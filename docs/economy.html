@@ -110,9 +110,9 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 <header class="hero">
   <div class="eyebrow">Core RPG · дизайн-документ · версия 0.1</div>
   <h1>Экономика сервера Core RPG</h1>
-  <p class="lead">Полная модель прогрессии: 71 уровень, 4 основных класса, 8 профессий, система аспектов и заточка предметов. Раздел заточки описывает механику плагина Zatochka один в один: грейды, камни, руны, шансы и бонусы взяты из его config.yml. Остальные числа служат базой, которую будем калибровать по тестам.</p>
+  <p class="lead">Полная модель прогрессии: 71 уровень, 4 основных класса, 8 профессий, система аспектов и заточка предметов. Разделы классов и уровней описывают плагин RoyalQuestClasses (классы, профессии, опыт, параметры, боевые формулы), раздел заточки описывает плагин Zatochka один в один. Названия классов и профессий задаются через display-name в конфиге и не требуют правки кода. Остальные числа служат базой, которую будем калибровать по тестам.</p>
   <div class="meta">
-    <span>Уровни: 1–71</span><span>Классы: 4 + 8 профессий</span><span>Заточка: плагин Zatochka 1.0.0</span><span>Грейды предметов: C / B / A</span><span>Заточка до +10 (C) и +11 (B, A)</span><span>Валюта: золото (G)</span>
+    <span>Уровни: 1–71</span><span>Классы: 4 + 8 профессий</span><span>Классы: плагин RoyalQuestClasses</span><span>Заточка: плагин Zatochka 1.0.0</span><span>Грейды предметов: C / B / A</span><span>Заточка до +10 (C) и +11 (B, A)</span><span>Валюта: золото (G)</span>
   </div>
 </header>
 
@@ -122,6 +122,7 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   <a href="#levels">Уровни и опыт</a>
   <a href="#classes">Основные классы</a>
   <a href="#professions">Профессии</a>
+  <a href="#params">Параметры и бой</a>
   <a href="#aspects">Аспекты</a>
   <a href="#sharpen">Заточка</a>
   <a href="#calc">Калькулятор заточки</a>
@@ -146,126 +147,173 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 
 <section id="levels">
   <div class="eyebrow">02 · Уровни</div>
-  <h2>Опыт и базовые характеристики по уровням</h2>
-  <p class="lead">Опыт для перехода на следующий уровень считается по формуле <code>XP = 80 × L^1.9</code> (округление до 10). Базовое здоровье: <code>100 + 10 × (L − 1)</code>, базовый урон: <code>10 + 1.5 × (L − 1)</code>. Каждый уровень даёт 2 очка аспектов. Класс умножает базу своими коэффициентами.</p>
+  <h2>Опыт и очки параметров по уровням</h2>
+  <p class="lead">Уровни ведёт плагин RoyalQuestClasses: ванильный опыт перехватывается и переводится в кастомный с множителем <code>vanilla-exp-multiplier</code>. Таблица опыта для уровней 2–30 взята из конфига плагина, дальше она продолжается ростом ×1.08 за уровень с округлением до 500. Каждые 5 уровней игрок получает 4 очка параметров. На 21 уровне опыт блокируется, пока не выбрана профессия.</p>
   <div class="stat-row">
     <div class="stat"><div class="v" id="xpTotal">—</div><div class="l">Опыт всего до 71</div></div>
     <div class="stat"><div class="v" id="xpLast">—</div><div class="l">Опыт за 70 → 71</div></div>
-    <div class="stat"><div class="v">140</div><div class="l">Очков аспектов к 71</div></div>
-    <div class="stat"><div class="v">800</div><div class="l">Базовое HP на 71</div></div>
+    <div class="stat"><div class="v">56</div><div class="l">Очков параметров к 71</div></div>
+    <div class="stat"><div class="v">21</div><div class="l">Уровень выбора профессии</div></div>
   </div>
+  <div class="band">Настройки конфига: <code>max-level: 71</code>, <code>profession-level: 21</code>, <code>block-exp-until-profession: true</code>, <code>use-custom-levels: true</code>. Формула <code>exp-formula</code> (100 × L^1.5) даёт на 31 уровне меньше, чем таблица на 30, поэтому все 71 значение из таблицы ниже записываем в <code>exp-table</code> целиком.</div>
   <div class="toggle" role="group" aria-label="Фильтр уровней">
     <button type="button" data-f="key" aria-pressed="true">Ключевые уровни</button>
     <button type="button" data-f="all" aria-pressed="false">Все 71</button>
   </div>
   <div class="tbl"><table id="lvlTable">
-    <thead><tr><th>Уровень</th><th>Фаза</th><th class="num">Опыт до след.</th><th class="num">Опыт всего</th><th class="num">Базовое HP</th><th class="num">Базовый урон</th><th class="num">Очки аспектов</th><th>Событие</th></tr></thead>
+    <thead><tr><th>Уровень</th><th>Фаза</th><th class="num">Опыт до след.</th><th class="num">Опыт всего</th><th class="num">Очков параметров</th><th>Событие</th></tr></thead>
     <tbody></tbody>
   </table></div>
-  <p class="note">Ориентир по времени: фаза I около 3 часов, II около 8 часов, III около 40 часов, IV около 80 часов. Итого до 71 уровня примерно 130 часов активной игры при среднем темпе.</p>
+  <p class="note">Ориентир по времени: фаза I около 3 часов, II около 8 часов, III около 40 часов, IV около 80 часов. Итого до 71 уровня примерно 130 часов активной игры. Темп регулируется множителем конвертации опыта, не таблицей.</p>
 </section>
 
 <section id="classes">
   <div class="eyebrow">03 · Классы</div>
   <h2>Четыре основных класса (выбор на 1 уровне)</h2>
-  <p class="lead">Класс задаёт множители к базовым характеристикам, стартовый набор аспектов и оружие. Множители применяются ко всем уровням, поэтому разрыв между классами растёт вместе с базой.</p>
+  <p class="lead">Класс выбирается в GUI при первом входе или командой <code>/class</code>, один раз и навсегда. Класс задаёт главный параметр (Сила, Точность или Интеллект), стартовые бонусы из конфига и ветку профессий. Множители из карточек ниже остаются целью баланса: в плагине они реализуются через список бонусов класса в формате <code>attribute:…</code> и <code>effect:…</code>.</p>
   <div class="grid g4">
-    <div class="card"><h3>Мечник</h3><div class="role">Ближний бой · танк / урон</div>
+    <div class="card"><h3>Мечник</h3><div class="role">Ближний бой · танк / урон · ключ <code>swordsman</code></div>
       <div class="kv"><b>×1.25</b><span>Здоровье</span><b>×1.30</b><span>Защита</span><b>×1.00</b><span>Урон</span><b>×0.95</b><span>Скорость</span></div>
-      <ul><li>Оружие: меч, топор, щит</li><li>Стартовые аспекты: Сила удара +5, Отталкивание +10%</li><li>Пассивка: блок щитом гасит 40% урона</li></ul></div>
-    <div class="card"><h3>Лучник</h3><div class="role">Дальний бой · контроль дистанции</div>
+      <ul><li>Главный параметр: Сила</li><li>Оружие: меч, топор, щит</li><li>Стартовые аспекты: Сила удара +5, Отталкивание +10%</li><li>Пассивка: блок щитом гасит 40% урона</li><li>В конфиге: +4 макс. HP, +2 брони</li></ul></div>
+    <div class="card"><h3>Лучник</h3><div class="role">Дальний бой · контроль дистанции · ключ <code>archer</code></div>
       <div class="kv"><b>×0.90</b><span>Здоровье</span><b>×0.85</b><span>Защита</span><b>×1.10</b><span>Урон</span><b>×1.10</b><span>Скорость</span></div>
-      <ul><li>Оружие: лук, арбалет</li><li>Стартовые аспекты: Скорость натяжки +15%, Крит. шанс +5%</li><li>Пассивка: выстрел в голову ×1.5 урона</li></ul></div>
-    <div class="card"><h3>Маг</h3><div class="role">Магический урон · контроль</div>
+      <ul><li>Главный параметр: Точность</li><li>Оружие: лук, арбалет</li><li>Стартовые аспекты: Скорость натяжки +15%, Крит. шанс +5%</li><li>Пассивка: выстрел в голову ×1.5 урона</li><li>В конфиге: +0.02 скорости передвижения</li></ul></div>
+    <div class="card"><h3>Маг</h3><div class="role">Магический урон · контроль · ключ <code>mage</code></div>
       <div class="kv"><b>×0.80</b><span>Здоровье</span><b>×0.80</b><span>Защита</span><b>×1.40</b><span>Маг. урон</span><b>×1.00</b><span>Скорость</span></div>
-      <ul><li>Оружие: посох, жезл, книга</li><li>Стартовые аспекты: Мана +50, Регенерация маны +20%</li><li>Пассивка: заклинания игнорируют 20% защиты</li></ul></div>
-    <div class="card"><h3>Асассин</h3><div class="role">Скорость · критический урон</div>
+      <ul><li>Главный параметр: Интеллект</li><li>Оружие: посох, жезл, книга</li><li>Стартовые аспекты: Мана +50, Регенерация маны +20%</li><li>Пассивка: заклинания игнорируют 20% защиты</li><li>В конфиге: +2 макс. HP, ночное зрение</li></ul></div>
+    <div class="card"><h3>Асассин</h3><div class="role">Скорость · критический урон · ключ <code>thief</code></div>
       <div class="kv"><b>×0.85</b><span>Здоровье</span><b>×0.75</b><span>Защита</span><b>×1.30</b><span>Крит. урон</span><b>×1.20</b><span>Скорость атаки</span></div>
-      <ul><li>Оружие: кинжалы, парные клинки</li><li>Стартовые аспекты: Крит. шанс +10%, Уклонение +5%</li><li>Пассивка: удар в спину всегда критический</li></ul></div>
+      <ul><li>Главный параметр: Сила</li><li>Оружие: кинжалы, парные клинки</li><li>Стартовые аспекты: Крит. шанс +10%, Уклонение +5%</li><li>Пассивка: удар в спину всегда критический</li><li>В конфиге: +0.03 скорости, +0.1 скорости атаки</li></ul></div>
   </div>
   <div class="tbl"><table>
-    <thead><tr><th>Класс</th><th class="num">HP на 1</th><th class="num">HP на 21</th><th class="num">HP на 45</th><th class="num">HP на 71</th><th class="num">Урон на 71</th><th>Главный ресурс</th></tr></thead>
-    <tbody id="classTable"></tbody>
+    <thead><tr><th>Ключ конфига</th><th>Название в плагине</th><th>Название на сервере</th><th>Главный параметр</th><th>Иконка GUI</th><th>Профессии</th></tr></thead>
+    <tbody>
+      <tr><td><code>swordsman</code></td><td>Мечник</td><td><b>Мечник</b></td><td>Сила</td><td>IRON_SWORD</td><td>Паладин, Берсерк</td></tr>
+      <tr><td><code>archer</code></td><td>Стрелок</td><td><b>Лучник</b></td><td>Точность</td><td>BOW</td><td>Снайпер, Охотник</td></tr>
+      <tr><td><code>mage</code></td><td>Маг</td><td><b>Маг</b></td><td>Интеллект</td><td>BLAZE_ROD</td><td>Чернокнижник, Клирик</td></tr>
+      <tr><td><code>thief</code></td><td>Вор</td><td><b>Асассин</b></td><td>Сила</td><td>GOLDEN_SWORD</td><td>Разбойник, Жнец</td></tr>
+    </tbody>
   </table></div>
+  <h3>Команды и плейсхолдеры</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Команда</th><th>Что делает</th></tr></thead>
+    <tbody>
+      <tr><td><code>/class</code></td><td class="wrap-text">GUI выбора базового класса, алиас <code>/класс</code></td></tr>
+      <tr><td><code>/profession [имя]</code></td><td class="wrap-text">GUI или прямой выбор профессии с 21 уровня, алиасы <code>/профессия</code>, <code>/prof</code></td></tr>
+      <tr><td><code>/myclass</code></td><td class="wrap-text">Класс, профессия, уровень и опыт, алиас <code>/rqclass</code></td></tr>
+      <tr><td><code>/stats</code></td><td class="wrap-text">GUI распределения очков параметров: ЛКМ +1, ПКМ −1, алиас <code>/параметры</code></td></tr>
+      <tr><td><code>/rqadmin reload | reset | setlevel | giveexp | info</code></td><td class="wrap-text">Админ-команды, право <code>royalquest.admin</code></td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">PlaceholderAPI: <code>%royalquest_class%</code>, <code>%royalquest_profession%</code>, <code>%royalquest_level%</code>, <code>%royalquest_exp%</code>, <code>%royalquest_exp_needed%</code>, <code>%royalquest_exp_progress%</code>, <code>%royalquest_has_class%</code>, <code>%royalquest_has_profession%</code>, <code>%royalquest_needs_profession%</code> и ключи <code>_class_key</code>, <code>_profession_key</code> для табов и скорбордов.</p>
 </section>
 
 <section id="professions">
   <div class="eyebrow">04 · Профессии</div>
   <h2>Восемь профессий (выбор на 21 уровне)</h2>
-  <p class="lead">Каждый класс разветвляется на две профессии-антонима: одна усиливает выживание или контроль, другая усиливает урон ценой защиты. Профессия добавляет свои множители поверх классовых, открывает уникальный навык и запрещает один аспект, чтобы ветки ощущались по-разному. Смена профессии стоит 25 000 G и доступна раз в 7 дней.</p>
+  <p class="lead">Каждый класс разветвляется на две профессии-антонима: одна усиливает выживание или контроль, другая усиливает урон ценой защиты. Профессия добавляет свои множители поверх классовых, открывает уникальный навык и запрещает один аспект, чтобы ветки ощущались по-разному. В плагине выбор окончательный, поэтому смена профессии продаётся как услуга NPC за 25 000 G не чаще раза в 7 дней и выполняется через <code>/rqadmin reset &lt;игрок&gt; profession</code>.</p>
 
   <div class="pair">
-    <div class="card"><h3>Паладин</h3><div class="role">Мечник · защитная ветка</div>
+    <div class="card"><h3>Паладин</h3><div class="role">Мечник · защитная ветка · ключ <code>crusader</code></div>
       <div class="kv"><b>×1.20</b><span>Здоровье (доп.)</span><b>×1.25</b><span>Защита (доп.)</span><b>+50%</b><span>Регенерация</span><b>×0.85</b><span>Урон</span></div>
-      <ul><li>Навык «Священный щит»: 5 сек неуязвимости союзников, КД 90 сек</li><li>Закрыт аспект: Крит. урон</li></ul></div>
+      <ul><li>Навык «Священный щит»: 5 сек неуязвимости союзников, КД 90 сек</li><li>Закрыт аспект: Крит. урон</li><li>В конфиге: +4 макс. HP, постоянная регенерация</li></ul></div>
     <div class="vs">против</div>
-    <div class="card"><h3>Берсерк</h3><div class="role">Мечник · атакующая ветка</div>
+    <div class="card"><h3>Берсерк</h3><div class="role">Мечник · атакующая ветка · ключ <code>dark_knight</code></div>
       <div class="kv"><b>×1.35</b><span>Урон</span><b>+20%</b><span>Скорость атаки</span><b>×0.70</b><span>Защита</span><b>+30%</b><span>Отталкивание</span></div>
-      <ul><li>Навык «Ярость»: урон растёт на 2% за каждые 5% потерянного HP</li><li>Закрыт аспект: Регенерация</li></ul></div>
+      <ul><li>Навык «Ярость»: урон растёт на 2% за каждые 5% потерянного HP</li><li>Закрыт аспект: Регенерация</li><li>В конфиге: +2 к урону атаки</li></ul></div>
   </div>
 
   <div class="pair">
-    <div class="card"><h3>Снайпер</h3><div class="role">Лучник · точность и сила</div>
+    <div class="card"><h3>Снайпер</h3><div class="role">Лучник · точность и сила · ключ <code>sniper</code></div>
       <div class="kv"><b>×1.40</b><span>Урон стрелы</span><b>+25%</b><span>Крит. урон</span><b>×0.70</b><span>Скорость натяжки</span><b>+40%</b><span>Дальность</span></div>
-      <ul><li>Навык «Прицел»: следующий выстрел ×3 урона, 4 сек подготовки</li><li>Закрыт аспект: Скорость атаки</li></ul></div>
+      <ul><li>Навык «Прицел»: следующий выстрел ×3 урона, 4 сек подготовки</li><li>Закрыт аспект: Скорость атаки</li><li>В конфиге: +1.5 к урону атаки</li></ul></div>
     <div class="vs">против</div>
-    <div class="card"><h3>Охотник</h3><div class="role">Лучник · скорость и темп</div>
+    <div class="card"><h3>Охотник</h3><div class="role">Лучник · скорость и темп · ключ <code>hunter</code></div>
       <div class="kv"><b>+40%</b><span>Скорость натяжки</span><b>+15%</b><span>Скорость</span><b>×0.80</b><span>Урон стрелы</span><b>+10%</b><span>Уклонение</span></div>
-      <ul><li>Навык «Залп»: 5 стрел веером, КД 20 сек</li><li>Закрыт аспект: Сила удара</li></ul></div>
+      <ul><li>Навык «Залп»: 5 стрел веером, КД 20 сек</li><li>Ловушки и приручение зверей</li><li>Закрыт аспект: Сила удара</li><li>В конфиге: постоянный эффект скорости</li></ul></div>
   </div>
 
   <div class="pair">
-    <div class="card"><h3>Чернокнижник</h3><div class="role">Маг · разрушение</div>
+    <div class="card"><h3>Чернокнижник</h3><div class="role">Маг · разрушение · ключ <code>warlock</code></div>
       <div class="kv"><b>×1.35</b><span>Маг. урон</span><b>+15%</b><span>Крит. шанс магии</span><b>×0.80</b><span>Здоровье</span><b>+25%</b><span>Расход маны</span></div>
-      <ul><li>Навык «Проклятие»: цель получает +30% урона 8 сек</li><li>Закрыт аспект: Регенерация HP</li></ul></div>
+      <ul><li>Навык «Проклятие»: цель получает +30% урона 8 сек</li><li>Закрыт аспект: Регенерация HP</li><li>В конфиге: постоянный эффект силы</li></ul></div>
     <div class="vs">против</div>
-    <div class="card"><h3>Клирик</h3><div class="role">Маг · поддержка и исцеление</div>
+    <div class="card"><h3>Клирик</h3><div class="role">Маг · поддержка и исцеление · ключ <code>wizard</code></div>
       <div class="kv"><b>+100%</b><span>Регенерация HP</span><b>+50%</b><span>Регенерация маны</span><b>×0.70</b><span>Маг. урон</span><b>×1.15</b><span>Защита</span></div>
-      <ul><li>Навык «Исцеление»: восстанавливает 30% HP группе, КД 45 сек</li><li>Закрыт аспект: Крит. урон</li></ul></div>
+      <ul><li>Навык «Исцеление»: восстанавливает 30% HP группе, КД 45 сек</li><li>Закрыт аспект: Крит. урон</li><li>В конфиге: огнестойкость</li></ul></div>
   </div>
 
   <div class="pair">
-    <div class="card"><h3>Разбойник</h3><div class="role">Асассин · два тяжёлых клинка</div>
+    <div class="card"><h3>Разбойник</h3><div class="role">Асассин · два тяжёлых клинка · ключ <code>rogue</code></div>
       <div class="kv"><b>×1.50</b><span>Крит. урон</span><b>+20%</b><span>Сила удара</span><b>×0.80</b><span>Скорость атаки</span><b>+10%</b><span>Вампиризм при крите</span></div>
-      <ul><li>Носит два тяжёлых клинка: оружие в обеих руках, урон второй руки 60%</li><li>Навык «Казнь»: мгновенно добивает цель ниже 15% HP, КД 30 сек</li><li>Закрыт аспект: Уклонение</li></ul></div>
+      <ul><li>Носит два тяжёлых клинка: оружие в обеих руках, урон второй руки 60%</li><li>Навык «Казнь»: мгновенно добивает цель ниже 15% HP, КД 30 сек</li><li>Закрыт аспект: Уклонение</li><li>В конфиге: +0.02 скорости передвижения</li></ul></div>
     <div class="vs">против</div>
-    <div class="card"><h3>Жнец</h3><div class="role">Асассин · мобильность</div>
+    <div class="card"><h3>Жнец</h3><div class="role">Асассин · мобильность · ключ <code>assassin</code></div>
       <div class="kv"><b>+25%</b><span>Скорость</span><b>+20%</b><span>Уклонение</span><b>×0.75</b><span>Крит. урон</span><b>+30%</b><span>Скорость атаки</span></div>
-      <ul><li>Навык «Дым»: невидимость 6 сек, первый удар из неё ×2, КД 40 сек</li><li>Закрыт аспект: Сила удара</li></ul></div>
+      <ul><li>Навык «Дым»: невидимость 6 сек, первый удар из неё ×2, КД 40 сек</li><li>Яды и скрытные убийства</li><li>Закрыт аспект: Сила удара</li><li>В конфиге: +0.15 скорости атаки</li></ul></div>
   </div>
+  <p class="note">Формат бонусов в конфиге: <code>attribute:ИМЯ:значение</code>, <code>effect:ИМЯ:уровень:длительность</code> (0 = бесконечно), <code>permission:узел</code>. Бонусы класса и профессии складываются и применяются при входе и при выборе.</p>
+</section>
+
+<section id="params">
+  <div class="eyebrow">05 · Параметры и бой</div>
+  <h2>Четыре параметра и боевые формулы плагина</h2>
+  <p class="lead">Игрок распределяет очки параметров в <code>/stats</code>. Очки приходят по 4 каждые 5 уровней, к 71 уровню их 56. Каждые 10 очков в одном параметре дают кратность: дополнительный бонус сверх линейного. Формулы ниже взяты из StatsManager и CombatCalculator.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Параметр</th><th>Кому</th><th>За 1 очко</th><th>За каждые 10 (кратность)</th><th class="num">При 20 очках</th><th class="num">При 56 очках</th></tr></thead>
+    <tbody>
+      <tr><td>Сила / Точность / Интеллект</td><td>Главный параметр класса</td><td>+2 атаки</td><td>+15 атаки</td><td class="num">+70</td><td class="num">+187</td></tr>
+      <tr><td>Ловкость</td><td>Все</td><td>+0.25% скорости атаки</td><td>+2.5% скорости атаки, +4 уворота</td><td class="num">+10%, 8 ув.</td><td class="num">+26.5%, 20 ув.</td></tr>
+      <tr><td>Выносливость</td><td>Все</td><td>+67 HP</td><td>—</td><td class="num">+1 340 HP</td><td class="num">+3 752 HP</td></tr>
+      <tr><td>Удача</td><td>Все</td><td>+0.33 рейтинга крита, +1 атаки</td><td>+1 рейтинга, +7.5 атаки, +5% силы крита</td><td class="num">рейтинг 8.6</td><td class="num">рейтинг 23.5</td></tr>
+    </tbody>
+  </table></div>
+  <div class="band">Выносливость даёт +67 HP за очко: это масштаб Royal Quest, в Minecraft это 33 сердца. Перед запуском калибруем это число в StatsManager вместе с ценами, иначе все очки уйдут в HP.</div>
+  <h3>Боевые формулы (игрок против игрока)</h3>
+  <div class="grid g2">
+    <div class="card"><h3>Шанс крита</h3><ul><li>Ш = 0.6 × (1 − 0.999^(Рейтинг × (60.1 − Уровень × 0.649)))</li><li>Кап 57%. С ростом уровня тот же рейтинг даёт меньше крита, поэтому в эндгейме Удачу нужно докладывать</li></ul></div>
+    <div class="card"><h3>Сила крита</h3><ul><li>Базовые +50% урона</li><li>+5% за каждые 10 очков Удачи</li></ul></div>
+    <div class="card"><h3>Уворот и попадание</h3><ul><li>Уворот = 4 за каждые 10 Ловкости</li><li>Попадание = Главный параметр / 5</li><li>Шанс промаха = (Уворот − Попадание) / 100, кап 85%</li></ul></div>
+    <div class="card"><h3>Защита</h3><ul><li>Поглощение = 1 − 100 / (100 + Защита / 100)</li><li>Сейчас в бой передаётся защита 0, поглощение включится вместе с аспектом «Защита»</li></ul></div>
+  </div>
+  <h3>Шанс крита по уровню и рейтингу</h3>
+  <div class="tbl"><table id="critTable">
+    <thead><tr><th>Удача (очков)</th><th class="num">Рейтинг</th><th class="num">Ур. 10</th><th class="num">Ур. 21</th><th class="num">Ур. 45</th><th class="num">Ур. 71</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
 </section>
 
 <section id="aspects">
-  <div class="eyebrow">05 · Аспекты</div>
+  <div class="eyebrow">06 · Аспекты</div>
   <h2>Система аспектов</h2>
-  <p class="lead">Аспект это одна числовая характеристика персонажа. Итоговое значение складывается из четырёх источников: база уровня, множитель класса и профессии, вложенные очки аспектов и бонусы предметов с заточкой. Каждый аспект имеет цену за очко и потолок, чтобы нельзя было уйти в один стат.</p>
-  <div class="band">Формула: <code>Итог = (База × Класс × Профессия + Очки × Шаг) + Предметы + Заточка</code>. Процентные аспекты складываются аддитивно, затем применяется потолок.</div>
+  <p class="lead">Аспект это одна числовая характеристика персонажа. Четыре параметра плагина это то, во что игрок вкладывает очки, а аспекты это итоговые значения, которые видит бой. Итог складывается из базы уровня, множителя класса и профессии, параметров и бонусов предметов с заточкой. У каждого аспекта есть потолок, чтобы нельзя было уйти в один стат.</p>
+  <div class="band">Формула: <code>Итог = База × Класс × Профессия + Параметры + Предметы + Заточка</code>. Процентные аспекты складываются аддитивно, затем применяется потолок.</div>
   <div class="tbl"><table>
-    <thead><tr><th>Аспект</th><th>Единица</th><th class="num">База на 1</th><th class="num">Шаг за очко</th><th class="num">Цена очка</th><th class="num">Потолок</th><th>Где растёт</th><th>Кому важен</th></tr></thead>
+    <thead><tr><th>Аспект</th><th>Единица</th><th class="num">База на 1</th><th>Откуда в плагине</th><th class="num">Потолок</th><th>Где ещё растёт</th><th>Кому важен</th></tr></thead>
     <tbody>
-      <tr><td>Здоровье (HP)</td><td>ед.</td><td class="num">100</td><td class="num">+8</td><td class="num">1</td><td class="num">3 000</td><td>Уровень, броня</td><td>Мечник, Паладин</td></tr>
-      <tr><td>Регенерация HP</td><td>ед./сек</td><td class="num">0.5</td><td class="num">+0.1</td><td class="num">2</td><td class="num">15</td><td>Очки, Клирик</td><td>Паладин, Клирик</td></tr>
-      <tr><td>Защита</td><td>%, снижение урона</td><td class="num">0</td><td class="num">+0.5</td><td class="num">2</td><td class="num">60</td><td>Броня, заточка брони</td><td>Мечник, Паладин</td></tr>
-      <tr><td>Урон</td><td>ед. за удар</td><td class="num">10</td><td class="num">+1</td><td class="num">1</td><td class="num">—</td><td>Оружие, заточка</td><td>Мечник, Лучник, Асассин</td></tr>
-      <tr><td>Маг. урон</td><td>ед. за заклинание</td><td class="num">10</td><td class="num">+1.5</td><td class="num">1</td><td class="num">—</td><td>Посох, заточка</td><td>Маг</td></tr>
-      <tr><td>Сила удара</td><td>ед., пробивает защиту</td><td class="num">0</td><td class="num">+1</td><td class="num">2</td><td class="num">150</td><td>Очки, тяжёлое оружие</td><td>Мечник, Разбойник, Снайпер</td></tr>
-      <tr><td>Крит. шанс</td><td>%</td><td class="num">5</td><td class="num">+0.5</td><td class="num">2</td><td class="num">50</td><td>Очки, кинжалы</td><td>Асассин, Лучник</td></tr>
-      <tr><td>Крит. урон</td><td>% от урона</td><td class="num">150</td><td class="num">+2</td><td class="num">2</td><td class="num">350</td><td>Очки, заточка +7</td><td>Асассин, Разбойник, Снайпер</td></tr>
-      <tr><td>Скорость атаки</td><td>%</td><td class="num">100</td><td class="num">+1</td><td class="num">3</td><td class="num">180</td><td>Очки, лёгкое оружие</td><td>Асассин, Жнец, Берсерк</td></tr>
-      <tr><td>Скорость передвижения</td><td>%</td><td class="num">100</td><td class="num">+0.5</td><td class="num">3</td><td class="num">140</td><td>Очки, сапоги</td><td>Жнец, Охотник</td></tr>
-      <tr><td>Скорость натяжки лука</td><td>%</td><td class="num">100</td><td class="num">+1.5</td><td class="num">2</td><td class="num">200</td><td>Очки, лук</td><td>Лучник, Охотник</td></tr>
-      <tr><td>Отталкивание</td><td>%</td><td class="num">100</td><td class="num">+2</td><td class="num">1</td><td class="num">250</td><td>Очки, щит, топор</td><td>Мечник, Берсерк</td></tr>
-      <tr><td>Уклонение</td><td>%, шанс избежать удара</td><td class="num">0</td><td class="num">+0.5</td><td class="num">3</td><td class="num">35</td><td>Очки, лёгкая броня</td><td>Асассин, Жнец, Охотник</td></tr>
-      <tr><td>Мана</td><td>ед.</td><td class="num">100</td><td class="num">+10</td><td class="num">1</td><td class="num">2 000</td><td>Уровень, посох</td><td>Маг</td></tr>
-      <tr><td>Регенерация маны</td><td>ед./сек</td><td class="num">2</td><td class="num">+0.3</td><td class="num">2</td><td class="num">40</td><td>Очки, Клирик</td><td>Маг, Клирик</td></tr>
-      <tr><td>Вампиризм</td><td>% от урона в HP</td><td class="num">0</td><td class="num">+0.5</td><td class="num">3</td><td class="num">20</td><td>Только предметы и Разбойник</td><td>Берсерк, Разбойник</td></tr>
+      <tr><td>Здоровье (HP)</td><td>ед.</td><td class="num">20</td><td>Выносливость, +67 за очко; бонусы класса</td><td class="num">3 000</td><td>Броня</td><td>Мечник, Паладин</td></tr>
+      <tr><td>Регенерация HP</td><td>ед./сек</td><td class="num">0.5</td><td>Эффект REGENERATION у Паладина</td><td class="num">15</td><td>Клирик, предметы</td><td>Паладин, Клирик</td></tr>
+      <tr><td>Защита</td><td>%, снижение урона</td><td class="num">0</td><td>Формула поглощения, пока передаётся 0</td><td class="num">60</td><td>Броня, заточка брони</td><td>Мечник, Паладин</td></tr>
+      <tr><td>Урон</td><td>ед. за удар</td><td class="num">4</td><td>Главный параметр +2/очко, Удача +1/очко</td><td class="num">—</td><td>Оружие, заточка</td><td>Мечник, Лучник, Асассин</td></tr>
+      <tr><td>Маг. урон</td><td>ед. за заклинание</td><td class="num">4</td><td>Интеллект как главный параметр</td><td class="num">—</td><td>Посох, заточка</td><td>Маг</td></tr>
+      <tr><td>Сила удара</td><td>ед., пробивает защиту</td><td class="num">0</td><td>Пока нет, план</td><td class="num">150</td><td>Тяжёлое оружие</td><td>Мечник, Разбойник, Снайпер</td></tr>
+      <tr><td>Крит. шанс</td><td>%</td><td class="num">0</td><td>Рейтинг от Удачи, формула RQ</td><td class="num">57</td><td>Кинжалы</td><td>Асассин, Лучник</td></tr>
+      <tr><td>Крит. урон</td><td>% от урона</td><td class="num">150</td><td>+5% за 10 Удачи</td><td class="num">350</td><td>Заточка +7</td><td>Асассин, Разбойник, Снайпер</td></tr>
+      <tr><td>Скорость атаки</td><td>%</td><td class="num">100</td><td>Ловкость +0.25%/очко, бонусы класса</td><td class="num">180</td><td>Лёгкое оружие</td><td>Асассин, Жнец, Берсерк</td></tr>
+      <tr><td>Скорость передвижения</td><td>%</td><td class="num">100</td><td>Бонусы класса и профессии (атрибут, эффект SPEED)</td><td class="num">140</td><td>Сапоги</td><td>Жнец, Охотник</td></tr>
+      <tr><td>Скорость натяжки лука</td><td>%</td><td class="num">100</td><td>Пока нет, план</td><td class="num">200</td><td>Лук</td><td>Лучник, Охотник</td></tr>
+      <tr><td>Отталкивание</td><td>%</td><td class="num">100</td><td>Атрибут ATTACK_KNOCKBACK через бонусы</td><td class="num">250</td><td>Щит, топор</td><td>Мечник, Берсерк</td></tr>
+      <tr><td>Уклонение</td><td>%, шанс избежать удара</td><td class="num">0</td><td>Уворот: 4 за 10 Ловкости</td><td class="num">35</td><td>Лёгкая броня</td><td>Асассин, Жнец, Охотник</td></tr>
+      <tr><td>Мана</td><td>ед.</td><td class="num">100</td><td>Пока нет, план</td><td class="num">2 000</td><td>Посох</td><td>Маг</td></tr>
+      <tr><td>Регенерация маны</td><td>ед./сек</td><td class="num">2</td><td>Пока нет, план</td><td class="num">40</td><td>Клирик</td><td>Маг, Клирик</td></tr>
+      <tr><td>Вампиризм</td><td>% от урона в HP</td><td class="num">0</td><td>Пока нет, план</td><td class="num">20</td><td>Только предметы и Разбойник</td><td>Берсерк, Разбойник</td></tr>
     </tbody>
   </table></div>
-  <p class="note">Очки аспектов: 2 за уровень, 140 к 71 уровню. Сброс очков стоит 5 000 G × номер фазы (D 5 000, C 10 000, B 15 000, A 20 000).</p>
+  <p class="note">Сброс параметров стоит 5 000 G × номер фазы (I 5 000, II 10 000, III 15 000, IV 20 000) и выполняется через админ-сброс. Аспекты с пометкой «план» ждут своего плагина или ядра.</p>
 </section>
 
 <section id="sharpen">
-  <div class="eyebrow">06 · Заточка</div>
+  <div class="eyebrow">07 · Заточка</div>
   <h2>Заточка предметов (плагин Zatochka)</h2>
   <p class="lead">Заточку делает плагин Zatochka для Paper / Purpur / Folia 1.21. Меню открывается командой <code>/zatochka</code> (алиасы <code>/sharpen</code>, <code>/zat</code>, <code>/заточка</code>) или правым кликом по NPC Citizens «Королевский алхимик». Игрок держит предмет в основной руке, кладёт камень и, по желанию, руну в слоты меню и нажимает «Улучшить». Золото за попытку не берётся: вся стоимость заточки это камни и руны.</p>
 
@@ -324,7 +372,7 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 </section>
 
 <section id="calc">
-  <div class="eyebrow">07 · Расчёт</div>
+  <div class="eyebrow">08 · Расчёт</div>
   <h2>Калькулятор ожидаемой стоимости заточки</h2>
   <p class="lead">Считает математическое ожидание числа попыток и затрат на достижение каждой ступени по правилам плагина: успех, сохранение уровня (руна), откат на ступень (без руны) или уничтожение (без руны и кубика) с покупкой нового предмета и заточкой с нуля. Цены камней и предмета задаются ниже и будут калиброваться по рынку.</p>
   <div class="controls">
@@ -345,7 +393,7 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 </section>
 
 <section id="money">
-  <div class="eyebrow">08 · Деньги</div>
+  <div class="eyebrow">09 · Деньги</div>
   <h2>Источники дохода и стоки золота</h2>
   <p class="lead">Экономика держится на одной валюте, золоте. Доход растёт ступенчато с фазой, а стоки масштабируются так, чтобы на каждой фазе игрок тратил около 70% заработанного и не накапливал мешок к эндгейму.</p>
   <h3>Средний доход в час по фазам</h3>
@@ -367,7 +415,7 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       <tr><td>Налог рынка</td><td class="wrap-text">5% с продажи, 10% для предметов +7 и выше и для цветных камней</td><td class="wrap-text">Выводит золото из обращения между игроками</td></tr>
       <tr><td>Телепорт</td><td class="wrap-text">10 G × уровень игрока за прыжок между городами</td><td class="wrap-text">Мелкий сток, растёт с уровнем</td></tr>
       <tr><td>Смерть</td><td class="wrap-text">Потеря 1% золота в кошельке, не из банка</td><td class="wrap-text">Мотивирует хранить в банке</td></tr>
-      <tr><td>Сброс аспектов</td><td class="wrap-text">5 000 G × номер фазы</td><td class="wrap-text">Редкий, но крупный сток</td></tr>
+      <tr><td>Сброс параметров</td><td class="wrap-text">5 000 G × номер фазы</td><td class="wrap-text">Редкий, но крупный сток</td></tr>
       <tr><td>Смена профессии</td><td class="wrap-text">25 000 G, не чаще раза в 7 дней</td><td class="wrap-text">Крупный сток для эндгейма</td></tr>
       <tr><td>Банк</td><td class="wrap-text">Хранение бесплатно, вывод свыше 100 000 G за сутки с комиссией 1%</td><td class="wrap-text">Ограничивает перелив золота</td></tr>
     </tbody>
@@ -400,13 +448,13 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 </section>
 
 <section id="todo">
-  <div class="eyebrow">09 · Дальше</div>
+  <div class="eyebrow">10 · Дальше</div>
   <h2>Что допиливаем следующим шагом</h2>
   <div class="grid g2">
     <div class="card"><h3>Навыки</h3><ul><li>Дерево из 3–4 активных навыков на класс</li><li>Улучшения навыков за очки с 10 уровня</li></ul></div>
     <div class="card"><h3>Предметы</h3><ul><li>Редкости: обычный, редкий, эпический, легендарный</li><li>Случайные аспекты на дропе, рероллы</li></ul></div>
     <div class="card"><h3>Контент</h3><ul><li>Список данжей и боссов по фазам с дропом камней</li><li>Ежедневные и недельные задания</li></ul></div>
-    <div class="card"><h3>Техника</h3><ul><li>Zatochka 1.0.0 уже готов: заточка, камни, руны, GUI, NPC</li><li>Выбор ядра классов и аспектов: MMOCore / MMOItems или своё</li><li>Таблицы дропа камней по фазам в конфиги мобов и боссов</li></ul></div>
+    <div class="card"><h3>Техника</h3><ul><li>Zatochka 1.0.0 готов: заточка, камни, руны, GUI, NPC</li><li>RoyalQuestClasses готов: классы, профессии, уровни, параметры. Нужен конфиг: имена, 71 уровень, профессия на 21, полная exp-table</li><li>Аспекты с пометкой «план»: мана, натяжка, сила удара, вампиризм</li><li>Таблицы дропа камней по фазам в конфиги мобов и боссов</li></ul></div>
   </div>
 </section>
 
@@ -419,22 +467,26 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   var fmt=function(n){return Math.round(n).toLocaleString('ru-RU')};
   var fmt1=function(n){return (Math.round(n*10)/10).toLocaleString('ru-RU')};
   var phaseOf=function(l){return l<=11?{k:'d',t:'C · I'}:l<=21?{k:'c',t:'C · II'}:l<=45?{k:'b',t:'B'}:{k:'a',t:'A'}};
-  var events={1:'Выбор класса, Крошка и Осколок',11:'Конец фазы I',12:'Железо, Ашкалотский кубик в дропе',21:'Выбор профессии',22:'Грейд B: золото и алмаз, макс +11',30:'Первый рейд, Чёрный камень',45:'Конец фазы III',46:'Грейд A: незерит, цветные камни',60:'PvP-сезоны, Пурпурный камень',71:'Максимум'};
-  var xp=function(l){return Math.round(80*Math.pow(l,1.9)/10)*10};
+  var events={1:'Выбор класса в GUI, Крошка и Осколок',11:'Конец фазы I',12:'Железо, Ашкалотский кубик в дропе',20:'+4 очка параметров',21:'Выбор профессии, опыт заблокирован до выбора',22:'Грейд B: золото и алмаз, макс +11',30:'Первый рейд, Чёрный камень',45:'Конец фазы III',46:'Грейд A: незерит, цветные камни',60:'PvP-сезоны, Пурпурный камень',71:'Максимум'};
+  var expTable={2:100,3:250,4:450,5:700,6:1000,7:1400,8:1900,9:2500,10:3200,11:4000,12:5000,13:6200,14:7600,15:9200,16:11000,17:13000,18:15500,19:18500,20:22000,21:26000,22:30500,23:35500,24:41000,25:47000,26:54000,27:62000,28:71000,29:81000,30:92000};
+  var xp=function(l){ /* опыт, нужный ДЛЯ уровня l */
+    if(l<=1)return 0; if(expTable[l])return expTable[l];
+    return Math.round(92000*Math.pow(1.08,l-30)/500)*500;
+  };
   var levels=[],total=0;
   for(var l=1;l<=71;l++){
-    var need=l<71?xp(l):0;
-    levels.push({l:l,ph:phaseOf(l),need:need,total:total,hp:100+10*(l-1),dmg:10+1.5*(l-1),pts:2*l,ev:events[l]||''});
+    var need=l<71?xp(l+1):0;
+    levels.push({l:l,ph:phaseOf(l),need:need,total:total,pts:Math.floor(l/5)*4,ev:events[l]||(l%5===0?'+4 очка параметров':'')});
     total+=need;
   }
   document.getElementById('xpTotal').textContent=fmt(total);
-  document.getElementById('xpLast').textContent=fmt(xp(70));
-  var keyLv={1:1,5:1,11:1,12:1,15:1,21:1,22:1,30:1,40:1,45:1,46:1,55:1,60:1,65:1,70:1,71:1};
+  document.getElementById('xpLast').textContent=fmt(xp(71));
+  var keyLv={1:1,5:1,11:1,12:1,15:1,20:1,21:1,22:1,30:1,31:1,40:1,45:1,46:1,55:1,60:1,65:1,70:1,71:1};
   function renderLevels(all){
     var tb=document.querySelector('#lvlTable tbody'),h='';
     levels.forEach(function(r){
       if(!all&&!keyLv[r.l])return;
-      h+='<tr><td><b>'+r.l+'</b></td><td><span class="pill t-'+r.ph.toLowerCase()+'">'+r.ph+'</span></td><td class="num">'+(r.need?fmt(r.need):'—')+'</td><td class="num">'+fmt(r.total)+'</td><td class="num">'+fmt(r.hp)+'</td><td class="num">'+fmt1(r.dmg)+'</td><td class="num">'+r.pts+'</td><td>'+r.ev+'</td></tr>';
+      h+='<tr><td><b>'+r.l+'</b></td><td><span class="pill t-'+r.ph.k+'">'+r.ph.t+'</span></td><td class="num">'+(r.need?fmt(r.need):'—')+'</td><td class="num">'+fmt(r.total)+'</td><td class="num">'+r.pts+'</td><td>'+r.ev+'</td></tr>';
     });
     tb.innerHTML=h;
   }
@@ -446,15 +498,11 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     });
   });
 
-  var classes=[
-    {n:'Мечник',hp:1.25,dmg:1.0,res:'Выносливость'},
-    {n:'Лучник',hp:0.9,dmg:1.1,res:'Стрелы и концентрация'},
-    {n:'Маг',hp:0.8,dmg:1.4,res:'Мана'},
-    {n:'Асассин',hp:0.85,dmg:1.0,res:'Энергия'}
-  ];
-  var hpAt=function(l){return 100+10*(l-1)};
-  document.getElementById('classTable').innerHTML=classes.map(function(c){
-    return '<tr><td><b>'+c.n+'</b></td><td class="num">'+fmt(hpAt(1)*c.hp)+'</td><td class="num">'+fmt(hpAt(21)*c.hp)+'</td><td class="num">'+fmt(hpAt(45)*c.hp)+'</td><td class="num">'+fmt(hpAt(71)*c.hp)+'</td><td class="num">'+fmt1((10+1.5*70)*c.dmg)+'</td><td>'+c.res+'</td></tr>';
+  var crit=function(rating,level){var e=rating*(60.1007-level*0.6491);return Math.max(0,Math.min(0.57,0.6*(1-Math.pow(0.999,e))))};
+  var rating=function(luck){return Math.floor(luck*0.33+Math.floor(luck/10)*1.0)};
+  document.querySelector('#critTable tbody').innerHTML=[0,10,20,30,40,56].map(function(lk){
+    var r=rating(lk);
+    return '<tr><td><b>'+lk+'</b></td><td class="num">'+r+'</td>'+[10,21,45,71].map(function(lv){return '<td class="num">'+fmt1(crit(r,lv)*100)+'%</td>'}).join('')+'</tr>';
   }).join('');
 
   var cfg={
