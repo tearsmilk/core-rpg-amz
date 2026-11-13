@@ -1,0 +1,453 @@
+<title>Экономика Core RPG</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Rubik:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: dark-first game design doc. Sticky left nav on desktop, single column on phone. Tier colors D/C/B/A run through every table. */
+:root{
+  --bg:#0f1218; --bg-2:#161b24; --bg-3:#1e2532; --line:#2a3240;
+  --fg:#e8ecf3; --fg-2:#a4adbd; --fg-3:#6b7585;
+  --accent:#e6b45c; --accent-2:#f3d28c;
+  --d:#8f9bb3; --c:#5fbf8a; --b:#5aa7e8; --a:#d97de0;
+  --good:#5fbf8a; --warn:#e6b45c; --bad:#e2695f;
+  --display:"Unbounded","Rubik",system-ui,sans-serif;
+  --body:"Rubik",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
+  --bg:#f6f4ef; --bg-2:#ffffff; --bg-3:#eeeae1; --line:#d9d3c6;
+  --fg:#1a1d24; --fg-2:#4a5160; --fg-3:#7a8190;
+  --accent:#a8761c; --accent-2:#7a5410;
+  --d:#5c6677; --c:#1f8a52; --b:#1f6fb8; --a:#9a3ba3;
+  --good:#1f8a52; --warn:#a8761c; --bad:#b83a30;
+  color-scheme:light;
+}}
+:root[data-theme="light"]{
+  --bg:#f6f4ef; --bg-2:#ffffff; --bg-3:#eeeae1; --line:#d9d3c6;
+  --fg:#1a1d24; --fg-2:#4a5160; --fg-3:#7a8190;
+  --accent:#a8761c; --accent-2:#7a5410;
+  --d:#5c6677; --c:#1f8a52; --b:#1f6fb8; --a:#9a3ba3;
+  --good:#1f8a52; --warn:#a8761c; --bad:#b83a30;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.55;margin:0;
+  padding-block:0 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:var(--accent)}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:clamp(26px,4vw,40px);font-weight:700}
+h2{font-size:clamp(20px,2.6vw,26px);font-weight:700;margin-top:8px}
+h3{font-size:16px;font-weight:500;color:var(--accent-2);margin-top:4px}
+p{max-width:68ch;margin:0}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3)}
+.wrap{max-width:1180px;margin:0 auto}
+header.hero{padding-block:40px 28px;border-bottom:1px solid var(--line);display:grid;gap:14px}
+.hero .meta{display:flex;flex-wrap:wrap;gap:8px 18px;font-family:var(--mono);font-size:12px;color:var(--fg-2)}
+.layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:40px;padding-top:28px}
+nav.toc{position:sticky;top:env(safe-area-inset-top,0px);align-self:start;display:grid;gap:4px;padding-top:8px;font-size:13px}
+nav.toc a{color:var(--fg-2);text-decoration:none;padding:5px 10px;border-left:2px solid var(--line)}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--fg);border-color:var(--accent);outline:none}
+main{display:grid;gap:56px;min-width:0}
+section{display:grid;gap:16px;min-width:0;scroll-margin-top:12px}
+.lead{color:var(--fg-2)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.card{background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:8px;align-content:start;min-width:0}
+.card h3{margin:0}
+.card .role{font-size:12px;color:var(--fg-3)}
+.card ul{margin:0;padding-left:18px;color:var(--fg-2);font-size:14px}
+.card li{margin:2px 0}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px}
+.kv b{font-family:var(--mono);font-weight:600;color:var(--fg)}
+.kv span{color:var(--fg-2)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--bg-2)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:top}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg-3);background:var(--bg-3);font-weight:600}
+td.num,th.num{text-align:right;font-family:var(--mono)}
+tr:last-child td{border-bottom:none}
+td.wrap-text{white-space:normal;min-width:220px}
+.pill{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid currentColor;line-height:1.5}
+.t-d{color:var(--d)} .t-c{color:var(--c)} .t-b{color:var(--b)} .t-a{color:var(--a)}
+.pair{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+.vs{font-family:var(--display);font-size:12px;color:var(--fg-3)}
+.band{border-left:3px solid var(--accent);padding:10px 14px;background:var(--bg-2);border-radius:0 8px 8px 0;color:var(--fg-2);font-size:14px}
+.note{font-size:13px;color:var(--fg-3)}
+.phases{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.phase{padding:14px;display:grid;gap:4px;border-right:1px solid var(--line);background:var(--bg-2)}
+.phase:last-child{border-right:none}
+.phase .lv{font-family:var(--display);font-size:20px;font-weight:700}
+.phase .nm{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.phase .ds{font-size:12px;color:var(--fg-2)}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+.controls label{display:grid;gap:4px;font-size:12px;color:var(--fg-3)}
+select,input[type=number]{background:var(--bg-3);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit;font-size:14px;min-width:120px}
+select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.stat-row{display:flex;flex-wrap:wrap;gap:10px}
+.stat{background:var(--bg-3);border-radius:8px;padding:10px 14px;display:grid;gap:2px;min-width:140px}
+.stat .v{font-family:var(--mono);font-size:20px;font-weight:600}
+.stat .l{font-size:11px;color:var(--fg-3);text-transform:uppercase;letter-spacing:.08em}
+.bar{height:6px;background:var(--bg-3);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.toggle{display:flex;gap:8px;flex-wrap:wrap}
+.toggle button{background:var(--bg-3);color:var(--fg-2);border:1px solid var(--line);border-radius:6px;padding:5px 12px;font:inherit;font-size:13px;cursor:pointer}
+.toggle button[aria-pressed=true]{color:var(--fg);border-color:var(--accent);background:var(--bg-2)}
+.toggle button:focus-visible{outline:2px solid var(--accent)}
+@media (max-width:820px){
+  .layout{grid-template-columns:1fr;gap:24px}
+  nav.toc{position:static;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .phases{grid-template-columns:1fr 1fr}
+  .phase:nth-child(2){border-right:none}
+  .phase:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .pair{grid-template-columns:1fr}
+  .vs{text-align:center}
+}
+@media (prefers-reduced-motion:no-preference){ nav.toc a{transition:color .15s,border-color .15s} }
+</style>
+
+<div class="wrap">
+<header class="hero">
+  <div class="eyebrow">Core RPG · дизайн-документ · версия 0.1</div>
+  <h1>Экономика сервера Core RPG</h1>
+  <p class="lead">Полная модель прогрессии: 71 уровень, 4 основных класса, 8 профессий, система аспектов и заточка предметов. Все числа в документе считаются из формул ниже и служат базой, которую будем калибровать по тестам.</p>
+  <div class="meta">
+    <span>Уровни: 1–71</span><span>Классы: 4 + 8 профессий</span><span>Заточка: +0 … +10</span><span>Типы заточки: D / C / B / A</span><span>Валюта: золото (G)</span>
+  </div>
+</header>
+
+<div class="layout">
+<nav class="toc" aria-label="Разделы">
+  <a href="#overview">Обзор и фазы</a>
+  <a href="#levels">Уровни и опыт</a>
+  <a href="#classes">Основные классы</a>
+  <a href="#professions">Профессии</a>
+  <a href="#aspects">Аспекты</a>
+  <a href="#sharpen">Заточка</a>
+  <a href="#calc">Калькулятор заточки</a>
+  <a href="#money">Деньги: доход и расход</a>
+  <a href="#todo">Что допиливаем</a>
+</nav>
+
+<main>
+
+<section id="overview">
+  <div class="eyebrow">01 · Обзор</div>
+  <h2>Четыре фазы игры</h2>
+  <p class="lead">Прогрессия делится на четыре фазы. Границы фаз совпадают с типами заточки, чтобы игрок всегда понимал, какой уровень снаряжения ему доступен. Переход между фазами задаёт скачок дохода, цен и силы предметов.</p>
+  <div class="phases">
+    <div class="phase"><div class="nm t-d">Тип D · новичок</div><div class="lv">1 – 11</div><div class="ds">Выбор класса на 1 уровне. Обучение, стартовая зона, первые заточки.</div></div>
+    <div class="phase"><div class="nm t-c">Тип C · ученик</div><div class="lv">12 – 21</div><div class="ds">Открытый мир, первые данжи. На 21 уровне выбор профессии.</div></div>
+    <div class="phase"><div class="nm t-b">Тип B · ветеран</div><div class="lv">22 – 45</div><div class="ds">Самая длинная фаза. Групповой контент, боссы, рынок.</div></div>
+    <div class="phase"><div class="nm t-a">Тип A · мастер</div><div class="lv">46 – 71</div><div class="ds">Эндгейм. Дорогая заточка, рейды, PvP-сезоны.</div></div>
+  </div>
+  <div class="band">Правило баланса: полная заточка до +7 текущего тира должна стоить примерно 12–18 часов игры в этой фазе. Заточка +8…+10 рассчитана как долгосрочная цель, а не как норма.</div>
+</section>
+
+<section id="levels">
+  <div class="eyebrow">02 · Уровни</div>
+  <h2>Опыт и базовые характеристики по уровням</h2>
+  <p class="lead">Опыт для перехода на следующий уровень считается по формуле <code>XP = 80 × L^1.9</code> (округление до 10). Базовое здоровье: <code>100 + 10 × (L − 1)</code>, базовый урон: <code>10 + 1.5 × (L − 1)</code>. Каждый уровень даёт 2 очка аспектов. Класс умножает базу своими коэффициентами.</p>
+  <div class="stat-row">
+    <div class="stat"><div class="v" id="xpTotal">—</div><div class="l">Опыт всего до 71</div></div>
+    <div class="stat"><div class="v" id="xpLast">—</div><div class="l">Опыт за 70 → 71</div></div>
+    <div class="stat"><div class="v">140</div><div class="l">Очков аспектов к 71</div></div>
+    <div class="stat"><div class="v">800</div><div class="l">Базовое HP на 71</div></div>
+  </div>
+  <div class="toggle" role="group" aria-label="Фильтр уровней">
+    <button type="button" data-f="key" aria-pressed="true">Ключевые уровни</button>
+    <button type="button" data-f="all" aria-pressed="false">Все 71</button>
+  </div>
+  <div class="tbl"><table id="lvlTable">
+    <thead><tr><th>Уровень</th><th>Фаза</th><th class="num">Опыт до след.</th><th class="num">Опыт всего</th><th class="num">Базовое HP</th><th class="num">Базовый урон</th><th class="num">Очки аспектов</th><th>Событие</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
+  <p class="note">Ориентир по времени: фаза D около 3 часов, C около 8 часов, B около 40 часов, A около 80 часов. Итого до 71 уровня примерно 130 часов активной игры при среднем темпе.</p>
+</section>
+
+<section id="classes">
+  <div class="eyebrow">03 · Классы</div>
+  <h2>Четыре основных класса (выбор на 1 уровне)</h2>
+  <p class="lead">Класс задаёт множители к базовым характеристикам, стартовый набор аспектов и оружие. Множители применяются ко всем уровням, поэтому разрыв между классами растёт вместе с базой.</p>
+  <div class="grid g4">
+    <div class="card"><h3>Мечник</h3><div class="role">Ближний бой · танк / урон</div>
+      <div class="kv"><b>×1.25</b><span>Здоровье</span><b>×1.30</b><span>Защита</span><b>×1.00</b><span>Урон</span><b>×0.95</b><span>Скорость</span></div>
+      <ul><li>Оружие: меч, топор, щит</li><li>Стартовые аспекты: Сила удара +5, Отталкивание +10%</li><li>Пассивка: блок щитом гасит 40% урона</li></ul></div>
+    <div class="card"><h3>Лучник</h3><div class="role">Дальний бой · контроль дистанции</div>
+      <div class="kv"><b>×0.90</b><span>Здоровье</span><b>×0.85</b><span>Защита</span><b>×1.10</b><span>Урон</span><b>×1.10</b><span>Скорость</span></div>
+      <ul><li>Оружие: лук, арбалет</li><li>Стартовые аспекты: Скорость натяжки +15%, Крит. шанс +5%</li><li>Пассивка: выстрел в голову ×1.5 урона</li></ul></div>
+    <div class="card"><h3>Маг</h3><div class="role">Магический урон · контроль</div>
+      <div class="kv"><b>×0.80</b><span>Здоровье</span><b>×0.80</b><span>Защита</span><b>×1.40</b><span>Маг. урон</span><b>×1.00</b><span>Скорость</span></div>
+      <ul><li>Оружие: посох, жезл, книга</li><li>Стартовые аспекты: Мана +50, Регенерация маны +20%</li><li>Пассивка: заклинания игнорируют 20% защиты</li></ul></div>
+    <div class="card"><h3>Асассин</h3><div class="role">Скорость · критический урон</div>
+      <div class="kv"><b>×0.85</b><span>Здоровье</span><b>×0.75</b><span>Защита</span><b>×1.30</b><span>Крит. урон</span><b>×1.20</b><span>Скорость атаки</span></div>
+      <ul><li>Оружие: кинжалы, парные клинки</li><li>Стартовые аспекты: Крит. шанс +10%, Уклонение +5%</li><li>Пассивка: удар в спину всегда критический</li></ul></div>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Класс</th><th class="num">HP на 1</th><th class="num">HP на 21</th><th class="num">HP на 45</th><th class="num">HP на 71</th><th class="num">Урон на 71</th><th>Главный ресурс</th></tr></thead>
+    <tbody id="classTable"></tbody>
+  </table></div>
+</section>
+
+<section id="professions">
+  <div class="eyebrow">04 · Профессии</div>
+  <h2>Восемь профессий (выбор на 21 уровне)</h2>
+  <p class="lead">Каждый класс разветвляется на две профессии-антонима: одна усиливает выживание или контроль, другая усиливает урон ценой защиты. Профессия добавляет свои множители поверх классовых, открывает уникальный навык и запрещает один аспект, чтобы ветки ощущались по-разному. Смена профессии стоит 25 000 G и доступна раз в 7 дней.</p>
+
+  <div class="pair">
+    <div class="card"><h3>Паладин</h3><div class="role">Мечник · защитная ветка</div>
+      <div class="kv"><b>×1.20</b><span>Здоровье (доп.)</span><b>×1.25</b><span>Защита (доп.)</span><b>+50%</b><span>Регенерация</span><b>×0.85</b><span>Урон</span></div>
+      <ul><li>Навык «Священный щит»: 5 сек неуязвимости союзников, КД 90 сек</li><li>Закрыт аспект: Крит. урон</li></ul></div>
+    <div class="vs">против</div>
+    <div class="card"><h3>Берсерк</h3><div class="role">Мечник · атакующая ветка</div>
+      <div class="kv"><b>×1.35</b><span>Урон</span><b>+20%</b><span>Скорость атаки</span><b>×0.70</b><span>Защита</span><b>+30%</b><span>Отталкивание</span></div>
+      <ul><li>Навык «Ярость»: урон растёт на 2% за каждые 5% потерянного HP</li><li>Закрыт аспект: Регенерация</li></ul></div>
+  </div>
+
+  <div class="pair">
+    <div class="card"><h3>Снайпер</h3><div class="role">Лучник · точность и сила</div>
+      <div class="kv"><b>×1.40</b><span>Урон стрелы</span><b>+25%</b><span>Крит. урон</span><b>×0.70</b><span>Скорость натяжки</span><b>+40%</b><span>Дальность</span></div>
+      <ul><li>Навык «Прицел»: следующий выстрел ×3 урона, 4 сек подготовки</li><li>Закрыт аспект: Скорость атаки</li></ul></div>
+    <div class="vs">против</div>
+    <div class="card"><h3>Рейнджер</h3><div class="role">Лучник · скорость и темп</div>
+      <div class="kv"><b>+40%</b><span>Скорость натяжки</span><b>+15%</b><span>Скорость</span><b>×0.80</b><span>Урон стрелы</span><b>+10%</b><span>Уклонение</span></div>
+      <ul><li>Навык «Залп»: 5 стрел веером, КД 20 сек</li><li>Закрыт аспект: Сила удара</li></ul></div>
+  </div>
+
+  <div class="pair">
+    <div class="card"><h3>Чернокнижник</h3><div class="role">Маг · разрушение</div>
+      <div class="kv"><b>×1.35</b><span>Маг. урон</span><b>+15%</b><span>Крит. шанс магии</span><b>×0.80</b><span>Здоровье</span><b>+25%</b><span>Расход маны</span></div>
+      <ul><li>Навык «Проклятие»: цель получает +30% урона 8 сек</li><li>Закрыт аспект: Регенерация HP</li></ul></div>
+    <div class="vs">против</div>
+    <div class="card"><h3>Клирик</h3><div class="role">Маг · поддержка и исцеление</div>
+      <div class="kv"><b>+100%</b><span>Регенерация HP</span><b>+50%</b><span>Регенерация маны</span><b>×0.70</b><span>Маг. урон</span><b>×1.15</b><span>Защита</span></div>
+      <ul><li>Навык «Исцеление»: восстанавливает 30% HP группе, КД 45 сек</li><li>Закрыт аспект: Крит. урон</li></ul></div>
+  </div>
+
+  <div class="pair">
+    <div class="card"><h3>Палач</h3><div class="role">Асассин · один удар</div>
+      <div class="kv"><b>×1.50</b><span>Крит. урон</span><b>+20%</b><span>Сила удара</span><b>×0.80</b><span>Скорость атаки</span><b>+10%</b><span>Вампиризм при крите</span></div>
+      <ul><li>Навык «Казнь»: мгновенно добивает цель ниже 15% HP, КД 30 сек</li><li>Закрыт аспект: Уклонение</li></ul></div>
+    <div class="vs">против</div>
+    <div class="card"><h3>Тень</h3><div class="role">Асассин · мобильность</div>
+      <div class="kv"><b>+25%</b><span>Скорость</span><b>+20%</b><span>Уклонение</span><b>×0.75</b><span>Крит. урон</span><b>+30%</b><span>Скорость атаки</span></div>
+      <ul><li>Навык «Дым»: невидимость 6 сек, первый удар из неё ×2, КД 40 сек</li><li>Закрыт аспект: Сила удара</li></ul></div>
+  </div>
+</section>
+
+<section id="aspects">
+  <div class="eyebrow">05 · Аспекты</div>
+  <h2>Система аспектов</h2>
+  <p class="lead">Аспект это одна числовая характеристика персонажа. Итоговое значение складывается из четырёх источников: база уровня, множитель класса и профессии, вложенные очки аспектов и бонусы предметов с заточкой. Каждый аспект имеет цену за очко и потолок, чтобы нельзя было уйти в один стат.</p>
+  <div class="band">Формула: <code>Итог = (База × Класс × Профессия + Очки × Шаг) + Предметы + Заточка</code>. Процентные аспекты складываются аддитивно, затем применяется потолок.</div>
+  <div class="tbl"><table>
+    <thead><tr><th>Аспект</th><th>Единица</th><th class="num">База на 1</th><th class="num">Шаг за очко</th><th class="num">Цена очка</th><th class="num">Потолок</th><th>Где растёт</th><th>Кому важен</th></tr></thead>
+    <tbody>
+      <tr><td>Здоровье (HP)</td><td>ед.</td><td class="num">100</td><td class="num">+8</td><td class="num">1</td><td class="num">3 000</td><td>Уровень, броня</td><td>Мечник, Паладин</td></tr>
+      <tr><td>Регенерация HP</td><td>ед./сек</td><td class="num">0.5</td><td class="num">+0.1</td><td class="num">2</td><td class="num">15</td><td>Очки, Клирик</td><td>Паладин, Клирик</td></tr>
+      <tr><td>Защита</td><td>%, снижение урона</td><td class="num">0</td><td class="num">+0.5</td><td class="num">2</td><td class="num">60</td><td>Броня, заточка брони</td><td>Мечник, Паладин</td></tr>
+      <tr><td>Урон</td><td>ед. за удар</td><td class="num">10</td><td class="num">+1</td><td class="num">1</td><td class="num">—</td><td>Оружие, заточка</td><td>Мечник, Лучник, Асассин</td></tr>
+      <tr><td>Маг. урон</td><td>ед. за заклинание</td><td class="num">10</td><td class="num">+1.5</td><td class="num">1</td><td class="num">—</td><td>Посох, заточка</td><td>Маг</td></tr>
+      <tr><td>Сила удара</td><td>ед., пробивает защиту</td><td class="num">0</td><td class="num">+1</td><td class="num">2</td><td class="num">150</td><td>Очки, тяжёлое оружие</td><td>Мечник, Палач, Снайпер</td></tr>
+      <tr><td>Крит. шанс</td><td>%</td><td class="num">5</td><td class="num">+0.5</td><td class="num">2</td><td class="num">50</td><td>Очки, кинжалы</td><td>Асассин, Лучник</td></tr>
+      <tr><td>Крит. урон</td><td>% от урона</td><td class="num">150</td><td class="num">+2</td><td class="num">2</td><td class="num">350</td><td>Очки, заточка +7</td><td>Асассин, Палач, Снайпер</td></tr>
+      <tr><td>Скорость атаки</td><td>%</td><td class="num">100</td><td class="num">+1</td><td class="num">3</td><td class="num">180</td><td>Очки, лёгкое оружие</td><td>Асассин, Тень, Берсерк</td></tr>
+      <tr><td>Скорость передвижения</td><td>%</td><td class="num">100</td><td class="num">+0.5</td><td class="num">3</td><td class="num">140</td><td>Очки, сапоги</td><td>Тень, Рейнджер</td></tr>
+      <tr><td>Скорость натяжки лука</td><td>%</td><td class="num">100</td><td class="num">+1.5</td><td class="num">2</td><td class="num">200</td><td>Очки, лук</td><td>Лучник, Рейнджер</td></tr>
+      <tr><td>Отталкивание</td><td>%</td><td class="num">100</td><td class="num">+2</td><td class="num">1</td><td class="num">250</td><td>Очки, щит, топор</td><td>Мечник, Берсерк</td></tr>
+      <tr><td>Уклонение</td><td>%, шанс избежать удара</td><td class="num">0</td><td class="num">+0.5</td><td class="num">3</td><td class="num">35</td><td>Очки, лёгкая броня</td><td>Асассин, Тень, Рейнджер</td></tr>
+      <tr><td>Мана</td><td>ед.</td><td class="num">100</td><td class="num">+10</td><td class="num">1</td><td class="num">2 000</td><td>Уровень, посох</td><td>Маг</td></tr>
+      <tr><td>Регенерация маны</td><td>ед./сек</td><td class="num">2</td><td class="num">+0.3</td><td class="num">2</td><td class="num">40</td><td>Очки, Клирик</td><td>Маг, Клирик</td></tr>
+      <tr><td>Вампиризм</td><td>% от урона в HP</td><td class="num">0</td><td class="num">+0.5</td><td class="num">3</td><td class="num">20</td><td>Только предметы и Палач</td><td>Берсерк, Палач</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Очки аспектов: 2 за уровень, 140 к 71 уровню. Сброс очков стоит 5 000 G × номер фазы (D 5 000, C 10 000, B 15 000, A 20 000).</p>
+</section>
+
+<section id="sharpen">
+  <div class="eyebrow">06 · Заточка</div>
+  <h2>Заточка предметов: +0 … +10</h2>
+  <p class="lead">Заточка усиливает оружие и броню. У каждого предмета есть тип (D, C, B, A) по уровню, на котором он надевается, и точить его можно только камнем того же типа. Шанс успеха зависит от текущей ступени, а последствие провала зависит от вида камня.</p>
+  <div class="grid g2">
+    <div class="card"><h3>Обычный камень</h3><div class="role">дешёвый · рискованный</div>
+      <ul><li>Успех: предмет получает +1</li><li>Провал: предмет <b>ломается</b> и исчезает</li><li>Цена: базовая для типа</li><li>Выпадает с мобов и в сундуках</li></ul></div>
+    <div class="card"><h3>Зачарованный камень</h3><div class="role">дорогой · безопасный</div>
+      <ul><li>Успех: предмет получает +1</li><li>Провал: предмет <b>опускается на ступень ниже</b> (не ниже +0)</li><li>Цена: ×3 от обычного</li><li>Только с боссов, за квесты и на рынке</li></ul></div>
+  </div>
+  <h3>Типы заточки и бонус за ступень</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Тип</th><th>Уровни</th><th class="num">Бонус за +1</th><th class="num">Бонус на +10</th><th class="num">Обычный камень</th><th class="num">Зачарованный</th><th class="num">Цена предмета</th><th class="num">Плата кузнецу за ступень</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill t-d">D</span></td><td>1 – 11</td><td class="num">+3%</td><td class="num">+30%</td><td class="num">120 G</td><td class="num">360 G</td><td class="num">500 G</td><td class="num">20 G × ступень</td></tr>
+      <tr><td><span class="pill t-c">C</span></td><td>12 – 21</td><td class="num">+4%</td><td class="num">+40%</td><td class="num">450 G</td><td class="num">1 350 G</td><td class="num">2 000 G</td><td class="num">60 G × ступень</td></tr>
+      <tr><td><span class="pill t-b">B</span></td><td>22 – 45</td><td class="num">+5%</td><td class="num">+50%</td><td class="num">1 600 G</td><td class="num">4 800 G</td><td class="num">8 000 G</td><td class="num">200 G × ступень</td></tr>
+      <tr><td><span class="pill t-a">A</span></td><td>46 – 71</td><td class="num">+6%</td><td class="num">+60%</td><td class="num">5 500 G</td><td class="num">16 500 G</td><td class="num">30 000 G</td><td class="num">700 G × ступень</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Бонус применяется к главному стату предмета: урон у оружия, защита у брони. Процент одинаков для всех классов, поэтому заточка не ломает баланс между ветками.</p>
+  <h3>Шанс успеха по ступеням</h3>
+  <div class="tbl"><table id="chanceTable">
+    <thead><tr><th>Переход</th><th class="num">Шанс</th><th>Шкала</th><th>Что открывает</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
+</section>
+
+<section id="calc">
+  <div class="eyebrow">07 · Расчёт</div>
+  <h2>Калькулятор ожидаемой стоимости заточки</h2>
+  <p class="lead">Считает математическое ожидание затрат на достижение каждой ступени с учётом провалов: для обычного камня в стоимость входит потеря предмета и повторная прокачка с нуля, для зачарованного учитывается откат на ступень ниже. Часы считаются по среднему доходу фазы.</p>
+  <div class="controls">
+    <label>Тип заточки<select id="cTier"><option value="D">D · 1–11</option><option value="C">C · 12–21</option><option value="B" selected>B · 22–45</option><option value="A">A · 46–71</option></select></label>
+    <label>Доход в час, G<input type="number" id="cIncome" value="2500" min="1" step="50"></label>
+  </div>
+  <div class="tbl"><table id="calcTable">
+    <thead><tr><th>Цель</th><th class="num">Обычный: ожид. G</th><th class="num">Обычный: часы</th><th class="num">Зачарованный: ожид. G</th><th class="num">Зачарованный: часы</th><th>Выгоднее</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
+  <p class="note">Ожидание для обычного камня считается по рекурсии T(k) = (c_k + (1 − p_k)(предмет + E(k−1))) / p_k, для зачарованного по первому достижению F(s) = (c_{s+1} + (1 − p_{s+1}) F(s−1)) / p_{s+1}. Ожидание не включает удачу: реальная цена может быть в разы выше или ниже.</p>
+</section>
+
+<section id="money">
+  <div class="eyebrow">08 · Деньги</div>
+  <h2>Источники дохода и стоки золота</h2>
+  <p class="lead">Экономика держится на одной валюте, золоте. Доход растёт ступенчато с фазой, а стоки масштабируются так, чтобы на каждой фазе игрок тратил около 70% заработанного и не накапливал мешок к эндгейму.</p>
+  <h3>Средний доход в час по фазам</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Фаза</th><th class="num">Мобы</th><th class="num">Квесты</th><th class="num">Данжи / боссы</th><th class="num">Ежедневки</th><th class="num">Итого в час</th><th class="num">Цель трат</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill t-d">D</span> 1–11</td><td class="num">120</td><td class="num">100</td><td class="num">—</td><td class="num">30</td><td class="num">250</td><td class="num">175</td></tr>
+      <tr><td><span class="pill t-c">C</span> 12–21</td><td class="num">350</td><td class="num">250</td><td class="num">150</td><td class="num">50</td><td class="num">800</td><td class="num">560</td></tr>
+      <tr><td><span class="pill t-b">B</span> 22–45</td><td class="num">900</td><td class="num">600</td><td class="num">800</td><td class="num">200</td><td class="num">2 500</td><td class="num">1 750</td></tr>
+      <tr><td><span class="pill t-a">A</span> 46–71</td><td class="num">2 500</td><td class="num">1 500</td><td class="num">3 000</td><td class="num">500</td><td class="num">7 500</td><td class="num">5 250</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Стоки золота</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Сток</th><th>Правило</th><th>Зачем</th></tr></thead>
+    <tbody>
+      <tr><td>Заточка</td><td class="wrap-text">Камень + плата кузнецу за ступень, см. таблицу типов</td><td class="wrap-text">Главный сток, 50–60% всех трат</td></tr>
+      <tr><td>Ремонт</td><td class="wrap-text">2% цены предмета за полный ремонт, прочность падает от ударов и смертей</td><td class="wrap-text">Постоянный мелкий сток</td></tr>
+      <tr><td>Налог рынка</td><td class="wrap-text">5% с продажи, 10% для предметов +7 и выше</td><td class="wrap-text">Выводит золото из обращения между игроками</td></tr>
+      <tr><td>Телепорт</td><td class="wrap-text">10 G × уровень игрока за прыжок между городами</td><td class="wrap-text">Мелкий сток, растёт с уровнем</td></tr>
+      <tr><td>Смерть</td><td class="wrap-text">Потеря 1% золота в кошельке, не из банка</td><td class="wrap-text">Мотивирует хранить в банке</td></tr>
+      <tr><td>Сброс аспектов</td><td class="wrap-text">5 000 G × номер фазы</td><td class="wrap-text">Редкий, но крупный сток</td></tr>
+      <tr><td>Смена профессии</td><td class="wrap-text">25 000 G, не чаще раза в 7 дней</td><td class="wrap-text">Крупный сток для эндгейма</td></tr>
+      <tr><td>Банк</td><td class="wrap-text">Хранение бесплатно, вывод свыше 100 000 G за сутки с комиссией 1%</td><td class="wrap-text">Ограничивает перелив золота</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Цены на снаряжение (NPC-торговец)</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Тип</th><th class="num">Оружие</th><th class="num">Часть брони</th><th class="num">Полный сет (4)</th><th class="num">Зелье HP</th><th class="num">Зелье маны</th><th class="num">Выкуп у NPC</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill t-d">D</span></td><td class="num">500</td><td class="num">300</td><td class="num">1 200</td><td class="num">15</td><td class="num">15</td><td class="num">20%</td></tr>
+      <tr><td><span class="pill t-c">C</span></td><td class="num">2 000</td><td class="num">1 200</td><td class="num">4 800</td><td class="num">40</td><td class="num">40</td><td class="num">20%</td></tr>
+      <tr><td><span class="pill t-b">B</span></td><td class="num">8 000</td><td class="num">5 000</td><td class="num">20 000</td><td class="num">120</td><td class="num">120</td><td class="num">20%</td></tr>
+      <tr><td><span class="pill t-a">A</span></td><td class="num">30 000</td><td class="num">18 000</td><td class="num">72 000</td><td class="num">350</td><td class="num">350</td><td class="num">20%</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="todo">
+  <div class="eyebrow">09 · Дальше</div>
+  <h2>Что допиливаем следующим шагом</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Навыки</h3><ul><li>Дерево из 3–4 активных навыков на класс</li><li>Улучшения навыков за очки с 10 уровня</li></ul></div>
+    <div class="card"><h3>Предметы</h3><ul><li>Редкости: обычный, редкий, эпический, легендарный</li><li>Случайные аспекты на дропе, рероллы</li></ul></div>
+    <div class="card"><h3>Контент</h3><ul><li>Список данжей и боссов по фазам с дропом камней</li><li>Ежедневные и недельные задания</li></ul></div>
+    <div class="card"><h3>Техника</h3><ul><li>Выбор плагинов: MMOCore / MMOItems или своё ядро</li><li>Конфиги классов и заточки из этого документа</li></ul></div>
+  </div>
+</section>
+
+</main>
+</div>
+</div>
+
+<script>
+(function(){
+  var fmt=function(n){return Math.round(n).toLocaleString('ru-RU')};
+  var fmt1=function(n){return (Math.round(n*10)/10).toLocaleString('ru-RU')};
+  var phaseOf=function(l){return l<=11?'D':l<=21?'C':l<=45?'B':'A'};
+  var events={1:'Выбор класса',11:'Конец фазы D',12:'Камни типа C',21:'Выбор профессии',22:'Камни типа B',30:'Первый рейд',45:'Конец фазы B',46:'Камни типа A',60:'PvP-сезоны',71:'Максимум'};
+  var xp=function(l){return Math.round(80*Math.pow(l,1.9)/10)*10};
+  var levels=[],total=0;
+  for(var l=1;l<=71;l++){
+    var need=l<71?xp(l):0;
+    levels.push({l:l,ph:phaseOf(l),need:need,total:total,hp:100+10*(l-1),dmg:10+1.5*(l-1),pts:2*l,ev:events[l]||''});
+    total+=need;
+  }
+  document.getElementById('xpTotal').textContent=fmt(total);
+  document.getElementById('xpLast').textContent=fmt(xp(70));
+  var keyLv={1:1,5:1,11:1,12:1,15:1,21:1,22:1,30:1,40:1,45:1,46:1,55:1,60:1,65:1,70:1,71:1};
+  function renderLevels(all){
+    var tb=document.querySelector('#lvlTable tbody'),h='';
+    levels.forEach(function(r){
+      if(!all&&!keyLv[r.l])return;
+      h+='<tr><td><b>'+r.l+'</b></td><td><span class="pill t-'+r.ph.toLowerCase()+'">'+r.ph+'</span></td><td class="num">'+(r.need?fmt(r.need):'—')+'</td><td class="num">'+fmt(r.total)+'</td><td class="num">'+fmt(r.hp)+'</td><td class="num">'+fmt1(r.dmg)+'</td><td class="num">'+r.pts+'</td><td>'+r.ev+'</td></tr>';
+    });
+    tb.innerHTML=h;
+  }
+  renderLevels(false);
+  document.querySelectorAll('.toggle button').forEach(function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('.toggle button').forEach(function(x){x.setAttribute('aria-pressed','false')});
+      b.setAttribute('aria-pressed','true');renderLevels(b.dataset.f==='all');
+    });
+  });
+
+  var classes=[
+    {n:'Мечник',hp:1.25,dmg:1.0,res:'Выносливость'},
+    {n:'Лучник',hp:0.9,dmg:1.1,res:'Стрелы и концентрация'},
+    {n:'Маг',hp:0.8,dmg:1.4,res:'Мана'},
+    {n:'Асассин',hp:0.85,dmg:1.0,res:'Энергия'}
+  ];
+  var hpAt=function(l){return 100+10*(l-1)};
+  document.getElementById('classTable').innerHTML=classes.map(function(c){
+    return '<tr><td><b>'+c.n+'</b></td><td class="num">'+fmt(hpAt(1)*c.hp)+'</td><td class="num">'+fmt(hpAt(21)*c.hp)+'</td><td class="num">'+fmt(hpAt(45)*c.hp)+'</td><td class="num">'+fmt(hpAt(71)*c.hp)+'</td><td class="num">'+fmt1((10+1.5*70)*c.dmg)+'</td><td>'+c.res+'</td></tr>';
+  }).join('');
+
+  var chance=[0.95,0.90,0.80,0.70,0.60,0.50,0.40,0.30,0.20,0.10];
+  var unlock={4:'Свечение предмета',7:'Дополнительный случайный аспект, налог рынка 10%',10:'Титул «Легендарный», уникальная частица'};
+  document.querySelector('#chanceTable tbody').innerHTML=chance.map(function(p,i){
+    var k=i+1,col=p>=0.7?'var(--good)':p>=0.4?'var(--warn)':'var(--bad)';
+    return '<tr><td>+'+i+' → <b>+'+k+'</b></td><td class="num">'+Math.round(p*100)+'%</td><td style="min-width:140px"><div class="bar"><i style="width:'+(p*100)+'%;background:'+col+'"></i></div></td><td>'+(unlock[k]||'')+'</td></tr>';
+  }).join('');
+
+  var tiers={
+    D:{stone:120,fee:20,item:500,income:250},
+    C:{stone:450,fee:60,item:2000,income:800},
+    B:{stone:1600,fee:200,item:8000,income:2500},
+    A:{stone:5500,fee:700,item:30000,income:7500}
+  };
+  function expectPlain(t){
+    var E=[0],out=[];
+    for(var k=1;k<=10;k++){
+      var c=t.stone+t.fee*k,p=chance[k-1];
+      var T=(c+(1-p)*(t.item+E[k-1]))/p;
+      E[k]=E[k-1]+T;out.push(E[k]);
+    }
+    return out;
+  }
+  function expectEnch(t){
+    var F=[],out=[],sum=0;
+    for(var s=0;s<10;s++){
+      var c=t.stone*3+t.fee*(s+1),p=chance[s];
+      F[s]=s===0?c/p:(c+(1-p)*F[s-1])/p;
+      sum+=F[s];out.push(sum);
+    }
+    return out;
+  }
+  var sel=document.getElementById('cTier'),inc=document.getElementById('cIncome');
+  function renderCalc(){
+    var t=tiers[sel.value],ph=parseFloat(inc.value)||t.income;
+    var a=expectPlain(t),b=expectEnch(t);
+    document.querySelector('#calcTable tbody').innerHTML=a.map(function(v,i){
+      var best=v<=b[i]?'Обычный':'Зачарованный';
+      var ratio=v<=b[i]?b[i]/v:v/b[i];
+      return '<tr><td><b>+'+(i+1)+'</b></td><td class="num">'+fmt(v)+'</td><td class="num">'+fmt1(v/ph)+'</td><td class="num">'+fmt(b[i])+'</td><td class="num">'+fmt1(b[i]/ph)+'</td><td>'+best+' <span class="note">(×'+fmt1(ratio)+')</span></td></tr>';
+    }).join('');
+  }
+  sel.addEventListener('change',function(){inc.value=tiers[sel.value].income;renderCalc()});
+  inc.addEventListener('input',renderCalc);
+  renderCalc();
+})();
+</script>
