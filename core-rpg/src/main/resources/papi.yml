@@ -42,11 +42,11 @@ not-loaded: ""
 # Знаков после запятой в exp_progress (0..3). 1 → «42.5».
 progress-digits: 1
 
-# Совместимость с RoyalQuestClasses. При true:
+# Совместимость со старыми конфигами RoyalQuestClasses (по умолчанию выключена). При true:
 #   • дополнительно регистрируется старый префикс royalquest, поэтому готовые конфиги табов,
 #     скорбордов и голограмм с %royalquest_level%, %royalquest_stats_available% … работают как раньше
 #     (если префикс royalquest не занят другим плагином — тогда предупреждение в консоли);
 #   • старые имена понимаются под любым префиксом:
 #   stats_available → points, stats_primary → stat_primary, stats_agility → stat_agility,
 #   stats_stamina → stat_stamina, stats_luck → stat_luck, stats_primary_name → stat_primary_name
-legacy-names: true
+legacy-names: false

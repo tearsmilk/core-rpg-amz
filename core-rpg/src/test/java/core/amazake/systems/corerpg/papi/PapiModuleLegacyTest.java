@@ -13,8 +13,9 @@ class PapiModuleLegacyTest {
     }
 
     @Test
-    void legacyPrefixRegisteredAlongsideCoreByDefault() {
-        assertTrue(PapiModule.wantsLegacy(PapiSettings.DEFAULTS, "core"));
+    void legacyPrefixOffByDefault() {
+        assertFalse(PapiModule.wantsLegacy(PapiSettings.DEFAULTS, "core"));
+        assertTrue(PapiModule.wantsLegacy(legacy(true), "core"));
     }
 
     @Test

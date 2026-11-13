@@ -164,11 +164,12 @@ class PlaceholdersTest {
 
     @Test
     void legacyNames() {
-        assertEquals("3", r("stats_available", HERO));
-        assertEquals("10", r("stats_primary", HERO));
-        assertEquals("Сила", r("stats_primary_name", HERO));
-        final PapiSettings off = new PapiSettings("Нет", "none", "", "", 1, false);
-        assertNull(Placeholders.resolve("stats_available", new Placeholders.View(HERO, ASPECTS, HAND), SOURCE, off));
+        final PapiSettings on = new PapiSettings("Нет", "none", "", "", 1, true);
+        final Placeholders.View view = new Placeholders.View(HERO, ASPECTS, HAND);
+        assertEquals("3", Placeholders.resolve("stats_available", view, SOURCE, on));
+        assertEquals("10", Placeholders.resolve("stats_primary", view, SOURCE, on));
+        assertEquals("Сила", Placeholders.resolve("stats_primary_name", view, SOURCE, on));
+        assertNull(Placeholders.resolve("stats_available", view, SOURCE, S));
     }
 
     @Test
@@ -188,7 +189,8 @@ class PlaceholdersTest {
     @Test
     void normalize() {
         assertEquals("level", Placeholders.normalize("  Level ", S));
-        assertEquals("points", Placeholders.normalize("stats_available", S));
+        assertNull(Placeholders.normalize("stats_available", S));
+        assertEquals("points", Placeholders.normalize("stats_available", new PapiSettings("Нет", "none", "", "", 1, true)));
         assertNull(Placeholders.normalize("", S));
         for (final Aspect a : Aspect.values()) {
             assertEquals("aspect_" + a.key(), Placeholders.normalize("aspect_" + a.key(), S));

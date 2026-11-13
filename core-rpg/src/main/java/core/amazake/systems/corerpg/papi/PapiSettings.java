@@ -17,7 +17,7 @@ import org.bukkit.configuration.ConfigurationSection;
 public record PapiSettings(String noneName, String noneKey, String noSeal, String notLoaded, int progressDigits,
                            boolean legacyNames) {
 
-    public static final PapiSettings DEFAULTS = new PapiSettings("Нет", "none", "", "", 1, true);
+    public static final PapiSettings DEFAULTS = new PapiSettings("Нет", "none", "", "", 1, false);
 
     /** Текст файла по умолчанию: пишется в папку системы, если файла нет. */
     public static final String DEFAULT_YAML = """
@@ -65,14 +65,14 @@ public record PapiSettings(String noneName, String noneKey, String noSeal, Strin
         # Знаков после запятой в exp_progress (0..3). 1 → «42.5».
         progress-digits: 1
 
-        # Совместимость с RoyalQuestClasses. При true:
+        # Совместимость со старыми конфигами RoyalQuestClasses (по умолчанию выключена). При true:
         #   • дополнительно регистрируется старый префикс royalquest, поэтому готовые конфиги табов,
         #     скорбордов и голограмм с %royalquest_level%, %royalquest_stats_available% … работают как раньше
         #     (если префикс royalquest не занят другим плагином — тогда предупреждение в консоли);
         #   • старые имена понимаются под любым префиксом:
         #   stats_available → points, stats_primary → stat_primary, stats_agility → stat_agility,
         #   stats_stamina → stat_stamina, stats_luck → stat_luck, stats_primary_name → stat_primary_name
-        legacy-names: true
+        legacy-names: false
         """;
 
     public static PapiSettings from(final ConfigurationSection config, final Consumer<String> warn) {
