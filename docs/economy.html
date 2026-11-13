@@ -209,7 +209,7 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       <div class="kv"><b>×1.40</b><span>Урон стрелы</span><b>+25%</b><span>Крит. урон</span><b>×0.70</b><span>Скорость натяжки</span><b>+40%</b><span>Дальность</span></div>
       <ul><li>Навык «Прицел»: следующий выстрел ×3 урона, 4 сек подготовки</li><li>Закрыт аспект: Скорость атаки</li></ul></div>
     <div class="vs">против</div>
-    <div class="card"><h3>Рейнджер</h3><div class="role">Лучник · скорость и темп</div>
+    <div class="card"><h3>Охотник</h3><div class="role">Лучник · скорость и темп</div>
       <div class="kv"><b>+40%</b><span>Скорость натяжки</span><b>+15%</b><span>Скорость</span><b>×0.80</b><span>Урон стрелы</span><b>+10%</b><span>Уклонение</span></div>
       <ul><li>Навык «Залп»: 5 стрел веером, КД 20 сек</li><li>Закрыт аспект: Сила удара</li></ul></div>
   </div>
@@ -225,11 +225,11 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   </div>
 
   <div class="pair">
-    <div class="card"><h3>Палач</h3><div class="role">Асассин · один удар</div>
+    <div class="card"><h3>Разбойник</h3><div class="role">Асассин · два тяжёлых клинка</div>
       <div class="kv"><b>×1.50</b><span>Крит. урон</span><b>+20%</b><span>Сила удара</span><b>×0.80</b><span>Скорость атаки</span><b>+10%</b><span>Вампиризм при крите</span></div>
-      <ul><li>Навык «Казнь»: мгновенно добивает цель ниже 15% HP, КД 30 сек</li><li>Закрыт аспект: Уклонение</li></ul></div>
+      <ul><li>Носит два тяжёлых клинка: оружие в обеих руках, урон второй руки 60%</li><li>Навык «Казнь»: мгновенно добивает цель ниже 15% HP, КД 30 сек</li><li>Закрыт аспект: Уклонение</li></ul></div>
     <div class="vs">против</div>
-    <div class="card"><h3>Тень</h3><div class="role">Асассин · мобильность</div>
+    <div class="card"><h3>Жнец</h3><div class="role">Асассин · мобильность</div>
       <div class="kv"><b>+25%</b><span>Скорость</span><b>+20%</b><span>Уклонение</span><b>×0.75</b><span>Крит. урон</span><b>+30%</b><span>Скорость атаки</span></div>
       <ul><li>Навык «Дым»: невидимость 6 сек, первый удар из неё ×2, КД 40 сек</li><li>Закрыт аспект: Сила удара</li></ul></div>
   </div>
@@ -248,17 +248,17 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       <tr><td>Защита</td><td>%, снижение урона</td><td class="num">0</td><td class="num">+0.5</td><td class="num">2</td><td class="num">60</td><td>Броня, заточка брони</td><td>Мечник, Паладин</td></tr>
       <tr><td>Урон</td><td>ед. за удар</td><td class="num">10</td><td class="num">+1</td><td class="num">1</td><td class="num">—</td><td>Оружие, заточка</td><td>Мечник, Лучник, Асассин</td></tr>
       <tr><td>Маг. урон</td><td>ед. за заклинание</td><td class="num">10</td><td class="num">+1.5</td><td class="num">1</td><td class="num">—</td><td>Посох, заточка</td><td>Маг</td></tr>
-      <tr><td>Сила удара</td><td>ед., пробивает защиту</td><td class="num">0</td><td class="num">+1</td><td class="num">2</td><td class="num">150</td><td>Очки, тяжёлое оружие</td><td>Мечник, Палач, Снайпер</td></tr>
+      <tr><td>Сила удара</td><td>ед., пробивает защиту</td><td class="num">0</td><td class="num">+1</td><td class="num">2</td><td class="num">150</td><td>Очки, тяжёлое оружие</td><td>Мечник, Разбойник, Снайпер</td></tr>
       <tr><td>Крит. шанс</td><td>%</td><td class="num">5</td><td class="num">+0.5</td><td class="num">2</td><td class="num">50</td><td>Очки, кинжалы</td><td>Асассин, Лучник</td></tr>
-      <tr><td>Крит. урон</td><td>% от урона</td><td class="num">150</td><td class="num">+2</td><td class="num">2</td><td class="num">350</td><td>Очки, заточка +7</td><td>Асассин, Палач, Снайпер</td></tr>
-      <tr><td>Скорость атаки</td><td>%</td><td class="num">100</td><td class="num">+1</td><td class="num">3</td><td class="num">180</td><td>Очки, лёгкое оружие</td><td>Асассин, Тень, Берсерк</td></tr>
-      <tr><td>Скорость передвижения</td><td>%</td><td class="num">100</td><td class="num">+0.5</td><td class="num">3</td><td class="num">140</td><td>Очки, сапоги</td><td>Тень, Рейнджер</td></tr>
-      <tr><td>Скорость натяжки лука</td><td>%</td><td class="num">100</td><td class="num">+1.5</td><td class="num">2</td><td class="num">200</td><td>Очки, лук</td><td>Лучник, Рейнджер</td></tr>
+      <tr><td>Крит. урон</td><td>% от урона</td><td class="num">150</td><td class="num">+2</td><td class="num">2</td><td class="num">350</td><td>Очки, заточка +7</td><td>Асассин, Разбойник, Снайпер</td></tr>
+      <tr><td>Скорость атаки</td><td>%</td><td class="num">100</td><td class="num">+1</td><td class="num">3</td><td class="num">180</td><td>Очки, лёгкое оружие</td><td>Асассин, Жнец, Берсерк</td></tr>
+      <tr><td>Скорость передвижения</td><td>%</td><td class="num">100</td><td class="num">+0.5</td><td class="num">3</td><td class="num">140</td><td>Очки, сапоги</td><td>Жнец, Охотник</td></tr>
+      <tr><td>Скорость натяжки лука</td><td>%</td><td class="num">100</td><td class="num">+1.5</td><td class="num">2</td><td class="num">200</td><td>Очки, лук</td><td>Лучник, Охотник</td></tr>
       <tr><td>Отталкивание</td><td>%</td><td class="num">100</td><td class="num">+2</td><td class="num">1</td><td class="num">250</td><td>Очки, щит, топор</td><td>Мечник, Берсерк</td></tr>
-      <tr><td>Уклонение</td><td>%, шанс избежать удара</td><td class="num">0</td><td class="num">+0.5</td><td class="num">3</td><td class="num">35</td><td>Очки, лёгкая броня</td><td>Асассин, Тень, Рейнджер</td></tr>
+      <tr><td>Уклонение</td><td>%, шанс избежать удара</td><td class="num">0</td><td class="num">+0.5</td><td class="num">3</td><td class="num">35</td><td>Очки, лёгкая броня</td><td>Асассин, Жнец, Охотник</td></tr>
       <tr><td>Мана</td><td>ед.</td><td class="num">100</td><td class="num">+10</td><td class="num">1</td><td class="num">2 000</td><td>Уровень, посох</td><td>Маг</td></tr>
       <tr><td>Регенерация маны</td><td>ед./сек</td><td class="num">2</td><td class="num">+0.3</td><td class="num">2</td><td class="num">40</td><td>Очки, Клирик</td><td>Маг, Клирик</td></tr>
-      <tr><td>Вампиризм</td><td>% от урона в HP</td><td class="num">0</td><td class="num">+0.5</td><td class="num">3</td><td class="num">20</td><td>Только предметы и Палач</td><td>Берсерк, Палач</td></tr>
+      <tr><td>Вампиризм</td><td>% от урона в HP</td><td class="num">0</td><td class="num">+0.5</td><td class="num">3</td><td class="num">20</td><td>Только предметы и Разбойник</td><td>Берсерк, Разбойник</td></tr>
     </tbody>
   </table></div>
   <p class="note">Очки аспектов: 2 за уровень, 140 к 71 уровню. Сброс очков стоит 5 000 G × номер фазы (D 5 000, C 10 000, B 15 000, A 20 000).</p>
