@@ -127,7 +127,7 @@ tr.is-plan td{background:var(--plan-bg)} tr.is-plan td:first-child{box-shadow:in
   <h1>Экономика сервера Core RPG</h1>
   <p class="lead">Полная модель прогрессии: 71 уровень, 4 основных класса, 8 профессий, система аспектов и заточка предметов. Разделы классов и уровней описывают плагин RoyalQuestClasses (классы, профессии, опыт, параметры, боевые формулы), раздел заточки описывает плагин Zatochka один в один. Названия классов и профессий задаются через display-name в конфиге и не требуют правки кода. Эталоном для сравнения взята вики Royal Quest (royalquest.info): таблица опыта, параметры, 152 печати и таблицы заточки по грейдам и камням. Остальные числа служат базой, которую будем калибровать по тестам.</p>
   <div class="meta">
-    <span>Уровни: 1–71</span><span>Классы: 4 + 8 профессий</span><span>Классы: плагин RoyalQuestClasses</span><span>Печати: плагин MagicSeals 1.0.0</span><span>Заточка: плагин Zatochka 1.0.0</span><span>Грейды предметов: C / B / A</span><span>Заточка до +10 (C) и +11 (B, A)</span><span>Эталон: вики Royal Quest</span><span>Валюта: золото (G)</span>
+    <span>Уровни: 1–71</span><span>Классы: 4 + 8 профессий</span><span>Классы: плагин RoyalQuestClasses v3</span><span>Печати: плагин MagicSeals 1.0.0</span><span>Заточка: плагин Zatochka 1.0.0</span><span>Грейды предметов: C / B / A</span><span>Заточка до +10 (C) и +11 (B, A)</span><span>Эталон: вики Royal Quest</span><span>Валюта: золото (G)</span>
   </div>
 </header>
 
@@ -142,6 +142,7 @@ tr.is-plan td{background:var(--plan-bg)} tr.is-plan td:first-child{box-shadow:in
   <a href="#seals">Печати</a>
   <a href="#sharpen">Заточка</a>
   <a href="#calc">Калькулятор заточки</a>
+  <a href="#commands">Команды</a>
   <a href="#power">Сводная калибровка</a>
   <a href="#money">Деньги: доход и расход</a>
   <a href="#todo">Что допиливаем</a>
@@ -172,13 +173,13 @@ tr.is-plan td{background:var(--plan-bg)} tr.is-plan td:first-child{box-shadow:in
     <div class="stat"><div class="v">56</div><div class="l">Очков параметров к 71</div></div>
     <div class="stat"><div class="v">21</div><div class="l">Уровень выбора профессии</div></div>
   </div>
-  <div class="band">Настройки конфига: <code>max-level: 71</code>, <code>profession-level: 21</code>, <code>block-exp-until-profession: true</code>, <code>use-custom-levels: true</code>. Таблица плагина сейчас покрывает уровни 2–30 и растёт плавно, формула <code>exp-formula</code> (100 × L^1.5) после 30 уровня даёт меньше, чем таблица. Все 71 значение из колонки «Наш опыт» записываем в <code>exp-table</code> целиком.</div>
+  <div class="band">Обновление плагина (v3): опыт для уровня считается формулой <code>100 + 50 × уровень</code> прямо в коде, секция <code>exp-table</code> и <code>exp-formula</code> из конфига больше не читаются. Максимум берётся из ключа <code>max-level</code> в корне конфига (в config.yml он всё ещё лежит в <code>settings.max-level</code>, поэтому сейчас работает умолчание 65). Блокировка опыта и открытие меню профессии в LevelManager зашиты на 20 уровень, хотя остальные места читают <code>settings.profession-level</code>. За одно начисление опыта берётся максимум один уровень. Чтобы получить таблицу из колонки «Наш опыт» и профессию на 21, нужно вернуть чтение <code>exp-table</code> и <code>settings.profession-level</code> в LevelManager и завести <code>max-level: 71</code>.</div>
   <div class="toggle" role="group" aria-label="Фильтр уровней">
     <button type="button" data-f="key" aria-pressed="true">Ключевые уровни</button>
     <button type="button" data-f="all" aria-pressed="false">Все 71</button>
   </div>
   <div class="tbl"><table id="lvlTable">
-    <thead><tr><th>Уровень</th><th>Фаза</th><th class="num">Наш опыт до след.</th><th class="num">Наш опыт всего</th><th class="num">RQ оригинал</th><th class="num">Плагин сейчас</th><th class="num">Очков параметров</th><th>Событие</th></tr></thead>
+    <thead><tr><th>Уровень</th><th>Фаза</th><th class="num">Наш опыт до след.</th><th class="num">Наш опыт всего</th><th class="num">RQ оригинал</th><th class="num">Плагин v3 (100 + 50 × L)</th><th class="num">Очков параметров</th><th>Событие</th></tr></thead>
     <tbody></tbody>
   </table></div>
   <p class="note">Ориентир по времени: фаза I около 3 часов, II около 8 часов, III около 40 часов, IV около 80 часов. Итого до 71 уровня примерно 130 часов активной игры. Темп регулируется множителем конвертации опыта и опытом за моба по уровню зоны, не таблицей. Скачки на границах пятёрок это осознанная механика RQ: каждые 5 уровней игрок переходит в новую зону с более дорогими мобами.</p>
@@ -187,7 +188,7 @@ tr.is-plan td{background:var(--plan-bg)} tr.is-plan td:first-child{box-shadow:in
 <section id="classes">
   <div class="eyebrow">03 · Классы</div>
   <h2>Четыре основных класса (выбор на 1 уровне)</h2>
-  <p class="lead">Класс выбирается в GUI при первом входе или командой <code>/class</code>, один раз и навсегда. Класс задаёт главный параметр (Сила, Точность или Интеллект), стартовые бонусы из конфига и ветку профессий. Множители из карточек ниже остаются целью баланса: в плагине они реализуются через список бонусов класса в формате <code>attribute:…</code> и <code>effect:…</code>.</p>
+  <p class="lead">Класс выбирается в GUI при первом входе или командой <code>/class</code>, один раз и навсегда. Класс задаёт главный параметр (Сила, Точность или Интеллект), стартовые бонусы из конфига и ветку профессий. Множители из карточек ниже остаются целью баланса: в плагине они реализуются через список бонусов класса в формате <code>attribute:…</code> и <code>effect:…</code>. В обновлении v3 эти списки остались в конфиге, но код их не применяет, строки «В конфиге» заработают после возврата чтения конфига в BonusManager.</p>
   <div class="grid g4">
     <div class="card"><h3>Мечник</h3><div class="role">Ближний бой · танк / урон · ключ <code>swordsman</code></div>
       <div class="kv"><b>×1.25</b><span>Здоровье</span><b>×1.30</b><span>Защита</span><b>×1.00</b><span>Урон</span><b>×0.95</b><span>Скорость</span></div>
@@ -233,7 +234,7 @@ tr.is-plan td{background:var(--plan-bg)} tr.is-plan td:first-child{box-shadow:in
       <tr><td><code>/rqadmin reload | reset | setlevel | giveexp | info</code></td><td class="wrap-text">Админ-команды, право <code>royalquest.admin</code></td></tr>
     </tbody>
   </table></div>
-  <p class="note">PlaceholderAPI: <code>%royalquest_class%</code>, <code>%royalquest_profession%</code>, <code>%royalquest_level%</code>, <code>%royalquest_exp%</code>, <code>%royalquest_exp_needed%</code>, <code>%royalquest_exp_progress%</code>, <code>%royalquest_has_class%</code>, <code>%royalquest_has_profession%</code>, <code>%royalquest_needs_profession%</code> и ключи <code>_class_key</code>, <code>_profession_key</code> для табов и скорбордов.</p>
+  <p class="note">Единый набор команд и прав для всех трёх плагинов описан в разделе «Команды». PlaceholderAPI сейчас: <code>%royalquest_class%</code>, <code>%royalquest_profession%</code>, <code>%royalquest_level%</code>, <code>%royalquest_exp%</code>, <code>%royalquest_exp_needed%</code>, <code>%royalquest_exp_progress%</code>, <code>%royalquest_has_class%</code>, <code>%royalquest_has_profession%</code>, <code>%royalquest_needs_profession%</code> и ключи <code>_class_key</code>, <code>_profession_key</code> для табов и скорбордов.</p>
 </section>
 
 <section id="professions">
@@ -286,7 +287,7 @@ tr.is-plan td{background:var(--plan-bg)} tr.is-plan td:first-child{box-shadow:in
 <section id="params">
   <div class="eyebrow">05 · Параметры и бой</div>
   <h2>Четыре параметра и боевые формулы плагина</h2>
-  <p class="lead">Игрок распределяет очки параметров в <code>/stats</code>. Очки приходят по 4 каждые 5 уровней, к 71 уровню их 56. Каждые 10 очков в одном параметре дают кратность: дополнительный бонус сверх линейного. Формулы ниже взяты из StatsManager и CombatCalculator.</p>
+  <p class="lead">Игрок распределяет очки параметров в <code>/stats</code>. Очки приходят по 4 каждые 5 уровней, к 71 уровню их 56. В первой версии плагина каждые 10 очков давали кратность, в обновлении v3 формулы линейные. Таблица ниже описывает v1, сравнение версий и предложение дальше.</p>
   <div class="tbl"><table>
     <thead><tr><th>Параметр</th><th>Кому</th><th>За 1 очко</th><th>За каждые 10 (кратность)</th><th class="num">При 20 очках</th><th class="num">При 56 очках</th></tr></thead>
     <tbody>
@@ -297,17 +298,19 @@ tr.is-plan td{background:var(--plan-bg)} tr.is-plan td:first-child{box-shadow:in
     </tbody>
   </table></div>
   <div class="band">Выносливость даёт +67 HP за очко: это масштаб Royal Quest, в Minecraft это 33 сердца. Перед запуском калибруем это число в StatsManager вместе с ценами, иначе все очки уйдут в HP.</div>
-  <h3>Параметры: Royal Quest против плагина</h3>
+  <h3>Параметры: Royal Quest, плагин v1 и обновление v3</h3>
+  <p class="note">В обновлении v3 кратности каждые 10 очков убраны, формулы стали линейными, а Ловкость переехала со скорости атаки на скорость передвижения. Удача через атрибуты ничего не даёт, её читает только CombatCalculator для крита. Классовые и профессиональные бонусы из <code>class-bonuses</code> и <code>profession-bonuses</code> в v3 не применяются: BonusManager теперь дублирует формулы параметров вместо чтения конфига.</p>
   <div class="tbl"><table class="cmp">
-    <thead><tr><th>Параметр</th><th>Royal Quest (вики)</th><th>Плагин сейчас</th><th>Предлагаю</th></tr></thead>
+    <thead><tr><th>Параметр</th><th>Royal Quest (вики)</th><th>Плагин v1</th><th>Плагин v3 (обновление)</th><th>Предлагаю</th></tr></thead>
     <tbody>
-      <tr><td>Сила / Точность / Интеллект</td><td class="wrap-text">+2 атаки за очко, +15 за каждые 10</td><td class="wrap-text">То же</td><td class="wrap-text">Оставить</td></tr>
-      <tr><td>Ловкость</td><td class="wrap-text">+0.25% скорости атаки, за 10: +2.5% и +2 уворота</td><td class="wrap-text diff">За 10: +2.5% и +4 уворота</td><td class="wrap-text">+2 уворота как в RQ, иначе Ловкость обгоняет Удачу</td></tr>
-      <tr><td>Выносливость</td><td class="wrap-text">Здоровье (число не указано), за 10: +10 энергии</td><td class="wrap-text diff">+67 HP за очко</td><td class="wrap-text">+10 HP за очко (5 сердец): 56 очков это 560 HP, сопоставимо с заточкой и печатями. Энергия: план</td></tr>
-      <tr><td>Удача</td><td class="wrap-text">+0.3% крита, за 10: +1% крита и +2 попадания</td><td class="wrap-text diff">+0.33 рейтинга, за 10: +1 рейтинга, +1 атаки за очко, +7.5 за 10, +5% силы крита за 10</td><td class="wrap-text">Оставить рейтинг, убрать атаку от Удачи: её даёт печать «Удачи» и главный параметр</td></tr>
-      <tr><td>Очки</td><td class="wrap-text">Таблица RQ не найдена на вики, в плагине 4 за 5 уровней</td><td class="wrap-text">4 за 5 уровней</td><td class="wrap-text">Оставить, 56 к 71</td></tr>
+      <tr><td>Сила / Точность / Интеллект</td><td class="wrap-text">+2 атаки за очко, +15 за каждые 10</td><td class="wrap-text">То же</td><td class="wrap-text diff">+0.5 атаки за очко, без кратности</td><td class="wrap-text">+0.5 за очко это шаг в сторону Minecraft-масштаба, оставить и добавить +3 за каждые 10 как «кратность»</td></tr>
+      <tr><td>Ловкость</td><td class="wrap-text">+0.25% скорости атаки, за 10: +2.5% и +2 уворота</td><td class="wrap-text">За 10: +2.5% и +4 уворота</td><td class="wrap-text diff">+0.002 скорости передвижения за очко (2% базовой), уворот по-прежнему +4 за 10 в CombatCalculator</td><td class="wrap-text">Вернуть скорость атаки +0.01 за очко, скорость бега оставить печатям; уворот +2 за 10 как в RQ</td></tr>
+      <tr><td>Выносливость</td><td class="wrap-text">Здоровье, за 10: +10 энергии</td><td class="wrap-text">+67 HP за очко</td><td class="wrap-text diff">+1 HP за очко (полсердца)</td><td class="wrap-text">+2 HP за очко (сердце): 14 очков это 28 HP, видно на фоне печатей, не ломает ванильную шкалу</td></tr>
+      <tr><td>Удача</td><td class="wrap-text">+0.3% крита, за 10: +1% крита и +2 попадания</td><td class="wrap-text">+0.33 рейтинга, +1 атаки за очко</td><td class="wrap-text">Только рейтинг крита в CombatCalculator, атрибутов нет</td><td class="wrap-text">Оставить как в v3</td></tr>
+      <tr><td>Очки</td><td class="wrap-text">Нет данных на вики</td><td class="wrap-text">4 за 5 уровней</td><td class="wrap-text">4 за 5 уровней, распределение через <code>/stats</code> и метод allocate по имени, включая русские названия</td><td class="wrap-text">Оставить, 56 к 71</td></tr>
     </tbody>
   </table></div>
+  <div class="band">Найденные проблемы v3, которые влияют на баланс: 1) StatsManager и BonusManager вешают одни и те же модификаторы (rq_stat_attack и rq_attack), поэтому фактически очко даёт +1.0 атаки, +2 HP и +0.004 скорости, вдвое больше задуманного; 2) модификаторы создаются со случайным UUID и чистятся по префиксу имени, при релогине это работает, но любой другой плагин с префиксом rq_ или class_ будет вычищен; 3) конфиговые бонусы классов и профессий не применяются, поэтому все карточки «В конфиге: …» в разделах классов и профессий сейчас не работают; 4) цель сборки откатилась на Java 17 и Paper 1.20.6, тогда как Zatochka и MagicSeals собираются под 1.21.</div>
   <h3>Боевые формулы (игрок против игрока)</h3>
   <div class="grid g2">
     <div class="card"><h3>Шанс крита</h3><ul><li>Ш = 0.6 × (1 − 0.999^(Рейтинг × (60.1 − Уровень × 0.649)))</li><li>Кап 57%. С ростом уровня тот же рейтинг даёт меньше крита, поэтому в эндгейме Удачу нужно докладывать</li></ul></div>
@@ -581,13 +584,89 @@ tr.is-plan td{background:var(--plan-bg)} tr.is-plan td:first-child{box-shadow:in
   <p class="note">Модель: марковская цепь по уровням 0…max, ожидание до первого достижения цели решается линейной системой. Крошка на грейдах B и A недоступна, калькулятор это учитывает. В режиме Royal Quest считаются уровни до +10, +11 там отдельная механика. Ожидание не включает удачу: реальная цена может быть в разы выше или ниже.</p>
 </section>
 
+<section id="commands">
+  <div class="eyebrow">10 · Команды</div>
+  <h2>Команды трёх плагинов и единый набор</h2>
+  <p class="lead">Сейчас у каждого плагина свои корневые команды и свой стиль: печати и заточка живут под одним корнем с подкомандами, классы разбросаны по пяти корням плюс админский <code>/rqadmin</code>. Ниже текущее состояние как есть и предложение: без приписки rq, одинаковая структура «корень → подкоманда», массовая выдача расходников, права строго двух уровней: все или оп.</p>
+
+  <h3>Как есть</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Плагин</th><th>Команда</th><th>Описание</th><th>Право сейчас</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="6">MagicSeals</td><td><code>/seal</code>, <code>/seal menu</code></td><td class="wrap-text">Меню наложения печати</td><td><code>magicseals.use</code></td></tr>
+      <tr><td><code>/seal list</code></td><td class="wrap-text">Список всех печатей</td><td>все</td></tr>
+      <tr><td><code>/seal info</code></td><td class="wrap-text">Печать на предмете в руке</td><td>все</td></tr>
+      <tr><td><code>/seal give &lt;игрок&gt; &lt;расходник&gt; [1–64]</code></td><td class="wrap-text">Выдать один расходник</td><td><code>magicseals.admin</code></td></tr>
+      <tr><td><code>/seal reload</code></td><td class="wrap-text">Перечитать config.yml и seals.yml</td><td><code>magicseals.admin</code></td></tr>
+      <tr><td>NPC «Мастер зачарования»</td><td class="wrap-text">Правый клик открывает меню (Citizens)</td><td>все</td></tr>
+      <tr><td rowspan="6">Zatochka</td><td><code>/zatochka</code>, <code>/zatochka menu</code></td><td class="wrap-text">Меню заточки. Алиасы <code>/sharpen</code>, <code>/zat</code>, <code>/заточка</code></td><td><code>zatochka.use</code></td></tr>
+      <tr><td><code>/zatochka info</code></td><td class="wrap-text">Заточка предмета в руке</td><td><code>zatochka.use</code></td></tr>
+      <tr><td><code>/zatochka give &lt;игрок&gt; &lt;расходник&gt; [кол-во]</code></td><td class="wrap-text">Выдать камень или руну</td><td><code>zatochka.admin</code></td></tr>
+      <tr><td><code>/zatochka reload</code></td><td class="wrap-text">Перечитать конфиг</td><td><code>zatochka.admin</code></td></tr>
+      <tr><td>NPC «Королевский алхимик»</td><td class="wrap-text">Правый клик открывает меню (Citizens)</td><td>все</td></tr>
+      <tr><td>—</td><td class="wrap-text">Отдельного списка камней нет, подсказка только в tab-complete</td><td>—</td></tr>
+      <tr><td rowspan="10">RoyalQuestClasses v3</td><td><code>/class</code> (<code>/класс</code>)</td><td class="wrap-text">GUI выбора класса, открывается при первом входе</td><td>все</td></tr>
+      <tr><td><code>/profession [имя]</code> (<code>/профессия</code>, <code>/prof</code>)</td><td class="wrap-text">GUI или прямой выбор профессии с 20 уровня</td><td>все</td></tr>
+      <tr><td><code>/myclass</code> (<code>/мойкласс</code>, <code>/rqclass</code>)</td><td class="wrap-text">GUI с информацией о персонаже</td><td>все</td></tr>
+      <tr><td><code>/stats</code> (<code>/параметры</code>, <code>/params</code>)</td><td class="wrap-text">GUI распределения очков</td><td>все</td></tr>
+      <tr><td><code>/rqadmin reset &lt;игрок&gt; [class|profession|all]</code></td><td class="wrap-text">Сброс класса, профессии или всего</td><td><code>royalquest.admin</code></td></tr>
+      <tr><td><code>/rqadmin setlevel &lt;игрок&gt; &lt;уровень&gt;</code></td><td class="wrap-text">Установить уровень</td><td><code>royalquest.admin</code></td></tr>
+      <tr><td><code>/rqadmin giveexp &lt;игрок&gt; &lt;опыт&gt;</code></td><td class="wrap-text">Выдать опыт</td><td><code>royalquest.admin</code></td></tr>
+      <tr><td><code>/rqadmin info &lt;игрок&gt;</code></td><td class="wrap-text">Информация об игроке</td><td><code>royalquest.admin</code></td></tr>
+      <tr><td><code>/rqadmin reload</code></td><td class="wrap-text">Перечитать конфиг</td><td><code>royalquest.admin</code></td></tr>
+      <tr><td>Алиас <code>/rqа</code></td><td class="wrap-text">Алиас с кириллической «а», с клавиатуры его не набрать осмысленно</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">В исходниках v3 сброс делается одной подкомандой <code>reset &lt;игрок&gt; class|profession|all</code>, отдельных <code>resetclass</code> и <code>resetprofession</code> нет. Приписка rq встречается в <code>/rqadmin</code>, алиасе <code>/rqclass</code>, правах <code>royalquest.*</code> и плейсхолдерах <code>%royalquest_*%</code>.</p>
+
+  <h3>Предлагаемый единый набор</h3>
+  <p class="note">Правило: один корень на систему, подкоманды одинаковые у всех трёх (<code>menu</code>, <code>info</code>, <code>list</code>, <code>give</code>, <code>reload</code>), русские алиасы у корня. Права два: по умолчанию всем и <code>op</code>. Там, где команда для всех, право не нужно вовсе.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Система</th><th>Команда</th><th>Что делает</th><th>Кто</th><th>Что меняется</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="6">Печати<br><code>/seals</code>, алиасы <code>/seal</code>, <code>/печати</code></td><td><code>/seals</code>, <code>/seals menu</code></td><td class="wrap-text">Меню наложения</td><td>все</td><td class="wrap-text">Убрать право <code>magicseals.use</code>, корень во множественном числе</td></tr>
+      <tr><td><code>/seals list [оружие|броня|щит] [класс]</code></td><td class="wrap-text">Каталог с фильтрами по типу и классу, постранично</td><td>все</td><td class="wrap-text diff">Фильтры новые</td></tr>
+      <tr><td><code>/seals info</code></td><td class="wrap-text">Печать на предмете в руке: название, цвет, бонусы</td><td>все</td><td class="wrap-text">Без изменений</td></tr>
+      <tr><td><code>/seals give &lt;ник&gt; &lt;расходник|all|stones|wax&gt; [1–64]</code></td><td class="wrap-text"><code>all</code> выдаёт все 8 расходников по N штук, <code>stones</code> три камня, <code>wax</code> три сургуча</td><td>оп</td><td class="wrap-text diff">Группы all / stones / wax новые</td></tr>
+      <tr><td><code>/seals set &lt;ник&gt; &lt;печать&gt; &lt;цвет&gt;</code></td><td class="wrap-text">Поставить конкретную печать на предмет в руке игрока, для тестов баланса</td><td>оп</td><td class="wrap-text diff">Новая</td></tr>
+      <tr><td><code>/seals reload</code></td><td class="wrap-text">Перечитать конфиги</td><td>оп</td><td class="wrap-text">Без изменений</td></tr>
+      <tr><td rowspan="6">Заточка<br><code>/sharpen</code>, алиасы <code>/zatochka</code>, <code>/zat</code>, <code>/заточка</code></td><td><code>/sharpen</code>, <code>/sharpen menu</code></td><td class="wrap-text">Меню заточки</td><td>все</td><td class="wrap-text">Убрать право <code>zatochka.use</code>, английский корень как у остальных</td></tr>
+      <tr><td><code>/sharpen info</code></td><td class="wrap-text">Заточка предмета в руке, грейд, максимум, бонус</td><td>все</td><td class="wrap-text">Без изменений</td></tr>
+      <tr><td><code>/sharpen list</code></td><td class="wrap-text">Список камней и рун с описанием и шансами для грейда предмета в руке</td><td>все</td><td class="wrap-text diff">Новая</td></tr>
+      <tr><td><code>/sharpen give &lt;ник&gt; &lt;расходник|all|stones|runes&gt; [1–64]</code></td><td class="wrap-text"><code>all</code> все 9 расходников, <code>stones</code> семь камней, <code>runes</code> две руны</td><td>оп</td><td class="wrap-text diff">Группы новые</td></tr>
+      <tr><td><code>/sharpen set &lt;ник&gt; &lt;0–11&gt;</code></td><td class="wrap-text">Поставить уровень заточки предмету в руке игрока</td><td>оп</td><td class="wrap-text diff">Новая</td></tr>
+      <tr><td><code>/sharpen reload</code></td><td class="wrap-text">Перечитать конфиг</td><td>оп</td><td class="wrap-text">Без изменений</td></tr>
+      <tr><td rowspan="9">Классы<br><code>/class</code>, алиас <code>/класс</code></td><td><code>/class</code></td><td class="wrap-text">Если класс не выбран: GUI выбора. Если выбран: GUI персонажа (бывший <code>/myclass</code>)</td><td>все</td><td class="wrap-text diff">Объединение <code>/class</code> и <code>/myclass</code></td></tr>
+      <tr><td><code>/class choose &lt;класс&gt;</code></td><td class="wrap-text">Выбор класса без GUI</td><td>все</td><td class="wrap-text diff">Новая</td></tr>
+      <tr><td><code>/profession [имя]</code> (<code>/профессия</code>, <code>/prof</code>)</td><td class="wrap-text">GUI или прямой выбор с 21 уровня</td><td>все</td><td class="wrap-text">Уровень 21 из конфига</td></tr>
+      <tr><td><code>/stats</code> (<code>/параметры</code>)</td><td class="wrap-text">GUI распределения очков</td><td>все</td><td class="wrap-text">Без изменений</td></tr>
+      <tr><td><code>/stats add &lt;параметр&gt; [кол-во]</code></td><td class="wrap-text">Вложить очки без GUI, метод allocate уже есть в v3</td><td>все</td><td class="wrap-text diff">Новая</td></tr>
+      <tr><td><code>/class admin reset &lt;ник&gt; class|profession|stats|all</code></td><td class="wrap-text">Сброс. <code>stats</code> возвращает очки параметров, это замена платного сброса через NPC</td><td>оп</td><td class="wrap-text diff">Вместо <code>/rqadmin</code>, добавлен сброс очков</td></tr>
+      <tr><td><code>/class admin setlevel &lt;ник&gt; &lt;1–71&gt;</code>, <code>giveexp &lt;ник&gt; &lt;опыт&gt;</code></td><td class="wrap-text">Уровень и опыт</td><td>оп</td><td class="wrap-text">Переезд под <code>/class admin</code></td></tr>
+      <tr><td><code>/class admin set &lt;ник&gt; class|profession &lt;имя&gt;</code></td><td class="wrap-text">Назначить класс или профессию игроку напрямую</td><td>оп</td><td class="wrap-text diff">Новая</td></tr>
+      <tr><td><code>/class admin info &lt;ник&gt;</code>, <code>reload</code></td><td class="wrap-text">Информация и перечитывание конфига</td><td>оп</td><td class="wrap-text">Переезд под <code>/class admin</code></td></tr>
+    </tbody>
+  </table></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Права и плейсхолдеры</th><th>Сейчас</th><th>Предлагаю</th></tr></thead>
+    <tbody>
+      <tr><td>Пользовательские права</td><td class="wrap-text"><code>magicseals.use</code>, <code>zatochka.use</code>, <code>royalquest.use</code></td><td class="wrap-text">Убрать, команды для всех без права</td></tr>
+      <tr><td>Админские права</td><td class="wrap-text"><code>magicseals.admin</code>, <code>zatochka.admin</code>, <code>royalquest.admin</code></td><td class="wrap-text"><code>core.seals.admin</code>, <code>core.sharpen.admin</code>, <code>core.class.admin</code>, все с <code>default: op</code></td></tr>
+      <tr><td>Плейсхолдеры</td><td class="wrap-text"><code>%royalquest_class%</code> и остальные с префиксом royalquest</td><td class="wrap-text"><code>%core_class%</code>, <code>%core_profession%</code>, <code>%core_level%</code>, <code>%core_exp%</code>, <code>%core_exp_needed%</code>, <code>%core_exp_progress%</code>, плюс новые <code>%core_sharpen%</code> и <code>%core_seal%</code> для предмета в руке</td></tr>
+      <tr><td>Названия расходников в <code>give</code></td><td class="wrap-text">Только английские id: shard, stone_c, rune_cold</td><td class="wrap-text">Принимать и русские: осколок, кубик, кристалл, как уже сделано для параметров в allocate</td></tr>
+    </tbody>
+  </table></div>
+  <div class="band">Все пункты этого раздела требуют правок в коде трёх плагинов. В артефакте это спецификация, в коде пока ничего не менялось.</div>
+</section>
+
 <section id="power">
-  <div class="eyebrow">10 · Калибровка</div>
+  <div class="eyebrow">11 · Калибровка</div>
   <h2>Сводная калибровка: кто сколько даёт силы</h2>
   <p class="lead">Четыре системы складываются в одного персонажа: параметры (RoyalQuestClasses), печати (MagicSeals), заточка (Zatochka) и ванильное снаряжение по грейду. Ниже расчёт атаки и здоровья типичного персонажа по фазам при обычном распределении очков (главный 50%, Выносливость 25%, Ловкость 15%, Удача 10%), обычной заточке фазы и обычных печатях. Из него выводятся целевые HP и урон мобов.</p>
   <div class="controls">
-    <label>HP за очко Выносливости<select id="pwStam"><option value="10" selected>10 (предлагаю)</option><option value="67">67 (плагин сейчас)</option></select></label>
-    <label>Атака от Удачи<select id="pwLuck"><option value="0" selected>Убрать (предлагаю)</option><option value="1">Оставить (плагин сейчас)</option></select></label>
+    <label>Атака за очко главного параметра<select id="pwPrim"><option value="v1">v1: +2, +15 за 10</option><option value="v3">v3: +0.5</option><option value="v3x2">v3 с дублированием: +1.0</option><option value="prop" selected>Предлагаю: +0.5, +3 за 10</option></select></label>
+    <label>HP за очко Выносливости<select id="pwStam"><option value="2" selected>2 (предлагаю)</option><option value="1">1 (v3)</option><option value="10">10</option><option value="67">67 (v1)</option></select></label>
+    <label>Атака от Удачи<select id="pwLuck"><option value="0" selected>Нет (v3, предлагаю)</option><option value="1">Да (v1)</option></select></label>
   </div>
   <div class="tbl"><table id="powerTable">
     <thead><tr><th>Уровень</th><th>Снаряжение</th><th class="num">Очков</th><th class="num">Атака: база</th><th class="num">+ параметры</th><th class="num">+ печать</th><th class="num">× заточка</th><th class="num">Итог атака</th><th class="num">HP итог</th><th class="num">Крит</th><th class="num">Цель: HP моба (6 ударов)</th><th class="num">Цель: урон моба (10 ударов)</th></tr></thead>
@@ -597,13 +676,13 @@ tr.is-plan td{background:var(--plan-bg)} tr.is-plan td:first-child{box-shadow:in
     <thead><tr><th>Уровень</th><th class="num">Доля оружия</th><th class="num">Доля параметров</th><th class="num">Доля печатей</th><th class="num">Доля заточки</th></tr></thead>
     <tbody></tbody>
   </table></div>
-  <div class="band">Целевая картина: на 1 уровне сила почти целиком от оружия, к 21 параметры дают половину, к 71 параметры и заточка делят основную массу, печати держат 8–12%. Если долю печатей хочется выше, поднимаем единицы бюджета в разделе «Печати», а не отдельные печати. Мобов калибруем множителем HP и урона по уровню зоны (LevelledMobs или MythicMobs), а не ванильными значениями: ванильный зомби с 20 HP умирает от одного удара уже на 11 уровне.</div>
+  <div class="band">Целевая картина с формулами v3: на 1 уровне сила целиком от оружия, к 71 параметры дают около трети атаки, заточка почти половину, печати 8–12%. Переключатель выше показывает, как меняется картина при формулах v1: там параметры съедают всё, и оружие с печатями перестают значить. Если долю печатей хочется выше, поднимаем единицы бюджета в разделе «Печати», а не отдельные печати. Мобов калибруем множителем HP и урона по уровню зоны (LevelledMobs или MythicMobs), а не ванильными значениями: ванильный зомби с 20 HP умирает от одного удара уже на 11 уровне.</div>
   <h3>Решения перебаланса одной таблицей</h3>
   <div class="tbl"><table>
     <thead><tr><th>Система</th><th>Решение</th><th>Где меняется</th></tr></thead>
     <tbody>
-      <tr><td>Опыт</td><td class="wrap-text">Таблица RQ ÷ 200, продолжена до 71</td><td>config.yml RoyalQuestClasses, exp-table</td></tr>
-      <tr><td>Параметры</td><td class="wrap-text">Выносливость 10 HP за очко, Ловкость +2 уворота за 10, атака от Удачи убрана</td><td>StatsManager, CombatCalculator</td></tr>
+      <tr><td>Опыт</td><td class="wrap-text">Таблица RQ ÷ 200, продолжена до 71. В v3 нужно вернуть чтение exp-table, settings.profession-level и max-level: 71</td><td>LevelManager, config.yml RoyalQuestClasses</td></tr>
+      <tr><td>Параметры</td><td class="wrap-text">База v3: +0.5 атаки, Выносливость 2 HP за очко, Ловкость обратно на скорость атаки, кратность +3 атаки за 10, убрать дублирование модификаторов, вернуть конфиговые бонусы классов</td><td>StatsManager, BonusManager, CombatCalculator</td></tr>
       <tr><td>Заточка</td><td class="wrap-text">Множители камней 2 / 4 / 6 / 8, таблицы RQ по грейду, +11 через жертву предмета, двуручная категория заполнена</td><td>config.yml Zatochka сейчас, код для грейдов и +11</td></tr>
       <tr><td>Печати</td><td class="wrap-text">Единый бюджет очков, веса цветов 60 / 27 / 10 / 3, потолок сопротивления 40%, 144 печати в каталоге (57 плагина + 87 RQ), классовая фильтрация</td><td>seals.yml и config.yml MagicSeals, код для новых типов</td></tr>
       <tr><td>Грейды</td><td class="wrap-text">Золото это грейд B во всех плагинах</td><td>gradeFor в MagicSeals</td></tr>
@@ -613,7 +692,7 @@ tr.is-plan td{background:var(--plan-bg)} tr.is-plan td:first-child{box-shadow:in
 </section>
 
 <section id="money">
-  <div class="eyebrow">11 · Деньги</div>
+  <div class="eyebrow">12 · Деньги</div>
   <h2>Источники дохода и стоки золота</h2>
   <p class="lead">Экономика держится на одной валюте, золоте. Доход растёт ступенчато с фазой, а стоки масштабируются так, чтобы на каждой фазе игрок тратил около 70% заработанного и не накапливал мешок к эндгейму.</p>
   <h3>Средний доход в час по фазам</h3>
@@ -669,13 +748,13 @@ tr.is-plan td{background:var(--plan-bg)} tr.is-plan td:first-child{box-shadow:in
 </section>
 
 <section id="todo">
-  <div class="eyebrow">12 · Дальше</div>
+  <div class="eyebrow">13 · Дальше</div>
   <h2>Что допиливаем следующим шагом</h2>
   <div class="grid g2">
     <div class="card"><h3>Навыки</h3><ul><li>Дерево из 3–4 активных навыков на класс</li><li>Улучшения навыков за очки с 10 уровня</li></ul></div>
     <div class="card"><h3>Предметы</h3><ul><li>Редкости: обычный, редкий, эпический, легендарный</li><li>Случайные аспекты на дропе, рероллы</li></ul></div>
     <div class="card"><h3>Контент</h3><ul><li>Список данжей и боссов по фазам с дропом камней</li><li>Ежедневные и недельные задания</li></ul></div>
-    <div class="card"><h3>Техника</h3><ul><li>Zatochka 1.0.0 готов: заточка, камни, руны, GUI, NPC</li><li>MagicSeals 1.0.0 готов: 57 печатей. 87 печатей RQ: часть в seals.yml сразу, остальные после новых типов бонусов в коде</li><li>RoyalQuestClasses готов: классы, профессии, уровни, параметры. Нужен конфиг: имена, 71 уровень, профессия на 21, полная exp-table</li><li>Аспекты с пометкой «план»: мана, натяжка, сила удара, вампиризм</li><li>Таблицы дропа камней по фазам в конфиги мобов и боссов</li></ul></div>
+    <div class="card"><h3>Техника</h3><ul><li>Zatochka 1.0.0 готов: заточка, камни, руны, GUI, NPC</li><li>MagicSeals 1.0.0 готов: 57 печатей. 87 печатей RQ: часть в seals.yml сразу, остальные после новых типов бонусов в коде</li><li>RoyalQuestClasses v3: классы, профессии, уровни, параметры, /stats. Вернуть в код чтение exp-table, profession-level и конфиговых бонусов, убрать двойное наложение модификаторов, собрать под Java 21 и Paper 1.21</li><li>Аспекты с пометкой «план»: мана, натяжка, сила удара, вампиризм</li><li>Таблицы дропа камней по фазам в конфиги мобов и боссов</li></ul></div>
   </div>
 </section>
 
@@ -690,7 +769,7 @@ tr.is-plan td{background:var(--plan-bg)} tr.is-plan td:first-child{box-shadow:in
   var phaseOf=function(l){return l<=11?{k:'d',t:'C · I'}:l<=21?{k:'c',t:'C · II'}:l<=45?{k:'b',t:'B'}:{k:'a',t:'A'}};
   var events={1:'Выбор класса в GUI, Крошка и Осколок',11:'Конец фазы I',12:'Железо, Ашкалотский кубик в дропе',20:'+4 очка параметров',21:'Выбор профессии, опыт заблокирован до выбора',22:'Грейд B: золото и алмаз, макс +11',30:'Первый рейд, Чёрный камень',45:'Конец фазы III',46:'Грейд A: незерит, цветные камни',60:'PvP-сезоны, Пурпурный камень',71:'Максимум'};
   var pluginTable={2:100,3:250,4:450,5:700,6:1000,7:1400,8:1900,9:2500,10:3200,11:4000,12:5000,13:6200,14:7600,15:9200,16:11000,17:13000,18:15500,19:18500,20:22000,21:26000,22:30500,23:35500,24:41000,25:47000,26:54000,27:62000,28:71000,29:81000,30:92000};
-  var pluginXp=function(l){return l<=1?0:(pluginTable[l]||Math.round(100*Math.pow(l,1.5)))};
+  var pluginXp=function(l){return l<=1?0:100+50*(l-1)}; /* v3: getExpForLevel(текущий уровень) */
   var RQEXP=[0, 17, 34, 60, 94, 185, 262, 353, 458, 577, 1119, 1378, 1666, 1985, 2335, 4662, 5442, 6293, 7216, 8215, 16905, 19190, 21656, 24309, 27152, 57465, 64134, 71281, 78921, 87068, 189010, 208547, 229386, 251569, 275138, 611115, 668763, 730044, 795080, 863992, 1959315, 2130911, 2312851, 2505490, 2709186, 6261287, 6776832, 7322354, 7898905, 8507545, 20007102, 21570730, 23222600, 24965854, 26803678, 64054384, 68841480, 73892016, 79215480, 84821536, 205747152, 220538240, 236125936, 252539248, 269807776];
   var rqXp=function(l){ /* опыт RQ, нужный ДЛЯ уровня l; 66–71 продолжены по схеме RQ */
     if(l<=65)return RQEXP[l-1];
@@ -879,12 +958,12 @@ tr.is-plan td{background:var(--plan-bg)} tr.is-plan td:first-child{box-shadow:in
   el('cGrade').addEventListener('change',function(){var d=defaults[el('cGrade').value];el('cStonePrice').value=d.stone;el('cRunePrice').value=d.rune;el('cItemPrice').value=d.item;el('cIncome').value=d.income;renderCalc()});
   renderCalc();
   function renderPower(){
-    var hpPt=+el('pwStam').value, luckAtk=+el('pwLuck').value;
+    var hpPt=+el('pwStam').value, luckAtk=+el('pwLuck').value, pm=el('pwPrim').value;
     var rows=[{l:1,gear:'C · камень',w:5,seal:0,sh:0,hpSeal:0},{l:11,gear:'C · камень, +3',w:5,seal:1.2,sh:18,hpSeal:4},{l:21,gear:'C · железо, +5',w:6,seal:1.2,sh:35.1,hpSeal:4},{l:45,gear:'B · алмаз, +7',w:7,seal:1.6,sh:56.1,hpSeal:8},{l:71,gear:'A · незерит, +9',w:8,seal:2.4,sh:81,hpSeal:12}];
     var h='',h2='';
     rows.forEach(function(r){
       var pts=Math.floor(r.l/5)*4, pr=Math.round(pts*0.5), st=Math.round(pts*0.25), ag=Math.round(pts*0.15), lk=pts-pr-st-ag;
-      var param=pr*2+Math.floor(pr/10)*15+(luckAtk?lk*1+Math.floor(lk/10)*7.5:0);
+      var param=(pm==='v1'?pr*2+Math.floor(pr/10)*15:pm==='v3'?pr*0.5:pm==='v3x2'?pr*1.0:pr*0.5+Math.floor(pr/10)*3)+(luckAtk?lk*1+Math.floor(lk/10)*7.5:0);
       var baseA=r.w+param+r.seal, total=baseA*(1+r.sh/100);
       var hp=20+4+st*hpPt+r.hpSeal;
       var rating=Math.floor(lk*0.33+Math.floor(lk/10)), cr=crit(rating,r.l)*100;
@@ -894,6 +973,6 @@ tr.is-plan td{background:var(--plan-bg)} tr.is-plan td:first-child{box-shadow:in
     });
     document.querySelector('#powerTable tbody').innerHTML=h; document.querySelector('#shareTable tbody').innerHTML=h2;
   }
-  el('pwStam').addEventListener('change',renderPower); el('pwLuck').addEventListener('change',renderPower); renderPower();
+  ['pwStam','pwLuck','pwPrim'].forEach(function(id){el(id).addEventListener('change',renderPower)}); renderPower();
 })();
 </script>
