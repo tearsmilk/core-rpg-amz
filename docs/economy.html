@@ -110,9 +110,9 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 <header class="hero">
   <div class="eyebrow">Core RPG · дизайн-документ · версия 0.1</div>
   <h1>Экономика сервера Core RPG</h1>
-  <p class="lead">Полная модель прогрессии: 71 уровень, 4 основных класса, 8 профессий, система аспектов и заточка предметов. Все числа в документе считаются из формул ниже и служат базой, которую будем калибровать по тестам.</p>
+  <p class="lead">Полная модель прогрессии: 71 уровень, 4 основных класса, 8 профессий, система аспектов и заточка предметов. Раздел заточки описывает механику плагина Zatochka один в один: грейды, камни, руны, шансы и бонусы взяты из его config.yml. Остальные числа служат базой, которую будем калибровать по тестам.</p>
   <div class="meta">
-    <span>Уровни: 1–71</span><span>Классы: 4 + 8 профессий</span><span>Заточка: +0 … +10</span><span>Типы заточки: D / C / B / A</span><span>Валюта: золото (G)</span>
+    <span>Уровни: 1–71</span><span>Классы: 4 + 8 профессий</span><span>Заточка: плагин Zatochka 1.0.0</span><span>Грейды предметов: C / B / A</span><span>Заточка до +10 (C) и +11 (B, A)</span><span>Валюта: золото (G)</span>
   </div>
 </header>
 
@@ -134,14 +134,14 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 <section id="overview">
   <div class="eyebrow">01 · Обзор</div>
   <h2>Четыре фазы игры</h2>
-  <p class="lead">Прогрессия делится на четыре фазы. Границы фаз совпадают с типами заточки, чтобы игрок всегда понимал, какой уровень снаряжения ему доступен. Переход между фазами задаёт скачок дохода, цен и силы предметов.</p>
+  <p class="lead">Прогрессия делится на четыре фазы. Грейд предмета в плагине определяется материалом, поэтому фазы привязаны к материалам: две первые фазы живут на грейде C, затем B и A. Переход между фазами задаёт скачок дохода, цен и силы предметов.</p>
   <div class="phases">
-    <div class="phase"><div class="nm t-d">Тип D · новичок</div><div class="lv">1 – 11</div><div class="ds">Выбор класса на 1 уровне. Обучение, стартовая зона, первые заточки.</div></div>
-    <div class="phase"><div class="nm t-c">Тип C · ученик</div><div class="lv">12 – 21</div><div class="ds">Открытый мир, первые данжи. На 21 уровне выбор профессии.</div></div>
-    <div class="phase"><div class="nm t-b">Тип B · ветеран</div><div class="lv">22 – 45</div><div class="ds">Самая длинная фаза. Групповой контент, боссы, рынок.</div></div>
-    <div class="phase"><div class="nm t-a">Тип A · мастер</div><div class="lv">46 – 71</div><div class="ds">Эндгейм. Дорогая заточка, рейды, PvP-сезоны.</div></div>
+    <div class="phase"><div class="nm t-d">Фаза I · грейд C</div><div class="lv">1 – 11</div><div class="ds">Выбор класса на 1 уровне. Кожа, дерево, камень. Точится Крошкой и Осколком.</div></div>
+    <div class="phase"><div class="nm t-c">Фаза II · грейд C</div><div class="lv">12 – 21</div><div class="ds">Железо и кольчуга. Первые данжи. На 21 уровне выбор профессии.</div></div>
+    <div class="phase"><div class="nm t-b">Фаза III · грейд B</div><div class="lv">22 – 45</div><div class="ds">Золото и алмаз, макс. заточка +11. Групповой контент, боссы, рынок.</div></div>
+    <div class="phase"><div class="nm t-a">Фаза IV · грейд A</div><div class="lv">46 – 71</div><div class="ds">Незерит, макс. заточка +11. Эндгейм: цветные камни, рейды, PvP-сезоны.</div></div>
   </div>
-  <div class="band">Правило баланса: полная заточка до +7 текущего тира должна стоить примерно 12–18 часов игры в этой фазе. Заточка +8…+10 рассчитана как долгосрочная цель, а не как норма.</div>
+  <div class="band">Правило баланса: заточка оружия до +7 на текущем грейде должна стоить примерно 12–18 часов игры в этой фазе при использовании Осколков. Заточка +8…+11 рассчитана как долгосрочная цель с цветными камнями и рунами, а не как норма.</div>
 </section>
 
 <section id="levels">
@@ -162,7 +162,7 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     <thead><tr><th>Уровень</th><th>Фаза</th><th class="num">Опыт до след.</th><th class="num">Опыт всего</th><th class="num">Базовое HP</th><th class="num">Базовый урон</th><th class="num">Очки аспектов</th><th>Событие</th></tr></thead>
     <tbody></tbody>
   </table></div>
-  <p class="note">Ориентир по времени: фаза D около 3 часов, C около 8 часов, B около 40 часов, A около 80 часов. Итого до 71 уровня примерно 130 часов активной игры при среднем темпе.</p>
+  <p class="note">Ориентир по времени: фаза I около 3 часов, II около 8 часов, III около 40 часов, IV около 80 часов. Итого до 71 уровня примерно 130 часов активной игры при среднем темпе.</p>
 </section>
 
 <section id="classes">
@@ -266,28 +266,59 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 
 <section id="sharpen">
   <div class="eyebrow">06 · Заточка</div>
-  <h2>Заточка предметов: +0 … +10</h2>
-  <p class="lead">Заточка усиливает оружие и броню. У каждого предмета есть тип (D, C, B, A) по уровню, на котором он надевается, и точить его можно только камнем того же типа. Шанс успеха зависит от текущей ступени, а последствие провала зависит от вида камня.</p>
-  <div class="grid g2">
-    <div class="card"><h3>Обычный камень</h3><div class="role">дешёвый · рискованный</div>
-      <ul><li>Успех: предмет получает +1</li><li>Провал: предмет <b>ломается</b> и исчезает</li><li>Цена: базовая для типа</li><li>Выпадает с мобов и в сундуках</li></ul></div>
-    <div class="card"><h3>Зачарованный камень</h3><div class="role">дорогой · безопасный</div>
-      <ul><li>Успех: предмет получает +1</li><li>Провал: предмет <b>опускается на ступень ниже</b> (не ниже +0)</li><li>Цена: ×3 от обычного</li><li>Только с боссов, за квесты и на рынке</li></ul></div>
-  </div>
-  <h3>Типы заточки и бонус за ступень</h3>
+  <h2>Заточка предметов (плагин Zatochka)</h2>
+  <p class="lead">Заточку делает плагин Zatochka для Paper / Purpur / Folia 1.21. Меню открывается командой <code>/zatochka</code> (алиасы <code>/sharpen</code>, <code>/zat</code>, <code>/заточка</code>) или правым кликом по NPC Citizens «Королевский алхимик». Игрок держит предмет в основной руке, кладёт камень и, по желанию, руну в слоты меню и нажимает «Улучшить». Золото за попытку не берётся: вся стоимость заточки это камни и руны.</p>
+
+  <h3>Грейд предмета определяется материалом</h3>
   <div class="tbl"><table>
-    <thead><tr><th>Тип</th><th>Уровни</th><th class="num">Бонус за +1</th><th class="num">Бонус на +10</th><th class="num">Обычный камень</th><th class="num">Зачарованный</th><th class="num">Цена предмета</th><th class="num">Плата кузнецу за ступень</th></tr></thead>
+    <thead><tr><th>Грейд</th><th>Материалы</th><th>Фазы</th><th class="num">Макс. заточка</th><th>Какие камни подходят</th></tr></thead>
     <tbody>
-      <tr><td><span class="pill t-d">D</span></td><td>1 – 11</td><td class="num">+3%</td><td class="num">+30%</td><td class="num">120 G</td><td class="num">360 G</td><td class="num">500 G</td><td class="num">20 G × ступень</td></tr>
-      <tr><td><span class="pill t-c">C</span></td><td>12 – 21</td><td class="num">+4%</td><td class="num">+40%</td><td class="num">450 G</td><td class="num">1 350 G</td><td class="num">2 000 G</td><td class="num">60 G × ступень</td></tr>
-      <tr><td><span class="pill t-b">B</span></td><td>22 – 45</td><td class="num">+5%</td><td class="num">+50%</td><td class="num">1 600 G</td><td class="num">4 800 G</td><td class="num">8 000 G</td><td class="num">200 G × ступень</td></tr>
-      <tr><td><span class="pill t-a">A</span></td><td>46 – 71</td><td class="num">+6%</td><td class="num">+60%</td><td class="num">5 500 G</td><td class="num">16 500 G</td><td class="num">30 000 G</td><td class="num">700 G × ступень</td></tr>
+      <tr><td><span class="pill t-c">C</span></td><td class="wrap-text">Кожа, дерево, камень, железо, кольчуга, а также лук, арбалет, трезубец, булава и щит</td><td>I и II (1–21)</td><td class="num">+10</td><td class="wrap-text">Все, включая Крошку</td></tr>
+      <tr><td><span class="pill t-b">B</span></td><td class="wrap-text">Золото, алмаз</td><td>III (22–45)</td><td class="num">+11</td><td class="wrap-text">Все, кроме Крошки</td></tr>
+      <tr><td><span class="pill t-a">A</span></td><td class="wrap-text">Незерит</td><td>IV (46–71)</td><td class="num">+11</td><td class="wrap-text">Все, кроме Крошки</td></tr>
     </tbody>
   </table></div>
-  <p class="note">Бонус применяется к главному стату предмета: урон у оружия, защита у брони. Процент одинаков для всех классов, поэтому заточка не ломает баланс между ветками.</p>
-  <h3>Шанс успеха по ступеням</h3>
+
+  <h3>Категории предметов</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Категория</th><th>Ключ конфига</th><th>Что входит</th><th>Бонус заточки</th></tr></thead>
+    <tbody>
+      <tr><td>Броня</td><td><code>armor</code></td><td class="wrap-text">Шлем, нагрудник, поножи, ботинки</td><td class="wrap-text">Защита, %: входящий урон делится на (1 + средний бонус надетых частей / 100)</td></tr>
+      <tr><td>Одноручное оружие</td><td><code>weapon_1h</code></td><td class="wrap-text">Мечи, топоры, трезубец, булава, лук, арбалет, кирки, лопаты, мотыги</td><td class="wrap-text">Атака, %: урон умножается на (1 + бонус / 100), для луков считается по оружию в руке в момент попадания</td></tr>
+      <tr><td>Щит</td><td><code>weapon_1h</code></td><td class="wrap-text">Щит использует таблицы шансов одноручного оружия</td><td class="wrap-text">Без боевого бонуса</td></tr>
+      <tr><td>Двуручное оружие</td><td><code>weapon_2h</code></td><td class="wrap-text">Зарезервировано в конфиге, пока ни один предмет сюда не попадает</td><td class="wrap-text">Атака, %, самые низкие шансы</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Камни и руны</h3>
+  <p class="lead">В артефакте раньше было два вида заточки: обычная и зачарованная. В плагине это реализовано через расходники: Осколок и Крошка это обычные камни, Ашкалотский кубик это безопасный камень без уничтожения, цветные камни поднимают шанс, а руны полностью защищают предмет.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Расходник</th><th>ID</th><th>Предмет</th><th class="num">Шанс ×</th><th>Провал</th><th>Роль в экономике</th></tr></thead>
+    <tbody>
+      <tr><td>Крошка философского камня</td><td><code>crumb</code></td><td>Аметистовая друза</td><td class="num">×1.0</td><td class="wrap-text">Уничтожение или −1</td><td class="wrap-text">Только грейд C. Дешёвый стартовый камень, продаёт NPC</td></tr>
+      <tr><td>Осколок философского камня</td><td><code>shard</code></td><td>Осколок аметиста</td><td class="num">×1.0</td><td class="wrap-text">Уничтожение или −1</td><td class="wrap-text">Базовый камень для всех грейдов, продаёт NPC, падает с мобов</td></tr>
+      <tr><td>Ашкалотский кубик</td><td><code>cube</code></td><td>Магнетит</td><td class="num">×1.0</td><td class="wrap-text">Только −1, предмет не ломается</td><td class="wrap-text">«Зачарованная» заточка из старого артефакта. Дроп из данжей, рынок</td></tr>
+      <tr><td>Чёрный философский камень</td><td><code>black</code></td><td>Чёрный краситель</td><td class="num">×1.5</td><td class="wrap-text">Уничтожение или −1</td><td class="wrap-text">Боссы фазы III</td></tr>
+      <tr><td>Белый философский камень</td><td><code>white</code></td><td>Белый краситель</td><td class="num">×2.0</td><td class="wrap-text">Уничтожение или −1</td><td class="wrap-text">Рейды, недельные задания</td></tr>
+      <tr><td>Красный философский камень</td><td><code>red</code></td><td>Красный краситель</td><td class="num">×2.5</td><td class="wrap-text">Уничтожение или −1</td><td class="wrap-text">Боссы фазы IV</td></tr>
+      <tr><td>Пурпурный философский камень</td><td><code>purple</code></td><td>Пурпурный краситель</td><td class="num">×3.0</td><td class="wrap-text">Уничтожение или −1</td><td class="wrap-text">PvP-сезоны, самый редкий</td></tr>
+      <tr><td>Руна Сохранения</td><td><code>rune_save</code></td><td>Бумага</td><td class="num">—</td><td class="wrap-text">Уровень не меняется, предмет цел</td><td class="wrap-text">Кладётся в слот руны вместе с камнем, тратится при любой попытке</td></tr>
+      <tr><td>Руна Холода</td><td><code>rune_cold</code></td><td>Синий лёд</td><td class="num">—</td><td class="wrap-text">Уровень не меняется, предмет цел</td><td class="wrap-text">То же действие, другой источник дропа</td></tr>
+    </tbody>
+  </table></div>
+  <div class="band">Порядок розыгрыша одной попытки: шанс успеха = базовый шанс категории × множитель камня (не выше 100%). При провале с руной уровень сохраняется. Без руны и без кубика бросается шанс уничтожения; если он не выпал, уровень падает на 1 (не ниже +0). Камень и руна тратятся всегда, даже при успехе.</div>
+
+  <h3>Шансы успеха и уничтожения по категориям</h3>
+  <p class="note">Таблицы из config.yml плагина. Шанс уничтожения проверяется только после провала, поэтому итоговая вероятность потерять предмет за попытку равна (1 − успех) × уничтожение.</p>
   <div class="tbl"><table id="chanceTable">
-    <thead><tr><th>Переход</th><th class="num">Шанс</th><th>Шкала</th><th>Что открывает</th></tr></thead>
+    <thead><tr><th>Цель</th><th class="num">Броня: успех</th><th class="num">Броня: уничт.</th><th class="num">1H: успех</th><th class="num">1H: уничт.</th><th class="num">2H: успех</th><th class="num">2H: уничт.</th><th>Шкала (1H, Осколок)</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
+
+  <h3>Бонусы заточки</h3>
+  <p class="note">Значения кумулятивные и одинаковы для всех грейдов. Оружие +10 удваивает урон, броня +10 утраивает защиту. Для брони плагин берёт среднее по заточенным частям, поэтому четыре части +10 дают такой же делитель, как одна.</p>
+  <div class="tbl"><table id="bonusTable">
+    <thead><tr><th>Уровень</th><th class="num">Оружие: атака +%</th><th class="num">Множитель урона</th><th class="num">Броня: защита +%</th><th class="num">Делитель входящего урона</th><th>Доступно</th></tr></thead>
     <tbody></tbody>
   </table></div>
 </section>
@@ -295,16 +326,22 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 <section id="calc">
   <div class="eyebrow">07 · Расчёт</div>
   <h2>Калькулятор ожидаемой стоимости заточки</h2>
-  <p class="lead">Считает математическое ожидание затрат на достижение каждой ступени с учётом провалов: для обычного камня в стоимость входит потеря предмета и повторная прокачка с нуля, для зачарованного учитывается откат на ступень ниже. Часы считаются по среднему доходу фазы.</p>
+  <p class="lead">Считает математическое ожидание числа попыток и затрат на достижение каждой ступени по правилам плагина: успех, сохранение уровня (руна), откат на ступень (без руны) или уничтожение (без руны и кубика) с покупкой нового предмета и заточкой с нуля. Цены камней и предмета задаются ниже и будут калиброваться по рынку.</p>
   <div class="controls">
-    <label>Тип заточки<select id="cTier"><option value="D">D · 1–11</option><option value="C">C · 12–21</option><option value="B" selected>B · 22–45</option><option value="A">A · 46–71</option></select></label>
+    <label>Категория<select id="cCat"><option value="weapon_1h" selected>Одноручное оружие</option><option value="armor">Броня</option><option value="weapon_2h">Двуручное оружие</option></select></label>
+    <label>Грейд<select id="cGrade"><option value="C">C · макс +10</option><option value="B" selected>B · макс +11</option><option value="A">A · макс +11</option></select></label>
+    <label>Камень<select id="cStone"><option value="crumb">Крошка ×1.0</option><option value="shard" selected>Осколок ×1.0</option><option value="cube">Кубик ×1.0, без уничтожения</option><option value="black">Чёрный ×1.5</option><option value="white">Белый ×2.0</option><option value="red">Красный ×2.5</option><option value="purple">Пурпурный ×3.0</option></select></label>
+    <label>Руна<select id="cRune"><option value="0" selected>Без руны</option><option value="1">С руной на каждой попытке</option></select></label>
+    <label>Цена камня, G<input type="number" id="cStonePrice" value="1600" min="0" step="50"></label>
+    <label>Цена руны, G<input type="number" id="cRunePrice" value="4000" min="0" step="50"></label>
+    <label>Цена предмета, G<input type="number" id="cItemPrice" value="8000" min="0" step="100"></label>
     <label>Доход в час, G<input type="number" id="cIncome" value="2500" min="1" step="50"></label>
   </div>
   <div class="tbl"><table id="calcTable">
-    <thead><tr><th>Цель</th><th class="num">Обычный: ожид. G</th><th class="num">Обычный: часы</th><th class="num">Зачарованный: ожид. G</th><th class="num">Зачарованный: часы</th><th>Выгоднее</th></tr></thead>
+    <thead><tr><th>Цель</th><th class="num">Шанс попытки</th><th class="num">Ожид. попыток</th><th class="num">Ожид. потерь предмета</th><th class="num">Ожид. стоимость, G</th><th class="num">Часов</th></tr></thead>
     <tbody></tbody>
   </table></div>
-  <p class="note">Ожидание для обычного камня считается по рекурсии T(k) = (c_k + (1 − p_k)(предмет + E(k−1))) / p_k, для зачарованного по первому достижению F(s) = (c_{s+1} + (1 − p_{s+1}) F(s−1)) / p_{s+1}. Ожидание не включает удачу: реальная цена может быть в разы выше или ниже.</p>
+  <p class="note">Модель: марковская цепь по уровням 0…max, ожидание до первого достижения цели решается линейной системой. Крошка на грейдах B и A недоступна, калькулятор это учитывает. Ожидание не включает удачу: реальная цена может быть в разы выше или ниже.</p>
 </section>
 
 <section id="money">
@@ -325,9 +362,9 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   <div class="tbl"><table>
     <thead><tr><th>Сток</th><th>Правило</th><th>Зачем</th></tr></thead>
     <tbody>
-      <tr><td>Заточка</td><td class="wrap-text">Камень + плата кузнецу за ступень, см. таблицу типов</td><td class="wrap-text">Главный сток, 50–60% всех трат</td></tr>
+      <tr><td>Камни заточки</td><td class="wrap-text">Крошка и Осколок продаются у NPC, остальные камни и руны только дроп и рынок</td><td class="wrap-text">Главный сток, 50–60% всех трат</td></tr>
       <tr><td>Ремонт</td><td class="wrap-text">2% цены предмета за полный ремонт, прочность падает от ударов и смертей</td><td class="wrap-text">Постоянный мелкий сток</td></tr>
-      <tr><td>Налог рынка</td><td class="wrap-text">5% с продажи, 10% для предметов +7 и выше</td><td class="wrap-text">Выводит золото из обращения между игроками</td></tr>
+      <tr><td>Налог рынка</td><td class="wrap-text">5% с продажи, 10% для предметов +7 и выше и для цветных камней</td><td class="wrap-text">Выводит золото из обращения между игроками</td></tr>
       <tr><td>Телепорт</td><td class="wrap-text">10 G × уровень игрока за прыжок между городами</td><td class="wrap-text">Мелкий сток, растёт с уровнем</td></tr>
       <tr><td>Смерть</td><td class="wrap-text">Потеря 1% золота в кошельке, не из банка</td><td class="wrap-text">Мотивирует хранить в банке</td></tr>
       <tr><td>Сброс аспектов</td><td class="wrap-text">5 000 G × номер фазы</td><td class="wrap-text">Редкий, но крупный сток</td></tr>
@@ -337,12 +374,27 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   </table></div>
   <h3>Цены на снаряжение (NPC-торговец)</h3>
   <div class="tbl"><table>
-    <thead><tr><th>Тип</th><th class="num">Оружие</th><th class="num">Часть брони</th><th class="num">Полный сет (4)</th><th class="num">Зелье HP</th><th class="num">Зелье маны</th><th class="num">Выкуп у NPC</th></tr></thead>
+    <thead><tr><th>Грейд</th><th>Материал</th><th class="num">Оружие</th><th class="num">Часть брони</th><th class="num">Полный сет (4)</th><th class="num">Зелье HP</th><th class="num">Выкуп у NPC</th></tr></thead>
     <tbody>
-      <tr><td><span class="pill t-d">D</span></td><td class="num">500</td><td class="num">300</td><td class="num">1 200</td><td class="num">15</td><td class="num">15</td><td class="num">20%</td></tr>
-      <tr><td><span class="pill t-c">C</span></td><td class="num">2 000</td><td class="num">1 200</td><td class="num">4 800</td><td class="num">40</td><td class="num">40</td><td class="num">20%</td></tr>
-      <tr><td><span class="pill t-b">B</span></td><td class="num">8 000</td><td class="num">5 000</td><td class="num">20 000</td><td class="num">120</td><td class="num">120</td><td class="num">20%</td></tr>
-      <tr><td><span class="pill t-a">A</span></td><td class="num">30 000</td><td class="num">18 000</td><td class="num">72 000</td><td class="num">350</td><td class="num">350</td><td class="num">20%</td></tr>
+      <tr><td><span class="pill t-d">C · I</span></td><td>Кожа, камень</td><td class="num">500</td><td class="num">300</td><td class="num">1 200</td><td class="num">15</td><td class="num">20%</td></tr>
+      <tr><td><span class="pill t-c">C · II</span></td><td>Железо, кольчуга</td><td class="num">2 000</td><td class="num">1 200</td><td class="num">4 800</td><td class="num">40</td><td class="num">20%</td></tr>
+      <tr><td><span class="pill t-b">B</span></td><td>Золото, алмаз</td><td class="num">8 000</td><td class="num">5 000</td><td class="num">20 000</td><td class="num">120</td><td class="num">20%</td></tr>
+      <tr><td><span class="pill t-a">A</span></td><td>Незерит</td><td class="num">30 000</td><td class="num">18 000</td><td class="num">72 000</td><td class="num">350</td><td class="num">20%</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Цены и источники расходников заточки</h3>
+  <p class="note">Ориентир для рынка и NPC. Цена камня растёт с фазой, в которой он нужен, чтобы заточка оставалась главным стоком на каждом грейде.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Расходник</th><th class="num">Фаза I–II (C)</th><th class="num">Фаза III (B)</th><th class="num">Фаза IV (A)</th><th>Источник</th></tr></thead>
+    <tbody>
+      <tr><td>Крошка</td><td class="num">120</td><td class="num">—</td><td class="num">—</td><td class="wrap-text">NPC-алхимик, мобы 1–21</td></tr>
+      <tr><td>Осколок</td><td class="num">450</td><td class="num">1 600</td><td class="num">5 500</td><td class="wrap-text">NPC-алхимик по цене фазы, мобы, сундуки</td></tr>
+      <tr><td>Ашкалотский кубик</td><td class="num">1 200</td><td class="num">4 500</td><td class="num">15 000</td><td class="wrap-text">Данжи, ежедневки, рынок</td></tr>
+      <tr><td>Чёрный камень</td><td class="num">—</td><td class="num">4 000</td><td class="num">12 000</td><td class="wrap-text">Боссы фазы III</td></tr>
+      <tr><td>Белый камень</td><td class="num">—</td><td class="num">7 000</td><td class="num">20 000</td><td class="wrap-text">Рейды, недельные задания</td></tr>
+      <tr><td>Красный камень</td><td class="num">—</td><td class="num">—</td><td class="num">30 000</td><td class="wrap-text">Боссы фазы IV</td></tr>
+      <tr><td>Пурпурный камень</td><td class="num">—</td><td class="num">—</td><td class="num">50 000</td><td class="wrap-text">PvP-сезоны, топ рейтинга</td></tr>
+      <tr><td>Руна Сохранения / Холода</td><td class="num">1 000</td><td class="num">4 000</td><td class="num">14 000</td><td class="wrap-text">Ежедневки, боссы, рынок</td></tr>
     </tbody>
   </table></div>
 </section>
@@ -354,7 +406,7 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     <div class="card"><h3>Навыки</h3><ul><li>Дерево из 3–4 активных навыков на класс</li><li>Улучшения навыков за очки с 10 уровня</li></ul></div>
     <div class="card"><h3>Предметы</h3><ul><li>Редкости: обычный, редкий, эпический, легендарный</li><li>Случайные аспекты на дропе, рероллы</li></ul></div>
     <div class="card"><h3>Контент</h3><ul><li>Список данжей и боссов по фазам с дропом камней</li><li>Ежедневные и недельные задания</li></ul></div>
-    <div class="card"><h3>Техника</h3><ul><li>Выбор плагинов: MMOCore / MMOItems или своё ядро</li><li>Конфиги классов и заточки из этого документа</li></ul></div>
+    <div class="card"><h3>Техника</h3><ul><li>Zatochka 1.0.0 уже готов: заточка, камни, руны, GUI, NPC</li><li>Выбор ядра классов и аспектов: MMOCore / MMOItems или своё</li><li>Таблицы дропа камней по фазам в конфиги мобов и боссов</li></ul></div>
   </div>
 </section>
 
@@ -366,8 +418,8 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 (function(){
   var fmt=function(n){return Math.round(n).toLocaleString('ru-RU')};
   var fmt1=function(n){return (Math.round(n*10)/10).toLocaleString('ru-RU')};
-  var phaseOf=function(l){return l<=11?'D':l<=21?'C':l<=45?'B':'A'};
-  var events={1:'Выбор класса',11:'Конец фазы D',12:'Камни типа C',21:'Выбор профессии',22:'Камни типа B',30:'Первый рейд',45:'Конец фазы B',46:'Камни типа A',60:'PvP-сезоны',71:'Максимум'};
+  var phaseOf=function(l){return l<=11?{k:'d',t:'C · I'}:l<=21?{k:'c',t:'C · II'}:l<=45?{k:'b',t:'B'}:{k:'a',t:'A'}};
+  var events={1:'Выбор класса, Крошка и Осколок',11:'Конец фазы I',12:'Железо, Ашкалотский кубик в дропе',21:'Выбор профессии',22:'Грейд B: золото и алмаз, макс +11',30:'Первый рейд, Чёрный камень',45:'Конец фазы III',46:'Грейд A: незерит, цветные камни',60:'PvP-сезоны, Пурпурный камень',71:'Максимум'};
   var xp=function(l){return Math.round(80*Math.pow(l,1.9)/10)*10};
   var levels=[],total=0;
   for(var l=1;l<=71;l++){
@@ -405,49 +457,92 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     return '<tr><td><b>'+c.n+'</b></td><td class="num">'+fmt(hpAt(1)*c.hp)+'</td><td class="num">'+fmt(hpAt(21)*c.hp)+'</td><td class="num">'+fmt(hpAt(45)*c.hp)+'</td><td class="num">'+fmt(hpAt(71)*c.hp)+'</td><td class="num">'+fmt1((10+1.5*70)*c.dmg)+'</td><td>'+c.res+'</td></tr>';
   }).join('');
 
-  var chance=[0.95,0.90,0.80,0.70,0.60,0.50,0.40,0.30,0.20,0.10];
-  var unlock={4:'Свечение предмета',7:'Дополнительный случайный аспект, налог рынка 10%',10:'Титул «Легендарный», уникальная частица'};
-  document.querySelector('#chanceTable tbody').innerHTML=chance.map(function(p,i){
-    var k=i+1,col=p>=0.7?'var(--good)':p>=0.4?'var(--warn)':'var(--bad)';
-    return '<tr><td>+'+i+' → <b>+'+k+'</b></td><td class="num">'+Math.round(p*100)+'%</td><td style="min-width:140px"><div class="bar"><i style="width:'+(p*100)+'%;background:'+col+'"></i></div></td><td>'+(unlock[k]||'')+'</td></tr>';
-  }).join('');
-
-  var tiers={
-    D:{stone:120,fee:20,item:500,income:250},
-    C:{stone:450,fee:60,item:2000,income:800},
-    B:{stone:1600,fee:200,item:8000,income:2500},
-    A:{stone:5500,fee:700,item:30000,income:7500}
+  var cfg={
+    maxLevel:{C:10,B:11,A:11},
+    bonus:{
+      weapon:[0,5,11,18,26,35.1,45,56.1,68.2,81,100,130],
+      armor:[0,10,22,36,52,70,90,112,136.2,162.1,200,260]
+    },
+    success:{
+      armor:[0,100,90,85,75,65,50,40,30,20,20,5],
+      weapon_1h:[0,100,90,75,60,50,40,30,20,14,8,3],
+      weapon_2h:[0,100,80,65,50,35,25,15,10,5,3,1]
+    },
+    destroy:{
+      armor:[0,0,1,1,1,2,3,4,7,12,24,40],
+      weapon_1h:[0,0,1,1,2,2,4,5,8,13,28,45],
+      weapon_2h:[0,0,1,2,3,5,7,10,15,22,35,50]
+    },
+    stones:{crumb:1.0,shard:1.0,cube:1.0,black:1.5,white:2.0,red:2.5,purple:3.0}
   };
-  function expectPlain(t){
-    var E=[0],out=[];
-    for(var k=1;k<=10;k++){
-      var c=t.stone+t.fee*k,p=chance[k-1];
-      var T=(c+(1-p)*(t.item+E[k-1]))/p;
-      E[k]=E[k-1]+T;out.push(E[k]);
-    }
-    return out;
+  var fmtPct=function(v){return (Math.round(v*10)/10).toLocaleString('ru-RU')+'%'};
+  var sc=cfg.success,dc=cfg.destroy,h='';
+  for(var k=1;k<=11;k++){
+    var p=sc.weapon_1h[k],col=p>=60?'var(--good)':p>=30?'var(--warn)':'var(--bad)';
+    h+='<tr><td>+'+(k-1)+' → <b>+'+k+'</b>'+(k===11?' <span class="note">(только B, A)</span>':'')+'</td>'+
+      '<td class="num">'+sc.armor[k]+'%</td><td class="num">'+dc.armor[k]+'%</td>'+
+      '<td class="num">'+sc.weapon_1h[k]+'%</td><td class="num">'+dc.weapon_1h[k]+'%</td>'+
+      '<td class="num">'+sc.weapon_2h[k]+'%</td><td class="num">'+dc.weapon_2h[k]+'%</td>'+
+      '<td style="min-width:140px"><div class="bar"><i style="width:'+p+'%;background:'+col+'"></i></div></td></tr>';
   }
-  function expectEnch(t){
-    var F=[],out=[],sum=0;
-    for(var s=0;s<10;s++){
-      var c=t.stone*3+t.fee*(s+1),p=chance[s];
-      F[s]=s===0?c/p:(c+(1-p)*F[s-1])/p;
-      sum+=F[s];out.push(sum);
-    }
-    return out;
+  document.querySelector('#chanceTable tbody').innerHTML=h;
+  h='';
+  for(var k=1;k<=11;k++){
+    var w=cfg.bonus.weapon[k],ar=cfg.bonus.armor[k];
+    h+='<tr><td><b>+'+k+'</b></td><td class="num">+'+fmtPct(w).replace('%','')+'%</td><td class="num">×'+fmt1(1+w/100)+'</td><td class="num">+'+fmtPct(ar).replace('%','')+'%</td><td class="num">÷'+fmt1(1+ar/100)+'</td><td>'+(k===11?'Грейды B и A':'Все грейды')+'</td></tr>';
   }
-  var sel=document.getElementById('cTier'),inc=document.getElementById('cIncome');
+  document.querySelector('#bonusTable tbody').innerHTML=h;
+
+  /* Ожидание до первого достижения уровня n из 0.
+     Состояния 0..n-1; из s попытка на s+1: успех p, сохранение (руна) 1-p,
+     иначе уничтожение q=(1-p)*d (без кубика/руны) -> 0 + цена предмета,
+     иначе откат -> max(s-1,0). Решаем систему E(s)=c + p E(s+1) + ... */
+  function solve(n,cat,stoneId,rune,cStone,cRune,cItem){
+    var N=n, A=[], B=[];
+    for(var s=0;s<N;s++){
+      var row=new Array(N).fill(0);
+      var p=Math.min(100,sc[cat][s+1]*cfg.stones[stoneId])/100;
+      var noDestroy=stoneId==='cube'||rune;
+      var q=rune?0:(noDestroy?0:(1-p)*dc[cat][s+1]/100);
+      var down=rune?0:(1-p)-q;
+      var keep=rune?(1-p):0;
+      var cost=cStone+(rune?cRune:0)+q*cItem;
+      row[s]+=1-keep;
+      if(s+1<N) row[s+1]-=p;
+      if(q>0) row[0]-=q;
+      if(down>0) row[Math.max(s-1,0)]-=down;
+      A.push(row);B.push(cost);
+    }
+    // Gaussian elimination
+    for(var i=0;i<N;i++){
+      var piv=i;for(var r=i+1;r<N;r++) if(Math.abs(A[r][i])>Math.abs(A[piv][i])) piv=r;
+      var t=A[i];A[i]=A[piv];A[piv]=t;var tb=B[i];B[i]=B[piv];B[piv]=tb;
+      for(var r=0;r<N;r++){ if(r===i||A[r][i]===0) continue; var f=A[r][i]/A[i][i]; for(var c=i;c<N;c++) A[r][c]-=f*A[i][c]; B[r]-=f*B[i]; }
+    }
+    return B[0]/A[0][0];
+  }
+  var el=function(id){return document.getElementById(id)};
+  var defaults={C:{stone:450,rune:1000,item:2000,income:800},B:{stone:1600,rune:4000,item:8000,income:2500},A:{stone:5500,rune:14000,item:30000,income:7500}};
   function renderCalc(){
-    var t=tiers[sel.value],ph=parseFloat(inc.value)||t.income;
-    var a=expectPlain(t),b=expectEnch(t);
-    document.querySelector('#calcTable tbody').innerHTML=a.map(function(v,i){
-      var best=v<=b[i]?'Обычный':'Зачарованный';
-      var ratio=v<=b[i]?b[i]/v:v/b[i];
-      return '<tr><td><b>+'+(i+1)+'</b></td><td class="num">'+fmt(v)+'</td><td class="num">'+fmt1(v/ph)+'</td><td class="num">'+fmt(b[i])+'</td><td class="num">'+fmt1(b[i]/ph)+'</td><td>'+best+' <span class="note">(×'+fmt1(ratio)+')</span></td></tr>';
-    }).join('');
+    var cat=el('cCat').value,grade=el('cGrade').value,stone=el('cStone').value,rune=el('cRune').value==='1';
+    var cStone=+el('cStonePrice').value||0,cRune=+el('cRunePrice').value||0,cItem=+el('cItemPrice').value||0,inc=+el('cIncome').value||1;
+    var max=cfg.maxLevel[grade],rows='';
+    if(stone==='crumb'&&grade!=='C'){
+      rows='<tr><td colspan="6">Крошка философского камня подходит только для грейда C.</td></tr>';
+    } else {
+      // количество попыток: та же система с cStone=1, cRune=0, cItem=0; потери: cStone=0,cItem=1
+      for(var n=1;n<=max;n++){
+        var p=Math.min(100,sc[cat][n]*cfg.stones[stone]);
+        var cost=solve(n,cat,stone,rune,cStone,cRune,cItem);
+        var tries=solve(n,cat,stone,rune,1,0,0);
+        var losses=(stone==='cube'||rune)?0:solve(n,cat,stone,rune,0,0,1);
+        rows+='<tr><td><b>+'+n+'</b></td><td class="num">'+fmt1(p)+'%</td><td class="num">'+fmt1(tries)+'</td><td class="num">'+(losses?fmt1(losses):'0')+'</td><td class="num">'+fmt(cost)+'</td><td class="num">'+fmt1(cost/inc)+'</td></tr>';
+      }
+    }
+    document.querySelector('#calcTable tbody').innerHTML=rows;
   }
-  sel.addEventListener('change',function(){inc.value=tiers[sel.value].income;renderCalc()});
-  inc.addEventListener('input',renderCalc);
+  ['cCat','cStone','cRune','cStonePrice','cRunePrice','cItemPrice','cIncome'].forEach(function(id){el(id).addEventListener(id.indexOf('Price')>0||id==='cIncome'?'input':'change',renderCalc)});
+  el('cGrade').addEventListener('change',function(){var d=defaults[el('cGrade').value];el('cStonePrice').value=d.stone;el('cRunePrice').value=d.rune;el('cItemPrice').value=d.item;el('cIncome').value=d.income;renderCalc()});
   renderCalc();
 })();
 </script>
