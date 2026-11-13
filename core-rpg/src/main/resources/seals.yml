@@ -8,7 +8,7 @@
 #   types    — WEAPON, ARMOR, SHIELD, ACCESSORY (у аксессуаров нет слота в Minecraft: такие типы игнорируются)
 #   classes  — any или ключи классов/профессий: swordsman, archer, mage, thief, crusader, dark_knight, sniper, hunter,
 #              wizard, warlock, rogue, assassin. Печать выпадает игроку, только если подходит его класс или профессия
-#              (выключается settings.class-filter в config.yml)
+#              (выключается settings.class-filter ниже)
 #   enabled  — false: печать в каталоге, но не выпадает (бонусы на системах, которых пока нет: мана, энергия, проки)
 #   bonuses  — ключ: [зелёная, синяя, фиолетовая, оранжевая]; пустое значение (~) — у этого цвета бонуса нет
 #
@@ -18,6 +18,70 @@
 #   stat_primary, stat_agility, stat_stamina, stat_luck (очки параметров), accuracy, evasion,
 #   exp_bonus (%), gold_bonus (%, зарезервирован), status_bleed, status_poison, status_burn (шанс %),
 #   range (блоки), damage_vs:<цель> (%; fire, air, earth, water, monster), resource и proc (план, не работают).
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Настройки печатей. Неверное значение — предупреждение в консоли и значение по умолчанию.
+# ---------------------------------------------------------------------------------------------------------------------
+settings:
+  # Веса цветов при наложении (камень) и смене (кристалл крови) печати. Относительные: шанс цвета = вес / сумма.
+  # Целые 0..1000000; если все нули — берутся 60/27/10/3 (60% / 27% / 10% / 3%).
+  roll-weights:
+    green: 60
+    blue: 27
+    purple: 10
+    orange: 3
+
+  # Шанс (0..100 %), что арконитовый сургуч вместе с кристаллом крови перебросит цвет печати (название остаётся).
+  # Если не сработал — оба расходника тратятся, цвет не меняется (Сердце Аркона при этом не тратится).
+  arkonite-reroll-chance: 100
+
+  # true — печать выбирается только из подходящих классу или профессии игрока (поле classes у печати, any — всем).
+  # Если по классу ничего не подошло — из всех печатей этого типа предмета. false — из всех печатей типа.
+  class-filter: true
+
+  # Имя сущности (NPC Citizens, житель, стойка для брони…), правый клик по которой открывает меню мастера.
+  # Цвета и регистр не важны. Пустая строка — NPC выключен.
+  npc-name: "Мастер зачарования"
+
+  # Заголовок меню мастера (MiniMessage).
+  menu-title: "<dark_purple>Наложение печати"
+
+  # Расходники: материал предмета (имя Material, например AMETHYST_SHARD, EMERALD) и название (MiniMessage).
+  # Расходник узнаётся по скрытой метке, а не по виду, поэтому смена материала или названия старые предметы не ломает
+  # (но новые не будут складываться со старыми в одну стопку).
+  #   stone_c / stone_b / stone_a — камни для первого наложения на предметы грейда C / B (алмаз, золото) / A (незерит)
+  #   blood_crystal — смена печати; arkonite_wax — вместе с кристаллом меняет только цвет
+  #   wax — оранжевый цвет; account_wax — оранжевый цвет и привязка предмета к игроку
+  #   heart — вместе с камнем или кристаллом: цвет не ниже синего
+  # Выдать: /seals give <ник> <расходник|all|stones|wax> [1..64]
+  consumables:
+    stone_c:
+      material: AMETHYST_SHARD
+      name: "<light_purple>Изумрудный камень (C)</light_purple>"
+    stone_b:
+      material: AMETHYST_SHARD
+      name: "<light_purple>Сапфировый камень (B)</light_purple>"
+    stone_a:
+      material: AMETHYST_SHARD
+      name: "<light_purple>Морионовый камень (A)</light_purple>"
+    blood_crystal:
+      material: AMETHYST_SHARD
+      name: "<light_purple>Кристалл крови</light_purple>"
+    wax:
+      material: AMETHYST_SHARD
+      name: "<light_purple>Сургуч Черепа Ахи</light_purple>"
+    account_wax:
+      material: AMETHYST_SHARD
+      name: "<light_purple>Особый сургуч</light_purple>"
+    arkonite_wax:
+      material: AMETHYST_SHARD
+      name: "<light_purple>Арконитовый сургуч</light_purple>"
+    heart:
+      material: AMETHYST_SHARD
+      name: "<light_purple>Сердце Аркона</light_purple>"
+
+# Сопротивление урону (resistance) печати сами не применяют: это делает бой, потолок — в combat.yml.
+
 seals:
   aggression:
     name: "Агрессии"

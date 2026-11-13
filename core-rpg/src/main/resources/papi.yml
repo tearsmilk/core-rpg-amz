@@ -1,0 +1,52 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  CoreRpg — плейсхолдеры PlaceholderAPI (модуль papi)
+# ─────────────────────────────────────────────────────────────────────────────
+# Включение и префикс плейсхолдеров — в config.yml, раздел placeholderapi:
+#   enabled: true      — отдавать плейсхолдеры (нужен плагин PlaceholderAPI)
+#   identifier: core   — префикс: %core_level%, %core_class% …
+#
+# Список плейсхолдеров (%core_<имя>%):
+#   class, class_key            — класс (имя / ключ: swordsman, archer, mage, thief)
+#   profession, profession_key  — профессия (имя / ключ)
+#   level, max_level            — уровень и максимальный уровень
+#   exp, exp_needed, exp_left   — опыт внутри уровня, нужно на уровень, осталось
+#   exp_progress                — прогресс уровня в процентах 0..100
+#   points                      — свободные очки параметров
+#   stat_primary, stat_agility, stat_stamina, stat_luck — вложенные очки
+#   stat_<параметр>_total       — вложенные + бонусы печатей и заточки +11
+#   stat_primary_name           — Сила / Точность / Интеллект (по классу)
+#   stat_agility_name, stat_stamina_name, stat_luck_name
+#   has_class, has_profession, needs_profession — true / false
+#   aspect_<ключ>               — любой аспект: aspect_crit_chance, aspect_evasion,
+#                                 aspect_resistance:fire, aspect_damage_vs:monster …
+#   crit_chance                 — то же, что aspect_crit_chance
+#   sharpen, sharpen_max, sharpen_bonus — заточка предмета в основной руке
+#   sharpen_text                — «+N» или пусто без заточки
+#   seal, seal_color            — печать предмета в основной руке и её цвет
+#
+# Предмет в руке запоминается при каждом пересчёте аспектов игрока (смена слота, экипировки),
+# поэтому плейсхолдеры руки безопасно читать из любого потока (табы, скорборды, голограммы).
+
+# Что выводить вместо имени класса/профессии, если они ещё не выбраны.
+none-name: "Нет"
+
+# Что выводить вместо ключа класса/профессии (class_key, profession_key), если они не выбраны.
+none-key: "none"
+
+# Что выводить в seal и seal_color, если на предмете в руке нет печати.
+no-seal: ""
+
+# Что выводить, пока профиль игрока не загружен (первые мгновения после входа) или игрок не в сети.
+not-loaded: ""
+
+# Знаков после запятой в exp_progress (0..3). 1 → «42.5».
+progress-digits: 1
+
+# Совместимость с RoyalQuestClasses. При true:
+#   • дополнительно регистрируется старый префикс royalquest, поэтому готовые конфиги табов,
+#     скорбордов и голограмм с %royalquest_level%, %royalquest_stats_available% … работают как раньше
+#     (если префикс royalquest не занят другим плагином — тогда предупреждение в консоли);
+#   • старые имена понимаются под любым префиксом:
+#   stats_available → points, stats_primary → stat_primary, stats_agility → stat_agility,
+#   stats_stamina → stat_stamina, stats_luck → stat_luck, stats_primary_name → stat_primary_name
+legacy-names: true
