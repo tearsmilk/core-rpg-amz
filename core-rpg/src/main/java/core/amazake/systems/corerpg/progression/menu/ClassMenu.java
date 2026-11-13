@@ -83,7 +83,7 @@ public final class ClassMenu extends ProgressionMenu {
         if (!c.passives().isEmpty()) {
             lore.add("<gold>Пассивки:</gold>");
             for (final String p : c.passives()) {
-                lore.add("<gray>• " + MenuItems.passiveLabel(p) + "</gray>");
+                lore.add("<gray>• " + this.module.passiveLabel(p) + "</gray>");
             }
         }
         final var professions = catalog.professionsOf(c.key());

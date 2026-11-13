@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -159,6 +160,20 @@ final class SealMenuListener implements Listener {
                 event.setCancelled(true);
                 return;
             }
+        }
+    }
+
+    /**
+     * Смерть с открытым меню: сервер закрывает окно уже после сбора выпадающих предметов и затем очищает инвентарь,
+     * поэтому без keepInventory расходники из слотов добавляются к выпадающим предметам (с keepInventory их вернёт
+     * закрытие — инвентарь сохранится).
+     */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onDeath(final PlayerDeathEvent event) {
+        final Player player = event.getPlayer();
+        final SealMenu menu = menuOf(player.getOpenInventory().getTopInventory());
+        if (menu != null && !event.getKeepInventory()) {
+            this.module.menuDropped(player, menu, event.getDrops());
         }
     }
 

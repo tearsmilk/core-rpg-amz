@@ -1,5 +1,6 @@
 package core.amazake.systems.corerpg.combat;
 
+import core.amazake.systems.corerpg.util.Text;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -105,6 +106,33 @@ public record CombatSettings(
 
     /** Значения по умолчанию = разбор пустой конфигурации. */
     public static final CombatSettings DEFAULTS = from(new MemoryConfiguration(), w -> { });
+
+    /**
+     * Описание пассивки для меню (MiniMessage) по текущим числам из combat.yml; выключенная пассивка помечена.
+     * null — такой пассивки бой не знает.
+     */
+    public String passiveDescription(final String key) {
+        if (key == null) {
+            return null;
+        }
+        final Passives p = this.passives;
+        return switch (key.toLowerCase(Locale.ROOT)) {
+            case "rage" -> labeled(p.rage().enabled(), "Ярость: +" + Text.num(p.rage().percentPerStep())
+                + "% урона за каждые " + Text.num(p.rage().stepPercent()) + "% потерянного здоровья (до +"
+                + Text.num(p.rage().maxPercent()) + "%)", "Ярость");
+            case "headshot" -> labeled(p.headshot().enabled(),
+                "Выстрел в голову: ×" + Text.num(p.headshot().multiplier()) + " урона", "Выстрел в голову");
+            case "backstab" -> labeled(p.backstab().enabled(),
+                "Удар в спину всегда критический" + (p.backstab().meleeOnly() ? " (ближний бой)" : ""), "Удар в спину");
+            case "dual_wield" -> labeled(p.dualWield().enabled(),
+                "Два клинка: +" + Text.num(p.dualWield().percent()) + "% атаки второй руки", "Два клинка");
+            default -> null;
+        };
+    }
+
+    private static String labeled(final boolean enabled, final String text, final String name) {
+        return enabled ? text : name + " <dark_gray>(отключено)</dark_gray>";
+    }
 
     public static CombatSettings from(final ConfigurationSection root, final Consumer<String> warn) {
         final ConfigurationSection config = root == null ? new MemoryConfiguration() : root;

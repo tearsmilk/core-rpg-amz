@@ -142,6 +142,15 @@ public final class SealsModule implements CoreModule {
         return data == null || data.id() == null || data.color() == null ? "" : data.color().russian();
     }
 
+    /**
+     * Персональный ли предмет (Особый сургуч, в том числе старый ключ MagicSeals). Такой предмет нельзя переложить в
+     * чужое окно — это правило должны соблюдать и меню других модулей. Любой поток.
+     */
+    public boolean isBound(final ItemStack item) {
+        final SealItems it = this.items;
+        return it != null && item != null && !item.getType().isAir() && it.isBound(item);
+    }
+
     /** Число печатей в каталоге (включённых и выключенных). */
     public int catalogSize() {
         return this.catalog.get().size();
@@ -194,6 +203,16 @@ public final class SealsModule implements CoreModule {
     void menuClosed(final Player player, final SealMenu menu) {
         this.openMenus.remove(player.getUniqueId(), menu);
         this.giveBack(player, menu.finish());
+    }
+
+    /** Смерть с открытым меню (без keepInventory): расходники — к выпадающим предметам. Поток игрока. */
+    void menuDropped(final Player player, final SealMenu menu, final List<ItemStack> drops) {
+        this.openMenus.remove(player.getUniqueId(), menu);
+        for (final ItemStack stack : menu.finish()) {
+            if (stack != null && !stack.getType().isAir()) {
+                drops.add(stack);
+            }
+        }
     }
 
     /** Отдать предметы игроку; не влезло — под ноги. Поток игрока. */

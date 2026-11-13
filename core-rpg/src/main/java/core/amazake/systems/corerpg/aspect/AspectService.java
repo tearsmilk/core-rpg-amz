@@ -57,7 +57,7 @@ public final class AspectService implements Listener {
     private final CoreRpgSystem system;
     private final List<AspectContributor> contributors = new CopyOnWriteArrayList<>();
     private final Map<UUID, AspectSnapshot> snapshots = new ConcurrentHashMap<>();
-    private final Map<UUID, Boolean> pending = new ConcurrentHashMap<>();
+    private final RefreshGate<Player> pending = new RefreshGate<>();
     private volatile boolean contributorFailed;
 
     public AspectService(final CoreRpgSystem system) {
@@ -110,15 +110,19 @@ public final class AspectService implements Listener {
 
     /** Пересчитать в потоке игрока чуть позже; повторные вызовы до пересчёта склеиваются. Любой поток. */
     public void refreshLater(final Player player) {
-        if (player == null || this.pending.putIfAbsent(player.getUniqueId(), Boolean.TRUE) != null) {
+        if (player == null) {
+            return;
+        }
+        final UUID uuid = player.getUniqueId();
+        if (!this.pending.claim(uuid, player)) {
             return;
         }
         final boolean queued = this.system.context().runOnceForPlayer(player, () -> {
-            this.pending.remove(player.getUniqueId());
+            this.pending.release(uuid, player);
             this.refresh(player);
         });
         if (!queued) {
-            this.pending.remove(player.getUniqueId());
+            this.pending.release(uuid, player);
         }
     }
 
@@ -136,7 +140,7 @@ public final class AspectService implements Listener {
 
     public void forget(final UUID uuid) {
         this.snapshots.remove(uuid);
-        this.pending.remove(uuid);
+        this.pending.forget(uuid);
     }
 
     private void apply(final Player player, final AspectSnapshot snapshot) {

@@ -1,6 +1,7 @@
 package core.amazake.systems.corerpg.sharpen;
 
 import core.amazake.systems.api.SystemContext;
+import core.amazake.systems.corerpg.seals.SealsModule;
 import core.amazake.systems.corerpg.util.Gear;
 import core.amazake.systems.corerpg.util.Text;
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -83,6 +85,9 @@ final class SharpenMenus implements Listener {
             return slot == SLOT_STONE || slot == SLOT_RUNE || (slot == SLOT_SACRIFICE && this.sacrificeEnabled());
         }
     }
+
+    /** Тот же текст, что у запрета модуля печатей (BoundItemListener). */
+    private static final String CANNOT_TRANSFER = "<red>Персональный предмет нельзя передать.</red>";
 
     private final SharpenModule module;
     private final SystemContext context;
@@ -326,6 +331,10 @@ final class SharpenMenus implements Listener {
 
     /** Подходит ли предмет для слота меню. */
     private boolean accepts(final Player player, final Holder holder, final int slot, final ItemStack item) {
+        if (this.bound(item)) {
+            // Персональный предмет (печати) в чужое окно не кладётся никаким способом — как и в BoundItemListener.
+            return false;
+        }
         if (slot == SLOT_STONE) {
             final Consumable c = this.items().consumable(item);
             return c != null && c.isStone();
@@ -340,7 +349,17 @@ final class SharpenMenus implements Listener {
         return false;
     }
 
-    private void denyMessage(final Player player, final int slot) {
+    /** Персональный предмет модуля печатей. */
+    private boolean bound(final ItemStack item) {
+        final SealsModule seals = this.module.system().seals();
+        return seals != null && seals.isBound(item);
+    }
+
+    private void denyMessage(final Player player, final int slot, final ItemStack item) {
+        if (this.bound(item)) {
+            Text.send(player, CANNOT_TRANSFER);
+            return;
+        }
         if (slot == SLOT_STONE) {
             Text.send(player, "<red>Сюда можно положить только камень заточки.</red>");
         } else if (slot == SLOT_RUNE) {
@@ -401,7 +420,7 @@ final class SharpenMenus implements Listener {
             final ItemStack cursor = event.getCursor();
             if (!cursor.getType().isAir() && !this.accepts(player, holder, raw, cursor)) {
                 event.setCancelled(true);
-                this.denyMessage(player, raw);
+                this.denyMessage(player, raw, cursor);
                 return;
             }
             if (raw == SLOT_SACRIFICE && !cursor.getType().isAir() && cursor.getAmount() > 1) {
@@ -427,6 +446,10 @@ final class SharpenMenus implements Listener {
             event.setCancelled(true);
             final ItemStack current = event.getCurrentItem();
             if (current == null || current.getType().isAir() || event.getClickedInventory() == null) {
+                return;
+            }
+            if (this.bound(current)) {
+                Text.send(player, CANNOT_TRANSFER);
                 return;
             }
             final ItemStack rest = this.moveIn(player, holder, current);
@@ -494,6 +517,35 @@ final class SharpenMenus implements Listener {
             }
         }
         this.scheduleRender(player, holder);
+    }
+
+    /**
+     * Смерть с открытым меню. Сервер закрывает окно (причина DEATH) уже после того, как собрал выпадающие предметы,
+     * а потом очищает инвентарь: возврат в инвентарь при закрытии уничтожил бы содержимое слотов. Поэтому без
+     * keepInventory содержимое слотов добавляется к выпадающим предметам; с keepInventory его вернёт закрытие —
+     * инвентарь сохранится.
+     */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onDeath(final PlayerDeathEvent event) {
+        final Player player = event.getPlayer();
+        final Holder holder = holderOf(player.getOpenInventory());
+        if (holder == null || holder.skipReturn || event.getKeepInventory()) {
+            return;
+        }
+        holder.skipReturn = true;
+        final Inventory top = holder.inventory;
+        addDrop(event.getDrops(), top.getItem(SLOT_STONE));
+        addDrop(event.getDrops(), top.getItem(SLOT_RUNE));
+        if (holder.sacrificeEnabled()) {
+            addDrop(event.getDrops(), top.getItem(SLOT_SACRIFICE));
+        }
+        clearInputs(holder);
+    }
+
+    private static void addDrop(final List<ItemStack> drops, final ItemStack stack) {
+        if (stack != null && !stack.getType().isAir()) {
+            drops.add(stack.clone());
+        }
     }
 
     @EventHandler(priority = EventPriority.MONITOR)

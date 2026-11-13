@@ -206,7 +206,8 @@ NPC-открытием по имени сущности (по умолчанию
 арконит, сердце), `set <ник> <печать> <green|blue|purple|orange|зелёная|синяя|фиолетовая|оранжевая>` (на предмет в
 руке игрока), `reload`. Админ: `core.seals.admin`. После изменения предмета — `system.aspects().refreshLater(player)`.
 
-**Фасад:** `sealName`, `sealColorName`, `catalogSize`.
+**Фасад:** `sealName`, `sealColorName`, `catalogSize`, `isBound(item)` (персональный предмет: меню других модулей
+тоже не принимают его в слоты).
 
 ## Модуль D: combat (бой, регенерация, пассивки)
 
@@ -248,7 +249,8 @@ CombatCalculator RoyalQuestClasses (крит, уворот, поглощение
 лечит на аспект `regen` (не мёртвого, не выше максимума). Порядок обработчиков не должен дважды применять одно и
 то же. Чистая математика — в отдельном классе с тестами.
 
-**Фасад:** только enable/reload/disable.
+**Фасад:** enable/reload/disable и `passiveDescription(key)` — описание пассивки по числам combat.yml для меню
+прогрессии.
 
 ## Модуль E: papi (PlaceholderAPI)
 

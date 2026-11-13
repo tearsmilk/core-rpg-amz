@@ -158,7 +158,7 @@ public final class CharacterMenu extends ProgressionMenu {
             aspectLore.add("");
             aspectLore.add("<gold>Пассивки:</gold>");
             for (final String p : passives) {
-                aspectLore.add("<gray>• " + MenuItems.passiveLabel(p) + "</gray>");
+                aspectLore.add("<gray>• " + this.module.passiveLabel(p) + "</gray>");
             }
         }
         inv.setItem(ASPECTS, MenuItems.item(Material.IRON_CHESTPLATE, "<gold><b>Характеристики</b></gold>", aspectLore));

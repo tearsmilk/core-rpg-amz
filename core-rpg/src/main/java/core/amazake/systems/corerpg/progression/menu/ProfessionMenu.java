@@ -90,7 +90,7 @@ public final class ProfessionMenu extends ProgressionMenu {
         if (!p.passives().isEmpty()) {
             lore.add("<gold>Пассивки:</gold>");
             for (final String s : p.passives()) {
-                lore.add("<gray>• " + MenuItems.passiveLabel(s) + "</gray>");
+                lore.add("<gray>• " + this.module.passiveLabel(s) + "</gray>");
             }
         }
         if (!p.lockedAspects().isEmpty()) {

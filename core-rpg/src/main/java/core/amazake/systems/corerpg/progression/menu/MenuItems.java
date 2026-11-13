@@ -113,7 +113,7 @@ public final class MenuItems {
         return sign + Text.num(value);
     }
 
-    /** Название пассивки. */
+    /** Название пассивки, которую бой не описал (см. ProgressionModule#passiveLabel). */
     public static String passiveLabel(final String key) {
         return switch (key) {
             case "rage" -> "Ярость: +2% урона за каждые 5% потерянного здоровья";

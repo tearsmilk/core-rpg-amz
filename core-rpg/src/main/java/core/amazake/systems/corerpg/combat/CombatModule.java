@@ -87,6 +87,15 @@ public final class CombatModule implements CoreModule {
         return this.loaded.get();
     }
 
+    /**
+     * Описание пассивки для меню других модулей (MiniMessage), по текущим числам combat.yml; null — неизвестная
+     * пассивка. Любой поток.
+     */
+    public String passiveDescription(final String key) {
+        final Loaded current = this.loaded.get();
+        return current == null ? null : current.settings().passiveDescription(key);
+    }
+
     CombatSettings settings() {
         return this.loaded.get().settings();
     }

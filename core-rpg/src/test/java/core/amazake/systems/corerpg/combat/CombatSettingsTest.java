@@ -211,4 +211,25 @@ class CombatSettingsTest {
         assertEquals(1, warnings.size());
         assertTrue(warnings.get(0).startsWith("statuses.poison"));
     }
+
+    @Test
+    void passiveDescriptionsFollowConfiguredNumbers() throws Exception {
+        final CombatSettings defaults = CombatSettings.DEFAULTS;
+        assertEquals("Ярость: +2% урона за каждые 5% потерянного здоровья (до +40%)", defaults.passiveDescription("rage"));
+        assertEquals("Выстрел в голову: ×1.5 урона", defaults.passiveDescription("headshot"));
+        assertEquals("Два клинка: +60% атаки второй руки", defaults.passiveDescription("dual_wield"));
+        assertNull(defaults.passiveDescription("unknown"));
+
+        final CombatSettings tuned = CombatSettings.from(yaml("""
+            passives:
+              rage: {percent-per-step: 3, step-percent: 10, max-percent: 25}
+              headshot: {multiplier: 2}
+              dual_wield: {percent: 40}
+              backstab: {enabled: false}
+            """), w -> { });
+        assertEquals("Ярость: +3% урона за каждые 10% потерянного здоровья (до +25%)", tuned.passiveDescription("rage"));
+        assertEquals("Выстрел в голову: ×2 урона", tuned.passiveDescription("headshot"));
+        assertEquals("Два клинка: +40% атаки второй руки", tuned.passiveDescription("dual_wield"));
+        assertEquals("Удар в спину <dark_gray>(отключено)</dark_gray>", tuned.passiveDescription("backstab"));
+    }
 }

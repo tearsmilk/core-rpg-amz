@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
@@ -27,10 +28,25 @@ public final class ProfileStore {
     private final SystemContext context;
     private final Map<UUID, PlayerProfile> profiles = new ConcurrentHashMap<>();
     private final Set<UUID> dirty = ConcurrentHashMap.newKeySet();
+    /** Снимки вышедших игроков, ещё не записанные на диск. */
+    private final Map<UUID, PlayerProfile> pendingWrites = new ConcurrentHashMap<>();
+    /** Текущая сессия каждого игрока онлайн (токен загрузки). */
+    private final Map<UUID, Object> sessions = new ConcurrentHashMap<>();
+    private final Object sessionLock = new Object();
+    /** Все записи файлов и выбор записываемого снимка — под этим замком. */
     private final Object ioLock = new Object();
 
+    /** Где выполняется чтение и запись файлов (вне тика). */
+    private final Executor io;
+
     public ProfileStore(final SystemContext context) {
+        this(context, task -> Bukkit.getAsyncScheduler().runNow(context.plugin(), t -> task.run()));
+    }
+
+    /** Для тестов: свой исполнитель ввода-вывода вместо асинхронного планировщика сервера. */
+    ProfileStore(final SystemContext context, final Executor io) {
         this.context = context;
+        this.io = io;
     }
 
     /** Снимок игрока; если профиль ещё не загружен — пустой профиль (уровень 1, без класса). */
@@ -65,65 +81,124 @@ public final class ProfileStore {
     /**
      * Читает профиль игрока вне тика и отдаёт его в поток игрока. Если профиль уже в памяти (система включена при
      * игроке онлайн и он уже загружен), колбэк вызывается сразу в потоке игрока.
+     *
+     * <p>Каждая загрузка открывает «сессию» игрока: прочитанный с диска профиль попадает в память, только если эта
+     * сессия ещё текущая (игрок не вышел, пока шло чтение). Если после выхода игрока его запись ещё не дошла до
+     * диска, берётся снимок из очереди записи — он новее файла.</p>
      */
     public void load(final Player player, final Consumer<PlayerProfile> onLoaded) {
         final UUID uuid = player.getUniqueId();
-        final PlayerProfile cached = this.profiles.get(uuid);
+        final Object session = new Object();
+        final PlayerProfile cached;
+        synchronized (this.sessionLock) {
+            this.sessions.put(uuid, session);
+            cached = this.profiles.get(uuid);
+        }
         if (cached != null) {
             this.context.runOnceForPlayer(player, () -> onLoaded.accept(this.get(uuid)));
             return;
         }
-        Bukkit.getAsyncScheduler().runNow(this.context.plugin(), task -> {
-            final PlayerProfile read = this.read(uuid);
-            this.profiles.putIfAbsent(uuid, read);
+        this.io.execute(() -> {
+            final PlayerProfile unwritten = this.pendingWrites.get(uuid);
+            final PlayerProfile read = unwritten != null ? unwritten : this.read(uuid);
+            synchronized (this.sessionLock) {
+                if (this.sessions.get(uuid) != session) {
+                    return; // игрок вышел (или зашёл заново) — эта загрузка устарела
+                }
+                this.profiles.putIfAbsent(uuid, read);
+            }
             this.context.runOnceForPlayer(player, () -> onLoaded.accept(this.get(uuid)));
         });
     }
 
-    /** Выход игрока: записать вне тика и убрать из памяти. */
+    /**
+     * Выход игрока (поток игрока, PlayerQuitEvent): профиль сразу убирается из памяти, его последний снимок
+     * ставится в очередь записи и пишется вне тика.
+     */
     public void unload(final UUID uuid) {
-        final PlayerProfile profile = this.profiles.get(uuid);
-        if (profile == null) {
-            return;
+        final PlayerProfile profile;
+        synchronized (this.sessionLock) {
+            this.sessions.remove(uuid);
+            profile = this.profiles.get(uuid);
+            if (profile == null) {
+                return;
+            }
+            // сначала в очередь записи, потом из памяти: запись в любой момент найдёт последний снимок
+            this.pendingWrites.put(uuid, profile);
+            this.profiles.remove(uuid, profile);
         }
-        Bukkit.getAsyncScheduler().runNow(this.context.plugin(), task -> {
-            if (this.dirty.remove(uuid)) {
-                this.write(profile);
-            }
-            // Игрок мог перезайти, пока шла запись: тогда профиль остаётся в памяти.
-            if (Bukkit.getPlayer(uuid) == null) {
-                this.profiles.remove(uuid, profile);
-            }
-        });
+        this.io.execute(() -> this.flush(uuid));
     }
 
     /** Записать изменённые профили (из асинхронного таймера). */
     public void saveDirty() {
         for (final UUID uuid : Set.copyOf(this.dirty)) {
-            final PlayerProfile profile = this.profiles.get(uuid);
-            if (profile != null && this.dirty.remove(uuid)) {
-                this.write(profile);
+            this.flush(uuid);
+        }
+        for (final UUID uuid : Set.copyOf(this.pendingWrites.keySet())) {
+            this.flush(uuid);
+        }
+    }
+
+    /**
+     * Записать на диск последний снимок игрока, если он изменён или ждёт записи после выхода. Записи одного игрока
+     * идут строго по очереди, и каждая берёт самый свежий снимок уже под замком — старый снимок не может лечь
+     * поверх нового.
+     */
+    private void flush(final UUID uuid) {
+        synchronized (this.ioLock) {
+            final boolean wasDirty = this.dirty.remove(uuid);
+            final PlayerProfile unwritten = this.pendingWrites.get(uuid);
+            if (!wasDirty && unwritten == null) {
+                return;
+            }
+            final PlayerProfile live = this.profiles.get(uuid);
+            final PlayerProfile latest = live != null ? live : unwritten;
+            if (latest != null && this.write(latest) && unwritten != null) {
+                this.pendingWrites.remove(uuid, unwritten);
             }
         }
     }
 
-    /** Записать всё сразу: выключение системы и остановка сервера. */
+    /**
+     * Записать всё сразу: выключение системы и остановка сервера. Держит замок записи всё время, поэтому дожидается
+     * записи, уже начатой таймером или выходом игрока: новый экземпляр системы прочитает файлы только после неё.
+     */
     public void saveAll() {
-        this.saveDirty();
+        synchronized (this.ioLock) {
+            this.saveDirty();
+        }
     }
 
     /** Профиль игрока, которого нет онлайн: читается с диска (админские команды). Вызывать вне тика. */
     public PlayerProfile readOffline(final UUID uuid) {
         final PlayerProfile online = this.profiles.get(uuid);
-        return online != null ? online : this.read(uuid);
+        if (online != null) {
+            return online;
+        }
+        final PlayerProfile unwritten = this.pendingWrites.get(uuid);
+        return unwritten != null ? unwritten : this.read(uuid);
     }
 
     /** Записать профиль игрока, которого нет онлайн. Вызывать вне тика. */
     public void writeOffline(final PlayerProfile profile) {
-        if (this.profiles.containsKey(profile.uuid())) {
-            this.profiles.put(profile.uuid(), profile);
-            this.dirty.add(profile.uuid());
-        } else {
+        final boolean queued;
+        synchronized (this.sessionLock) {
+            if (this.profiles.containsKey(profile.uuid())) {
+                this.profiles.put(profile.uuid(), profile);
+                this.dirty.add(profile.uuid());
+                return;
+            }
+            queued = this.pendingWrites.containsKey(profile.uuid());
+            if (queued) {
+                this.pendingWrites.put(profile.uuid(), profile);
+            }
+        }
+        if (queued) {
+            this.flush(profile.uuid());
+            return;
+        }
+        synchronized (this.ioLock) {
             this.write(profile);
         }
     }
@@ -158,7 +233,8 @@ public final class ProfileStore {
             Math.max(0, yaml.getInt("points.luck", 0)));
     }
 
-    private void write(final PlayerProfile profile) {
+    /** Запись файла; вызывается под {@link #ioLock}. false — не удалось (профиль снова помечен изменённым). */
+    private boolean write(final PlayerProfile profile) {
         final YamlConfiguration yaml = new YamlConfiguration();
         yaml.set("class", profile.classId());
         yaml.set("profession", profile.professionId());
@@ -172,14 +248,16 @@ public final class ProfileStore {
         final Path file = this.file(profile.uuid());
         final Path tmp = file.resolveSibling(file.getFileName() + ".tmp");
         try {
-            synchronized (this.ioLock) {
-                Files.createDirectories(file.getParent());
-                Files.writeString(tmp, yaml.saveToString());
-                Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            }
+            Files.createDirectories(file.getParent());
+            Files.writeString(tmp, yaml.saveToString());
+            Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            return true;
         } catch (final IOException e) {
-            this.dirty.add(profile.uuid());
+            if (this.profiles.containsKey(profile.uuid())) {
+                this.dirty.add(profile.uuid());
+            }
             this.context.logger().log(Level.WARNING, "Не удалось сохранить профиль " + profile.uuid(), e);
+            return false;
         }
     }
 

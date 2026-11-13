@@ -5,6 +5,7 @@ import core.amazake.systems.corerpg.CoreModule;
 import core.amazake.systems.corerpg.CoreRpgSystem;
 import core.amazake.systems.corerpg.aspect.Aspect;
 import core.amazake.systems.corerpg.aspect.AspectSnapshot;
+import core.amazake.systems.corerpg.combat.CombatModule;
 import core.amazake.systems.corerpg.profile.PlayerProfile;
 import core.amazake.systems.corerpg.profile.ProfileStore;
 import core.amazake.systems.corerpg.progression.command.ClassCommand;
@@ -13,6 +14,7 @@ import core.amazake.systems.corerpg.progression.command.ProfessionCommand;
 import core.amazake.systems.corerpg.progression.command.StatsCommand;
 import core.amazake.systems.corerpg.progression.menu.CharacterMenu;
 import core.amazake.systems.corerpg.progression.menu.ClassMenu;
+import core.amazake.systems.corerpg.progression.menu.MenuItems;
 import core.amazake.systems.corerpg.progression.menu.ProfessionMenu;
 import core.amazake.systems.corerpg.progression.menu.ProgressionMenu;
 import core.amazake.systems.corerpg.progression.menu.StatsMenu;
@@ -92,7 +94,7 @@ public final class ProgressionModule implements CoreModule {
     /** Когда игроку последний раз сообщали о блокировке опыта (мс). */
     private final Map<UUID, Long> blockedMessageAt = new ConcurrentHashMap<>();
     /** Игроки, которым уже поставлен возврат постоянных эффектов (склейка событий молока). */
-    private final Set<UUID> pendingReapply = ConcurrentHashMap.newKeySet();
+    private final core.amazake.systems.corerpg.aspect.RefreshGate<Player> pendingReapply = new core.amazake.systems.corerpg.aspect.RefreshGate<>();
     private volatile SystemContext context;
     private volatile BonusEffects effects;
 
@@ -253,6 +255,16 @@ public final class ProgressionModule implements CoreModule {
 
     public boolean isLoaded(final Player player) {
         return this.system.profiles().isLoaded(player.getUniqueId());
+    }
+
+    /**
+     * Строка пассивки для меню: описание от боя (числа из combat.yml, выключенные помечены); если бой такую
+     * пассивку не знает — название из меню.
+     */
+    public String passiveLabel(final String key) {
+        final CombatModule combat = this.system.combat();
+        final String fromCombat = combat == null ? null : combat.passiveDescription(key);
+        return fromCombat != null ? fromCombat : MenuItems.passiveLabel(key);
     }
 
     public AspectSnapshot aspects(final Player player) {
@@ -688,15 +700,15 @@ public final class ProgressionModule implements CoreModule {
     /** Вернуть постоянные эффекты в ближайший тик (после молока, тотема, респавна). Поток события игрока. */
     void reapplyLater(final Player player) {
         final BonusEffects fx = this.effects;
-        if (fx == null || !fx.hasPermanent(player.getUniqueId()) || !this.pendingReapply.add(player.getUniqueId())) {
+        if (fx == null || !fx.hasPermanent(player.getUniqueId()) || !this.pendingReapply.claim(player.getUniqueId(), player)) {
             return;
         }
         final boolean queued = this.inPlayerThread(player, () -> {
-            this.pendingReapply.remove(player.getUniqueId());
+            this.pendingReapply.release(player.getUniqueId(), player);
             fx.reapplyPermanent(player);
         });
         if (!queued) {
-            this.pendingReapply.remove(player.getUniqueId());
+            this.pendingReapply.release(player.getUniqueId(), player);
         }
     }
 
@@ -708,7 +720,7 @@ public final class ProgressionModule implements CoreModule {
             fx.forget(player.getUniqueId());
         }
         this.blockedMessageAt.remove(player.getUniqueId());
-        this.pendingReapply.remove(player.getUniqueId());
+        this.pendingReapply.forget(player.getUniqueId());
     }
 
     // --- админ (вызывается в потоке отправителя; цель меняется в её потоке) ---

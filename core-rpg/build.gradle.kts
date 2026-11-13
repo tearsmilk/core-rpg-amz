@@ -101,4 +101,5 @@ tasks.test {
 // Тесты чистой логики (без сервера): Paper API нужен и им.
 dependencies {
     testImplementation("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
+    testImplementation(files(apiJar))
 }
