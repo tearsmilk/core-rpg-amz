@@ -1,0 +1,8 @@
+# Описание системы. name и version подставляет сборка: name — rootProject.name из settings.gradle.kts, version — из build.gradle.kts.
+name: ${name}
+version: ${version}
+main: core.amazake.systems.corerpg.CoreRpgSystem
+description: "RPG-ядро: классы и профессии, уровни 1–71, параметры, аспекты, заточка +0…+11, магические печати, бой, PlaceholderAPI"
+authors: [tearsmilk]
+api-version: 2
+conflicts: [Zatochka, MagicSeals, RoyalQuestClasses]

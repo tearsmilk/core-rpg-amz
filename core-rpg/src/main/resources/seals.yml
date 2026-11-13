@@ -1,0 +1,1196 @@
+# Каталог магических печатей CoreRpg. После правки: /seals reload (или /amazake system reload core-rpg).
+# 57 печатей перенесены из плагина MagicSeals, 87 добавлены из Royal Quest (royalquest.info) — итого 144.
+# Значения перебалансированы по единому бюджету очков (см. docs/economy.html, раздел «Печати»).
+#
+# Поля печати:
+#   name     — название (в лоре: «Печать <name>»)
+#   origin   — plugin (из MagicSeals) или royal-quest
+#   types    — WEAPON, ARMOR, SHIELD, ACCESSORY (у аксессуаров нет слота в Minecraft: такие типы игнорируются)
+#   classes  — any или ключи классов/профессий: swordsman, archer, mage, thief, crusader, dark_knight, sniper, hunter,
+#              wizard, warlock, rogue, assassin. Печать выпадает игроку, только если подходит его класс или профессия
+#              (выключается settings.class-filter в config.yml)
+#   enabled  — false: печать в каталоге, но не выпадает (бонусы на системах, которых пока нет: мана, энергия, проки)
+#   bonuses  — ключ: [зелёная, синяя, фиолетовая, оранжевая]; пустое значение (~) — у этого цвета бонуса нет
+#
+# Ключи бонусов: attack_damage, armor, max_health, movement_speed, attack_speed, resistance (доля 0..1),
+#   resistance:<цель> (fire, chaos, undead, humanoid, water, air, earth, poison, animal, arthropod),
+#   resistance_pvp, crit_chance (%), crit_damage (%), lifesteal (%), regen (HP/с), heal_on_kill (HP),
+#   stat_primary, stat_agility, stat_stamina, stat_luck (очки параметров), accuracy, evasion,
+#   exp_bonus (%), gold_bonus (%, зарезервирован), status_bleed, status_poison, status_burn (шанс %),
+#   range (блоки), damage_vs:<цель> (%; fire, air, earth, water, monster), resource и proc (план, не работают).
+seals:
+  aggression:
+    name: "Агрессии"
+    origin: plugin
+    types: [WEAPON]
+    classes: [any]
+    bonuses:
+      "attack_damage": [1.0, 1.6, 2.4, 3.4]
+  fury:
+    name: "Ярости"
+    origin: plugin
+    types: [WEAPON]
+    classes: [any]
+    bonuses:
+      "attack_speed": [0.08, 0.13, 0.19, 0.27]
+  might:
+    name: "Могущества"
+    origin: plugin
+    types: [WEAPON]
+    classes: [any]
+    bonuses:
+      "attack_damage": [1.2, 1.7, 2.3, 3.0]
+  bloody_axe:
+    name: "Кровавого топора"
+    origin: plugin
+    types: [WEAPON]
+    classes: [crusader, dark_knight, rogue, swordsman]
+    bonuses:
+      "attack_damage": [0.7, 1.1, 1.6, 2.2]
+      "attack_speed": [0.04, 0.06, 0.08, 0.12]
+  physical_lethality:
+    name: "Физической убойности"
+    origin: plugin
+    types: [WEAPON]
+    classes: [assassin, crusader, dark_knight, rogue, swordsman, thief]
+    bonuses:
+      "attack_damage": [0.8, 1.4, 2.5, 3.9]
+  berserk_rat:
+    name: "Бешеной крысы"
+    origin: plugin
+    types: [WEAPON]
+    classes: [any]
+    bonuses:
+      "attack_damage": [0.8, 1.1, 1.5, 2.0]
+      "attack_speed": [0.04, 0.06, 0.08, 0.11]
+  madness:
+    name: "Безумия"
+    origin: plugin
+    types: [WEAPON]
+    classes: [any]
+    bonuses:
+      "attack_damage": [0.5, 0.9, 1.7, 2.6]
+      "attack_speed": [0.03, 0.05, 0.09, 0.14]
+  executioner:
+    name: "Палача"
+    origin: plugin
+    types: [WEAPON]
+    classes: [assassin, crusader, dark_knight, rogue, swordsman, thief]
+    bonuses:
+      "attack_damage": [1.0, 1.6, 2.4, 3.4]
+  death_artist:
+    name: "Художника смерти"
+    origin: plugin
+    types: [WEAPON]
+    classes: [archer, assassin, crusader, dark_knight, hunter, rogue, sniper, swordsman, thief]
+    bonuses:
+      "attack_damage": [0.7, 1.1, 1.6, 2.2]
+      "attack_speed": [0.04, 0.06, 0.08, 0.12]
+  hammer_of_pain:
+    name: "Молота боли"
+    origin: plugin
+    types: [WEAPON]
+    classes: [crusader, dark_knight, swordsman]
+    bonuses:
+      "attack_damage": [1.2, 1.7, 2.3, 3.0]
+  kinetics:
+    name: "Кинетики"
+    origin: plugin
+    types: [WEAPON]
+    classes: [archer, hunter, sniper]
+    bonuses:
+      "attack_speed": [0.1, 0.14, 0.18, 0.24]
+  aiming:
+    name: "Прицеливания"
+    origin: plugin
+    types: [WEAPON]
+    classes: [archer, hunter, sniper]
+    bonuses:
+      "attack_damage": [0.8, 1.1, 1.5, 2.0]
+      "attack_speed": [0.04, 0.06, 0.08, 0.11]
+  death_rider:
+    name: "Наездника смерти"
+    origin: plugin
+    types: [WEAPON]
+    classes: [crusader, dark_knight]
+    bonuses:
+      "attack_speed": [0.05, 0.08, 0.13, 0.18]
+      "attack_damage": [0.4, 0.7, 1.1, 1.5]
+  vitality:
+    name: "Выносливости"
+    origin: plugin
+    types: [ARMOR]
+    classes: [any]
+    bonuses:
+      "max_health": [2.0, 3.2, 4.8, 6.8]
+  bear:
+    name: "Медведя-шатуна"
+    origin: plugin
+    types: [ARMOR]
+    classes: [assassin, crusader, dark_knight, rogue, swordsman, thief]
+    bonuses:
+      "max_health": [1.3, 2.1, 3.2, 4.5]
+      "armor": [0.4, 0.7, 1.1, 1.5]
+  full_energy:
+    name: "Полной энергии"
+    origin: plugin
+    types: [ARMOR]
+    classes: [archer, assassin, crusader, dark_knight, hunter, rogue, sniper, swordsman, thief]
+    bonuses:
+      "max_health": [2.4, 3.4, 4.6, 6.0]
+  boar:
+    name: "Кабана"
+    origin: plugin
+    types: [ARMOR]
+    classes: [archer, assassin, crusader, dark_knight, hunter, rogue, sniper, swordsman, thief]
+    bonuses:
+      "max_health": [1.6, 2.2, 3.0, 4.0]
+      "armor": [0.5, 0.7, 1.0, 1.3]
+  ant_worker:
+    name: "Муравья-рабочего"
+    origin: plugin
+    types: [ARMOR]
+    classes: [any]
+    bonuses:
+      "max_health": [1.3, 2.1, 3.2, 4.5]
+      "movement_speed": [0.002, 0.004, 0.005, 0.007]
+  bulwark:
+    name: "Оплота"
+    origin: plugin
+    types: [ARMOR, SHIELD]
+    classes: [any]
+    bonuses:
+      "armor": [1.0, 1.6, 2.4, 3.4]
+  fortress:
+    name: "Крепости"
+    origin: plugin
+    types: [ARMOR, SHIELD]
+    classes: [any]
+    bonuses:
+      "armor": [1.2, 1.7, 2.3, 3.0]
+  metaller:
+    name: "Металлера"
+    origin: plugin
+    types: [ARMOR, SHIELD]
+    classes: [any]
+    bonuses:
+      "armor": [0.8, 1.4, 2.5, 3.9]
+  black_rock:
+    name: "Чёрной скалы"
+    origin: plugin
+    types: [ARMOR, SHIELD]
+    classes: [any]
+    bonuses:
+      "armor": [0.7, 1.1, 1.6, 2.2]
+      "resistance": [0.01, 0.02, 0.03, 0.04]
+  tortolla:
+    name: "Тортоллы"
+    origin: plugin
+    types: [ARMOR, SHIELD]
+    classes: [any]
+    bonuses:
+      "armor": [0.7, 1.1, 1.6, 2.2]
+      "max_health": [0.9, 1.4, 2.1, 3.0]
+  steel_claw:
+    name: "Стальной клешни"
+    origin: plugin
+    types: [ARMOR, SHIELD]
+    classes: [any]
+    bonuses:
+      "armor": [0.8, 1.1, 1.5, 2.0]
+      "resistance": [0.02, 0.02, 0.03, 0.04]
+  warding:
+    name: "Сопротивления"
+    origin: plugin
+    types: [ARMOR]
+    classes: [any]
+    bonuses:
+      "resistance": [0.03, 0.05, 0.07, 0.1]
+  fire_ward:
+    name: "Защиты от огня"
+    origin: plugin
+    types: [ARMOR]
+    classes: [any]
+    bonuses:
+      "resistance": [0.04, 0.05, 0.07, 0.09]
+  chaos_ward:
+    name: "Защиты от хаоса"
+    origin: plugin
+    types: [ARMOR]
+    classes: [any]
+    bonuses:
+      "resistance": [0.02, 0.03, 0.05, 0.07]
+      "armor": [0.4, 0.7, 1.1, 1.5]
+  grave_digger:
+    name: "Гробовщика"
+    origin: plugin
+    types: [ARMOR, SHIELD]
+    classes: [any]
+    bonuses:
+      "resistance": [0.02, 0.03, 0.05, 0.06]
+      "armor": [0.5, 0.7, 1.0, 1.3]
+  white_angel:
+    name: "Белого ангела"
+    origin: plugin
+    types: [ARMOR]
+    classes: [mage, warlock, wizard]
+    bonuses:
+      "resistance": [0.02, 0.03, 0.05, 0.07]
+      "max_health": [0.9, 1.4, 2.1, 3.0]
+  black_angel:
+    name: "Чёрного ангела"
+    origin: plugin
+    types: [ARMOR]
+    classes: [mage, warlock, wizard]
+    bonuses:
+      "resistance": [0.02, 0.03, 0.05, 0.07]
+      "attack_damage": [0.4, 0.7, 1.1, 1.5]
+  swiftness:
+    name: "Стремительности"
+    origin: plugin
+    types: [ARMOR, WEAPON]
+    classes: [any]
+    bonuses:
+      "movement_speed": [0.005, 0.008, 0.012, 0.017]
+  wanderer:
+    name: "Странствий"
+    origin: plugin
+    types: [ARMOR]
+    classes: [any]
+    bonuses:
+      "movement_speed": [0.006, 0.009, 0.011, 0.015]
+  old_cobbler:
+    name: "Старого сапожника"
+    origin: plugin
+    types: [ARMOR]
+    classes: [any]
+    bonuses:
+      "movement_speed": [0.004, 0.007, 0.013, 0.019]
+  messenger:
+    name: "Гонца"
+    origin: plugin
+    types: [ARMOR]
+    classes: [any]
+    bonuses:
+      "movement_speed": [0.005, 0.008, 0.012, 0.017]
+  rapid_success:
+    name: "Стремительного успеха"
+    origin: plugin
+    types: [ARMOR, WEAPON]
+    classes: [any]
+    bonuses:
+      "movement_speed": [0.003, 0.005, 0.008, 0.011]
+      "attack_speed": [0.04, 0.06, 0.08, 0.12]
+  steel_rider:
+    name: "Стального наездника"
+    origin: plugin
+    types: [ARMOR]
+    classes: [crusader, dark_knight]
+    bonuses:
+      "movement_speed": [0.003, 0.005, 0.008, 0.011]
+      "armor": [0.4, 0.7, 1.1, 1.5]
+  ant_warrior:
+    name: "Муравья-воина"
+    origin: plugin
+    types: [ARMOR, WEAPON]
+    classes: [assassin, crusader, dark_knight, rogue, swordsman, thief]
+    bonuses:
+      "movement_speed": [0.004, 0.006, 0.008, 0.01]
+      "attack_speed": [0.04, 0.06, 0.08, 0.11]
+  bard:
+    name: "Барда"
+    origin: plugin
+    types: [WEAPON, ARMOR]
+    classes: [assassin, crusader, dark_knight, rogue, swordsman, thief]
+    bonuses:
+      "attack_damage": [0.7, 1.1, 1.6, 2.2]
+      "max_health": [0.9, 1.4, 2.1, 3.0]
+  strongman:
+    name: "Силача"
+    origin: plugin
+    types: [WEAPON, ARMOR]
+    classes: [assassin, crusader, dark_knight, rogue, swordsman, thief]
+    bonuses:
+      "attack_damage": [0.8, 1.1, 1.5, 2.0]
+      "max_health": [1.1, 1.5, 2.0, 2.6]
+  forest_warrior:
+    name: "Лесного воина"
+    origin: plugin
+    types: [WEAPON, ARMOR]
+    classes: [archer, assassin, crusader, dark_knight, hunter, rogue, sniper, swordsman, thief]
+    bonuses:
+      "attack_damage": [0.7, 1.1, 1.6, 2.2]
+      "movement_speed": [0.002, 0.004, 0.005, 0.007]
+  scorpion:
+    name: "Скорпиона"
+    origin: plugin
+    types: [WEAPON, ARMOR]
+    classes: [any]
+    bonuses:
+      "attack_damage": [0.5, 0.9, 1.7, 2.6]
+      "attack_speed": [0.03, 0.05, 0.09, 0.14]
+  ritual_scorpion:
+    name: "Ритуального скорпиона"
+    origin: plugin
+    types: [WEAPON]
+    classes: [mage, warlock, wizard]
+    bonuses:
+      "attack_damage": [0.7, 1.1, 1.6, 2.2]
+      "resistance": [0.01, 0.02, 0.03, 0.04]
+  blood_feast:
+    name: "Пира крови"
+    origin: plugin
+    types: [WEAPON]
+    classes: [assassin, crusader, dark_knight, rogue, swordsman, thief]
+    bonuses:
+      "attack_damage": [0.5, 0.9, 1.7, 2.6]
+      "max_health": [0.7, 1.2, 2.2, 3.4]
+  physical_vampirism:
+    name: "Физического вампиризма"
+    origin: plugin
+    types: [WEAPON]
+    classes: [archer, assassin, crusader, dark_knight, hunter, rogue, sniper, swordsman, thief]
+    bonuses:
+      "attack_damage": [0.7, 1.1, 1.6, 2.2]
+      "max_health": [0.9, 1.4, 2.1, 3.0]
+  caligula:
+    name: "Калигулы"
+    origin: plugin
+    types: [WEAPON, ARMOR]
+    classes: [any]
+    bonuses:
+      "attack_damage": [0.7, 1.1, 1.6, 2.2]
+      "attack_speed": [0.04, 0.06, 0.08, 0.12]
+  zealot:
+    name: "Изувера"
+    origin: plugin
+    types: [WEAPON]
+    classes: [any]
+    bonuses:
+      "attack_speed": [0.05, 0.08, 0.13, 0.18]
+      "movement_speed": [0.002, 0.004, 0.005, 0.007]
+  lucky_shot:
+    name: "Стрелка удачи"
+    origin: plugin
+    types: [WEAPON]
+    classes: [archer, hunter, sniper]
+    bonuses:
+      "attack_damage": [0.8, 1.1, 1.5, 2.0]
+      "attack_speed": [0.04, 0.06, 0.08, 0.11]
+  hunter:
+    name: "Охотника за головами"
+    origin: plugin
+    types: [WEAPON]
+    classes: [any]
+    bonuses:
+      "attack_damage": [0.8, 1.1, 1.5, 2.0]
+      "movement_speed": [0.003, 0.004, 0.005, 0.007]
+  master:
+    name: "Хозяина"
+    origin: plugin
+    types: [ARMOR, SHIELD]
+    classes: [any]
+    bonuses:
+      "armor": [0.8, 1.1, 1.5, 2.0]
+      "max_health": [1.1, 1.5, 2.0, 2.6]
+  oak_ent:
+    name: "Дубового энта"
+    origin: plugin
+    types: [ARMOR, SHIELD]
+    classes: [any]
+    bonuses:
+      "armor": [0.5, 0.9, 1.7, 2.6]
+      "max_health": [0.7, 1.2, 2.2, 3.4]
+  salamander:
+    name: "Саламандры"
+    origin: plugin
+    types: [ARMOR]
+    classes: [any]
+    bonuses:
+      "resistance": [0.02, 0.03, 0.05, 0.07]
+      "movement_speed": [0.002, 0.004, 0.005, 0.007]
+  black_crab:
+    name: "Чёрного краба"
+    origin: plugin
+    types: [ARMOR, SHIELD]
+    classes: [any]
+    bonuses:
+      "armor": [0.5, 0.9, 1.7, 2.6]
+      "resistance": [0.01, 0.02, 0.03, 0.05]
+  centipede:
+    name: "Многоножки"
+    origin: plugin
+    types: [ARMOR]
+    classes: [archer, assassin, crusader, dark_knight, hunter, rogue, sniper, swordsman, thief]
+    bonuses:
+      "movement_speed": [0.003, 0.005, 0.008, 0.011]
+      "resistance": [0.01, 0.02, 0.03, 0.04]
+  fatality:
+    name: "Фаталиста"
+    origin: plugin
+    types: [WEAPON]
+    classes: [any]
+    bonuses:
+      "attack_damage": [0.8, 1.4, 2.5, 3.9]
+  fortitude:
+    name: "Железной веры"
+    origin: plugin
+    types: [ARMOR, SHIELD]
+    classes: [any]
+    bonuses:
+      "armor": [0.7, 1.1, 1.6, 2.2]
+      "resistance": [0.01, 0.02, 0.03, 0.04]
+  avoidance:
+    name: "Избегания смерти"
+    origin: plugin
+    types: [ARMOR]
+    classes: [any]
+    bonuses:
+      "max_health": [1.3, 2.1, 3.2, 4.5]
+      "resistance": [0.01, 0.02, 0.03, 0.04]
+  peace:
+    name: "Умиротворения"
+    origin: plugin
+    types: [ARMOR]
+    classes: [any]
+    bonuses:
+      "max_health": [1.6, 2.2, 3.0, 4.0]
+      "resistance": [0.02, 0.02, 0.03, 0.04]
+  bezgreshnika:
+    name: "Безгрешника"
+    origin: royal-quest
+    types: [ACCESSORY, ARMOR, WEAPON]
+    classes: [archer, assassin, crusader, dark_knight, hunter, rogue, sniper, swordsman, thief]
+    enabled: false
+    bonuses:
+      "resource": [5, 5, 8, 11]
+      "crit_damage": [~, 4, 5, 7]
+  beshenstva:
+    name: "Бешенства"
+    origin: royal-quest
+    types: [SHIELD, WEAPON]
+    classes: [any]
+    bonuses:
+      "crit_chance": [1.5, 2.4, 3.6, 5.1]
+  boevogo_maga:
+    name: "Боевого мага"
+    origin: royal-quest
+    types: [ARMOR, SHIELD, WEAPON]
+    classes: [mage, warlock, wizard]
+    enabled: false
+    bonuses:
+      "attack_damage": [1.0, 1.1, 1.6, 2.2]
+      "resource": [~, 4, 5, 7]
+  bolshoy_emkosti:
+    name: "Большой ёмкости"
+    origin: royal-quest
+    types: [ARMOR, SHIELD, WEAPON]
+    classes: [archer, assassin, crusader, dark_knight, hunter, rogue, sniper, swordsman, thief]
+    enabled: false
+    bonuses:
+      "resource": [5, 8, 12, 17]
+  veselogo_rodzhera:
+    name: "Весёлого роджера"
+    origin: royal-quest
+    types: [ACCESSORY, ARMOR]
+    classes: [archer, assassin, crusader, dark_knight, hunter, rogue, sniper, swordsman, thief]
+    enabled: false
+    bonuses:
+      "stat_luck": [1, 1, 1, 1]
+      "resource": [~, 5, 4, 6]
+      "movement_speed": [~, ~, 0.004, 0.006]
+  veselogo_rodzhera_ancient:
+    name: "Весёлого роджера (Древняя)"
+    origin: royal-quest
+    types: [ACCESSORY, ARMOR]
+    classes: [archer, assassin, crusader, dark_knight, hunter, rogue, sniper, swordsman, thief]
+    enabled: false
+    bonuses:
+      "stat_luck": [1, 1, 1, 1]
+      "resource": [~, 5, 4, 6]
+      "exp_bonus": [~, ~, 2, 2]
+  virtuoznogo_snaypera:
+    name: "Виртуозного снайпера"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [archer, hunter, mage, sniper, warlock, wizard]
+    bonuses:
+      "attack_damage": [1.0, 0.7, 1.1, 1.5]
+      "range": [~, 0.26, 0.4, 0.56]
+  voli_magoga:
+    name: "Воли магога"
+    origin: royal-quest
+    types: [ARMOR, SHIELD, WEAPON]
+    classes: [mage, warlock, wizard]
+    enabled: false
+    bonuses:
+      "resource": [5, 8, 5, 7]
+      "heal_on_kill": [~, ~, 1.6, 2.2]
+  garma:
+    name: "Гарма"
+    origin: royal-quest
+    types: [ARMOR, SHIELD, WEAPON]
+    classes: [assassin, crusader, dark_knight, rogue, swordsman, thief]
+    enabled: false
+    bonuses:
+      "stat_primary": [1, 1, 1, 1]
+      "resource": [2, 4, 8, 6]
+      "movement_speed": [~, ~, ~, 0.006]
+  dalnoboynosti:
+    name: "Дальнобойности"
+    origin: royal-quest
+    types: [ARMOR, WEAPON]
+    classes: [archer, hunter, mage, sniper, warlock, wizard]
+    bonuses:
+      "accuracy": [2, 1, 2, 3]
+      "range": [~, 0.26, 0.4, 0.56]
+  desnitsy_kardinala:
+    name: "Десницы кардинала"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [mage, warlock, wizard]
+    bonuses:
+      "stat_primary": [1, 1, 1, 1]
+      "attack_damage": [~, 0.7, 0.9, 1.2]
+      "range": [~, ~, 0.22, 0.31]
+  druida_zacharovanie:
+    name: "Друида (зачарование)"
+    origin: royal-quest
+    types: [ACCESSORY]
+    classes: [mage, warlock, wizard]
+    bonuses:
+      "stat_primary": [1, 1, 1, 1]
+      "armor": [0.4, 1.1, 1.6, 2.2]
+  zhguchego_plameni:
+    name: "Жгучего пламени"
+    origin: royal-quest
+    types: [ACCESSORY, WEAPON]
+    classes: [any]
+    bonuses:
+      "status_burn": [3, 2, 3, 4]
+      "attack_speed": [~, 0.08, 0.13, 0.18]
+  zhuzhi:
+    name: "Жужи"
+    origin: royal-quest
+    types: [WEAPON, ARMOR, SHIELD, ACCESSORY]
+    classes: [any]
+    bonuses:
+      "stat_agility": [1, 1, 1, 1]
+      "stat_stamina": [~, ~, 1, 2]
+  zheludya:
+    name: "Жёлудя"
+    origin: royal-quest
+    types: [ACCESSORY, ARMOR]
+    classes: [any]
+    bonuses:
+      "armor": [1.0, 0.7, 1.6, 2.2]
+      "crit_damage": [~, 5, 5, 7]
+  zapaslivogo_strelka:
+    name: "Запасливого стрелка"
+    origin: royal-quest
+    types: [ACCESSORY, ARMOR]
+    classes: [archer, hunter, sniper]
+    bonuses:
+      "stat_stamina": [1, 1, 1, 2]
+      "stat_primary": [1, 1, 1, 1]
+  zatrasa:
+    name: "Затраса"
+    origin: royal-quest
+    types: [ACCESSORY]
+    classes: [mage, warlock, wizard]
+    bonuses:
+      "stat_primary": [1, 1, 1, 2]
+      "stat_luck": [1, 1, 1, 1]
+  zaschity_ot_vody:
+    name: "Защиты от воды"
+    origin: royal-quest
+    types: [ACCESSORY, ARMOR, SHIELD]
+    classes: [any]
+    bonuses:
+      "resistance:water": [0.03, 0.03, 0.05, 0.07]
+      "stat_stamina": [~, 1, 1, 1]
+  zaschity_ot_vozduha:
+    name: "Защиты от воздуха"
+    origin: royal-quest
+    types: [ACCESSORY, ARMOR, SHIELD]
+    classes: [any]
+    bonuses:
+      "resistance:air": [0.03, 0.03, 0.05, 0.07]
+      "stat_stamina": [~, 1, 1, 1]
+  zaschity_ot_zemli:
+    name: "Защиты от земли"
+    origin: royal-quest
+    types: [ACCESSORY, ARMOR, SHIELD]
+    classes: [any]
+    bonuses:
+      "resistance:earth": [0.03, 0.03, 0.05, 0.07]
+      "stat_stamina": [~, 1, 1, 1]
+  zaschity_ot_yada:
+    name: "Защиты от яда"
+    origin: royal-quest
+    types: [ACCESSORY, ARMOR, SHIELD]
+    classes: [any]
+    bonuses:
+      "resistance:poison": [0.03, 0.03, 0.05, 0.07]
+      "stat_stamina": [~, 1, 1, 1]
+  zverstva:
+    name: "Зверства"
+    origin: royal-quest
+    types: [SHIELD, WEAPON]
+    classes: [assassin, crusader, dark_knight, rogue, swordsman, thief]
+    bonuses:
+      "stat_primary": [1, 1, 1, 2]
+      "crit_chance": [~, 1.6, 1.6, 2.2]
+  zemletryaseniya:
+    name: "Землетрясения"
+    origin: royal-quest
+    types: [ACCESSORY]
+    classes: [any]
+    bonuses:
+      "stat_stamina": [1, 1, 1, 2]
+      "damage_vs:earth": [~, 3, 3, 4]
+  intellekta:
+    name: "Интеллекта"
+    origin: royal-quest
+    types: [ACCESSORY, SHIELD, WEAPON]
+    classes: [mage, warlock, wizard]
+    bonuses:
+      "stat_primary": [1, 1, 2, 3]
+  iskalechennogo_razuma:
+    name: "Искалеченного разума"
+    origin: royal-quest
+    types: [ACCESSORY, WEAPON]
+    classes: [mage, warlock, wizard]
+    bonuses:
+      "stat_primary": [1, 1, 1, 2]
+      "status_bleed": [~, 2, 3, 4]
+  kardinalskoy_mantii:
+    name: "Кардинальской мантии"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [mage, warlock, wizard]
+    enabled: false
+    bonuses:
+      "resource": [3, 5, 4, 6]
+      "armor": [0.4, 0.7, 0.9, 1.2]
+      "proc": [~, ~, 3, 4]
+  kardinalskoy_mantii_ancient:
+    name: "Кардинальской мантии (Древняя)"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [mage, warlock, wizard]
+    enabled: false
+    bonuses:
+      "armor": [1.0, 0.7, 0.9, 1.2]
+      "resource": [~, 5, 4, 6]
+      "exp_bonus": [~, ~, 2, 2]
+  kogtey_maury:
+    name: "Когтей мауры"
+    origin: royal-quest
+    types: [WEAPON]
+    classes: [assassin, rogue, thief]
+    bonuses:
+      "attack_damage": [1.0, 1.1, 1.6, 1.5]
+      "crit_damage": [~, 4, 5, 11]
+  korbana_dallasa:
+    name: "Корбана далласа"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [assassin, crusader, dark_knight, rogue, swordsman, thief]
+    bonuses:
+      "stat_stamina": [1, 1, 1, 1]
+      "stat_primary": [1, 1, 1, 1]
+      "stat_luck": [1, 1, 1, 1]
+  kriticheskih_zamechaniy:
+    name: "Критических замечаний"
+    origin: royal-quest
+    types: [ACCESSORY, ARMOR]
+    classes: [any]
+    bonuses:
+      "crit_damage": [5, 4, 5, 11]
+      "movement_speed": [~, 0.005, 0.008, 0.007]
+  krovotochaschih_ran:
+    name: "Кровоточащих ран"
+    origin: royal-quest
+    types: [ACCESSORY, WEAPON]
+    classes: [any]
+    bonuses:
+      "status_bleed": [3, 2, 3, 4]
+      "accuracy": [~, 2, 3, 4]
+  kurazha:
+    name: "Куража"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [archer, assassin, crusader, dark_knight, hunter, rogue, sniper, swordsman, thief]
+    enabled: false
+    bonuses:
+      "attack_speed": [0.08, 0.06, 0.07, 0.1]
+      "movement_speed": [~, 0.005, 0.004, 0.006]
+      "resource": [~, ~, 4, 6]
+  kurazha_ancient:
+    name: "Куража (Древняя)"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [archer, assassin, crusader, dark_knight, hunter, rogue, sniper, swordsman, thief]
+    enabled: false
+    bonuses:
+      "attack_speed": [0.08, 0.06, 0.07, 0.1]
+      "exp_bonus": [~, 2, 2, 2]
+      "resource": [~, ~, 4, 6]
+  lovkacha:
+    name: "Ловкача"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [any]
+    bonuses:
+      "stat_agility": [1, 1, 2, 3]
+  lunatika:
+    name: "Лунатика"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [mage, warlock, wizard]
+    enabled: false
+    bonuses:
+      "stat_agility": [1, 1, 1, 1]
+      "resource": [~, ~, 4, 6]
+      "damage_vs:air": [~, ~, 3, 4]
+  lyakushi:
+    name: "Лякуши"
+    origin: royal-quest
+    types: [ARMOR, WEAPON]
+    classes: [mage, warlock, wizard]
+    enabled: false
+    bonuses:
+      "resource": [5, 4, 5, 7]
+      "stat_agility": [~, 1, 1, 2]
+  maga_ubiytsy:
+    name: "Мага-убийцы"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [mage, warlock, wizard]
+    enabled: false
+    bonuses:
+      "resource": [5, 3, 4, 6]
+      "attack_damage": [~, 0.6, 0.9, 1.2]
+  maga_ubiytsy_ancient:
+    name: "Мага-убийцы (Древняя)"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [mage, warlock, wizard]
+    enabled: false
+    bonuses:
+      "exp_bonus": [2, 3, 2, 4]
+      "resource": [~, ~, 8, 7]
+  magicheskogo_vampirizma:
+    name: "Магического вампиризма"
+    origin: royal-quest
+    types: [ARMOR, SHIELD, WEAPON]
+    classes: [mage, warlock, wizard]
+    enabled: false
+    bonuses:
+      "resource": [5, 5, 5, 7]
+      "heal_on_kill": [~, 0.7, 1.6, 2.2]
+  magicheskoy_voli:
+    name: "Магической воли"
+    origin: royal-quest
+    types: [ARMOR, SHIELD, WEAPON]
+    classes: [mage, warlock, wizard]
+    enabled: false
+    bonuses:
+      "resource": [5, 8, 12, 17]
+  magicheskoy_zavisti:
+    name: "Магической зависти"
+    origin: royal-quest
+    types: [ARMOR, SHIELD, WEAPON]
+    classes: [mage, warlock, wizard]
+    enabled: false
+    bonuses:
+      "resource": [5, 8, 5, 7]
+  magicheskoy_zavisti_ancient:
+    name: "Магической зависти (Древняя)"
+    origin: royal-quest
+    types: [ARMOR, SHIELD, WEAPON]
+    classes: [mage, warlock, wizard]
+    enabled: false
+    bonuses:
+      "resource": [5, 5, 8, 11]
+      "gold_bonus": [~, 1, 2, 3]
+  magicheskoy_uboynosti:
+    name: "Магической убойности"
+    origin: royal-quest
+    types: [ARMOR, SHIELD, WEAPON]
+    classes: [mage, warlock, wizard]
+    bonuses:
+      "stat_primary": [1, 1, 1, 1]
+      "attack_damage": [~, 1.1, 1.6, 2.2]
+  meditatsii:
+    name: "Медитации"
+    origin: royal-quest
+    types: [ARMOR, SHIELD, WEAPON]
+    classes: [mage, warlock, wizard]
+    enabled: false
+    bonuses:
+      "resource": [3, 5, 4, 6]
+      "stat_primary": [1, 1, 1, 1]
+      "resistance:chaos": [~, ~, 0.03, 0.04]
+  metallicheskogo_skorpiona:
+    name: "Металлического скорпиона"
+    origin: royal-quest
+    types: [ARMOR, SHIELD, WEAPON]
+    classes: [archer, assassin, crusader, dark_knight, hunter, rogue, sniper, swordsman, thief]
+    enabled: false
+    bonuses:
+      "crit_chance": [1.5, 1.6, 1.6, 2.2]
+      "resource": [~, 4, 8, 11]
+  mechty_kardinala:
+    name: "Мечты кардинала"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [mage, warlock, wizard]
+    bonuses:
+      "stat_primary": [1, 1, 1, 1]
+      "stat_agility": [~, 1, 1, 1]
+      "damage_vs:air": [~, ~, 3, 4]
+  mozgokruta:
+    name: "Мозгокрута"
+    origin: royal-quest
+    types: [ACCESSORY, ARMOR, SHIELD]
+    classes: [mage, warlock, wizard]
+    enabled: false
+    bonuses:
+      "stat_primary": [1, 1, 1, 1]
+      "proc": [1, 2, 3, 4]
+      "resource": [~, ~, 4, 6]
+  mozgokruta_ancient:
+    name: "Мозгокрута (Древняя)"
+    origin: royal-quest
+    types: [ACCESSORY, ARMOR, SHIELD]
+    classes: [mage, warlock, wizard]
+    enabled: false
+    bonuses:
+      "stat_primary": [1, 1, 1, 1]
+      "exp_bonus": [~, 2, 3, 4]
+  nahodchivogo_dzhonsa:
+    name: "Находчивого Джонса"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [archer, assassin, crusader, dark_knight, hunter, rogue, sniper, swordsman, thief]
+    bonuses:
+      "stat_luck": [1, 1, 1, 1]
+      "stat_agility": [1, 1, 1, 1]
+      "evasion": [~, ~, 2, 2]
+  nizhada:
+    name: "Нижада"
+    origin: royal-quest
+    types: [ACCESSORY, ARMOR, SHIELD, WEAPON]
+    classes: [any]
+    bonuses:
+      "armor": [1.0, 1.1, 1.6, 2.2]
+      "stat_stamina": [~, 1, 1, 1]
+  orlinogo_zreniya:
+    name: "Орлиного зрения"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [archer, hunter, sniper]
+    bonuses:
+      "range": [0.25, 0.26, 0.4, 0.56]
+      "stat_primary": [~, 1, 1, 1]
+  oruzhenostsa:
+    name: "Оруженосца"
+    origin: royal-quest
+    types: [ARMOR, SHIELD, WEAPON]
+    classes: [assassin, crusader, dark_knight, rogue, swordsman, thief]
+    bonuses:
+      "stat_primary": [1, 1, 1, 1]
+      "stat_stamina": [1, 1, 1, 2]
+  ochkarika:
+    name: "Очкарика"
+    origin: royal-quest
+    types: [ACCESSORY, ARMOR, SHIELD, WEAPON]
+    classes: [mage, warlock, wizard]
+    bonuses:
+      "stat_primary": [1, 1, 1, 1]
+      "accuracy": [~, 2, 3, 4]
+  pepla:
+    name: "Пепла"
+    origin: royal-quest
+    types: [ARMOR, WEAPON]
+    classes: [archer, assassin, crusader, dark_knight, hunter, rogue, sniper, swordsman, thief]
+    enabled: false
+    bonuses:
+      "resistance:fire": [0.02, 0.02, 0.03, 0.04]
+      "resource": [2, 5, 8, 11]
+  peschanogo_kokona:
+    name: "Песчаного кокона"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [any]
+    bonuses:
+      "max_health": [2.0, 2.1, 3.2, 3.0]
+      "resistance:fire": [~, 0.02, 0.03, 0.07]
+  pozhara:
+    name: "Пожара"
+    origin: royal-quest
+    types: [ACCESSORY]
+    classes: [any]
+    bonuses:
+      "stat_stamina": [1, 1, 1, 2]
+      "damage_vs:fire": [~, 3, 5, 4]
+  potopa:
+    name: "Потопа"
+    origin: royal-quest
+    types: [ACCESSORY]
+    classes: [any]
+    bonuses:
+      "stat_stamina": [1, 1, 1, 2]
+      "damage_vs:water": [~, 3, 3, 4]
+  predskazatelya:
+    name: "Предсказателя"
+    origin: royal-quest
+    types: [ACCESSORY, ARMOR]
+    classes: [mage, warlock, wizard]
+    bonuses:
+      "stat_primary": [1, 1, 1, 1]
+      "evasion": [~, 2, 3, 4]
+  prizrachnosti:
+    name: "Призрачности"
+    origin: royal-quest
+    types: [ACCESSORY, WEAPON]
+    classes: [any]
+    bonuses:
+      "evasion": [1, 2, 3, 3]
+      "accuracy": [1, 1, 2, 4]
+  proklyatogo_lesa:
+    name: "Проклятого леса"
+    origin: royal-quest
+    types: [ACCESSORY, ARMOR, SHIELD, WEAPON]
+    classes: [any]
+    bonuses:
+      "attack_damage": [1.0, 1.6, 1.1, 1.5]
+      "movement_speed": [~, ~, 0.008, 0.011]
+  proklyatogo_lesa_ancient:
+    name: "Проклятого леса (Древняя)"
+    origin: royal-quest
+    types: [ACCESSORY, ARMOR, SHIELD, WEAPON]
+    classes: [any]
+    enabled: false
+    bonuses:
+      "attack_damage": [1.0, 1.6, 1.1, 2.2]
+      "exp_bonus": [~, ~, 3, 3]
+  pustynnogo_kraba:
+    name: "Пустынного краба"
+    origin: royal-quest
+    types: [ARMOR, SHIELD, WEAPON]
+    classes: [archer, assassin, crusader, dark_knight, hunter, rogue, sniper, swordsman, thief]
+    enabled: false
+    bonuses:
+      "armor": [1.0, 1.1, 1.1, 1.5]
+      "resource": [~, 4, 8, 11]
+  razryvnogo_vystrela:
+    name: "Разрывного выстрела"
+    origin: royal-quest
+    types: [ACCESSORY, WEAPON]
+    classes: [archer, hunter, sniper]
+    enabled: false
+    bonuses:
+      "stat_primary": [1, 1, 1, 1]
+      "status_bleed": [1, 2, 3, 4]
+      "resource": [~, ~, ~, 6]
+  razryada:
+    name: "Разряда"
+    origin: royal-quest
+    types: [ACCESSORY]
+    classes: [any]
+    bonuses:
+      "stat_stamina": [1, 1, 1, 2]
+      "damage_vs:air": [~, 3, 3, 4]
+  roskoshi:
+    name: "Роскоши"
+    origin: royal-quest
+    types: [ACCESSORY]
+    classes: [any]
+    bonuses:
+      "stat_luck": [1, 1, 1, 1]
+      "movement_speed": [~, 0.005, 0.008, 0.011]
+  roskoshi_ancient:
+    name: "Роскоши (Древняя)"
+    origin: royal-quest
+    types: [ACCESSORY]
+    classes: [any]
+    enabled: false
+    bonuses:
+      "stat_luck": [1, 1, 1, 1]
+      "gold_bonus": [~, 2, 2, 4]
+  svetlyachka:
+    name: "Светлячка"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [archer, assassin, crusader, dark_knight, hunter, rogue, sniper, swordsman, thief]
+    enabled: false
+    bonuses:
+      "stat_luck": [1, 1, 1, 1]
+      "resource": [~, ~, 8, 11]
+  slugi_kardinala:
+    name: "Слуги кардинала"
+    origin: royal-quest
+    types: [ACCESSORY]
+    classes: [any]
+    bonuses:
+      "stat_luck": [1, 1, 1, 1]
+      "evasion": [~, 2, 2, 2]
+      "damage_vs:fire": [~, ~, 3, 4]
+  smertelnoy_britvy:
+    name: "Смертельной бритвы"
+    origin: royal-quest
+    types: [WEAPON]
+    classes: [assassin, crusader, dark_knight, mage, rogue, swordsman, thief, warlock, wizard]
+    bonuses:
+      "attack_damage": [1.0, 1.1, 1.6, 2.2]
+      "crit_chance": [~, 1.1, 1.6, 2.2]
+  sopelki:
+    name: "Сопелки"
+    origin: royal-quest
+    types: [ACCESSORY, ARMOR]
+    classes: [any]
+    bonuses:
+      "evasion": [1, 2, 3, 3]
+      "resistance:animal": [0.01, 0.02, 0.03, 0.07]
+  sohraneniya_many:
+    name: "Сохранения маны"
+    origin: royal-quest
+    types: [ARMOR, WEAPON]
+    classes: [mage, warlock, wizard]
+    enabled: false
+    bonuses:
+      "armor": [0.7, 0.7, 1.1, 1.5]
+      "resource": [2, 5, 8, 11]
+  sohraneniya_energii:
+    name: "Сохранения энергии"
+    origin: royal-quest
+    types: [ARMOR, SHIELD, WEAPON]
+    classes: [archer, assassin, crusader, dark_knight, hunter, rogue, sniper, swordsman, thief]
+    enabled: false
+    bonuses:
+      "armor": [0.7, 0.7, 1.1, 1.5]
+      "resource": [2, 5, 8, 11]
+  stalnogo_botinka:
+    name: "Стального ботинка"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [any]
+    bonuses:
+      "armor": [1.0, 0.7, 1.6, 2.2]
+      "movement_speed": [~, 0.005, 0.005, 0.007]
+  strannika_zacharovanie:
+    name: "Странника (зачарование)"
+    origin: royal-quest
+    types: [ACCESSORY, ARMOR]
+    classes: [any]
+    bonuses:
+      "stat_stamina": [1, 1, 1, 2]
+      "stat_luck": [~, 1, 1, 1]
+  strelka:
+    name: "Стрелка"
+    origin: royal-quest
+    types: [ACCESSORY, WEAPON]
+    classes: [archer, hunter, sniper]
+    bonuses:
+      "stat_primary": [1, 1, 2, 3]
+  strelkovoy_uboynosti:
+    name: "Стрелковой убойности"
+    origin: royal-quest
+    types: [ARMOR, WEAPON]
+    classes: [archer, hunter, sniper]
+    bonuses:
+      "stat_primary": [1, 1, 1, 1]
+      "attack_damage": [~, 1.1, 1.6, 2.2]
+  tantsuyuschego_lesa:
+    name: "Танцующего леса"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [any]
+    bonuses:
+      "stat_agility": [1, 1, 1, 1]
+      "attack_speed": [~, 0.08, 0.07, 0.1]
+      "crit_damage": [~, ~, 4, 6]
+  tarakana:
+    name: "Таракана"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [any]
+    bonuses:
+      "evasion": [2, 2, 3, 4]
+      "movement_speed": [~, 0.004, 0.005, 0.007]
+  udachi:
+    name: "Удачи"
+    origin: royal-quest
+    types: [ACCESSORY]
+    classes: [any]
+    bonuses:
+      "stat_luck": [1, 1, 2, 3]
+  ukusa_gadyuki:
+    name: "Укуса гадюки"
+    origin: royal-quest
+    types: [ACCESSORY, WEAPON]
+    classes: [any]
+    bonuses:
+      "status_poison": [3, 2, 3, 4]
+      "accuracy": [~, 2, 3, 4]
+  uchenika_ubiytsy:
+    name: "Ученика-убийцы"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [archer, assassin, crusader, dark_knight, hunter, rogue, sniper, swordsman, thief]
+    enabled: false
+    bonuses:
+      "resource": [5, 4, 5, 7]
+  uchenika_ubiytsy_ancient:
+    name: "Ученика-убийцы (Древняя)"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [archer, assassin, crusader, dark_knight, hunter, rogue, sniper, swordsman, thief]
+    enabled: false
+    bonuses:
+      "exp_bonus": [2, 3, 2, 4]
+      "resource": [~, ~, 8, 7]
+  fortuny:
+    name: "Фортуны"
+    origin: royal-quest
+    types: [WEAPON, ARMOR, SHIELD, ACCESSORY]
+    classes: [any]
+    bonuses:
+      "stat_luck": [1, 1, 1, 1]
+      "max_health": [~, ~, 2.1, 4.5]
+  shipostrela:
+    name: "Шипострела"
+    origin: royal-quest
+    types: [ACCESSORY, WEAPON]
+    classes: [archer, hunter, sniper]
+    bonuses:
+      "stat_primary": [1, 1, 1, 2]
+      "stat_luck": [~, ~, 1, 1]
+  egregora:
+    name: "Эгрегора"
+    origin: royal-quest
+    types: [ARMOR, SHIELD]
+    classes: [archer, assassin, crusader, dark_knight, hunter, rogue, sniper, swordsman, thief]
+    enabled: false
+    bonuses:
+      "armor": [1.0, 0.7, 1.1, 2.2]
+      "resource": [~, 5, 8, 7]
+  ekzortsizma:
+    name: "Экзорцизма"
+    origin: royal-quest
+    types: [ARMOR]
+    classes: [any]
+    bonuses:
+      "damage_vs:monster": [2, 3, 3, 4]
+      "stat_luck": [1, 1, 1, 2]
+  yadovitoy_bzykalki:
+    name: "Ядовитой бзыкалки"
+    origin: royal-quest
+    types: [ACCESSORY, WEAPON]
+    classes: [any]
+    bonuses:
+      "status_poison": [3, 2, 3, 4]
+      "attack_speed": [~, 0.08, 0.13, 0.18]
