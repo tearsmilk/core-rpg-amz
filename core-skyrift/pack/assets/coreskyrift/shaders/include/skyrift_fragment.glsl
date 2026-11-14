@@ -141,13 +141,16 @@ vec3 sr_hell(vec3 d, float sd, float time) {
 // ---- G 97: the rift across the sky and hell inside it.
 vec4 sr_rift(vec3 d) {
     float r = srParam;
+    // srParam is flat (one value per quad), so this early return is uniform for the whole primitive and keeps
+    // fwidth below in uniform control flow; it skips all the noise during the fog-in stage.
+    if (r <= 0.002) return vec4(0.0);
     float time = sr_time();
     float up = max(d.y, 0.002);
     vec2 uv = sr_plane(vec3(d.x, up, d.z), 0.0);
     float jag;
     float sd = sr_rift_sd(uv, r, jag);
     float aa = clamp(fwidth(sd), 0.02, 40.0);
-    if (r <= 0.002 || d.y <= 0.0) return vec4(0.0);
+    if (d.y <= 0.0) return vec4(0.0);
     float openF = clamp((r - SR_CRACK_END) / (1.0 - SR_CRACK_END), 0.0, 1.0);
     float horizon = smoothstep(0.012, 0.08, d.y);
     // Lightning-like flicker while the crack grows and when it snaps shut.
@@ -179,10 +182,11 @@ vec4 sr_rift(vec3 d) {
         col += SR_MOLTEN * lip * 1.2 * (1.0 - charred * 0.5);
         a = max(a, lip);
         // Fine side cracks of space around the young crack.
-        if (r < 0.65) {
+        float crackReach = 26.0 + 30.0 * openF;
+        if (r < 0.65 && sd < crackReach) {   // Voronoi only where the cracks can show
             vec3 vo = sr_voronoi(uv / 14.0);
             float line = 1.0 - smoothstep(0.0, 0.035, vo.y - vo.x);
-            float near = 1.0 - smoothstep(4.0, 26.0 + 30.0 * openF, sd);
+            float near = 1.0 - smoothstep(4.0, crackReach, sd);
             float k = line * near * (1.0 - smoothstep(0.35, 0.65, r)) * smoothstep(0.03, 0.12, r) * flick;
             col = mix(col, SR_MOLTEN * 1.2, k);
             a = max(a, k * 0.9);

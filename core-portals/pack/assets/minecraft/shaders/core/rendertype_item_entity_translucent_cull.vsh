@@ -8,6 +8,10 @@
 #moj_import <coreportals:portal_vertex.glsl>
 // <<< coreportals hook <<<
 
+// >>> coreskyrift hook (1/2): import >>>
+#moj_import <coreskyrift:skyrift_vertex.glsl>
+// <<< coreskyrift hook <<<
+
 // rezusmenu: vanilla 1.21.11 shader plus two cases for the in-world menu.
 // Shared file: identical copy in core-portals/pack and rezusmenu/pack (both systems need it in the same pack).
 //  1. Shader cursor: an item tinted with the marker colour (254, G, 254) through the item model tint
@@ -90,4 +94,8 @@ void main() {
     // >>> coreportals hook (2/2): portal vertices are unlit, the fragment shader paints them >>>
     if (cp_vertex(Color, gl_VertexID)) vertexColor = vec4(1.0);
     // <<< coreportals hook <<<
+
+    // >>> coreskyrift hook (2/2): sky rift vertices are unlit, the fragment shader paints them >>>
+    if (sr_vertex(Color, gl_VertexID, Position, Normal, UV2)) vertexColor = vec4(1.0);
+    // <<< coreskyrift hook <<<
 }

@@ -1,6 +1,5 @@
 package core.amazake.systems.coreskyrift;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -417,10 +416,5 @@ public record Settings(
 
     private static String fmt(final double v) {
         return v == Math.rint(v) ? Long.toString((long) v) : Double.toString(v);
-    }
-
-    /** Список id через запятую (для журнала). */
-    public List<String> mobIds() {
-        return new ArrayList<>(this.mobs.list().keySet());
     }
 }

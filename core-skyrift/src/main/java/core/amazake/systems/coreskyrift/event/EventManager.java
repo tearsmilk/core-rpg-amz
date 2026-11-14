@@ -28,6 +28,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -102,6 +103,11 @@ public final class EventManager implements Listener, MobSpawner.Owner {
         if (!RiftItem.is(item) || event.getHand() == null) {
             return;
         }
+        // Защита территорий (WorldGuard и т. п.) запрещает использование предмета так. isCancelled() не годится:
+        // ПКМ по воздуху приходит уже «отменённым» (useInteractedBlock = DENY).
+        if (event.useItemInHand() == Event.Result.DENY) {
+            return;
+        }
         event.setCancelled(true);
         final Player player = event.getPlayer();
         if (event.getHand() == EquipmentSlot.OFF_HAND) {
@@ -131,12 +137,20 @@ public final class EventManager implements Listener, MobSpawner.Owner {
             Text.send(player, s, refused);
             return;
         }
+        final PlayerInventory inv = player.getInventory();
+        if (!RiftItem.is(inv.getItemInMainHand())) {
+            return;
+        }
+        // Сначала событие (create ещё раз проверяет лимиты под замком), и только если оно создано — расход и
+        // задержка: при гонке двух запусков проигравший ничего не теряет.
+        final SkyEvent e = this.create(player.getWorld(), loc.getX(), loc.getY(), loc.getZ(), yaw(s, loc.getYaw()),
+            player.getName(), s);
+        if (e == null) {
+            Text.send(player, s, s.messages().tooMany());
+            return;
+        }
         if (s.item().consume() && player.getGameMode() != GameMode.CREATIVE) {
-            final PlayerInventory inv = player.getInventory();
             final ItemStack inHand = inv.getItemInMainHand();
-            if (!RiftItem.is(inHand)) {
-                return;
-            }
             if (inHand.getAmount() > 1) {
                 inHand.setAmount(inHand.getAmount() - 1);
                 inv.setItemInMainHand(inHand);
@@ -146,12 +160,6 @@ public final class EventManager implements Listener, MobSpawner.Owner {
         }
         if (s.item().cooldownSeconds() > 0) {
             this.cooldownUntil.put(player.getUniqueId(), now + s.item().cooldownSeconds() * 1000L);
-        }
-        final SkyEvent e = this.create(player.getWorld(), loc.getX(), loc.getY(), loc.getZ(), yaw(s, loc.getYaw()),
-            player.getName(), s);
-        if (e == null) {
-            Text.send(player, s, s.messages().tooMany());
-            return;
         }
         Text.send(player, s, s.messages().cast());
         this.join(player, e);
@@ -245,6 +253,7 @@ public final class EventManager implements Listener, MobSpawner.Owner {
     /** Глобальный поток, каждый тик. */
     private void tick() {
         final long g = ++this.globalTick;
+        this.spawner.expire();   // и без событий: точки, чей моб не пришёл, не должны висеть вечно
         if (this.events.isEmpty()) {
             return;
         }
@@ -266,7 +275,6 @@ public final class EventManager implements Listener, MobSpawner.Owner {
                 this.wave(e, live);
             }
         }
-        this.spawner.expire();
         if (g % DISCOVER_STEP == 0) {
             for (final Player p : Bukkit.getOnlinePlayers()) {
                 if (!this.viewers.containsKey(p.getUniqueId())) {
@@ -389,6 +397,10 @@ public final class EventManager implements Listener, MobSpawner.Owner {
     public void arrived(final UUID eventId, final Entity mob) {
         final SkyEvent e = this.events.get(eventId);
         if (e == null) {
+            // Событие уже убрано (конец, stop), а команда спавна была в пути: моб без хозяина — убрать.
+            if (this.settings.get().mobs().despawnOnEnd()) {
+                this.spawner.despawn(Map.of(mob.getUniqueId(), mob));
+            }
             return;
         }
         e.pending.updateAndGet(v -> Math.max(0, v - 1));
@@ -397,6 +409,12 @@ public final class EventManager implements Listener, MobSpawner.Owner {
         if (e.finished() && e.settings.mobs().despawnOnEnd()) {
             this.spawner.despawn(Map.of(mob.getUniqueId(), mob));   // пришёл после конца
         }
+    }
+
+    @Override
+    public boolean live(final UUID eventId) {
+        final SkyEvent e = this.events.get(eventId);
+        return e != null && !e.finished();
     }
 
     @Override
@@ -446,7 +464,7 @@ public final class EventManager implements Listener, MobSpawner.Owner {
         return n;
     }
 
-    /** Закрыть событие, в котором игрок (зритель), или ближайшее к нему в его мире. 0/1. */
+    /** Закрыть событие, в котором игрок (зритель), или ближайшее к нему в его мире. 0/1. Поток игрока. */
     public int stopFor(final Player p) {
         SkyEvent target = null;
         final SkyViewer v = this.viewers.get(p.getUniqueId());

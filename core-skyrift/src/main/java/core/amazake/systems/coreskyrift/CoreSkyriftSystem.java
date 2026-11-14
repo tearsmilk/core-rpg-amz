@@ -27,6 +27,7 @@ public final class CoreSkyriftSystem implements AmazakeSystem {
         this.events = m;
         context.registerListener(m);
         context.registerListener(m.spawner());
+        context.registerListener(new RiftGuard());
         context.registerCommand(new SkyriftCommand(context, this.settings::get, m, this::reloadNow));
         m.start();
         for (final Player player : Bukkit.getOnlinePlayers()) {

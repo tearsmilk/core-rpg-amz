@@ -128,6 +128,10 @@ final class SkyriftCommand extends Command {
                 Text.send(sender, s, s.messages().usage());
                 return;
             }
+            if (!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z)) {   // NaN/Infinity парсятся
+                Text.send(sender, s, s.messages().usage());
+                return;
+            }
             final String refused = this.events.refuse(world, x, z, s);
             if (refused != null) {
                 Text.send(sender, s, refused);
@@ -175,10 +179,14 @@ final class SkyriftCommand extends Command {
                 Text.send(sender, s, s.messages().playerNotFound(), Placeholder.unparsed("player", args[1]));
                 return;
             }
-            n = this.events.stopFor(target);
-        } else {
-            n = this.events.stopAll();
+            // Место игрока читается только в его потоке.
+            if (!this.context.runOnceForPlayer(target, () -> Text.send(sender, s, s.messages().stopped(),
+                Placeholder.unparsed("count", Integer.toString(this.events.stopFor(target)))))) {
+                Text.send(sender, s, s.messages().playerNotFound(), Placeholder.unparsed("player", args[1]));
+            }
+            return;
         }
+        n = this.events.stopAll();
         Text.send(sender, s, s.messages().stopped(), Placeholder.unparsed("count", Integer.toString(n)));
     }
 

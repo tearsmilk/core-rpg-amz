@@ -62,6 +62,9 @@ public final class MobSpawner implements Listener {
 
         /** Точка не дождалась моба (любой поток). */
         void expired(UUID eventId);
+
+        /** Событие ещё идёт (не закончилось и не убрано). Любой поток. */
+        boolean live(UUID eventId);
     }
 
     private record Pending(UUID eventId, UUID world, double x, double y, double z, long createdMs) {
@@ -132,26 +135,58 @@ public final class MobSpawner implements Listener {
         }
     }
 
-    /** Поток региона моба. */
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onSpawn(final CreatureSpawnEvent event) {
-        if (event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.CUSTOM || this.pending.isEmpty()) {
-            return;
-        }
-        final LivingEntity mob = event.getEntity();
-        if (!mob.getPersistentDataContainer().has(CORE_MOBS_KEY, PersistentDataType.STRING)) {
-            return;
-        }
-        final Location at = event.getLocation();
+    /**
+     * Ждущая точка для этого спавна: сначала точка идущего события, иначе любая (события, которое уже кончилось:
+     * команда была в пути). {@code null} — не наш моб.
+     */
+    private Pending match(final Location at) {
         final UUID world = at.getWorld().getUID();
-        Pending match = null;
+        Pending dead = null;
         for (final Pending p : this.pending) {
             if (p.world().equals(world) && Math.abs(p.x() - at.getX()) < MATCH && Math.abs(p.y() - at.getY()) < MATCH
                 && Math.abs(p.z() - at.getZ()) < MATCH) {
-                match = p;
-                break;
+                if (this.owner.live(p.eventId())) {
+                    return p;
+                }
+                if (dead == null) {
+                    dead = p;
+                }
             }
         }
+        return dead;
+    }
+
+    private static boolean ours(final CreatureSpawnEvent event) {
+        return event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.CUSTOM
+            && event.getEntity().getPersistentDataContainer().has(CORE_MOBS_KEY, PersistentDataType.STRING);
+    }
+
+    /**
+     * Моб пришёл к событию, которое уже кончилось (или убрано), а мобы событий убираются в конце: не дать ему
+     * появиться вовсе (отмена до MONITOR). Поток региона моба.
+     */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onLateSpawn(final CreatureSpawnEvent event) {
+        if (this.pending.isEmpty() || !ours(event) || !this.settings.get().mobs().despawnOnEnd()) {
+            return;
+        }
+        final Pending match = this.match(event.getLocation());
+        if (match == null || this.owner.live(match.eventId()) || !this.pending.remove(match)) {
+            return;
+        }
+        event.setCancelled(true);
+        this.owner.expired(match.eventId());
+    }
+
+    /** Поток региона моба. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onSpawn(final CreatureSpawnEvent event) {
+        if (this.pending.isEmpty() || !ours(event)) {
+            return;
+        }
+        final LivingEntity mob = event.getEntity();
+        final Location at = event.getLocation();
+        final Pending match = this.match(at);
         if (match == null || !this.pending.remove(match)) {
             return;
         }
@@ -197,23 +232,26 @@ public final class MobSpawner implements Listener {
             final Location at = mob.getLocation();
             final World w = at.getWorld();
             final double h = Math.max(0, top - at.getY());
+            // Несколько пакетов на шаг, а не по частице на пакет; force = false — только тем, кто рядом (обычная
+            // дальность частиц), а не всем в 512 блоках.
             final int n = (int) Math.min(18, 4 + h / 2);
-            for (int i = 0; i < n; i++) {
-                final double y = at.getY() + 1 + Math.random() * h;
-                w.spawnParticle(Particle.DUST, at.getX(), y, at.getZ(), 1, 0.25, 0.25, 0.25, 0, blood, true);
+            w.spawnParticle(Particle.DUST, at.getX(), at.getY() + 1 + h / 2, at.getZ(), n, 0.25, Math.max(0.25, h / 4),
+                0.25, 0, blood, false);
+            w.spawnParticle(Particle.DUST, at.getX(), at.getY() + 1, at.getZ(), 4, 0.4, 0.6, 0.4, 0, ember, false);
+            w.spawnParticle(Particle.FALLING_LAVA, at.getX(), at.getY() + 2, at.getZ(), 2, 0.4, 1.5, 0.4, 0, null,
+                false);
+            if (age[0] % 4 == 0) {
+                w.spawnParticle(Particle.SMALL_FLAME, at.getX(), at.getY() + 0.8, at.getZ(), 3, 0.3, 0.5, 0.3, 0.01,
+                    null, false);
             }
-            w.spawnParticle(Particle.DUST, at.getX(), at.getY() + 1, at.getZ(), 4, 0.4, 0.6, 0.4, 0, ember, true);
-            w.spawnParticle(Particle.FALLING_LAVA, at.getX(), at.getY() + 2, at.getZ(), 2, 0.4, 1.5, 0.4, 0, null, true);
-            w.spawnParticle(Particle.SMALL_FLAME, at.getX(), at.getY() + 0.8, at.getZ(), 3, 0.3, 0.5, 0.3, 0.01, null,
-                true);
             if (age[0] % 8 == 0) {
                 w.spawnParticle(Particle.LARGE_SMOKE, at.getX(), at.getY() + 1.5, at.getZ(), 2, 0.3, 0.6, 0.3, 0.01,
-                    null, true);
+                    null, false);
             }
             if (!fell[0] && age[0] > 4 && isOnGround(mob)) {
                 fell[0] = true;
-                w.spawnParticle(Particle.LAVA, at.getX(), at.getY() + 0.2, at.getZ(), 10, 0.6, 0.1, 0.6, 0, null, true);
-                w.spawnParticle(Particle.DUST, at.getX(), at.getY() + 0.1, at.getZ(), 30, 1.2, 0.05, 1.2, 0, blood, true);
+                w.spawnParticle(Particle.LAVA, at.getX(), at.getY() + 0.2, at.getZ(), 10, 0.6, 0.1, 0.6, 0, null, false);
+                w.spawnParticle(Particle.DUST, at.getX(), at.getY() + 0.1, at.getZ(), 30, 1.2, 0.05, 1.2, 0, blood, false);
                 if (fx.sounds()) {
                     w.playSound(at, Sound.ENTITY_GENERIC_EXPLODE, SoundCategory.HOSTILE, 0.4f, 0.7f);
                 }
