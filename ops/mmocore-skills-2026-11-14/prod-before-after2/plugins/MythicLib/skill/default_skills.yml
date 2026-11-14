@@ -1,0 +1,5304 @@
+AMBERS:
+  name: 'Янтари маны'
+  lore:
+    - 'Магический урон с шансом &630%&7'
+    - 'оставляет на земле янтарь.'
+    - ''
+    - 'Подобрав его, вы восстанавливаете &9{percent}%&7 недостающей маны.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/ambers
+  source: default:AMBERS
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0
+    delay:
+      player: 0
+      name: 'Задержка'
+      item: 0
+    mana:
+      player:
+        base: 2.0
+        per-level: 1.0
+      format: 0.#
+      name: 'Мана'
+      item: 0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      player:
+        base: 3.0
+        per-level: -0.1
+        max: 3.0
+        min: 1.0
+      name: 'Перезарядка'
+      item: 0
+    percent:
+      player:
+        base: 10.0
+        per-level: 1.1
+        max: 20.0
+        min: 10.0
+      name: 'Процент'
+      item: 0
+ARCANE_HAIL:
+  name: 'Чародейский град'
+  lore:
+    - 'Обрушьте на врагов быстрый'
+    - 'град магических снарядов.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/arcane_hail
+  source: mythiclib:rq_arcane_hail
+  # Change types of damage dealt
+  damage_types: [MAGIC, SKILL]
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 2
+        per-level: -0.1
+        min: 1
+    mana:
+      player:
+        base: 2
+        per-level: 1.1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 10
+        per-level: -0.3
+        min: 7
+        max: 10
+      name: 'Перезарядка'
+      item: 10.0
+    duration:
+      player:
+        base: 4
+        per-level: 1
+      format: 0.#
+      name: 'Длительность'
+      item: 4.0
+    damage:
+      player:
+        base: 3
+        per-level: 1
+      name: 'Урон'
+      item: 3.0
+    radius:
+      player:
+        base: 4
+        per-level: 0.5
+      name: 'Радиус'
+      item: 3.0
+ARCANE_RIFT:
+  name: 'Чародейский разлом'
+  lore:
+    - 'Призовите магический разлом,'
+    - 'чтобы нанести урон врагу.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:ARCANE_RIFT
+  # Change types of damage dealt
+  damage_types: [MAGIC, SKILL]
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player: 0
+    cooldown:
+      player:
+        base: 6
+        per-level: -0.5
+      name: 'Перезарядка'
+      item: 10.0
+    mana:
+      player:
+        base: 4
+        per-level: 1.1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+      name: 'Выносливость'
+      item: 0.0
+    duration:
+      player:
+        base: 2
+        per-level: 1
+      format: 0.#
+      name: 'Длительность'
+      item: 1.5
+    damage:
+      player:
+        base: 4
+        per-level: 0.5
+      name: 'Урон'
+      item: 5.0
+    amplifier:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Сила эффекта'
+      item: 2.0
+    speed:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Скорость'
+      item: 1.0
+BACKSTAB:
+  name: 'Удар в спину'
+  lore:
+    - 'Удары в спину наносят &c{extra}%&7 урона.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/backstab
+  source: default:BACKSTAB
+  # Change types of damage dealt
+  damage_types: [PHYSICAL, SKILL]
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0
+    delay:
+      player: 0
+      name: 'Задержка'
+      item: 0
+    cooldown:
+      player:
+        base: 2.0
+        per-level: -0.08
+        min: 1.2
+        max: 2.0
+      name: 'Перезарядка'
+      item: 0
+    mana:
+      player:
+        base: 8.0
+        per-level: 1.0
+      format: 0.#
+      name: 'Мана'
+      item: 0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0
+    extra:
+      player:
+        base: 50.0
+        per-level: 20.0
+      name: 'Дополнительно'
+      item: 0
+BLACK_HOLE:
+  name: 'Чёрная дыра'
+  lore:
+    - 'Затяните цель в чёрную дыру:'
+    - 'она не сможет двигаться'
+    - 'всё время действия скилла.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/black_hole
+  source: mythiclib:rq_black_hole
+  parameters:
+    delay:
+      player: 0
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    mana:
+      player:
+        base: 4
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 4.0
+        per-level: -0.16
+        min: 2.4
+        max: 4.0
+      name: 'Перезарядка'
+      item: 35.0
+    duration:
+      player:
+        base: 3
+        per-level: 0.2
+        min: 3
+        max: 5
+      format: 0.#
+      name: 'Длительность'
+      item: 2.0
+    radius:
+      player:
+        base: 4
+        per-level: 0.2
+        min: 4
+        max: 6
+      name: 'Радиус'
+      item: 2.0
+BLIND:
+  name: 'Ослепление'
+  lore:
+    - 'Окутайте врагов тёмной пеленой'
+    - 'и ослепите их.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/blind
+  source: default:BLIND
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player: 0
+    mana:
+      player:
+        base: 5
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 5.0
+        per-level: -0.2
+        min: 3.0
+        max: 5.0
+      name: 'Перезарядка'
+      item: 9.0
+    duration:
+      player:
+        base: 5
+        per-level: 1
+      format: 0.#
+      name: 'Длительность'
+      item: 5.0
+BLINK:
+  name: 'Скачок'
+  lore:
+    - Мгновенно переместитесь на &b{range}&7 блоков
+    - вперёд по направлению взгляда.
+    - Останавливается перед стеной.
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/blink
+  source: mythiclib:rq_blink
+  parameters:
+    delay:
+      player: 0
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    mana:
+      player:
+        base: 4
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 4
+        per-level: -0.1
+        min: 1.5
+      name: 'Перезарядка'
+      item: 10.0
+    range:
+      player:
+        base: 5
+        per-level: 0.2
+        min: 5
+        max: 7
+      name: 'Дальность'
+      item: 8.0
+BLIZZARD:
+  name: 'Метель'
+  lore:
+    - 'Выпустите град снежков'
+    - 'прямо во врагов.'
+    - 'Цельтесь точнее!'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: SNOWBALL
+  source: default:BLIZZARD
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player: 0
+    mana:
+      player:
+        base: 10
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 1
+        per-level: 1
+      name: 'Перезарядка'
+      item: 10.0
+    duration:
+      player:
+        base: 5
+        per-level: 1
+      format: 0.#
+      name: 'Длительность'
+      item: 2.5
+    damage:
+      player:
+        base: 4
+        per-level: 1
+      name: 'Урон'
+      item: 2.0
+    inaccuracy:
+      player:
+        base: 4
+        per-level: -0.5
+      name: 'Разброс'
+      item: 10.0
+    force:
+      player:
+        base: 3
+        per-level: 1
+      name: 'Сила'
+      item: 1.0
+BLOODBATH:
+  name: 'Кровавая баня'
+  lore:
+    - 'Похищает &c{amount}&7 сытости у цели'
+    - 'и восстанавливает ваш голод.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/bloodbath
+  source: default:BLOODBATH
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 2
+        per-level: -0.1
+    mana:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 2.0
+        per-level: -0.08
+        min: 1.2
+        max: 2.0
+      name: 'Перезарядка'
+      item: 8.0
+    amount:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Количество'
+      item: 2.0
+BOUNCY_FIREBALL:
+  name: 'Рикошетный шар'
+  categories:
+    - ACTIVE
+  lore:
+    - 'Выпустите рикошетящий огненный шар,'
+    - 'который наводится на цель'
+    - 'и обрушивается разрушительным ударом.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: FIRE_CHARGE
+  source: default:BOUNCY_FIREBALL
+  # Change types of damage dealt
+  damage_types: [SKILL, MAGIC, PROJECTILE]
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 2
+        per-level: -0.1
+    mana:
+      player:
+        base: 5
+        per-level: 2
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 4
+        per-level: 1
+      name: 'Перезарядка'
+      item: 20.0
+    damage:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Урон'
+      item: 5.0
+    ignite:
+      player:
+        base: 5
+        per-level: 1
+      name: 'Поджигание'
+      item: 40.0
+    radius:
+      player:
+        base: 6
+        per-level: 2
+      name: 'Радиус'
+      item: 4.0
+    speed:
+      player:
+        base: 0.3
+        per-level: 0.1
+      name: 'Скорость'
+      item: 1.0
+BUNNY_MODE:
+  name: 'Режим кролика'
+  lore:
+    - 'Быстро перемещайтесь прыжками'
+    - 'с отличной подвижностью.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: RABBIT_FOOT
+  source: default:BUNNY_MODE
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 1
+        per-level: -0.05
+    mana:
+      player:
+        base: 8
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 10
+        per-level: 1
+      name: 'Перезарядка'
+      item: 50.0
+    duration:
+      player:
+        base: 6
+        per-level: 1
+      format: 0.#
+      name: 'Длительность'
+      item: 20.0
+    jump-force:
+      player:
+        base: 5
+        per-level: 1
+      name: 'Сила прыжка'
+      item: 1.0
+    speed:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Скорость'
+      item: 1.0
+BURN:
+  name: 'Ожог'
+  lore:
+    - 'Подожгите цель вспышкой пламени.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:BURN
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player: 0
+    mana:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 8
+        per-level: 1
+      name: 'Перезарядка'
+      item: 8.0
+    duration:
+      player:
+        base: 4
+        per-level: 1
+      format: 0.#
+      name: 'Длительность'
+      item: 3.0
+BURNING_HANDS:
+  name: 'Пылающие руки'
+  lore:
+    - 'Соберите магическую энергию и выбросьте'
+    - 'конус пламени в сторону цели.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: CAMPFIRE
+  source: default:BURNING_HANDS
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player: 0
+    mana:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Перезарядка'
+      item: 10.0
+    duration:
+      player:
+        base: 2
+        per-level: 1
+      format: 0.#
+      name: 'Длительность'
+      item: 3.0
+    damage:
+      player:
+        base: 4
+        per-level: 1
+      name: 'Урон'
+      item: 2.0
+CHICKEN_WRAITH:
+  name: 'Куриный призрак'
+  lore:
+    - 'Устройте хаос быстрой'
+    - 'стрельбой яйцами.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: EGG
+  source: default:CHICKEN_WRAITH
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 2
+        per-level: -0.1
+    mana:
+      player:
+        base: 8
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Перезарядка'
+      item: 10.0
+    duration:
+      player:
+        base: 4
+        per-level: 1
+      format: 0.#
+      name: 'Длительность'
+      item: 2.5
+    damage:
+      player:
+        base: 1
+        per-level: 1.5
+      name: 'Урон'
+      item: 2.0
+    inaccuracy:
+      player:
+        base: 4
+        per-level: -0.5
+      name: 'Разброс'
+      item: 10.0
+    force:
+      player:
+        base: 4
+        per-level: 1
+      name: 'Сила'
+      item: 1.0
+CIRCULAR_SLASH:
+  name: 'Круговой удар'
+  lore:
+    - 'Нанесите мощный удар,'
+    - 'отбрасывающий всех вокруг.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/circular_slash
+  source: default:CIRCULAR_SLASH
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player: 0
+    mana:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 2.0
+        per-level: -0.08
+        min: 1.2
+        max: 2.0
+      name: 'Перезарядка'
+      item: 10.0
+    damage:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Урон'
+      item: 6.0
+    knockback:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Отбрасывание'
+      item: 1.0
+    radius:
+      player:
+        base: 3
+        per-level: 1
+      name: 'Радиус'
+      item: 3.0
+COMBO_ATTACK:
+  name: 'Серия ударов'
+  lore:
+    - 'Яростно рубите цель &8{count}&7 раз'
+    - 'и наносите в сумме &8{damage}&7 урона.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/combo_attack
+  source: default:COMBO_ATTACK
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0
+    delay:
+      player: 0
+      name: 'Задержка'
+      item: 0
+    mana:
+      player:
+        base: 10.0
+        per-level: -0.1
+        max: 5.0
+        min: 3.0
+      name: 'Мана'
+      item: 0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      player:
+        base: 20.0
+        per-level: -0.1
+        max: 20.0
+        min: 5.0
+      name: 'Перезарядка'
+      item: 0
+    damage:
+      player:
+        base: 9.0
+        per-level: 1.3
+      format: 0.#
+      name: 'Урон'
+      item: 0
+    count:
+      player:
+        base: 3.0
+        per-level: 1.2
+      name: 'Количество'
+      item: 0
+CONFUSE:
+  name: 'Замешательство'
+  lore:
+    - 'Сбейте врагов с толку,'
+    - 'мгновенно развернув цель на 180 градусов.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/confuse
+  source: default:CONFUSE
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player: 0
+    mana:
+      player:
+        base: 20
+        per-level: -1
+        min: 10
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 2
+        per-level: -0.1
+        min: 1
+      name: 'Перезарядка'
+      item: 7.0
+CONTAMINATION:
+  name: 'Заражение'
+  lore:
+    - Заражает область в точке прицела и каждую
+    - секунду наносит &c{damage}&7 урона врагам вокруг
+    - в течение &c{duration}&7 с.
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/contamination
+  source: mythiclib:rq_contamination
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player: 0
+    mana:
+      player:
+        base: 6
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 8
+        per-level: -0.2
+        min: 5
+        max: 8
+      name: 'Перезарядка'
+      item: 10.0
+    duration:
+      player:
+        base: 4
+        per-level: 1
+      format: 0.#
+      name: 'Длительность'
+      item: 8.0
+    damage:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Урон'
+      item: 2.0
+CONTROL:
+  name: 'Контроль'
+  lore:
+    - 'Цель замедляется на &8{duration}&7 с.'
+    - 'По ЛКМ её отбрасывает в ту сторону,'
+    - 'куда вы смотрите.'
+    - ''
+    - 'Чем выше уровень скилла, тем сильнее отброс.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: MAGENTA_DYE
+  source: default:CONTROL
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0
+    delay:
+      player: 0
+      name: 'Задержка'
+      item: 0
+    mana:
+      player:
+        base: 15.0
+        per-level: 1.5
+      name: 'Мана'
+      item: 0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      player:
+        base: 18.0
+        per-level: -0.3
+        max: 20.0
+        min: 10.0
+      name: 'Перезарядка'
+      item: 0
+    duration:
+      player:
+        base: 2.0
+        per-level: 1.0
+      format: 0.#
+      name: 'Длительность'
+      item: 0
+    knockback:
+      player:
+        base: 30.0
+        per-level: 3.0
+      name: 'Отбрасывание'
+      item: 0
+CORROSION:
+  name: 'Коррозия'
+  lore:
+    - 'Мгновенно разъедает область вокруг цели,'
+    - 'накладывая Яд &c{amplifier}&7 на &8{duration}&7 с'
+    - 'всем врагам в радиусе &8{radius}&7 блоков.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/corrosion
+  source: mythiclib:rq_corrosion
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player: 0
+    mana:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 8
+        per-level: -0.2
+        min: 5
+        max: 8
+      name: 'Перезарядка'
+      item: 10.0
+    amplifier:
+      player:
+        base: 1
+        per-level: 0.15
+        min: 1
+        max: 2
+      name: 'Сила эффекта'
+      item: 1.0
+    radius:
+      player:
+        base: 4
+        per-level: 0.3
+        min: 4
+        max: 7
+      name: 'Радиус'
+      item: 5.0
+    duration:
+      player:
+        base: 4
+        per-level: 0.5
+        min: 4
+        max: 8
+      format: 0.#
+      name: 'Длительность'
+      item: 4.0
+CORRUPT:
+  name: 'Порча'
+  lore:
+    - 'Портит область, нанося &c{damage}&7 мгновенного'
+    - 'урона врагам в радиусе &8{radius}&7 блоков,'
+    - 'и накладывает Иссушение &c{amplifier}&7 на &8{duration}&7 с.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/corrupt
+  source: mythiclib:rq_corrupt
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player: 0
+    mana:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 6
+        per-level: -0.15
+        min: 4
+        max: 6
+      name: 'Перезарядка'
+      item: 10.0
+    radius:
+      player: 2.7
+    duration:
+      player:
+        base: 4
+        per-level: 1
+      format: 0.#
+      name: 'Длительность'
+      item: 4.0
+    damage:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Урон'
+      item: 8.0
+    amplifier:
+      player:
+        base: 0
+        per-level: 0.2
+        min: 0
+        max: 2
+      name: 'Сила эффекта'
+      item: 1.0
+CORRUPTED_FANGS:
+  name: 'Порченые клыки'
+  lore:
+    - 'Призовите клыки преисподней'
+    - 'своей магией и обрушьте'
+    - 'их на цель.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:CORRUPTED_FANGS
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player: 0.5
+    mana:
+      player:
+        base: 15
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Перезарядка'
+      item: 12.0
+    damage:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Урон'
+      item: 5.0
+    fangs:
+      player:
+        base: 3
+        per-level: 2
+      name: 'Клыки'
+      item: 6.0
+CURSED_BEAM:
+  name: 'Проклятый луч'
+  lore:
+    - 'Выпустите проклятый луч тёмной энергии'
+    - 'прямо в цель и нанесите урон при попадании.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/cursed_beam
+  source: default:CURSED_BEAM
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player: 0
+    mana:
+      player:
+        base: 3.5
+        per-level: 1.1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 8.0
+        per-level: -0.32
+        min: 4.8
+        max: 8.0
+      name: 'Перезарядка'
+      item: 10.0
+    duration:
+      player:
+        base: 3
+        per-level: 1
+      format: 0.#
+      name: 'Длительность'
+      item: 5.0
+    damage:
+      player:
+        base: 4
+        per-level: 2
+      name: 'Урон'
+      item: 8.0
+DEATH_MARK:
+  name: 'Метка смерти'
+  lore:
+    - 'Пометьте цель смертельным проклятием,'
+    - 'замедляя её на &c{duration}&7 с и нанося'
+    - '&c{damage}&7 урона со временем.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/death_mark
+  source: default:DEATH_MARK
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player: 0
+    mana:
+      player:
+        base: 10
+        per-level: 1.5
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 10.0
+        per-level: -0.4
+        min: 6.0
+        max: 10.0
+      name: 'Перезарядка'
+      item: 7.0
+    duration:
+      player:
+        base: 5
+        per-level: 0.5
+      format: 0.#
+      name: 'Длительность'
+      item: 3.0
+    damage:
+      player:
+        base: 4
+        per-level: 0.1
+      name: 'Урон'
+      item: 5.0
+    amplifier:
+      player:
+        base: 1
+        per-level: 0.15
+        min: 1
+        max: 2
+      name: 'Сила эффекта'
+      item: 1.0
+DEEP_WOUND:
+  name: 'Глубокая рана'
+  lore:
+    - 'Вы пробиваете цель, нанося &c{damage}&7 урона.'
+    - 'Урон растёт до &c+{extra}%&7 в зависимости'
+    - 'от недостающего здоровья цели.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/deep_wound
+  source: default:DEEP_WOUND
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0
+    delay:
+      player: 0
+      name: 'Задержка'
+      item: 0
+    mana:
+      player:
+        base: 8.0
+        per-level: 3.0
+      name: 'Мана'
+      item: 0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      player:
+        base: 20.0
+        per-level: -0.1
+        max: 20.0
+        min: 5.0
+      name: 'Перезарядка'
+      item: 0
+    damage:
+      player:
+        base: 5.0
+        per-level: 1.5
+      format: 0.#
+      name: 'Урон'
+      item: 0
+    extra:
+      player:
+        base: 50.0
+        per-level: 20.0
+      name: 'Дополнительно'
+      item: 0
+EARTHQUAKE:
+  name: 'Землетрясение'
+  lore:
+    - 'Выпустите расходящуюся волну энергии.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:EARTHQUAKE
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player: 0
+    mana:
+      player:
+        base: 10
+        per-level: 1.3
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 10
+        per-level: 1
+      name: 'Перезарядка'
+      item: 10.0
+    duration:
+      player:
+        base: 5
+        per-level: 1
+      format: 0.#
+      name: 'Длительность'
+      item: 2.0
+    damage:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Урон'
+      item: 3.0
+    amplifier:
+      player:
+        base: 4
+        per-level: 2
+      name: 'Сила эффекта'
+      item: 1.0
+EMPOWERED_ATTACK:
+  name: 'Усиленная атака'
+  lore:
+    - 'Вы заряжаете оружие молнией.'
+    - 'Следующая атака наносит на &f{extra}%&7 больше урона'
+    - 'и перекидывается на врагов в радиусе &f{radius}&7 блоков'
+    - 'на &f{ratio}%&7 от исходного урона.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/empowered_attack
+  source: default:EMPOWERED_ATTACK
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0
+    delay:
+      player: 0
+      name: 'Задержка'
+      item: 0
+    mana:
+      player:
+        base: 4.0
+        per-level: 1.0
+      format: 0.#
+      name: 'Мана'
+      item: 0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      player:
+        base: 10.0
+        per-level: -0.2
+        max: 10.0
+        min: 5.0
+      name: 'Перезарядка'
+      item: 0
+    extra:
+      player:
+        base: 30.0
+        per-level: 8.0
+      name: 'Дополнительно'
+      item: 0
+    radius:
+      player:
+        base: 4.0
+        per-level: 1.0
+      name: 'Радиус'
+      item: 0
+    ratio:
+      player:
+        base: 30.0
+        per-level: 10.0
+        max: 100.0
+        min: 30.0
+      name: 'Доля'
+      item: 0
+EVADE:
+  name: 'Уклонение'
+  lore:
+    - 'Вы неуязвимы к урону &8{duration}&7 с.'
+    - 'Эффект сбрасывается, если вы ударите оружием.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/evade
+  source: default:EVADE
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0
+    delay:
+      player: 0
+      name: 'Задержка'
+      item: 0
+    mana:
+      player:
+        base: 8.0
+        per-level: 3.0
+      name: 'Мана'
+      item: 0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      player:
+        base: 20.0
+        per-level: -0.8
+        min: 12.0
+        max: 20.0
+      name: 'Перезарядка'
+      item: 0
+    duration:
+      player:
+        base: 2.0
+        per-level: 1.3
+        max: 10.0
+        min: 2.0
+      format: 0.#
+      name: 'Длительность'
+      item: 0
+EXPLOSIVE_TURKEY:
+  name: 'Взрывная индейка'
+  lore:
+    - 'Запустите взрывную индейку,'
+    - 'прицелившись в землю'
+    - 'рядом с целью.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:EXPLOSIVE_TURKEY
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player: 1
+    mana:
+      player:
+        base: 7
+        per-level: 1.1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Перезарядка'
+      item: 10.0
+    duration:
+      player:
+        base: 4
+        per-level: 1
+      format: 0.#
+      name: 'Длительность'
+      item: 4.0
+    damage:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Урон'
+      item: 6.0
+    knockback:
+      player:
+        base: 3
+        per-level: 1
+      name: 'Отбрасывание'
+      item: 1.0
+    radius:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Радиус'
+      item: 4.0
+FIRE_BERSERKER:
+  name: 'Огненный берсерк'
+  lore:
+    - 'Вы наносите на &c{extra}%&7 больше урона, пока горите.'
+  icon: FLINT_AND_STEEL
+  source: default:FIRE_BERSERKER
+  parameters:
+    mana:
+      player:
+        base: 2.0
+        per-level: 1.0
+        max: 0.0
+        min: 0.0
+      format: 0.#
+      name: 'Мана'
+      item: 0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0
+    extra:
+      player:
+        base: 10.0
+        per-level: 5.0
+      name: 'Дополнительно'
+      item: 0
+    timer:
+      name: 'Таймер'
+      item: 0
+    delay:
+      name: 'Задержка'
+      item: 0
+    cooldown:
+      name: 'Перезарядка'
+      item: 0
+FIRE_METEOR:
+  name: 'Огненный метеор'
+  lore:
+    - 'Обрушьте ярость преисподней'
+    - 'разрушительным ударом метеора.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: FIRE_CHARGE
+  source: default:FIRE_METEOR
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player: 0
+    mana:
+      player:
+        base: 9
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Перезарядка'
+      item: 10.0
+    damage:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Урон'
+      item: 6.0
+    knockback:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Отбрасывание'
+      item: 1.0
+    radius:
+      player:
+        base: 5
+        per-level: 2
+      name: 'Радиус'
+      item: 4.0
+FIRE_RAGE:
+  name: 'Огненная ярость'
+  lore:
+    - 'На &8{duration}&7 с вы замедляетесь и можете'
+    - 'выпустить до &c{count}&7 огненных шаров по ЛКМ.'
+    - ''
+    - 'Шары наносят &c{damage}&7 урона при попадании'
+    - 'и поджигают цель на &c{ignite}&7 с.'
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: FIRE_CHARGE
+  source: default:FIRE_RAGE
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0
+    delay:
+      player: 0
+      name: 'Задержка'
+      item: 0
+    mana:
+      player:
+        base: 15.0
+        per-level: 1.0
+      name: 'Мана'
+      item: 0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      player:
+        base: 9.0
+        per-level: -0.1
+        max: 5.0
+        min: 1.0
+      name: 'Перезарядка'
+      item: 0
+    duration:
+      player:
+        base: 8.0
+        per-level: 1.0
+      format: 0.#
+      name: 'Длительность'
+      item: 0
+    damage:
+      player:
+        base: 5.0
+        per-level: 3.0
+      name: 'Урон'
+      item: 0
+    ignite:
+      player:
+        base: 2.0
+        per-level: 1.1
+      name: 'Поджигание'
+      item: 0
+    count:
+      player:
+        base: 4.0
+        per-level: 1.0
+      name: 'Количество'
+      item: 0
+FIRE_STORM:
+  name: 'Огненная буря'
+  lore:
+    - 'Выпускает шквал из 6 огненных снарядов'
+    - 'по ближайшим врагам, в первую очередь — по'
+    - 'исходной цели. Каждый снаряд наносит &c{damage}&7 урона'
+    - 'и поджигает цель на &c{ignite}&7 с.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/fire_storm
+  source: default:FIRE_STORM
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0
+    delay:
+      player: 0
+      name: 'Задержка'
+      item: 0
+    mana:
+      player:
+        base: 15.0
+        per-level: 2.0
+      name: 'Мана'
+      item: 0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      player:
+        base: 5.0
+        per-level: -0.1
+        max: 5.0
+        min: 1.0
+      name: 'Перезарядка'
+      item: 0
+    damage:
+      player:
+        base: 5.0
+        per-level: 3.0
+      format: 0.#
+      name: 'Урон'
+      item: 0
+    ignite:
+      player:
+        base: 2.0
+        per-level: 1.1
+      name: 'Поджигание'
+      item: 0
+FIREBALL:
+  name: 'Огненный шар'
+  lore:
+    - 'Выпускает смертоносный огненный шар в цель.'
+    - 'Он наносит &c{damage}&7 урона при попадании'
+    - 'и поджигает её на &c{ignite}&7 с.'
+    - ''
+    - 'Шар раскалывается на 3 раскалённых осколка,'
+    - 'которые прилипают к стенам и взрываются через 3 с,'
+    - 'нанося &c{ratio}%&7 урона исходного заклинания.'
+    - ''
+    - 'Чем меньше у вас здоровья, тем сильнее осколки,'
+    - 'вплоть до бонуса при 50% потерянного здоровья.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/fireball
+  source: default:FIREBALL
+  # Change types of damage dealt
+  damage_types: [SKILL, MAGIC, PROJECTILE]
+  parameters:
+    mana:
+      player: 15 + 1.0 * {level}
+      name: 'Мана'
+      item: 0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      player:
+        base: 9.0
+        per-level: -0.1
+        min: 3.0
+      name: 'Перезарядка'
+      item: 0
+    timer:
+      player:
+        base: 2
+        per-level: 0
+      name: 'Таймер'
+      item: 0
+    delay:
+      player:
+        base: 1
+        per-level: -0.1
+        min: 0.3
+      name: 'Задержка'
+      item: 0
+    damage:
+      player:
+        base: 5.0
+        per-level: 3.0
+      format: 0.#
+      name: 'Урон'
+      item: 0
+    ignite:
+      player: min(2 + 1.1 * {level}, 10)
+      name: 'Поджигание'
+      item: 0
+    ratio:
+      player:
+        formula: 50 + min( 0.5, 1 - (%mmocore_health% / %mmocore_max_health%)) * 30 * 2
+        failsafe: 50.0
+      name: 'Доля'
+      item: 0
+FIREBOLT:
+  name: 'Огненная стрела'
+  lore:
+    - 'Вы создаёте пылающий шар'
+    - 'и бросаете его во врагов.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/firebolt
+  source: default:FIREBOLT
+  # Change types of damage dealt
+  damage_types: [MAGIC, SKILL, PROJECTILE]
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 3
+        per-level: 1
+      name: 'Урон'
+      item: 6.0
+    ignite:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Поджигание'
+      item: 3.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 7.0
+        per-level: -0.28
+        min: 4.2
+        max: 7.0
+      name: 'Перезарядка'
+      item: 10.0
+FIREFLY:
+  name: 'Светлячок'
+  lore:
+    - 'Рванитесь вперёд как ракета'
+    - 'и нанесите урон всем,'
+    - 'кто не успеет уйти с пути.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: FLINT_AND_STEEL
+  source: default:FIREFLY
+  parameters:
+    duration:
+      player:
+        base: 5
+        per-level: 2
+      format: 0.#
+      name: 'Длительность'
+      item: 2.5
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 4
+        per-level: 1.7
+      name: 'Урон'
+      item: 6.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 9
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Перезарядка'
+      item: 10.0
+    knockback:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Отбрасывание'
+      item: 1.0
+FREEZE:
+  name: 'Заморозка'
+  lore:
+    - 'Заморозьте область в точке прицела:'
+    - враги в радиусе &b{radius}&7 блоков замедлены
+    - на &b{duration}&7 с.
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/freeze
+  source: mythiclib:rq_freeze
+  parameters:
+    duration:
+      player:
+        base: 3
+        per-level: 0.3
+        min: 3
+        max: 6
+      format: 0.#
+      name: 'Длительность'
+      item: 4.0
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 5
+        per-level: 1.2
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 5.0
+        per-level: -0.2
+        min: 3.0
+        max: 5.0
+      name: 'Перезарядка'
+      item: 10.0
+    amplifier:
+      player:
+        base: 1
+        per-level: 0.15
+        min: 1
+        max: 2
+      name: 'Сила эффекта'
+      item: 2.0
+    radius:
+      player:
+        base: 4
+        per-level: 0.3
+        min: 4
+        max: 7
+      name: 'Радиус'
+      item: 5.0
+FREEZING_CURSE:
+  name: 'Ледяное проклятие'
+  lore:
+    - 'Начертайте проклятый магический круг,'
+    - 'который ненадолго замедляет цель.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: SNOWBALL
+  source: default:FREEZING_CURSE
+  parameters:
+    duration:
+      player:
+        base: 3
+        per-level: 2
+      format: 0.#
+      name: 'Длительность'
+      item: 3.0
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Урон'
+      item: 3.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 3
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Перезарядка'
+      item: 7.0
+    amplifier:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Сила эффекта'
+      item: 1.0
+    radius:
+      player:
+        base: 3
+        per-level: 2
+      name: 'Радиус'
+      item: 3.0
+FROG_MODE:
+  name: 'Режим лягушки'
+  lore:
+    - 'Легко ныряйте и выпрыгивайте из воды,'
+    - 'получая заметное преимущество'
+    - 'в водной среде.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:FROG_MODE
+  parameters:
+    duration:
+      player:
+        base: 10
+        per-level: 1
+      format: 0.#
+      name: 'Длительность'
+      item: 20.0
+    timer:
+      player:
+        base: 2
+        per-level: 1
+        min: 0
+        max: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 2
+        per-level: 1
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Перезарядка'
+      item: 50.0
+    jump-force:
+      player:
+        base: 4
+        per-level: 3
+      name: 'Сила прыжка'
+      item: 1.0
+    speed:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Скорость'
+      item: 1.0
+FROZEN_AURA:
+  name: 'Ледяная аура'
+  lore:
+    - 'Окружите себя ледяной аурой,'
+    - 'замедляющей всех рядом.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:FROZEN_AURA
+  parameters:
+    duration:
+      player:
+        base: 10
+        per-level: 1
+      format: 0.#
+      name: 'Длительность'
+      item: 6.0
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 2
+        per-level: 1.1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 5
+        per-level: 0.4
+      name: 'Перезарядка'
+      item: 10.0
+    amplifier:
+      player:
+        base: 3
+        per-level: 2
+      name: 'Сила эффекта'
+      item: 1.0
+    radius:
+      player:
+        base: 4
+        per-level: 3
+      name: 'Радиус'
+      item: 10.0
+FURTIVE_STRIKE:
+  name: 'Скрытный удар'
+  lore:
+    - 'Наносит &c{damage}&7 урона, увеличенного на &c{extra}%&7,'
+    - 'если в радиусе &c{radius}&7 блоков нет других врагов.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/furtive_strike
+  source: default:FURTIVE_STRIKE
+  parameters:
+    damage:
+      player:
+        base: 5.0
+        per-level: 1.5
+      format: 0.#
+      name: 'Урон'
+      item: 0
+    mana:
+      player:
+        base: 8.0
+        per-level: 3.0
+      name: 'Мана'
+      item: 0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0
+    extra:
+      player:
+        base: 50.0
+        per-level: 20.0
+      name: 'Дополнительно'
+      item: 0
+    cooldown:
+      player:
+        base: 20.0
+        per-level: -0.1
+        max: 20.0
+        min: 5.0
+      name: 'Перезарядка'
+      item: 0
+    radius:
+      player:
+        base: 7.0
+        per-level: 1.0
+      name: 'Радиус'
+      item: 0
+    timer:
+      name: 'Таймер'
+      item: 0
+    delay:
+      name: 'Задержка'
+      item: 0
+GRAND_HEAL:
+  name: 'Великое исцеление'
+  lore:
+    - 'Восстанавливает здоровье вам'
+    - 'и союзникам рядом.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/grand_heal
+  source: default:GRAND_HEAL
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 2
+        per-level: 1
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 2.5
+        per-level: 0.5
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 8.0
+        per-level: -0.32
+        min: 4.8
+        max: 8.0
+      name: 'Перезарядка'
+      item: 15.0
+    heal:
+      player:
+        base: 4
+        per-level: 3
+      name: 'Исцеление'
+      item: 5.0
+    radius:
+      player:
+        base: 3
+        per-level: 1
+      name: 'Радиус'
+      item: 5.0
+GREATER_HEALINGS:
+  name: 'Великое лечение'
+  lore:
+    - 'Мгновенно восстанавливает цели &a{heal}&7 HP.'
+    - 'Крадитесь, чтобы применить на себя.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: GOLDEN_APPLE
+  source: default:GREATER_HEALINGS
+  parameters:
+    mana:
+      player:
+        base: 4.0
+        per-level: 2.0
+      format: 0.#
+      name: 'Мана'
+      item: 0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0
+    heal:
+      player:
+        base: 10.0
+        per-level: 4.0
+      name: 'Исцеление'
+      item: 0
+    cooldown:
+      player:
+        base: 9.0
+        per-level: -0.1
+        max: 5.0
+        min: 1.0
+      name: 'Перезарядка'
+      item: 0
+    timer:
+      name: 'Таймер'
+      item: 0
+    delay:
+      name: 'Задержка'
+      item: 0
+HEAL:
+  name: 'Исцеление'
+  lore:
+    - 'Быстро восстанавливает здоровье.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/heal
+  source: default:HEAL
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 2
+        per-level: 0.1
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 4
+        per-level: 0.2
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 4.0
+        per-level: -0.16
+        min: 2.4
+        max: 4.0
+      name: 'Перезарядка'
+      item: 10.0
+    heal:
+      player:
+        base: 4
+        per-level: 0.5
+      name: 'Исцеление'
+      item: 4.0
+HEAVY_CHARGE:
+  name: 'Тяжёлый рывок'
+  lore:
+    - 'Рванитесь к цели с молниеносной скоростью'
+    - 'и нанесите огромный урон при столкновении.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:HEAVY_CHARGE
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 5
+        per-level: 0.3
+      name: 'Урон'
+      item: 6.0
+    delay:
+      player:
+        base: 2
+        per-level: 0.5
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 10
+        per-level: -0.5
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 10
+        per-level: 1.5
+      name: 'Перезарядка'
+      item: 10.0
+    knockback:
+      player:
+        base: 1
+        per-level: 0.5
+      name: 'Отбрасывание'
+      item: 1.0
+HOEARTHQUAKE:
+  name: 'Мотыжное землетрясение'
+  lore:
+    - 'Выпустите бегущий по земле снаряд,'
+    - 'который сотрясает почву, наносит урон'
+    - 'и дезориентирует врагов на пути.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:HOEARTHQUAKE
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 2
+        per-level: 1
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 6
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 6
+        per-level: 0.2
+      name: 'Перезарядка'
+      item: 10.0
+HOLY_MISSILE:
+  name: 'Святой снаряд'
+  lore:
+    - 'Выпустите быстрый священный снаряд'
+    - 'в выбранную цель'
+    - 'и нанесите божественный урон при попадании.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:HOLY_MISSILE
+  parameters:
+    duration:
+      player:
+        base: 4
+        per-level: 3
+      format: 0.#
+      name: 'Длительность'
+      item: 4.0
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 3
+        per-level: 0.5
+      name: 'Урон'
+      item: 6.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 15
+        per-level: 1.1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 10
+        per-level: 0.2
+      name: 'Перезарядка'
+      item: 10.0
+HUMAN_SHIELD:
+  name: 'Живой щит'
+  lore:
+    - 'Накладывает на союзника защитное заклинание,'
+    - 'снижая получаемый урон на &a{reduction}%&7.'
+    - '&a{redirect}%&7 этого урона переносится на вас.'
+    - 'Эффект сбрасывается, если здоровье падает до &c{low}%&7.'
+    - 'Длится &a{duration}&7 с.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/human_shield
+  source: default:HUMAN_SHIELD
+  parameters:
+    redirect:
+      player:
+        base: 30.0
+        per-level: -2.0
+        max: 30.0
+        min: 20.0
+      format: 0.#
+      name: 'Перенаправление'
+      item: 0
+    duration:
+      player:
+        base: 7.0
+        per-level: 1.0
+      name: 'Длительность'
+      item: 0
+    mana:
+      player:
+        base: 15.0
+        per-level: 1.5
+      name: 'Мана'
+      item: 0
+    low:
+      player:
+        base: 10.0
+        per-level: 1.0
+      name: 'Порог'
+      item: 0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      player:
+        base: 18.0
+        per-level: -0.3
+        max: 18.0
+        min: 14.0
+      name: 'Перезарядка'
+      item: 0
+    reduction:
+      player:
+        base: 30.0
+        per-level: 3.0
+        max: 70.0
+        min: 30.0
+      name: 'Снижение'
+      item: 0
+    timer:
+      name: 'Таймер'
+      item: 0
+    delay:
+      name: 'Задержка'
+      item: 0
+ICE_CRYSTAL:
+  name: 'Ледяной кристалл'
+  lore:
+    - 'Выпустите ледяной кристалл,'
+    - 'который наводится на цель, сковывает её льдом'
+    - 'и замедляет.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:ICE_CRYSTAL
+  parameters:
+    duration:
+      player:
+        base: 4
+        per-level: 1
+      format: 0.#
+      name: 'Длительность'
+      item: 3.0
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 4
+        per-level: 1.1
+      name: 'Урон'
+      item: 6.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 8
+        per-level: 0.2
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 5
+        per-level: 1.3
+      name: 'Перезарядка'
+      item: 10.0
+    amplifier:
+      player:
+        base: 3
+        per-level: 1.1
+      name: 'Сила эффекта'
+      item: 1.0
+ICE_SPIKES:
+  name: 'Ледяные шипы'
+  lore:
+    - 'Из земли поднимаются ледяные шипы'
+    - 'и раскалываются, нанося по &9{damage}&7 урона'
+    - 'попавшим врагам и замедляя их'
+    - 'на &9{slow}&7 с.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/ice_spikes
+  source: mythiclib:rq_ice_spikes
+  parameters:
+    damage:
+      player:
+        base: 3.0
+        per-level: 1.0
+      format: 0.#
+      name: 'Урон'
+      item: 0
+    mana:
+      player:
+        base: 20.0
+        per-level: 2.0
+      name: 'Мана'
+      item: 0
+    slow:
+      player:
+        base: 4.0
+        per-level: 1.0
+      name: 'Замедление'
+      item: 0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      player:
+        base: 6.0
+        per-level: -0.1
+        max: 6.0
+        min: 2.0
+      name: 'Перезарядка'
+      item: 0
+    timer:
+      name: 'Таймер'
+      item: 0
+    delay:
+      name: 'Задержка'
+      item: 0
+IGNITE:
+  name: 'Воспламенение'
+  lore:
+    - 'Подожгите цель яростным пламенем.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:IGNITE
+  parameters:
+    duration:
+      player:
+        base: 2
+        per-level: 1
+      format: 0.#
+      name: 'Длительность'
+      item: 80.0
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 2.5
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    max-ignite:
+      player:
+        base: 4
+        per-level: 3
+      name: 'Макс. поджигание'
+      item: 200.0
+    cooldown:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Перезарядка'
+      item: 10.0
+    radius:
+      player:
+        base: 3
+        per-level: 1
+      name: 'Радиус'
+      item: 5.0
+ITEM_BOMB:
+  name: 'Бомба-предмет'
+  lore:
+    - 'Превратите предмет в руке'
+    - 'во взрывчатку, которую можно бросить.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/item_bomb
+  source: default:ITEM_BOMB
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Урон'
+      item: 7.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    slow-duration:
+      player:
+        base: 5
+        per-level: 3
+      name: 'Длительность замедления'
+      item: 4.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    slow-amplifier:
+      player:
+        base: 1
+        per-level: 0.15
+        min: 1
+        max: 2
+      name: 'Сила замедления'
+      item: 1.0
+    cooldown:
+      player:
+        base: 5.0
+        per-level: -0.2
+        min: 3.0
+        max: 5.0
+      name: 'Перезарядка'
+      item: 15.0
+    radius:
+      player:
+        base: 3
+        per-level: 1
+      name: 'Радиус'
+      item: 6.0
+ITEM_THROW:
+  name: 'Бросок предмета'
+  lore:
+    - 'Метко швырните предмет из руки'
+    - 'прямо в цель.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/item_throw
+  source: default:ITEM_THROW
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 4
+        per-level: 1.1
+      name: 'Урон'
+      item: 6.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 3
+        per-level: 1.1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 6.0
+        per-level: -0.24
+        min: 3.6
+        max: 6.0
+      name: 'Перезарядка'
+      item: 10.0
+    force:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Сила'
+      item: 1.0
+LEAP:
+  name: 'Прыжок'
+  lore:
+    - 'Взрывной силой отбросьте себя'
+    - 'в воздух.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/leap
+  source: default:LEAP
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 2.2
+        per-level: 0.1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 4.0
+        per-level: -0.16
+        min: 2.4
+        max: 4.0
+      name: 'Перезарядка'
+      item: 10.0
+    force:
+      player:
+        base: 3
+        per-level: 0.5
+      name: 'Сила'
+      item: 1.0
+LIFE_ENDER:
+  name: 'Конец жизни'
+  lore:
+    - 'Призовите силу Энда'
+    - 'и обрушьте с неба'
+    - 'разрушительный метеор.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/life_ender
+  source: mythiclib:rq_life_ender
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Урон'
+      item: 5.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 6.0
+        per-level: -0.24
+        min: 3.6
+        max: 6.0
+      name: 'Перезарядка'
+      item: 10.0
+    knockback:
+      player:
+        base: 1
+        per-level: 0.1
+        min: 1
+        max: 2
+      name: 'Отбрасывание'
+      item: 1.0
+    radius:
+      player:
+        base: 4
+        per-level: 0.2
+        min: 4
+        max: 6
+      name: 'Радиус'
+      item: 4.0
+LIGHT_DASH:
+  name: 'Лёгкий рывок'
+  lore:
+    - 'Мчитесь туда, куда смотрите, на огромной скорости,'
+    - 'поражая всех на своём пути.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/light_dash
+  # Mia: was default:LIGHT_DASH (fixed cast-time direction). Script follows look direction incl. pitch.
+  source: mythiclib:rq_light_dash
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 6
+        per-level: 0.3
+      name: 'Урон'
+      item: 3.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 5
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 4.0
+        per-level: -0.16
+        min: 2.4
+        max: 4.0
+      name: 'Перезарядка'
+      item: 10.0
+    length:
+      player:
+        base: 4
+        per-level: 1
+      name: 'Длина'
+      item: 1.0
+LIGHTNING_BEAM:
+  name: 'Луч молнии'
+  lore:
+    - 'Призовите мощный электрический луч'
+    - 'с небес.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/lightning_beam
+  source: mythiclib:rq_lightning_beam
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 3
+        per-level: 0.5
+      name: 'Урон'
+      item: 8.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 10
+        per-level: 2.5
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 8.0
+        per-level: -0.32
+        min: 4.8
+        max: 8.0
+      name: 'Перезарядка'
+      item: 10.0
+    radius:
+      player:
+        base: 3
+        per-level: 0.2
+        min: 3
+        max: 5
+      name: 'Радиус'
+      item: 5.0
+MAGICAL_PATH:
+  name: 'Магический путь'
+  lore:
+    - 'Создайте твёрдую магическую платформу'
+    - 'в воздухе, чтобы пройти'
+    - 'туда, куда иначе не добраться.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:MAGICAL_PATH
+  parameters:
+    duration:
+      player:
+        base: 5
+        per-level: 0.5
+      format: 0.#
+      name: 'Длительность'
+      item: 3.0
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 8
+        per-level: 1.2
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 6
+        per-level: 0.7
+      name: 'Перезарядка'
+      item: 15.0
+MAGICAL_SHIELD:
+  name: 'Магический щит'
+  lore:
+    - 'Возведите мощный, но недолговечный'
+    - 'купол магической силы.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/magical_shield
+  source: default:MAGICAL_SHIELD
+  parameters:
+    duration:
+      player:
+        base: 10
+        per-level: 3
+      format: 0.#
+      name: 'Длительность'
+      item: 5.0
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 6
+        per-level: 0.3
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 4.0
+        per-level: -0.16
+        min: 2.4
+        max: 4.0
+      name: 'Перезарядка'
+      item: 35.0
+    power:
+      player:
+        base: 3
+        per-level: 1
+      name: 'Мощность'
+      item: 40.0
+    radius:
+      player:
+        base: 3
+        per-level: 1
+      name: 'Радиус'
+      item: 5.0
+MAGMA_FISSURE:
+  name: 'Магмовая трещина'
+  lore:
+    - 'Проведите к цели раскалённую'
+    - 'линию расплавленной магмы.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:MAGMA_FISSURE
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    ignite:
+      player:
+        base: 3
+        per-level: 0.3
+      name: 'Поджигание'
+      item: 4.0
+    damage:
+      player:
+        base: 4
+        per-level: 1.5
+      name: 'Урон'
+      item: 4.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 6
+        per-level: 0.3
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 10
+        per-level: 0.5
+      name: 'Перезарядка'
+      item: 10.0
+MINOR_EXPLOSION:
+  name: 'Малый взрыв'
+  lore:
+    - 'Создайте небольшой'
+    - 'контролируемый взрыв.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:MINOR_EXPLOSION
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 3
+        per-level: 0.1
+      name: 'Урон'
+      item: 6.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 5
+        per-level: 1.2
+        min: 0
+        max: 0
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 6
+        per-level: 0.5
+        min: 0
+        max: 0
+      name: 'Перезарядка'
+      item: 10.0
+    knockback:
+      player:
+        base: 2.3
+        per-level: 0.1
+        min: 0
+        max: 0
+      name: 'Отбрасывание'
+      item: 1.0
+    radius:
+      player:
+        base: 3
+        per-level: 1
+        min: 0
+        max: 0
+      name: 'Радиус'
+      item: 5.0
+MINOR_HEALINGS:
+  name: 'Малое лечение'
+  lore:
+    - 'Мгновенно восстанавливает цели &a{heal}&7 HP.'
+    - 'Крадитесь, чтобы применить на себя.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: GOLDEN_APPLE
+  source: default:MINOR_HEALINGS
+  parameters:
+    mana:
+      player:
+        base: 4.0
+        per-level: 2.0
+      format: 0.#
+      name: 'Мана'
+      item: 0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0
+    heal:
+      player:
+        base: 4.0
+        per-level: 2.0
+      name: 'Исцеление'
+      item: 0
+    cooldown:
+      player:
+        base: 9.0
+        per-level: -0.1
+        max: 5.0
+        min: 1.0
+      name: 'Перезарядка'
+      item: 0
+    timer:
+      name: 'Таймер'
+      item: 0
+    delay:
+      name: 'Задержка'
+      item: 0
+NEPTUNE_GIFT:
+  name: 'Дар Нептуна'
+  lore:
+    - 'Восстановление ресурсов увеличено на &8{extra}%&7, пока вы стоите в воде.'
+  icon: LILY_PAD
+  source: default:NEPTUNE_GIFT
+  parameters:
+    extra:
+      player:
+        base: 30.0
+        per-level: 5.0
+      format: 0.#
+      name: 'Дополнительно'
+      item: 0
+    timer:
+      name: 'Таймер'
+      item: 0
+    delay:
+      name: 'Задержка'
+      item: 0
+    mana:
+      name: 'Мана'
+      item: 0
+    stamina:
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      name: 'Перезарядка'
+      item: 0
+OVERLOAD:
+  name: 'Перегрузка'
+  lore:
+    - 'Соберите внутри себя взрывную'
+    - 'и нестабильную силу.'
+    - ''
+    - 'Вы становитесь живой бомбой'
+    - 'и обрушиваете разрушительный взрыв.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/overload
+  source: default:OVERLOAD
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 6
+        per-level: 1.2
+      name: 'Урон'
+      item: 6.0
+    delay:
+      player:
+        base: 4
+        per-level: 1.1
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 10
+        per-level: 1.5
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 15.0
+        per-level: -0.6
+        min: 9.0
+        max: 15.0
+      name: 'Перезарядка'
+      item: 10.0
+    radius:
+      player:
+        base: 5
+        per-level: 1
+      name: 'Радиус'
+      item: 6.0
+POISON:
+  name: 'Яд'
+  lore:
+    - 'Нанесите ядовитую атаку,'
+    - 'накладывающую периодический урон.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/poison
+  source: default:POISON
+  parameters:
+    duration:
+      player:
+        base: 10
+        per-level: 0.3
+      format: 0.#
+      name: 'Длительность'
+      item: 4.0
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 5
+        per-level: 1.3
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 8.0
+        per-level: -0.32
+        min: 4.8
+        max: 8.0
+      name: 'Перезарядка'
+      item: 10.0
+    amplifier:
+      player:
+        base: 1
+        per-level: 0.15
+        min: 1
+        max: 2
+      name: 'Сила эффекта'
+      item: 1.0
+POWER_MARK:
+  name: 'Метка силы'
+  lore:
+    - 'Атака накладывает на врага смертельную'
+    - 'магическую метку, которая расползается по земле.'
+    - 'Метка копит &6{ratio}%&7 урона, нанесённого'
+    - 'исходной цели за &6{duration}&7 с.'
+    - ''
+    - 'Затем метка взрывается, нанося накопленный'
+    - 'урон врагам рядом и оглушая их на &6{stun}+&7 с.'
+    - ''
+    - 'Чем больше урон, тем дольше оглушение.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/power_mark
+  source: default:POWER_MARK
+  parameters:
+    duration:
+      player:
+        base: 10.0
+        per-level: 1.1
+      format: 0.#
+      name: 'Длительность'
+      item: 0
+    mana:
+      player:
+        base: 2.0
+        per-level: 1.0
+      name: 'Мана'
+      item: 0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      player:
+        base: 30.0
+        per-level: -1.2
+        min: 18.0
+        max: 30.0
+      name: 'Перезарядка'
+      item: 0
+    stun:
+      player:
+        base: 2.4
+        per-level: 1.03
+      name: 'Оглушение'
+      item: 0
+    ratio:
+      player:
+        base: 10.0
+        per-level: 5.0
+      name: 'Доля'
+      item: 0
+    timer:
+      name: 'Таймер'
+      item: 0
+    delay:
+      name: 'Задержка'
+      item: 0
+PRESENT_THROW:
+  name: 'Бросок подарка'
+  lore:
+    - 'Швырните праздничный взрывной'
+    - 'подарок в цель.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:PRESENT_THROW
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 4
+        per-level: 0.5
+      name: 'Урон'
+      item: 6.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 3
+        per-level: 1.1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 8
+        per-level: 1.4
+      name: 'Перезарядка'
+      item: 10.0
+    force:
+      player:
+        base: 2
+        per-level: 1.2
+      name: 'Сила'
+      item: 1.0
+    radius:
+      player:
+        base: 3
+        per-level: 1
+      name: 'Радиус'
+      item: 4.0
+REGEN_ALLY:
+  name: 'Исцеление союзника'
+  lore:
+    - 'Сильно исцеляет любого'
+    - 'союзника рядом.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:REGEN_ALLY
+  parameters:
+    duration:
+      player:
+        base: 5
+        per-level: 1
+      format: 0.#
+      name: 'Длительность'
+      item: 3.0
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 3
+        per-level: 0.4
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 6
+        per-level: 0.5
+      name: 'Перезарядка'
+      item: 10.0
+    heal:
+      player:
+        base: 4
+        per-level: 1.1
+      name: 'Исцеление'
+      item: 7.0
+SHADOW_VEIL:
+  name: 'Покров тени'
+  lore:
+    - 'Окутайте себя покровом невидимости.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/shadow_veil
+  source: default:SHADOW_VEIL
+  parameters:
+    duration:
+      player:
+        base: 10
+        per-level: 1
+      format: 0.#
+      name: 'Длительность'
+      item: 5.0
+    timer:
+      player:
+        base: 0
+        per-level: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 10
+        per-level: 1.1
+      name: 'Мана'
+      item: 0.0
+    deception:
+      player:
+        base: 4
+        per-level: 0.3
+      name: 'Обман'
+      item: 1.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 10.0
+        per-level: -0.4
+        min: 6.0
+        max: 10.0
+      name: 'Перезарядка'
+      item: 35.0
+SHOCK:
+  name: 'Шок'
+  lore:
+    - 'Наложите мучительный эффект,'
+    - 'изматывающий врага.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:SHOCK
+  parameters:
+    duration:
+      player:
+        base: 6
+        per-level: 1.3
+      format: 0.#
+      name: 'Длительность'
+      item: 2.0
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 5
+        per-level: 0.5
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 4
+        per-level: 0.4
+      name: 'Перезарядка'
+      item: 8.0
+SHOCKWAVE:
+  name: 'Ударная волна'
+  lore:
+    - 'Мощным ударом подбросьте цель'
+    - 'в воздух.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/shockwave
+  source: default:SHOCKWAVE
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 6.0
+        per-level: 0.1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 7.0
+        per-level: -0.5
+        min: 4.2
+        max: 7.0
+      name: 'Перезарядка'
+      item: 7.5
+    length:
+      player:
+        base: 10
+        per-level: 1
+      name: 'Длина'
+      item: 5.0
+    knock-up:
+      player:
+        base: 5
+        per-level: 1
+      name: 'Подброс'
+      item: 1.0
+SHULKER_MISSILE:
+  name: 'Шалкер-снаряд'
+  lore:
+    - 'Выпускает четыре снаряда шалкера,'
+    - 'которые взрываются при попадании, нанося &c{damage}&7 урона'
+    - 'и накладывая &cЛевитацию&7 на &c{effect-duration}с&7.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/shulker_missile
+  source: default:SHULKER_MISSILE
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 2
+        per-level: -0.1
+    mana:
+      player:
+        base: 8
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 2.0
+        per-level: -0.08
+        min: 1.2
+        max: 2.0
+      name: 'Перезарядка'
+      item: 12.0
+    duration:
+      player:
+        base: 4
+        per-level: 0
+      format: 0.#
+      name: 'Длительность'
+      item: 5.0
+    damage:
+      player:
+        base: 5
+        per-level: 1
+      name: 'Урон'
+      item: 5.0
+    effect-duration:
+      player:
+        base: 2
+        per-level: 0
+      name: 'Длительность эффекта'
+      item: 5.0
+SKY_SMASH:
+  name: 'Удар с небес'
+  lore:
+    - 'Подбросьте врага в небо'
+    - 'заметным и ошеломляющим ударом.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/sky_smash
+  source: default:SKY_SMASH
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 4
+        per-level: 1.5
+      name: 'Урон'
+      item: 3.0
+    delay:
+      player:
+        base: 4
+        per-level: 0.5
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 8.0
+        per-level: -0.5
+        min: 4.0
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 10.0
+        per-level: -0.4
+        min: 6.0
+        max: 10.0
+      name: 'Перезарядка'
+      item: 10.0
+    knock-up:
+      player:
+        base: 2
+        per-level: 0.3
+      name: 'Подброс'
+      item: 1.0
+SLOW:
+  name: 'Замедление'
+  lore:
+    - 'Сильно замедлите врага,'
+    - 'снизив скорость движения'
+    - 'и оставив его уязвимым.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/slow
+  source: default:SLOW
+  parameters:
+    duration:
+      player:
+        base: 4
+        per-level: 0.2
+        min: 4
+        max: 6
+      format: 0.#
+      name: 'Длительность'
+      item: 3.0
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 3
+        per-level: 1.1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 10.0
+        per-level: -1.5
+        min: 6.0
+        max: 10.0
+      name: 'Перезарядка'
+      item: 5.0
+    amplifier:
+      player:
+        base: 1
+        per-level: 0.15
+        min: 1
+        max: 2
+      name: 'Сила эффекта'
+      item: 1.0
+SMITE:
+  name: 'Кара'
+  lore:
+    - 'Обрушьте на врагов мощь молнии!'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/smite
+  source: default:SMITE
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 4
+        per-level: 1.1
+      name: 'Урон'
+      item: 8.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 4
+        per-level: 0.5
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 6.0
+        per-level: -0.24
+        min: 3.6
+        max: 6.0
+      name: 'Перезарядка'
+      item: 10.0
+SNEAKY_PICKY:
+  name: 'Первый удар'
+  lore:
+    - 'Первая атака в бою усилена на &f{extra}%&7.'
+    - ''
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/sneaky_picky
+  source: default:SNEAKY_PICKY
+  parameters:
+    mana:
+      player:
+        base: 8.0
+        per-level: 1.0
+      format: 0.#
+      name: 'Мана'
+      item: 0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0
+    extra:
+      player:
+        base: 50.0
+        per-level: 20.0
+      name: 'Дополнительно'
+      item: 0
+    cooldown:
+      player:
+        base: 2.0
+        per-level: -0.08
+        min: 1.2
+        max: 2.0
+      name: 'Перезарядка'
+      item: 0
+    timer:
+      name: 'Таймер'
+      item: 0
+    delay:
+      name: 'Задержка'
+      item: 0
+SNOWMAN_TURRET:
+  name: 'Снеговик-турель'
+  lore:
+    - 'Призовите снеговика,'
+    - 'который поможет в атаке'
+    - 'градом снежков.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/snowman_turret
+  source: default:SNOWMAN_TURRET
+  parameters:
+    duration:
+      player:
+        base: 6
+        per-level: 0.5
+      format: 0.#
+      name: 'Длительность'
+      item: 6.0
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 5
+        per-level: 0.5
+      name: 'Урон'
+      item: 2.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 8.0
+        per-level: -0.5
+        min: 4.0
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 8.0
+        per-level: -0.5
+        min: 4.8
+        max: 8.0
+      name: 'Перезарядка'
+      item: 35.0
+    radius:
+      player:
+        base: 4
+        per-level: 1
+      name: 'Радиус'
+      item: 20.0
+SPARKLE:
+  name: 'Искры'
+  lore:
+    - 'Выпустите сверкающий разряд,'
+    - 'от которого враг пошатнётся.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:SPARKLE
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 4
+        per-level: 0.5
+      name: 'Урон'
+      item: 4.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 4
+        per-level: -0.5
+        min: 0
+        max: 0
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 4
+        per-level: 1.1
+      name: 'Перезарядка'
+      item: 10.0
+    limit:
+      player:
+        base: 4
+        per-level: 0.5
+      name: 'Лимит'
+      item: 5.0
+    radius:
+      player:
+        base: 3
+        per-level: 1.5
+      name: 'Радиус'
+      item: 6.0
+STARFALL:
+  name: 'Звездопад'
+  lore:
+    - 'Обрушьте на цель разрушительную атаку:'
+    - 'с неба падают магические звёзды.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/starfall
+  source: default:STARFALL
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 4.2
+        per-level: 1.1
+      name: 'Урон'
+      item: 3.5
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 8
+        per-level: 0.5
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 4.0
+        per-level: -0.16
+        min: 2.4
+        max: 4.0
+      name: 'Перезарядка'
+      item: 8.0
+STUN:
+  name: 'Оглушение'
+  lore:
+    - 'На короткое время полностью'
+    - 'парализуйте цель.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/stun
+  source: default:STUN
+  parameters:
+    duration:
+      player:
+        base: 6
+        per-level: 0.2
+      format: 0.#
+      name: 'Длительность'
+      item: 2.0
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 8.0
+        per-level: -0.2
+        min: 4.0
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 6.0
+        per-level: -0.24
+        min: 3.6
+        max: 6.0
+      name: 'Перезарядка'
+      item: 10.0
+SWIFTNESS:
+  name: 'Стремительность'
+  lore:
+    - 'Получите короткий прилив ловкости:'
+    - 'ускорение и усиление прыжка.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/swiftness
+  source: default:SWIFTNESS
+  parameters:
+    duration:
+      player:
+        base: 10
+        per-level: 0.5
+      format: 0.#
+      name: 'Длительность'
+      item: 4.0
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 4.0
+        per-level: 1.2
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 5.0
+        per-level: -0.2
+        min: 3.0
+        max: 5.0
+      name: 'Перезарядка'
+      item: 15.0
+    amplifier:
+      player:
+        base: 1
+        per-level: 0.15
+        min: 1
+        max: 2
+      name: 'Сила эффекта'
+      item: 1.0
+TACTICAL_GRENADE:
+  name: 'Тактическая граната'
+  lore:
+    - 'Запустите самонаводящуюся гранату'
+    - 'в цель; при попадании она'
+    - 'подбрасывает врага в воздух.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/tactical_grenade
+  source: default:TACTICAL_GRENADE
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 4
+        per-level: 0.5
+      name: 'Урон'
+      item: 4.0
+    delay:
+      player:
+        base: 3
+        per-level: -0.2
+    mana:
+      player:
+        base: 10.0
+        per-level: -0.5
+        min: 5.0
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 20.0
+        per-level: -1.5
+        min: 12.0
+        max: 20.0
+      name: 'Перезарядка'
+      item: 10.0
+    radius:
+      player:
+        base: 3
+        per-level: 0.5
+      name: 'Радиус'
+      item: 4.0
+    knock-up:
+      player:
+        base: 3
+        per-level: 0.5
+      name: 'Подброс'
+      item: 1.0
+TARGETED_FIREBALL:
+  name: 'Самонаводящийся шар'
+  lore:
+    - 'Запустите самонаводящийся огненный шар'
+    - 'в цель — от него бесполезно убегать.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:TARGETED_FIREBALL
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    ignite:
+      player:
+        base: 3
+        per-level: 0.5
+      name: 'Поджигание'
+      item: 4.0
+    damage:
+      player:
+        base: 4
+        per-level: 0.5
+      name: 'Урон'
+      item: 4.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 10
+        per-level: 1.5
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 15
+        per-level: -0.5
+      name: 'Перезарядка'
+      item: 10.0
+TELEKINESY:
+  name: 'Телекинез'
+  lore:
+    - 'Вы берёте контроль над целью на &9{duration}&7 с.'
+    - 'ЛКМ — швырнуть её.'
+    - 'Сила отброса: &f{knockback}%'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: MAGENTA_DYE
+  source: default:TELEKINESY
+  parameters:
+    duration:
+      player:
+        base: 3.0
+        per-level: 1.1
+        max: 6.0
+        min: 3.0
+      format: 0.#
+      name: 'Длительность'
+      item: 0
+    mana:
+      player:
+        base: 20.0
+        per-level: 2.0
+      name: 'Мана'
+      item: 0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      player:
+        base: 20.0
+        per-level: -0.3
+        max: 20.0
+        min: 10.0
+      name: 'Перезарядка'
+      item: 0
+    knockback:
+      player:
+        base: 50.0
+        per-level: 10.0
+      name: 'Отбрасывание'
+      item: 0
+    timer:
+      name: 'Таймер'
+      item: 0
+    delay:
+      name: 'Задержка'
+      item: 0
+THROW_UP:
+  name: 'Подброс плоти'
+  lore:
+    - 'Швырните куски разлагающейся плоти'
+    - 'в цель и нанесите урон при попадании.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:THROW_UP
+  parameters:
+    duration:
+      player:
+        base: 3
+        per-level: 1.1
+      format: 0.#
+      name: 'Длительность'
+      item: 2.5
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 2.4
+        per-level: 1.1
+      name: 'Урон'
+      item: 2.0
+    delay:
+      player:
+        base: 3
+        per-level: -0.5
+    mana:
+      player:
+        base: 8
+        per-level: 0.5
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 8
+        per-level: -1.5
+      name: 'Перезарядка'
+      item: 10.0
+THRUST:
+  name: 'Выпад'
+  lore:
+    - 'Рванитесь вперёд к цели'
+    - 'и нанесите значительный урон при столкновении.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/thrust
+  source: default:THRUST
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 6
+        per-level: 0.3
+      name: 'Урон'
+      item: 6.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 8.0
+        per-level: -1.4
+        min: 4.0
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 4.0
+        per-level: -0.16
+        min: 2.4
+        max: 4.0
+      name: 'Перезарядка'
+      item: 10.0
+TNT_THROW:
+  name: 'Бросок динамита'
+  lore:
+    - Швырните динамит. При попадании он
+    - взрывается, нанося &c{damage}&7 урона всем
+    - врагам в радиусе &c{radius}&7 блоков.
+    - '&7Блоки не разрушаются.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/tnt_throw
+  source: mythiclib:rq_tnt_throw
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+    mana:
+      player:
+        base: 4
+        per-level: 0.5
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 10
+        per-level: -0.3
+        min: 7
+        max: 10
+      name: 'Перезарядка'
+      item: 10.0
+    damage:
+      player:
+        base: 7
+        per-level: 1.0
+      name: Урон
+      item: 0.0
+    radius:
+      player:
+        base: 3.5
+        per-level: 0.15
+        min: 3.5
+        max: 5
+      name: Радиус
+      item: 0.0
+VAMPIRISM:
+  name: 'Вампиризм'
+  lore:
+    - 'Восстанавливает здоровье в зависимости'
+    - 'от урона, который вы нанесли цели.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/vampirism
+  source: default:VAMPIRISM
+  parameters:
+    timer:
+      player:
+        base: 2
+        per-level: 1
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player: 0
+    mana:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 2.0
+        per-level: -0.08
+        min: 1.2
+        max: 2.0
+      name: 'Перезарядка'
+      item: 8.0
+    drain:
+      player:
+        base: 6.0
+        per-level: 1.0
+      name: 'Поглощение'
+      item: 10.0
+VOID_ZAPPER:
+  name: 'Разряд бездны'
+  lore:
+    - 'Черпая разрушительную силу бездны,'
+    - 'поразите врага этим разрядом.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: BOOK
+  source: default:VOID_ZAPPER
+  parameters:
+    timer:
+      player:
+        base: 0
+        per-level: 0
+      format: 0.#
+      name: 'Таймер'
+      item: 0.0
+    damage:
+      player:
+        base: 6
+        per-level: 0.5
+      name: 'Урон'
+      item: 5
+    delay:
+      player:
+        base: 0
+        per-level: 0
+    mana:
+      player:
+        base: 4
+        per-level: 0.2
+      name: 'Мана'
+      item: 0
+    max:
+      player:
+        base: 3
+        per-level: 1
+      name: 'Макс. отскоков'
+      item: 6
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+      name: 'Выносливость'
+      item: 0
+    extra:
+      player:
+        base: 4
+        per-level: 1
+      name: 'Доп. урон'
+      item: 30
+    cooldown:
+      player:
+        base: 4
+        per-level: 0.5
+      name: 'Перезарядка'
+      item: 10
+    length:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Длина'
+      item: 30
+    knockback:
+      player:
+        base: 2
+        per-level: 1
+      name: 'Отбрасывание'
+      item: 1
+WARP:
+  name: 'Перенос'
+  lore:
+    - 'Телепортирует вас в указанную точку.'
+    - 'Макс. дальность: &5{range}'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon: ENDER_PEARL
+  source: default:WARP
+  parameters:
+    mana:
+      player:
+        base: 8.0
+        per-level: 3.0
+      format: 0.#
+      name: 'Мана'
+      item: 0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      player:
+        base: 15.0
+        per-level: -0.3
+        max: 15.0
+        min: 2.0
+      name: 'Перезарядка'
+      item: 0
+    range:
+      player:
+        base: 16.0
+        per-level: 1.0
+        max: 100.0
+        min: 0.0
+      name: 'Дальность'
+      item: 0
+    timer:
+      name: 'Таймер'
+      item: 0
+    delay:
+      name: 'Задержка'
+      item: 0
+WEAKEN_TARGET:
+  name: 'Ослабление цели'
+  lore:
+    - 'Накладывает на выбранную цель'
+    - 'эффект Слабости.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/weaken_target
+  source: default:WEAKEN_TARGET
+  parameters:
+    duration:
+      player:
+        base: 5
+        per-level: 0.5
+      format: 0.#
+      name: 'Длительность'
+      item: 4.0
+    timer:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player:
+        base: 0
+        per-level: 0
+    mana:
+      player:
+        base: 4
+        per-level: 0.5
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player:
+        base: 0
+        per-level: 0
+        min: 0
+        max: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 4.0
+        per-level: -0.16
+        min: 2.4
+        max: 4.0
+      name: 'Перезарядка'
+      item: 10.0
+    extra-damage:
+      player:
+        base: 4
+        per-level: 1
+      name: 'Доп. урон'
+      item: 40.0
+WEAKEN:
+  name: 'Ослабление'
+  lore:
+    - 'Цель ослаблена на &8{duration}&7 с'
+    - 'и получает на &8{ratio}%&7 больше урона.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/weaken
+  source: default:WEAKEN
+  parameters:
+    duration:
+      player:
+        base: 10.0
+        per-level: -0.1
+        max: 10.0
+        min: 5.0
+      format: 0.#
+      name: 'Длительность'
+      item: 0
+    mana:
+      player:
+        base: 4.0
+        per-level: 1.0
+      name: 'Мана'
+      item: 0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      player:
+        base: 20.0
+        per-level: -0.1
+        max: 20.0
+        min: 5.0
+      name: 'Перезарядка'
+      item: 0
+    ratio:
+      player:
+        base: 30.0
+        per-level: 3.0
+      name: 'Доля'
+      item: 0
+    timer:
+      name: 'Таймер'
+      item: 0
+    delay:
+      name: 'Задержка'
+      item: 0
+WITHER:
+  name: 'Иссушение'
+  lore:
+    - 'Накладывает на цель эффект иссушения.'
+    - ''
+    - '&eПерезарядка: {cooldown} с'
+    - '&9Стоимость: {mana} {mana_name}'
+  icon:
+    item: PAPER
+    item-model: royalquest:skill/wither
+  source: default:WITHER
+  parameters:
+    timer:
+      player: 0
+      name: 'Таймер'
+      item: 0.0
+    delay:
+      player: 0
+    mana:
+      player:
+        base: 6
+        per-level: 0.5
+      name: 'Мана'
+      item: 0.0
+    stamina:
+      player: 0
+      name: 'Выносливость'
+      item: 0.0
+    cooldown:
+      player:
+        base: 8
+        per-level: -0.5
+        min: 4
+      name: 'Перезарядка'
+      item: 8.0
+    duration:
+      player:
+        base: 6
+        per-level: 0.5
+      format: 0.#
+      name: 'Длительность'
+      item: 3.0
+    amplifier:
+      player:
+        base: 1
+        per-level: 0.15
+        min: 1
+        max: 2
+      name: 'Сила эффекта'
+      item: 1.0

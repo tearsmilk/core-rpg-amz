@@ -1,0 +1,91 @@
+class-plugin: MMOCORE
+level-plugin: MMOCORE
+mana-plugin: MMOCORE
+config-version: 3
+damage_types:
+  
+  # Unless stated otherwise (by MMOItems item types or skills),
+  # what damage types should be applied to vanilla melee attacks
+  # or projectiles?
+  #
+  # This includes, for instance, melee attacks done with vanilla
+  # weapons (MMOItems weapons all have custom damage types), damage
+  # dealt using vanilla bows and crossbows....
+  default:
+    melee_weapon:
+    - WEAPON
+    - PHYSICAL
+    melee_unarmed:
+    - UNARMED
+    - PHYSICAL
+    melee_default:
+    - PHYSICAL
+    bow:
+    - WEAPON
+    - PROJECTILE
+    - PHYSICAL
+    skills:
+    - SKILL
+    - MAGIC
+  
+  # Links Bukkit DamageCause's to MythicLib damage types.
+  # For instance, you can map damage dealt by Ender Dragon Breath
+  # damage to MAGIC damage type.
+  #
+  # Available Bukkit damage causes available here:
+  # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/event/entity/EntityDamageEvent.DamageCause.html
+  bukkit:
+    MAGIC:
+    - MAGIC
+    DRAGON_BREATH:
+    - MAGIC
+    POISON:
+    - MAGIC
+    - DOT
+    WITHER:
+    - MAGIC
+    - DOT
+    FIRE_TICK:
+    - PHYSICAL
+    - DOT
+    MELTING:
+    - PHYSICAL
+    - DOT
+    STARVATION:
+    - DOT
+    DRYOUT:
+    - DOT
+    FREEZE:
+    - DOT
+    FIRE:
+    - PHYSICAL
+    LAVA:
+    - PHYSICAL
+    HOT_FLOOR:
+    - PHYSICAL
+    SONIC_BOOM:
+    - PHYSICAL
+    LIGHTNING:
+    - PHYSICAL
+    FALL:
+    - PHYSICAL
+    THORNS:
+    - PHYSICAL
+    CONTACT:
+    - PHYSICAL
+    ENTITY_EXPLOSION:
+    - PHYSICAL
+    ENTITY_SWEEP_ATTACK:
+    - PHYSICAL
+    FALLING_BLOCK:
+    - PHYSICAL
+    FLY_INTO_WALL:
+    - PHYSICAL
+    BLOCK_EXPLOSION:
+    - PHYSICAL
+    SUFFOCATION:
+    - PHYSICAL
+    CRAMMING:
+    - PHYSICAL
+    DROWNING:
+    - PHYSICAL
