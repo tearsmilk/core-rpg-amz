@@ -6,7 +6,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Color;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -15,6 +19,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Interaction;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
@@ -25,19 +30,16 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 /**
- * Экран во весь монитор, прибитый к камере. Игрок на время меню — наблюдатель (нет руки, хотбара и прицела) и стоит
- * на месте; дисплеи едут на нём как пассажиры с поворотом «к камере» и стоят на расстоянии 1 блок перед глазами,
- * поэтому, как ни крути мышью, картинка неподвижна. Сплошной фон закрывает мир.
+ * Экран во весь монитор. Игрок на время меню — наблюдатель высоко над миром, ходить и летать не может (скорость 0),
+ * поэтому камера стоит на месте. Все дисплеи стоят в мире ровно в точке глаз, с поворотом «к камере» (billboard
+ * CENTER): точка дисплея совпадает с камерой, и картинка неподвижна на экране, как ни крути мышью — ни параллакса,
+ * ни дрожания. Видит экран только этот игрок. Всё — в потоке игрока.
  *
- * <p>Мышь всё равно поворачивает голову: сервер читает поворот и двигает по экрану курсор. Кнопка под курсором
- * подсвечивается накладкой, ЛКМ нажимает. Видит экран только этот игрок. Всё — в потоке игрока.</p>
- *
- * <p>Без блок-дисплеев: их грани затеняются по направлению, и при повороте камеры экран мигал. Картинки — плоские
- * предмет-дисплеи с моделью-квадратом из пака ({@code rezusmenu:<id>}, грань без затенения), сплошные заливки —
- * фон текстового дисплея (он не освещается).</p>
+ * <p>Мышь поворачивает голову, сервер двигает курсор. Курсор — либо шейдерный (предмет в мире, который шейдер пака
+ * отражает через центр экрана: он идёт за мышью с частотой кадров), либо глиф-стрелка, которую двигает сервер.</p>
  *
  * <p>Единицы: «камера» — блоки на расстоянии 1 перед глазами, (0, 0) — центр экрана, y вверх; «холст» — пиксели
- * панели 512 × 288 (см. {@link PanelMath}), y вниз.</p>
+ * холста 704 × 400 (см. {@link PanelMath}), y вниз.</p>
  */
 public final class Screen {
 
@@ -53,9 +55,17 @@ public final class Screen {
                         boolean flying) {
     }
 
+    /** Как курсор следует за мышью. */
+    public enum CursorMode {
+        /** Сервер считает курсор из поворота головы (чувствительность из config.yml) и двигает дисплей. */
+        ROTATION,
+        /** Предмет в мире с маркерным цветом: шейдер пака отражает его через центр экрана. */
+        SHADER
+    }
+
     /**
-     * Текстура-квадрат на холсте: левый верхний угол (x, y), размер w × h px. Прячется нулевым масштабом, а не
-     * удаляется: подсветки ставятся один раз и потом только двигаются.
+     * Текстура на холсте: левый верхний угол (x, y), ширина w px (высота — высота текстуры, 1:1). Прячется нулевым
+     * масштабом, а не удаляется: подсветки ставятся один раз и потом только двигаются.
      */
     public final class Quad {
         private final TextDisplay display;
@@ -79,8 +89,11 @@ public final class Screen {
             this.shown = shown;
         }
 
-        /** Показать с левым верхним углом в (x, y). */
+        /** Показать с левым верхним углом в (x, y) холста. */
         public void place(final double px, final double py) {
+            if (this.shown && px == this.x && py == this.y) {
+                return;
+            }
             this.x = px;
             this.y = py;
             this.shown = true;
@@ -94,7 +107,10 @@ public final class Screen {
             }
         }
 
-        /** Новая ширина, левый край на месте (заливка полоски). 0 — спрятать. */
+        /**
+         * Новая ширина всей текстуры (левый край на месте): заливка полоски режется масштабом по x, а не
+         * растягивается. 0 — спрятать.
+         */
         public void width(final double px) {
             final double next = Math.max(0, px);
             if (next == this.w && this.shown == next > 0) {
@@ -119,16 +135,24 @@ public final class Screen {
         final String hoverId;
         final Consumer<Button> action;
         final String group;
+        final String name;
 
-        Button(final PanelMath.Rect rect, final String hoverId, final Consumer<Button> action, final String group) {
+        Button(final PanelMath.Rect rect, final String hoverId, final Consumer<Button> action, final String group,
+               final String name) {
             this.rect = rect;
             this.hoverId = hoverId;
             this.action = action;
             this.group = group;
+            this.name = name;
         }
 
         public PanelMath.Rect rect() {
             return this.rect;
+        }
+
+        /** Имя для отладки кликов. */
+        public String name() {
+            return this.name;
         }
     }
 
@@ -137,10 +161,11 @@ public final class Screen {
 
     /** Шаг по глубине между слоями (единицы камеры), ближе к глазам — выше. */
     private static final double LAYER_STEP = 0.0015;
-    /** Слой подсветок под курсором и слой курсора (самый верхний). */
-    public static final int HOVER_LAYER = 3;
+    /** Слой подсветок под курсором и слой курсора-глифа (самый верхний). */
+    public static final int HOVER_LAYER = 4;
     public static final int CURSOR_LAYER = 20;
     private static final String BASE = "base";
+    /** Старые версии уменьшали игрока на время меню: модификатор снимается при возврате (и после падения). */
     private static final NamespacedKey SCALE_KEY = new NamespacedKey("rezusmenu", "menu_scale");
     /** На сколько блоков выше лимита постройки уносим игрока: там нет блоков, которые лезут в экран. */
     private static final int SKY = 64;
@@ -150,37 +175,49 @@ public final class Screen {
     private static final Color BLACK = Color.fromARGB(255, 8, 8, 12);
     private static final Color CLEAR = Color.fromARGB(0, 0, 0, 0);
     /** Шрифт пака с текстурами меню (символы — в {@link PanelMath}). */
-    private static final net.kyori.adventure.key.Key FONT = net.kyori.adventure.key.Key.key("rezusmenu", "ui");
-    /** Пиксель шрифта в блоках при масштабе 1 (так рисует текст текстовый дисплей). */
-    private static final double FONT_PX = 0.025;
+    private static final Key FONT = Key.key("rezusmenu", "ui");
     /**
-     * Где глиф стоит относительно точки текстового дисплея, px шрифта: дисплей центрует строку (ширина = ширина
-     * картинки + 1 px отступа), низ картинки с ascent = height лежит на базовой линии строки над точкой дисплея.
-     * Если меню в игре съехало на пиксель-два относительно надписей, правится в config.yml (art.glyph-offset-x/y).
+     * Свет предметов меню: блок 15, небо 14. Шейдер пака узнаёт его (UV2 = 240, 224) и рисует такие предметы без
+     * направленного света — иначе они светлеют, когда смотришь вниз, и темнеют, когда вверх. Текст света не
+     * имеет направления, ему — обычные 15/15.
      */
-    private static volatile double glyphDx = 0.5;
-    private static volatile double glyphDy = 2.0;
+    private static final Display.Brightness ITEM_LIGHT = new Display.Brightness(15, 14);
+    private static final Display.Brightness TEXT_LIGHT = new Display.Brightness(15, 15);
+    /** Маркерный цвет шейдерного курсора (254, 0, 254) и модель предмета с тинтом custom_model_data. */
+    private static final Color MARKER = Color.fromRGB(254, 0, 254);
+    private static final NamespacedKey CURSOR_MODEL = new NamespacedKey("rezusmenu", "cursor_mirror");
+    /** Шейдерный курсор ближе панели (она на глубине ~1), чтобы рисоваться поверх. */
+    private static final double CURSOR_DIST = 0.6;
+    /** Насколько игрок может сдвинуться, прежде чем меню закроется (блоки). */
+    private static final double MAX_DRIFT = 0.3;
 
     private final Plugin plugin;
     private final Player player;
     private final Saved saved;
     private final Calibration calibration;
-    private final double eyeOffset;
     private final double sensitivity;
+    private final double fineX;
+    private final double fineY;
+    /** Точка глаз = точка всех дисплеев = камера. И место ног — для проверки, что игрок не сдвинулся. */
+    private final Location origin;
+    private final Location feet;
     private final List<Element> elements = new ArrayList<>();
     private final List<Button> buttons = new ArrayList<>();
     /** Подсветки «под курсором» по id текстуры: одна на экран, переезжает к кнопке под курсором. */
     private final Map<String, Quad> hoverQuads = new HashMap<>();
     /** Пиксель холста → единицы камеры. */
-    private double scale;
+    private final double scale;
     private double boundW;
     private double boundH;
-    /** Курсор: стрелка-глиф (остриё — в точке курсора) или предмет (центр — в точке курсора). */
+    private CursorMode mode = CursorMode.ROTATION;
+    /** Курсор: стрелка-глиф (остриё — в точке курсора), предмет (центр — в точке курсора) или шейдерный. */
     private Display cursor;
     private boolean cursorCentered;
     private double cursorSize;
+    /** Шейдерный курсор: точка мира, которую шейдер показывает в точке курсора. */
+    private double[] anchor;
     /** Невидимая кликабельная сущность вокруг глаз: наблюдатель шлёт клик только по сущности. */
-    private org.bukkit.entity.Interaction target;
+    private Interaction target;
     private Runnable emptyClick;
     private double cu;
     private double cv;
@@ -190,35 +227,39 @@ public final class Screen {
     private boolean closed;
 
     private Screen(final Plugin plugin, final Player player, final Saved saved, final Calibration calibration,
-                   final double eyeOffset, final double sensitivity) {
+                   final double sensitivity, final double fineX, final double fineY) {
         this.plugin = plugin;
         this.player = player;
         this.saved = saved;
         this.calibration = calibration;
-        this.eyeOffset = eyeOffset;
         this.sensitivity = sensitivity;
+        this.fineX = fineX;
+        this.fineY = fineY;
         this.boundW = calibration.halfW();
         this.boundH = calibration.halfH();
         this.scale = PanelMath.scale(calibration.halfW(), calibration.halfH());
+        this.feet = player.getLocation();
+        final Location eye = player.getEyeLocation();
+        eye.setYaw(0f);
+        eye.setPitch(0f);
+        this.origin = eye;
     }
 
     /**
-     * Перевести игрока в режим меню (наблюдатель, без движения, взгляд прямо) и поставить фон.
+     * Перевести игрока в режим меню (наблюдатель над миром, без движения, взгляд прямо) и поставить фон.
      * Поток игрока. null — сейчас нельзя (мёртв, едет на чём-то).
      *
-     * @param eyeOffset насколько точка пассажиров выше глаз у игрока обычного размера (1.8 − 1.62)
-     * @param sensitivity сколько единиц камеры проходит курсор за градус поворота мыши
-     * @param playerScale размер игрока на время меню (атрибут scale): чем меньше, тем ближе точка пассажиров
-     *                    к глазам и тем неподвижнее экран при движении мыши вверх-вниз
+     * @param sensitivity сколько единиц камеры проходит курсор за градус поворота мыши (курсор {@link CursorMode#ROTATION})
+     * @param fineX       тонкая подстройка картинок, px шрифта вправо (config.yml art.glyph-offset-x)
+     * @param fineY       то же вверх (art.glyph-offset-y)
      */
     public static Screen open(final Plugin plugin, final Player player, final Calibration calibration,
-                              final double eyeOffset, final double sensitivity, final double playerScale) {
+                              final double sensitivity, final double fineX, final double fineY) {
         if (player.isDead() || player.isInsideVehicle()) {
             return null;
         }
         final Saved saved = new Saved(player.getGameMode(), player.getLocation(), player.getWalkSpeed(),
             player.getFlySpeed(), player.getAllowFlight(), player.isFlying());
-        final Screen screen = new Screen(plugin, player, saved, calibration, eyeOffset * playerScale, sensitivity);
         // Высоко над миром: ни один блок не встанет между глазами и экраном.
         final Location look = player.getLocation();
         look.setY(look.getWorld().getMaxHeight() + SKY);
@@ -227,23 +268,13 @@ public final class Screen {
         player.teleport(look);
         player.setFlySpeed(0f);
         player.setWalkSpeed(0f);
-        final org.bukkit.attribute.AttributeInstance scale = player.getAttribute(org.bukkit.attribute.Attribute.SCALE);
-        if (scale != null) {
-            scale.removeModifier(SCALE_KEY);
-            scale.addTransientModifier(new org.bukkit.attribute.AttributeModifier(SCALE_KEY, playerScale - 1.0,
-                org.bukkit.attribute.AttributeModifier.Operation.MULTIPLY_SCALAR_1));
-        }
+        removeScale(player);
+        final Screen screen = new Screen(plugin, player, saved, calibration, sensitivity, fineX, fineY);
         screen.refYaw = look.getYaw();
         screen.refPitch = 0f;
         screen.backdrop();
         screen.spawnTarget();
         return screen;
-    }
-
-    /** Сдвиг глифов относительно точки дисплея, px шрифта (config.yml art.glyph-offset-x/y). */
-    public static void glyphOffsets(final double dx, final double dy) {
-        glyphDx = dx;
-        glyphDy = dy;
     }
 
     public Player player() {
@@ -282,9 +313,28 @@ public final class Screen {
         return this.cv;
     }
 
+    /** Точка курсора на холсте, px. */
+    public double cursorX() {
+        return PanelMath.canvasX(this.cu, this.scale);
+    }
+
+    public double cursorY() {
+        return PanelMath.canvasY(this.cv, this.scale);
+    }
+
+    public CursorMode cursorMode() {
+        return this.mode;
+    }
+
     /** Что делать по ЛКМ, когда под курсором нет кнопки (калибровка). */
     public void onEmptyClick(final Runnable action) {
         this.emptyClick = action;
+    }
+
+    /** Игрок сдвинулся с места (чужой телепорт, толчок): меню надо закрыть. */
+    public boolean moved() {
+        final Location now = this.player.getLocation();
+        return now.getWorld() != this.feet.getWorld() || now.distanceSquared(this.feet) > MAX_DRIFT * MAX_DRIFT;
     }
 
     /** Сплошной фон во весь экран (с запасом) и табличка для вида от третьего лица. */
@@ -299,15 +349,15 @@ public final class Screen {
     }
 
     /**
-     * Невидимая кликабельная коробка вокруг глаз игрока. В режиме наблюдателя клиент не шлёт удар по воздуху, а
-     * ЛКМ по сущности шлёт: сервер пробует «вселить» игрока в неё — это событие и есть клик (см. MenuManager).
+     * Невидимая кликабельная коробка вокруг глаз игрока. Наблюдатель не шлёт удар по воздуху, а ЛКМ по сущности
+     * шлёт, если её коробка содержит глаза (тогда клиент выбирает её на расстоянии 0): сервер пробует «вселить»
+     * игрока в неё — это событие и есть клик (см. MenuManager). Коробка стоит в мире, а не едет на игроке.
      */
     private void spawnTarget() {
-        final Location eye = this.player.getEyeLocation();
-        final Location at = new Location(eye.getWorld(), eye.getX(), eye.getY() - 0.7, eye.getZ());
-        this.target = eye.getWorld().spawn(at, org.bukkit.entity.Interaction.class, e -> {
-            e.setInteractionWidth(1.4f);
-            e.setInteractionHeight(1.4f);
+        final Location at = this.origin.clone().subtract(0, 0.75, 0);
+        this.target = at.getWorld().spawn(at, Interaction.class, e -> {
+            e.setInteractionWidth(1.5f);
+            e.setInteractionHeight(1.5f);
             e.setResponsive(false);
             e.setPersistent(false);
             e.setVisibleByDefault(false);
@@ -322,19 +372,25 @@ public final class Screen {
 
     // --- элементы (пиксели холста) ---
 
-    /** Текстура {@code rezusmenu:<id>} размером w × h px, левый верхний угол в (x, y). */
-    public Quad quad(final String id, final double x, final double y, final double w, final double h, final int layer,
+    /** Текстура {@code id} в натуральную величину, левый верхний угол в (x, y). */
+    public Quad quad(final String id, final double x, final double y, final int layer, final String group) {
+        final PanelMath.Glyph g = glyphOf(id);
+        return this.spawnQuad(g, x, y, g.w(), layer, true, group);
+    }
+
+    /** Текстура {@code id}, ширина всей текстуры {@code w} px (заливки полосок), высота — натуральная. */
+    public Quad quad(final String id, final double x, final double y, final double w, final int layer,
                      final String group) {
-        return this.spawnQuad(id, x, y, w, h, layer, true, group);
+        return this.spawnQuad(glyphOf(id), x, y, w, layer, w > 0, group);
     }
 
     /**
-     * Накладка из таблицы пака (размер — размер её текстуры), пока спрятана: {@link Quad#place} показывает её
-     * левым верхним углом в точке. Живёт до закрытия экрана.
+     * Накладка (размер — размер её текстуры), пока спрятана: {@link Quad#place} показывает её левым верхним углом в
+     * точке. Живёт до закрытия экрана.
      */
     public Quad marker(final String id, final int layer) {
-        final PanelMath.Glyph g = PanelMath.glyph(id);
-        return this.spawnQuad(id, 0, 0, g.w(), g.h(), layer, false, BASE);
+        final PanelMath.Glyph g = glyphOf(id);
+        return this.spawnQuad(g, 0, 0, g.w(), layer, false, BASE);
     }
 
     /** Текст по центру прямоугольника (x, y, w, h); {@code lineHeight} — высота строки, px. */
@@ -344,7 +400,7 @@ public final class Screen {
         final double bottom = y + (h + lineHeight * lines) / 2;
         final TextDisplay d = this.spawnText(PanelMath.camX(x + w / 2, this.scale), PanelMath.camY(bottom, this.scale),
             lineHeight * this.scale, text, depth(layer), null, group);
-        d.setLineWidth(Math.max(20, (int) Math.round(w / lineHeight * 10)));
+        d.setLineWidth(Math.max(20, (int) Math.round(w / lineHeight * PanelMath.LINE_H)));
         return d;
     }
 
@@ -357,10 +413,54 @@ public final class Screen {
 
     /** Кнопка: зона нажатия (x, y, w, h); {@code hoverId} — накладка под курсором (её левый верхний угол — в (x, y)). */
     public Button button(final double x, final double y, final double w, final double h, final String hoverId,
-                         final String group, final Consumer<Button> action) {
-        final Button b = new Button(new PanelMath.Rect(x, y, w, h), hoverId, action, group);
+                         final String group, final String name, final Consumer<Button> action) {
+        final Button b = new Button(new PanelMath.Rect(x, y, w, h), hoverId, action, group, name);
         this.buttons.add(b);
         return b;
+    }
+
+    /**
+     * Картинка из «пикселей» текста (портрет-скин): {@code argb} — {@code w × h}, 0 — прозрачно; левый верхний угол
+     * в (x, y), пиксель картинки — {@code px} пикселей холста. Строка картинки — один текстовый дисплей: цветные
+     * глифы-пиксели (шириной 2, рисуют 1) склеены шагом −1, прозрачные — пустой шаг +1, поэтому ширина строки
+     * всегда {@code w} и пиксели стоят без зазоров.
+     */
+    public void pixels(final int[] argb, final int w, final int h, final double x, final double y, final double px,
+                       final int layer, final String group) {
+        final double z = depth(layer);
+        final double k = depthFactor(z);
+        final PanelMath.FontBox box = PanelMath.lineBox(w, 0, w, 1, PanelMath.PIXEL_ASCENT);
+        for (int row = 0; row < h; row++) {
+            final TextComponent.Builder line = Component.text().font(FONT).color(NamedTextColor.WHITE);
+            boolean any = false;
+            for (int col = 0; col < w; col++) {
+                final int c = argb[row * w + col];
+                if (c >>> 24 == 0) {
+                    line.append(Component.text(String.valueOf(PanelMath.POS1)));
+                } else {
+                    any = true;
+                    line.append(Component.text(String.valueOf(PanelMath.PIXEL), TextColor.color(c & 0xFFFFFF)));
+                    line.append(Component.text(String.valueOf(PanelMath.NEG1)));
+                }
+            }
+            if (!any) {
+                continue;
+            }
+            final PanelMath.Fit f = PanelMath.fit(box, PanelMath.camX(x, this.scale),
+                PanelMath.camY(y + row * px, this.scale), w * px * this.scale, px * this.scale, 0, 0);
+            final Component text = line.build();
+            final Transformation t = new Transformation(
+                new Vector3f((float) (f.tx() * k), (float) (f.ty() * k), (float) z), new Quaternionf(),
+                new Vector3f((float) (f.sx() * k), (float) (f.sy() * k), 1f), new Quaternionf());
+            this.spawn(TextDisplay.class, e -> {
+                e.text(text);
+                e.setDefaultBackground(false);
+                e.setBackgroundColor(CLEAR);
+                e.setShadowed(false);
+                e.setLineWidth(4096);
+                e.setTransformation(t);
+            }, group);
+        }
     }
 
     // --- элементы (единицы камеры) ---
@@ -376,7 +476,7 @@ public final class Screen {
     }
 
     public static void setText(final TextDisplay d, final Component text) {
-        if (d != null && d.isValid()) {
+        if (d != null && d.isValid() && !text.equals(d.text())) {
             d.text(text);
         }
     }
@@ -398,6 +498,14 @@ public final class Screen {
 
     // --- низкий уровень (единицы камеры) ---
 
+    private static PanelMath.Glyph glyphOf(final String id) {
+        final PanelMath.Glyph g = PanelMath.glyph(id);
+        if (g == null) {
+            throw new IllegalArgumentException("нет текстуры " + id);
+        }
+        return g;
+    }
+
     private static double depth(final int layer) {
         return -1.0 + layer * LAYER_STEP;
     }
@@ -411,28 +519,26 @@ public final class Screen {
         return z < 0 ? -z : 1.0;
     }
 
-    /** Точка в единицах камеры (на плоскости z = −1) → перенос дисплея на глубине z. */
-    private Vector3f at(final double x, final double y, final double z) {
+    /** Точка в единицах камеры (на плоскости z = −1) → перенос дисплея на глубине z. Дисплей стоит в глазах. */
+    private static Vector3f at(final double x, final double y, final double z) {
         final double k = depthFactor(z);
-        return new Vector3f((float) (x * k), (float) (y * k - this.eyeOffset), (float) z);
+        return new Vector3f((float) (x * k), (float) (y * k), (float) z);
     }
 
     /**
-     * Перенос и масштаб глифа: картинка {@code glyph} (px) растягивается в прямоугольник с левым верхним углом
-     * (left, top) и размером w × h — всё в единицах камеры на плоскости z = −1.
+     * Перенос и масштаб глифа {@code glyph}: левый верхний угол в (left, top), ширина всей текстуры w, высота h —
+     * единицы камеры на плоскости z = −1. Раскладка глифа — как у клиента ({@link PanelMath#glyphBox}).
      */
     private Transformation glyphTransform(final PanelMath.Glyph glyph, final double left, final double top,
                                           final double w, final double h, final double z, final boolean shown) {
         if (!shown || w <= 0 || h <= 0) {
-            return new Transformation(this.at(left, top, z), new Quaternionf(), new Vector3f(0f, 0f, 0f), new Quaternionf());
+            return new Transformation(at(left, top, z), new Quaternionf(), new Vector3f(0f, 0f, 0f), new Quaternionf());
         }
         final double k = depthFactor(z);
-        final double sx = w / (glyph.w() * FONT_PX);
-        final double sy = h / (glyph.h() * FONT_PX);
-        final double ox = left + w / 2 + glyphDx * FONT_PX * sx;
-        final double oy = top - h - glyphDy * FONT_PX * sy;
-        return new Transformation(this.at(ox, oy, z), new Quaternionf(),
-            new Vector3f((float) (sx * k), (float) (sy * k), 1f), new Quaternionf());
+        final PanelMath.Fit f = PanelMath.fit(PanelMath.glyphBox(glyph.w(), glyph.h()), left, top, w, h,
+            this.fineX, this.fineY);
+        return new Transformation(at(f.tx(), f.ty(), z), new Quaternionf(),
+            new Vector3f((float) (f.sx() * k), (float) (f.sy() * k), 1f), new Quaternionf());
     }
 
     private Transformation quadTransform(final PanelMath.Glyph glyph, final double x, final double y, final double w,
@@ -443,7 +549,7 @@ public final class Screen {
 
     /** Символ текстуры шрифтом пака, без тени и подложки. */
     static Component glyphText(final PanelMath.Glyph glyph) {
-        return Component.text(String.valueOf(glyph.ch())).font(FONT).color(net.kyori.adventure.text.format.NamedTextColor.WHITE);
+        return Component.text(String.valueOf(glyph.ch())).font(FONT).color(NamedTextColor.WHITE);
     }
 
     private TextDisplay spawnGlyph(final PanelMath.Glyph glyph, final Transformation transform, final String group) {
@@ -457,14 +563,10 @@ public final class Screen {
         }, group);
     }
 
-    private Quad spawnQuad(final String id, final double x, final double y, final double w, final double h,
+    private Quad spawnQuad(final PanelMath.Glyph glyph, final double x, final double y, final double w,
                            final int layer, final boolean shown, final String group) {
-        final PanelMath.Glyph glyph = PanelMath.glyph(id);
-        if (glyph == null) {
-            throw new IllegalArgumentException("нет текстуры " + id);
-        }
-        final TextDisplay d = this.spawnGlyph(glyph, this.quadTransform(glyph, x, y, w, h, layer, shown), group);
-        return new Quad(d, glyph, x, y, w, h, layer, shown);
+        final TextDisplay d = this.spawnGlyph(glyph, this.quadTransform(glyph, x, y, w, glyph.h(), layer, shown), group);
+        return new Quad(d, glyph, x, y, w, glyph.h(), layer, shown);
     }
 
     /**
@@ -473,7 +575,7 @@ public final class Screen {
     private ItemDisplay spawnItem(final double cx, final double cy, final double size, final ItemStack item,
                                   final double z, final String group) {
         final float s = (float) (size * depthFactor(z));
-        final Vector3f at = this.at(cx, cy, z);
+        final Vector3f at = at(cx, cy, z);
         return this.spawn(ItemDisplay.class, e -> {
             e.setItemStack(item == null ? null : item.clone());
             e.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
@@ -485,7 +587,7 @@ public final class Screen {
     private void spawnFill(final double cx, final double cy, final double w, final double h, final double z,
                            final Color color, final String group) {
         final double k = depthFactor(z);
-        final Vector3f at = this.at(cx, cy - h / 2, z);
+        final Vector3f at = at(cx, cy - h / 2, z);
         this.spawn(TextDisplay.class, e -> {
             e.text(Component.text(" "));
             e.setDefaultBackground(false);
@@ -499,8 +601,8 @@ public final class Screen {
     /** Текст: (cx, bottom) — середина нижнего края. */
     private TextDisplay spawnText(final double cx, final double bottom, final double lineHeight, final Component text,
                                   final double z, final Color background, final String group) {
-        final float s = (float) (lineHeight / 0.25 * depthFactor(z));
-        final Vector3f at = this.at(cx, bottom, z);
+        final float s = (float) (lineHeight / (PanelMath.LINE_H * PanelMath.FONT_PX) * depthFactor(z));
+        final Vector3f at = at(cx, bottom, z);
         return this.spawn(TextDisplay.class, e -> {
             e.text(text);
             e.setDefaultBackground(false);
@@ -510,11 +612,17 @@ public final class Screen {
         }, group);
     }
 
+    /** Дисплей в точке глаз, лицом к камере, только для этого игрока. */
     private <T extends Display> T spawn(final Class<T> type, final Consumer<T> setup, final String group) {
-        final World world = this.player.getWorld();
-        final T d = world.spawn(this.player.getEyeLocation(), type, e -> {
-            e.setBillboard(Display.Billboard.CENTER);
-            e.setBrightness(new Display.Brightness(15, 15));
+        return this.spawnAt(this.origin, type, Display.Billboard.CENTER, setup, group);
+    }
+
+    private <T extends Display> T spawnAt(final Location where, final Class<T> type, final Display.Billboard billboard,
+                                          final Consumer<T> setup, final String group) {
+        final World world = where.getWorld();
+        final T d = world.spawn(where, type, e -> {
+            e.setBillboard(billboard);
+            e.setBrightness(e instanceof ItemDisplay ? ITEM_LIGHT : TEXT_LIGHT);
             e.setViewRange(1.0f);
             e.setPersistent(false);
             e.setVisibleByDefault(false);
@@ -522,24 +630,35 @@ public final class Screen {
             setup.accept(e);
         });
         this.player.showEntity(this.plugin, d);
-        this.player.addPassenger(d);
         this.elements.add(new Element(d, group));
         return d;
     }
 
     // --- курсор ---
 
-    /** Курсор-стрелка из пака (16 × 16 px холста), остриё — левый верхний угол — точно в точке курсора. */
-    public void arrowCursor() {
+    /**
+     * Курсор-стрелка. {@code shader}: шейдерный (если пак с шейдером не стоит, курсор поедет против мыши — для
+     * этого есть запасной режим в config.yml); иначе глиф из пака, остриё — левый верхний угол — в точке курсора.
+     */
+    public void arrowCursor(final boolean shader) {
         this.removeCursor();
         this.cursorCentered = false;
         this.cursorSize = 16 * this.scale;
-        this.cursor = this.spawnGlyph(PanelMath.glyph("cursor"), this.cursorTransform(), BASE);
+        if (shader) {
+            this.mode = CursorMode.SHADER;
+            this.cu = 0;
+            this.cv = 0;
+            this.placeAnchor(this.refYaw, this.refPitch, 0, 0);
+        } else {
+            this.mode = CursorMode.ROTATION;
+            this.cursor = this.spawnGlyph(PanelMath.glyph("cursor"), this.cursorTransform(), BASE);
+        }
     }
 
     /** Курсор-предмет (ванильная иконка) размером {@code size} единиц камеры, центр — в точке курсора. */
     public void itemCursor(final ItemStack item, final double size) {
         this.removeCursor();
+        this.mode = CursorMode.ROTATION;
         this.cursorCentered = true;
         this.cursorSize = size;
         this.cursor = this.spawn(ItemDisplay.class, e -> {
@@ -556,6 +675,7 @@ public final class Screen {
             old.remove();
             this.cursor = null;
         }
+        this.anchor = null;
     }
 
     private Transformation cursorTransform() {
@@ -564,8 +684,44 @@ public final class Screen {
             return this.glyphTransform(PanelMath.glyph("cursor"), this.cu, this.cv, this.cursorSize, this.cursorSize, z, true);
         }
         final float s = (float) (this.cursorSize * depthFactor(z));
-        return new Transformation(this.at(this.cu, this.cv, z), new Quaternionf(), new Vector3f(s, s, 0.001f),
+        return new Transformation(at(this.cu, this.cv, z), new Quaternionf(), new Vector3f(s, s, 0.001f),
             new Quaternionf());
+    }
+
+    private double[] eye() {
+        return new double[] {this.origin.getX(), this.origin.getY(), this.origin.getZ()};
+    }
+
+    /**
+     * Шейдерный курсор: поставить предмет в точку мира, которую шейдер при взгляде (yaw, pitch) покажет в (sx, sy).
+     * Предмет смотрит на глаза; его правый нижний угол (остриё стрелки, повёрнутой на 180°) — ровно в этой точке.
+     */
+    private void placeAnchor(final float yaw, final float pitch, final double sx, final double sy) {
+        final double[] eye = this.eye();
+        final double[] p = PanelMath.anchor(eye, yaw, pitch, sx, sy, CURSOR_DIST);
+        this.anchor = p;
+        final float[] rot = PanelMath.lookAt(eye, p);
+        final Location loc = new Location(this.origin.getWorld(), p[0], p[1], p[2], rot[0], rot[1]);
+        if (this.cursor != null && this.cursor.isValid()) {
+            this.cursor.teleport(loc);
+            return;
+        }
+        // Размер на глубине CURSOR_DIST: на экране — как 16 px холста. Локальный x дисплея смотрит влево от
+        // взгляда, y — вверх: сдвиг (+s/2, +s/2) ставит правый нижний угол квадрата в точку дисплея.
+        final float s = (float) (this.cursorSize * CURSOR_DIST);
+        final ItemStack item = new ItemStack(Material.PAPER);
+        item.editMeta(m -> {
+            m.setItemModel(CURSOR_MODEL);
+            final org.bukkit.inventory.meta.components.CustomModelDataComponent cmd = m.getCustomModelDataComponent();
+            cmd.setColors(List.of(MARKER));
+            m.setCustomModelDataComponent(cmd);
+        });
+        this.cursor = this.spawnAt(loc, ItemDisplay.class, Display.Billboard.FIXED, e -> {
+            e.setItemStack(item);
+            e.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
+            e.setTransformation(new Transformation(new Vector3f(s / 2, s / 2, 0f), new Quaternionf(),
+                new Vector3f(s, s, s), new Quaternionf()));
+        }, BASE);
     }
 
     /** Курсор — в центр (пробел). */
@@ -575,7 +731,12 @@ public final class Screen {
         this.refPitch = l.getPitch();
         this.cu = 0;
         this.cv = 0;
-        this.moveCursor(0);
+        if (this.mode == CursorMode.SHADER) {
+            this.placeAnchor(l.getYaw(), l.getPitch(), 0, 0);
+        } else {
+            this.moveCursor(0);
+        }
+        this.updateHover();
     }
 
     /** Такт: курсор по повороту головы и подсветка кнопки под ним. Поток игрока, каждый тик. */
@@ -584,6 +745,33 @@ public final class Screen {
             return;
         }
         final Location l = this.player.getLocation();
+        if (this.mode == CursorMode.SHADER) {
+            this.updateShaderCursor(l.getYaw(), l.getPitch());
+        } else {
+            this.updateRotationCursor(l);
+        }
+        this.updateHover();
+    }
+
+    /** Сервер считает курсор тем же отражением, что и шейдер; у края экрана переставляет опорную точку. */
+    private void updateShaderCursor(final float yaw, final float pitch) {
+        if (this.anchor == null) {
+            this.placeAnchor(yaw, pitch, 0, 0);
+        }
+        final double[] s = PanelMath.mirror(this.eye(), yaw, pitch, this.anchor);
+        double u = s == null ? this.cu : s[0];
+        double v = s == null ? this.cv : s[1];
+        final boolean clamp = s == null || Math.abs(u) > this.boundW || Math.abs(v) > this.boundH;
+        u = Math.max(-this.boundW, Math.min(this.boundW, u));
+        v = Math.max(-this.boundH, Math.min(this.boundH, v));
+        if (clamp) {
+            this.placeAnchor(yaw, pitch, u, v);
+        }
+        this.cu = u;
+        this.cv = v;
+    }
+
+    private void updateRotationCursor(final Location l) {
         final double s = this.sensitivity;
         double u = wrap(l.getYaw() - this.refYaw) * s;
         double v = -(l.getPitch() - this.refPitch) * s;
@@ -601,11 +789,10 @@ public final class Screen {
             this.cv = v;
             this.moveCursor(1);
         }
-        this.updateHover();
     }
 
     private void moveCursor(final int interpolation) {
-        if (this.cursor != null && this.cursor.isValid()) {
+        if (this.mode == CursorMode.ROTATION && this.cursor != null && this.cursor.isValid()) {
             this.cursor.setInterpolationDelay(0);
             this.cursor.setInterpolationDuration(interpolation);
             this.cursor.setTransformation(this.cursorTransform());
@@ -613,8 +800,8 @@ public final class Screen {
     }
 
     private void updateHover() {
-        final double px = PanelMath.panelX(this.cu, this.scale);
-        final double py = PanelMath.panelY(this.cv, this.scale);
+        final double px = this.cursorX();
+        final double py = this.cursorY();
         final List<PanelMath.Rect> rects = new ArrayList<>(this.buttons.size());
         for (final Button b : this.buttons) {
             rects.add(b.rect);
@@ -676,15 +863,19 @@ public final class Screen {
         restore(this.player, this.saved);
     }
 
+    private static void removeScale(final Player player) {
+        final org.bukkit.attribute.AttributeInstance scale = player.getAttribute(org.bukkit.attribute.Attribute.SCALE);
+        if (scale != null) {
+            scale.removeModifier(SCALE_KEY);
+        }
+    }
+
     /** Вернуть игроку сохранённое состояние (и после падения сервера — из файла). */
     public static void restore(final Player player, final Saved saved) {
         if (!player.isOnline()) {
             return;
         }
-        final org.bukkit.attribute.AttributeInstance scale = player.getAttribute(org.bukkit.attribute.Attribute.SCALE);
-        if (scale != null) {
-            scale.removeModifier(SCALE_KEY);
-        }
+        removeScale(player);
         player.setGameMode(saved.mode());
         player.setWalkSpeed(saved.walkSpeed());
         player.setFlySpeed(saved.flySpeed());
