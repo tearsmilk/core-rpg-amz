@@ -1,0 +1,41 @@
+
+# ~Written by RopeFire~
+
+CancelEvent:
+  Conditions:
+  - incombat true
+  Skills:
+  - CancelEvent @self
+
+beam_summoned:
+  Skills:
+  - CancelEvent @self
+  - state{model=beam;state=beam} @self
+  - delay 20
+  - lockmodel @self
+  - delay 10
+  - sound{s=custom.beam;v=3;p=1} @self
+  - delay 5
+  - aura{auraName=beamD;oT=beam_damage;duration=60;interval=5} @self
+  - delay 65
+  - remove @self
+
+beam_damage:
+  Conditions:
+  - targetwithin{d=20} true
+  Skills:
+  - totem{md=2;oH=[ - damage{a=3;pk=true;ie=true;ia=true;ir=true;ieff=true;pi=true} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=beam;pid=damage1}
+  - totem{md=2;oH=[ - damage{a=3;pk=true;ie=true;ia=true;ir=true;ieff=true;pi=true} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=beam;pid=damage2}
+  - totem{md=2;oH=[ - damage{a=3;pk=true;ie=true;ia=true;ir=true;ieff=true;pi=true} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=beam;pid=damage3}
+  - totem{md=2;oH=[ - damage{a=3;pk=true;ie=true;ia=true;ir=true;ieff=true;pi=true} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=beam;pid=damage4}
+  - totem{md=2;oH=[ - damage{a=3;pk=true;ie=true;ia=true;ir=true;ieff=true;pi=true} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=beam;pid=damage5}
+  - totem{md=2;oH=[ - damage{a=3;pk=true;ie=true;ia=true;ir=true;ieff=true;pi=true} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=beam;pid=damage6}
+  - totem{md=2;oH=[ - damage{a=3;pk=true;ie=true;ia=true;ir=true;ieff=true;pi=true} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=beam;pid=damage7}
+  - totem{md=2;oH=[ - damage{a=3;pk=true;ie=true;ia=true;ir=true;ieff=true;pi=true} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=beam;pid=damage8}
+  - totem{md=2;oH=[ - damage{a=3;pk=true;ie=true;ia=true;ir=true;ieff=true;pi=true} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=beam;pid=damage9}
+  - totem{md=2;oH=[ - damage{a=3;pk=true;ie=true;ia=true;ir=true;ieff=true;pi=true} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=beam;pid=damage10}
+  - totem{md=2;oH=[ - damage{a=3;pk=true;ie=true;ia=true;ir=true;ieff=true;pi=true} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=beam;pid=damage11}
+  - totem{md=2;oH=[ - damage{a=3;pk=true;ie=true;ia=true;ir=true;ieff=true;pi=true} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=beam;pid=damage12}
+  - totem{md=2;oH=[ - damage{a=3;pk=true;ie=true;ia=true;ir=true;ieff=true;pi=true} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=beam;pid=damage13}
+  - totem{md=2;oH=[ - damage{a=3;pk=true;ie=true;ia=true;ir=true;ieff=true;pi=true} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=beam;pid=damage14}
+  - totem{md=2;oH=[ - damage{a=3;pk=true;ie=true;ia=true;ir=true;ieff=true;pi=true} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=beam;pid=damage15}

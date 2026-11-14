@@ -1,0 +1,141 @@
+spdr_atk:
+  Cooldown: 4
+  Conditions:
+  - targetwithin{d=3} true
+  - offgcd
+  Skills:
+  - gcd{ticks=20}
+  - potion{type=SPEED;duration=5;level=1;delay=12} @self
+  - state{state=atk;li=2;lo=2} @Self
+
+  - sound{s=minecraft:entity.witch.throw;v=1;p=1.2;delay=14} @origin
+  - damage{a=<mob.damage>*0.6;delay=15} @LivingInCone{a=180;r=3}
+
+spdr_dash:
+  Cooldown: 4
+  Conditions:
+  - targetwithin{d=6} true
+  - offgcd
+  Skills:
+  - gcd{ticks=45}
+  - potion{type=SLOWNESS;duration=42;level=20} @self
+  - state{state=dash;li=2;lo=2} @Self
+  - lockmodel{l=true;delay=37} @self
+  - lockmodel{l=false;delay=48} @self
+  - sound{s=minecraft:item.trident.riptide_1;v=1;p=2;delay=35} @origin
+
+  - lunge{delay=33;v=2;yv=0.1} @target
+  - damage{a=<mob.damage>*0.6;delay=36} @LivingInCone{a=360;r=4}
+
+spdr_trap:
+  Cooldown: 1
+  Conditions:
+  - targetwithin{d=10} true
+  - offgcd
+  Skills:
+  - gcd{ticks=60}
+  - potion{type=SLOWNESS;duration=70;level=20} @self
+  - state{state=trap;li=2;lo=2;speed=1} @self
+  - sound{s=minecraft:entity.camel.eat;v=1;p=2;delay=20} @self
+  - projectile{b=MEG;model=spdr_trap2_vfx;oh=spdr_trap-HIT;
+    ;v=16;i=1;hR=0.6;vR=0.6;vo=0.5;syo=0.25;g=1.5;delay=21} @target
+spdr_trap-HIT:
+  Skills:
+  - damage{a=<mob.damage>*0.6}
+  - sound{s=minecraft:block.wet_grass.fall;v=0.8;p=1.2} @self
+  - summon{s=true;m=spider_trap;a=1;r=0} @origin
+
+spdr_pois:
+  Cooldown: 1
+  Conditions:
+  - targetwithin{d=10} true
+  - offgcd
+  Skills:
+  - gcd{ticks=60}
+  - potion{type=SLOWNESS;duration=70;level=20} @self
+  - state{state=pois;li=2;lo=2;speed=1} @self
+  - sound{s=minecraft:entity.camel.eat;v=1;p=2;delay=20} @self
+  - projectile{b=MEG;model=spdr_pois2_vfx;oh=spdr_pois-HIT;ohb=spdr_pois-BLOCK;
+    ;v=16;i=1;hR=0.6;vR=0.6;vo=0.5;syo=0.25;g=1.5;delay=21} @target
+spdr_pois-HIT:
+  Skills:
+  - sound{s=minecraft:block.wet_grass.fall;v=0.8;p=1.2} @self
+  - summon{s=true;m=spider_pois;a=1;r=0} @origin
+spdr_pois-BLOCK:
+  Skills:
+  - sound{s=minecraft:block.wet_grass.fall;v=0.8;p=1.2} @self
+  - summon{s=true;m=spider_pois;a=1;r=0} @origin
+
+spdrelite_atk_r:
+  Cooldown: 6
+  Conditions:
+  - targetwithin{d=6} true
+  - offgcd
+  Skills:
+  - gcd{ticks=50}
+  - potion{type=SLOWNESS;duration=9;level=20;delay=30} @self
+  - state{state=atk_r;li=2;lo=2} @self
+
+  - summon{m=spdr_stomp_vfx_small;delay=33} @modelpart{p=impact}
+
+spdrelite_atk_l:
+  Cooldown: 6
+  Conditions:
+  - targetwithin{d=6} true
+  - offgcd
+  Skills:
+  - gcd{ticks=50}
+  - potion{type=SLOWNESS;duration=9;level=20;delay=30} @self
+  - state{state=atk_l;li=2;lo=2} @self
+
+  - summon{m=spdr_stomp_vfx_small;delay=33} @modelpart{p=impact}
+
+spdrelite_atk:
+  Cooldown: 6
+  Conditions:
+  - targetwithin{d=7.5} true
+  - offgcd
+  Skills:
+  - gcd{ticks=60}
+  - potion{type=SLOWNESS;duration=40;level=20;delay=5} @self
+  - state{state=atk;li=2;lo=2} @self
+
+  - summon{m=spdr_stomp_vfx;delay=28} @modelpart{p=impact}
+
+spdrelite_rush:
+  Cooldown: 20
+  Conditions:
+  - targetwithin{d=15} true
+  - offgcd
+  Skills:
+  - gcd{ticks=130}
+  - potion{type=SPEED;duration=120;level=1} @self
+  - defaultstate{mid=spider_elite_am;type=walk;state=rush} @self
+  - defaultstate{mid=spider_elite_am;type=walk;state=walk;delay=120} @self
+  - damage{a=<mob.damage>*0.3;repeat=20;repeati=6} @LivingInCone{a=360;r=4}
+
+  - summon{m=spdr_stomp_vfx_small;delay=33} @modelpart{p=impact}
+spdr_elite_rush_l:
+  Skills:
+  - summon{m=spdr_stomp_vfx_small} @modelpart{p=impact2}
+spdr_elite_rush_r:
+  Skills:
+  - summon{m=spdr_stomp_vfx_small} @modelpart{p=impact}
+
+
+am_spdr_step:
+  Skills:
+  - sound{s=minecraft:entity.spider.step;v=0.7;p=0.8} @self
+am_spdr_elite_step:
+  Skills:
+  - sound{s=minecraft:entity.wither_skeleton.step;v=0.4;p=1.2} @self
+
+spdr_s1:
+  Skills:
+  - state{s=s1} @self
+spdr_s2:
+  Skills:
+  - state{s=s2} @self
+spdr_s3:
+  Skills:
+  - state{s=s3} @self

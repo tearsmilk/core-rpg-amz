@@ -1,0 +1,2186 @@
+defenderfallen:
+  Type: skeleton
+  Display: 'Fallen Defender'
+  AIGoalSelectors:
+  Modules:
+    ThreatTable: true
+  AITargetSelectors:
+  - 0 clear
+  - 1 SpecificFaction CorruptedFlesh
+  - 2 SpecificFaction Zombie
+  - 3 attacker
+  - 4 players
+  AIGoalSelectors:
+  - 0 clear
+  Health: 350
+  BossBar:
+    Enabled: true
+    Title: '&cFallen Defender'
+    Range: 40
+    Color: GREEN
+    Style: SEGMENTED_20
+  Faction: FallenHero
+  DamageModifiers:
+  - FIRE 0
+  - MAGIC 1.1
+  - PROJECTILE 0.25
+  Damage: 12 #10 is the BASE damage. Setting it to 20 will DOUBLE damage. Setting it to 5 will REDUCE damage in 50% from the original.
+  KillMessages:
+  - '<target.name> was killed by the fallen heroes.'
+  - 'The fallen heroes have claimed justice over <target.name>.'
+  - "<target.name> suffered the revenge of the fallen heroes."
+  - "The fallen heroes have claimed <target.name>'s soul."
+  - '<target.name> tried to defy the fallen heroes. Tried.'
+  Equipment:
+  - air:4
+  - air:3
+  - air:2
+  - imbootsfallen:1
+  - iron_axe:0
+  - air:5
+  Drops:
+  - exp 100-250 1
+  - exp 100-250 1
+  - exp 100-250 1
+  - exp 100-250 1
+  - exp 100-250 1
+  - exp 100-250 1
+  - exp 100-250 1
+  - exp 100-250 1
+  Skills:
+  - potion{type=SLOW;duration=40;level=200;p=false;delay=0;force=true} @Self ~onSpawn
+  - message{m="Hitrec <caster.var.hitrec> STACKS"} @PlayersNearOrigin{r=75} ~onDamaged 0 #DEBUG
+  - message{m="Shieldstax <caster.var.shieldstacks> STACKS"} @PlayersNearOrigin{r=75} ~onDamaged 0 #DEBUG
+#====== MODEL ASSIGNEMENT =============
+  - model{mid=fallendefender;s=idle;n=false} @self ~onSpawn 1
+  - bindhitbox{m=fallendefender;p=ob_shieldenn;t=defender_shieldennbox;delay=2} @self ~onSpawn
+  - hitboxconfig{m=fallendefender;p=ob_shieldenn;pass=0;delay=2} @self ~onSpawn
+  - DefaultState{type=IDLE;state=idlestatic;li=3;lo=2;n=false;frame=0} @self ~onSpawn 0
+  - bodyclamp{c=0} @self ~onSpawn
+#  - bodyclamp{maxhead=0;maxbody=0} @self ~onSpawn
+  - RunAIGoalSelector{goal=clear} @self ~onSpawn
+#  - spin{d=1;v=10} @self ~onSpawn
+  - state{s=idlestatic;li=0;lo=0;n=false;delay=1} @self ~onSpawn
+  - partvisibility{p=lame;v=false;delay=1} @self ~onspawn
+  - submodel{mid=fallendefender;subpartid=shield2;remove=true} @self ~onSpawn
+  - submodel{mid=fallendefender;subpartid=shieldennfx;remove=true} @self ~onSpawn
+  - submodel{mid=fallendefender;subpartid=ob_forcefield;remove=true} @self ~onSpawn
+  - submodel{mid=fallendefender;subpartid=ob_shallowfield;remove=true} @self ~onSpawn
+  - submodel{mid=fallendefender;subpartid=shieldenndeployfx;remove=true} @self ~onSpawn
+  - submodel{mid=fallendefender;partid=fravager_chipcitums;submodelid=fallendefender;subpartid=fravager_chipcitums;remove=true} @self ~onSpawn
+  - submodel{mid=fallendefender;partid=svorden;submodelid=fallendefender;subpartid=sfe_effects;remove=true} @self ~onSpawn
+  - submodel{mid=fallendefender;partid=svorden;submodelid=fallendefender;subpartid=sfe_frame0;remove=true} @self ~onSpawn
+  - bindhitbox{m=fallendefender;p=ob_shallowfield;t=defender_shallowfield;delay=2} @self 0
+  - hitboxconfig{m=fallendefender;p=ob_shallowfield;pass=0;delay=2} @self 0
+  #GENDER
+  - setvariable{var=caster.eichpee;value="<caster.mhp>";t=integer} @Self ~onSpawn
+  - setvariable{var=caster.gender;value="1";t=integer} @Self ~onSpawn
+
+  # ENTER COMBAT DFSTATES
+  - DefaultState{type=WALK;state=walk;li=5;lo=2} @self ~onEnterCombat ?!variableEquals{var=caster.svorden;value="1"} ?!variableEquals{var=caster.shielding;value="1"}
+  - DefaultState{type=IDLE;state=idle_combat;li=5;lo=2} @self ~onEnterCombat ?!variableEquals{var=caster.svorden;value="1"} ?!variableEquals{var=caster.shielding;value="1"}
+
+  - DefaultState{type=WALK;state=walk_unsheathed;li=5;lo=2} @self ~onEnterCombat ?variableEquals{var=caster.svorden;value="1"} ?!variableEquals{var=caster.shielding;value="1"}
+  - DefaultState{type=IDLE;state=idle_unsheathed;li=5;lo=2} @self ~onEnterCombat ?variableEquals{var=caster.svorden;value="1"} ?!variableEquals{var=caster.shielding;value="1"}
+  - DefaultState{type=WALK;state=walk_block;li=5;lo=2} @self ~onEnterCombat ?variableEquals{var=caster.shielding;value="1"}
+  - DefaultState{type=IDLE;state=idle_blocking;li=5;lo=2} @self ~onEnterCombat ?variableEquals{var=caster.shielding;value="1"}
+
+  #LEAVE COMBAT DFSTATES 
+  
+  - DefaultState{type=WALK;state=walk;li=5;lo=2} @self ~onDropCombat ?!variableEquals{var=caster.svorden;value="1"}
+  - DefaultState{type=IDLE;state=idle;li=8;lo=2;delay=60} @self ~onDropCombat ?!variableEquals{var=caster.svorden;value="1"}
+  - DefaultState{type=WALK;state=walk_unsheathed;li=5;lo=2} @self ~onDropCombat ?variableEquals{var=caster.svorden;value="1"}
+  - DefaultState{type=IDLE;state=idle_unsheathed;li=5;lo=2} @self ~onDropCombat ?variableEquals{var=caster.svorden;value="1"}
+#============ DISGUISE =================
+  - changepart{m=fallendefender;pid=head;nm=fallendefender2;npid=head} @self ~onSpawn
+  - changepart{m=fallendefender;pid=right_arm;nm=fallendefender2;npid=right_arm} @self ~onSpawn
+  - changepart{m=fallendefender;pid=right_forearm;nm=fallendefender2;npid=right_forearm} @self ~onSpawn
+  - changepart{m=fallendefender;pid=left_arm;nm=fallendefender2;npid=left_arm} @self ~onSpawn
+  - changepart{m=fallendefender;pid=left_forearm;nm=fallendefender2;npid=left_forearm} @self ~onSpawn
+  - changepart{m=fallendefender;pid=hip;nm=fallendefender2;npid=hip} @self ~onSpawn
+  - changepart{m=fallendefender;pid=chest;nm=fallendefender2;npid=chest} @self ~onSpawn
+  - changepart{m=fallendefender;pid=left_leg;nm=fallendefender2;npid=left_leg} @self ~onSpawn
+  - changepart{m=fallendefender;pid=left_shin;nm=fallendefender2;npid=left_shin} @self ~onSpawn
+  - changepart{m=fallendefender;pid=right_leg;nm=fallendefender2;npid=right_leg} @self ~onSpawn
+  - changepart{m=fallendefender;pid=right_shin;nm=fallendefender2;npid=right_shin} @self ~onSpawn
+#============ ATTACK =================
+  - setvariable{var=caster.combor;value="0";t=integer} @Self ~onSpawn
+  - setvariable{var=caster.comboa;value="0";t=integer} @Self ~onSpawn
+
+  - CancelEvent{sync=true} @self ~onAttack 1 #CANCEL ATTACKS
+
+  - randomskill{s=meleefdefendertrigger;sync=true} @Target ~onAttack >0% 1
+  - randomskill{s=meleefdefendertrigger;sync=true} @LivingInCone{a=45.0;r=4.5;rot=0.0;ignore=samefaction} ~onTimer:13 0.85
+  - randomskill{s=meleefdefendertrigger;sync=true} @LivingInCone{a=45.0;r=2.8;rot=0.0;ignore=samefaction} ~onTimer:10 1
+  - randomskill{s=meleefdefendertrigger2;sync=true} @LivingInCone{a=110.0;r=6;rot=0.0;ignore=samefaction} ~onTimer:15 0.6 ########## 0.6
+  
+  - randomskill{s=attack4fdefender,attack5fdefender,attack4fdefender,attack5fdefender,cutslash_fdefender;sync=true} @LivingInCone{a=110.0;r=27;rot=0.0;ignore=samefaction} ~onTimer:77 0.45 ###### 0.6
+  - randomskill{s=bruttack1_fdefender,bruttack1_fdefender;sync=true} @LivingInCone{a=110.0;r=6.5;rot=0.0;ignore=samefaction} ~onTimer:37 0.5 ###### 0.6
+  - randomskill{s=leap1fdefender,leap3fdefender,leap2fdefender,leap3fdefender,leap3fdefender,leap3fdefender;sync=true} @target ~onTimer:30 <70% 0.5
+  
+
+  - randomskill{s=fdefender_ravageprotocol;sync=true} @LivingInCone{a=60.0;r=30;rot=0.0;ignore=samefaction} ~onTimer:120 <25% 0.14
+#============ SVORDENSTANCE MELEE TRIGGERS
+  
+  - randomskill{s=meleefdefendertriggerSvorden;sync=true} @LivingInCone{a=150;r=7;rot=0.0;ignore=samefaction} ~onTimer:26 0.5 ?variableEquals{var=caster.svorden;value="1"}
+  - randomskill{s=fdefender_fireprojectile_vert,fdefender_fireprojectile_vert,attack5fdefender,attack4fdefender,cutslash_fdefender;sync=true} @LivingInCone{a=110.0;r=35;rot=0.0;ignore=samefaction} ~onTimer:77 0.45 ?variableEquals{var=caster.svorden;value="1"}
+  - randomskill{s=meleefdefendertriggerSvorden2;sync=true} @LivingInCone{a=160.0;r=54;rot=0.0;ignore=samefaction} ~onTimer:30 0.9 ?variableEquals{var=caster.svorden;value="1"} ########## 0.6
+
+  - randomskill{s=meleefdefendertriggerShieldenn;sync=true} @LivingInCone{a=170.0;r=5;rot=0.0;ignore=samefaction} ~onTimer:55 0.6 ?variableEquals{var=caster.shieldenn;value="1"} ########## 0.6
+  - randomskill{s=meleefdefendertriggerShieldennA;sync=true} @LivingInCone{a=200.0;r=5;rot=0.0;ignore=samefaction} ~onTimer:35 0.6 ?variableEquals{var=caster.shieldenn;value="1"}
+
+#================ RIP IN PEPSI PROTOCOL
+  - setrotation{relative=false;pitch=0} @Self ~onDeath 1
+  - sound{s=emaginationfallenheroes:custom.fallenhero.death;p=1;v=1} @selflocation ~onDeath 1
+  - sound{s=emaginationfallendefender:custom.fallendefender.death;p=1;v=1;delay=0} @selflocation ~onDeath 1
+  - skill{s=[
+    - bodyclamp{c=0} @self ~onSpawn @self
+    - changeparent{model=fallendefender;parent=left_leg_death;child=left_leg} @self
+    - changeparent{model=fallendefender;parent=left_shin_death;child=left_shin} @self
+    - changeparent{model=fallendefender;parent=right_leg_death;child=right_leg} @self
+    - changeparent{model=fallendefender;parent=right_shin_death;child=right_shin} @self
+    - changeparent{model=fallendefender;parent=left_arm_death;child=left_arm} @self 0
+    - changeparent{model=fallendefender;parent=left_forearm_death;child=left_forearm} @self
+    - changeparent{model=fallendefender;parent=right_arm_death;child=right_arm_control} @self 0
+    - changeparent{model=fallendefender;parent=right_forearm_death;child=right_forearm} @self
+    - changeparent{model=fallendefender;parent=head_death;child=head_control} @self
+    - changeparent{model=fallendefender;parent=hip_death;child=hip} @self
+    - changeparent{model=fallendefender;parent=chest_death;child=chest} @self
+    - changeparent{model=fallendefender;parent=core_control;child=svorden} @self
+    
+    - effect:particles{particle=reddust;color=#39e9b7;amount=35;hS=0.3;vS=0.3;size=2} @ModelPart{m=fallendefender;p=chest;offset=LOCAL;y=0}
+    - effect:particles{particle=reddust;color=#39e9b7;amount=6;hS=0.2;vS=0.1;size=0.75;delay=0;repeat=20;repeatinterval=1} @ModelPart{m=fallendefender;p=chest;offset=LOCAL;y=0}
+    - effect:particles{particle=reddust;color=#39e9b7;amount=6;hS=0.2;vS=0.1;size=1.5;delay=20;repeat=22;repeatinterval=1} @ModelPart{m=fallendefender;p=chest;offset=LOCAL;y=0}
+    - effect:particles{particle=reddust;color=#39e9b7;amount=6;hS=0.2;vS=0.1;size=0.75;delay=42;repeat=40;repeatinterval=1} @ModelPart{m=fallendefender;p=chest;offset=LOCAL;y=0}
+
+    - effect:particles{particle=reddust;color=#39e9b7;amount=6;hS=0.1;vS=0.1;size=0.7;delay=0;repeat=84;repeatinterval=1} @ModelPart{m=fallendefender;p=left_forearm;offset=LOCAL;y=0}
+    - effect:particles{particle=reddust;color=#39e9b7;amount=6;hS=0.1;vS=0.1;size=0.7;delay=0;repeat=100;repeatinterval=1} @ModelPart{m=fallendefender;p=left_shin;offset=LOCAL;y=0}
+
+    - effect:particles{particle=reddust;color=#39e9b7;amount=6;hS=0.1;vS=0.1;size=0.7;delay=0;repeat=72;repeatinterval=1} @ModelPart{m=fallendefender;p=right_forearm;offset=LOCAL;y=0}
+    - effect:particles{particle=reddust;color=#39e9b7;amount=6;hS=0.1;vS=0.1;size=0.7;delay=0;repeat=100;repeatinterval=1} @ModelPart{m=fallendefender;p=right_shin;offset=LOCAL;y=0}
+
+    - effect:particles{particle=reddust;color=#39e9b7;amount=6;hS=0.1;vS=0.16;size=0.8;delay=0;repeat=140;repeatinterval=1} @ModelPart{m=fallendefender;p=axeparticles1;offset=LOCAL;y=0}
+
+    - effect:particles{particle=reddust;color=#39e9b7;amount=3;hS=0.1;vS=0.1;size=0.4;delay=0;repeat=95;repeatinterval=1} @ModelPart{m=fallendefender;p=eye1;offset=LOCAL;y=0}
+    - effect:particles{particle=reddust;color=#39e9b7;amount=3;hS=0.1;vS=0.1;size=0.4;delay=0;repeat=95;repeatinterval=1} @ModelPart{m=fallendefender;p=eye2;offset=LOCAL;y=0}
+
+    - changepart{m=fallendefender;pid=hip;nm=fallendefender3;npid=hip;delay=162} @self
+    - changepart{m=fallendefender;pid=chest;nm=fallendefender3;npid=chest;delay=162} @self
+    - effect:particles{particle=reddust;color=#39e9b7;amount=45;hS=0.15;vS=0.25;size=1.8;delay=162;repeat=3} @ModelPart{m=fallendefender;p=chest;offset=LOCAL;y=0}
+    
+    - changepart{m=fallendefender;pid=left_arm;nm=fallendefender3;npid=left_arm;delay=160} @self
+    - changepart{m=fallendefender;pid=left_forearm;nm=fallendefender3;npid=left_forearm;delay=160} @self
+    - effect:particles{particle=reddust;color=#39e9b7;amount=15;hS=0.15;vS=0.15;size=1.4;delay=160;repeat=2;repeatinterval=1} @ModelPart{m=fallendefender;p=left_forearm;offset=LOCAL;y=0}
+
+    - changepart{m=fallendefender;pid=right_forearm;nm=fallendefender3;npid=right_forearm;delay=160} @self
+    - changepart{m=fallendefender;pid=right_arm;nm=fallendefender3;npid=right_arm;delay=160} @self
+    - effect:particles{particle=reddust;color=#39e9b7;amount=15;hS=0.15;vS=0.15;size=1.4;delay=160;repeat=2;repeatinterval=1} @ModelPart{m=fallendefender;p=right_forearm;offset=LOCAL;y=0}
+    
+    - effect:particles{particle=reddust;color=#39e9b7;amount=3;hS=0.1;vS=0.1;size=0.5;delay=95;repeat=17;repeatinterval=1} @ModelPart{m=fallendefender;p=eye1;offset=LOCAL;y=0}
+    - effect:particles{particle=reddust;color=#39e9b7;amount=3;hS=0.1;vS=0.1;size=0.5;delay=95;repeat=17;repeatinterval=1} @ModelPart{m=fallendefender;p=eye2;offset=LOCAL;y=0}
+    - effect:particles{particle=reddust;color=#39e9b7;amount=3;hS=0.1;vS=0.1;size=0.4;delay=112;repeat=50;repeatinterval=1} @ModelPart{m=fallendefender;p=eye1;offset=LOCAL;y=0}
+    - effect:particles{particle=reddust;color=#39e9b7;amount=3;hS=0.1;vS=0.1;size=0.4;delay=112;repeat=50;repeatinterval=1} @ModelPart{m=fallendefender;p=eye2;offset=LOCAL;y=0}
+    - effect:particles{particle=reddust;color=#39e9b7;amount=3;hS=0.1;vS=0.1;size=0.5;delay=150;repeat=25;repeatinterval=1} @ModelPart{m=fallendefender;p=head;offset=LOCAL;y=0}
+    - changepart{m=fallendefender;pid=head;nm=fallendefender3;npid=head;delay=165} @self
+
+    - changepart{m=fallendefender;pid=left_leg;nm=fallendefender3;npid=left_leg;delay=100} @self
+    - changepart{m=fallendefender;pid=left_shin;nm=fallendefender3;npid=left_shin;delay=100} @self
+    - effect:particles{particle=reddust;color=#39e9b7;amount=20;hS=0.17;vS=0.17;size=1.5;delay=100;repeat=3;repeatinterval=1} @ModelPart{m=fallendefender;p=left_shin;offset=LOCAL;y=0}
+    - changepart{m=fallendefender;pid=right_leg;nm=fallendefender3;npid=right_leg;delay=100} @self
+    - changepart{m=fallendefender;pid=right_shin;nm=fallendefender3;npid=right_shin;delay=100} @self
+    - effect:particles{particle=reddust;color=#39e9b7;amount=20;hS=0.17;vS=0.17;size=1.5;delay=100;repeat=3;repeatinterval=1} @ModelPart{m=fallendefender;p=right_shin;offset=LOCAL;y=0}
+    - effect:particles{particle=cloud;amount=150;hS=1.1;vS=0.55;speed=0;size=4.5;repeat=0;repeatinterval=1;sideOffset=0;delay=319} @ModelPart{m=fallendefender;p=hip;offset=LOCAL;y=0}
+    - effect:particles{particle=cloud;amount=60;hS=0.6;vS=0.2;speed=0;size=4.5;repeat=0;repeatinterval=1;sideOffset=0;delay=319} @ModelPart{m=fallendefender;p=svorden;offset=LOCAL;y=0}];sync=true} @Self ~onDeath
+#==============
+  - randomskill{s=hurt1fdefender,hurt2fdefender,hurt3fdefender,hurt4fdefender;sync=true} @self ~onDamaged 0.85 #Hurtmechanic
+  - velocity{m=set;x=0;y=0;z=0} @self ~onDamaged
+  - setvariable{var=caster.statueform;value="1";t=integer} @Self ~onSpawn #=====================
+  - skill{s=fdefenderstcheck3;cooldown=99999;sync=true} @self ~onDamaged 1 #=====================
+#============== SOULFIRE FORCEFIELD
+  - setvariable{var=caster.shieldennstacks;value="0";t=integer} @Self ~onSpawn
+  - skill{s=meleefdefendertriggerShieldenn} @LivingInCone{a=160;r=5.5;rot=0.0;ignore=samefaction} ~onSignal:COUNTERATTACK
+  - randomskill{s=meleefdefendertrigger_sfe_shieldenn;sync=true} @LivingInCone{a=110.0;r=5;rot=0.0;ignore=samefaction} ~onTimer:20 0.6 ?variableEquals{var=caster.shieldenn;value="1"} 
+  - skill{s=fdefender_forcefield_execute_commute_normal;sync=true} @Trigger ~onDamaged <70% 0.6
+#============== SOULFIRE BLADE
+  - setvariable{var=caster.svorden;value="0";t=integer} @Self ~onSpawn
+  - setvariable{var=caster.svordenstacks;value="0";t=integer} @Self ~onSpawn
+  - skill{s=raytrace_sfe_passive;sync=true} ~onTimer:1 ?variableEquals{var=caster.svorden;value="1"}
+  - skill{s=fdefender_unseathe_execute_trigger;sync=true;cooldown=1} ~onDamaged 0.25 =30%-50%
+  - skill{s=fdefender_unseathe_execute_trigger;sync=true;cooldown=1} ~onDamaged 0.45 =10%-30%
+  - skill{s=fdefender_unseathe_execute_trigger;sync=true;cooldown=1} ~onDamaged 0.65 =0%-10%
+  - skill{s=fdefender_unseathe_execute_trigger;sync=true;cooldown=1} ~onTimer:120 0.15 =30%-50%
+  - skill{s=fdefender_unseathe_execute_trigger;sync=true;cooldown=1} ~onTimer:100 0.3 =10%-30%
+  - skill{s=fdefender_unseathe_execute_trigger;sync=true;cooldown=1} ~onTimer:70 0.35 =0%-10%
+  - skill{s=fdefender_svordenhide;sync=false;cooldown=1} ~onTimer:80 ?!incombat
+
+# ========= Anti-ranged protocol
+  - skill{s=hurtgenfdefender;sync=true} @self ~onDamaged 1 #Hurtmechanic ANTIARROW
+  - skill{s=hurtgenfdefender2;sync=true} @self ~onDamaged 1 #Hurtmechanic ANTIMMSkills
+  - setvariable{var=caster.rollumterr;value="0";t=integer} @Self ~OnSpawn #Hurtmechanic ANTIARROW
+  - setvariable{var=caster.projrec;value="0";t=integer} @Self ~OnSpawn #Hurtmechanic ANTIARROW
+  - setvariable{var=caster.running;value="0";t=integer} @Self ~onSpawn
+  - setvariable{var=caster.runstacks;value="0";t=integer} @Self ~onSpawn
+  - skill{s=fdefender_sidesteppcheck;sync=true} @self ~onSignal:ARROWARNING
+# ======== Shielder protocol
+  - setvariable{var=caster.shielding;value="0";t=integer} @Self ~onSpawn
+  - setvariable{var=caster.shieldstacks;value="0";t=integer} @Self ~onSpawn
+#======== RUNNER PROTOCOL (Activate if you remove statue pose)
+  - Aura{auraName=checkrunfdefender;onTick=fdefender_runprotocolcheck;interval=30;duration=99999} @self ~onSpawn 0 #=============== RUN MECHANICUS
+  - skill{s=outrun_trigger_fdefender} @Trigger ~onDamaged 0.35
+  - setvariable{var=caster.hitrec;value="0";t=integer} @Self ~OnSpawn #Hurtmechanic ANTIARROW
+  - message{m="Hitrec <caster.var.hitrec>"} @PlayersNearOrigin{r=75} ~onDamaged 0
+  - message{m="&eCOMBOR &a<caster.var.combor>"} @PlayersNearOrigin{r=75} ~onDamaged 0 
+
+# ======== Dodger/Sgh Protocol (activate here if you remove statue pose)
+  - Aura{auraName=backstepdodgerfdefender;onTick=fdefender_bstpcheck;interval=7;duration=99999} @self ~onSpawn 0
+  - sound{s=emaginationfallenheroes:custom.fallenhero.hitmetal;p=1;v=1} @selflocation ~onDamaged 1 #Hurtmechanic SOUND
+  - sound{s=emaginationfallenheroes:custom.fallenhero.hitmetal;p=1;v=1} @selflocation ~onDeath 1 
+  - setstance{stance=static} @self ~onSpawn
+  - message{m="<caster.var.runstacks>"} @PlayersNearOrigin{r=35} ~onTimer:40 0
+  - sound{s=emaginationfallenheroes:custom.fallenhero.death;p=1;v=1} @selflocation ~onDeath 1
+  - Aura{auraName=staticfdefender;onTick=fdefenderstcheck;interval=20;duration=99999;delay=40} @self ~onSpawn
+
+  Options:
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.18
+    Interactable: true
+    PreventOtherDrops: true
+    KnockbackResistance: 0.9
+    PreventSunburn: true
+
+defenderfallen_activated:
+  Type: skeleton
+  Display: 'Fallen Defender'
+  AIGoalSelectors:
+  Modules:
+    ThreatTable: true
+  AITargetSelectors:
+  - 0 clear
+  - 1 SpecificFaction CorruptedFlesh
+  - 2 SpecificFaction Zombie
+  - 3 attacker
+  - 4 players
+  AIGoalSelectors:
+  - 0 clear
+  Health: 350
+  BossBar:
+    Enabled: true
+    Title: '&cFallen Defender'
+    Range: 40
+    Color: GREEN
+    Style: SEGMENTED_20
+  Faction: FallenHero
+  DamageModifiers:
+  - FIRE 0
+  - MAGIC 1.1
+  - PROJECTILE 0.25
+  Damage: 12 #10 is the BASE damage. Setting it to 20 will DOUBLE damage. Setting it to 5 will REDUCE damage in 50% from the original.
+  KillMessages:
+  - '<target.name> was killed by the fallen heroes.'
+  - 'The fallen heroes have claimed justice over <target.name>.'
+  - "<target.name> suffered the revenge of the fallen heroes."
+  - "The fallen heroes have claimed <target.name>'s soul."
+  - '<target.name> tried to defy the fallen heroes. Tried.'
+  Equipment:
+  - air:4
+  - air:3
+  - air:2
+  - imbootsfallen:1
+  - iron_axe:0
+  - air:5
+  Drops:
+  - exp 100-250 1
+  - exp 100-250 1
+  - exp 100-250 1
+  - exp 100-250 1
+  - exp 100-250 1
+  - exp 100-250 1
+  - exp 100-250 1
+  - exp 100-250 1
+  Skills:
+  - message{m="Hitrec <caster.var.hitrec> STACKS"} @PlayersNearOrigin{r=75} ~onDamaged 0 #DEBUG
+  - message{m="Shieldstax <caster.var.shieldstacks> STACKS"} @PlayersNearOrigin{r=75} ~onDamaged 0 #DEBUG
+#====== MODEL ASSIGNEMENT =============
+  - model{mid=fallendefender;s=idle;n=false} @self ~onSpawn 1
+  - bindhitbox{m=fallendefender;p=ob_shieldenn;t=defender_shieldennbox;delay=2} @self ~onSpawn
+  - hitboxconfig{m=fallendefender;p=ob_shieldenn;pass=0;delay=2} @self ~onSpawn
+#  - spin{d=1;v=10} @self ~onSpawn
+
+  - partvisibility{p=lame;v=false;delay=1} @self ~onspawn
+  - submodel{mid=fallendefender;subpartid=shield2;remove=true} @self ~onSpawn
+  - submodel{mid=fallendefender;subpartid=shieldennfx;remove=true} @self ~onSpawn
+  - submodel{mid=fallendefender;subpartid=ob_forcefield;remove=true} @self ~onSpawn
+  - submodel{mid=fallendefender;subpartid=ob_shallowfield;remove=true} @self ~onSpawn
+  - submodel{mid=fallendefender;subpartid=shieldenndeployfx;remove=true} @self ~onSpawn
+  - submodel{mid=fallendefender;partid=fravager_chipcitums;submodelid=fallendefender;subpartid=fravager_chipcitums;remove=true} @self ~onSpawn
+  - submodel{mid=fallendefender;partid=svorden;submodelid=fallendefender;subpartid=sfe_effects;remove=true} @self ~onSpawn
+  - submodel{mid=fallendefender;partid=svorden;submodelid=fallendefender;subpartid=sfe_frame0;remove=true} @self ~onSpawn
+  - bindhitbox{m=fallendefender;p=ob_shallowfield;t=defender_shallowfield;delay=2} @self 0
+  - hitboxconfig{m=fallendefender;p=ob_shallowfield;pass=0;delay=2} @self 0
+  #GENDER
+  - setvariable{var=caster.gender;value="1";t=integer} @Self ~onSpawn
+  - setspeed{speed=1.1;type=walking;delay=10} @Self ~onSpawn
+  - setvariable{var=caster.eichpee;value="<caster.mhp>";t=integer} @Self ~onSpawn
+  - skill{s=fdefender_hp_check;cooldown=99999;sync=true;delay=1} @Self ~onSpawn
+
+  # ENTER COMBAT DFSTATES
+  - DefaultState{type=WALK;state=walk;li=5;lo=2} @self ~onEnterCombat ?!variableEquals{var=caster.svorden;value="1"} ?!variableEquals{var=caster.shielding;value="1"}
+  - DefaultState{type=IDLE;state=idle_combat;li=5;lo=2} @self ~onEnterCombat ?!variableEquals{var=caster.svorden;value="1"} ?!variableEquals{var=caster.shielding;value="1"}
+
+  - DefaultState{type=WALK;state=walk_unsheathed;li=5;lo=2} @self ~onEnterCombat ?variableEquals{var=caster.svorden;value="1"} ?!variableEquals{var=caster.shielding;value="1"}
+  - DefaultState{type=IDLE;state=idle_unsheathed;li=5;lo=2} @self ~onEnterCombat ?variableEquals{var=caster.svorden;value="1"} ?!variableEquals{var=caster.shielding;value="1"}
+  - DefaultState{type=WALK;state=walk_block;li=5;lo=2} @self ~onEnterCombat ?variableEquals{var=caster.shielding;value="1"}
+  - DefaultState{type=IDLE;state=idle_blocking;li=5;lo=2} @self ~onEnterCombat ?variableEquals{var=caster.shielding;value="1"}
+
+  #LEAVE COMBAT DFSTATES 
+  
+  - DefaultState{type=WALK;state=walk;li=5;lo=2} @self ~onDropCombat ?!variableEquals{var=caster.svorden;value="1"}
+  - DefaultState{type=IDLE;state=idle;li=8;lo=2;delay=60} @self ~onDropCombat ?!variableEquals{var=caster.svorden;value="1"}
+  - DefaultState{type=WALK;state=walk_unsheathed;li=5;lo=2} @self ~onDropCombat ?variableEquals{var=caster.svorden;value="1"}
+  - DefaultState{type=IDLE;state=idle_unsheathed;li=5;lo=2} @self ~onDropCombat ?variableEquals{var=caster.svorden;value="1"}
+#============ DISGUISE =================
+
+#============ ATTACK =================
+  - skill{s=leap2fdefender} @Trigger ~onSignal:DEBUG_TEST 1
+
+  - setvariable{var=caster.combor;value="0";t=integer} @Self ~onSpawn
+  - setvariable{var=caster.comboa;value="0";t=integer} @Self ~onSpawn
+
+  - CancelEvent{sync=true} @self ~onAttack 1 #CANCEL ATTACKS
+
+  - randomskill{s=meleefdefendertrigger;sync=true} @Target ~onAttack >0% 1
+  - randomskill{s=meleefdefendertrigger;sync=true} @LivingInCone{a=45.0;r=4.5;rot=0.0;ignore=samefaction} ~onTimer:13 0.85
+  - randomskill{s=meleefdefendertrigger;sync=true} @LivingInCone{a=45.0;r=2.8;rot=0.0;ignore=samefaction} ~onTimer:10 1
+  - randomskill{s=meleefdefendertrigger2;sync=true} @LivingInCone{a=110.0;r=6;rot=0.0;ignore=samefaction} ~onTimer:15 0.6 ########## 0.6
+  
+  - randomskill{s=attack4fdefender,attack5fdefender,attack4fdefender,attack5fdefender,cutslash_fdefender;sync=true} @LivingInCone{a=110.0;r=27;rot=0.0;ignore=samefaction} ~onTimer:77 0.45 ###### 0.6
+  - randomskill{s=bruttack1_fdefender,bruttack1_fdefender;sync=true} @LivingInCone{a=110.0;r=6.5;rot=0.0;ignore=samefaction} ~onTimer:37 0.5 ###### 0.6
+  - randomskill{s=leap1fdefender,leap3fdefender,leap2fdefender,leap3fdefender,leap3fdefender,leap3fdefender;sync=true} @target ~onTimer:30 <70% 0.5
+  
+
+  - randomskill{s=fdefender_ravageprotocol;sync=true} @LivingInCone{a=60.0;r=30;rot=0.0;ignore=samefaction} ~onTimer:120 <25% 0.14
+#============ SVORDENSTANCE MELEE TRIGGERS
+  
+  - randomskill{s=meleefdefendertriggerSvorden;sync=true} @LivingInCone{a=150;r=7;rot=0.0;ignore=samefaction} ~onTimer:26 0.5 ?variableEquals{var=caster.svorden;value="1"}
+  - randomskill{s=fdefender_fireprojectile_vert,fdefender_fireprojectile_vert,attack5fdefender,attack4fdefender,cutslash_fdefender;sync=true} @LivingInCone{a=110.0;r=35;rot=0.0;ignore=samefaction} ~onTimer:77 0.45 ?variableEquals{var=caster.svorden;value="1"}
+  - randomskill{s=meleefdefendertriggerSvorden2;sync=true} @LivingInCone{a=160.0;r=54;rot=0.0;ignore=samefaction} ~onTimer:30 0.9 ?variableEquals{var=caster.svorden;value="1"} ########## 0.6
+
+  - randomskill{s=meleefdefendertriggerShieldenn;sync=true} @LivingInCone{a=170.0;r=5;rot=0.0;ignore=samefaction} ~onTimer:55 0.6 ?variableEquals{var=caster.shieldenn;value="1"} ########## 0.6
+  - randomskill{s=meleefdefendertriggerShieldennA;sync=true} @LivingInCone{a=200.0;r=5;rot=0.0;ignore=samefaction} ~onTimer:35 0.6 ?variableEquals{var=caster.shieldenn;value="1"}
+
+#================ RIP IN PEPSI PROTOCOL
+  - setrotation{relative=false;pitch=0} @Self ~onDeath 1
+  - sound{s=emaginationfallenheroes:custom.fallenhero.death;p=1;v=1} @selflocation ~onDeath 1
+  - sound{s=emaginationfallendefender:custom.fallendefender.death;p=1;v=1;delay=0} @selflocation ~onDeath 1
+  - skill{s=[
+    - bodyclamp{c=0} @self ~onSpawn @self
+    - changeparent{model=fallendefender;parent=left_leg_death;child=left_leg} @self
+    - changeparent{model=fallendefender;parent=left_shin_death;child=left_shin} @self
+    - changeparent{model=fallendefender;parent=right_leg_death;child=right_leg} @self
+    - changeparent{model=fallendefender;parent=right_shin_death;child=right_shin} @self
+    - changeparent{model=fallendefender;parent=left_arm_death;child=left_arm} @self 0
+    - changeparent{model=fallendefender;parent=left_forearm_death;child=left_forearm} @self
+    - changeparent{model=fallendefender;parent=right_arm_death;child=right_arm_control} @self 0
+    - changeparent{model=fallendefender;parent=right_forearm_death;child=right_forearm} @self
+    - changeparent{model=fallendefender;parent=head_death;child=head_control} @self
+    - changeparent{model=fallendefender;parent=hip_death;child=hip} @self
+    - changeparent{model=fallendefender;parent=chest_death;child=chest} @self
+    - changeparent{model=fallendefender;parent=core_control;child=svorden} @self
+    
+    - effect:particles{particle=reddust;color=#39e9b7;amount=35;hS=0.3;vS=0.3;size=2} @ModelPart{m=fallendefender;p=chest;offset=LOCAL;y=0}
+    - effect:particles{particle=reddust;color=#39e9b7;amount=6;hS=0.2;vS=0.1;size=0.75;delay=0;repeat=20;repeatinterval=1} @ModelPart{m=fallendefender;p=chest;offset=LOCAL;y=0}
+    - effect:particles{particle=reddust;color=#39e9b7;amount=6;hS=0.2;vS=0.1;size=1.5;delay=20;repeat=22;repeatinterval=1} @ModelPart{m=fallendefender;p=chest;offset=LOCAL;y=0}
+    - effect:particles{particle=reddust;color=#39e9b7;amount=6;hS=0.2;vS=0.1;size=0.75;delay=42;repeat=40;repeatinterval=1} @ModelPart{m=fallendefender;p=chest;offset=LOCAL;y=0}
+
+    - effect:particles{particle=reddust;color=#39e9b7;amount=6;hS=0.1;vS=0.1;size=0.7;delay=0;repeat=84;repeatinterval=1} @ModelPart{m=fallendefender;p=left_forearm;offset=LOCAL;y=0}
+    - effect:particles{particle=reddust;color=#39e9b7;amount=6;hS=0.1;vS=0.1;size=0.7;delay=0;repeat=100;repeatinterval=1} @ModelPart{m=fallendefender;p=left_shin;offset=LOCAL;y=0}
+
+    - effect:particles{particle=reddust;color=#39e9b7;amount=6;hS=0.1;vS=0.1;size=0.7;delay=0;repeat=72;repeatinterval=1} @ModelPart{m=fallendefender;p=right_forearm;offset=LOCAL;y=0}
+    - effect:particles{particle=reddust;color=#39e9b7;amount=6;hS=0.1;vS=0.1;size=0.7;delay=0;repeat=100;repeatinterval=1} @ModelPart{m=fallendefender;p=right_shin;offset=LOCAL;y=0}
+
+    - effect:particles{particle=reddust;color=#39e9b7;amount=6;hS=0.1;vS=0.16;size=0.8;delay=0;repeat=140;repeatinterval=1} @ModelPart{m=fallendefender;p=axeparticles1;offset=LOCAL;y=0}
+
+    - effect:particles{particle=reddust;color=#39e9b7;amount=3;hS=0.1;vS=0.1;size=0.4;delay=0;repeat=95;repeatinterval=1} @ModelPart{m=fallendefender;p=eye1;offset=LOCAL;y=0}
+    - effect:particles{particle=reddust;color=#39e9b7;amount=3;hS=0.1;vS=0.1;size=0.4;delay=0;repeat=95;repeatinterval=1} @ModelPart{m=fallendefender;p=eye2;offset=LOCAL;y=0}
+
+    - changepart{m=fallendefender;pid=hip;nm=fallendefender3;npid=hip;delay=162} @self
+    - changepart{m=fallendefender;pid=chest;nm=fallendefender3;npid=chest;delay=162} @self
+    - effect:particles{particle=reddust;color=#39e9b7;amount=45;hS=0.15;vS=0.25;size=1.8;delay=162;repeat=3} @ModelPart{m=fallendefender;p=chest;offset=LOCAL;y=0}
+    
+    - changepart{m=fallendefender;pid=left_arm;nm=fallendefender3;npid=left_arm;delay=160} @self
+    - changepart{m=fallendefender;pid=left_forearm;nm=fallendefender3;npid=left_forearm;delay=160} @self
+    - effect:particles{particle=reddust;color=#39e9b7;amount=15;hS=0.15;vS=0.15;size=1.4;delay=160;repeat=2;repeatinterval=1} @ModelPart{m=fallendefender;p=left_forearm;offset=LOCAL;y=0}
+
+    - changepart{m=fallendefender;pid=right_forearm;nm=fallendefender3;npid=right_forearm;delay=160} @self
+    - changepart{m=fallendefender;pid=right_arm;nm=fallendefender3;npid=right_arm;delay=160} @self
+    - effect:particles{particle=reddust;color=#39e9b7;amount=15;hS=0.15;vS=0.15;size=1.4;delay=160;repeat=2;repeatinterval=1} @ModelPart{m=fallendefender;p=right_forearm;offset=LOCAL;y=0}
+    
+    - effect:particles{particle=reddust;color=#39e9b7;amount=3;hS=0.1;vS=0.1;size=0.5;delay=95;repeat=17;repeatinterval=1} @ModelPart{m=fallendefender;p=eye1;offset=LOCAL;y=0}
+    - effect:particles{particle=reddust;color=#39e9b7;amount=3;hS=0.1;vS=0.1;size=0.5;delay=95;repeat=17;repeatinterval=1} @ModelPart{m=fallendefender;p=eye2;offset=LOCAL;y=0}
+    - effect:particles{particle=reddust;color=#39e9b7;amount=3;hS=0.1;vS=0.1;size=0.4;delay=112;repeat=50;repeatinterval=1} @ModelPart{m=fallendefender;p=eye1;offset=LOCAL;y=0}
+    - effect:particles{particle=reddust;color=#39e9b7;amount=3;hS=0.1;vS=0.1;size=0.4;delay=112;repeat=50;repeatinterval=1} @ModelPart{m=fallendefender;p=eye2;offset=LOCAL;y=0}
+    - effect:particles{particle=reddust;color=#39e9b7;amount=3;hS=0.1;vS=0.1;size=0.5;delay=150;repeat=25;repeatinterval=1} @ModelPart{m=fallendefender;p=head;offset=LOCAL;y=0}
+    - changepart{m=fallendefender;pid=head;nm=fallendefender3;npid=head;delay=165} @self
+
+    - changepart{m=fallendefender;pid=left_leg;nm=fallendefender3;npid=left_leg;delay=100} @self
+    - changepart{m=fallendefender;pid=left_shin;nm=fallendefender3;npid=left_shin;delay=100} @self
+    - effect:particles{particle=reddust;color=#39e9b7;amount=20;hS=0.17;vS=0.17;size=1.5;delay=100;repeat=3;repeatinterval=1} @ModelPart{m=fallendefender;p=left_shin;offset=LOCAL;y=0}
+    - changepart{m=fallendefender;pid=right_leg;nm=fallendefender3;npid=right_leg;delay=100} @self
+    - changepart{m=fallendefender;pid=right_shin;nm=fallendefender3;npid=right_shin;delay=100} @self
+    - effect:particles{particle=reddust;color=#39e9b7;amount=20;hS=0.17;vS=0.17;size=1.5;delay=100;repeat=3;repeatinterval=1} @ModelPart{m=fallendefender;p=right_shin;offset=LOCAL;y=0}
+    - effect:particles{particle=cloud;amount=150;hS=1.1;vS=0.55;speed=0;size=4.5;repeat=0;repeatinterval=1;sideOffset=0;delay=319} @ModelPart{m=fallendefender;p=hip;offset=LOCAL;y=0}
+    - effect:particles{particle=cloud;amount=60;hS=0.6;vS=0.2;speed=0;size=4.5;repeat=0;repeatinterval=1;sideOffset=0;delay=319} @ModelPart{m=fallendefender;p=svorden;offset=LOCAL;y=0}];sync=true} @Self ~onDeath
+#==============
+  - randomskill{s=hurt1fdefender,hurt2fdefender,hurt3fdefender,hurt4fdefender;sync=true} @self ~onDamaged 0.85 #Hurtmechanic
+  - velocity{m=set;x=0;y=0;z=0} @self ~onDamaged
+  - setvariable{var=caster.statueform;value="0";t=integer} @Self ~onSpawn #=====================
+
+#============== SOULFIRE FORCEFIELD
+  - setvariable{var=caster.shieldennstacks;value="0";t=integer} @Self ~onSpawn
+  - skill{s=meleefdefendertriggerShieldenn} @LivingInCone{a=160;r=5.5;rot=0.0;ignore=samefaction} ~onSignal:COUNTERATTACK
+  - randomskill{s=meleefdefendertrigger_sfe_shieldenn;sync=true} @LivingInCone{a=110.0;r=5;rot=0.0;ignore=samefaction} ~onTimer:20 0.6 ?variableEquals{var=caster.shieldenn;value="1"} 
+  - skill{s=fdefender_forcefield_execute_commute_normal;sync=true} @Trigger ~onDamaged <70% 0.6
+#============== SOULFIRE BLADE
+  - setvariable{var=caster.svorden;value="0";t=integer} @Self ~onSpawn
+  - setvariable{var=caster.svordenstacks;value="0";t=integer} @Self ~onSpawn
+  - skill{s=raytrace_sfe_passive;sync=true} ~onTimer:1 ?variableEquals{var=caster.svorden;value="1"}
+  - skill{s=fdefender_unseathe_execute_trigger;sync=true;cooldown=1} ~onDamaged 0.25 =30%-50%
+  - skill{s=fdefender_unseathe_execute_trigger;sync=true;cooldown=1} ~onDamaged 0.45 =10%-30%
+  - skill{s=fdefender_unseathe_execute_trigger;sync=true;cooldown=1} ~onDamaged 0.65 =0%-10%
+  - skill{s=fdefender_unseathe_execute_trigger;sync=true;cooldown=1} ~onTimer:120 0.15 =30%-50%
+  - skill{s=fdefender_unseathe_execute_trigger;sync=true;cooldown=1} ~onTimer:100 0.3 =10%-30%
+  - skill{s=fdefender_unseathe_execute_trigger;sync=true;cooldown=1} ~onTimer:70 0.35 =0%-10%
+  - skill{s=fdefender_svordenhide;sync=false;cooldown=1} ~onTimer:80 ?!incombat
+
+# ========= Anti-ranged protocol
+  - skill{s=hurtgenfdefender;sync=true} @self ~onDamaged 1 #Hurtmechanic ANTIARROW
+  - skill{s=hurtgenfdefender2;sync=true} @self ~onDamaged 1 #Hurtmechanic ANTIMMSkills
+  - setvariable{var=caster.rollumterr;value="0";t=integer} @Self ~OnSpawn #Hurtmechanic ANTIARROW
+  - setvariable{var=caster.projrec;value="0";t=integer} @Self ~OnSpawn #Hurtmechanic ANTIARROW
+  - setvariable{var=caster.running;value="0";t=integer} @Self ~onSpawn
+  - setvariable{var=caster.runstacks;value="0";t=integer} @Self ~onSpawn
+  - skill{s=fdefender_sidesteppcheck;sync=true} @self ~onSignal:ARROWARNING
+# ======== Shielder protocol
+  - setvariable{var=caster.shielding;value="0";t=integer} @Self ~onSpawn
+  - setvariable{var=caster.shieldstacks;value="0";t=integer} @Self ~onSpawn
+#======== RUNNER PROTOCOL (Activate if you remove statue pose)
+  - Aura{auraName=checkrunfdefender;onTick=fdefender_runprotocolcheck;interval=30;duration=99999} @self ~onSpawn 0 #=============== RUN MECHANICUS
+  - skill{s=outrun_trigger_fdefender} @Trigger ~onDamaged 0.35
+  - setvariable{var=caster.hitrec;value="0";t=integer} @Self ~OnSpawn #Hurtmechanic ANTIARROW
+  - message{m="Hitrec <caster.var.hitrec>"} @PlayersNearOrigin{r=75} ~onDamaged 0
+  - message{m="&eCOMBOR &a<caster.var.combor>"} @PlayersNearOrigin{r=75} ~onDamaged 0 
+
+# ======== Dodger/Sgh Protocol (activate here if you remove statue pose)
+  - Aura{auraName=backstepdodgerfdefender;onTick=fdefender_bstpcheck;interval=7;duration=99999} @self ~onSpawn 1
+  - sound{s=emaginationfallenheroes:custom.fallenhero.hitmetal;p=1;v=1} @selflocation ~onDamaged 1 #Hurtmechanic SOUND
+  - sound{s=emaginationfallenheroes:custom.fallenhero.hitmetal;p=1;v=1} @selflocation ~onDeath 1 
+  - setstance{stance=normal} @self ~onSpawn
+  - message{m="<caster.var.runstacks>"} @PlayersNearOrigin{r=35} ~onTimer:40 0
+  - sound{s=emaginationfallenheroes:custom.fallenhero.death;p=1;v=1} @selflocation ~onDeath 1
+
+
+  Options:
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.18
+    Interactable: true
+    PreventOtherDrops: true
+    KnockbackResistance: 0.9
+    PreventSunburn: true
+
+defenderfallen_n:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  DamageModifiers:
+  - FIRE 0
+  - MAGIC 2.7
+  Damage: 0
+  Drops:
+  Skills:
+   - model{mid=fhero_fireexplosion;s=idle;n=false} @self ~onSpawn 1
+   - skill{s=[
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame2;delay=1} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame3;delay=2} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame4;delay=3} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame5;delay=4} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame6;delay=5} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame7;delay=6} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame8;delay=7} @self];sync=true} @self ~onSpawn 1
+   - summon{mob=defenderfallen;amount=1;noise=0.5;r=0.6;yr=0} @SelfLocation{y=0} ~onSpawn
+   - sudoskill{s=[
+    - setvariable{var=caster.zlocxd;value="<caster.l.z>-10";t=integer} @Self ~onSpawn
+    - look{headOnly=false;immediately=false;repeat=40;repeatInterval=1;delay=0} @Location{c=<caster.l.x>,<caster.l.y>,<caster.var.zlocxd>,-180,-1} ~onSpawn
+    - spin{d=1;v=110;delay=0} @self ~onSpawn];sync=true;cat=true;delay=1} @Children ~onSpawn
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=20} @Self ~onSpawn
+   - effect:particles{particle=reddust;color=#03c982;amount=5;hS=0.3;vS=0.3;size=0.8;repeat=1;repeatinterval=1} @Origin{y=0.3} ~onSpawn 1
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: true
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+
+defenderfallen_e:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  DamageModifiers:
+  - FIRE 0
+  - MAGIC 2.7
+  Damage: 0
+  Drops:
+  Skills:
+   - model{mid=fhero_fireexplosion;s=idle;n=false} @self ~onSpawn 1
+   - skill{s=[
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame2;delay=1} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame3;delay=2} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame4;delay=3} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame5;delay=4} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame6;delay=5} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame7;delay=6} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame8;delay=7} @self];sync=true} @self ~onSpawn 1
+   - summon{mob=defenderfallen;amount=1;noise=0.5;r=0.6;yr=0} @SelfLocation{y=0} ~onSpawn
+   - sudoskill{s=[
+    - setvariable{var=caster.xlocxd;value="<caster.l.x>+10";t=integer} @Self ~onSpawn
+    - look{headOnly=false;immediately=false;repeat=40;repeatInterval=1;delay=0} @Location{c=<caster.var.xlocxd>,<caster.l.y>,<caster.l.z>,-90,-1} ~onSpawn
+    - spin{d=1;v=90;delay=0} @self ~onSpawn];sync=true;cat=true;delay=1} @Children ~onSpawn
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=20} @Self ~onSpawn
+   - effect:particles{particle=reddust;color=#03c982;amount=5;hS=0.3;vS=0.3;size=0.8;repeat=1;repeatinterval=1} @Origin{y=0.3} ~onSpawn 1
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: true
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+
+defenderfallen_w:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  DamageModifiers:
+  - FIRE 0
+  - MAGIC 2.7
+  Damage: 0
+  Drops:
+  Skills:
+   - model{mid=fhero_fireexplosion;s=idle;n=false} @self ~onSpawn 1
+   - skill{s=[
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame2;delay=1} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame3;delay=2} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame4;delay=3} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame5;delay=4} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame6;delay=5} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame7;delay=6} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame8;delay=7} @self];sync=true} @self ~onSpawn 1
+   - summon{mob=defenderfallen;amount=1;noise=0.5;r=0.6;yr=0} @SelfLocation{y=0} ~onSpawn
+   - sudoskill{s=[
+     - setvariable{var=caster.xlocxd;value="<caster.l.x>-10";t=integer} @Self ~onSpawn
+     - look{headOnly=false;immediately=false;repeat=40;repeatInterval=1;delay=0} @Location{c=<caster.var.xlocxd>,<caster.l.y>,<caster.l.z>,-90,-1} ~onSpawn
+     - spin{d=1;v=-90;delay=0} @self ~onSpawn];sync=true;cat=true;delay=1} @Children ~onSpawn
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=20} @Self ~onSpawn
+   - effect:particles{particle=reddust;color=#03c982;amount=5;hS=0.3;vS=0.3;size=0.8;repeat=1;repeatinterval=1} @Origin{y=0.3} ~onSpawn 1
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: true
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+
+defender_shieldennbox:
+  Type: vex
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 1500
+  DamageModifiers:
+  - FIRE 0
+  - MAGIC 2.7
+  Damage: 0
+  Equipment:
+  - air:4
+  - air:3
+  - air:2
+  - air:1
+  - air:0
+  Skills:
+  - setvariable{var=caster.shieldennbox;value="1";t=integer;delay=1} @Self ~onSpawn
+  - cancelEvent{sync=true} @Trigger ~onDamaged
+  - cancelEvent{sync=true} @parent ~onDamaged
+  - message{m="&aShield Damaged"} @PlayersNearOrigin{r=75} ~onDamaged 0 #DEBUG MESSAGE
+  - variableadd{var=target.shieldstacks;amount=1;cooldown=2.5} @parent{conditions=[  - variableInRange{var=target.shieldstacks;value=>15} false ]} ~onDamaged 0.4 ?hasaura{n=shieldenaddstacks_temporary}
+  - sudoskill{s=[
+    - skill{s=meleefdefendertriggerShieldenn;sync=true} @LivingInCone{a=160.0;r=4.5;rot=0.0;ignore=samefaction}];sync=true;cat=true} @parent{conditions=[  - variableEquals{var=target.shielding;value="1"} true ]} ~onDamaged 0.8
+  - sudoskill{s=[
+    - randomskill{s=fdefender_forcefield_execute_commute_xd;cooldown=1} @Self <80%
+    - message{m="&aFallen Defender &dCasting&c Conmutando stacks SHIELDING=1 SHIELDENNBOX"} @PlayersNearOrigin{r=75} 0];sync=true;cat=true} @parent{conditions=[  - variableEquals{var=target.shielding;value="1"} true ]} ~onDamaged 0.5
+  - sudoskill{s=[
+    - randomskill{s=fdefender_forcefield_execute_commute_xd;cooldown=1} @Self <65%
+    - message{m="&aFallen Defender &dCasting&b Conmutando stacks SHIELDING=0 SHIELDENNBOX"} @PlayersNearOrigin{r=75} 0];sync=true;cat=true} @parent{conditions=[  - variableEquals{var=target.shielding;value="0"} true ]} ~onDamaged 0.3
+  - signal{s=COUNTERATTACK} @parent ~onDamaged 0
+  - randomskill{s=[
+      - state{state=block_trigger1;li=0;lo=8;n=false;speed=1} @parent
+    ],
+      [
+      - state{state=block_trigger2;li=0;lo=8;n=false;speed=1} @parent
+    ];sync=true} @parent ~onDamaged
+  - sound{s=emaginationfallenheroes:custom.fallenhero.hitmetal;p=2;v=2} @selflocation ~onDamaged
+  - sound{s=emaginationfallenheroes:custom.fallenhero.hitmetal;p=3;v=2} @selflocation ~onDamaged
+  - sound{s=item.shield.block;p=2;v=1;cooldown=0} @selflocation ~onDamaged
+  
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 60
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: true
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+defender_shallowfield:
+  Type: vex
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 1500
+  DamageModifiers:
+  - FIRE 0
+  - MAGIC 2.7
+  Damage: 0
+  Equipment:
+  - air:4
+  - air:3
+  - air:2
+  - air:1
+  - air:0
+  Skills:
+  - setvariable{var=caster.shallowbox;value="1";t=integer;delay=1} @Self ~onSpawn
+  - cancelEvent{sync=true} @Trigger ~onDamaged
+  - cancelEvent{sync=true} @parent ~onDamaged
+  - message{m="&aSpawned ShallowField"} @PlayersNearOrigin{r=75} ~onSpawn 0 #DEBUG MESSAGE
+  - message{m="&aShallowField Damaged"} @PlayersNearOrigin{r=75} ~onDamaged 0 #DEBUG MESSAGE
+  - sudoskill{s=[
+    - skill{s=meleefdefendertriggerShieldenn;sync=true} @LivingInCone{a=45.0;r=4.5;rot=0.0;ignore=samefaction}];sync=true;cat=true} @parent{conditions=[  - variableEquals{var=target.shielding;value="1"} true ]} ~onDamaged 0.8
+  - sudoskill{s=[
+    - randomskill{s=fdefender_forcefield_execute_commute;cooldown=1} @Trigger <75% ];sync=true;cat=true} @parent{conditions=[  - variableEquals{var=target.shielding;value="1"} true ]} ~onDamaged 0.4
+  - sudoskill{s=[
+    - randomskill{s=fdefender_forcefield_execute_commute;cooldown=1} @Trigger <75% ];sync=true;cat=true} @parent{conditions=[  - variableEquals{var=target.shielding;value="0"} true ]} ~onDamaged 0.2
+  - randomskill{s=[
+      - state{state=block_trigger1;li=0;lo=8;n=false;speed=1} @parent
+    ],
+      [
+      - state{state=block_trigger2;li=0;lo=8;n=false;speed=1} @parent
+    ];sync=true} @parent ~onDamaged
+  - sound{s=emaginationfallenheroes:custom.fallenhero.hitmetal;p=2;v=2} @selflocation ~onDamaged
+  - sound{s=emaginationfallenheroes:custom.fallenhero.hitmetal;p=3;v=2} @selflocation ~onDamaged
+  - sound{s=item.shield.block;p=2;v=1;cooldown=0} @selflocation ~onDamaged
+  - skill{s=fdefender_deflecc;sync=true} @Self ~onDamaged 0
+  - onDamaged{
+      auraName=fdefender_shallowflect;d=30000;deflectProjectiles=true;onDamaged=fdefender_deflecc} @Self ~onSpawn
+  - effect:particles{particle=reddust;color=#03c982;amount=5;hS=0.3;vS=0.3;size=0.8;repeat=1;repeatinterval=1} @Origin{y=0.3} ~onSpawn 1
+  Options:
+    ApplyInvisibility: false
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.01
+    MaxCombatDistance: 90
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: false
+    KnockbackResistance: 1
+    Collidable: false
+    NoGravity: true
+defender_shieldennbox2:
+  Type: vex
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 10
+  DamageModifiers:
+  - FIRE 0
+  - MAGIC 2.7
+  Damage: 0
+  Equipment:
+  - air:4
+  - air:3
+  - air:2
+  - air:1
+  - air:0
+  Drops:
+  Skills:
+  - remove @Self ~onSpawn 0
+  - setvariable{var=caster.shieldennbox;value="1";t=integer;delay=1} @Self ~onSpawn
+  - cancelEvent{sync=true} @Trigger ~onDamaged
+  - cancelEvent{sync=true} @parent ~onDamaged
+  - variableadd{var=target.shieldstacks;amount=1;cooldown=2.5} @parent{conditions=[  - variableInRange{var=target.shieldstacks;value=>15} false ]} ~onDamaged 0.57
+  - sudoskill{s=[
+    - randomskill{s=fdefender_forcefield_execute_commute;cooldown=1} @Trigger <65% 0.8
+    - skill{s=meleefdefendertriggerShieldenn;sync=true} @LivingInCone{a=160.0;r=4.5;rot=0.0;ignore=samefaction}];sync=true;cat=true;cooldown=0.8} @parent{conditions=[  - variableEquals{var=target.shielding;value="1"} true ]} ~onDamaged 0.8
+  - signal{s=COUNTERATTACK} @parent ~onDamaged 0
+  - randomskill{s=[
+      - state{state=block_trigger1;li=0;lo=8;n=false;speed=1} @parent
+    ],
+      [
+      - state{state=block_trigger2;li=0;lo=8;n=false;speed=1} @parent
+    ];sync=true} @parent ~onDamaged
+  - sound{s=emaginationfallenheroes:custom.fallenhero.hitmetal;p=2;v=2} @selflocation ~onDamaged
+  - sound{s=emaginationfallenheroes:custom.fallenhero.hitmetal;p=3;v=2} @selflocation ~onDamaged
+  - sound{s=item.shield.block;p=2;v=1;cooldown=0} @selflocation ~onDamaged
+  - onDamaged{
+      auraName=fdefender_superdeflect;d=30000;
+      onTick=[
+        - sudoskill{s=shieldennAura_tick;sync=false} @Parent
+      ];deflectProjectiles=true;deflectConditions=[  - samefaction false ];onDamaged=fdefender_deflecc} @Self ~onSpawn 1
+  - effect:particles{particle=reddust;color=#03c982;amount=5;hS=0.3;vS=0.3;size=0.8;repeat=1;repeatinterval=1} @Origin{y=0.3} ~onSpawn 1
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 60
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: true
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+defender_expFXmarker1:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  DamageModifiers:
+  - FIRE 0
+  - MAGIC 2.7
+  Damage: 0
+  Equipment:
+  - air:4
+  - air:3
+  - air:2
+  - air:1
+  - air:0
+  Drops:
+  Skills:
+   - model{mid=fhero_fireexplosion;s=idle;n=false} @self ~onSpawn 1
+   - skill{s=[
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame2;delay=1} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame3;delay=2} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame4;delay=3} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame5;delay=4} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame6;delay=5} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame7;delay=6} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=frame8;delay=7} @self];sync=true} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=8} @Self ~onSpawn
+   - effect:particles{particle=reddust;color=#03c982;amount=5;hS=0.3;vS=0.3;size=0.8;repeat=1;repeatinterval=1} @Origin{y=0.3} ~onSpawn 1
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: true
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+defender_expFXmarker2:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+   - setrotation{relative=true;yaw=<random.0to180>} @Self
+   - model{mid=fhero_fireexplosion;s=idle;n=false} @self ~onSpawn 1
+   - skill{s=[
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=explosionb1;delay=0} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=explosionb2;delay=1} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=explosionb3;delay=2} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=explosionb4;delay=3} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=explosionb5;delay=4} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=explosionb6;delay=5} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=explosionb7;delay=6} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=explosionb8;delay=7} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=explosionb9;delay=8} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=explosionb10;delay=9} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=explosionb11;delay=10} @self
+    - changepart{m=fhero_fireexplosion;pid=frame1;nm=fdexplosion_resources;npid=explosionb12;delay=11} @self];sync=true} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=12} @Self ~onSpawn
+   - effect:particles{particle=reddust;color=#03c982;amount=5;hS=0.3;vS=0.3;size=0.8;repeat=1;repeatinterval=1} @Origin{y=0.3} ~onSpawn 1
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    Invincible: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: false
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+defender_ravagemarker:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+   - setrotation{relative=true;yaw=<random.0to180>} @Self ~onSpawn 0
+   - model{mid=ravage_effectus_xd;s=idle;n=false} @self ~onSpawn 1
+   - bodyclamp{c=0} @self ~onSpawn @self ~onSpawn 1
+   - skill{s=[
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage1;delay=0} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage2;delay=1} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage3;delay=2} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage4;delay=3} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage5;delay=4} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage6;delay=5} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage7;delay=6} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage8;delay=7} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage9;delay=8} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage10;delay=9} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage11;delay=10} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage12;delay=11} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage13;delay=12} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage14;delay=13} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage15;delay=14} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage16;delay=15} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage17;delay=16} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage18;delay=17} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage19;delay=18} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage20;delay=19} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage21;delay=20} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage22;delay=21} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage23;delay=22} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage24;delay=23} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravage25;delay=24} @self];sync=true} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=25} @Self ~onSpawn
+   - effect:blockmask{m=light;r=1;duration=25;onlyair=true} @Origin{y=1.7} ~onSpawn 1
+   - effect:particles{particle=reddust;color=#03c982;amount=5;hS=0.3;vS=0.3;size=0.8;repeat=1;repeatinterval=1} @Origin{y=0.3} ~onSpawn 1
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: false
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+defender_expFXmarker3:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+   - spin{d=1;v=<random.0to45>} @self ~onSpawn 0
+   - model{mid=ravage_effectus_xd;s=idle;n=false} @self ~onSpawn 1
+   - bodyclamp{c=0} @self ~onSpawn @self ~onSpawn 1
+   - skill{s=[
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravageb1;delay=0} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravageb2;delay=1} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravageb3;delay=2} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravageb4;delay=3} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravageb5;delay=4} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravageb6;delay=5} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravageb7;delay=6} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravageb8;delay=7} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravageb9;delay=8} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravageb10;delay=9} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravageb11;delay=10} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravageb12;delay=11} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravageb131;delay=12} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravageb14;delay=13} @self
+    - changepart{m=ravage_effectus_xd;pid=ravage1;nm=fdexplosion_resources;npid=ravageb15;delay=14} @self];sync=true} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=15} @Self ~onSpawn
+   - effect:blockmask{m=light;r=1;duration=25;onlyair=true} @Origin{y=2} ~onSpawn 1
+   - effect:particles{particle=reddust;color=#03c982;amount=5;hS=0.3;vS=0.3;size=0.8;repeat=1;repeatinterval=1} @Origin{y=0.3} ~onSpawn 1
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: false
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+fdefender_shockwave1:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+   - setrotation{relative=true;yaw=<random.0to180>} @Self
+   - model{mid=fhero_shockwave;s=idle;n=false} @self ~onSpawn 1
+   - skill{s=[
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw1;delay=0} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw2;delay=1} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw3;delay=2} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw4;delay=3} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw5;delay=4} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw6;delay=5} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw7;delay=6} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw8;delay=7} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw9;delay=8} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw10;delay=9} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw11;delay=10} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw12;delay=11} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw13;delay=12} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw14;delay=13} @self];sync=true} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=12} @Self ~onSpawn
+   - effect:particles{particle=reddust;color=#03c982;amount=5;hS=0.3;vS=0.3;size=0.8;repeat=1;repeatinterval=1} @Origin{y=0.3} ~onSpawn 1
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: false
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+fdefender_supershockwave1:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+   - setrotation{relative=true;yaw=<random.0to180>;delay=1} @Self ~onSpawn 0
+   - model{mid=fhero_supershockwave;s=idle;n=false} @self ~onSpawn 1
+   - bodyclamp{m=fhero_supershockwave;c=0} @self ~onSpawn 1
+   - state{s=sprout;li=0;lo=0;n=false;delay=1} @self ~onSpawn 1
+   - skill{s=[
+    - changepart{m=fhero_supershockwave;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswb_1;delay=1} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswb_2;delay=1} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswb_3;delay=1} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswb_4;delay=1} @self
+
+    - changepart{m=fhero_supershockwave;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswc_1;delay=2} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswc_2;delay=2} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswc_3;delay=2} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswc_4;delay=2} @self
+
+    - changepart{m=fhero_supershockwave;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswd_1;delay=3} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswd_2;delay=3} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswd_3;delay=3} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswd_4;delay=3} @self
+
+    - changepart{m=fhero_supershockwave;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswe_1;delay=4} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswe_2;delay=4} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswe_3;delay=4} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswe_4;delay=4} @self
+
+    - changepart{m=fhero_supershockwave;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswf_1;delay=5} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswf_2;delay=5} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswf_3;delay=5} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswf_4;delay=5} @self
+    
+    - changepart{m=fhero_supershockwave;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswg_1;delay=6} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswg_2;delay=6} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswg_3;delay=6} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswg_4;delay=6} @self
+    
+    - changepart{m=fhero_supershockwave;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswh_1;delay=7} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswh_2;delay=7} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswh_3;delay=7} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswh_4;delay=7} @self
+    
+    - changepart{m=fhero_supershockwave;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswi_1;delay=8} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswi_2;delay=8} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswi_3;delay=8} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswi_4;delay=8} @self
+    
+    - changepart{m=fhero_supershockwave;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswj_1;delay=9} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswj_2;delay=9} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswj_3;delay=9} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswj_4;delay=9} @self
+    
+    - changepart{m=fhero_supershockwave;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswk_1;delay=10} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswk_2;delay=10} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswk_3;delay=10} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswk_4;delay=10} @self
+
+    - changepart{m=fhero_supershockwave;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswl_1;delay=11} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswl_2;delay=11} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswl_3;delay=11} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswl_4;delay=11} @self
+    
+    - changepart{m=fhero_supershockwave;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswm_1;delay=12} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswm_2;delay=12} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswm_3;delay=12} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswm_4;delay=12} @self
+    
+    - changepart{m=fhero_supershockwave;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswn_1;delay=13} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswn_2;delay=13} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswn_3;delay=13} @self
+    - changepart{m=fhero_supershockwave;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswn_4;delay=13} @self];sync=true} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=14} @Self ~onSpawn 1
+   - effect:blockmask{m=light;r=1;duration=25;onlyair=true} @Origin{y=2} ~onSpawn 1
+   - effect:particles{particle=reddust;color=#03c982;amount=5;hS=0.3;vS=0.3;size=0.8;repeat=1;repeatinterval=1} @Origin{y=0.3} ~onSpawn 1
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.000001
+    MaxCombatDistance: 0.1
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: false
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+    Invincible: false
+fdefender_supershockwave2:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+   - setrotation{relative=true;yaw=<random.0to180>;delay=1} @Self ~onSpawn 0
+   - model{mid=fhero_supershockwave_vert;s=idle;n=false} @self ~onSpawn 1
+   - bodyclamp{m=fhero_supershockwave_vert;c=0} @self ~onSpawn 1
+   - state{s=sprout;li=0;lo=0;n=false;delay=1} @self ~onSpawn 1
+   - skill{s=[
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswb_1;delay=1} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswb_2;delay=1} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswb_3;delay=1} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswb_4;delay=1} @self
+
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswc_1;delay=2} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswc_2;delay=2} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswc_3;delay=2} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswc_4;delay=2} @self
+
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswd_1;delay=3} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswd_2;delay=3} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswd_3;delay=3} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswd_4;delay=3} @self
+
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswe_1;delay=4} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswe_2;delay=4} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswe_3;delay=4} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswe_4;delay=4} @self
+
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswf_1;delay=5} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswf_2;delay=5} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswf_3;delay=5} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswf_4;delay=5} @self
+    
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswg_1;delay=6} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswg_2;delay=6} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswg_3;delay=6} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswg_4;delay=6} @self
+    
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswh_1;delay=7} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswh_2;delay=7} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswh_3;delay=7} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswh_4;delay=7} @self
+    
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswi_1;delay=8} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswi_2;delay=8} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswi_3;delay=8} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswi_4;delay=8} @self
+    
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswj_1;delay=9} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswj_2;delay=9} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswj_3;delay=9} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswj_4;delay=9} @self
+    
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswk_1;delay=10} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswk_2;delay=10} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswk_3;delay=10} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswk_4;delay=10} @self
+
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswl_1;delay=11} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswl_2;delay=11} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswl_3;delay=11} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswl_4;delay=11} @self
+    
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswm_1;delay=12} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswm_2;delay=12} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswm_3;delay=12} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswm_4;delay=12} @self
+    
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_1;nm=fdefender_shockwaveresources;npid=rswn_1;delay=13} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_2;nm=fdefender_shockwaveresources;npid=rswn_2;delay=13} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_3;nm=fdefender_shockwaveresources;npid=rswn_3;delay=13} @self
+    - changepart{m=fhero_supershockwave_vert;pid=rswa_4;nm=fdefender_shockwaveresources;npid=rswn_4;delay=13} @self];sync=true} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=14} @Self ~onSpawn 1
+   - effect:blockmask{m=light;r=1;duration=25;onlyair=true} @Origin{y=2} ~onSpawn 1
+   - effect:particles{particle=reddust;color=#03c982;amount=5;hS=0.3;vS=0.3;size=0.8;repeat=1;repeatinterval=1} @Origin{y=0.3} ~onSpawn 1
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.000001
+    MaxCombatDistance: 0.1
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: false
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+    Invincible: false
+defender_fireblade1:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 10 #### BASE DAMAGE OF THE FIRE TRAILS LEFT BEHIND
+  Drops:
+  Skills:
+   - model{mid=defender_fire_blade;s=idle;n=false} @self ~onSpawn 1
+   - state{s=sprout;li=0;lo=0;n=false;delay=1} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - totem{charges=1;onStart=[
+    - summon{mob=fdefender_fireplayer;amount=1;noise=0;r=0.1;yr=0} @EntitiesNearOrigin{r=1.5;ignore=samefaction;conditions=[  -hasaura{n=fireplayerfhero} false ]} 0.3
+    - basedamage{m=0.1;ignorearmor=false;preventknockback=true;preventimmunity=true} @EntitiesNearOrigin{r=1.5;ignore=samefaction}
+    - sound{s=entity.generic.burn;v=1} @EntitiesNearOrigin{r=1.5;ignore=samefaction}];d=2} @Origin{y=2} ~onTimer:8
+   - effect:blockmask{m=light;r=2;duration=81;onlyair=true} @Origin{y=2.5} ~onSpawn 1
+   - remove{delay=80} @Self ~onSpawn
+   - effect:particles{particle=reddust;color=#03c982;amount=5;hS=0.5;vS=0.3;size=0.8;repeat=20;repeatinterval=1} @Origin{y=2.3} ~onSpawn 1
+   - effect:particles{particle=reddust;color=#03c982;amount=7;hS=0.25;vS=0.1;size=1.1;repeat=20;repeatinterval=1;delay=62} @Origin{y=2.02} ~onSpawn 1
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: true
+    Invincible: true
+    KnockbackResistance: 1
+    Collidable: false
+defender_fireblade1b:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 10 #### BASE DAMAGE OF THE FIRE TRAILS LEFT BEHIND
+  Drops:
+  Skills:
+   - model{mid=defender_fire_blade;s=idle;n=false} @self ~onSpawn 1
+   - state{s=sprout2;li=0;lo=0;n=false;delay=1} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - totem{charges=1;onStart=[
+    - summon{mob=fdefender_fireplayer;amount=1;noise=0;r=0.1;yr=0} @EntitiesNearOrigin{r=1.8;ignore=samefaction;conditions=[  - hasaura{n=fireplayer} false ]} 0.3
+    - basedamage{m=0.2;ignorearmor=false;preventknockback=true;preventimmunity=true} @EntitiesNearOrigin{r=2;ignore=samefaction}
+    - sound{s=entity.generic.burn;v=1} @EntitiesNearOrigin{r=1.8;ignore=samefaction}];d=2} @Origin{y=2.2} ~onTimer:7
+#==========
+   - basedamage{m=0.1;ignorearmor=false;preventknockback=true} @EntitiesNearOrigin{r=1.5;ignore=samefaction;y=2} ~onTimer:6
+   - sound{s=entity.generic.burn;v=1} @EntitiesNearOrigin{r=1.5;ignore=samefaction} ~onTimer:10
+   - effect:blockmask{m=light;r=0.5;duration=134;onlyair=true} @Origin{y=2.5} ~onSpawn 1
+   - remove{delay=125} @Self ~onSpawn
+   - effect:particles{particle=reddust;color=#03c982;amount=3;hS=0.5;vS=0.3;size=0.8;repeat=20;repeatinterval=1} @Origin{y=2.3} ~onSpawn 1
+   - effect:particles{particle=reddust;color=#03c982;amount=4;hS=0.25;vS=0.1;size=1.1;repeat=20;repeatinterval=1;delay=107} @Origin{y=2.02} ~onSpawn 1
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: true
+    Invincible: true
+    KnockbackResistance: 1
+    Collidable: false
+defender_fireblade2:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+   - model{mid=ravager_fireblade2;s=idle;n=false} @self ~onSpawn 1
+   - bodyclamp{m=ravager_fireblade2;c=0} @self
+   - skill{s=[
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=fb1;delay=0} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=fb2;delay=1} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=fb3;delay=2} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=fb4;delay=3} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=fb5;delay=4} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=fb6;delay=5} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=fb7;delay=6} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=fb8;delay=7} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=fb9;delay=8} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=fb10;delay=9} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=fb11;delay=10} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=fb12;delay=11} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=fb13;delay=12} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=fb14;delay=13} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=fb15;delay=14} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=fb16;delay=15} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=fb17;delay=16} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=fb18;delay=17} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=fb19;delay=18} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=fb20;delay=19} @self];sync=true} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=20} @Self ~onSpawn
+   - effect:particles{particle=reddust;color=#abf9e8;amount=4;hS=0.3;vS=0.3;size=1.2;repeat=1;repeatinterval=1} @Origin{y=2.3} ~onSpawn 1
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: false
+    Invincible: true
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+defender_fireblade3:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+   - model{mid=ravager_fireblade2;s=idle;n=false} @self ~onSpawn 1
+   - bodyclamp{m=ravager_fireblade2;c=0} @self 0
+   - skill{s=[
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxd2_1;delay=0} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxd2_2;delay=1} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxd2_3;delay=2} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxd2_4;delay=3} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxd2_5;delay=4} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxd2_6;delay=5} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxd2_7;delay=6} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxd2_8;delay=7} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxd2_9;delay=8} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxd2_10;delay=9} @self];sync=true} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=10} @Self ~onSpawn
+   - effect:particles{particle=reddust;color=#abf9e8;amount=4;hS=0.3;vS=0.3;size=1.2;repeat=1;repeatinterval=1} @Origin{y=2.3} ~onSpawn 1
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: false
+    Invincible: true
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+fdefender_fireplayer:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 10 #### BASE DAMAGE OF THE FIRE TRAILS LEFT BEHIND
+  Drops:
+  Skills:
+   - model{mid=defender_fire_blade;s=burningplayer;n=false} @self ~onSpawn 1
+   - mounttarget @Nearestplayer{r=2} ~onSpawn 1
+   - Aura{auraName=fireplayer;duration=80} @EntitiesNearOrigin{r=1.8;ignore=samefaction}
+   - state{s=burningplayer;li=0;lo=0;n=false;delay=1} @self ~onSpawn 1
+   - basedamage{m=0.1;ignorearmor=false;preventknockback=true} @Nearestplayer{r=2;ignore=samefaction} ~onTimer:20
+   - sound{s=entity.generic.burn;v=1} @Nearestplayer{r=2;ignore=samefaction} ~onTimer:20
+   - Aura{auraName=fireplayerfhero;duration=60} @Nearestplayer{r=2} ~onSpawn
+   - remove{delay=61} @Self ~onSpawn 0.5
+   - remove{delay=90;repeat=10;repeatinterval=5} @Self ~onSpawn
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: true
+    KnockbackResistance: 0
+    Collidable: false
+defenderleapmarker2:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  DamageModifiers:
+  - FIRE 0
+  - MAGIC 2.7
+  Damage: 0
+  Equipment:
+  - air:4
+  - air:3
+  - air:2
+  - air:1
+  - air:0
+  Drops:
+  Skills:
+   - jump{velocity=0.6} ~onSpawn
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - pull{velocity=3;repeat=900;repeatinterval=1} @Parent ~onSpawn 0
+   - remove @Self ~onSignal:DIERS
+   - remove{delay=24} @Self ~onSpawn
+   - potion{type=SLOW_FALLING;duration=8;level=0;p=false;delay=0;force=true;delay=14} @Self ~onSpawn
+   - remove{delay=2} @Self ~onTimer:1 ?onground
+   - setvariable{var=caster.sapo;value="0";t=integer} @Self ~onSpawn
+   - variableadd{var=caster.sapo;amount=1} @self ~onTimer:1 0
+   - message{m="<caster.var.sapo>"} @PlayersNearOrigin{r=75} ~onTimer:1  0 #DEBUGMESSAGE
+   - setvariable{var=caster.leapmarker;value="0";t=integer} @Self ~onTimer:1 ?onground
+   - setvariable{var=caster.leapmarker;value="2";t=integer} @Self ~onSpawn
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: true
+    KnockbackResistance: 0
+defenderleapmarker2b:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  DamageModifiers:
+  - FIRE 0
+  - MAGIC 2.7
+  Damage: 0
+  Equipment:
+  - air:4
+  - air:3
+  - air:2
+  - air:1
+  - air:0
+  Drops:
+  Skills:
+   - jump{velocity=0.6} ~onSpawn
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - pull{velocity=3;repeat=900;repeatinterval=1} @Parent ~onSpawn 0
+   - potion{type=SLOW_FALLING;duration=4;level=0;p=false;delay=0;force=true;delay=32} @Self ~onSpawn
+   - remove @Self ~onSignal:DIERS
+   - remove @Self ~onTimer:36
+   - remove{delay=2} @Self ~onTimer:1 ?onground
+   - setvariable{var=caster.leapmarker;value="0";t=integer} @Self ~onTimer:1 ?onground
+   - setvariable{var=caster.leapmarker;value="2";t=integer} @Self ~onSpawn
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: true
+    KnockbackResistance: 0
+defenderleapmarker1:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  DamageModifiers:
+  - FIRE 0
+  - MAGIC 2.7
+  Damage: 0
+  Equipment:
+  - air:4
+  - air:3
+  - air:2
+  - air:1
+  - air:0
+  Drops:
+  Skills:
+   - cancelEvent{sync=true} ~onAttack
+   - remove @Self ~onTimer:25
+   - teleport{spreadh=0;spreadv=0} @forward{f=0;y=10.5} ~onSpawn
+   - jump{velocity=0.4;delay=1} ~onSpawn 0
+   - lunge{vy=-1.5;v=0;repeat=10;repeatinterval=1;delay=16} @forward{f=0;y=-10}
+   - potion{type=SLOW_FALLING;duration=1;lvl=0;p=true;force=true;cooldown=10} @Parent ~onSignal:DIERS
+   - setvariable{var=caster.leapmarker;value="1";t=integer} @Self ~onSpawn
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: true
+    KnockbackResistance: 0
+fdefender_ffx1:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+   - model{mid=ravager_fireblade2;s=idle;n=false} @self ~onSpawn 1
+   - bodyclamp{m=ravager_fireblade2;c=0} @self 0
+   - skill{s=[
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxa1;delay=0} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxa2;delay=1} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxa3;delay=2} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxa4;delay=3} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxa5;delay=4} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxa6;delay=5} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxa7;delay=6} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxa8;delay=7} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxa9;delay=8} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxa10;delay=9} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxa11;delay=10} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxa12;delay=11} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxa13;delay=12} @self];sync=true} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=13} @Self ~onSpawn
+   - effect:particles{particle=reddust;color=#abf9e8;amount=4;hS=0.3;vS=0.3;size=1.2;repeat=1;repeatinterval=1} @Origin{y=2.3} ~onSpawn 1
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: false
+    Invincible: true
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+fdefender_ffx2:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+   - model{mid=ravager_fireblade2;s=idle;n=false} @self ~onSpawn 1
+   - bodyclamp{m=ravager_fireblade2;c=0} @self 0
+   - skill{s=[
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxb1;delay=0} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxb2;delay=1} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxb3;delay=2} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxb4;delay=3} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxb5;delay=4} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxb6;delay=5} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxb7;delay=6} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxb8;delay=7} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxb9;delay=8} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxb10;delay=9} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxb11;delay=10} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxb12;delay=11} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxb13;delay=12} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxb14;delay=13} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxb15;delay=14} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxb16;delay=15} @self];sync=true} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=16} @Self ~onSpawn
+   - effect:particles{particle=reddust;color=#abf9e8;amount=4;hS=0.3;vS=0.3;size=1.2;repeat=1;repeatinterval=1} @Origin{y=3.5} ~onSpawn 1
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: false
+    Invincible: true
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+fdefender_ffx3:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+   - model{mid=ravager_fireblade2;s=idle;n=false} @self ~onSpawn 1
+   - bodyclamp{m=ravager_fireblade2;c=0} @self 0
+   - skill{s=[
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxc1;delay=0} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxc2;delay=1} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxc3;delay=2} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxc4;delay=3} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxc5;delay=4} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxc6;delay=5} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxc7;delay=6} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxc8;delay=7} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxc9;delay=8} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxc10;delay=9} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxc11;delay=10} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxc12;delay=11} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxc13;delay=12} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxc14;delay=13} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxc15;delay=14} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxc16;delay=15} @self
+    - changepart{m=ravager_fireblade2;pid=fb1;nm=fdexplosion_resources;npid=ffxc17;delay=16} @self];sync=true} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=17} @Self ~onSpawn
+   - effect:particles{particle=reddust;color=#abf9e8;amount=4;hS=0.3;vS=0.3;size=1.2;repeat=1;repeatinterval=1} @Origin{y=3.5} ~onSpawn 1
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: false
+    Invincible: true
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+
+#LOCATED FIREFX
+
+fdefender_ffx1b:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+   - model{mid=fhero_fireffects;s=idle;n=false} @self ~onSpawn 1
+   - bodyclamp{m=fhero_fireffects;c=0} @self 0
+   - skill{s=[
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxa1;delay=0} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxa2;delay=1} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxa3;delay=2} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxa4;delay=3} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxa5;delay=4} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxa6;delay=5} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxa7;delay=6} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxa8;delay=7} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxa9;delay=8} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxa10;delay=9} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxa11;delay=10} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxa12;delay=11} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxa13;delay=12} @self];sync=true} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=13} @Self ~onSpawn
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: false
+    Invincible: true
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+fdefender_ffx2b:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+   - model{mid=fhero_fireffects;s=idle;n=false} @self ~onSpawn 1
+   - bodyclamp{m=fhero_fireffects;c=0} @self 0
+   - skill{s=[
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxb1;delay=0} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxb2;delay=1} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxb3;delay=2} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxb4;delay=3} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxb5;delay=4} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxb6;delay=5} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxb7;delay=6} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxb8;delay=7} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxb9;delay=8} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxb10;delay=9} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxb11;delay=10} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxb12;delay=11} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxb13;delay=12} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxb14;delay=13} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxb15;delay=14} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxb16;delay=15} @self];sync=true} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=16} @Self ~onSpawn
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: false
+    Invincible: true
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+fdefender_ffx3b:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+   - model{mid=fhero_fireffects;s=idle;n=false} @self ~onSpawn 1
+   - bodyclamp{m=fhero_fireffects;c=0} @self 0
+   - skill{s=[
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxc1;delay=0} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxc2;delay=1} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxc3;delay=2} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxc4;delay=3} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxc5;delay=4} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxc6;delay=5} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxc7;delay=6} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxc8;delay=7} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxc9;delay=8} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxc10;delay=9} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxc11;delay=10} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxc12;delay=11} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxc13;delay=12} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxc14;delay=13} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxc15;delay=14} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxc16;delay=15} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=ffxc17;delay=16} @self];sync=true} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=17} @Self ~onSpawn
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: false
+    Invincible: true
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+fdefender_fwavea:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+   - model{mid=fhero_fireffects;s=idle;n=false} @self ~onSpawn 1
+   - bodyclamp{m=fhero_fireffects;c=0} @self 0
+   - skill{s=[
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=firewavea1;delay=0} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=firewavea2;delay=1} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=firewavea3;delay=2} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=firewavea4;delay=3} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=firewavea5;delay=4} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=firewavea6;delay=5} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=firewavea7;delay=6} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=firewavea8;delay=7} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=firewavea9;delay=8} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=firewavea10;delay=9} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=firewavea11;delay=10} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=firewavea12;delay=11} @self
+    - changepart{m=fhero_fireffects;pid=fb1;nm=fdexplosion_resources;npid=firewavea13;delay=12} @self];sync=true} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=14} @Self ~onSpawn
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: false
+    Invincible: true
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+fdefender_shockwave1:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+   - model{mid=fhero_shockwave;s=idle;n=false} @self ~onSpawn 1
+   - skill{s=[
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw1;delay=0} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw2;delay=1} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw3;delay=2} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw4;delay=3} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw5;delay=4} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw6;delay=5} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw7;delay=6} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw8;delay=7} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw9;delay=8} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw10;delay=9} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw11;delay=10} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw12;delay=11} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw13;delay=12} @self
+    - changepart{m=fhero_shockwave;pid=frame1;nm=fdexplosion_resources;npid=rsw14;delay=13} @self];sync=true} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=14} @Self ~onSpawn
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Invincible: true
+    Despawn: true
+    Interactable: false
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+fdefender_shockwave2:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+   - model{mid=fhero_shockwave2;s=idle;n=false} @self ~onSpawn 1
+   - skill{s=[
+    - changepart{m=fhero_shockwave2;pid=frame1;nm=fdexplosion_resources;npid=rwsb1;delay=0} @self
+    - changepart{m=fhero_shockwave2;pid=frame1;nm=fdexplosion_resources;npid=rwsb2;delay=1} @self
+    - changepart{m=fhero_shockwave2;pid=frame1;nm=fdexplosion_resources;npid=rwsb3;delay=2} @self
+    - changepart{m=fhero_shockwave2;pid=frame1;nm=fdexplosion_resources;npid=rwsb4;delay=3} @self
+    - changepart{m=fhero_shockwave2;pid=frame1;nm=fdexplosion_resources;npid=rwsb5;delay=4} @self
+    - changepart{m=fhero_shockwave2;pid=frame1;nm=fdexplosion_resources;npid=rwsb6;delay=5} @self
+    - changepart{m=fhero_shockwave2;pid=frame1;nm=fdexplosion_resources;npid=rwsb7;delay=6} @self
+    - changepart{m=fhero_shockwave2;pid=frame1;nm=fdexplosion_resources;npid=rwsb8;delay=7} @self
+    - changepart{m=fhero_shockwave2;pid=frame1;nm=fdexplosion_resources;npid=rwsb9;delay=8} @self
+    - changepart{m=fhero_shockwave2;pid=frame1;nm=fdexplosion_resources;npid=rwsb10;delay=9} @self
+    - changepart{m=fhero_shockwave2;pid=frame1;nm=fdexplosion_resources;npid=rwsb11;delay=10} @self
+    - changepart{m=fhero_shockwave2;pid=frame1;nm=fdexplosion_resources;npid=rwsb12;delay=11} @self
+    - changepart{m=fhero_shockwave2;pid=frame1;nm=fdexplosion_resources;npid=rwsb13;delay=12} @self
+    - changepart{m=fhero_shockwave2;pid=frame1;nm=fdexplosion_resources;npid=rwsb14;delay=13} @self];sync=true} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=14} @Self ~onSpawn
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Invincible: true
+    Despawn: true
+    Interactable: false
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+defender_fireprojectile_b:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 10 #### BASE DAMAGE OF THE FIRE TRAILS LEFT BEHIND
+  Drops:
+  Skills:
+   - model{mid=defender_fireprojectile} @self ~onSpawn
+   - bodyclamp{m=defender_fireprojectile;c=0} @self ~onSpawn 1
+   - look{headOnly=false;immediately=true;repeat=90;repeatInterval=1} @ProjectileForward ~onSpawn
+   - state{s=idle2;li=0;lo=4;delay=0} @self ~onSpawn 1
+   - state{s=rotatedidle;li=0;lo=4;delay=0} @self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=80} @Self ~onSpawn
+   - effect:particles{particle=reddust;color=#03c982;amount=5;hS=0.5;vS=0.3;size=0.8;repeat=20;repeatinterval=1} @Origin{y=2.3} ~onSpawn 1
+   - effect:particles{particle=reddust;color=#03c982;amount=7;hS=0.25;vS=0.1;size=1.1;repeat=20;repeatinterval=1;delay=62} @Origin{y=2.02} ~onSpawn 1
+   #PROJECTILE VERTICAL
+   - state{s=death_projectile;li=1;lo=4;delay=15} @self ~onSpawn 1
+
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: true
+    Invincible: true
+    KnockbackResistance: 1
+    Collidable: false
+
+defender_fireprojectile_a1:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 10 #### BASE DAMAGE OF THE FIRE TRAILS LEFT BEHIND
+  Drops:
+  Skills:
+   - model{mid=defender_fireprojectile;s=idle;n=false} @self ~onSpawn 1
+   - bodyclamp{m=defender_fireprojectile;c=0} @self ~onSpawn 1
+   - look{headOnly=false;immediately=true;repeat=90;repeatInterval=1} @ProjectileForward ~onSpawn
+   - state{s=idle3;li=0;lo=4;delay=0} @self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=80} @Self ~onSpawn
+   - effect:particles{particle=reddust;color=#03c982;amount=5;hS=0.5;vS=0.3;size=0.8;repeat=20;repeatinterval=1} @Origin{y=2.3} ~onSpawn 1
+   - effect:particles{particle=reddust;color=#03c982;amount=7;hS=0.25;vS=0.1;size=1.1;repeat=20;repeatinterval=1;delay=62} @Origin{y=2.02} ~onSpawn 1
+   #PROJECTILE VERTICAL
+   - state{s=death_projectile;li=1;lo=4;delay=15} @self ~onSpawn 1
+
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: true
+    Invincible: true
+    KnockbackResistance: 1
+    Collidable: false
+
+defender_fireprojectile_a2:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 10 #### BASE DAMAGE OF THE FIRE TRAILS LEFT BEHIND
+  Drops:
+  Skills:
+   - model{mid=defender_fireprojectile;s=idle;n=false} @self ~onSpawn 1
+   - bodyclamp{m=defender_fireprojectile;c=0} @self ~onSpawn 1
+   - look{headOnly=false;immediately=true;repeat=90;repeatInterval=1} @ProjectileForward ~onSpawn
+   - state{s=idle4;li=0;lo=4;delay=0} @self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=80} @Self ~onSpawn
+   - effect:particles{particle=reddust;color=#03c982;amount=5;hS=0.5;vS=0.3;size=0.8;repeat=20;repeatinterval=1} @Origin{y=2.3} ~onSpawn 1
+   - effect:particles{particle=reddust;color=#03c982;amount=7;hS=0.25;vS=0.1;size=1.1;repeat=20;repeatinterval=1;delay=62} @Origin{y=2.02} ~onSpawn 1
+   #PROJECTILE VERTICAL
+   - state{s=death_projectile;li=1;lo=4;delay=15} @self ~onSpawn 1
+
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: true
+    Invincible: true
+    KnockbackResistance: 1
+    Collidable: false
+
+defender_fireprojectile_a3:
+  Type: silverfish
+  Display: ''
+  Faction: FallenHero
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 10 #### BASE DAMAGE OF THE FIRE TRAILS LEFT BEHIND
+  Drops:
+  Skills:
+   - model{mid=defender_fireprojectile;s=idle;n=false} @self ~onSpawn 1
+   - bodyclamp{m=defender_fireprojectile;c=0} @self ~onSpawn 1
+   - look{headOnly=false;immediately=true;repeat=90;repeatInterval=1} @ProjectileForward ~onSpawn
+   - state{s=idle2;li=0;lo=4;delay=0} @self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=80} @Self ~onSpawn
+   - effect:particles{particle=reddust;color=#03c982;amount=5;hS=0.5;vS=0.3;size=0.8;repeat=20;repeatinterval=1} @Origin{y=2.3} ~onSpawn 1
+   - effect:particles{particle=reddust;color=#03c982;amount=7;hS=0.25;vS=0.1;size=1.1;repeat=20;repeatinterval=1;delay=62} @Origin{y=2.02} ~onSpawn 1
+   #PROJECTILE VERTICAL
+   - state{s=death_projectile;li=1;lo=4;delay=28} @self ~onSpawn 1
+
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: true
+    Invincible: true
+    KnockbackResistance: 1
+    Collidable: false

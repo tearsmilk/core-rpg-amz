@@ -1,0 +1,216 @@
+lostassets_swordmaster_lc_1:
+  Type: ARMOR_STAND
+  Pose:
+      Head: 0,0,160
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_lc_1} @self ~onSpawn
+lostassets_swordmaster_lc_2:
+  Type: ARMOR_STAND
+  Pose:
+      Head: 0,0,30
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_lc_2} @self ~onSpawn
+lostassets_swordmaster_lc_3:
+  Type: ARMOR_STAND
+  Pose:
+      Head: 0,0,110
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_lc_3} @self ~onSpawn
+lostassets_swordmaster_target:
+  Type: ARMOR_STAND
+  Pose:
+      Head: 0,0to360,0to360
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_target} @self ~onSpawn
+lostassets_swordmaster_rc1:
+  Type: ARMOR_STAND
+  Pose:
+      Head: 0,0,10
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_rc1} @self ~onSpawn
+lostassets_swordmaster_rc2:
+  Type: ARMOR_STAND
+  Pose:
+      RightArm: 0,0,10
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_rc2} @self ~onSpawn
+lostassets_swordmaster_rc3:
+  Type: ARMOR_STAND
+  Pose:
+      RightArm: 0,0,10
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_swordmaster_rc_set} ~onSpawn
+  - skill{s=lostassets_vfx_rc3} @self ~onSpawn
+lostassets_swordmaster_slc1:
+  Type: ARMOR_STAND
+  Pose:
+      RightArm: 0,0,10
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_swordmaster_slc_set1} ~onSpawn
+  - skill{s=lostassets_vfx_slc1} @self ~onSpawn
+lostassets_swordmaster_slc2:
+  Type: ARMOR_STAND
+  Pose:
+      RightArm: 0,0,10
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_swordmaster_slc_set2} ~onSpawn
+  - skill{s=lostassets_vfx_slc2} @self ~onSpawn
+lostassets_swordmaster_slc3:
+  Type: ARMOR_STAND
+  Pose:
+      RightArm: 0,0,28
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_slc3} @self ~onSpawn
+lostassets_swordmaster_slc4:
+  Type: ARMOR_STAND
+  Pose:
+      RightArm: 0,0,152
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_slc4} @self ~onSpawn
+lostassets_swordmaster_slc5:
+  Type: ARMOR_STAND
+  Pose:
+      RightArm: 0,0,0
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - effect:particles{particle=soul_fire_flame;m=water;amount=10;hS=3;vS=1;y=0.6;speed=0.1;forwardOffset=0;sideOffset=0} @self ~onTimer:1
+  - effect:particles{particle=smoke_normal;amount=10;hS=3;vS=1;y=0.6;speed=0;forwardOffset=0;sideOffset=0} @self ~onTimer:1
+  - skill{s=lostassets_vfx_slc5} @self ~onSpawn
+lostassets_swordmaster_src1:
+  Type: ARMOR_STAND
+  Pose:
+      RightArm: 0,0,0
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_swordmaster_src_set1} ~onSpawn
+  - skill{s=lostassets_vfx_src1} @self ~onSpawn
+lostassets_swordmaster_src2:
+  Type: ARMOR_STAND
+  Pose:
+      RightArm: 0,0,90
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_src2} @self ~onSpawn
+lostassets_swordmaster_src3:
+  Type: ARMOR_STAND
+  Pose:
+      RightArm: 0to360,0to360,0to360
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_src3} @self ~onSpawn
+lostassets_swordmaster_src4:
+  Type: ARMOR_STAND
+  Pose:
+      Head: 0to360,0to360,0to360
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+
+# 088204J7Z
+  Skills:
+  - skill{s=lostassets_vfx_src4} @self ~onSpawn

@@ -1,0 +1,646 @@
+new_creeper:
+  Type: VINDICATOR
+  Display: Creeper
+  Health: 15
+  Faction: creepers
+  Damage: 0
+  Armor: 0
+  DamageModifiers:
+  - FALL 0
+  Modules:
+   ThreatTable: true
+  Options:
+    PreventOtherDrops: true
+    Despawn: true
+    MaxCombatDistance: 256
+    PreventRandomEquipment: true
+    PreventSunburn: true
+    AttackSpeed: 0.18
+    Collidable: true
+    FollowRange: 80
+    KnockbackResistance: 100
+    MovementSpeed: 0.21
+    AttackSpeed: 1
+    Invincible: false
+    NoAI: false
+    Silent: true
+  Skills:
+  - gcd{ticks=30} @self ~onSpawn
+  - metaskill{s=Creeper1} @self ~onTimer:20
+  - cancelevent @self ~onAttack
+  - sound{s=entity.creeper.hurt;p=1.2;v=1.5} @Self ~onDamaged
+  - sound{s=entity.creeper.death;p=1;v=3} @Self ~onDeath
+  - model{modelid=creeper;damagetint=false} @Self ~onSpawn
+  - model{modelid=creeper;damagetint=false} @Self ~onLoad
+  - state{state=damage} @Self ~onDamaged
+Explode:
+ Type: SKELETON
+ Display: Creeper Explosion
+ Health: 100
+ Faction: creepers
+ Options:
+  PreventOtherDrops: true
+  Despawn: false
+  MaxCombatDistance: 256
+  Silent: true
+  PreventRandomEquipment: true
+  PreventSunburn: true
+  AttackSpeed: 0.18
+  Collidable: true
+  NoAI: true
+  Invincible: true
+ Skills:
+ - model{modelid=explode;damagetint=false} @Self ~onSpawn
+ - damage{a=20;pi=true;pk=true} @EIR{r=4} ~onSpawn
+ - throw{v=15;vY=2;delay=2} @EIR{r=4} ~onSpawn
+ - remove{delay=17} @self ~onSpawn
+ - effect:particles{particle=smoke;amount=100;hS=0.8;vS=1.5;y=-0.4;size=1;s=0} @self ~onSpawn
+ - effect:particles{particle=explosion_large;amount=10;hS=0.8;vS=1.5;y=-0.4;size=1;s=0} @self ~onSpawn
+IExplode:
+ Type: SKELETON
+ Display: Creeper Explosion
+ Health: 100
+ Faction: creepers
+ Options:
+  PreventOtherDrops: true
+  Despawn: false
+  MaxCombatDistance: 256
+  Silent: true
+  PreventRandomEquipment: true
+  PreventSunburn: true
+  AttackSpeed: 0.18
+  Collidable: true
+  NoAI: true
+  Invincible: true
+ Skills:
+ - model{modelid=illusion_explode;damagetint=false} @Self ~onSpawn
+ - damage{a=20;pi=true;pk=true} @EIR{r=4} ~onSpawn
+ - throw{v=15;vY=2;delay=2} @EIR{r=4} ~onSpawn
+ - remove{delay=17} @self ~onSpawn
+ - effect:particles{particle=smoke;amount=100;hS=0.8;vS=1.5;y=-0.4;size=1;s=0} @self ~onSpawn
+ - effect:particles{particle=explosion_large;amount=10;hS=0.8;vS=1.5;y=-0.4;size=1;s=0} @self ~onSpawn
+FlashCreeper:
+  Type: VINDICATOR
+  Display: Flash Creeper
+  Health: 15
+  Faction: creepers
+  Damage: 0
+  Armor: 0
+  DamageModifiers:
+  - FALL 0
+  Modules:
+   ThreatTable: true
+  Options:
+    PreventOtherDrops: true
+    Despawn: true
+    MaxCombatDistance: 256
+    PreventRandomEquipment: true
+    PreventSunburn: true
+    AttackSpeed: 0.18
+    Collidable: true
+    FollowRange: 80
+    KnockbackResistance: 100
+    MovementSpeed: 0.21
+    AttackSpeed: 1
+    Invincible: false
+    NoAI: false
+    Silent: true
+  Skills:
+  - gcd{ticks=30} @self ~onSpawn
+  - metaskill{s=FCreeper1} @self ~onTimer:20
+  - cancelevent @self ~onAttack
+  - sound{s=entity.creeper.hurt;p=1.2;v=1.5} @Self ~onDamaged
+  - sound{s=entity.creeper.death;p=1;v=3} @Self ~onDeath
+  - model{modelid=dazzle_creeper;damagetint=false} @Self ~onSpawn
+  - model{modelid=dazzle_creeper;damagetint=false} @Self ~onLoad
+  - state{state=damage} @Self ~onDamaged
+ElectricCreeper:
+  Type: VINDICATOR
+  Display: Charged Creeper
+  Health: 15
+  Faction: creepers
+  Damage: 0
+  Armor: 0
+  DamageModifiers:
+  - FALL 0
+  Modules:
+   ThreatTable: true
+  Options:
+    PreventOtherDrops: true
+    Despawn: true
+    MaxCombatDistance: 256
+    PreventRandomEquipment: true
+    PreventSunburn: true
+    AttackSpeed: 0.18
+    Collidable: true
+    FollowRange: 80
+    KnockbackResistance: 100
+    MovementSpeed: 0.21
+    AttackSpeed: 1
+    Invincible: false
+    NoAI: false
+    Silent: true
+  Skills:
+  - gcd{ticks=30} @self ~onSpawn
+  - metaskill{s=ECreeper1} @self ~onTimer:20
+  - cancelevent @self ~onAttack
+  - sound{s=entity.creeper.hurt;p=0.8;v=1.5} @Self ~onDamaged
+  - sound{s=entity.creeper.death;p=0.8;v=3} @Self ~onDeath
+  - model{modelid=electric_creeper;damagetint=false} @Self ~onSpawn
+  - model{modelid=electric_creeper;damagetint=false} @Self ~onLoad
+  - state{state=damage} @Self ~onDamaged
+EExplode:
+ Type: SKELETON
+ Display: Creeper Explosion
+ Health: 100
+ Faction: creepers
+ Options:
+  PreventOtherDrops: true
+  Despawn: false
+  MaxCombatDistance: 256
+  Silent: true
+  PreventRandomEquipment: true
+  PreventSunburn: true
+  AttackSpeed: 0.18
+  Collidable: true
+  NoAI: true
+  Invincible: true
+ Skills:
+ - model{modelid=electric_explode;damagetint=false} @Self ~onSpawn
+ - damage{a=35;pi=true;pk=true} @EIR{r=5.5} ~onSpawn
+ - throw{v=25;vY=3;delay=2} @EIR{r=5.5} ~onSpawn
+ - remove{delay=17} @self ~onSpawn
+ - effect:particles{particle=smoke;amount=100;hS=0.8;vS=1.5;y=-0.4;size=1;s=0} @self ~onSpawn
+ - effect:particles{particle=explosion_large;amount=10;hS=0.8;vS=1.5;y=-0.4;size=1;s=0} @self ~onSpawn
+NukeCreeper:
+  Type: VINDICATOR
+  Display: Nuclear Creeper
+  Health: 150
+  Faction: creepers
+  Damage: 0
+  Armor: 0
+  DamageModifiers:
+  - FALL 0
+  Modules:
+   ThreatTable: true
+  Options:
+    PreventOtherDrops: true
+    Despawn: true
+    MaxCombatDistance: 256
+    PreventRandomEquipment: true
+    PreventSunburn: true
+    AttackSpeed: 0.18
+    Collidable: true
+    FollowRange: 80
+    KnockbackResistance: 100
+    MovementSpeed: 0.21
+    AttackSpeed: 1
+    Invincible: false
+    NoAI: false
+    Silent: true
+  Skills:
+  - gcd{ticks=30} @self ~onSpawn
+  - metaskill{s=NCreeper1} @self ~onTimer:20
+  - cancelevent @self ~onAttack
+  - sound{s=entity.creeper.hurt;p=0.4;v=1.5} @Self ~onDamaged
+  - sound{s=entity.creeper.death;p=0.4;v=3} @Self ~onDeath
+  - model{modelid=nuke_creeper;damagetint=false} @Self ~onSpawn
+  - model{modelid=nuke_creeper;damagetint=false} @Self ~onLoad
+  - state{state=damage} @Self ~onDamaged
+NExplode:
+ Type: SKELETON
+ Display: Nuclear Explosion
+ Health: 100
+ Faction: creepers
+ Options:
+  PreventOtherDrops: true
+  Despawn: false
+  MaxCombatDistance: 256
+  Silent: true
+  PreventRandomEquipment: true
+  PreventSunburn: true
+  AttackSpeed: 0.18
+  Collidable: true
+  NoAI: true
+  Invincible: true
+ Skills:
+ - model{modelid=nuke_explosion;damagetint=false;rad=400} @Self ~onSpawn
+ - model{modelid=nuke_explosion;damagetint=false;rad=400} @Self ~onLoad
+ - damage{a=10000;pi=true;pk=true} @EIR{r=5.5} ~onSpawn
+ - damage{a=10000;pi=true;pk=true;delay=30} @EIR{r=15} ~onSpawn
+ - sendtitle{title="♟";d=10;fo=500} @PIR{r=25} ~onSpawn
+ - sendtitle{title="♟";d=2;fo=100} @PIR{r=50} ~onSpawn
+ - sendtitle{title="♟";d=2;fo=50} @PIR{r=100} ~onSpawn
+ - damage{a=100;pi=true;pk=true;delay=50;repeat=356;repeatinterval=2} @EIR{r=27} ~onSpawn
+ - throw{v=100;vY=5;delay=45;repeat=2;repeatinterval=1} @EIR{r=40} ~onSpawn
+ - throw{v=100;vY=5;delay=60} @EIR{r=60} ~onSpawn
+ - remove{delay=690} @self ~onSpawn
+ - sound{s=entity.lightning_bolt.thunder;p=0;v=10;delay=6} @Self ~onSpawn
+ - sound{s=item.elytra.flying;p=0;v=10;delay=9} @Self ~onSpawn
+ - sound{s=entity.lightning_bolt.thunder;p=0;v=10;delay=9} @Self ~onSpawn
+ - sound{s=entity.generic.explode;p=0.6;v=10;delay=5} @Self ~onSpawn
+ - effect:particles{particle=smoke;amount=100;hS=0.8;vS=1.5;y=-0.4;size=1;s=0} @self ~onSpawn
+ - effect:particles{particle=explosion_large;amount=10;hS=0.8;vS=1.5;y=-0.4;size=1;s=0} @self ~onSpawn
+IlussionCreeper:
+  Type: VINDICATOR
+  Display: Ilussion Creeper
+  Health: 15
+  Faction: creepers
+  Damage: 0
+  Armor: 0
+  DamageModifiers:
+  - FALL 0
+  Modules:
+   ThreatTable: true
+  Options:
+    PreventOtherDrops: true
+    Despawn: true
+    MaxCombatDistance: 256
+    PreventRandomEquipment: true
+    PreventSunburn: true
+    AttackSpeed: 0.18
+    Collidable: true
+    FollowRange: 80
+    KnockbackResistance: 100
+    MovementSpeed: 0.21
+    AttackSpeed: 1
+    Invincible: false
+    NoAI: false
+    Silent: true
+  Skills:
+  - gcd{ticks=30} @self ~onSpawn
+  - randomskill{s=ICreeper1 1, ICreeper2 1} @self ~onTimer:20
+  - cancelevent @self ~onAttack
+  - sound{s=entity.creeper.hurt;p=1.2;v=1.5} @Self ~onDamaged
+  - sound{s=entity.creeper.death;p=1;v=3} @Self ~onDeath
+  - model{modelid=illusion_creeper;damagetint=false} @Self ~onSpawn
+  - model{modelid=illusion_creeper;damagetint=false} @Self ~onLoad
+  - state{state=damage} @Self ~onDamaged
+IFaces:
+ Type: SKELETON
+ Display: Ilussion
+ Health: 100
+ Faction: creepers
+ Options:
+  PreventOtherDrops: true
+  Despawn: false
+  MaxCombatDistance: 256
+  Silent: true
+  PreventRandomEquipment: true
+  PreventSunburn: true
+  AttackSpeed: 0.18
+  Collidable: true
+  NoAI: true
+  Invincible: true
+ Skills:
+ - model{modelid=illusion_creeper_faces;damagetint=false} @Self ~onSpawn
+ - mounttarget @NearestPlayer ~onSpawn
+ - remove{delay=60} @self ~onSpawn
+IlussionCreeperCopy:
+  Type: VINDICATOR
+  Display: Ilussion Creeper Copy
+  Health: 20
+  Faction: creepers
+  Damage: 0
+  Armor: 0
+  DamageModifiers:
+  - FALL 0
+  Modules:
+   ThreatTable: true
+  Options:
+    PreventOtherDrops: true
+    Despawn: true
+    MaxCombatDistance: 256
+    PreventRandomEquipment: true
+    PreventSunburn: true
+    AttackSpeed: 0.18
+    Collidable: true
+    FollowRange: 80
+    KnockbackResistance: 100
+    MovementSpeed: 0.21
+    AttackSpeed: 1
+    Invincible: false
+    NoAI: false
+    Silent: true
+  Skills:
+  - gcd{ticks=30} @self ~onSpawn
+  - potion{type=SLOW;duration=30;level=5} @self ~onSpawn
+  - metaskill{s=FakeCreeper} @self ~onTimer:20
+  - cancelevent @self ~onAttack
+  - sound{s=entity.creeper.hurt;p=1.2;v=1.5} @Self ~onDamaged
+  - sound{s=entity.creeper.death;p=1;v=3} @Self ~onDeath
+  - model{modelid=illusion_creeper;damagetint=false} @Self ~onSpawn
+  - model{modelid=illusion_creeper;damagetint=false} @Self ~onLoad
+  - state{state=damage} @Self ~onDamaged
+SporeCreeper:
+  Type: VINDICATOR
+  Display: Spore Creeper
+  Health: 25
+  Faction: creepers
+  Damage: 0
+  Armor: 0
+  DamageModifiers:
+  - FALL 0
+  Modules:
+   ThreatTable: true
+  Options:
+    PreventOtherDrops: true
+    Despawn: true
+    MaxCombatDistance: 256
+    PreventRandomEquipment: true
+    PreventSunburn: true
+    AttackSpeed: 0.18
+    Collidable: true
+    FollowRange: 80
+    KnockbackResistance: 100
+    MovementSpeed: 0.21
+    AttackSpeed: 1
+    Invincible: false
+    NoAI: false
+    Silent: true
+  Skills:
+  - gcd{ticks=30} @self ~onSpawn
+  - metaskill{s=SCreeper1} @self ~onTimer:20
+  - cancelevent @self ~onAttack
+  - sound{s=entity.creeper.hurt;p=1.2;v=1.5} @Self ~onDamaged
+  - sound{s=entity.creeper.death;p=1;v=3} @Self ~onDeath
+  - model{modelid=spore_creeper;damagetint=false} @Self ~onSpawn
+  - model{modelid=spore_creeper;damagetint=false} @Self ~onLoad
+  - state{state=damage} @Self ~onDamaged
+SmallSporeCreeper:
+  Type: VINDICATOR
+  Display: Spore Creeper
+  Health: 10
+  Faction: creepers
+  Damage: 0
+  Armor: 0
+  DamageModifiers:
+  - FALL 0
+  Modules:
+   ThreatTable: true
+  Options:
+    PreventOtherDrops: true
+    Despawn: true
+    MaxCombatDistance: 256
+    PreventRandomEquipment: true
+    PreventSunburn: true
+    AttackSpeed: 0.18
+    Collidable: true
+    FollowRange: 80
+    KnockbackResistance: 100
+    MovementSpeed: 0.23
+    AttackSpeed: 1
+    Invincible: false
+    NoAI: false
+    Silent: true
+  Skills:
+  - gcd{ticks=30} @self ~onSpawn
+  - metaskill{s=SSCreeper1} @self ~onTimer:20
+  - cancelevent @self ~onAttack
+  - sound{s=entity.creeper.hurt;p=1.8;v=1.5} @Self ~onDamaged
+  - sound{s=entity.creeper.death;p=1.8;v=3} @Self ~onDeath
+  - model{modelid=spore_small_creeper;damagetint=false} @Self ~onSpawn
+  - model{modelid=spore_small_creeper;damagetint=false} @Self ~onLoad
+  - state{state=damage} @Self ~onDamaged
+SporeProjectile:
+ Type: SKELETON
+ Display: Spore Projectile
+ Health: 100
+ Faction: creepers
+ Options:
+  PreventOtherDrops: true
+  Despawn: false
+  MaxCombatDistance: 256
+  Silent: true
+  PreventRandomEquipment: true
+  PreventSunburn: true
+  AttackSpeed: 0.18
+  Collidable: true
+  NoAI: true
+  Invincible: true
+ Skills:
+ - model{modelid=spore_creeper_projectile;damagetint=false} @Self ~onSpawn
+SporeLandmine:
+  Type: VINDICATOR
+  Display: Spore Landmine
+  Health: 15
+  Faction: creepers
+  AIGoalSelectors:
+  - clear
+  AITargetSelectors:
+  - clear
+  Damage: 0
+  Armor: 0
+  DamageModifiers:
+  - FALL 0
+  Modules:
+   ThreatTable: true
+  Options:
+    PreventOtherDrops: true
+    Despawn: true
+    MaxCombatDistance: 256
+    PreventRandomEquipment: true
+    PreventSunburn: true
+    AttackSpeed: 0.18
+    Collidable: false
+    FollowRange: 80
+    KnockbackResistance: 100
+    MovementSpeed: 0.21
+    AttackSpeed: 1
+    Invincible: false
+    NoAI: false
+    Silent: true
+  Skills:
+  - gcd{ticks=30} @self ~onSpawn
+  - metaskill{s=SLandmine1} @self ~onTimer:20
+  - metaskill{s=SLandmine2} @self ~onDeath
+  - cancelevent @self ~onAttack
+  - model{modelid=spore_landmine;damagetint=false} @Self ~onSpawn
+  - model{modelid=spore_landmine;damagetint=false} @Self ~onLoad
+SExplode:
+ Type: SKELETON
+ Display: Creeper Explosion
+ Health: 100
+ Faction: creepers
+ Options:
+  PreventOtherDrops: true
+  Despawn: false
+  MaxCombatDistance: 256
+  Silent: true
+  PreventRandomEquipment: true
+  PreventSunburn: true
+  AttackSpeed: 0.18
+  Collidable: true
+  NoAI: true
+  Invincible: true
+ Skills:
+ - model{modelid=spore_explode;damagetint=false} @Self ~onSpawn
+ - projectile{
+     oT=[
+     ];oE=[
+        - summon{type=SporeLandmine;amount=1;radius=0;os=true;yr=0}
+     ];bullet=MOB;mob=SporeProjectile;v=15;i=0.1;hR=1;vR=1;sE=false;sB=true;g=1;syo=4;tyo=8;eso=0;vn=5;hn=8} @Ring{r=6;p=5} ~onSpawn
+ - projectile{
+     oT=[
+     ];oE=[
+        - summon{type=SmallSporeCreeper;amount=1;radius=0;os=true;yr=0}
+     ];bullet=MOB;mob=SporeProjectile;v=7;i=0.1;hR=1;vR=1;sE=false;sB=true;g=1;syo=4;tyo=8;eso=0;vn=5;hn=8} @Ring{r=4;p=5} ~onSpawn
+ - damage{a=10;pi=true;pk=true} @EIR{r=4} ~onSpawn
+ - throw{v=15;vY=2;delay=2} @EIR{r=4} ~onSpawn
+ - remove{delay=50} @self ~onSpawn
+ - effect:particles{particle=smoke;amount=100;hS=0.8;vS=1.5;y=-0.4;size=1;s=0} @self ~onSpawn
+ - effect:particles{particle=explosion_large;amount=10;hS=0.8;vS=1.5;y=-0.4;size=1;s=0} @self ~onSpawn
+SSExplode:
+ Type: SKELETON
+ Display: Creeper Explosion
+ Health: 100
+ Faction: creepers
+ Options:
+  PreventOtherDrops: true
+  Despawn: false
+  MaxCombatDistance: 256
+  Silent: true
+  PreventRandomEquipment: true
+  PreventSunburn: true
+  AttackSpeed: 0.18
+  Collidable: true
+  NoAI: true
+  Invincible: true
+ Skills:
+ - model{modelid=small_spore_explode;damagetint=false} @Self ~onSpawn
+ - damage{a=10;pi=true;pk=true} @EIR{r=3} ~onSpawn
+ - throw{v=15;vY=2;delay=2} @EIR{r=3} ~onSpawn
+ - remove{delay=17} @self ~onSpawn
+ - effect:particles{particle=smoke;amount=100;hS=0.8;vS=1.5;y=-0.4;size=1;s=0} @self ~onSpawn
+ - effect:particles{particle=explosion_large;amount=1;hS=0.5;vS=1.5;y=-0.4;size=1;s=0} @self ~onSpawn
+UmberCreeper:
+  Type: VINDICATOR
+  Display: Umber Creeper
+  Health: 20
+  Faction: creepers
+  Damage: 0
+  Armor: 0
+  DamageModifiers:
+  - FALL 0
+  Modules:
+   ThreatTable: true
+  Options:
+    PreventOtherDrops: true
+    Despawn: true
+    MaxCombatDistance: 256
+    PreventRandomEquipment: true
+    PreventSunburn: true
+    AttackSpeed: 0.18
+    Collidable: true
+    FollowRange: 80
+    KnockbackResistance: 100
+    MovementSpeed: 0.21
+    AttackSpeed: 1
+    Invincible: false
+    NoAI: false
+    Silent: true
+  Skills:
+  - gcd{ticks=30} @self ~onSpawn
+  - metaskill{s=UCreeper1} @self ~onTimer:20
+  - cancelevent @self ~onAttack
+  - sound{s=entity.creeper.hurt;p=1.2;v=1.5} @Self ~onDamaged
+  - sound{s=entity.creeper.death;p=1;v=3} @Self ~onDeath
+  - model{modelid=umber_creeper;damagetint=false} @Self ~onSpawn
+  - model{modelid=umber_creeper;damagetint=false} @Self ~onLoad
+  - state{state=damage} @Self ~onDamaged
+UmberLandmine:
+  Type: VINDICATOR
+  Display: Spore Landmine
+  Health: 15
+  Faction: creepers
+  AIGoalSelectors:
+  - clear
+  AITargetSelectors:
+  - clear
+  Damage: 0
+  Armor: 0
+  DamageModifiers:
+  - FALL 0
+  Modules:
+   ThreatTable: true
+  Options:
+    PreventOtherDrops: true
+    Despawn: true
+    MaxCombatDistance: 256
+    PreventRandomEquipment: true
+    PreventSunburn: true
+    AttackSpeed: 0.18
+    Collidable: false
+    FollowRange: 80
+    KnockbackResistance: 100
+    MovementSpeed: 0.21
+    AttackSpeed: 1
+    Invincible: true
+    NoAI: false
+    Silent: true
+  Skills:
+  - gcd{ticks=30} @self ~onSpawn
+  - metaskill{s=ULandmine1} @self ~onTimer:1
+  - cancelevent @self ~onAttack
+  - model{modelid=umber_landmine;damagetint=false;rad=400} @Self ~onSpawn
+  - model{modelid=umber_landmine;damagetint=false;rad=400} @Self ~onLoad
+SSSExplode:
+ Type: SKELETON
+ Display: Creeper Explosion
+ Health: 100
+ Faction: creepers
+ Options:
+  PreventOtherDrops: true
+  Despawn: false
+  MaxCombatDistance: 256
+  Silent: true
+  PreventRandomEquipment: true
+  PreventSunburn: true
+  AttackSpeed: 0.18
+  Collidable: true
+  NoAI: true
+  Invincible: true
+ Skills:
+ - model{modelid=small_explode;damagetint=false} @Self ~onSpawn
+ - damage{a=15;pi=true;pk=true} @EIR{r=3} ~onSpawn
+ - throw{v=15;vY=2;delay=2} @EIR{r=3} ~onSpawn
+ - remove{delay=17} @self ~onSpawn
+ - effect:particles{particle=smoke;amount=100;hS=0.8;vS=1.5;y=-0.4;size=1;s=0} @self ~onSpawn
+ - effect:particles{particle=explosion_large;amount=1;hS=0.5;vS=1.5;y=-0.4;size=1;s=0} @self ~onSpawn
+NukeTnT:
+  Type: VINDICATOR
+  Display: NukeTnT
+  Health: 100
+  Faction: creepers
+  AIGoalSelectors:
+  - clear
+  AITargetSelectors:
+  - clear
+  Damage: 0
+  Armor: 0
+  DamageModifiers:
+  - FALL 0
+  Modules:
+   ThreatTable: true
+  Options:
+    PreventOtherDrops: true
+    Despawn: true
+    MaxCombatDistance: 256
+    PreventRandomEquipment: true
+    PreventSunburn: true
+    AttackSpeed: 0.18
+    Collidable: false
+    FollowRange: 80
+    KnockbackResistance: 100
+    MovementSpeed: 0.21
+    AttackSpeed: 1
+    Interactable: true
+    Invincible: true
+    NoAI: false
+    Silent: true
+  Skills:
+  - gcd{ticks=30} @self ~onSpawn
+  - metaskill{s=Nuketnt1} @self ~onInteract
+  - cancelevent @self ~onAttack
+  - model{modelid=nuke_tnt;damagetint=false;rad=400} @Self ~onSpawn
+  - model{modelid=nuke_tnt;damagetint=false;rad=400} @Self ~onLoad

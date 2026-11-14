@@ -1,0 +1,281 @@
+Creeper1:
+   Cooldown: 5
+   Conditions:
+   - targetWithin 3
+   - offgcd true
+   Skills:
+   - gcd{ticks=60}
+   - state{state=explode_start} @Self
+   - sound{s=entity.creeper.primed;p=1;v=2} @Self
+   - setspeed{s=0.5} @self
+   - delay 37
+   - metaskill{s=EC1}
+   - setspeed{s=1} @self
+EC1:
+   Cooldown: 0
+   Conditions:
+   - targetWithin 3
+   Skills:
+   - gcd{ticks=100}
+   - state{state=explode_start;r=true} @Self
+   - state{state=explode_end} @Self
+   - delay 5
+   - sound{s=entity.generic.explode;p=1;v=2} @Self
+   - summon{type=Explode;amount=1;radius=0;os=true} @self
+   - remove @self 
+FCreeper1:
+   Cooldown: 5
+   Conditions:
+   - targetWithin 6
+   - offgcd true
+   Skills:
+   - gcd{ticks=60}
+   - state{state=explode_start} @Self
+   - sound{s=entity.creeper.primed;p=1;v=2} @Self
+   - setspeed{s=0.5} @self
+   - delay 37
+   - state{state=explode_start;r=true} @Self
+   - state{state=explode_end} @Self
+   - sound{s=entity.generic.explode;p=2;v=2} @Self
+   - effect:particles{particle=flash;amount=1;hS=0;vS=0;s=0;y=1;size=1.5;s=0} @self
+   - sendtitle{title="<#FEFEFD>█";d=60;fo=40} @PIR{r=25}
+   - remove @self 
+ECreeper1:
+   Cooldown: 5
+   Conditions:
+   - targetWithin 5
+   - offgcd true
+   Skills:
+   - gcd{ticks=60}
+   - state{state=explode_start} @Self
+   - sound{s=entity.creeper.primed;p=1;v=2} @Self
+   - setspeed{s=0.5} @self
+   - delay 37
+   - metaskill{s=EEC1}
+   - setspeed{s=1} @self
+EEC1:
+   Cooldown: 0
+   Conditions:
+   - targetWithin 5
+   Skills:
+   - gcd{ticks=100}
+   - state{state=explode_start;r=true} @Self
+   - state{state=explode_end} @Self
+   - sound{s=entity.lightning_bolt.thunder;p=1.5;v=3;delay=2} @Self
+   - sound{s=entity.generic.explode;p=0.6;v=3;delay=2} @Self
+   - delay 4
+   - summon{type=EExplode;amount=1;radius=0;os=true} @self
+   - remove @self 
+NCreeper1:
+   Cooldown: 20
+   Conditions:
+   - targetWithin 5
+   - offgcd true
+   Skills:
+   - gcd{ticks=60}
+   - state{state=explode_start} @Self
+   - sound{s=entity.creeper.primed;p=0;v=5} @Self
+   - setspeed{s=0.7} @self
+   - delay 197
+   - metaskill{s=NEC1}
+   - setspeed{s=1} @self
+NEC1:
+   Cooldown: 0
+   Conditions:
+   Skills:
+   - gcd{ticks=100}
+   - state{state=explode_start;r=true} @Self
+   - state{state=explode_end} @Self
+   - delay 26
+   - summon{type=NExplode;amount=1;radius=0;os=true} @self
+   - remove @self 
+ICreeper1:
+   Cooldown: 15
+   Conditions:
+   - targetWithin 10
+   - offgcd true
+   Skills:
+   - gcd{ticks=130}
+   - state{state=attack} @Self
+   - setspeed{s=0} @self
+   - setspeed{s=1;delay=105} @self
+   - potion{type=BLINDNESS;duration=100;level=5;delay=23} @PIR{r=15}
+   - summon{type=IFaces;amount=1;radius=0;os=true;delay=24} @PIR{r=15}
+   - sound{s=entity.allay.hurt;p=1.5;v=2;delay=24} @Self
+   - delay 37
+   - sound{s=entity.squid.squirt;p=1.8;v=2} @Self
+   - delay 10
+   - sound{s=entity.squid.squirt;p=1;v=2} @Self
+   - teleport{spreadh=8;spreadv=0;delay=39} @self
+   - delay 18
+   - summon{type=IlussionCreeperCopy;amount=5;radius=5;os=true} @self
+   - sound{s=entity.squid.squirt;p=1.8;v=2;delay=5} @Self
+ICreeper2:
+   Cooldown: 5
+   Conditions:
+   - targetWithin 3
+   - offgcd true
+   Skills:
+   - gcd{ticks=60}
+   - state{state=explode_start} @Self
+   - sound{s=entity.creeper.primed;p=1;v=2} @Self
+   - setspeed{s=0.5} @self
+   - delay 37
+   - metaskill{s=IEC1}
+   - setspeed{s=1} @self
+IEC1:
+   Cooldown: 0
+   Conditions:
+   - targetWithin 3
+   Skills:
+   - gcd{ticks=100}
+   - state{state=explode_start;r=true} @Self
+   - state{state=explode_end} @Self
+   - delay 5
+   - sound{s=entity.generic.explode;p=1;v=2} @Self
+   - summon{type=IExplode;amount=1;radius=0;os=true} @self
+   - remove @self 
+FakeCreeper:
+   Cooldown: 5
+   Conditions:
+   - targetWithin 3
+   - offgcd true
+   Skills:
+   - gcd{ticks=60}
+   - state{state=explode_start} @Self
+   - sound{s=entity.creeper.primed;p=1;v=2} @Self
+   - setspeed{s=0.5} @self
+   - delay 37
+   - metaskill{s=FC}
+   - setspeed{s=1} @self
+FC:
+   Cooldown: 0
+   Conditions:
+   - targetWithin 3
+   Skills:
+   - gcd{ticks=100}
+   - state{state=explode_start;r=true} @Self
+   - state{state=explode_end} @Self
+   - delay 5
+   - sound{s=entity.generic.extinguish_fire;p=1;v=2} @Self
+   - effect:particles{particle=poof;amount=50;hS=0.4;vS=1.5;y=0;size=1;s=0} @self ~onSpawn
+   - remove @self 
+SCreeper1:
+   Cooldown: 5
+   Conditions:
+   - targetWithin 3
+   - offgcd true
+   Skills:
+   - gcd{ticks=60}
+   - state{state=explode_start} @Self
+   - sound{s=entity.creeper.primed;p=1;v=2} @Self
+   - setspeed{s=0.5} @self
+   - delay 37
+   - metaskill{s=SC1}
+   - setspeed{s=1} @self
+SC1:
+   Cooldown: 0
+   Conditions:
+   - targetWithin 6
+   Skills:
+   - gcd{ticks=100}
+   - state{state=explode_start;r=true} @Self
+   - state{state=explode_end} @Self
+   - delay 5
+   - sound{s=entity.generic.explode;p=1;v=2} @Self
+   - summon{type=SExplode;amount=1;radius=0;os=true} @self
+   - remove @self 
+SSCreeper1:
+   Cooldown: 5
+   Conditions:
+   - targetWithin 2
+   - offgcd true
+   Skills:
+   - gcd{ticks=60}
+   - state{state=explode_start} @Self
+   - sound{s=entity.creeper.primed;p=1.3;v=2} @Self
+   - setspeed{s=0.5} @self
+   - delay 37
+   - metaskill{s=SSC1}
+   - setspeed{s=1} @self
+SSC1:
+   Cooldown: 0
+   Conditions:
+   - targetWithin 2
+   Skills:
+   - gcd{ticks=100}
+   - state{state=explode_start;r=true} @Self
+   - state{state=explode_end} @Self
+   - delay 5
+   - sound{s=entity.generic.explode;p=1.3;v=2} @Self
+   - summon{type=SSExplode;amount=1;radius=0;os=true} @self
+   - remove @self 
+SLandmine1:
+   Cooldown: 5
+   Conditions:
+   - playerWithin 1.5
+   - offgcd true
+   Skills:
+   - gcd{ticks=60}
+   - state{state=death} @Self
+   - sound{s=entity.creeper.primed;p=2;v=2} @Self
+   - delay 12
+   - summon{type=SSExplode;amount=1;radius=0;os=true} @self
+   - sound{s=entity.generic.explode;p=1;v=2} @Self
+   - remove @self 
+SLandmine2:
+   Cooldown: 5
+   Conditions:
+   - offgcd true
+   Skills:
+   - gcd{ticks=60}
+   - sound{s=entity.creeper.primed;p=2;v=2} @Self
+   - delay 12
+   - summon{type=SSExplode;amount=1;radius=0;os=true} @self
+   - sound{s=entity.generic.explode;p=1;v=2} @Self
+   - remove @self
+UCreeper1:
+   Cooldown: 10
+   Conditions:
+   - targetWithin 8
+   - offgcd true
+   Skills:
+   - gcd{ticks=140}
+   - state{state=attack} @Self
+   - potion{type=DAMAGE_RESISTANCE;duration=120;delay=20;level=100} @self 
+   - sound{s=block.grass.break;p=1;v=2;repeat=19;repeatinterval=6} @Self
+   - setspeed{s=0} @self
+   - delay 30
+   - summon{type=UmberLandmine;amount=1;radius=0;os=true} @self
+   - disengage{v=2} @target
+   - disengage{v=2} @target
+   - delay 21
+   - summon{type=UmberLandmine;amount=1;radius=0;os=true} @self
+   - disengage{v=2} @target
+   - delay 30
+   - summon{type=UmberLandmine;amount=1;radius=0;os=true} @self
+   - disengage{v=2} @target
+   - delay 50
+   - setspeed{s=1} @self
+ULandmine1:
+   Cooldown: 5
+   Conditions:
+   - playerWithin 1
+   - offgcd true
+   Skills:
+   - gcd{ticks=60}
+   - summon{type=SSSExplode;amount=1;radius=0;os=true} @self
+   - sound{s=entity.generic.explode;p=1.4;v=2} @Self
+   - remove @self
+Nuketnt1:
+   Cooldown: 1000
+   Conditions:
+   - offgcd true
+   Skills:
+   - gcd{ticks=60}
+   - state{state=activated} @Self
+   - sound{s=entity.creeper.primed;p=0;v=5} @Self   
+   - delay 245
+   - summon{type=NExplode;amount=1;radius=0;os=true} @self
+   - delay 15
+   - remove @self

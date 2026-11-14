@@ -1,0 +1,68 @@
+
+# ~Written by RopeFire~
+
+CancelEvent:
+  Conditions:
+  - incombat true
+  Skills:
+  - CancelEvent @self
+
+blackbox_summoned:
+  Skills:
+  - CancelEvent @self
+  - state{model=blackbox;state=blackbox} @self
+  - aura{auraName=emerged;duration=339} @self
+  - lockmodel @self
+  - sound{s=custom.blackbox_build;v=3;p=1} @self
+  - delay 100
+  - potion{type=DARKNESS;duration=215;l=0} @LivingInRadius{r=5}
+  - potion{type=SLOWNESS;duration=215;l=1} @LivingInRadius{r=5}
+  - delay 50
+  - aura{auraName=sword1;oT=sword1_damage;duration=8} @self
+  - sound{s=custom.swords_whoosh;v=3;p=1} @self
+  - delay 5
+  - aura{auraName=sword2;oT=sword2_damage;duration=8} @self
+  - sound{s=custom.swords_whoosh;v=3;p=1} @self
+  - delay 5
+  - aura{auraName=sword3;oT=sword3_damage;duration=7} @self
+  - sound{s=custom.swords_whoosh;v=3;p=1} @self
+  - delay 17
+  - aura{auraName=sword4;oT=sword4_damage;duration=7} @self
+  - sound{s=custom.swords_whoosh;v=3;p=1} @self
+  - delay 29
+  - aura{auraName=sword5;oT=sword5_damage;duration=7} @self
+  - sound{s=custom.swords_whoosh;v=3;p=1} @self
+  - delay 133
+  - remove @self
+
+sword1_damage:
+  Skills:
+  - totem{md=4;oH=[ - damage{a=30} ];hnp=true;hp=true;hR=2;vR=2;i=1;drawhitbox=false} @ModelPart{mid=blackbox;pid=bone}
+
+sword2_damage:
+  Skills:
+  - totem{md=4;oH=[ - damage{a=30} ];hnp=true;hp=true;hR=2;vR=2;i=1;drawhitbox=false} @ModelPart{mid=blackbox;pid=bone5}
+
+sword3_damage:
+  Skills:
+  - totem{md=4;oH=[ - damage{a=30} ];hnp=true;hp=true;hR=2;vR=2;i=1;drawhitbox=false} @ModelPart{mid=blackbox;pid=bone3}
+
+sword4_damage:
+  Skills:
+  - totem{md=4;oH=[ - damage{a=30} ];hnp=true;hp=true;hR=2;vR=2;i=1;drawhitbox=false} @ModelPart{mid=blackbox;pid=bone2}
+
+sword5_damage:
+  Skills:
+  - totem{md=4;oH=[ - damage{a=30;is=true} ];hnp=true;hp=true;hR=2;vR=2;i=1;drawhitbox=false} @ModelPart{mid=blackbox;pid=bone4}
+
+blackbox_wall:
+  Conditions:
+  - hasaura{n=emerged} true
+  Skills:
+  - throw{v=-2;vy=-1} @EIRR{min=4;max=5}
+
+blackbox_wall2:
+  Conditions:
+  - hasaura{n=emerged} true
+  Skills:
+  - throw{v=2;vy=-1} @EIRR{min=5;max=6}

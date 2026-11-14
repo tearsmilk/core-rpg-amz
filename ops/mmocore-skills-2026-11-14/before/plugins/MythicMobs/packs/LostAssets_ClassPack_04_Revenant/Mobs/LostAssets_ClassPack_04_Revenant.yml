@@ -1,0 +1,172 @@
+lostassets_revenant_skill1:
+  Type: ARMOR_STAND
+  Pose:
+      Head: 0,0,0
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_revenant_skill1} @self ~onSpawn
+lostassets_revenant_skill2:
+  Type: ARMOR_STAND
+  Pose:
+      Head: 0,0,0
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_revenant_skill2} @self ~onSpawn
+lostassets_revenant_skill3:
+  Type: ARMOR_STAND
+  Pose:
+      Head: 0,0,0
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_revenant_skill3} @self ~onSpawn
+lostassets_revenant_skill4:
+  Type: ARMOR_STAND
+  Pose:
+      Head: 0,0,0
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_revenant_skill4} @self ~onSpawn
+lostassets_revenant_src_1:
+  Type: ARMOR_STAND
+  Pose:
+      Head: 0to360,0to360,0to360
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_revenant_src_1} @self ~onSpawn
+lostassets_revenant_src_2:
+  Type: ARMOR_STAND
+  Pose:
+      RightArm: 0to360,0to360,0to360
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_revenant_src_2} @self ~onSpawn
+lostassets_revenant_src_3:
+  Type: ARMOR_STAND
+  Pose:
+      RightArm: 0,0,10
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_revenant_src_3} @self ~onSpawn
+lostassets_revenant_rc_1:
+  Type: ARMOR_STAND
+  Pose:
+      Head: 0,-30,20
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_revenant_rc_1} @self ~onSpawn
+lostassets_revenant_rc_2:
+  Type: ARMOR_STAND
+  Pose:
+      Head: 0,-30,160
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_revenant_rc_2} @self ~onSpawn
+lostassets_revenant_lc_1:
+  Type: ARMOR_STAND
+  Pose:
+      Head: 0,-30,-20
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_revenant_lc_1} @self ~onSpawn
+lostassets_revenant_lc_2:
+  Type: ARMOR_STAND
+  Pose:
+      Head: 0,-30,200
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_revenant_lc_2} @self ~onSpawn
+lostassets_revenant_lc_3:
+  Type: ARMOR_STAND
+  Pose:
+      Head: 0,-30,0
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+  Skills:
+  - skill{s=lostassets_vfx_revenant_lc_3} @self ~onSpawn
+lostassets_revenant_eff:
+  Type: ARMOR_STAND
+  Pose:
+      Head: 0,-30,0
+  ItemHand: AIR
+  Options:
+    Marker: true
+    Small: false
+    HasArms: true
+    Invisible: true
+    Invincible: true
+#MmdqFTO3ZlZnBnZ4ElMGJVQBhFZzklaOJzYU1UeZRlT6VkMWxGRr90aFJlcQlGV4pFdDJ3N
+  Skills:
+  - effect:particles{particle=spell_witch;m=water;amount=40;hS=2;vS=1;y=0.6;speed=0;forwardOffset=0;sideOffset=0} @self ~onTimer:1
+  - effect:particles{particle=smoke_normal;m=water;amount=20;hS=2;vS=1;y=0.6;speed=0;forwardOffset=0;sideOffset=0} @self ~onTimer:1
+  - skill{s=lostassets_vfx_revenant_eff} @self ~onSpawn

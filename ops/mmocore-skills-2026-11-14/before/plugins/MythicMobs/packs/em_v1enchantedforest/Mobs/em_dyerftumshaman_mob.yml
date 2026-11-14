@@ -1,0 +1,352 @@
+
+dyerftumShaman_em:
+  Type: vindicator
+  Display: 'Dyerftum Shaman'
+  Modules:
+    ThreatTable: true
+  Health: 400
+  Faction: Dyerftum
+  DamageModifiers:
+  - FIRE 0
+  - MAGIC 1.1
+  - PROJECTILE 0.25
+  Damage: 12 #This is the BASE damage. Applies for ALL skills Setting it to 24 will DOUBLE damage. Setting it to 3 will REDUCE damage in 50% from the original.
+  KillMessages:
+  - '<target.name> was killed by a Dyerftum Shaman.'
+  - 'A Dyerftum shaman poisoned <target.name>.'
+  - "<target.name> was slain by Dyerftums"
+  - "A group of Dyerftum killed <target.name>."
+  BossBar:
+    Enabled: true
+    Title: '&BDyerftum Shaman &A<caster.hp>/<caster.mhp>HP'
+    Range: 30
+    Color: GREEN
+    Style: SEGMENTED_6
+  Equipment:
+  - air:4
+  - air:3
+  - air:2
+  - imboots_dyerftumShaman_em:1
+  - iron_axe:0
+  - air:5
+  Drops:
+  - exp 10-25 1
+  LevelModifiers:
+    Health: 0.5
+    Damage: 0.03
+  Skills:
+  - message{m="Hitrec <caster.var.hitrec> STACKS"} @PlayersNearOrigin{r=75} ~onDamaged 0 #DEBUGMESSAGE
+#====== MODEL ASSIGNEMENT =============
+  - model{m=em_dyerftum5;n=false;damagetint=false;save=true} @self ~onSpawn 1
+  - model{m=em_dyerftum5;n=false;damagetint=false;save=true} @self ~onLoad 1
+  - setlevel{a=set;l=0} ~onSpawn
+  - setvariable{var=caster.skillxd;value="none";t=string} @Self ~onSpawn
+  - skill{s=dyerftumShaman_em_hp_check} @Self ~onSpawn
+  - setvariable{var=caster.eichpee;value="<caster.mhp>";t=integer} @Self ~onSpawn
+  - DefaultState{type=WALK;state=walk_combat;li=3;lo=2} @self ~onEnterCombat
+  - DefaultState{type=IDLE;state=idle_combat;li=3;lo=2} @self ~onEnterCombat
+  - DefaultState{type=WALK;state=walk;li=3;lo=2} @self ~onDropCombat
+  - DefaultState{type=IDLE;state=idle;li=3;lo=2} @self ~onDropCombat
+  
+  - potion{type=JUMP;duration=999999;lvl=0;p=true} @Self ~OnSpawn
+#============ DISGUISE PROTOCOL =================
+  - submodel{mid=em_dyerftum5;partid=chest2;subpartid=chest2;remove=true} @self ~onSpawn 1
+  - submodel{mid=em_dyerftum5;partid=head2;subpartid=head2;remove=true} @self ~onSpawn 1
+  - submodel{mid=em_dyerftum5;partid=left_forearm2;subpartid=left_forearm2;remove=true} @self ~onSpawn 1
+  - submodel{mid=em_dyerftum5;partid=right_forearm2;subpartid=right_forearm2;remove=true} @self ~onSpawn 1
+
+  - submodel{mid=em_dyerftum5;partid=chest2;subpartid=chest2;remove=true} @self ~onLoad 1
+  - submodel{mid=em_dyerftum5;partid=head2;subpartid=head2;remove=true} @self ~onLoad 1
+  - submodel{mid=em_dyerftum5;partid=left_forearm2;subpartid=left_forearm2;remove=true} @self ~onLoad 1
+  - submodel{mid=em_dyerftum5;partid=right_forearm2;subpartid=right_forearm2;remove=true} @self ~onLoad 1
+
+  - changepart{m=em_dyerftum5;pid=head;nm=em_dyerftum5;npid=head2} @self ~onSpawn 0.5
+  - changepart{m=em_dyerftum5;pid=chest;nm=em_dyerftum5;npid=chest2} @self ~onSpawn 0.5
+#============ ATTACK =================
+  - skill{s=dyerftumShaman_em_bruttack1} @Trigger ~onSignal:DEBUG_TEST 1
+#  - skill{s=dyerftumShaman_em_castpoison} @Trigger ~onSignal:DEBUG_TEST 1
+  - CancelEvent{sync=true} @self ~onAttack 1 #CANCEL ATTACKS
+  
+  - skill{s=[
+      - skill{s=dyerftumShaman_em_meleetrigger;sync=false} @LivingInCone{a=160.0;r=4;rot=0.0;ignore=samefaction}
+      - skill{s=dyerftumShaman_em_meleetrigger;sync=false} @LivingInCone{a=200.0;r=1;rot=0.0;ignore=samefaction}]} ~onTimer:12 0.85 ?!variableEquals{var=caster.rage;value="1"} ?incombat
+  - skill{s=[
+      - skill{s=dyerftumShaman_em_meleetrigger2;sync=false} @LivingInCone{a=160.0;r=4;rot=0.0;ignore=samefaction}
+      - skill{s=dyerftumShaman_em_meleetrigger2;sync=false} @LivingInCone{a=200.0;r=1;rot=0.0;ignore=samefaction}]} ~onTimer:8 0.95 ?variableEquals{var=caster.rage;value="1"} ?incombat
+  
+  - skill{s=dyerftumShaman_em_casthealing_sensor;sync=false} @EntitiesInRadius{r=15;ignore=players} ~onTimer:32 0.6 ?incombat
+  
+  - skill{s=dyerftumShaman_em_idlesounds_trigger;sync=false} ~onTimer:32 0.6 ?!incombat
+  - skill{s=dyerftumShaman_em_idlesounds_trigger;sync=false} ~onTimer:32 0.3 ?incombat
+  - skill{s=dyerftumShaman_em_castsummoning_sensor;sync=false} @EntitiesInRadius{r=15} ~onTimer:30 <36% 0.8 ?incombat
+  - skill{s=dyerftumShaman_em_castsummoning_sensor;sync=false} @EntitiesInRadius{r=15} ~onTimer:40 =36%-75% 0.5 ?incombat
+  - skill{s=dyerftumShaman_em_castertrigger1;sync=false} @LivingInCone{a=160.0;r=10;rot=0.0;ignore=samefaction} ~onTimer:32 0.75 ?incombat
+
+  # SUMMON CONTROLLERS
+  - skill{s=dyerftumShaman_em_parsesummonings} ~onSignal:DIESUMMON
+  - variablesubtract{var=caster.brutesummonsamount;amount=1} @self ~onSignal:DIESUMMONBRUTE
+  - setvariable{var=caster.summonsamount;value="0";t=integer} @Self ~onSpawn
+  - setvariable{var=caster.brutesummonsamount;value="0";t=integer} @Self ~onSpawn
+
+  - setvariable{var=caster.combor;value="0";t=integer} @Self ~onSpawn
+  - setvariable{var=caster.comboa;value="0";t=integer} @Self ~onSpawn
+  
+  - sound{s=emewoods1:custom.enchantedwoods1.heavy_wood_hit;p=<random.float.0.8to0.9>;v=1.2} @selflocation ~onDamaged 1 #Hurtmechanic SOUND
+  - setstance{stance=normal} @self ~onSpawn
+  - skill{s=hurt1dyerftumShaman_em} @self ~onDamaged 0.92 #Hurtmechanic
+  - setvariable{var=caster.vulnerable;value="0";t=integer} @Self ~onSpawn
+  - velocity{m=set;x=0;y=0;z=0} @self ~onDamaged
+  - setspeed{speed=1.3;type=walking} @self ~onEnterCombat
+  - setspeed{speed=1;type=walking} @self ~onDropCombat
+  - skill{s=dyerftumShaman_em_target_check} ~onEnterCombat
+#================ RIP IN PEPSI PROTOCOL
+  
+  #LEAFS VFX
+  - summon{mob=dyerftum_leafs_1;amount=1;noise=2;yr=0.8;repeat=4to5;repeatinterval=1} @RandomLocationsNearOrigin{a=1;r=1;s=0.3;minr=0.3;y=-2} ~onDeath
+  - summon{mob=dyerftum_leafs_1;amount=1;noise=2;yr=0.8;repeat=2;repeatinterval=1;delay=18} @RandomLocationsNearOrigin{sideoffset=0.7;a=1;r=1;s=0.3;minr=0.3;y=-3.6} ~onDeath
+  - summon{mob=dyerftum_leafs_1;amount=1;noise=2;yr=0.8;repeat=2;repeatinterval=1;delay=36} @RandomLocationsNearOrigin{a=1;r=1;s=0.3;minr=0.3;y=-4.2;z=3} ~onDeath
+  #
+  - sound{s=emewoods1:custom.enchantedwoods1.heavy_wood_hit;p=<random.float.0.9to1.2>;v=1.5} @selflocation ~onDeath
+  - sound{s=emewoods1:custom.enchantedwoods1.shaman_death;p=<random.float.0.9to1.2>;v=1.5} @selflocation ~onDeath
+  - sound{s=emewoods1:custom.enchantedwoods1.wood_impact1;p=<random.float.0.8to1.2>;v=2} @selflocation ~onDeath
+  - lockmodel{l=false;delay=0} @Self ~onDeath
+  - sound{s=emewoods1:custom.enchantedwoods1.heavy_wood_hit;p=<random.float.0.9to1.2>;v=1.2;delay=13} @selflocation ~onDeath 1
+  - sound{s=emewoods1:custom.enchantedwoods1.wood_impact1;p=<random.float.0.9to1.2>;v=1.2;delay=13} @selflocation ~onDeath 1
+
+  - sound{s=emewoods1:custom.enchantedwoods1.heavy_wood_hit;p=<random.float.0.9to1.2>;v=1.2;delay=37} @selflocation ~onDeath 1
+  - sound{s=emewoods1:custom.enchantedwoods1.wood_impact1;p=<random.float.0.9to1.2>;v=1.2;delay=37} @selflocation ~onDeath 1
+  - sound{s=emewoods1:custom.enchantedwoods1.wood_impact1;p=<random.float.0.9to1.2>;v=1.2;delay=37} @selflocation ~onDeath 1
+
+  - effect:particles{particle=cloud;amount=150;hS=1.1;vS=0.55;speed=0;size=4.5;repeat=0;repeatinterval=1;sideOffset=0;delay=120} @ModelPart{p=hip;offset=GLOBAL;y=0.2} ~onDeath
+  - effect:particles{particle=cloud;amount=60;hS=0.6;vS=0.2;speed=0;size=4.5;repeat=0;repeatinterval=1;sideOffset=0;delay=120} @ModelPart{p=head;offset=GLOBAL;y=0.2} ~onDeath
+
+# ========= Anti-ranged protocol
+  - skill{s=hurtgendyerftumShaman_em;sync=true} @self ~onDamaged 1 #Hurtmechanic ANTIARROW
+  - skill{s=hurtgendyerftumShaman_em2;sync=true} @self ~onDamaged 1 #Hurtmechanic ANTIMMSkills
+
+  - setvariable{var=caster.projrec;value="0";t=integer} @Self ~OnSpawn #Hurtmechanic ANTIARROW
+  - setvariable{var=caster.running;value="0";t=integer} @Self ~onSpawn
+  - setvariable{var=caster.ragestacks;value="0";t=integer} @Self ~onSpawn
+  - setvariable{var=caster.hurtened;value="0";t=integer} @Self ~onSpawn
+  - setvariable{var=caster.parrying;value="0";t=integer} @Self ~onSpawn
+#======== RUNNER PROTOCOL 
+  - Aura{auraName=checkrundyerftumShaman_em;onTick=dyerftumShaman_em_runprotocolcheck;interval=18;duration=99999} @self ~onSpawn 1 #=============== RUN MECHANICUS
+  - setvariable{var=caster.hitrec;value="0";t=integer} @Self ~OnSpawn #Hurtmechanic ANTIARROW
+  - message{m="Hitrec <caster.var.hitrec>"} @PlayersNearOrigin{r=75} ~onDamaged 0 #DEBUGMESSAGE
+  - message{m="&eCOMBOR &a<caster.var.combor>"} @PlayersNearOrigin{r=75} ~onDamaged 0 #DEBUGMESSAGE
+
+  Options:
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.24
+    Interactable: true
+    PreventOtherDrops: true
+    KnockbackResistance: 0.9
+    FollowRange: 24
+    Despawn: PERSISTENT
+
+dyerftumShaman_em_venomburst1:
+  Type: silverfish
+  Display: ''
+  Faction: Dyerftum
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Skills:
+   - model{mid=fey_venom_marker1;damagetint=false;scale=1} @self ~onSpawn 1
+   - cullconfig{vc=false;bkc=false;blc=false} @self ~onSpawn
+   - state{state=burst1;li=1;lo=2} @self ~onSpawn
+   - skill{s=[
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_1;delay=1} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_2;delay=2} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_3;delay=3} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_4;delay=4} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_5;delay=5} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_6;delay=6} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_7;delay=7} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_8;delay=8} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_9;delay=9} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_10;delay=10} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_11;delay=11} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_12;delay=12} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_13;delay=13} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_14;delay=14} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_15;delay=15} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_16;delay=16} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_17;delay=17} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_18;delay=18} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_19;delay=20} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_20;delay=22} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_21;delay=24} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_22;delay=26} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_23;delay=28} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_24;delay=30} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_25;delay=32} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_26;delay=34} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_27;delay=36} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_28;delay=38} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_29;delay=40}];sync=false;delay=1} @self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=41} @Self ~onSpawn
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: true
+    Invincible: true
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+
+dyerftumShaman_em_venomburst2:
+  Type: silverfish
+  Display: ''
+  Faction: Dyerftum
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Skills:
+   - model{mid=fey_venom_marker1;damagetint=false;scale=1} @self ~onSpawn 1
+   - cullconfig{vc=false;bkc=false;blc=false} @self ~onSpawn
+   - state{state=burst2;li=0} @self ~onSpawn
+   - skill{s=[
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_1;delay=1} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_2;delay=2} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_3;delay=3} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_4;delay=4} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_5;delay=5} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_6;delay=6} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_7;delay=7} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_8;delay=8} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_9;delay=9} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_10;delay=10} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_11;delay=11} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_12;delay=12} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_13;delay=13} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_14;delay=14} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_15;delay=15} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_16;delay=16} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_17;delay=17} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_18;delay=18} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_19;delay=20} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_20;delay=22} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_21;delay=24} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_22;delay=26} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_23;delay=28} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_24;delay=30} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_25;delay=32} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_26;delay=34} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_27;delay=36} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_28;delay=38} @self
+    - changepart{m=fey_venom_marker1;pid=frame1;nm=fey_venom_resources;npid=vb1_29;delay=40}];sync=false;delay=1} @self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=41} @Self ~onSpawn
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Despawn: true
+    Interactable: true
+    Invincible: true
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+
+dyerftumShaman_em_tornado1:
+  Type: silverfish
+  Display: ''
+  Faction: Dyerftum
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+  - model{mid=feywind_tornado;s=idle;n=false} @self ~onSpawn 1
+  - cullconfig{vc=false;bkc=false;blc=false} @self ~onSpawn
+  - state{state=rotate1;li=0;lo=3} @self ~onSpawn
+  - state{state=expand;li=0;lo=3} @self ~onSpawn
+  - state{state=spawn;li=0;lo=3} @self ~onSpawn
+  - cancelEvent{sync=true} ~onAttack
+  - sound{s=emewoods1:custom.enchantedwoods1.tornado_loop;p=<random.float.0.9to1.2>;v=1} @SelfLocation ~onSpawn
+  - sound{s=emewoods1:custom.enchantedwoods1.tornado_loop;p=<random.float.0.9to1.2>;v=1} @SelfLocation ~onTimer:20
+  - skill{s=[
+      - pull{velocity=15;to=true;origin=@ModelPart{p=airborne_marker;offset=GLOBAL;y=0}} @EntitiesNearOrigin{r=1.8;y=0.2;ignore=samefaction}
+      ];repeat=30;repeatinterval=1} ~onSpawn
+  - skill{s=[
+      - pull{velocity=15;to=true;origin=@ModelPart{p=airborne_marker;offset=GLOBAL;y=0}} @EntitiesNearOrigin{r=2.2;y=0.2;ignore=samefaction}
+      ];repeat=29;repeatinterval=1;delay=30} ~onSpawn
+  
+  - skill{s=[
+      - effect:particles{particle=SNEEZE;amount=1;hS=0.5;vS=0.1;speed=0.2;directional=true;size=0.1
+      ;origin=@SelfLocation;y=0} 0.3];repeat=81;repeatinterval=1} @Ring{y=1;radius=4;points=16} ~onSpawn
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.001
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Invincible: true
+    Despawn: true
+    Interactable: false
+    KnockbackResistance: 1
+    Collidable: false
+    NoGravity: true
+
+dyerftumShaman_em_tornado2:
+  Type: silverfish
+  Display: ''
+  Faction: Dyerftum
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+  - model{mid=feywind_tornado;s=idle;n=false} @self ~onSpawn 1
+  - cullconfig{vc=false;bkc=false;blc=false} @self ~onSpawn
+  - state{state=rotate1;li=0;lo=3} @self ~onSpawn
+  - state{state=expand;li=0;lo=3} @self ~onSpawn
+  - state{state=spawn;li=0;lo=3} @self ~onSpawn
+  - cancelEvent{sync=true} ~onAttack
+  - sound{s=emewoods1:custom.enchantedwoods1.tornado_loop;p=<random.float.0.9to1.2>;v=1} @SelfLocation ~onSpawn
+  - sound{s=emewoods1:custom.enchantedwoods1.tornado_loop;p=<random.float.0.9to1.2>;v=1} @SelfLocation ~onTimer:20
+  - skill{s=[
+      - effect:particles{particle=SNEEZE;amount=1;hS=0.5;vS=0.1;speed=0.2;directional=true;size=0.1
+      ;origin=@SelfLocation;y=0} 0.22];repeat=81;repeatinterval=1} @Ring{y=1;radius=4;points=8} ~onSpawn
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.001
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Invincible: true
+    Despawn: true
+    Interactable: false
+    KnockbackResistance: 1
+    Collidable: false
+    NoGravity: true
+

@@ -1,0 +1,98 @@
+dyerftum_leafs_1:
+  Type: vex
+  Display: ''
+  Faction: Dyerftum
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+   - model{mid=em_leafvfx;damagetint=false} @self ~onSpawn 1
+   - cullconfig{vc=false;bkc=false;blc=false} @self ~onSpawn
+   - state{s=spawn;li=0} @self ~onSpawn
+   - skill{s=[
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps1_1;delay=1} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps1_2;delay=2} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps1_3;delay=3} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps1_4;delay=4} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps1_5;delay=5} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps1_6;delay=6} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps1_7;delay=7} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps1_8;delay=8} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps1_9;delay=9} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps1_10;delay=10} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps1_11;delay=11} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps1_12;delay=12} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps1_13;delay=13} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps1_14;delay=14} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps1_15;delay=15} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps1_16;delay=16}];sync=true} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=20} @Self ~onSpawn
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventItemPickup: true
+    Despawn: true
+    Interactable: false
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+    Invincible: true
+
+dyerftum_leafs_2:
+  Type: vex
+  Display: ''
+  Faction: Dyerftum
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+   - model{mid=em_leafvfx;damagetint=false} @self ~onSpawn 1
+   - cullconfig{vc=false;bkc=false;blc=false} @self ~onSpawn
+   - state{s=spawn;li=0} @self ~onSpawn
+   - skill{s=[
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps2_1;delay=1} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps2_2;delay=2} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps2_3;delay=3} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps2_4;delay=4} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps2_5;delay=5} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps2_6;delay=6} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps2_7;delay=7} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps2_8;delay=8} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps2_9;delay=9} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps2_10;delay=10} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps2_11;delay=11} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps2_12;delay=12} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps2_13;delay=13} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps2_14;delay=14} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps2_15;delay=15} @self
+    - changepart{m=em_leafvfx;pid=frame1;nm=sapplosion1_resources;npid=lps2_16;delay=16}];sync=true} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=20} @Self ~onSpawn
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventItemPickup: true
+    Despawn: true
+    Interactable: false
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true
+    Invincible: true
+# n68JN3MkG4lJTO3h68569wZomtdIaaGHTNHJ00fVSV6EFohuCvFwIExL5PuQVW+OMNtBnUXG6+6M5Misa/a87NBdSmYtpd+h63u9VISvamE=

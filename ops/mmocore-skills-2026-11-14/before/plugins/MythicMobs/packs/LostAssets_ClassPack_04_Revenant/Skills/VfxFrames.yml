@@ -1,0 +1,151 @@
+# Сгенерировано: механики ~onSpawn с inline delay вынесены в скиллы с построчным delay (MythicMobs 5.14)
+lostassets_vfx_revenant_skill1:
+  Skills:
+  - delay 5
+  - model{mid=lostassets_revenant;d=false;usm=false} @self
+  - state{s=skill1} @self
+  - delay 35
+  - remove @self
+lostassets_vfx_revenant_skill2:
+  Skills:
+  - delay 5
+  - model{mid=lostassets_revenant;d=false;usm=false} @self
+  - state{s=skill2} @self
+  - delay 75
+  - remove @self
+lostassets_vfx_revenant_skill3:
+  Skills:
+  - delay 2
+  - model{mid=lostassets_revenant;d=false;usm=false} @self
+  - state{s=skill3;sp=1.5} @self
+  - delay 18
+  - remove @self
+lostassets_vfx_revenant_skill4:
+  Skills:
+  - delay 5
+  - model{mid=lostassets_revenant;d=false;usm=false} @self
+  - state{s=skill4} @self
+  - delay 35
+  - remove @self
+lostassets_vfx_revenant_src_1:
+  Skills:
+  - delay 2
+  - equip{item=lostassets_86:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_87:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_88:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_89:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_90:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_91:HEAD} @self
+  - delay 1
+  - remove @self
+lostassets_vfx_revenant_src_2:
+  Skills:
+  - delay 2
+  - equip{item=lostassets_86:HAND} @self
+  - delay 1
+  - equip{item=lostassets_87:HAND} @self
+  - delay 1
+  - equip{item=lostassets_88:HAND} @self
+  - delay 1
+  - equip{item=lostassets_89:HAND} @self
+  - delay 1
+  - equip{item=lostassets_90:HAND} @self
+  - delay 1
+  - equip{item=lostassets_91:HAND} @self
+  - delay 1
+  - remove @self
+lostassets_vfx_revenant_src_3:
+  Skills:
+  - delay 44
+  - skill{s=lostassets_revenant_src_pp} @self
+  - delay 56
+  - remove @self
+lostassets_vfx_revenant_rc_1:
+  Skills:
+  - delay 12
+  - equip{item=lostassets_86:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_87:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_88:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_89:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_90:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_91:HEAD} @self
+  - delay 1
+  - remove @self
+lostassets_vfx_revenant_rc_2:
+  Skills:
+  - delay 13
+  - equip{item=lostassets_86:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_87:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_88:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_89:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_90:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_91:HEAD} @self
+  - delay 1
+  - remove @self
+lostassets_vfx_revenant_lc_1:
+  Skills:
+  - delay 2
+  - equip{item=lostassets_86:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_87:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_88:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_89:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_90:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_91:HEAD} @self
+  - delay 1
+  - remove @self
+lostassets_vfx_revenant_lc_2:
+  Skills:
+  - delay 2
+  - equip{item=lostassets_86:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_87:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_88:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_89:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_90:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_91:HEAD} @self
+  - delay 1
+  - remove @self
+lostassets_vfx_revenant_lc_3:
+  Skills:
+  - delay 8
+  - equip{item=lostassets_86:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_87:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_88:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_89:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_90:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_91:HEAD} @self
+  - delay 1
+  - remove @self
+lostassets_vfx_revenant_eff:
+  Skills:
+  - delay 18
+  - remove @self

@@ -1,0 +1,2040 @@
+--- orig/plugins/MMOCore/classes/archer.yml	2026-11-14 19:49:16.955143417 +0000
++++ new/plugins/MMOCore/classes/archer.yml	2026-11-14 20:14:09.173712887 +0000
+@@ -11,7 +11,7 @@
+     off-combat-health-regen: false
+     off-combat-mana-regen: false
+ # Resource: ENERGY (non-caster). Uses MMOCore mana internally (skill mana costs spend it).
+-# Small pool, fast regen. HUD shows the gold energy bar when mana name is 'Энергия'.
++# Small pool, moderate regen (cut ~50%). HUD shows the gold energy bar when mana name is 'Энергия'.
+ mana:
+     char: '■'
+     icon: '&6■'
+@@ -24,9 +24,10 @@
+     max-mana:
+         base: 20
+         per-level: 0.2
++    # Regen cut ~50% (was base 1.0, per-level 0.02 -> 1.0/s at lvl1, 2.0/s at lvl50)
+     mana-regeneration:
+-        base: 1.0
+-        per-level: 0.02
++        base: 0.5
++        per-level: 0.01
+ max-level: 65
+ exp-curve: '{level} * 200'
+ main-exp-sources: []
+--- orig/plugins/MMOCore/classes/assassin.yml	2026-11-14 19:49:17.379544364 +0000
++++ new/plugins/MMOCore/classes/assassin.yml	2026-11-14 20:14:09.216295535 +0000
+@@ -11,7 +11,7 @@
+     off-combat-health-regen: false
+     off-combat-mana-regen: false
+ # Resource: ENERGY (non-caster). Uses MMOCore mana internally (skill mana costs spend it).
+-# Small pool, fast regen. HUD shows the gold energy bar when mana name is 'Энергия'.
++# Small pool, moderate regen (cut ~50%). HUD shows the gold energy bar when mana name is 'Энергия'.
+ mana:
+     char: '■'
+     icon: '&6■'
+@@ -24,9 +24,10 @@
+     max-mana:
+         base: 20
+         per-level: 0.2
++    # Regen cut ~50% (was base 1.0, per-level 0.02 -> 1.0/s at lvl1, 2.0/s at lvl50)
+     mana-regeneration:
+-        base: 1.0
+-        per-level: 0.02
++        base: 0.5
++        per-level: 0.01
+ max-level: 65
+ exp-curve: '{level} * 200'
+ main-exp-sources: []
+--- orig/plugins/MMOCore/classes/crusader.yml	2026-11-14 19:49:17.809688170 +0000
++++ new/plugins/MMOCore/classes/crusader.yml	2026-11-14 20:14:09.236040937 +0000
+@@ -11,7 +11,7 @@
+     off-combat-health-regen: false
+     off-combat-mana-regen: false
+ # Resource: ENERGY (non-caster). Uses MMOCore mana internally (skill mana costs spend it).
+-# Small pool, fast regen. HUD shows the gold energy bar when mana name is 'Энергия'.
++# Small pool, moderate regen (cut ~50%). HUD shows the gold energy bar when mana name is 'Энергия'.
+ mana:
+     char: '■'
+     icon: '&6■'
+@@ -24,9 +24,10 @@
+     max-mana:
+         base: 20
+         per-level: 0.2
++    # Regen cut ~50% (was base 1.0, per-level 0.02 -> 1.0/s at lvl1, 2.0/s at lvl50)
+     mana-regeneration:
+-        base: 1.0
+-        per-level: 0.02
++        base: 0.5
++        per-level: 0.01
+ max-level: 65
+ exp-curve: '{level} * 200'
+ main-exp-sources: []
+--- orig/plugins/MMOCore/classes/dark_knight.yml	2026-11-14 19:49:18.244760114 +0000
++++ new/plugins/MMOCore/classes/dark_knight.yml	2026-11-14 20:14:09.259808802 +0000
+@@ -11,7 +11,7 @@
+     off-combat-health-regen: false
+     off-combat-mana-regen: false
+ # Resource: ENERGY (non-caster). Uses MMOCore mana internally (skill mana costs spend it).
+-# Small pool, fast regen. HUD shows the gold energy bar when mana name is 'Энергия'.
++# Small pool, moderate regen (cut ~50%). HUD shows the gold energy bar when mana name is 'Энергия'.
+ mana:
+     char: '■'
+     icon: '&6■'
+@@ -24,9 +24,10 @@
+     max-mana:
+         base: 20
+         per-level: 0.2
++    # Regen cut ~50% (was base 1.0, per-level 0.02 -> 1.0/s at lvl1, 2.0/s at lvl50)
+     mana-regeneration:
+-        base: 1.0
+-        per-level: 0.02
++        base: 0.5
++        per-level: 0.01
+ max-level: 65
+ exp-curve: '{level} * 200'
+ main-exp-sources: []
+--- orig/plugins/MMOCore/classes/hunter.yml	2026-11-14 19:49:19.131174178 +0000
++++ new/plugins/MMOCore/classes/hunter.yml	2026-11-14 20:14:09.280517067 +0000
+@@ -11,7 +11,7 @@
+     off-combat-health-regen: false
+     off-combat-mana-regen: false
+ # Resource: ENERGY (non-caster). Uses MMOCore mana internally (skill mana costs spend it).
+-# Small pool, fast regen. HUD shows the gold energy bar when mana name is 'Энергия'.
++# Small pool, moderate regen (cut ~50%). HUD shows the gold energy bar when mana name is 'Энергия'.
+ mana:
+     char: '■'
+     icon: '&6■'
+@@ -24,9 +24,10 @@
+     max-mana:
+         base: 20
+         per-level: 0.2
++    # Regen cut ~50% (was base 1.0, per-level 0.02 -> 1.0/s at lvl1, 2.0/s at lvl50)
+     mana-regeneration:
+-        base: 1.0
+-        per-level: 0.02
++        base: 0.5
++        per-level: 0.01
+ max-level: 65
+ exp-curve: '{level} * 200'
+ main-exp-sources: []
+--- orig/plugins/MMOCore/classes/mage.yml	2026-11-14 19:49:19.555400841 +0000
++++ new/plugins/MMOCore/classes/mage.yml	2026-11-14 20:14:09.385331664 +0000
+@@ -23,9 +23,10 @@
+     max-mana:
+         base: 30
+         per-level: 2
++    # Regen cut ~50% (was base 0.2, per-level 0.03 -> 0.8/s at lvl20, 1.7/s at lvl50)
+     mana-regeneration:
+-        base: 0.2
+-        per-level: 0.03
++        base: 0.1
++        per-level: 0.015
+ max-level: 65
+ exp-curve: '{level} * 200'
+ main-exp-sources: []
+--- orig/plugins/MMOCore/classes/rogue.yml	2026-11-14 19:49:19.978193200 +0000
++++ new/plugins/MMOCore/classes/rogue.yml	2026-11-14 20:14:09.302894416 +0000
+@@ -11,7 +11,7 @@
+     off-combat-health-regen: false
+     off-combat-mana-regen: false
+ # Resource: ENERGY (non-caster). Uses MMOCore mana internally (skill mana costs spend it).
+-# Small pool, fast regen. HUD shows the gold energy bar when mana name is 'Энергия'.
++# Small pool, moderate regen (cut ~50%). HUD shows the gold energy bar when mana name is 'Энергия'.
+ mana:
+     char: '■'
+     icon: '&6■'
+@@ -24,9 +24,10 @@
+     max-mana:
+         base: 20
+         per-level: 0.2
++    # Regen cut ~50% (was base 1.0, per-level 0.02 -> 1.0/s at lvl1, 2.0/s at lvl50)
+     mana-regeneration:
+-        base: 1.0
+-        per-level: 0.02
++        base: 0.5
++        per-level: 0.01
+ max-level: 65
+ exp-curve: '{level} * 200'
+ main-exp-sources: []
+--- orig/plugins/MMOCore/classes/sniper.yml	2026-11-14 19:49:20.386178082 +0000
++++ new/plugins/MMOCore/classes/sniper.yml	2026-11-14 20:14:09.323582451 +0000
+@@ -11,7 +11,7 @@
+     off-combat-health-regen: false
+     off-combat-mana-regen: false
+ # Resource: ENERGY (non-caster). Uses MMOCore mana internally (skill mana costs spend it).
+-# Small pool, fast regen. HUD shows the gold energy bar when mana name is 'Энергия'.
++# Small pool, moderate regen (cut ~50%). HUD shows the gold energy bar when mana name is 'Энергия'.
+ mana:
+     char: '■'
+     icon: '&6■'
+@@ -24,9 +24,10 @@
+     max-mana:
+         base: 20
+         per-level: 0.2
++    # Regen cut ~50% (was base 1.0, per-level 0.02 -> 1.0/s at lvl1, 2.0/s at lvl50)
+     mana-regeneration:
+-        base: 1.0
+-        per-level: 0.02
++        base: 0.5
++        per-level: 0.01
+ max-level: 65
+ exp-curve: '{level} * 200'
+ main-exp-sources: []
+--- orig/plugins/MMOCore/classes/swordsman.yml	2026-11-14 19:49:20.817097283 +0000
++++ new/plugins/MMOCore/classes/swordsman.yml	2026-11-14 20:14:09.347116429 +0000
+@@ -11,7 +11,7 @@
+     off-combat-health-regen: false
+     off-combat-mana-regen: false
+ # Resource: ENERGY (non-caster). Uses MMOCore mana internally (skill mana costs spend it).
+-# Small pool, fast regen. HUD shows the gold energy bar when mana name is 'Энергия'.
++# Small pool, moderate regen (cut ~50%). HUD shows the gold energy bar when mana name is 'Энергия'.
+ mana:
+     char: '■'
+     icon: '&6■'
+@@ -24,9 +24,10 @@
+     max-mana:
+         base: 20
+         per-level: 0.2
++    # Regen cut ~50% (was base 1.0, per-level 0.02 -> 1.0/s at lvl1, 2.0/s at lvl50)
+     mana-regeneration:
+-        base: 1.0
+-        per-level: 0.02
++        base: 0.5
++        per-level: 0.01
+ max-level: 65
+ exp-curve: '{level} * 200'
+ main-exp-sources: []
+--- orig/plugins/MMOCore/classes/thief.yml	2026-11-14 19:49:21.244642824 +0000
++++ new/plugins/MMOCore/classes/thief.yml	2026-11-14 20:14:09.368224482 +0000
+@@ -11,7 +11,7 @@
+     off-combat-health-regen: false
+     off-combat-mana-regen: false
+ # Resource: ENERGY (non-caster). Uses MMOCore mana internally (skill mana costs spend it).
+-# Small pool, fast regen. HUD shows the gold energy bar when mana name is 'Энергия'.
++# Small pool, moderate regen (cut ~50%). HUD shows the gold energy bar when mana name is 'Энергия'.
+ mana:
+     char: '■'
+     icon: '&6■'
+@@ -24,9 +24,10 @@
+     max-mana:
+         base: 20
+         per-level: 0.2
++    # Regen cut ~50% (was base 1.0, per-level 0.02 -> 1.0/s at lvl1, 2.0/s at lvl50)
+     mana-regeneration:
+-        base: 1.0
+-        per-level: 0.02
++        base: 0.5
++        per-level: 0.01
+ max-level: 65
+ exp-curve: '{level} * 200'
+ main-exp-sources: []
+--- orig/plugins/MMOCore/classes/warlock.yml	2026-11-14 19:49:21.666702817 +0000
++++ new/plugins/MMOCore/classes/warlock.yml	2026-11-14 20:14:09.399069771 +0000
+@@ -23,9 +23,10 @@
+     max-mana:
+         base: 30
+         per-level: 2
++    # Regen cut ~50% (was base 0.2, per-level 0.03 -> 0.8/s at lvl20, 1.7/s at lvl50)
+     mana-regeneration:
+-        base: 0.2
+-        per-level: 0.03
++        base: 0.1
++        per-level: 0.015
+ max-level: 65
+ exp-curve: '{level} * 200'
+ main-exp-sources: []
+--- orig/plugins/MMOCore/classes/wizard.yml	2026-11-14 19:49:22.095864042 +0000
++++ new/plugins/MMOCore/classes/wizard.yml	2026-11-14 20:14:09.414895712 +0000
+@@ -23,9 +23,10 @@
+     max-mana:
+         base: 30
+         per-level: 2
++    # Regen cut ~50% (was base 0.2, per-level 0.03 -> 0.8/s at lvl20, 1.7/s at lvl50)
+     mana-regeneration:
+-        base: 0.2
+-        per-level: 0.03
++        base: 0.1
++        per-level: 0.015
+ max-level: 65
+ exp-curve: '{level} * 200'
+ main-exp-sources: []
+--- orig/plugins/MythicHUD/hud_assets/hud/skill_casting_bar-hud.yml	2026-11-14 19:52:23.014089935 +0000
++++ new/plugins/MythicHUD/hud_assets/hud/skill_casting_bar-hud.yml	2026-11-14 20:19:15.172785122 +0000
+@@ -683,11 +683,11 @@
+       offset:
+         x: 137
+         y: -2
+-    skillnames: ### Mia: skill names above the bar in cast mode (replaces MMOCore action-bar text that overlapped the slots)
++    skillnames: ### Skill name is shown ONLY for ~2 s right after that skill is cast (was: all 6 names always visible in cast mode).
++      ### 'justcast' (PlaceholderAPI/config.yml > expansions.utils.shortcuts) = 1 while the slot's cooldown started < 2 s ago.
+       conditions:
+         - placeholder{ph=%mmocore_class_id%;v=HUMAN} false hide
+-        - placeholder{ph=%mmocore_is_casting%;v=true} true hide
+-      text: "<green>%changeoutput_equals_input:{mmocore_bound_1}_matcher:noskill_ifmatch:_else:{utils_uncolor:each_mmocore_bound_1}  %%changeoutput_equals_input:{mmocore_bound_2}_matcher:noskill_ifmatch:_else:{utils_uncolor:each_mmocore_bound_2}  %%changeoutput_equals_input:{mmocore_bound_3}_matcher:noskill_ifmatch:_else:{utils_uncolor:each_mmocore_bound_3}  %%changeoutput_equals_input:{mmocore_bound_4}_matcher:noskill_ifmatch:_else:{utils_uncolor:each_mmocore_bound_4}  %%changeoutput_equals_input:{mmocore_bound_5}_matcher:noskill_ifmatch:_else:{utils_uncolor:each_mmocore_bound_5}  %%changeoutput_equals_input:{mmocore_bound_6}_matcher:noskill_ifmatch:_else:{utils_uncolor:each_mmocore_bound_6}  %"
++      text: "<gold>%changeoutput_equals_input:{utils_shortcut_justcast:1}_matcher:1_ifmatch:{utils_uncolor:each_mmocore_bound_1}  _else:%%changeoutput_equals_input:{utils_shortcut_justcast:2}_matcher:1_ifmatch:{utils_uncolor:each_mmocore_bound_2}  _else:%%changeoutput_equals_input:{utils_shortcut_justcast:3}_matcher:1_ifmatch:{utils_uncolor:each_mmocore_bound_3}  _else:%%changeoutput_equals_input:{utils_shortcut_justcast:4}_matcher:1_ifmatch:{utils_uncolor:each_mmocore_bound_4}  _else:%%changeoutput_equals_input:{utils_shortcut_justcast:5}_matcher:1_ifmatch:{utils_uncolor:each_mmocore_bound_5}  _else:%%changeoutput_equals_input:{utils_shortcut_justcast:6}_matcher:1_ifmatch:{utils_uncolor:each_mmocore_bound_6}  _else:%"
+       font: "default"
+       align: center
+       offset:
+--- orig/plugins/MythicLib/script/royalquest_skills.yml	2026-11-14 19:53:16.203180601 +0000
++++ new/plugins/MythicLib/script/royalquest_skills.yml	2026-11-14 20:18:55.700720925 +0000
+@@ -26,3 +26,303 @@
+       interaction_type: OFFENSE_SKILL
+   mechanics:
+     - 'damage{amount="<modifier.damage>";knockback=false}'
++
++##############################################################################
++# RoyalQuest skill fixes (2026-11-14)
++#
++# Why these exist: MythicLib's built-in "location" skills (ICE_SPIKES,
++# LIGHTNING_BEAM, FREEZE, ARCANE_HAIL, ...) pick their target point with a
++# BLOCK-ONLY ray trace (LocationSkillResult -> Player#rayTraceBlocks), so when
++# you aim at a player/mob the spell lands on the block BEHIND it.
++# The scripts below use 'ray_trace' (blocks AND entities): if the crosshair is
++# on a valid enemy the spell lands at that enemy's feet, otherwise on the block.
++##############################################################################
++
++# ---------------------------------------------------------------- ICE_SPIKES
++rq_ice_spikes:
++  public: true
++  mechanics:
++    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_ice_spikes_ent;hit_block=rq_ice_spikes_at}'
++rq_ice_spikes_ent:
++  mechanics:
++    - 'script{name=rq_ice_spikes_at;target_location={type=target;position=FEET}}'
++rq_ice_spikes_at:
++  mechanics:
++    - 'sound{sound=BLOCK_GLASS_BREAK;volume=1.5;pitch=0.6}'
++    - 'sound{sound=ENTITY_PLAYER_HURT_FREEZE;volume=1;pitch=0.8}'
++    - 'script{name=rq_ice_spikes_fx;counter=rq_is_i;iterations=10}'
++    - 'script{name=rq_ice_spikes_hit;target={type=nearby_entities;radius=3}}'
++rq_ice_spikes_fx:
++  mechanics:
++    - 'particle{particle=SNOWFLAKE;amount=10;x=0.1;y=0.7;z=0.1;target={type=custom;relative=true;x="(random() * 2 - 1) * 2.5";y=0.8;z="(random() * 2 - 1) * 2.5"}}'
++    - 'particle{particle=ITEM_SNOWBALL;amount=6;x=0.15;y=0.5;z=0.15;target={type=custom;relative=true;x="(random() * 2 - 1) * 2.5";y=0.6;z="(random() * 2 - 1) * 2.5"}}'
++rq_ice_spikes_hit:
++  conditions:
++    - 'can_target'
++  mechanics:
++    - 'damage{amount="<modifier.damage>";knockback=false}'
++    - 'potion{effect=SLOWNESS;level=1;ticks="<modifier.slow> * 20"}'
++
++# ---------------------------------------------------------------- LIGHTNING_BEAM
++rq_lightning_beam:
++  public: true
++  mechanics:
++    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_lightning_beam_ent;hit_block=rq_lightning_beam_at}'
++rq_lightning_beam_ent:
++  mechanics:
++    - 'script{name=rq_lightning_beam_at;target_location={type=target;position=FEET}}'
++rq_lightning_beam_at:
++  mechanics:
++    - 'sound{sound=ENTITY_LIGHTNING_BOLT_THUNDER;volume=0.8;pitch=1.6}'
++    - 'sound{sound=ENTITY_LIGHTNING_BOLT_IMPACT;volume=1;pitch=1}'
++    - 'particle{particle=ELECTRIC_SPARK;amount=80;x=0.12;y=5;z=0.12;target={type=custom;relative=true;x=0;y=5;z=0}}'
++    - 'particle{particle=END_ROD;amount=30;x=0.08;y=5;z=0.08;target={type=custom;relative=true;x=0;y=5;z=0}}'
++    - 'particle{particle=FIREWORK;amount=40;speed=0.2;target={type=custom;relative=true;x=0;y=0.3;z=0}}'
++    - 'script{name=rq_lightning_beam_hit;target={type=nearby_entities;radius="<modifier.radius>"}}'
++rq_lightning_beam_hit:
++  conditions:
++    - 'can_target'
++  mechanics:
++    - 'damage{amount="<modifier.damage>"}'
++
++# ---------------------------------------------------------------- FREEZE
++rq_freeze:
++  public: true
++  mechanics:
++    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_freeze_ent;hit_block=rq_freeze_at}'
++rq_freeze_ent:
++  mechanics:
++    - 'script{name=rq_freeze_at;target_location={type=target;position=FEET}}'
++rq_freeze_at:
++  mechanics:
++    - 'sound{sound=BLOCK_GLASS_BREAK;volume=1;pitch=1.6}'
++    - 'sound{sound=ENTITY_PLAYER_HURT_FREEZE;volume=1;pitch=1.2}'
++    - 'particle{particle=SNOWFLAKE;amount=70;x=2;y=0.4;z=2;speed=0.02;target={type=custom;relative=true;x=0;y=0.5;z=0}}'
++    - 'particle{particle=ITEM_SNOWBALL;amount=30;x=2;y=0.3;z=2;target={type=custom;relative=true;x=0;y=0.4;z=0}}'
++    - 'script{name=rq_freeze_hit;target={type=nearby_entities;radius="<modifier.radius>"}}'
++rq_freeze_hit:
++  conditions:
++    - 'can_target'
++  mechanics:
++    - 'potion{effect=SLOWNESS;level="<modifier.amplifier>";ticks="<modifier.duration> * 20"}'
++    - 'particle{particle=SNOWFLAKE;amount=12;x=0.3;y=0.5;z=0.3;target={type=target}}'
++
++# ---------------------------------------------------------------- ARCANE_HAIL
++rq_arcane_hail:
++  public: true
++  mechanics:
++    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_arcane_hail_ent;hit_block=rq_arcane_hail_at}'
++rq_arcane_hail_ent:
++  mechanics:
++    - 'script{name=rq_arcane_hail_at;target_location={type=target;position=FEET}}'
++rq_arcane_hail_at:
++  mechanics:
++    - 'sound{sound=ENTITY_EVOKER_CAST_SPELL;volume=1;pitch=1.4}'
++    - 'script{name=rq_arcane_hail_tick;counter=rq_ah_i;iterations="<modifier.duration> * 10"}'
++rq_arcane_hail_tick:
++  mechanics:
++    - 'delay{amount="(<rq_ah_i> - 1) * 2"}'
++    - 'script{name=rq_arcane_hail_strike;target_location={type=custom;relative=true;x="(random() * 2 - 1) * <modifier.radius>";y=0;z="(random() * 2 - 1) * <modifier.radius>"}}'
++rq_arcane_hail_strike:
++  mechanics:
++    - 'particle{particle=END_ROD;amount=4;x=0.03;y=1.2;z=0.03;target={type=custom;relative=true;x=0;y=1.2;z=0}}'
++    - 'particle{particle=WITCH;amount=12;x=0.1;y=0.1;z=0.1;speed=0.1}'
++    - 'particle{particle=SMOKE;amount=6;speed=0.05}'
++    - 'sound{sound=ENTITY_ENDERMAN_HURT;volume=0.5;pitch=2}'
++    - 'script{name=rq_arcane_hail_hit;target={type=nearby_entities;radius=2}}'
++rq_arcane_hail_hit:
++  conditions:
++    - 'can_target'
++  mechanics:
++    - 'damage{amount="<modifier.damage>";knockback=false}'
++
++# ---------------------------------------------------------------- BLACK_HOLE
++rq_black_hole:
++  public: true
++  mechanics:
++    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_black_hole_ent;hit_block=rq_black_hole_at}'
++rq_black_hole_ent:
++  mechanics:
++    - 'script{name=rq_black_hole_at;target_location={type=target;position=FEET}}'
++rq_black_hole_at:
++  mechanics:
++    - 'sound{sound=BLOCK_BEACON_ACTIVATE;volume=1;pitch=0.5}'
++    - 'sound{sound=ENTITY_ENDERMAN_TELEPORT;volume=1;pitch=0.5}'
++    - 'script{name=rq_black_hole_tick;counter=rq_bh_i;iterations="<modifier.duration> * 10"}'
++rq_black_hole_tick:
++  mechanics:
++    - 'delay{amount="(<rq_bh_i> - 1) * 2"}'
++    - 'particle{particle=PORTAL;amount=25;x=1;y=0.6;z=1;speed=0.6;target={type=custom;relative=true;x=0;y=0.8;z=0}}'
++    - 'particle{particle=SQUID_INK;amount=3;x=0.15;y=0.15;z=0.15;target={type=custom;relative=true;x=0;y=0.8;z=0}}'
++    - 'copy_vector{variable=rq_bh_c;value=target_location}'
++    - 'script{name=rq_black_hole_pull;target={type=nearby_entities;radius="<modifier.radius>"}}'
++rq_black_hole_pull:
++  conditions:
++    - 'can_target'
++  mechanics:
++    - 'set_vector{variable=rq_bh_v;x="min(0.8, max(-0.8, ((<rq_bh_c.x>) - (<target.location.x>)) * 0.25))";y="min(0.3, max(-0.3, ((<rq_bh_c.y>) + 0.5 - (<target.location.y>)) * 0.1))";z="min(0.8, max(-0.8, ((<rq_bh_c.z>) - (<target.location.z>)) * 0.25))"}'
++    - 'set_velocity{vector=rq_bh_v;target={type=target}}'
++
++# ---------------------------------------------------------------- CONTAMINATION
++rq_contamination:
++  public: true
++  mechanics:
++    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_contamination_ent;hit_block=rq_contamination_at}'
++rq_contamination_ent:
++  mechanics:
++    - 'script{name=rq_contamination_at;target_location={type=target;position=FEET}}'
++rq_contamination_at:
++  mechanics:
++    - 'sound{sound=ENTITY_EVOKER_CAST_SPELL;volume=1;pitch=0.6}'
++    - 'script{name=rq_contamination_tick;counter=rq_ct_i;iterations="<modifier.duration>"}'
++rq_contamination_tick:
++  mechanics:
++    - 'delay{amount="(<rq_ct_i> - 1) * 20"}'
++    - 'particle{particle=DUST;amount=60;x=2.5;y=0.2;z=2.5;color={red=130;green=20;blue=170};target={type=custom;relative=true;x=0;y=0.3;z=0}}'
++    - 'particle{particle=WITCH;amount=15;x=2;y=0.3;z=2;target={type=custom;relative=true;x=0;y=0.3;z=0}}'
++    - 'sound{sound=BLOCK_BREWING_STAND_BREW;volume=0.6;pitch=0.7}'
++    - 'script{name=rq_contamination_hit;target={type=nearby_entities;radius=5}}'
++rq_contamination_hit:
++  conditions:
++    - 'can_target'
++  mechanics:
++    - 'damage{amount="<modifier.damage>";knockback=false}'
++
++# ---------------------------------------------------------------- CORROSION
++rq_corrosion:
++  public: true
++  mechanics:
++    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_corrosion_ent;hit_block=rq_corrosion_at}'
++rq_corrosion_ent:
++  mechanics:
++    - 'script{name=rq_corrosion_at;target_location={type=target;position=FEET}}'
++rq_corrosion_at:
++  mechanics:
++    - 'sound{sound=BLOCK_BREWING_STAND_BREW;volume=1;pitch=0.5}'
++    - 'sound{sound=ENTITY_SLIME_SQUISH;volume=1;pitch=0.6}'
++    - 'particle{particle=DUST;amount=70;x=2;y=0.3;z=2;color={red=90;green=200;blue=40};target={type=custom;relative=true;x=0;y=0.3;z=0}}'
++    - 'particle{particle=ITEM_SLIME;amount=30;x=2;y=0.3;z=2;target={type=custom;relative=true;x=0;y=0.3;z=0}}'
++    - 'script{name=rq_corrosion_hit;target={type=nearby_entities;radius="<modifier.radius>"}}'
++rq_corrosion_hit:
++  conditions:
++    - 'can_target'
++  mechanics:
++    - 'potion{effect=POISON;level="<modifier.amplifier>";ticks="<modifier.duration> * 20"}'
++
++# ---------------------------------------------------------------- CORRUPT
++rq_corrupt:
++  public: true
++  mechanics:
++    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_corrupt_ent;hit_block=rq_corrupt_at}'
++rq_corrupt_ent:
++  mechanics:
++    - 'script{name=rq_corrupt_at;target_location={type=target;position=FEET}}'
++rq_corrupt_at:
++  mechanics:
++    - 'sound{sound=ENTITY_WITHER_AMBIENT;volume=0.7;pitch=1.5}'
++    - 'particle{particle=DUST;amount=50;x=1.3;y=0.3;z=1.3;color={red=110;green=0;blue=140};target={type=custom;relative=true;x=0;y=0.3;z=0}}'
++    - 'particle{particle=SQUID_INK;amount=10;x=1;y=0.2;z=1;target={type=custom;relative=true;x=0;y=0.3;z=0}}'
++    - 'script{name=rq_corrupt_hit;target={type=nearby_entities;radius="<modifier.radius>"}}'
++rq_corrupt_hit:
++  conditions:
++    - 'can_target'
++  mechanics:
++    - 'damage{amount="<modifier.damage>"}'
++    - 'potion{effect=WITHER;level="<modifier.amplifier>";ticks="<modifier.duration> * 20"}'
++
++# ---------------------------------------------------------------- LIFE_ENDER
++rq_life_ender:
++  public: true
++  mechanics:
++    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_life_ender_ent;hit_block=rq_life_ender_at}'
++rq_life_ender_ent:
++  mechanics:
++    - 'script{name=rq_life_ender_at;target_location={type=target;position=FEET}}'
++rq_life_ender_at:
++  mechanics:
++    - 'sound{sound=ENTITY_WITHER_SHOOT;volume=1;pitch=0.5}'
++    - 'line{source={type=custom;relative=true;x=0;y=18;z=0};target={type=target_location};step=0.6;points_per_tick=2;tick=rq_life_ender_trail;end=rq_life_ender_impact}'
++rq_life_ender_trail:
++  mechanics:
++    - 'particle{particle=FLAME;amount=6;x=0.25;y=0.25;z=0.25;speed=0.02}'
++    - 'particle{particle=LAVA;amount=1}'
++rq_life_ender_impact:
++  mechanics:
++    - 'sound{sound=ENTITY_GENERIC_EXPLODE;volume=1.5;pitch=0.8}'
++    - 'particle{particle=EXPLOSION_EMITTER;amount=1}'
++    - 'particle{particle=FLAME;amount=60;x=1.5;y=0.3;z=1.5;speed=0.05}'
++    - 'copy_vector{variable=rq_le_c;value=target_location}'
++    - 'script{name=rq_life_ender_hit;target={type=nearby_entities;radius="<modifier.radius>"}}'
++rq_life_ender_hit:
++  conditions:
++    - 'can_target'
++  mechanics:
++    - 'damage{amount="<modifier.damage>";knockback=false}'
++    - 'set_vector{variable=rq_le_v;x="((<target.location.x>) - (<rq_le_c.x>)) / max(0.5, sqrt(((<target.location.x>) - (<rq_le_c.x>))^2 + ((<target.location.z>) - (<rq_le_c.z>))^2)) * 0.6 * <modifier.knockback>";y=0.45;z="((<target.location.z>) - (<rq_le_c.z>)) / max(0.5, sqrt(((<target.location.x>) - (<rq_le_c.x>))^2 + ((<target.location.z>) - (<rq_le_c.z>))^2)) * 0.6 * <modifier.knockback>"}'
++    - 'set_velocity{vector=rq_le_v;target={type=target}}'
++
++# ---------------------------------------------------------------- TNT_THROW (Бросок динамита)
++# No vanilla TNT entity any more: a thrown "dynamite" projectile that, on
++# impact (enemy or block), plays explosion particles/sound and deals AoE
++# damage <modifier.damage> in <modifier.radius>. No block damage, no fire,
++# no self-damage, allies/PvP-protected players are skipped by can_target.
++rq_tnt_throw:
++  public: true
++  mechanics:
++    - 'sound{sound=ENTITY_TNT_PRIMED;volume=1;pitch=1.3}'
++    - 'sound{sound=ENTITY_SNOWBALL_THROW;volume=1;pitch=0.6}'
++    - 'projectile{speed=20;life_span=24;size=0.4;offense=true;hits=1;stop_on_block=true;ignore_passable=true;tick=rq_tnt_tick;hit_entity=rq_tnt_ent;hit_block=rq_tnt_boom}'
++rq_tnt_tick:
++  mechanics:
++    - 'particle{particle=SMOKE;amount=2;x=0.05;y=0.05;z=0.05}'
++    - 'particle{particle=FLAME;amount=1}'
++rq_tnt_ent:
++  mechanics:
++    - 'script{name=rq_tnt_boom;target_location={type=target;position=BODY}}'
++rq_tnt_boom:
++  mechanics:
++    - 'sound{sound=ENTITY_GENERIC_EXPLODE;volume=1.5;pitch=1}'
++    - 'particle{particle=EXPLOSION_EMITTER;amount=1}'
++    - 'particle{particle=EXPLOSION;amount=8;x=1.2;y=0.6;z=1.2}'
++    - 'particle{particle=LARGE_SMOKE;amount=25;x=1.2;y=0.6;z=1.2;speed=0.05}'
++    - 'particle{particle=FLAME;amount=30;x=1;y=0.5;z=1;speed=0.08}'
++    - 'script{name=rq_tnt_hit;target={type=nearby_entities;radius="<modifier.radius>"}}'
++rq_tnt_hit:
++  conditions:
++    - 'can_target'
++  mechanics:
++    - 'damage{amount="<modifier.damage>";damage_type="SKILL,PHYSICAL"}'
++
++# ---------------------------------------------------------------- BLINK (Скачок)
++# Horizontal blink of <modifier.range> blocks (~5) in the facing direction.
++# Safe landing: 9 block ray traces (feet/waist/head height x left/center/right
++# edge of the player's hitbox). The blink stops 0.5 block before the first
++# obstacle, so the player can never end up inside a block. Yaw/pitch kept.
++# Not cast (no mana/cooldown) when looking straight up/down.
++rq_blink:
++  public: true
++  conditions:
++    - 'boolean{formula="sqrt((<caster.eye_direction.x>)^2 + (<caster.eye_direction.z>)^2) > 0.05"}'
++  mechanics:
++    - 'set_double{variable=rq_bl_h;value="sqrt((<caster.eye_direction.x>)^2 + (<caster.eye_direction.z>)^2)"}'
++    - 'set_double{variable=rq_bl_dx;value="(<caster.eye_direction.x>) / (<rq_bl_h>)"}'
++    - 'set_double{variable=rq_bl_dz;value="(<caster.eye_direction.z>) / (<rq_bl_h>)"}'
++    - 'set_double{variable=rq_bl_r;value="<modifier.range>"}'
++    - 'set_double{variable=rq_bl_d;value="<rq_bl_r> + 0.5"}'
++    - 'ray_trace{mode=BLOCKS;range="<rq_bl_r> + 0.5";ignore_passable=true;source={type=custom;relative=true;source=true;x="(<rq_bl_dz>) * (0.28)";y=0.1;z="(<rq_bl_dx>) * (-0.28)"};target={type=custom;relative=true;source=true;x="(<rq_bl_dz>) * (0.28) + (<rq_bl_dx>)";y=0.1;z="(<rq_bl_dx>) * (-0.28) + (<rq_bl_dz>)"};hit_block=rq_blink_wall}'
++    - 'ray_trace{mode=BLOCKS;range="<rq_bl_r> + 0.5";ignore_passable=true;source={type=custom;relative=true;source=true;x="0";y=0.1;z="0"};target={type=custom;relative=true;source=true;x="(<rq_bl_dx>)";y=0.1;z="(<rq_bl_dz>)"};hit_block=rq_blink_wall}'
++    - 'ray_trace{mode=BLOCKS;range="<rq_bl_r> + 0.5";ignore_passable=true;source={type=custom;relative=true;source=true;x="(<rq_bl_dz>) * (-0.28)";y=0.1;z="(<rq_bl_dx>) * (0.28)"};target={type=custom;relative=true;source=true;x="(<rq_bl_dz>) * (-0.28) + (<rq_bl_dx>)";y=0.1;z="(<rq_bl_dx>) * (0.28) + (<rq_bl_dz>)"};hit_block=rq_blink_wall}'
++    - 'ray_trace{mode=BLOCKS;range="<rq_bl_r> + 0.5";ignore_passable=true;source={type=custom;relative=true;source=true;x="(<rq_bl_dz>) * (0.28)";y=0.9;z="(<rq_bl_dx>) * (-0.28)"};target={type=custom;relative=true;source=true;x="(<rq_bl_dz>) * (0.28) + (<rq_bl_dx>)";y=0.9;z="(<rq_bl_dx>) * (-0.28) + (<rq_bl_dz>)"};hit_block=rq_blink_wall}'
++    - 'ray_trace{mode=BLOCKS;range="<rq_bl_r> + 0.5";ignore_passable=true;source={type=custom;relative=true;source=true;x="0";y=0.9;z="0"};target={type=custom;relative=true;source=true;x="(<rq_bl_dx>)";y=0.9;z="(<rq_bl_dz>)"};hit_block=rq_blink_wall}'
++    - 'ray_trace{mode=BLOCKS;range="<rq_bl_r> + 0.5";ignore_passable=true;source={type=custom;relative=true;source=true;x="(<rq_bl_dz>) * (-0.28)";y=0.9;z="(<rq_bl_dx>) * (0.28)"};target={type=custom;relative=true;source=true;x="(<rq_bl_dz>) * (-0.28) + (<rq_bl_dx>)";y=0.9;z="(<rq_bl_dx>) * (0.28) + (<rq_bl_dz>)"};hit_block=rq_blink_wall}'
++    - 'ray_trace{mode=BLOCKS;range="<rq_bl_r> + 0.5";ignore_passable=true;source={type=custom;relative=true;source=true;x="(<rq_bl_dz>) * (0.28)";y=1.8;z="(<rq_bl_dx>) * (-0.28)"};target={type=custom;relative=true;source=true;x="(<rq_bl_dz>) * (0.28) + (<rq_bl_dx>)";y=1.8;z="(<rq_bl_dx>) * (-0.28) + (<rq_bl_dz>)"};hit_block=rq_blink_wall}'
++    - 'ray_trace{mode=BLOCKS;range="<rq_bl_r> + 0.5";ignore_passable=true;source={type=custom;relative=true;source=true;x="0";y=1.8;z="0"};target={type=custom;relative=true;source=true;x="(<rq_bl_dx>)";y=1.8;z="(<rq_bl_dz>)"};hit_block=rq_blink_wall}'
++    - 'ray_trace{mode=BLOCKS;range="<rq_bl_r> + 0.5";ignore_passable=true;source={type=custom;relative=true;source=true;x="(<rq_bl_dz>) * (-0.28)";y=1.8;z="(<rq_bl_dx>) * (0.28)"};target={type=custom;relative=true;source=true;x="(<rq_bl_dz>) * (-0.28) + (<rq_bl_dx>)";y=1.8;z="(<rq_bl_dx>) * (0.28) + (<rq_bl_dz>)"};hit_block=rq_blink_wall}'
++    - 'set_double{variable=rq_bl_t;value="max(0, min(<rq_bl_r>, (<rq_bl_d>) - 0.5))"}'
++    - 'particle{particle=PORTAL;amount=40;x=0.3;y=0.8;z=0.3;speed=0.4;target={type=caster}}'
++    - 'sound{sound=ENTITY_ENDERMAN_TELEPORT;volume=1;pitch=1.2}'
++    - 'teleport{target={type=caster};target_location={type=custom;relative=true;source=true;x="(<rq_bl_dx>) * (<rq_bl_t>)";y=0.01;z="(<rq_bl_dz>) * (<rq_bl_t>)"}}'
++    - 'particle{particle=REVERSE_PORTAL;amount=40;x=0.3;y=0.8;z=0.3;speed=0.1;target={type=caster}}'
++rq_blink_wall:
++  mechanics:
++    - 'set_double{variable=rq_bl_d;value="min(<rq_bl_d>, ((<target_location.x>) - (<caster.location.x>)) * (<rq_bl_dx>) + ((<target_location.z>) - (<caster.location.z>)) * (<rq_bl_dz>))"}'
+--- orig/plugins/MythicLib/skill/default_skills.yml	2026-11-14 19:53:18.335815132 +0000
++++ new/plugins/MythicLib/skill/default_skills.yml	2026-11-14 20:15:40.008709293 +0000
+@@ -28,9 +28,7 @@
+       name: 'Мана'
+       item: 0
+     stamina:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
++      player: 0
+       name: 'Выносливость'
+       item: 0
+     cooldown:
+@@ -60,9 +58,9 @@
+   icon:
+     item: PAPER
+     item-model: royalquest:skill/arcane_hail
+-  source: default:ARCANE_HAIL
++  source: mythiclib:rq_arcane_hail
+   # Change types of damage dealt
+-  damage_types: [MAGIC,SKILL]
++  damage_types: [MAGIC, SKILL]
+   parameters:
+     timer:
+       player: 0
+@@ -72,6 +70,7 @@
+       player:
+         base: 2
+         per-level: -0.1
++        min: 1
+     mana:
+       player:
+         base: 2
+@@ -84,8 +83,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 1
+-        per-level: -0.2
++        base: 10
++        per-level: -0.3
++        min: 7
++        max: 10
+       name: 'Перезарядка'
+       item: 10.0
+     duration:
+@@ -118,7 +119,7 @@
+   icon: BOOK
+   source: default:ARCANE_RIFT
+   # Change types of damage dealt
+-  damage_types: [MAGIC,SKILL]
++  damage_types: [MAGIC, SKILL]
+   parameters:
+     timer:
+       player: 0
+@@ -181,7 +182,7 @@
+     item-model: royalquest:skill/backstab
+   source: default:BACKSTAB
+   # Change types of damage dealt
+-  damage_types: [PHYSICAL,SKILL]
++  damage_types: [PHYSICAL, SKILL]
+   parameters:
+     timer:
+       player: 0
+@@ -194,7 +195,9 @@
+     cooldown:
+       player:
+         base: 2.0
+-        per-level: 1.0
++        per-level: -0.08
++        min: 1.2
++        max: 2.0
+       name: 'Перезарядка'
+       item: 0
+     mana:
+@@ -205,9 +208,7 @@
+       name: 'Мана'
+       item: 0
+     stamina:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
++      player: 0
+       name: 'Выносливость'
+       item: 0
+     extra:
+@@ -228,7 +229,7 @@
+   icon:
+     item: PAPER
+     item-model: royalquest:skill/black_hole
+-  source: default:BLACK_HOLE
++  source: mythiclib:rq_black_hole
+   parameters:
+     delay:
+       player: 0
+@@ -250,21 +251,27 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 4
+-        per-level: 0.5
++        base: 4.0
++        per-level: -0.16
++        min: 2.4
++        max: 4.0
+       name: 'Перезарядка'
+       item: 35.0
+     duration:
+       player:
+-        base: 4
+-        per-level: 0.5
++        base: 3
++        per-level: 0.2
++        min: 3
++        max: 5
+       format: 0.#
+       name: 'Длительность'
+       item: 2.0
+     radius:
+       player:
+         base: 4
+-        per-level: 1
++        per-level: 0.2
++        min: 4
++        max: 6
+       name: 'Радиус'
+       item: 2.0
+ BLIND:
+@@ -298,8 +305,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 5
+-        per-level: 1
++        base: 5.0
++        per-level: -0.2
++        min: 3.0
++        max: 5.0
+       name: 'Перезарядка'
+       item: 9.0
+     duration:
+@@ -312,15 +321,16 @@
+ BLINK:
+   name: 'Скачок'
+   lore:
+-    - 'Телепортируйтесь туда,'
+-    - 'куда смотрите.'
++    - Мгновенно переместитесь на &b{range}&7 блоков
++    - вперёд по направлению взгляда.
++    - Останавливается перед стеной.
+     - ''
+     - '&eПерезарядка: {cooldown} с'
+     - '&9Стоимость: {mana} {mana_name}'
+   icon:
+     item: PAPER
+     item-model: royalquest:skill/blink
+-  source: default:BLINK
++  source: mythiclib:rq_blink
+   parameters:
+     delay:
+       player: 0
+@@ -347,9 +357,10 @@
+       item: 10.0
+     range:
+       player:
+-        base: 2
+-        per-level: 1
+-        max: 8
++        base: 5
++        per-level: 0.2
++        min: 5
++        max: 7
+       name: 'Дальность'
+       item: 8.0
+ BLIZZARD:
+@@ -444,8 +455,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 1
+-        per-level: 1
++        base: 2.0
++        per-level: -0.08
++        min: 1.2
++        max: 2.0
+       name: 'Перезарядка'
+       item: 8.0
+     amount:
+@@ -468,7 +481,7 @@
+   icon: FIRE_CHARGE
+   source: default:BOUNCY_FIREBALL
+   # Change types of damage dealt
+-  damage_types: [SKILL,MAGIC,PROJECTILE]
++  damage_types: [SKILL, MAGIC, PROJECTILE]
+   parameters:
+     timer:
+       player: 0
+@@ -485,9 +498,7 @@
+       name: 'Мана'
+       item: 0.0
+     stamina:
+-      player:
+-        base: 2
+-        per-level: 1
++      player: 0
+       name: 'Выносливость'
+       item: 0.0
+     cooldown:
+@@ -745,15 +756,15 @@
+       name: 'Мана'
+       item: 0.0
+     stamina:
+-      player:
+-        base: 2
+-        per-level: 1
++      player: 0
+       name: 'Выносливость'
+       item: 0.0
+     cooldown:
+       player:
+-        base: 2
+-        per-level: 1
++        base: 2.0
++        per-level: -0.08
++        min: 1.2
++        max: 2.0
+       name: 'Перезарядка'
+       item: 10.0
+     damage:
+@@ -804,9 +815,7 @@
+       name: 'Мана'
+       item: 0
+     stamina:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
++      player: 0
+       name: 'Выносливость'
+       item: 0
+     cooldown:
+@@ -870,15 +879,16 @@
+ CONTAMINATION:
+   name: 'Заражение'
+   lore:
+-    - 'Заражает область и каждую секунду'
+-    - 'наносит &c{damage}&7 урона врагам вокруг в течение &c{duration}&7 с.'
++    - Заражает область в точке прицела и каждую
++    - секунду наносит &c{damage}&7 урона врагам вокруг
++    - в течение &c{duration}&7 с.
+     - ''
+     - '&eПерезарядка: {cooldown} с'
+     - '&9Стоимость: {mana} {mana_name}'
+   icon:
+     item: PAPER
+     item-model: royalquest:skill/contamination
+-  source: default:CONTAMINATION
++  source: mythiclib:rq_contamination
+   parameters:
+     timer:
+       player: 0
+@@ -893,15 +903,15 @@
+       name: 'Мана'
+       item: 0.0
+     stamina:
+-      player:
+-        base: 2
+-        per-level: 1
++      player: 0
+       name: 'Выносливость'
+       item: 0.0
+     cooldown:
+       player:
+-        base: 1
+-        per-level: 1
++        base: 8
++        per-level: -0.2
++        min: 5
++        max: 8
+       name: 'Перезарядка'
+       item: 10.0
+     duration:
+@@ -946,11 +956,7 @@
+       name: 'Мана'
+       item: 0
+     stamina:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
+-        max: 0.0
+-        min: 0.0
++      player: 0
+       name: 'Выносливость'
+       item: 0
+     cooldown:
+@@ -986,17 +992,14 @@
+   icon:
+     item: PAPER
+     item-model: royalquest:skill/corrosion
+-  source: default:CORROSION
++  source: mythiclib:rq_corrosion
+   parameters:
+     timer:
+       player: 0
+       name: 'Таймер'
+       item: 0.0
+     delay:
+-      player:
+-        base: 2
+-        per-level: -0.1
+-        min: 1
++      player: 0
+     mana:
+       player:
+         base: 2
+@@ -1004,33 +1007,39 @@
+       name: 'Мана'
+       item: 0.0
+     stamina:
+-      player:
+-        base: 2
+-        per-level: 1
++      player: 0
+       name: 'Выносливость'
+       item: 0.0
+     cooldown:
+       player:
+-        base: 2
+-        per-level: 1
++        base: 8
++        per-level: -0.2
++        min: 5
++        max: 8
+       name: 'Перезарядка'
+       item: 10.0
+     amplifier:
+       player:
+-        base: 2
+-        per-level: 2
++        base: 1
++        per-level: 0.15
++        min: 1
++        max: 2
+       name: 'Сила эффекта'
+       item: 1.0
+     radius:
+       player:
+         base: 4
+-        per-level: 3
++        per-level: 0.3
++        min: 4
++        max: 7
+       name: 'Радиус'
+       item: 5.0
+     duration:
+       player:
+         base: 4
+-        per-level: 1
++        per-level: 0.5
++        min: 4
++        max: 8
+       format: 0.#
+       name: 'Длительность'
+       item: 4.0
+@@ -1046,7 +1055,7 @@
+   icon:
+     item: PAPER
+     item-model: royalquest:skill/corrupt
+-  source: default:CORRUPT
++  source: mythiclib:rq_corrupt
+   parameters:
+     timer:
+       player: 0
+@@ -1061,15 +1070,15 @@
+       name: 'Мана'
+       item: 0.0
+     stamina:
+-      player:
+-        base: 2
+-        per-level: 1
++      player: 0
+       name: 'Выносливость'
+       item: 0.0
+     cooldown:
+       player:
+-        base: 2
+-        per-level: 1
++        base: 6
++        per-level: -0.15
++        min: 4
++        max: 6
+       name: 'Перезарядка'
+       item: 10.0
+     radius:
+@@ -1089,8 +1098,10 @@
+       item: 8.0
+     amplifier:
+       player:
+-        base: 2
+-        per-level: 1
++        base: 0
++        per-level: 0.2
++        min: 0
++        max: 2
+       name: 'Сила эффекта'
+       item: 1.0
+ CORRUPTED_FANGS:
+@@ -1170,8 +1181,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 8
+-        per-level: 1
++        base: 8.0
++        per-level: -0.32
++        min: 4.8
++        max: 8.0
+       name: 'Перезарядка'
+       item: 10.0
+     duration:
+@@ -1219,8 +1232,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 10
+-        per-level: 0.5
++        base: 10.0
++        per-level: -0.4
++        min: 6.0
++        max: 10.0
+       name: 'Перезарядка'
+       item: 7.0
+     duration:
+@@ -1238,8 +1253,10 @@
+       item: 5.0
+     amplifier:
+       player:
+-        base: 2
+-        per-level: 1
++        base: 1
++        per-level: 0.15
++        min: 1
++        max: 2
+       name: 'Сила эффекта'
+       item: 1.0
+ DEEP_WOUND:
+@@ -1271,9 +1288,7 @@
+       name: 'Мана'
+       item: 0
+     stamina:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
++      player: 0
+       name: 'Выносливость'
+       item: 0
+     cooldown:
+@@ -1379,9 +1394,7 @@
+       name: 'Мана'
+       item: 0
+     stamina:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
++      player: 0
+       name: 'Выносливость'
+       item: 0
+     cooldown:
+@@ -1440,15 +1453,15 @@
+       name: 'Мана'
+       item: 0
+     stamina:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
++      player: 0
+       name: 'Выносливость'
+       item: 0
+     cooldown:
+       player:
+         base: 20.0
+-        per-level: 1.0
++        per-level: -0.8
++        min: 12.0
++        max: 20.0
+       name: 'Перезарядка'
+       item: 0
+     duration:
+@@ -1485,9 +1498,7 @@
+       name: 'Мана'
+       item: 0.0
+     stamina:
+-      player:
+-        base: 2
+-        per-level: 1
++      player: 0
+       name: 'Выносливость'
+       item: 0.0
+     cooldown:
+@@ -1538,11 +1549,7 @@
+       name: 'Мана'
+       item: 0
+     stamina:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
+-        max: 0.0
+-        min: 0.0
++      player: 0
+       name: 'Выносливость'
+       item: 0
+     extra:
+@@ -1639,9 +1646,7 @@
+       name: 'Мана'
+       item: 0
+     stamina:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
++      player: 0
+       name: 'Выносливость'
+       item: 0
+     cooldown:
+@@ -1707,9 +1712,7 @@
+       name: 'Мана'
+       item: 0
+     stamina:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
++      player: 0
+       name: 'Выносливость'
+       item: 0
+     cooldown:
+@@ -1754,17 +1757,14 @@
+     item-model: royalquest:skill/fireball
+   source: default:FIREBALL
+   # Change types of damage dealt
+-  damage_types: [SKILL,MAGIC,PROJECTILE]
++  damage_types: [SKILL, MAGIC, PROJECTILE]
+   parameters:
+     mana:
+       player: 15 + 1.0 * {level}
+       name: 'Мана'
+       item: 0
+     stamina:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
+-        max: 5
++      player: 0
+       name: 'Выносливость'
+       item: 0
+     cooldown:
+@@ -1800,8 +1800,7 @@
+       item: 0
+     ratio:
+       player:
+-        formula: 50 + min( 0.5, 1 - (%mmocore_health% / %mmocore_max_health%)) * 30
+-          * 2
++        formula: 50 + min( 0.5, 1 - (%mmocore_health% / %mmocore_max_health%)) * 30 * 2
+         failsafe: 50.0
+       name: 'Доля'
+       item: 0
+@@ -1818,7 +1817,7 @@
+     item-model: royalquest:skill/firebolt
+   source: default:FIREBOLT
+   # Change types of damage dealt
+-  damage_types: [MAGIC,SKILL,PROJECTILE]
++  damage_types: [MAGIC, SKILL, PROJECTILE]
+   parameters:
+     timer:
+       player:
+@@ -1863,8 +1862,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 7
+-        per-level: 1
++        base: 7.0
++        per-level: -0.28
++        min: 4.2
++        max: 7.0
+       name: 'Перезарядка'
+       item: 10.0
+ FIREFLY:
+@@ -1935,21 +1936,23 @@
+ FREEZE:
+   name: 'Заморозка'
+   lore:
+-    - 'Выпустите быстрый снежок,'
+-    - 'замедляющий всех,'
+-    - 'кого он заденет.'
++    - 'Заморозьте область в точке прицела:'
++    - враги в радиусе &b{radius}&7 блоков замедлены
++    - на &b{duration}&7 с.
+     - ''
+     - '&eПерезарядка: {cooldown} с'
+     - '&9Стоимость: {mana} {mana_name}'
+   icon:
+     item: PAPER
+     item-model: royalquest:skill/freeze
+-  source: default:FREEZE
++  source: mythiclib:rq_freeze
+   parameters:
+     duration:
+       player:
+-        base: 5
+-        per-level: 2
++        base: 3
++        per-level: 0.3
++        min: 3
++        max: 6
+       format: 0.#
+       name: 'Длительность'
+       item: 4.0
+@@ -1983,20 +1986,26 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 5
+-        per-level: 1
++        base: 5.0
++        per-level: -0.2
++        min: 3.0
++        max: 5.0
+       name: 'Перезарядка'
+       item: 10.0
+     amplifier:
+       player:
+-        base: 6
+-        per-level: 5
++        base: 1
++        per-level: 0.15
++        min: 1
++        max: 2
+       name: 'Сила эффекта'
+       item: 2.0
+     radius:
+       player:
+-        base: 7
+-        per-level: 6
++        base: 4
++        per-level: 0.3
++        min: 4
++        max: 7
+       name: 'Радиус'
+       item: 5.0
+ FREEZING_CURSE:
+@@ -2109,11 +2118,7 @@
+       name: 'Мана'
+       item: 0.0
+     stamina:
+-      player:
+-        base: 2
+-        per-level: 1
+-        min: 0
+-        max: 0
++      player: 0
+       name: 'Выносливость'
+       item: 0.0
+     cooldown:
+@@ -2225,11 +2230,7 @@
+       name: 'Мана'
+       item: 0
+     stamina:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
+-        max: 0.0
+-        min: 0.0
++      player: 0
+       name: 'Выносливость'
+       item: 0
+     extra:
+@@ -2293,17 +2294,15 @@
+       name: 'Мана'
+       item: 0.0
+     stamina:
+-      player:
+-        base: 2
+-        per-level: 1
+-        min: 0
+-        max: 0
++      player: 0
+       name: 'Выносливость'
+       item: 0.0
+     cooldown:
+       player:
+-        base: 8
+-        per-level: 1.1
++        base: 8.0
++        per-level: -0.32
++        min: 4.8
++        max: 8.0
+       name: 'Перезарядка'
+       item: 15.0
+     heal:
+@@ -2337,11 +2336,7 @@
+       name: 'Мана'
+       item: 0
+     stamina:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
+-        max: 0.0
+-        min: 0.0
++      player: 0
+       name: 'Выносливость'
+       item: 0
+     heal:
+@@ -2407,8 +2402,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 4
+-        per-level: 0.5
++        base: 4.0
++        per-level: -0.16
++        min: 2.4
++        max: 4.0
+       name: 'Перезарядка'
+       item: 10.0
+     heal:
+@@ -2625,11 +2622,7 @@
+       name: 'Порог'
+       item: 0
+     stamina:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
+-        max: 0.0
+-        min: 0.0
++      player: 0
+       name: 'Выносливость'
+       item: 0
+     cooldown:
+@@ -2732,7 +2725,7 @@
+   icon:
+     item: PAPER
+     item-model: royalquest:skill/ice_spikes
+-  source: default:ICE_SPIKES
++  source: mythiclib:rq_ice_spikes
+   parameters:
+     damage:
+       player:
+@@ -2754,11 +2747,7 @@
+       name: 'Замедление'
+       item: 0
+     stamina:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
+-        max: 0.0
+-        min: 0.0
++      player: 0
+       name: 'Выносливость'
+       item: 0
+     cooldown:
+@@ -2894,14 +2883,18 @@
+       item: 0.0
+     slow-amplifier:
+       player:
+-        base: 3
+-        per-level: 1
++        base: 1
++        per-level: 0.15
++        min: 1
++        max: 2
+       name: 'Сила замедления'
+       item: 1.0
+     cooldown:
+       player:
+-        base: 5
+-        per-level: 1
++        base: 5.0
++        per-level: -0.2
++        min: 3.0
++        max: 5.0
+       name: 'Перезарядка'
+       item: 15.0
+     radius:
+@@ -2960,8 +2953,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 6
+-        per-level: 0.5
++        base: 6.0
++        per-level: -0.24
++        min: 3.6
++        max: 6.0
+       name: 'Перезарядка'
+       item: 10.0
+     force:
+@@ -3014,8 +3009,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 4
+-        per-level: 0.3
++        base: 4.0
++        per-level: -0.16
++        min: 2.4
++        max: 4.0
+       name: 'Перезарядка'
+       item: 10.0
+     force:
+@@ -3036,7 +3033,7 @@
+   icon:
+     item: PAPER
+     item-model: royalquest:skill/life_ender
+-  source: default:LIFE_ENDER
++  source: mythiclib:rq_life_ender
+   parameters:
+     timer:
+       player:
+@@ -3075,20 +3072,26 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 6
+-        per-level: 1
++        base: 6.0
++        per-level: -0.24
++        min: 3.6
++        max: 6.0
+       name: 'Перезарядка'
+       item: 10.0
+     knockback:
+       player:
+-        base: 3
+-        per-level: 1
++        base: 1
++        per-level: 0.1
++        min: 1
++        max: 2
+       name: 'Отбрасывание'
+       item: 1.0
+     radius:
+       player:
+-        base: 5
+-        per-level: 1
++        base: 4
++        per-level: 0.2
++        min: 4
++        max: 6
+       name: 'Радиус'
+       item: 4.0
+ LIGHT_DASH:
+@@ -3142,8 +3145,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 4
+-        per-level: 1
++        base: 4.0
++        per-level: -0.16
++        min: 2.4
++        max: 4.0
+       name: 'Перезарядка'
+       item: 10.0
+     length:
+@@ -3163,7 +3168,7 @@
+   icon:
+     item: PAPER
+     item-model: royalquest:skill/lightning_beam
+-  source: default:LIGHTNING_BEAM
++  source: mythiclib:rq_lightning_beam
+   parameters:
+     timer:
+       player:
+@@ -3202,14 +3207,18 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 8
+-        per-level: 1
++        base: 8.0
++        per-level: -0.32
++        min: 4.8
++        max: 8.0
+       name: 'Перезарядка'
+       item: 10.0
+     radius:
+       player:
+         base: 3
+-        per-level: 1
++        per-level: 0.2
++        min: 3
++        max: 5
+       name: 'Радиус'
+       item: 5.0
+ MAGICAL_PATH:
+@@ -3315,8 +3324,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 4
+-        per-level: 0.2
++        base: 4.0
++        per-level: -0.16
++        min: 2.4
++        max: 4.0
+       name: 'Перезарядка'
+       item: 35.0
+     power:
+@@ -3480,11 +3491,7 @@
+       name: 'Мана'
+       item: 0
+     stamina:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
+-        max: 0.0
+-        min: 0.0
++      player: 0
+       name: 'Выносливость'
+       item: 0
+     heal:
+@@ -3589,10 +3596,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 15
+-        per-level: 1.1
+-        min: 0
+-        max: 0
++        base: 15.0
++        per-level: -0.6
++        min: 9.0
++        max: 15.0
+       name: 'Перезарядка'
+       item: 10.0
+     radius:
+@@ -3649,14 +3656,18 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 8
+-        per-level: 1.1
++        base: 8.0
++        per-level: -0.32
++        min: 4.8
++        max: 8.0
+       name: 'Перезарядка'
+       item: 10.0
+     amplifier:
+       player:
+-        base: 3
+-        per-level: 1
++        base: 1
++        per-level: 0.15
++        min: 1
++        max: 2
+       name: 'Сила эффекта'
+       item: 1.0
+ POWER_MARK:
+@@ -3689,22 +3700,18 @@
+       player:
+         base: 2.0
+         per-level: 1.0
+-        max: 0.0
+-        min: 0.0
+       name: 'Мана'
+       item: 0
+     stamina:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
+-        max: 0.0
+-        min: 0.0
++      player: 0
+       name: 'Выносливость'
+       item: 0
+     cooldown:
+       player:
+         base: 30.0
+-        per-level: 1.0
++        per-level: -1.2
++        min: 18.0
++        max: 30.0
+       name: 'Перезарядка'
+       item: 0
+     stun:
+@@ -3900,8 +3907,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 10
+-        per-level: 1.5
++        base: 10.0
++        per-level: -0.4
++        min: 6.0
++        max: 10.0
+       name: 'Перезарядка'
+       item: 35.0
+ SHOCK:
+@@ -3986,10 +3995,8 @@
+         max: 0
+     mana:
+       player:
+-        base: 6
++        base: 6.0
+         per-level: 0.1
+-        min: 0
+-        max: 0
+       name: 'Мана'
+       item: 0.0
+     stamina:
+@@ -4002,8 +4009,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 7
++        base: 7.0
+         per-level: -0.5
++        min: 4.2
++        max: 7.0
+       name: 'Перезарядка'
+       item: 7.5
+     length:
+@@ -4052,8 +4061,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 2
+-        per-level: 1
++        base: 2.0
++        per-level: -0.08
++        min: 1.2
++        max: 2.0
+       name: 'Перезарядка'
+       item: 12.0
+     duration:
+@@ -4111,8 +4122,9 @@
+         max: 0
+     mana:
+       player:
+-        base: 8
++        base: 8.0
+         per-level: -0.5
++        min: 4.0
+       name: 'Мана'
+       item: 0.0
+     stamina:
+@@ -4125,8 +4137,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 10
+-        per-level: 0.4
++        base: 10.0
++        per-level: -0.4
++        min: 6.0
++        max: 10.0
+       name: 'Перезарядка'
+       item: 10.0
+     knock-up:
+@@ -4151,10 +4165,10 @@
+   parameters:
+     duration:
+       player:
+-        base: 10
+-        per-level: -0.5
+-        min: 0
+-        max: 0
++        base: 4
++        per-level: 0.2
++        min: 4
++        max: 6
+       format: 0.#
+       name: 'Длительность'
+       item: 3.0
+@@ -4188,16 +4202,18 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 10
++        base: 10.0
+         per-level: -1.5
+-        min: 0
+-        max: 0
++        min: 6.0
++        max: 10.0
+       name: 'Перезарядка'
+       item: 5.0
+     amplifier:
+       player:
+-        base: 3
+-        per-level: 1
++        base: 1
++        per-level: 0.15
++        min: 1
++        max: 2
+       name: 'Сила эффекта'
+       item: 1.0
+ SMITE:
+@@ -4249,10 +4265,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 6
+-        per-level: 1.3
+-        min: 0
+-        max: 0
++        base: 6.0
++        per-level: -0.24
++        min: 3.6
++        max: 6.0
+       name: 'Перезарядка'
+       item: 10.0
+ SNEAKY_PICKY:
+@@ -4274,11 +4290,7 @@
+       name: 'Мана'
+       item: 0
+     stamina:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
+-        max: 0.0
+-        min: 0.0
++      player: 0
+       name: 'Выносливость'
+       item: 0
+     extra:
+@@ -4290,7 +4302,9 @@
+     cooldown:
+       player:
+         base: 2.0
+-        per-level: 1.0
++        per-level: -0.08
++        min: 1.2
++        max: 2.0
+       name: 'Перезарядка'
+       item: 0
+     timer:
+@@ -4342,8 +4356,9 @@
+         max: 0
+     mana:
+       player:
+-        base: 8
++        base: 8.0
+         per-level: -0.5
++        min: 4.0
+       name: 'Мана'
+       item: 0.0
+     stamina:
+@@ -4356,8 +4371,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 8
++        base: 8.0
+         per-level: -0.5
++        min: 4.8
++        max: 8.0
+       name: 'Перезарядка'
+       item: 35.0
+     radius:
+@@ -4482,8 +4499,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 4
+-        per-level: 0.2
++        base: 4.0
++        per-level: -0.16
++        min: 2.4
++        max: 4.0
+       name: 'Перезарядка'
+       item: 8.0
+ STUN:
+@@ -4522,8 +4541,9 @@
+         max: 0
+     mana:
+       player:
+-        base: 8
++        base: 8.0
+         per-level: -0.2
++        min: 4.0
+       name: 'Мана'
+       item: 0.0
+     stamina:
+@@ -4536,8 +4556,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 6
+-        per-level: 0.3
++        base: 6.0
++        per-level: -0.24
++        min: 3.6
++        max: 6.0
+       name: 'Перезарядка'
+       item: 10.0
+ SWIFTNESS:
+@@ -4576,10 +4598,8 @@
+         max: 0
+     mana:
+       player:
+-        base: 4
++        base: 4.0
+         per-level: 1.2
+-        min: 0
+-        max: 0
+       name: 'Мана'
+       item: 0.0
+     stamina:
+@@ -4592,14 +4612,18 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 5
+-        per-level: 0.5
++        base: 5.0
++        per-level: -0.2
++        min: 3.0
++        max: 5.0
+       name: 'Перезарядка'
+       item: 15.0
+     amplifier:
+       player:
+-        base: 3
+-        per-level: 0.5
++        base: 1
++        per-level: 0.15
++        min: 1
++        max: 2
+       name: 'Сила эффекта'
+       item: 1.0
+ TACTICAL_GRENADE:
+@@ -4635,8 +4659,9 @@
+         per-level: -0.2
+     mana:
+       player:
+-        base: 10
++        base: 10.0
+         per-level: -0.5
++        min: 5.0
+       name: 'Мана'
+       item: 0.0
+     stamina:
+@@ -4649,8 +4674,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 20
++        base: 20.0
+         per-level: -1.5
++        min: 12.0
++        max: 20.0
+       name: 'Перезарядка'
+       item: 10.0
+     radius:
+@@ -4751,11 +4778,7 @@
+       name: 'Мана'
+       item: 0
+     stamina:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
+-        max: 0.0
+-        min: 0.0
++      player: 0
+       name: 'Выносливость'
+       item: 0
+     cooldown:
+@@ -4870,8 +4893,9 @@
+         max: 0
+     mana:
+       player:
+-        base: 8
++        base: 8.0
+         per-level: -1.4
++        min: 4.0
+       name: 'Мана'
+       item: 0.0
+     stamina:
+@@ -4884,23 +4908,26 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 4
+-        per-level: 0.2
++        base: 4.0
++        per-level: -0.16
++        min: 2.4
++        max: 4.0
+       name: 'Перезарядка'
+       item: 10.0
+ TNT_THROW:
+   name: 'Бросок динамита'
+   lore:
+-    - 'Швырните мощную взрывчатку,'
+-    - 'уничтожая цель и блоки'
+-    - 'вокруг точки попадания.'
++    - Швырните динамит. При попадании он
++    - взрывается, нанося &c{damage}&7 урона всем
++    - врагам в радиусе &c{radius}&7 блоков.
++    - '&7Блоки не разрушаются.'
+     - ''
+     - '&eПерезарядка: {cooldown} с'
+     - '&9Стоимость: {mana} {mana_name}'
+   icon:
+     item: PAPER
+     item-model: royalquest:skill/tnt_throw
+-  source: default:TNT_THROW
++  source: mythiclib:rq_tnt_throw
+   parameters:
+     timer:
+       player:
+@@ -4934,15 +4961,25 @@
+     cooldown:
+       player:
+         base: 10
+-        per-level: 0.5
++        per-level: -0.3
++        min: 7
++        max: 10
+       name: 'Перезарядка'
+       item: 10.0
+-    force:
++    damage:
+       player:
+-        base: 4
+-        per-level: 0.5
+-      name: 'Сила'
+-      item: 1.0
++        base: 7
++        per-level: 1.0
++      name: Урон
++      item: 0.0
++    radius:
++      player:
++        base: 3.5
++        per-level: 0.15
++        min: 3.5
++        max: 5
++      name: Радиус
++      item: 0.0
+ VAMPIRISM:
+   name: 'Вампиризм'
+   lore:
+@@ -4964,9 +5001,7 @@
+       name: 'Таймер'
+       item: 0.0
+     delay:
+-      player:
+-        base: 2
+-        per-level: 1
++      player: 0
+     mana:
+       player:
+         base: 2
+@@ -4974,23 +5009,21 @@
+       name: 'Мана'
+       item: 0.0
+     stamina:
+-      player:
+-        base: 2
+-        per-level: 1
++      player: 0
+       name: 'Выносливость'
+       item: 0.0
+     cooldown:
+       player:
+-        base: 2
+-        per-level: 1
++        base: 2.0
++        per-level: -0.08
++        min: 1.2
++        max: 2.0
+       name: 'Перезарядка'
+       item: 8.0
+     drain:
+       player:
+-        base: 6
+-        per-level: 1
+-        min: 0
+-        max: 0
++        base: 6.0
++        per-level: 1.0
+       name: 'Поглощение'
+       item: 10.0
+ VOID_ZAPPER:
+@@ -5082,11 +5115,7 @@
+       name: 'Мана'
+       item: 0
+     stamina:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
+-        max: 0.0
+-        min: 0.0
++      player: 0
+       name: 'Выносливость'
+       item: 0
+     cooldown:
+@@ -5159,8 +5188,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 4
+-        per-level: 0.4
++        base: 4.0
++        per-level: -0.16
++        min: 2.4
++        max: 4.0
+       name: 'Перезарядка'
+       item: 10.0
+     extra-damage:
+@@ -5198,11 +5229,7 @@
+       name: 'Мана'
+       item: 0
+     stamina:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
+-        max: 0.0
+-        min: 0.0
++      player: 0
+       name: 'Выносливость'
+       item: 0
+     cooldown:
+@@ -5269,9 +5296,9 @@
+       item: 3.0
+     amplifier:
+       player:
+-        base: 3
+-        per-level: 1
+-        min: 0
+-        max: 0
++        base: 1
++        per-level: 0.15
++        min: 1
++        max: 2
+       name: 'Сила эффекта'
+       item: 1.0
+--- orig/plugins/PlaceholderAPI/config.yml	2026-11-14 19:58:11.946428333 +0000
++++ new/plugins/PlaceholderAPI/config.yml	2026-11-14 20:19:15.173441310 +0000
+@@ -54,10 +54,14 @@
+   utils:
+     shortcuts:
+       othermath: '%utils_parseother:[{0}]_math_{1}+1%'
+-      mana_check: '%utils_uncolor:each_changeoutput_equals_input:{mmocore_bound_{0}}_matcher:noskill_ifmatch:0_else:{utils_trycatch:0_mmocore_skill_parameter_mana:{string_replacecharacters_skill_{mmocore_bound_{0}}}}%'
++      # fixed: old version looked the skill up by its display NAME (mmocore_skill_parameter_mana:<name>) -> always 0, so the 'no mana' icon never showed
++      mana_check: '%changeoutput_equals_input:{mmocore_bound_{0}}_matcher:noskill_ifmatch:0_else:{mmocore_bound_skill_parameter_mana:{0}}%'
+       # Party HUD: party member N name, or own name when the slot is empty (ParseOther throws on empty names)
+       pm: '%changeoutput_equals_input:{mmocore_party_member_{0}}_matcher:_ifmatch:{player_name}_else:{mmocore_party_member_{0}}%'
+       noskillcd_check: '%changeoutput_equals_input:{mmocore_bound_{0}}_matcher:noskill_ifmatch:0_else:{mmocore_cooldown_bound_{0}}%'
++      # 1 while skill slot {0} was cast less than 2 s ago (remaining cooldown + 2 >= full cooldown after cooldown-reduction), else 0.
++      # Used by MythicHUD skill_casting_bar 'skillnames' to show only the name of the skill just cast.
++      justcast: '%math_0:_max(0,min(1,floor({mmocore_cooldown_bound_{0}}+2-{mmocore_bound_skill_parameter_cooldown:{0}}*(1-{mmocore_stat_cooldown_reduction}/100))+1))*min(1,ceiling({mmocore_cooldown_bound_{0}}))%'
+   string:
+     replacements:
+       nospace:

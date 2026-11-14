@@ -1,0 +1,33 @@
+﻿#########################################################
+## Developed by Little Room, patreon.com/littleroomdev ##
+#########################################################
+
+megawarden_PET:
+  Type: PIG
+  AIGoalSelectors:
+  - 0 clear
+  - 1 lookatplayers
+  - 2 randomstroll
+  AITargetSelectors:
+  - 0 clear
+  Drops: []
+  Equipment: []
+  Skills:
+  - skill{s=MEGAWARDEN_pet_feed} @trigger ~onInteract
+  - model{mid=mega_warden_pet;n=false;s=1} @self ~onSpawn
+  - model{mid=mega_warden_pet;n=false;s=1} @self ~onLoad
+  - skill{s=MEGAWARDEN_pet_spawn} @self ~onSpawn
+  Display: "§bMegaWarden"
+  Health: 100
+  Damage: 0
+  Options:
+    Collidable: false
+    Invincible: true
+    Despawn: true
+    AlwaysShowName: false
+    PreventOtherDrops: true
+    Silent: true
+    KnockbackResistance: 1
+    FollowRange: 20
+    PreventItemPickup: true
+    PreventRandomEquipment: true

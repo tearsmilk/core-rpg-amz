@@ -1,0 +1,128 @@
+
+dyerftum1_em:
+  Type: vindicator
+  Display: 'Dyerftling'
+  Modules:
+    ThreatTable: true
+  AITargetSelectors:
+  - 0 clear
+  - 1 players
+  - 2 attacker
+  AIGoalSelectors:
+  - clear
+  - meleeattack
+  - lookatplayers
+  - randomstroll
+  - randomlookaround
+  - float
+  Health: 26
+  Faction: Dyerftum
+  DamageModifiers:
+  - FIRE 0
+  - MAGIC 1.1
+  - PROJECTILE 0.25
+  Damage: 6 #This is the BASE damage. Applies for ALL skills Setting it to 12 will DOUBLE damage. Setting it to 3 will REDUCE damage in 50% from the original.
+  KillMessages:
+  - '<target.name> was killed by a Dyerftum.'
+  - 'A Dyerftum slashed <target.name>.'
+  - "<target.name> was slain by Dyerftums"
+  - "A group of Dyerftum killed <target.name>."
+  Equipment:
+  - air:4
+  - air:3
+  - air:2
+  - imboots_dyerftum1em:1
+  - air:0
+  - air:5
+  Drops:
+  - exp 10-25 1
+  LevelModifiers:
+    Health: 0.5
+    Damage: 0.03
+  Skills:
+  - message{m="Hitrec <caster.var.hitrec> STACKS"} @PlayersNearOrigin{r=75} ~onDamaged 0 #DEBUGMESSAGE
+#====== MODEL ASSIGNEMENT =============
+  - model{m=em_dyerftum1;n=false;damagetint=false;scale=0.9} @self ~onSpawn 1
+  - setlevel{a=set;l=0} ~onSpawn
+  - setvariable{var=caster.skillxd;value="none";t=string} @Self ~onSpawn
+  - skill{s=dyerftum1em_hp_check} @Self ~onSpawn
+  - setvariable{var=caster.eichpee;value="<caster.mhp>";t=integer} @Self ~onSpawn
+  - DefaultState{type=WALK;state=walk_combat;li=3;lo=2} @self ~onEnterCombat
+  - DefaultState{type=IDLE;state=idle_combat;li=3;lo=2} @self ~onEnterCombat
+  - DefaultState{type=WALK;state=walk;li=3;lo=2} @self ~onDropCombat
+  - DefaultState{type=IDLE;state=idle;li=3;lo=2} @self ~onDropCombat
+  - potion{type=JUMP;duration=999999;lvl=0;p=true} @Self ~OnSpawn
+#============ DISGUISE PROTOCOL =================
+  - submodel{mid=em_dyerftum1;partid=chest2;subpartid=chest2;remove=true} @self ~onSpawn 1
+  - submodel{mid=em_dyerftum1;partid=head2;subpartid=head2;remove=true} @self ~onSpawn 1
+
+  - submodel{mid=em_dyerftum1;partid=chest2;subpartid=chest2;remove=true} @self ~onLoad 1
+  - submodel{mid=em_dyerftum1;partid=head2;subpartid=head2;remove=true} @self ~onLoad 1
+
+  - changepart{m=em_dyerftum1;pid=head;nm=em_dyerftum1;npid=head2} @self ~onSpawn 0.5
+  - changepart{m=em_dyerftum1;pid=chest;nm=em_dyerftum1;npid=chest2} @self ~onSpawn 0.5
+
+#============ ATTACK =================
+
+  - skill{s=dyerftum1em_meleetrigger} @Trigger ~onSignal:DEBUG_TEST 1
+  - CancelEvent{sync=true} @self ~onAttack 1 #CANCEL ATTACKS
+  
+  - skill{s=[
+      - skill{s=dyerftum1em_meleetrigger;sync=false} @LivingInCone{a=160.0;r=4.5;rot=0.0;ignore=samefaction}
+      - skill{s=dyerftum1em_meleetrigger;sync=false} @LivingInCone{a=200.0;r=1;rot=0.0;ignore=samefaction}]} ~onTimer:14 0.8 ?!variableEquals{var=caster.rage;value="1"} ?incombat
+  - skill{s=[
+      - skill{s=dyerftum1em_meleetrigger2;sync=false} @LivingInCone{a=160.0;r=5.5;rot=0.0;ignore=samefaction}
+      - skill{s=dyerftum1em_meleetrigger2;sync=false} @LivingInCone{a=200.0;r=1;rot=0.0;ignore=samefaction}]} ~onTimer:9 0.9 ?variableEquals{var=caster.rage;value="1"} ?incombat
+  
+  - skill{s=dyerftum1em_meleetrigger;sync=false} @LivingInCone{a=160.0;r=4.5;rot=0.0;ignore=samefaction} ~onAttack
+  - setvariable{var=caster.combor;value="0";t=integer} @Self ~onSpawn
+  - setvariable{var=caster.comboa;value="0";t=integer} @Self ~onSpawn
+  
+  - sound{s=emewoods1:custom.enchantedwoods1.wood_hit;p=<random.float.1.2to1.5>;v=1.2} @selflocation ~onDamaged 1 #Hurtmechanic SOUND
+  - setstance{stance=normal} @self ~onSpawn
+  - skill{s=hurt1dyerftum1em} @self ~onDamaged 0.92 #Hurtmechanic
+  - setvariable{var=caster.vulnerable;value="0";t=integer} @Self ~onSpawn
+  - velocity{m=set;x=0;y=0;z=0} @self ~onDamaged
+  - setspeed{speed=1.3;type=walking} @self ~onEnterCombat
+  - setspeed{speed=0.8;type=walking} @self ~onDropCombat
+#================ RIP IN PEPSI PROTOCOL
+
+  - sound{s=emewoods1:custom.enchantedwoods1.dyerftum_death;p=<random.float.1.2to1.6>;v=1.5} @selflocation ~onDeath
+  - sound{s=emewoods1:custom.enchantedwoods1.wood_hit;p=<random.float.1.2to1.5>;v=1.2;delay=15} @selflocation ~onDeath
+  - lockmodel{l=false;delay=0} @Self ~onDeath
+  - effect:particles{particle=cloud;amount=150;hS=1.1;vS=0.55;speed=0;size=4.5;repeat=0;repeatinterval=1;sideOffset=0;delay=60} @ModelPart{m=em_dyerftum1;p=hip;offset=GLOBAL;y=0.2} ~onDeath
+  - effect:particles{particle=cloud;amount=60;hS=0.6;vS=0.2;speed=0;size=4.5;repeat=0;repeatinterval=1;sideOffset=0;delay=60} @ModelPart{m=em_dyerftum1;p=head;offset=GLOBAL;y=0.2} ~onDeath
+
+
+# ========= Anti-ranged protocol
+  - setspeed{speed=0.8;type=walking;delay=1} @self ~onSpawn
+  - skill{s=hurtgendyerftum1em;sync=true} @self ~onDamaged 1 #Hurtmechanic ANTIARROW
+  - skill{s=hurtgendyerftum1em2;sync=true} @self ~onDamaged 1 #Hurtmechanic ANTIMMSkills
+
+  - setvariable{var=caster.projrec;value="0";t=integer} @Self ~OnSpawn #Hurtmechanic ANTIARROW
+  - setvariable{var=caster.running;value="0";t=integer} @Self ~onSpawn
+  - setvariable{var=caster.ragestacks;value="4";t=integer} @Self ~onSpawn
+  - setvariable{var=caster.hurtened;value="0";t=integer} @Self ~onSpawn
+#======== RUNNER PROTOCOL 
+  - Aura{auraName=checkrundyerftum1em;onTick=dyerftum1em_runprotocolcheck;interval=14;duration=99999} @self ~onSpawn 1 #=============== RUN MECHANICUS
+  - setvariable{var=caster.hitrec;value="0";t=integer} @Self ~OnSpawn #Hurtmechanic ANTIARROW
+  - message{m="Hitrec <caster.var.hitrec>"} @PlayersNearOrigin{r=75} ~onDamaged 0 #DEBUGMESSAGE
+  - message{m="&eCOMBOR &a<caster.var.combor>"} @PlayersNearOrigin{r=75} ~onDamaged 0 #DEBUGMESSAGE
+
+  Options:
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.32
+    Interactable: true
+    PreventOtherDrops: true
+    KnockbackResistance: 0.9
+    FollowRange: 24
+
+dyerftum1_em_summoned:
+  Template: dyerftum1_em
+  Health: 20
+  Damage: 4
+  Skills:
+  - signal{s=DIESUMMON} @Parent ~onDeath
+  Options:
+    FollowRange: 45

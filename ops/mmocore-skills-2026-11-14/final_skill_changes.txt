@@ -1,0 +1,93 @@
+ARCANE_HAIL       source: default:ARCANE_HAIL -> mythiclib:rq_arcane_hail
+ARCANE_HAIL       cooldown: 1-0.2/lvl -> 10-0.3/lvl min 7 max 10
+ARCANE_HAIL       delay: 2-0.1/lvl -> 2-0.1/lvl min 1
+BACKSTAB          cooldown: 2.0+1/lvl -> 2.0-0.08/lvl min 1.2 max 2
+BLACK_HOLE        source: default:BLACK_HOLE -> mythiclib:rq_black_hole
+BLACK_HOLE        cooldown: 4+0.5/lvl -> 4.0-0.16/lvl min 2.4 max 4
+BLACK_HOLE        duration: 4+0.5/lvl -> 3+0.2/lvl min 3 max 5
+BLACK_HOLE        radius: 4+1/lvl -> 4+0.2/lvl min 4 max 6
+BLIND             cooldown: 5+1/lvl -> 5.0-0.2/lvl min 3 max 5
+BLINK             source: default:BLINK -> mythiclib:rq_blink
+BLINK             lore rewritten
+BLINK             range: 2+1/lvl max 8 -> 5+0.2/lvl min 5 max 7
+BLOODBATH         cooldown: 1+1/lvl -> 2.0-0.08/lvl min 1.2 max 2
+CIRCULAR_SLASH    cooldown: 2+1/lvl -> 2.0-0.08/lvl min 1.2 max 2
+CONTAMINATION     source: default:CONTAMINATION -> mythiclib:rq_contamination
+CONTAMINATION     lore rewritten
+CONTAMINATION     cooldown: 1+1/lvl -> 8-0.2/lvl min 5 max 8
+CORROSION         source: default:CORROSION -> mythiclib:rq_corrosion
+CORROSION         amplifier: 2+2/lvl -> 1+0.15/lvl min 1 max 2
+CORROSION         cooldown: 2+1/lvl -> 8-0.2/lvl min 5 max 8
+CORROSION         delay: 2-0.1/lvl min 1 -> 0
+CORROSION         duration: 4+1/lvl -> 4+0.5/lvl min 4 max 8
+CORROSION         radius: 4+3/lvl -> 4+0.3/lvl min 4 max 7
+CORRUPT           source: default:CORRUPT -> mythiclib:rq_corrupt
+CORRUPT           amplifier: 2+1/lvl -> 0+0.2/lvl min 0 max 2
+CORRUPT           cooldown: 2+1/lvl -> 6-0.15/lvl min 4 max 6
+CURSED_BEAM       cooldown: 8+1/lvl -> 8.0-0.32/lvl min 4.8 max 8
+DEATH_MARK        amplifier: 2+1/lvl -> 1+0.15/lvl min 1 max 2
+DEATH_MARK        cooldown: 10+0.5/lvl -> 10.0-0.4/lvl min 6 max 10
+EVADE             cooldown: 20.0+1/lvl -> 20.0-0.8/lvl min 12 max 20
+FIREBOLT          cooldown: 7+1/lvl -> 7.0-0.28/lvl min 4.2 max 7
+FREEZE            source: default:FREEZE -> mythiclib:rq_freeze
+FREEZE            lore rewritten
+FREEZE            amplifier: 6+5/lvl -> 1+0.15/lvl min 1 max 2
+FREEZE            cooldown: 5+1/lvl -> 5.0-0.2/lvl min 3 max 5
+FREEZE            duration: 5+2/lvl -> 3+0.3/lvl min 3 max 6
+FREEZE            radius: 7+6/lvl -> 4+0.3/lvl min 4 max 7
+GRAND_HEAL        cooldown: 8+1.1/lvl -> 8.0-0.32/lvl min 4.8 max 8
+HEAL              cooldown: 4+0.5/lvl -> 4.0-0.16/lvl min 2.4 max 4
+ICE_SPIKES        source: default:ICE_SPIKES -> mythiclib:rq_ice_spikes
+ITEM_BOMB         cooldown: 5+1/lvl -> 5.0-0.2/lvl min 3 max 5
+ITEM_BOMB         slow-amplifier: 3+1/lvl -> 1+0.15/lvl min 1 max 2
+ITEM_THROW        cooldown: 6+0.5/lvl -> 6.0-0.24/lvl min 3.6 max 6
+LEAP              cooldown: 4+0.3/lvl -> 4.0-0.16/lvl min 2.4 max 4
+LIFE_ENDER        source: default:LIFE_ENDER -> mythiclib:rq_life_ender
+LIFE_ENDER        cooldown: 6+1/lvl -> 6.0-0.24/lvl min 3.6 max 6
+LIFE_ENDER        knockback: 3+1/lvl -> 1+0.1/lvl min 1 max 2
+LIFE_ENDER        radius: 5+1/lvl -> 4+0.2/lvl min 4 max 6
+LIGHT_DASH        cooldown: 4+1/lvl -> 4.0-0.16/lvl min 2.4 max 4
+LIGHTNING_BEAM    source: default:LIGHTNING_BEAM -> mythiclib:rq_lightning_beam
+LIGHTNING_BEAM    cooldown: 8+1/lvl -> 8.0-0.32/lvl min 4.8 max 8
+LIGHTNING_BEAM    radius: 3+1/lvl -> 3+0.2/lvl min 3 max 5
+MAGICAL_SHIELD    cooldown: 4+0.2/lvl -> 4.0-0.16/lvl min 2.4 max 4
+OVERLOAD          cooldown: 15+1.1/lvl min 0 max 0 -> 15.0-0.6/lvl min 9 max 15
+POISON            amplifier: 3+1/lvl -> 1+0.15/lvl min 1 max 2
+POISON            cooldown: 8+1.1/lvl -> 8.0-0.32/lvl min 4.8 max 8
+POWER_MARK        cooldown: 30.0+1/lvl -> 30.0-1.2/lvl min 18 max 30
+POWER_MARK        mana: 2.0+1/lvl min 0 max 0 -> 2.0+1/lvl
+SHADOW_VEIL       cooldown: 10+1.5/lvl -> 10.0-0.4/lvl min 6 max 10
+SHOCKWAVE         cooldown: 7-0.5/lvl -> 7.0-0.5/lvl min 4.2 max 7
+SHOCKWAVE         mana: 6+0.1/lvl min 0 max 0 -> 6.0+0.1/lvl
+SHULKER_MISSILE   cooldown: 2+1/lvl -> 2.0-0.08/lvl min 1.2 max 2
+SKY_SMASH         cooldown: 10+0.4/lvl -> 10.0-0.4/lvl min 6 max 10
+SKY_SMASH         mana: 8-0.5/lvl -> 8.0-0.5/lvl min 4
+SLOW              amplifier: 3+1/lvl -> 1+0.15/lvl min 1 max 2
+SLOW              cooldown: 10-1.5/lvl min 0 max 0 -> 10.0-1.5/lvl min 6 max 10
+SLOW              duration: 10-0.5/lvl min 0 max 0 -> 4+0.2/lvl min 4 max 6
+SMITE             cooldown: 6+1.3/lvl min 0 max 0 -> 6.0-0.24/lvl min 3.6 max 6
+SNEAKY_PICKY      cooldown: 2.0+1/lvl -> 2.0-0.08/lvl min 1.2 max 2
+SNOWMAN_TURRET    cooldown: 8-0.5/lvl -> 8.0-0.5/lvl min 4.8 max 8
+SNOWMAN_TURRET    mana: 8-0.5/lvl -> 8.0-0.5/lvl min 4
+STARFALL          cooldown: 4+0.2/lvl -> 4.0-0.16/lvl min 2.4 max 4
+STUN              cooldown: 6+0.3/lvl -> 6.0-0.24/lvl min 3.6 max 6
+STUN              mana: 8-0.2/lvl -> 8.0-0.2/lvl min 4
+SWIFTNESS         amplifier: 3+0.5/lvl -> 1+0.15/lvl min 1 max 2
+SWIFTNESS         cooldown: 5+0.5/lvl -> 5.0-0.2/lvl min 3 max 5
+SWIFTNESS         mana: 4+1.2/lvl min 0 max 0 -> 4.0+1.2/lvl
+TACTICAL_GRENADE  cooldown: 20-1.5/lvl -> 20.0-1.5/lvl min 12 max 20
+TACTICAL_GRENADE  mana: 10-0.5/lvl -> 10.0-0.5/lvl min 5
+THRUST            cooldown: 4+0.2/lvl -> 4.0-0.16/lvl min 2.4 max 4
+THRUST            mana: 8-1.4/lvl -> 8.0-1.4/lvl min 4
+TNT_THROW         source: default:TNT_THROW -> mythiclib:rq_tnt_throw
+TNT_THROW         lore rewritten
+TNT_THROW         cooldown: 10+0.5/lvl -> 10-0.3/lvl min 7 max 10
+TNT_THROW         damage: None -> 7+1/lvl
+TNT_THROW         force: removed
+TNT_THROW         radius: None -> 3.5+0.15/lvl min 3.5 max 5
+VAMPIRISM         cooldown: 2+1/lvl -> 2.0-0.08/lvl min 1.2 max 2
+VAMPIRISM         delay: 2+1/lvl -> 0
+VAMPIRISM         drain: 6+1/lvl min 0 max 0 -> 6.0+1/lvl
+WEAKEN_TARGET     cooldown: 4+0.4/lvl -> 4.0-0.16/lvl min 2.4 max 4
+WITHER            amplifier: 3+1/lvl min 0 max 0 -> 1+0.15/lvl min 1 max 2
+stamina cost -> 0 for: AMBERS, BACKSTAB, BOUNCY_FIREBALL, CIRCULAR_SLASH, COMBO_ATTACK, CONTAMINATION, CONTROL, CORROSION, CORRUPT, DEEP_WOUND, EMPOWERED_ATTACK, EVADE, EXPLOSIVE_TURKEY, FIREBALL, FIRE_BERSERKER, FIRE_RAGE, FIRE_STORM, FROG_MODE, FURTIVE_STRIKE, GRAND_HEAL, GREATER_HEALINGS, HUMAN_SHIELD, ICE_SPIKES, MINOR_HEALINGS, POWER_MARK, SNEAKY_PICKY, TELEKINESY, VAMPIRISM, WARP, WEAKEN

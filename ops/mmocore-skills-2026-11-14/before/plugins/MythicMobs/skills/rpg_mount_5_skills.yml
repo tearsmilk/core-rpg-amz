@@ -1,0 +1,324 @@
+######## created by samus2002 ########
+  
+Cancelattack:
+  Skills:
+  - CancelEvent
+
+Horncrier_Step:
+  Skills:
+  - effect:sound{s=entity.llama.step;volume=0.5;pitch=1} @self
+  
+Jellyfish_Idle:
+  Skills:
+  - effect:sound{s=entity.slime.squish;volume=0.8;pitch=0.7} @self
+  - effect:sound{s=entity.fish.swim;volume=0.65;pitch=0.6} @self
+  
+Ogre_Step:
+  Skills:
+  - effect:sound{s=entity.ravager.step;volume=0.5;pitch=1} @self
+  
+Mob_Throne_Normal_Step:
+  Skills:
+  - effect:sound{s=entity.sheep.step;volume=0.6;pitch=1.4} @self
+  - effect:sound{s=entity.sheep.step;volume=0.6;pitch=1.4;delay=2} @self
+  - effect:sound{s=entity.sheep.step;volume=0.6;pitch=1.4;delay=4} @self
+  
+Mob_Throne_Slime_Step:
+  Skills:
+  - effect:sound{s=entity.slime.squish;volume=0.6;pitch=1.8} @self
+  - effect:sound{s=entity.slime.squish;volume=0.6;pitch=1.8;delay=2} @self
+  - effect:sound{s=entity.slime.squish;volume=0.6;pitch=1.8;delay=4} @self
+  
+Talonstrider_Flap:
+  Skills:
+  - effect:sound{s=entity.ender_dragon.flap;volume=0.7;pitch=1.4} @self
+  
+Ogre_Idle:
+  Skills:
+  - effect:sound{s=entity.zombie.ambient;volume=0.8;pitch=0.6} @self
+  - effect:sound{s=entity.blaze.ambient;volume=0.6;pitch=0.5} @self
+  
+Horncrier_Forest_Dash:
+  Cooldown: 5
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=40}
+  - state{s=run;lo=10} @self
+  - lunge{velocity=0.85;velocityY=-1;repeat=40;repeatinterval=1} @forward{f=5;y=-2}
+  - effect:particles{particle=totem;amount=20;hS=0.9;vS=0.4;y=0.3;speed=0;forwardOffset=-2;sideOffset=0} @self
+  - effect:sound{s=entity.polar_bear.warning;volume=0.75;pitch=0.9} @self
+  - effect:sound{s=entity.wither.shoot;volume=0.4;pitch=0.7} @self
+  - delay 40
+  - state{s=run;remove=true;li=10;lo=10} @self
+  
+Horncrier_Frozen_Dash:
+  Cooldown: 5
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=40}
+  - state{s=run;lo=10} @self
+  - lunge{velocity=0.85;velocityY=-1;repeat=40;repeatinterval=1} @forward{f=5;y=-2}
+  - effect:particles{particle=snowflake;amount=20;hS=0.9;vS=0.4;y=0.3;speed=0;forwardOffset=-2;sideOffset=0} @self
+  - effect:sound{s=entity.polar_bear.warning;volume=0.75;pitch=0.9} @self
+  - effect:sound{s=entity.wither.shoot;volume=0.4;pitch=0.7} @self
+  - delay 40
+  - state{s=run;remove=true;li=10;lo=10} @self
+  
+Horncrier_Crimsonwood_Dash:
+  Cooldown: 5
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=40}
+  - state{s=run;lo=10} @self
+  - lunge{velocity=0.85;velocityY=-1;repeat=40;repeatinterval=1} @forward{f=5;y=-2}
+  - effect:particles{particle=flame;amount=20;hS=0.9;vS=0.4;y=0.3;speed=0.1;forwardOffset=-2;sideOffset=0} @self
+  - effect:sound{s=entity.polar_bear.warning;volume=0.75;pitch=0.9} @self
+  - effect:sound{s=entity.wither.shoot;volume=0.4;pitch=0.7} @self
+  - delay 40
+  - state{s=run;remove=true;li=10;lo=10} @self
+  
+Horncrier_Sculk_Dash:
+  Cooldown: 5
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=40}
+  - state{s=run;lo=10} @self
+  - lunge{velocity=0.85;velocityY=-1;repeat=40;repeatinterval=1} @forward{f=5;y=-2}
+  - effect:particles{particle=sculk_soul;amount=20;hS=0.9;vS=0.4;y=0.3;speed=0;forwardOffset=-2;sideOffset=0} @self
+  - effect:sound{s=entity.polar_bear.warning;volume=0.75;pitch=0.9} @self
+  - effect:sound{s=entity.wither.shoot;volume=0.4;pitch=0.7} @self
+  - delay 40
+  - state{s=run;remove=true;li=10;lo=10} @self
+
+Mob_Throne_Zombie_Dash:
+  Cooldown: 5
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=40}
+  - state{s=run;lo=10} @self
+  - lunge{velocity=0.8;velocityY=-1;repeat=40;repeatinterval=1} @forward{f=5;y=-2}
+  - effect:particles{particle=cloud;amount=12;hS=0.9;vS=0.4;y=0.3;speed=0;forwardOffset=-2;sideOffset=0} @self
+  - effect:sound{s=entity.zombie.hurt;volume=0.75;pitch=1.6} @self
+  - effect:sound{s=entity.wither.shoot;volume=0.4;pitch=0.7} @self
+  - delay 40
+  - state{s=run;remove=true;li=10;lo=10} @self
+  
+Mob_Throne_Skeleton_Dash:
+  Cooldown: 5
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=40}
+  - state{s=run;lo=10} @self
+  - lunge{velocity=0.8;velocityY=-1;repeat=40;repeatinterval=1} @forward{f=5;y=-2}
+  - effect:particles{particle=explosion_huge;amount=1;hS=0;vS=0;y=0.4;speed=0;forwardOffset=-2;sideOffset=0} @self
+  - effect:sound{s=entity.skeleton.ambient;volume=0.75;pitch=1.1} @self
+  - effect:sound{s=entity.wither.shoot;volume=0.4;pitch=0.7} @self
+  - delay 40
+  - state{s=run;remove=true;li=10;lo=10} @self
+  
+Mob_Throne_Slime_Dash:
+  Cooldown: 5
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=40}
+  - state{s=run;lo=10} @self
+  - lunge{velocity=0.8;velocityY=-1;repeat=40;repeatinterval=1} @forward{f=5;y=-2}
+  - effect:particles{particle=slime;amount=20;hS=0.9;vS=0.4;y=0.3;speed=0;forwardOffset=-2;sideOffset=0} @self
+  - effect:sound{s=entity.slime.jump;volume=0.75;pitch=1.2} @self
+  - effect:sound{s=entity.wither.shoot;volume=0.4;pitch=0.7} @self
+  - delay 40
+  - state{s=run;remove=true;li=10;lo=10} @self
+  
+Mob_Throne_Enderman_Dash:
+  Cooldown: 5
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=40}
+  - lunge{velocity=6;velocityY=-1;repeat=3;repeatinterval=1} @forward{f=5;y=-2}
+  - effect:particles{particle=portal;amount=20;hS=0.9;vS=0.4;y=0.3;speed=0;forwardOffset=-2;sideOffset=0} @self
+  - effect:sound{s=entity.enderman.teleport;volume=0.75;pitch=0.9} @self
+  
+Ogres_Prisoner_Mossy_Dash:
+  Cooldown: 5
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=40}
+  - state{s=run;lo=10} @self
+  - lunge{velocity=0.8;velocityY=-1;repeat=40;repeatinterval=1} @forward{f=5;y=-2}
+  - effect:particles{particle=cloud;amount=20;hS=0.9;vS=0.4;y=0.3;speed=0;forwardOffset=-2;sideOffset=0} @self
+  - effect:sound{s=entity.polar_bear.warning;volume=0.75;pitch=0.9} @self
+  - effect:sound{s=entity.wither.shoot;volume=0.4;pitch=0.7} @self
+  - delay 40
+  - state{s=run;remove=true;li=10;lo=10} @self
+  
+Ogres_Prisoner_Fiery_Dash:
+  Cooldown: 5
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=40}
+  - state{s=run;lo=10} @self
+  - lunge{velocity=0.8;velocityY=-1;repeat=40;repeatinterval=1} @forward{f=5;y=-2}
+  - effect:particles{particle=lava;amount=12;hS=0.9;vS=0.4;y=0.3;speed=0;forwardOffset=-2;sideOffset=0} @self
+  - effect:sound{s=entity.polar_bear.warning;volume=0.75;pitch=0.9} @self
+  - effect:sound{s=entity.wither.shoot;volume=0.4;pitch=0.7} @self
+  - delay 40
+  - state{s=run;remove=true;li=10;lo=10} @self
+  
+Ogres_Prisoner_Undead_Dash:
+  Cooldown: 5
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=40}
+  - state{s=run;lo=10} @self
+  - lunge{velocity=0.8;velocityY=-1;repeat=40;repeatinterval=1} @forward{f=5;y=-2}
+  - effect:particles{particle=explosion_huge;amount=1;hS=0;vS=0;y=0.4;speed=0;forwardOffset=-2;sideOffset=0} @self
+  - effect:sound{s=entity.polar_bear.warning;volume=0.75;pitch=0.9} @self
+  - effect:sound{s=entity.wither.shoot;volume=0.4;pitch=0.7} @self
+  - delay 40
+  - state{s=run;remove=true;li=10;lo=10} @self
+  
+Ogres_Prisoner_Cyclops_Dash:
+  Cooldown: 5
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=40}
+  - state{s=run;lo=10} @self
+  - lunge{velocity=0.8;velocityY=-1;repeat=40;repeatinterval=1} @forward{f=5;y=-2}
+  - effect:particles{particle=crimson_spore;amount=20;hS=0.9;vS=0.4;y=0.3;speed=0;forwardOffset=-2;sideOffset=0} @self
+  - effect:sound{s=entity.polar_bear.warning;volume=0.75;pitch=0.9} @self
+  - effect:sound{s=entity.wither.shoot;volume=0.4;pitch=0.7} @self
+  - delay 40
+  - state{s=run;remove=true;li=10;lo=10} @self
+  
+Jellyfish_Blue_Dash:
+  Cooldown: 5
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=40}
+  - state{s=run;lo=10} @self
+  - delay 12
+  - lunge{velocity=1.2;velocityY=0.1;repeat=8;repeati=1} @forward{f=25;y=0.1}
+  - effect:particles{particle=redstone;color=#82eeff;amount=25;hS=0.9;vS=0.4;y=1.2;speed=0;forwardOffset=-2;sideOffset=0} @self
+  - effect:sound{s=entity.wither.shoot;volume=0.4;pitch=0.7} @self
+  - effect:sound{s=entity.slime.squish;volume=0.8;pitch=0.7} @self
+  - effect:sound{s=entity.fish.swim;volume=0.65;pitch=0.6} @self
+  
+Jellyfish_Abyss_Dash:
+  Cooldown: 5
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=40}
+  - state{s=run;lo=10} @self
+  - delay 12
+  - lunge{velocity=1.2;velocityY=0.1;repeat=8;repeati=1} @forward{f=25;y=0.1}
+  - effect:particles{particle=drip_water;amount=25;hS=0.9;vS=0.4;y=1.2;speed=0;forwardOffset=-2;sideOffset=0} @self
+  - effect:sound{s=entity.wither.shoot;volume=0.4;pitch=0.7} @self
+  - effect:sound{s=entity.slime.squish;volume=0.8;pitch=0.7} @self
+  - effect:sound{s=entity.fish.swim;volume=0.65;pitch=0.6} @self
+  
+Jellyfish_Obsidian_Dash:
+  Cooldown: 5
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=40}
+  - state{s=run;lo=10} @self
+  - delay 12
+  - lunge{velocity=1.2;velocityY=0.1;repeat=8;repeati=1} @forward{f=25;y=0.1}
+  - effect:particles{particle=redstone;color=#0c0224;amount=25;hS=0.9;vS=0.4;y=1.2;speed=0;forwardOffset=-2;sideOffset=0} @self
+  - effect:sound{s=entity.wither.shoot;volume=0.4;pitch=0.7} @self
+  - effect:sound{s=entity.slime.squish;volume=0.8;pitch=0.7} @self
+  - effect:sound{s=entity.fish.swim;volume=0.65;pitch=0.6} @self
+  
+Jellyfish_Aether_Dash:
+  Cooldown: 5
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=40}
+  - state{s=run;lo=10} @self
+  - delay 12
+  - lunge{velocity=1.2;velocityY=0.1;repeat=8;repeati=1} @forward{f=25;y=0.1}
+  - effect:particles{particle=flash;amount=1;hS=0;vS=0;y=1.2;speed=0;forwardOffset=-2;sideOffset=0} @self
+  - effect:sound{s=entity.wither.shoot;volume=0.4;pitch=0.7} @self
+  - effect:sound{s=entity.slime.squish;volume=0.8;pitch=0.7} @self
+  - effect:sound{s=entity.fish.swim;volume=0.65;pitch=0.6} @self
+  
+Jellyfish_Nether_Dash:
+  Cooldown: 5
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=40}
+  - state{s=run;lo=10} @self
+  - delay 12
+  - lunge{velocity=1.2;velocityY=0.1;repeat=8;repeati=1} @forward{f=25;y=0.1}
+  - effect:particles{particle=flame;amount=20;hS=0.9;vS=0.4;y=1.2;speed=0.1;forwardOffset=-2;sideOffset=0} @self
+  - effect:sound{s=entity.wither.shoot;volume=0.4;pitch=0.7} @self
+  - effect:sound{s=entity.slime.squish;volume=0.8;pitch=0.7} @self
+  - effect:sound{s=entity.fish.swim;volume=0.65;pitch=0.6} @self
+  
+Talonstrider_Desert_Dash:
+  Cooldown: 5
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=40}
+  - state{s=run;lo=10} @self
+  - delay 9
+  - lunge{velocity=0.9;velocityY=0.1;repeat=40;repeati=1} @forward{f=25;y=0.1}
+  - effect:particles{particle=redstone;color=#ffb647;amount=20;hS=0.9;vS=0.4;y=1.2;speed=0;forwardOffset=-2;sideOffset=0} @self
+  - effect:sound{s=entity.wither.shoot;volume=0.4;pitch=0.7} @self
+  
+Talonstrider_Sculk_Dash:
+  Cooldown: 5
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=40}
+  - state{s=run;lo=10} @self
+  - delay 9
+  - lunge{velocity=0.9;velocityY=0.1;repeat=40;repeati=1} @forward{f=25;y=0.1}
+  - effect:particles{particle=sculk_soul;amount=20;hS=0.9;vS=0.4;y=1.2;speed=0;forwardOffset=-2;sideOffset=0} @self
+  - effect:sound{s=entity.wither.shoot;volume=0.4;pitch=0.7} @self
+  
+Talonstrider_Ender_Dash:
+  Cooldown: 5
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=40}
+  - delay 9
+  - lunge{velocity=6;velocityY=0.1;repeat=5;repeati=1} @forward{f=25;y=0.1}
+  - effect:particles{particle=portal;amount=20;hS=0.9;vS=0.4;y=1.2;speed=0;forwardOffset=-2;sideOffset=0} @self
+  - effect:sound{s=entity.enderman.teleport;volume=0.75;pitch=0.9} @self
+  
+Talonstrider_Arctic_Dash:
+  Cooldown: 5
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=40}
+  - state{s=run;lo=10} @self
+  - delay 9
+  - lunge{velocity=0.9;velocityY=0.1;repeat=40;repeati=1} @forward{f=25;y=0.1}
+  - effect:particles{particle=snowflake;amount=20;hS=0.9;vS=0.4;y=1.2;speed=0;forwardOffset=-2;sideOffset=0} @self
+  - effect:sound{s=entity.wither.shoot;volume=0.4;pitch=0.7} @self
+  
+Horncrier_Crimsonwood_AIRBUBBLE:
+  Skills:
+  - potion{type=FIRE_RESISTANCE;duration=40;level=1;hasParticles=false} @ModelDriver

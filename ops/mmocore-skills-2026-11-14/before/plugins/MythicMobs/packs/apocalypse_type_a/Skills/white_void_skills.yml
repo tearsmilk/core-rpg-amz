@@ -1,0 +1,38 @@
+
+# ~Written by RopeFire~
+
+CancelEvent:
+  Conditions:
+  - incombat true
+  Skills:
+  - CancelEvent @self
+
+white_void_summoned:
+  Skills:
+  - CancelEvent @self
+  - state{model=white_void;state=white_void} @self
+  - lockmodel @self
+  - delay 60
+  - aura{auraName=WvoidDsmall;oT=white_void_damage_small;duration=15} @self
+  - sound{s=custom.white_void;v=3;p=1} @self
+  - delay 15
+  - aura{auraName=WvoidDmid;oT=white_void_damage_mid;duration=15} @self
+  - delay 15
+  - aura{auraName=WvoidDbig;oT=white_void_damage_big;duration=34} @self
+  - delay 61
+  - remove @self
+
+white_void_damage_small:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=10} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=white_void;pid=white_hole}
+  - totem{md=2;oH=[ - damage{a=10} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=white_void;pid=white_hole2}
+
+white_void_damage_mid:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=15} ];hnp=true;hp=true;hR=2;vR=2;i=1;drawhitbox=false} @ModelPart{mid=white_void;pid=white_hole}
+  - totem{md=2;oH=[ - damage{a=15} ];hnp=true;hp=true;hR=2;vR=2;i=1;drawhitbox=false} @ModelPart{mid=white_void;pid=white_hole2}
+
+white_void_damage_big:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=3;vR=3;i=1;drawhitbox=false} @ModelPart{mid=white_void;pid=white_hole}
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=3;vR=3;i=1;drawhitbox=false} @ModelPart{mid=white_void;pid=white_hole2}

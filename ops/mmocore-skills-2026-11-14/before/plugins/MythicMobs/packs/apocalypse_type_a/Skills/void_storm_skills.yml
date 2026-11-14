@@ -1,0 +1,140 @@
+
+# ~Written by RopeFire~
+
+CancelEvent:
+  Conditions:
+  - incombat true
+  Skills:
+  - CancelEvent @self
+
+void_storm_summoned:
+  Skills:
+  - CancelEvent @self
+  - state{model=void_storm;state=void_storm} @self
+  - look{headOnly=false;immediately=true} @target
+  - bodyclamp{mh=0;mb=0} @self
+  - sound{s=custom.void_storm;v=3;p=1} @self
+  - delay 10
+  - lockmodel @self
+  - delay 31
+  - aura{auraName=storm1;oT=storm1_damage;duration=8} @self
+  - delay 7
+  - aura{auraName=storm2;oT=storm2_damage;duration=8} @self
+  - delay 6
+  - aura{auraName=storm3;oT=storm3_damage;duration=9} @self
+  - delay 5
+  - aura{auraName=storm4;oT=storm4_damage;duration=8} @self
+  - delay 5
+  - aura{auraName=storm5;oT=storm5_damage;duration=8} @self
+  - delay 3
+  - aura{auraName=storm6;oT=storm6_damage;duration=8} @self
+  - delay 6
+  - aura{auraName=storm7;oT=storm7_damage;duration=8} @self
+  - delay 4
+  - aura{auraName=storm8;oT=storm8_damage;duration=8} @self
+  - delay 4
+  - aura{auraName=storm9;oT=storm9_damage;duration=8} @self
+  - delay 3
+  - aura{auraName=storm10;oT=storm10_damage;duration=8} @self
+  - delay 2
+  - aura{auraName=storm11;oT=storm11_damage;duration=8} @self
+  - delay 3
+  - aura{auraName=storm12;oT=storm12_damage;duration=8} @self
+  - delay 3
+  - aura{auraName=storm13;oT=storm13_damage;duration=8} @self
+  - delay 2
+  - aura{auraName=storm14;oT=storm14_damage;duration=8} @self
+  - delay 3
+  - aura{auraName=storm15;oT=storm15_damage;duration=8} @self
+  - delay 2
+  - aura{auraName=storm16;oT=storm16_damage;duration=8} @self
+  - delay 2
+  - aura{auraName=storm17;oT=storm17_damage;duration=8} @self
+  - delay 3
+  - aura{auraName=storm18;oT=storm18_damage;duration=8} @self
+  - delay 1
+  - aura{auraName=storm19;oT=storm19_damage;duration=8} @self
+  - delay 4
+  - aura{auraName=storm20;oT=storm20_damage;duration=8} @self
+  - delay 28
+  - remove @self
+
+storm1_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=void_storm;pid=particle}
+
+storm2_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=void_storm;pid=particle2}
+
+storm3_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=void_storm;pid=particle3}
+
+storm4_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=void_storm;pid=particle4}
+
+storm5_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=void_storm;pid=particle5}
+
+storm6_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=void_storm;pid=particle6}
+
+storm7_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=void_storm;pid=particle7}
+
+storm8_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=void_storm;pid=particle8}
+
+storm9_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=void_storm;pid=particle9}
+
+storm10_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=void_storm;pid=particle10}
+
+storm11_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=void_storm;pid=particle11}
+
+storm12_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=void_storm;pid=particle12}
+
+storm13_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=void_storm;pid=particle13}
+
+storm14_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=void_storm;pid=particle14}
+
+storm15_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=void_storm;pid=particle15}
+
+storm16_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=void_storm;pid=particle16}
+
+storm17_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=void_storm;pid=particle17}
+
+storm18_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=void_storm;pid=particle18}
+
+storm19_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=void_storm;pid=particle19}
+
+storm20_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=20} ];hnp=true;hp=true;hR=1.75;vR=1.75;i=1;drawhitbox=false} @ModelPart{mid=void_storm;pid=particle20}

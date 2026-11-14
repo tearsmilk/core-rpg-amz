@@ -1,0 +1,11 @@
+skill_casting_bar-layout:
+  elements:
+    skills:
+      asset: 'skill_casting_bar'
+      align: center
+      position:
+        x: 50.0
+        y: 0.0
+      offset:
+        x: 1
+        y: 90

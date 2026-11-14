@@ -1,0 +1,37 @@
+# Display options
+name: 'Начало приключения'
+lore:
+  - 'Ещё один пример задания.'
+  - ''
+  - '&eНаграды:'
+  - '&7► Каменные инструменты'
+  - '&7► 30 опыта'
+
+# Parent quests
+parent:
+  - 'tutorial'
+
+bossbar:
+  # Enable bossbar during the quest
+  enabled: true
+  # If true, it will display the percent of progress of the
+  # current objective. If false, it will display the percent of
+  # total quest progress (for instance, 33% = 1/3 objectives completed).
+  objective: true
+
+# Quest objectives
+objectives:
+  1:
+    type: 'goto{world="world";x=120;y=46;z=652;range=10}'
+    lore: 'Отправляйся в лагерь.'
+    triggers:
+      - 'message{format="Отличная работа!"}'
+  2:
+    type: 'talkto{npc=0}'
+    lore: 'Поговори с кузнецом.'
+    triggers:
+      - 'message{format="Кузнец сказал тебе подойти ко мне...?"}'
+      - 'item{type=STONE_SWORD}'
+      - 'item{type=STONE_AXE}'
+      - 'item{type=STONE_PICKAXE}'
+      - 'experience{amount=30}'

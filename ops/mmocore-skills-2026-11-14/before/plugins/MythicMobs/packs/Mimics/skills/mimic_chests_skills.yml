@@ -1,0 +1,746 @@
+
+# ~Written by RopeFire~
+
+CancelEvent:
+  Conditions:
+  - incombat true
+  Skills:
+  - CancelEvent @self
+
+#Common Chest Open
+common_chest_open:
+  TriggerConditions:
+  - holding{m=common_key} true
+  Conditions:
+  - hasaura{n=commonChestOpened} false
+  Skills:
+  - state{model=common_chest;state=open} @self
+  - consumeslot{slot=HAND;amount=1} @trigger
+  - aura{auraName=commonChestOpened;duration=160} @self
+  - delay 15
+  - sound{s=entity.shulker.close;v=1;p=2;sc=HOSTILE} @self
+  - delay 5
+  - sound{s=block.wooden_door.open;v=1;p=2;sc=HOSTILE} @self
+  - delay 8
+  - sound{s=entity.allay.item_given;v=1;p=2;sc=HOSTILE} @self
+  - delay 12
+  - dropitem{i=iron_ingot 1-4} @selfLocation{y=0.5}
+  - sound{s=entity.allay.item_taken;v=0.5;p=1.3;sc=HOSTILE} @self
+  - delay 10
+  - dropitem{i=gold_ingot 1-4} @selfLocation{y=0.5}
+  - sound{s=entity.allay.item_taken;v=0.5;p=1.3;sc=HOSTILE} @self
+  - delay 10
+  - dropitem{i=diamond 1-4} @selfLocation{y=0.5}
+  - sound{s=entity.allay.item_taken;v=0.5;p=1.3;sc=HOSTILE} @self
+  - delay 100
+  - particle{p=cloud;amount=50;x=5;z=20;s=0.07} @self
+  - remove @self
+
+#Common Chest Rotations
+common_chest_rotation_0:
+  Skills:
+  - setrotation{relative=true;yaw=0} @self
+
+common_chest_rotation_90:
+  Skills:
+  - setrotation{relative=true;yaw=90} @self
+
+common_chest_rotation_180:
+  Skills:
+  - setrotation{relative=true;yaw=180} @self
+
+common_chest_rotation_270:
+  Skills:
+  - setrotation{relative=true;yaw=270} @self
+
+#Common Mimic Spawn
+common_mimic_spawn:
+  Skills:
+  - setspeed{speed=0;type=WALKING} @self
+  - setcollidable{c=false} @self
+  - aura{auraName=commonMimicClosed;duration=999999;oE=common_mimic_stay_closed} @self
+  - setAI{ai=false} @self
+
+common_mimic_stay_closed:
+  Conditions:
+  - hasaura{n=commonMimicOpened} false
+  Skills:
+  - aura{auraName=commonMimicClosed;duration=999999;oE=common_mimic_stay_closed} @self  
+
+#Common Mimic Rotations
+common_mimic_rotation_0:
+  Skills:
+  - setrotation{relative=true;yaw=0} @self
+
+common_mimic_rotation_90:
+  Skills:
+  - setrotation{relative=true;yaw=90} @self
+
+common_mimic_rotation_180:
+  Skills:
+  - setrotation{relative=true;yaw=180} @self
+
+common_mimic_rotation_270:
+  Skills:
+  - setrotation{relative=true;yaw=270} @self
+
+#Common Mimic Open
+common_mimic_open:
+  TriggerConditions:
+  - holding{m=common_key} true
+  Conditions:
+  - hasaura{n=commonMimicOpened} false
+  Skills:
+  - gcd{ticks=40}
+  - setAI{ai=true} @self
+  - state{model=common_mimic;state=open} @self
+  - defaultstate{model=common_mimic;type=idle;state=aggro_idle} @self
+  - consumeslot{slot=HAND;amount=1} @trigger
+  - delay 15
+  - sound{s=entity.shulker.close;v=1;p=2;sc=HOSTILE} @self
+  - delay 5
+  - sound{s=block.wooden_door.open;v=1;p=2;sc=HOSTILE} @self
+  - delay 6
+  - sound{s=entity.vex.ambient;v=1;p=1.3;sc=HOSTILE} @self
+  - delay 14
+  - settarget @trigger
+  - setspeed{speed=1;type=WALKING} @self
+  - aura{auraName=commonMimicOpened;duration=999999;oE=common_mimic_stay_open} @self
+  - auraremove{aura=commonMimicClosed} @self
+
+common_mimic_stay_open:
+  Skills:
+  - aura{auraName=commonMimicOpened;duration=999999;oE=common_mimic_stay_open} @self  
+
+#Common Mimic Cut Tongue
+common_mimic_cut_tongue:
+  TriggerConditions:
+  - holding{m=shears} true
+  Conditions:
+  - hasaura{n=commonMimicOpened} true
+  - hasaura{n=commonMimicCutTongue} false
+  Skills:
+  - partvis{mid=common_mimic;part=tongue;child=true;v=false} @self
+  - dropitem{i=mimic_tongue} @self
+  - aura{auraName=commonMimicCutTongue;duration=999999;oE=common_mimic_cut_tongue_stay_cut} @self
+  - delay 1
+  - sound{s=entity.horse.death;v=0.5;p=2;sc=HOSTILE} @self
+  - sound{s=entity.sheep.shear;v=1;p=1;sc=HOSTILE} @self
+  
+common_mimic_cut_tongue_stay_cut:
+  Skills:
+  - aura{auraName=commonMimicCutTongue;duration=999999;oE=common_mimic_cut_tongue_stay_cut} @self
+
+#Common Mimic Bite  
+common_mimic_bite:
+  Conditions:
+  - incombat true
+  - targetwithin{d=16} true
+  - hasaura{n=commonMimicClosed} false
+  - hasaura{n=commonMimicCutTongue} false
+  - offgcd true
+  - varisset{var=caster.melee_queue} false
+  Skills:
+  - setvar{var=target.melee_queue;d=10} @EiR{r=4;targetplayers=false}
+  - CancelEvent @self
+  - gcd{ticks=20}
+  - setspeed{speed=0;type=WALKING} @self
+  - state{model=common_mimic;state=bite} @self
+  - rootmotion{ov=true} @self
+  - delay 6
+  - sound{s=entity.evoker_fangs.attack;v=0.5;p=1.5;sc=HOSTILE} @self
+  - delay 1
+  - aura{auraName=commonMimicBiteD;duration=5;oT=common_mimic_bite_damage} @self
+  - delay 13
+  - rootmotion{ov=false} @self
+  - setspeed{speed=1;type=WALKING} @self
+  
+common_mimic_bite_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=8} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=common_mimic;pid=tongue2}
+
+#Common Mimic Bite Fast
+common_mimic_bite_fast:
+  Conditions:
+  - incombat true
+  - targetwithin{d=16} true
+  - hasaura{n=commonMimicClosed} false
+  - hasaura{n=commonMimicCutTongue} true
+  - offgcd true
+  - varisset{var=caster.melee_queue} false
+  Skills:
+  - setvar{var=target.melee_queue;d=10} @EiR{r=4;targetplayers=false}
+  - CancelEvent @self
+  - gcd{ticks=13.33}
+  - setspeed{speed=0;type=WALKING} @self
+  - state{model=common_mimic;state=bite;speed=1.5} @self
+  - rootmotion{ov=true} @self
+  - delay 4
+  - sound{s=entity.evoker_fangs.attack;v=0.5;p=1.5;sc=HOSTILE} @self
+  - delay 0.66
+  - aura{auraName=commonMimicBiteFastD;duration=5;oT=common_mimic_bite_fast_damage} @self
+  - lunge{v=0.8} @target
+  - delay 3
+  - sound{s=entity.breeze.hurt;v=0.5;p=1.3;sc=HOSTILE} @self
+  - sound{s=entity.ender_dragon.hurt;v=0.3;p=2;sc=HOSTILE} @self
+  - delay 5.67
+  - rootmotion{ov=false} @self
+  - setspeed{speed=1;type=WALKING} @self
+  
+common_mimic_bite_fast_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=10} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=common_mimic;pid=tongue2}
+
+#Common Mimic Bite Tongue
+common_mimic_bite_tongue:
+  Cooldown: 5
+  Conditions:
+  - incombat true
+  - targetwithin{d=16} true
+  - hasaura{n=commonMimicClosed} false
+  - hasaura{n=commonMimicCutTongue} false
+  - offgcd true
+  - varisset{var=caster.melee_queue} false
+  Skills:
+  - setvar{var=target.melee_queue;d=10} @EiR{r=4;targetplayers=false}
+  - CancelEvent @self
+  - gcd{ticks=20}
+  - setspeed{speed=0;type=WALKING} @self
+  - state{model=common_mimic;state=bite_tongue} @self
+  - rootmotion{ov=true} @self
+  - delay 6
+  - sound{s=entity.evoker_fangs.attack;v=0.5;p=1.5;sc=HOSTILE} @self
+  - delay 1
+  - aura{auraName=commonMimicBiteTongueD;duration=5;oT=common_mimic_bite_tongue_damage} @self
+  - delay 3
+  - sound{s=entity.drowned.step;v=0.5;p=1.5;sc=HOSTILE} @self
+  - sound{s=entity.breeze.hurt;v=0.5;p=1.3;sc=HOSTILE} @self
+  - sound{s=entity.polar_bear.death;v=0.5;p=2;sc=HOSTILE} @self
+  - delay 10
+  - rootmotion{ov=false} @self
+  - setspeed{speed=1;type=WALKING} @self
+  
+common_mimic_bite_tongue_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=4} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=common_mimic;pid=tongue2}
+  
+common_mimic_saliva_sounds:
+  Skills:
+  - sound{s=entity.frog.tongue;v=0.5;p=1;sc=HOSTILE} @self
+
+#Common Mimic Damaged
+common_mimic_damaged:
+  Conditions:
+  - hasaura{n=commonMimicOpened} true
+  Skills:
+  - sound{s=entity.breeze.hurt;v=0.5;p=1.3;sc=HOSTILE} @self
+  - sound{s=entity.ender_dragon.hurt;v=0.3;p=2;sc=HOSTILE} @self
+
+#Common Mimic Death
+common_mimic_death:
+  Skills:
+  - sound{s=entity.breeze.death;v=0.5;p=1.3;sc=HOSTILE} @self
+  - sound{s=entity.creaking.death;v=0.5;p=2;sc=HOSTILE} @self
+  - delay 10
+  - dropitem{i=iron_ingot 1-4} @selfLocation{y=0.5}
+  - sound{s=entity.allay.item_taken;v=0.5;p=1.3;sc=HOSTILE} @self
+  - delay 10
+  - dropitem{i=gold_ingot 1-4} @selfLocation{y=0.5}
+  - sound{s=entity.allay.item_taken;v=0.5;p=1.3;sc=HOSTILE} @self
+  - delay 10
+  - dropitem{i=diamond 1-4} @selfLocation{y=0.5}
+  - sound{s=entity.allay.item_taken;v=0.5;p=1.3;sc=HOSTILE} @self
+  - delay 130
+  - particle{p=cloud;amount=50;x=5;z=20;s=0.07} @self
+
+#Rare Chest Open
+rare_chest_open:
+  TriggerConditions:
+  - holding{m=rare_key} true
+  Conditions:
+  - hasaura{n=rareChestOpened} false
+  Skills:
+  - state{model=rare_chest;state=open} @self
+  - consumeslot{slot=HAND;amount=1} @trigger
+  - aura{auraName=rareChestOpened;duration=160} @self
+  - delay 15
+  - sound{s=entity.shulker.close;v=1;p=2;sc=HOSTILE} @self
+  - delay 5
+  - sound{s=block.wooden_door.open;v=1;p=2;sc=HOSTILE} @self
+  - delay 8
+  - sound{s=entity.allay.item_given;v=1;p=2;sc=HOSTILE} @self
+  - delay 12
+  - dropitem{i=iron_ingot 2-8} @selfLocation{y=0.5}
+  - sound{s=entity.allay.item_taken;v=0.5;p=1.3;sc=HOSTILE} @self
+  - delay 10
+  - dropitem{i=gold_ingot 2-8} @selfLocation{y=0.5}
+  - sound{s=entity.allay.item_taken;v=0.5;p=1.3;sc=HOSTILE} @self
+  - delay 10
+  - dropitem{i=diamond 2-8} @selfLocation{y=0.5}
+  - sound{s=entity.allay.item_taken;v=0.5;p=1.3;sc=HOSTILE} @self
+  - delay 100
+  - particle{p=cloud;amount=50;x=5;z=20;s=0.07} @self
+  - remove @self
+
+#Rare Chest Rotations
+rare_chest_rotation_0:
+  Skills:
+  - setrotation{relative=true;yaw=0} @self
+
+rare_chest_rotation_90:
+  Skills:
+  - setrotation{relative=true;yaw=90} @self
+
+rare_chest_rotation_180:
+  Skills:
+  - setrotation{relative=true;yaw=180} @self
+
+rare_chest_rotation_270:
+  Skills:
+  - setrotation{relative=true;yaw=270} @self
+
+#Rare Mimic Spawn
+rare_mimic_spawn:
+  Skills:
+  - setspeed{speed=0;type=WALKING} @self
+  - setcollidable{c=false} @self
+  - aura{auraName=rareMimicClosed;duration=999999;oE=rare_mimic_stay_closed} @self
+  - setAI{ai=false} @self
+
+rare_mimic_stay_closed:
+  Conditions:
+  - hasaura{n=rareMimicOpened} false
+  Skills:
+  - aura{auraName=rareMimicClosed;duration=999999;oE=rare_mimic_stay_closed} @self  
+
+#Rare Mimic Rotations
+rare_mimic_rotation_0:
+  Skills:
+  - setrotation{relative=true;yaw=0} @self
+
+rare_mimic_rotation_90:
+  Skills:
+  - setrotation{relative=true;yaw=90} @self
+
+rare_mimic_rotation_180:
+  Skills:
+  - setrotation{relative=true;yaw=180} @self
+
+rare_mimic_rotation_270:
+  Skills:
+  - setrotation{relative=true;yaw=270} @self
+
+#Rare Mimic Open
+rare_mimic_open:
+  TriggerConditions:
+  - holding{m=rare_key} true
+  Conditions:
+  - hasaura{n=rareMimicOpened} false
+  Skills:
+  - gcd{ticks=40}
+  - setAI{ai=true} @self
+  - state{model=rare_mimic;state=open} @self
+  - defaultstate{model=rare_mimic;type=idle;state=aggro_idle} @self
+  - consumeslot{slot=HAND;amount=1} @trigger
+  - delay 15
+  - sound{s=entity.shulker.close;v=1;p=2;sc=HOSTILE} @self
+  - delay 5
+  - sound{s=block.wooden_door.open;v=1;p=2;sc=HOSTILE} @self
+  - delay 6
+  - sound{s=entity.vex.ambient;v=1;p=1.3;sc=HOSTILE} @self
+  - delay 14
+  - settarget @trigger
+  - setspeed{speed=1;type=WALKING} @self
+  - aura{auraName=rareMimicOpened;duration=999999;oE=rare_mimic_stay_open} @self
+  - auraremove{aura=rareMimicClosed} @self
+
+rare_mimic_stay_open:
+  Skills:
+  - aura{auraName=rareMimicOpened;duration=999999;oE=rare_mimic_stay_open} @self  
+
+#Rare Mimic Cut Tongue
+rare_mimic_cut_tongue:
+  TriggerConditions:
+  - holding{m=shears} true
+  Conditions:
+  - hasaura{n=rareMimicOpened} true
+  - hasaura{n=rareMimicCutTongue} false
+  Skills:
+  - partvis{mid=rare_mimic;part=tongue;child=true;v=false} @self
+  - dropitem{i=rare_mimic_tongue} @self
+  - aura{auraName=rareMimicCutTongue;duration=999999;oE=rare_mimic_cut_tongue_stay_cut} @self
+  - delay 1
+  - sound{s=entity.horse.death;v=0.5;p=2;sc=HOSTILE} @self
+  - sound{s=entity.sheep.shear;v=1;p=1;sc=HOSTILE} @self
+  
+rare_mimic_cut_tongue_stay_cut:
+  Skills:
+  - aura{auraName=rareMimicCutTongue;duration=999999;oE=rare_mimic_cut_tongue_stay_cut} @self
+
+#Rare Mimic Bite
+rare_mimic_bite:
+  Conditions:
+  - incombat true
+  - targetwithin{d=16} true
+  - hasaura{n=rareMimicClosed} false
+  - hasaura{n=rareMimicCutTongue} false
+  - offgcd true
+  - varisset{var=caster.melee_queue} false
+  Skills:
+  - setvar{var=target.melee_queue;d=10} @EiR{r=4;targetplayers=false}
+  - CancelEvent @self
+  - gcd{ticks=20}
+  - setspeed{speed=0;type=WALKING} @self
+  - state{model=rare_mimic;state=bite} @self
+  - rootmotion{ov=true} @self
+  - delay 6
+  - sound{s=entity.evoker_fangs.attack;v=0.5;p=1.5;sc=HOSTILE} @self
+  - delay 1
+  - aura{auraName=rareMimicBiteD;duration=5;oT=rare_mimic_bite_damage} @self
+  - delay 13
+  - rootmotion{ov=false} @self
+  - setspeed{speed=1;type=WALKING} @self
+  
+rare_mimic_bite_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=8} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=rare_mimic;pid=tongue2}
+
+#Rare Mimic Bite Fast
+rare_mimic_bite_fast:
+  Conditions:
+  - incombat true
+  - targetwithin{d=16} true
+  - hasaura{n=rareMimicClosed} false
+  - hasaura{n=rareMimicCutTongue} true
+  - offgcd true
+  - varisset{var=caster.melee_queue} false
+  Skills:
+  - setvar{var=target.melee_queue;d=10} @EiR{r=4;targetplayers=false}
+  - CancelEvent @self
+  - gcd{ticks=13.33}
+  - setspeed{speed=0;type=WALKING} @self
+  - state{model=rare_mimic;state=bite;speed=1.5} @self
+  - rootmotion{ov=true} @self
+  - delay 4
+  - sound{s=entity.evoker_fangs.attack;v=0.5;p=1.5;sc=HOSTILE} @self
+  - delay 0.66
+  - aura{auraName=rareMimicBiteFastD;duration=5;oT=rare_mimic_bite_fast_damage} @self
+  - lunge{v=0.8} @target
+  - delay 3
+  - sound{s=entity.breeze.hurt;v=0.5;p=1.3;sc=HOSTILE} @self
+  - sound{s=entity.ender_dragon.hurt;v=0.3;p=2;sc=HOSTILE} @self
+  - delay 5.67
+  - rootmotion{ov=false} @self
+  - setspeed{speed=1;type=WALKING} @self
+  
+rare_mimic_bite_fast_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=10} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=rare_mimic;pid=tongue2}
+
+#Rare Mimic Bite Tongue
+rare_mimic_bite_tongue:
+  Cooldown: 5
+  Conditions:
+  - incombat true
+  - targetwithin{d=16} true
+  - hasaura{n=rareMimicClosed} false
+  - hasaura{n=rareMimicCutTongue} false
+  - offgcd true
+  - varisset{var=caster.melee_queue} false
+  Skills:
+  - setvar{var=target.melee_queue;d=10} @EiR{r=4;targetplayers=false}
+  - CancelEvent @self
+  - gcd{ticks=20}
+  - setspeed{speed=0;type=WALKING} @self
+  - state{model=rare_mimic;state=bite_tongue} @self
+  - rootmotion{ov=true} @self
+  - delay 6
+  - sound{s=entity.evoker_fangs.attack;v=0.5;p=1.5;sc=HOSTILE} @self
+  - delay 1
+  - aura{auraName=rareMimicBiteTongueD;duration=5;oT=rare_mimic_bite_tongue_damage} @self
+  - delay 3
+  - sound{s=entity.drowned.step;v=0.5;p=1.5;sc=HOSTILE} @self
+  - sound{s=entity.breeze.hurt;v=0.5;p=1.3;sc=HOSTILE} @self
+  - sound{s=entity.polar_bear.death;v=0.5;p=2;sc=HOSTILE} @self
+  - delay 10
+  - rootmotion{ov=false} @self
+  - setspeed{speed=1;type=WALKING} @self
+  
+rare_mimic_bite_tongue_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=4} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=rare_mimic;pid=tongue2}
+  
+rare_mimic_saliva_sounds:
+  Skills:
+  - sound{s=entity.frog.tongue;v=0.5;p=1;sc=HOSTILE} @self
+
+#Rare Mimic Damaged
+rare_mimic_damaged:
+  Conditions:
+  - hasaura{n=rareMimicOpened} true
+  Skills:
+  - sound{s=entity.breeze.hurt;v=0.5;p=1.3;sc=HOSTILE} @self
+  - sound{s=entity.ender_dragon.hurt;v=0.3;p=2;sc=HOSTILE} @self
+
+#Rare Mimic Death
+rare_mimic_death:
+  Skills:
+  - sound{s=entity.breeze.death;v=0.5;p=1.3;sc=HOSTILE} @self
+  - sound{s=entity.creaking.death;v=0.5;p=2;sc=HOSTILE} @self
+  - delay 10
+  - dropitem{i=iron_ingot 2-8} @selfLocation{y=0.5}
+  - sound{s=entity.allay.item_taken;v=0.5;p=1.3;sc=HOSTILE} @self
+  - delay 10
+  - dropitem{i=gold_ingot 2-8} @selfLocation{y=0.5}
+  - sound{s=entity.allay.item_taken;v=0.5;p=1.3;sc=HOSTILE} @self
+  - delay 10
+  - dropitem{i=diamond 2-8} @selfLocation{y=0.5}
+  - sound{s=entity.allay.item_taken;v=0.5;p=1.3;sc=HOSTILE} @self
+  - delay 130
+  - particle{p=cloud;amount=50;x=5;z=20;s=0.07} @self
+  
+#Legendary Chest Open
+legendary_chest_open:
+  TriggerConditions:
+  - holding{m=legendary_key} true
+  Conditions:
+  - hasaura{n=legendaryChestOpened} false
+  Skills:
+  - state{model=legendary_chest;state=open} @self
+  - consumeslot{slot=HAND;amount=1} @trigger
+  - aura{auraName=legendaryChestOpened;duration=160} @self
+  - delay 15
+  - sound{s=entity.shulker.close;v=1;p=2;sc=HOSTILE} @self
+  - delay 5
+  - sound{s=block.wooden_door.open;v=1;p=2;sc=HOSTILE} @self
+  - delay 8
+  - sound{s=entity.allay.item_given;v=1;p=2;sc=HOSTILE} @self
+  - delay 12
+  - dropitem{i=iron_ingot 4-16} @selfLocation{y=0.5}
+  - sound{s=entity.allay.item_taken;v=0.5;p=1.3;sc=HOSTILE} @self
+  - delay 10
+  - dropitem{i=gold_ingot 4-16} @selfLocation{y=0.5}
+  - sound{s=entity.allay.item_taken;v=0.5;p=1.3;sc=HOSTILE} @self
+  - delay 10
+  - dropitem{i=diamond 4-16} @selfLocation{y=0.5}
+  - sound{s=entity.allay.item_taken;v=0.5;p=1.3;sc=HOSTILE} @self
+  - delay 100
+  - particle{p=cloud;amount=50;x=5;z=20;s=0.07} @self
+  - remove @self
+
+#Legendary Chest Rotations
+legendary_chest_rotation_0:
+  Skills:
+  - setrotation{relative=true;yaw=0} @self
+
+legendary_chest_rotation_90:
+  Skills:
+  - setrotation{relative=true;yaw=90} @self
+
+legendary_chest_rotation_180:
+  Skills:
+  - setrotation{relative=true;yaw=180} @self
+
+legendary_chest_rotation_270:
+  Skills:
+  - setrotation{relative=true;yaw=270} @self
+
+#Legendary Mimic Spawn
+legendary_mimic_spawn:
+  Skills:
+  - setspeed{speed=0;type=WALKING} @self
+  - setcollidable{c=false} @self
+  - aura{auraName=legendaryMimicClosed;duration=999999;oE=legendary_mimic_stay_closed} @self
+  - setAI{ai=false} @self
+
+legendary_mimic_stay_closed:
+  Conditions:
+  - hasaura{n=legendaryMimicOpened} false
+  Skills:
+  - aura{auraName=legendaryMimicClosed;duration=999999;oE=legendary_mimic_stay_closed} @self  
+
+#Legendary Mimic Rotations
+legendary_mimic_rotation_0:
+  Skills:
+  - setrotation{relative=true;yaw=0} @self
+
+legendary_mimic_rotation_90:
+  Skills:
+  - setrotation{relative=true;yaw=90} @self
+
+legendary_mimic_rotation_180:
+  Skills:
+  - setrotation{relative=true;yaw=180} @self
+
+legendary_mimic_rotation_270:
+  Skills:
+  - setrotation{relative=true;yaw=270} @self
+
+#Legendary Mimic Open
+legendary_mimic_open:
+  TriggerConditions:
+  - holding{m=legendary_key} true
+  Conditions:
+  - hasaura{n=legendaryMimicOpened} false
+  Skills:
+  - gcd{ticks=40}
+  - setAI{ai=true} @self
+  - state{model=legendary_mimic;state=open} @self
+  - defaultstate{model=legendary_mimic;type=idle;state=aggro_idle} @self
+  - consumeslot{slot=HAND;amount=1} @trigger
+  - delay 15
+  - sound{s=entity.shulker.close;v=1;p=2;sc=HOSTILE} @self
+  - delay 5
+  - sound{s=block.wooden_door.open;v=1;p=2;sc=HOSTILE} @self
+  - delay 6
+  - sound{s=entity.vex.ambient;v=1;p=1.3;sc=HOSTILE} @self
+  - delay 14
+  - settarget @trigger
+  - setspeed{speed=1;type=WALKING} @self
+  - aura{auraName=legendaryMimicOpened;duration=999999;oE=legendary_mimic_stay_open} @self
+  - auraremove{aura=legendaryMimicClosed} @self
+
+legendary_mimic_stay_open:
+  Skills:
+  - aura{auraName=legendaryMimicOpened;duration=999999;oE=legendary_mimic_stay_open} @self  
+
+#Legendary Mimic Cut Tongue
+legendary_mimic_cut_tongue:
+  TriggerConditions:
+  - holding{m=shears} true
+  Conditions:
+  - hasaura{n=legendaryMimicOpened} true
+  - hasaura{n=legendaryMimicCutTongue} false
+  Skills:
+  - partvis{mid=legendary_mimic;part=tongue;child=true;v=false} @self
+  - dropitem{i=legendary_mimic_tongue} @self
+  - aura{auraName=legendaryMimicCutTongue;duration=999999;oE=legendary_mimic_cut_tongue_stay_cut} @self
+  - delay 1
+  - sound{s=entity.horse.death;v=0.5;p=2;sc=HOSTILE} @self
+  - sound{s=entity.sheep.shear;v=1;p=1;sc=HOSTILE} @self
+  
+legendary_mimic_cut_tongue_stay_cut:
+  Skills:
+  - aura{auraName=legendaryMimicCutTongue;duration=999999;oE=legendary_mimic_cut_tongue_stay_cut} @self
+
+#Legendary Mimic Bite
+legendary_mimic_bite:
+  Conditions:
+  - incombat true
+  - targetwithin{d=16} true
+  - hasaura{n=legendaryMimicClosed} false
+  - hasaura{n=legendaryMimicCutTongue} false
+  - offgcd true
+  - varisset{var=caster.melee_queue} false
+  Skills:
+  - setvar{var=target.melee_queue;d=10} @EiR{r=4;targetplayers=false}
+  - CancelEvent @self
+  - gcd{ticks=20}
+  - setspeed{speed=0;type=WALKING} @self
+  - state{model=legendary_mimic;state=bite} @self
+  - rootmotion{ov=true} @self
+  - delay 6
+  - sound{s=entity.evoker_fangs.attack;v=0.5;p=1.5;sc=HOSTILE} @self
+  - delay 1
+  - aura{auraName=legendaryMimicBiteD;duration=5;oT=legendary_mimic_bite_damage} @self
+  - delay 13
+  - rootmotion{ov=false} @self
+  - setspeed{speed=1;type=WALKING} @self
+  
+legendary_mimic_bite_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=8} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=legendary_mimic;pid=tongue2}
+
+#Legendary Mimic Bite Fast
+legendary_mimic_bite_fast:
+  Conditions:
+  - incombat true
+  - targetwithin{d=16} true
+  - hasaura{n=legendaryMimicClosed} false
+  - hasaura{n=legendaryMimicCutTongue} true
+  - offgcd true
+  - varisset{var=caster.melee_queue} false
+  Skills:
+  - setvar{var=target.melee_queue;d=10} @EiR{r=4;targetplayers=false}
+  - CancelEvent @self
+  - gcd{ticks=13.33}
+  - setspeed{speed=0;type=WALKING} @self
+  - state{model=legendary_mimic;state=bite;speed=1.5} @self
+  - rootmotion{ov=true} @self
+  - delay 4
+  - sound{s=entity.evoker_fangs.attack;v=0.5;p=1.5;sc=HOSTILE} @self
+  - delay 0.66
+  - aura{auraName=legendaryMimicBiteFastD;duration=5;oT=legendary_mimic_bite_fast_damage} @self
+  - lunge{v=0.8} @target
+  - delay 3
+  - sound{s=entity.breeze.hurt;v=0.5;p=1.3;sc=HOSTILE} @self
+  - sound{s=entity.ender_dragon.hurt;v=0.3;p=2;sc=HOSTILE} @self
+  - delay 5.67
+  - rootmotion{ov=false} @self
+  - setspeed{speed=1;type=WALKING} @self
+  
+legendary_mimic_bite_fast_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=10} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=legendary_mimic;pid=tongue2}
+
+#Legendary Mimic Bite Tongue
+legendary_mimic_bite_tongue:
+  Cooldown: 5
+  Conditions:
+  - incombat true
+  - targetwithin{d=16} true
+  - hasaura{n=legendaryMimicClosed} false
+  - hasaura{n=legendaryMimicCutTongue} false
+  - offgcd true
+  - varisset{var=caster.melee_queue} false
+  Skills:
+  - setvar{var=target.melee_queue;d=10} @EiR{r=4;targetplayers=false}
+  - CancelEvent @self
+  - gcd{ticks=20}
+  - setspeed{speed=0;type=WALKING} @self
+  - state{model=legendary_mimic;state=bite_tongue} @self
+  - rootmotion{ov=true} @self
+  - delay 6
+  - sound{s=entity.evoker_fangs.attack;v=0.5;p=1.5;sc=HOSTILE} @self
+  - delay 1
+  - aura{auraName=legendaryMimicBiteTongueD;duration=5;oT=legendary_mimic_bite_tongue_damage} @self
+  - delay 3
+  - sound{s=entity.drowned.step;v=0.5;p=1.5;sc=HOSTILE} @self
+  - sound{s=entity.breeze.hurt;v=0.5;p=1.3;sc=HOSTILE} @self
+  - sound{s=entity.polar_bear.death;v=0.5;p=2;sc=HOSTILE} @self
+  - delay 10
+  - rootmotion{ov=false} @self
+  - setspeed{speed=1;type=WALKING} @self
+  
+legendary_mimic_bite_tongue_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=4} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=legendary_mimic;pid=tongue2}
+  
+legendary_mimic_saliva_sounds:
+  Skills:
+  - sound{s=entity.frog.tongue;v=0.5;p=1;sc=HOSTILE} @self
+
+#Legendary Mimic Damaged
+legendary_mimic_damaged:
+  Conditions:
+  - hasaura{n=legendaryMimicOpened} true
+  Skills:
+  - sound{s=entity.breeze.hurt;v=0.5;p=1.3;sc=HOSTILE} @self
+  - sound{s=entity.ender_dragon.hurt;v=0.3;p=2;sc=HOSTILE} @self
+
+#Legendary Mimic Death
+legendary_mimic_death:
+  Skills:
+  - sound{s=entity.breeze.death;v=0.5;p=1.3;sc=HOSTILE} @self
+  - sound{s=entity.creaking.death;v=0.5;p=2;sc=HOSTILE} @self
+  - delay 10
+  - dropitem{i=iron_ingot 4-16} @selfLocation{y=0.5}
+  - sound{s=entity.allay.item_taken;v=0.5;p=1.3;sc=HOSTILE} @self
+  - delay 10
+  - dropitem{i=gold_ingot 4-16} @selfLocation{y=0.5}
+  - sound{s=entity.allay.item_taken;v=0.5;p=1.3;sc=HOSTILE} @self
+  - delay 10
+  - dropitem{i=diamond 4-16} @selfLocation{y=0.5}
+  - sound{s=entity.allay.item_taken;v=0.5;p=1.3;sc=HOSTILE} @self
+  - delay 13	0
+  - particle{p=cloud;amount=50;x=5;z=20;s=0.07} @self

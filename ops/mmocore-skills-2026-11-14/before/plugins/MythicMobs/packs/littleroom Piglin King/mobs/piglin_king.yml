@@ -1,0 +1,304 @@
+﻿#########################################################
+## Developed by Little Room, patreon.com/littleroomdev ##
+#########################################################
+
+
+LRD_PIGLINKING: 
+  Type: HUSK
+  Display: "Piglin King"
+  Health: 250
+  Damage: 1
+  Faction: PIGLINKING
+  AITargetSelectors:
+  - players
+  AIGoalSelectors:
+  - clear
+  Options:
+    Silent: true
+    PreventOtherDrops: true
+    KnockbackResistance: 1
+    FollowRange: 128
+    Despawn: NEVER
+    MovementSpeed: 0.2
+    #NoAI: true
+  Skills:
+  - CancelEvent{sync=true} @self ~onInteract
+  - CancelEvent{sync=true} @self ~onAttack
+  - model{m=lrd_piglin_king;usm=true;d=false;lp=false;step=1;lyaw=true} @self ~onSpawn
+  - model{m=lrd_piglin_king;usm=true;d=false;lp=false;step=1;lyaw=true} @self ~onLoad
+  - state{s=fire_spin_layer;p=7} @self ~onSpawn
+  - state{s=fire_spin_layer;p=7} @self ~onLoad
+  - bodyrotation{mh=40;mb=40;rde=40;rdu=120} @self ~onSpawn
+  - bodyrotation{mh=40;mb=40;rde=40;rdu=120} @self ~onLoad
+  - setvar{var=caster.servantsdead;val=0;type=INTEGER} @self ~onSpawn
+  - partvis{pid=grapes} @self ~onSpawn
+  - partvis{pid=grapes} @self ~onLoad
+  - partvis{pid=root_fire;child=true} @self ~onSpawn
+  - partvis{pid=root_fire;child=true} @self ~onLoad
+  - brightness{b=15;s=15;pid=fire;em=false} @self ~onSpawn
+  - brightness{b=15;s=15;pid=fire;em=false} @self ~onLoad
+  - brightness{b=15;s=15;pid=crystal} @self ~onSpawn
+  - brightness{b=15;s=15;pid=crystal} @self ~onLoad
+  - throw{v=3;vy=-1} @pir{r=24;conditions=[ - boundingboxesoverlap]} ~onTimer:1
+  - skill{s=LRD_PIGLINKING_bossbar_set} @self ~onSpawn
+  - skill{s=LRD_PIGLINKING_bossbar_damage} @self ~onDamaged
+  - skill{s=LRD_PIGLINKING_eat_grapes} @self ~onTimer:20 <100%
+  - skill{s=LRD_PIGLINKING_INVULNERABLE} @self ~onTimer:10
+  ## MOVEMENT ##
+  - skill{s=LRD_PIGLINKING_turn_right} @target ~onTimer:1
+  - skill{s=LRD_PIGLINKING_turn_left} @target ~onTimer:1
+  - skill{s=LRD_PIGLINKING_stop_turn} @target ~onTimer:20
+  - skill{s=LRD_PIGLINKING_forward_movement} @target ~onTimer:1
+  ## SERVANTS ##
+  - bindHitbox{mid=lrd_piglin_king;p=ob_fl_servant;t=LRD_PIGLINKING_FL_SERVANT_HITBOX} @self ~onSpawn
+  - hitboxconfig{mid=lrd_piglin_king;pid=ob_fl_servant;pass=0} @self ~onSpawn
+  - bindHitbox{mid=lrd_piglin_king;p=ob_fr_servant;t=LRD_PIGLINKING_FR_SERVANT_HITBOX} @self ~onSpawn
+  - hitboxconfig{mid=lrd_piglin_king;pid=ob_fr_servant;pass=0} @self ~onSpawn
+  - bindHitbox{mid=lrd_piglin_king;p=ob_br_servant;t=LRD_PIGLINKING_BR_SERVANT_HITBOX} @self ~onSpawn
+  - hitboxconfig{mid=lrd_piglin_king;pid=ob_br_servant;pass=0} @self ~onSpawn
+  - bindHitbox{mid=lrd_piglin_king;p=ob_bl_servant;t=LRD_PIGLINKING_BL_SERVANT_HITBOX} @self ~onSpawn
+  - hitboxconfig{mid=lrd_piglin_king;pid=ob_bl_servant;pass=0} @self ~onSpawn
+  - skill{s=LRD_PIGLINKING_lose_frontleft_servant} @self ~onSignal:fl_servant_death
+  - skill{s=LRD_PIGLINKING_damage_frontleft_servant} @self ~onSignal:fl_servant_damaged
+  - skill{s=LRD_PIGLINKING_lose_frontright_servant} @self ~onSignal:fr_servant_death
+  - skill{s=LRD_PIGLINKING_damage_frontright_servant} @self ~onSignal:fr_servant_damaged
+  - skill{s=LRD_PIGLINKING_lose_backright_servant} @self ~onSignal:br_servant_death
+  - skill{s=LRD_PIGLINKING_damage_backright_servant} @self ~onSignal:br_servant_damaged
+  - skill{s=LRD_PIGLINKING_lose_backleft_servant} @self ~onSignal:bl_servant_death
+  - skill{s=LRD_PIGLINKING_damage_backleft_servant} @self ~onSignal:bl_servant_damaged
+  ## STUNNED ##
+  - skill{s=LRD_PIGLINKING_stun_hit} @self ~onDamaged
+  ## SPELLS ##
+  - skill{s=LRD_PIGLINKING_spell_fire_circle} @self ~onTimer:20
+  - skill{s=LRD_PIGLINKING_spell_fire_circle_damage} @eir{r=4} ~onTimer:5
+  - skill{s=LRD_PIGLINKING_spell_AOE} @target ~onTimer:20
+  - skill{s=LRD_PIGLINKING_protection_spell;origin=@modelpart{pid=protectionorigin};fromorigin=true} @ENO{r=4;l=false;conditions=[ - onground false]} ~onDamaged
+  ## LOSE THRONE ##
+  - skill{s=LRD_PIGLINKING_lose_throne} @self ~onDamaged <25%
+  
+LRD_PIGLINKING_NO_THRONE: 
+  Type: IRON_GOLEM
+  Display: "Piglin King"
+  Health: 250
+  Damage: 1
+  Faction: PIGLINKING
+  AITargetSelectors:
+  - players
+  Options:
+    Silent: true
+    PreventOtherDrops: true
+    KnockbackResistance: 1
+    FollowRange: 128
+    Despawn: NEVER
+    MovementSpeed: 0
+    #NoAI: true
+  Skills:
+  - CancelEvent{sync=true} @self ~onInteract
+  - CancelEvent{sync=true} @self ~onAttack
+  - model{m=lrd_piglin_king_solo;usm=true;d=false;lp=false;step=1} @self ~onSpawn
+  - model{m=lrd_piglin_king_solo;usm=true;d=false;lp=false;step=1} @self ~onLoad
+  - bodyrotation{mh=40;mb=40;rde=20;rdu=20} @self ~onSpawn
+  - bodyrotation{mh=40;mb=40;rde=20;rdu=20} @self ~onLoad
+  - brightness{b=15;s=15;pid=crystal} @self ~onSpawn
+  - brightness{b=15;s=15;pid=crystal} @self ~onLoad
+  - gcd{ticks=40} @self ~onSpawn
+  - throw{v=3;vy=-1} @pir{r=24;conditions=[ - boundingboxesoverlap]} ~onTimer:1
+  - skill{s=LRD_PIGLINKING_throneless_bossbar_set} @self ~onSpawn
+  - skill{s=LRD_PIGLINKING_throneless_bossbar_damage} @self ~onDamaged
+  - skill{s=LRD_PIGLINKING_throneless_bounce_near} @target ~onTimer:20
+  - skill{s=LRD_PIGLINKING_throneless_bounce_far} @target ~onTimer:20
+  - skill{s=LRD_PIGLINKING_throneless_bounce_ground} @self ~onTimer:1
+  - skill{s=LRD_PIGLINKING_throneless_roll_attack} @target ~onTimer:20
+  - skill{s=LRD_PIGLINKING_throneless_roll} @modelpart{pid=groundcheck} ~onTimer:1
+  - skill{s=LRD_PIGLINKING_throneless_stop_roll} @self ~onSignal:END_CHARGE
+  - skill{s=LRD_PIGLINKING_throneless_death} @self ~onDeath
+  
+
+
+LRD_PIGLINKING_dummy:
+  Type: MARKER
+  Skills:
+  - signal{s=END_CHARGE} @LivingInRadius{r=5} ~onTimer:1
+  
+  
+  
+LRD_PIGLINKING_FL_SERVANT_HITBOX:
+  Type: PIGLIN
+  Health: 50
+  Faction: PIGLINKING
+  Options:
+    NoAI: true
+    Collidable: false
+  Skills:
+  - skill{s=LRD_PIGLINKING_SERVANT_remove_arrow} @ENO{r=3;l=false} ~onDamaged
+  - signal{s=fl_servant_damaged} @parent ~onDamaged
+  - signal{s=fl_servant_death} @parent ~onDeath
+  
+LRD_PIGLINKING_FR_SERVANT_HITBOX:
+  Type: PIGLIN
+  Health: 50
+  Faction: PIGLINKING
+  Options:
+    NoAI: true
+    Collidable: false
+  Skills:
+  - skill{s=LRD_PIGLINKING_SERVANT_remove_arrow} @ENO{r=3;l=false} ~onDamaged
+  - signal{s=fr_servant_damaged} @parent ~onDamaged
+  - signal{s=fr_servant_death} @parent ~onDeath
+  
+LRD_PIGLINKING_BR_SERVANT_HITBOX:
+  Type: PIGLIN
+  Health: 50
+  Faction: PIGLINKING
+  Options:
+    NoAI: true
+    Collidable: false
+  Skills:
+  - skill{s=LRD_PIGLINKING_SERVANT_remove_arrow} @ENO{r=3;l=false} ~onDamaged
+  - signal{s=br_servant_damaged} @parent ~onDamaged
+  - signal{s=br_servant_death} @parent ~onDeath
+  
+LRD_PIGLINKING_BL_SERVANT_HITBOX:
+  Type: PIGLIN
+  Health: 50
+  Faction: PIGLINKING
+  Options:
+    NoAI: true
+    Collidable: false
+  Skills:
+  - skill{s=LRD_PIGLINKING_SERVANT_remove_arrow} @ENO{r=3;l=false} ~onDamaged
+  - signal{s=bl_servant_damaged} @parent ~onDamaged
+  - signal{s=bl_servant_death} @parent ~onDeath
+  
+LRD_PIGLINKING_DEAD_SERVANT:
+  Type: PIGLIN
+  Options:
+    PreventRandomEquipment: true
+  Skills:
+  - damage{a=100} @self ~onSpawn
+  
+LRD_PIGLINKING_TELEGRAPH_BOUNCE:
+  Type: ARMOR_STAND
+  Faction: PIGLINKING
+  Options:
+    NoAI: true
+    Collidable: false
+    Invincible: true
+    KnockbackResistance: true
+  Skills:
+  - model{m=lrd_piglin_king_meteor_telegraph;usm=true;d=false;scale=3} @self ~onSpawn
+  - model{m=lrd_piglin_king_meteor_telegraph;usm=true;d=false;scale=3} @self ~onLoad
+  - brightness{b=15;s=15} @self ~onSpawn
+  - brightness{b=15;s=15} @self ~onLoad
+  - state{s=load;p=2} @self ~onSpawn
+  - velocity{m=set;x=0;y=-100;z=0} @self ~onSpawn
+  
+  
+LRD_PIGLINKING_slash_fx:
+  Type: ARMOR_STAND
+  Faction: PIGLINKING
+  Options:
+    NoAI: true
+    Collidable: false
+    Invincible: true
+    KnockbackResistance: true
+  Skills:
+  - model{m=lrd_piglin_king_fire_fx;usm=true;d=false;scale=0.75} @self ~onSpawn
+  - model{m=lrd_piglin_king_fire_fx;usm=true;d=false;scale=0.75} @self ~onLoad
+  - BodyRotation{mh=0;mb=0;rdu=0;rde=0} @self ~onSpawn
+  - remove{delay=30} @self ~onSpawn
+  - brightness{b=15;s=15} @self ~onSpawn
+  - brightness{b=15;s=15} @self ~onLoad
+  
+LRD_PIGLINKING_TELEGRAPH_METEOR:
+  Type: ARMOR_STAND
+  Faction: PIGLINKING
+  Options:
+    NoAI: true
+    Collidable: false
+    Invincible: true
+    KnockbackResistance: true
+  Skills:
+  - model{m=lrd_piglin_king_meteor_telegraph;usm=true;d=false;scale=1.25} @self ~onSpawn
+  - model{m=lrd_piglin_king_meteor_telegraph;usm=true;d=false;scale=1.25} @self ~onLoad
+  - brightness{b=15;s=15} @self ~onSpawn
+  - brightness{b=15;s=15} @self ~onLoad
+  - state{s=load;p=2} @self ~onSpawn
+  - velocity{m=set;x=0;y=-100;z=0} @self ~onSpawn
+  - projectile{interpolation=2;
+               bulletType=DISPLAY;
+               mat=MAGMA_BLOCK;
+               rots=0.1,0,0.1;
+               scale=1.5,1.5,1.5;
+               v=25;
+               bulletbrightness=15;
+               oE=LRD_PIGLINKING_meteor_impact;
+               ot=LRD_PIGLINKING_meteor_tick;
+               syo=24;
+               sfo=<random.float.-15to15>;
+               sso=<random.float.-15to15>;
+               delay=30;
+               sE=false} @selflocation ~onSpawn
+  
+LRD_PIGLINKING_GROUND_FX:
+  Type: ARMOR_STAND
+  Faction: PIGLINKING
+  Options:
+    NoAI: true
+    Collidable: false
+    Invincible: true
+    KnockbackResistance: true
+  Skills:
+  - model{m=lrd_piglin_king_ground_fx;usm=true;d=false;scale=1.5} @self ~onSpawn
+  - model{m=lrd_piglin_king_ground_fx;usm=true;d=false;scale=1.5} @self ~onLoad
+  - velocity{m=set;x=0;y=-100;z=0} @self ~onSpawn
+  - BodyClamp{mh=0;mb=0;rde=0;rdu=0} @self ~onSpawn
+  - BodyClamp{mh=0;mb=0;rde=0;rdu=0} @self ~onLoad
+  - remove{delay=40} @self ~onSpawn
+  - lockmodel{l=true;delay=5} @self ~onSpawn
+  - spin{duration=1;velocity=<random.float.0to100>} @self ~onSpawn
+  - effect:particle{p=block;m=dirt;a=25;hs=.5;vs=.15} @self ~onSpawn
+  - skill{s=LRD_PIGLINKING_recoil} @pir{r=15} ~onSpawn
+               
+LRD_PIGLINKING_EMBER:
+  Type: ARMOR_STAND
+  Options:
+    Marker: true
+  Skills:
+  - model{m=lrd_piglin_king_ember;usm=true;step=1;scale=2;d=false} @self ~onSpawn
+  - brightness{b=15;s=15} @self ~onSpawn
+  - brightness{b=14;s=14;delay=40} @self ~onSpawn
+  - brightness{b=13;s=13;delay=41} @self ~onSpawn
+  - brightness{b=12;s=12;delay=42} @self ~onSpawn
+  - brightness{b=11;s=11;delay=43} @self ~onSpawn
+  - brightness{b=10;s=10;delay=45} @self ~onSpawn
+  - brightness{b=9;s=9;delay=46} @self ~onSpawn
+  - brightness{b=8;s=8;delay=47} @self ~onSpawn
+  - brightness{b=7;s=7;delay=48} @self ~onSpawn
+  - brightness{b=6;s=6;delay=49} @self ~onSpawn
+  - brightness{b=5;s=5;delay=50} @self ~onSpawn
+  - brightness{b=4;s=4;delay=51} @self ~onSpawn
+  - brightness{b=3;s=3;delay=52} @self ~onSpawn
+  - brightness{b=2;s=2;delay=53} @self ~onSpawn
+  - brightness{b=1;s=1;delay=54} @self ~onSpawn
+  
+LRD_PIGLINKING_BROKEN_THRONE:
+  Type: ARMOR_STAND
+  Faction: PIGLINKING
+  Options:
+    NoAI: true
+    Collidable: false
+    Invincible: true
+    KnockbackResistance: true
+  Skills:
+  - model{m=lrd_piglin_king_throne;usm=true;d=false} @self ~onSpawn
+  - model{m=lrd_piglin_king_throne;usm=true;d=false} @self ~onLoad
+  - velocity{m=set;x=0;y=-100;z=0} @self ~onSpawn
+  - e:p{p=spark;a=1;hs=.25;vs=.25;repeat=5;repeati=1} @modelpart{pid=chunk;em=false} ~onSpawn
+  - e:p{p=poof;a=1;hs=.25;vs=.25;repeat=15;repeati=1} @modelpart{pid=chunk;em=false} ~onSpawn
+  - e:p{p=flash;a=1;hs=0;vs=0} @self ~onSpawn
+  - skill{s=LRD_PIGLINKING_recoil_big} @pir{r=16} ~onSpawn
+  - throw{v=7;vy=2} @pir{r=16} ~onSpawn
+  - remove{delay=25} @self ~onSpawn
+
+# 36259NFPBMNE7

@@ -1,0 +1,227 @@
+
+# ~Written by RopeFire~
+
+#Common Chest
+common_chest:
+  Type: WOLF
+  Display: 'Common Chest'
+  Health: 50
+  Damage: 0
+  AIGoalSelectors:
+  - clear
+  AITargetSelectors:
+  - clear
+  Options:
+    NoDamageTicks: 10
+    MovementSpeed: 0
+    KnockbackResistance: 1
+    Silent: true
+    Despawn: false
+    Invincible: true
+    Collidable: false
+    PreventSunburn: true
+    PreventBlockInfection: true
+    PreventOtherDrops: true
+    PreventRandomEquipment: true
+    PreventJockeyMounts: true
+  Skills:
+  - skill{s=CancelEvent} @self ~onAttack
+  - model{mid=common_chest;rt=common_chest;n=false;step=1;usm=true} @self ~onSpawn
+  - model{mid=common_chest;rt=common_chest;n=false;step=1;usm=true} @self ~onLoad
+  - randomskill{skills=common_chest_rotation_0,common_chest_rotation_90,common_chest_rotation_180,common_chest_rotation_270} @self ~onSpawn
+  - skill{s=common_chest_open} @self ~onInteract
+  
+#Common Chest
+common_mimic:
+  Type: VINDICATOR
+  Display: 'Common Mimic'
+  Faction: MIMICS
+  Health: 40
+  Armor: 15
+  Damage: 0
+  AIGoalSelectors:
+  - clear
+  - meleeattack
+  - movetowardstarget
+  AITargetSelectors:
+  - clear
+  - attacker
+  - players
+  Options:
+    NoDamageTicks: 10
+    MovementSpeed: 0.2
+    FollowRange: 32
+    KnockbackResistance: 1
+    Silent: true
+    Despawn: false
+    Invincible: false
+    PreventSunburn: true
+    PreventBlockInfection: true
+    PreventOtherDrops: true
+    PreventRandomEquipment: true
+    PreventJockeyMounts: true
+    MaxCombatDistance: 32
+  Skills:
+  - skill{s=CancelEvent} @self ~onAttack
+  - model{mid=common_mimic;rt=common_mimic;n=false;step=1;tint=false;usm=true} @self ~onSpawn
+  - model{mid=common_mimic;rt=common_mimic;n=false;step=1;tint=false;usm=true} @self ~onLoad
+  - randomskill{skills=common_mimic_rotation_0,common_mimic_rotation_90,common_mimic_rotation_180,common_mimic_rotation_270} @self ~onSpawn
+  - skill{s=common_mimic_open} @self ~onInteract
+  - skill{s=common_mimic_cut_tongue} @self ~onInteract
+  - skill{s=common_mimic_spawn} @self ~onSpawn
+  - skill{s=common_mimic_spawn} @self ~onLoad ?!hasaura{n=commonMimicOpened}
+  - randomskill{skills=common_mimic_bite,common_mimic_bite_fast,common_mimic_bite_tongue} @self ~onTimer:25
+  - skill{s=common_mimic_damaged} @self ~onDamaged
+  - CancelEvent @self ~onDamaged ?!hasaura{n=commonMimicOpened}
+  - skill{s=common_mimic_death} @self ~onDeath
+  - sound{s=entity.drowned.ambient_water;v=1;p=2;sc=HOSTILE} @self ~onTimer:100 ?hasaura{n=commonMimicOpened}
+  
+#Rare Chest
+rare_chest:
+  Type: WOLF
+  Display: 'Rare Chest'
+  Health: 50
+  Damage: 0
+  AIGoalSelectors:
+  - clear
+  AITargetSelectors:
+  - clear
+  Options:
+    NoDamageTicks: 10
+    MovementSpeed: 0
+    KnockbackResistance: 1
+    Silent: true
+    Despawn: false
+    Invincible: true
+    Collidable: false
+    PreventSunburn: true
+    PreventBlockInfection: true
+    PreventOtherDrops: true
+    PreventRandomEquipment: true
+    PreventJockeyMounts: true
+  Skills:
+  - skill{s=CancelEvent} @self ~onAttack
+  - model{mid=rare_chest;rt=rare_chest;n=false;step=1;usm=true} @self ~onSpawn
+  - model{mid=rare_chest;rt=rare_chest;n=false;step=1;usm=true} @self ~onLoad
+  - randomskill{skills=rare_chest_rotation_0,rare_chest_rotation_90,rare_chest_rotation_180,rare_chest_rotation_270} @self ~onSpawn
+  - skill{s=rare_chest_open} @self ~onInteract
+  
+#Rare Chest
+rare_mimic:
+  Type: VINDICATOR
+  Display: 'Rare Mimic'
+  Faction: MIMICS
+  Health: 50
+  Armor: 15
+  Damage: 0
+  AIGoalSelectors:
+  - clear
+  - meleeattack
+  - movetowardstarget
+  AITargetSelectors:
+  - clear
+  - attacker
+  - players
+  Options:
+    NoDamageTicks: 10
+    MovementSpeed: 0.2
+    FollowRange: 32
+    KnockbackResistance: 1
+    Silent: true
+    Despawn: false
+    Invincible: false
+    PreventSunburn: true
+    PreventBlockInfection: true
+    PreventOtherDrops: true
+    PreventRandomEquipment: true
+    PreventJockeyMounts: true
+    MaxCombatDistance: 32
+  Skills:
+  - skill{s=CancelEvent} @self ~onAttack
+  - model{mid=rare_mimic;rt=rare_mimic;n=false;step=1;tint=false;usm=true} @self ~onSpawn
+  - model{mid=rare_mimic;rt=rare_mimic;n=false;step=1;tint=false;usm=true} @self ~onLoad
+  - randomskill{skills=rare_mimic_rotation_0,rare_mimic_rotation_90,rare_mimic_rotation_180,rare_mimic_rotation_270} @self ~onSpawn
+  - skill{s=rare_mimic_open} @self ~onInteract
+  - skill{s=rare_mimic_cut_tongue} @self ~onInteract
+  - skill{s=rare_mimic_spawn} @self ~onSpawn
+  - skill{s=rare_mimic_spawn} @self ~onLoad ?!hasaura{n=rareMimicOpened}
+  - randomskill{skills=rare_mimic_bite,rare_mimic_bite_fast,rare_mimic_bite_tongue} @self ~onTimer:25
+  - skill{s=rare_mimic_damaged} @self ~onDamaged
+  - CancelEvent @self ~onDamaged ?!hasaura{n=rareMimicOpened}
+  - skill{s=rare_mimic_death} @self ~onDeath
+  - sound{s=entity.drowned.ambient_water;v=1;p=2;sc=HOSTILE} @self ~onTimer:100 ?hasaura{n=rareMimicOpened}
+  
+#Legendary Chest
+legendary_chest:
+  Type: WOLF
+  Display: 'Legendary Chest'
+  Health: 50
+  Damage: 0
+  AIGoalSelectors:
+  - clear
+  AITargetSelectors:
+  - clear
+  Options:
+    NoDamageTicks: 10
+    MovementSpeed: 0
+    KnockbackResistance: 1
+    Silent: true
+    Despawn: false
+    Invincible: true
+    Collidable: false
+    PreventSunburn: true
+    PreventBlockInfection: true
+    PreventOtherDrops: true
+    PreventRandomEquipment: true
+    PreventJockeyMounts: true
+  Skills:
+  - skill{s=CancelEvent} @self ~onAttack
+  - model{mid=legendary_chest;rt=legendary_chest;n=false;step=1;usm=true} @self ~onSpawn
+  - model{mid=legendary_chest;rt=legendary_chest;n=false;step=1;usm=true} @self ~onLoad
+  - randomskill{skills=legendary_chest_rotation_0,legendary_chest_rotation_90,legendary_chest_rotation_180,legendary_chest_rotation_270} @self ~onSpawn
+  - skill{s=legendary_chest_open} @self ~onInteract
+  
+#Legendary Chest
+legendary_mimic:
+  Type: VINDICATOR
+  Display: 'Legendary Mimic'
+  Faction: MIMICS
+  Health: 64
+  Armor: 15
+  Damage: 0
+  AIGoalSelectors:
+  - clear
+  - meleeattack
+  - movetowardstarget
+  AITargetSelectors:
+  - clear
+  - attacker
+  - players
+  Options:
+    NoDamageTicks: 10
+    MovementSpeed: 0.2
+    FollowRange: 32
+    KnockbackResistance: 1
+    Silent: true
+    Despawn: false
+    Invincible: false
+    PreventSunburn: true
+    PreventBlockInfection: true
+    PreventOtherDrops: true
+    PreventRandomEquipment: true
+    PreventJockeyMounts: true
+    MaxCombatDistance: 32
+  Skills:
+  - skill{s=CancelEvent} @self ~onAttack
+  - model{mid=legendary_mimic;rt=legendary_mimic;n=false;step=1;tint=false;usm=true} @self ~onSpawn
+  - model{mid=legendary_mimic;rt=legendary_mimic;n=false;step=1;tint=false;usm=true} @self ~onLoad
+  - randomskill{skills=legendary_mimic_rotation_0,legendary_mimic_rotation_90,legendary_mimic_rotation_180,legendary_mimic_rotation_270} @self ~onSpawn
+  - skill{s=legendary_mimic_open} @self ~onInteract
+  - skill{s=legendary_mimic_cut_tongue} @self ~onInteract
+  - skill{s=legendary_mimic_spawn} @self ~onSpawn
+  - skill{s=legendary_mimic_spawn} @self ~onLoad ?!hasaura{n=legendaryMimicOpened}
+  - randomskill{skills=legendary_mimic_bite,legendary_mimic_bite_fast,legendary_mimic_bite_tongue} @self ~onTimer:25
+  - skill{s=legendary_mimic_damaged} @self ~onDamaged
+  - CancelEvent @self ~onDamaged ?!hasaura{n=legendaryMimicOpened}
+  - skill{s=legendary_mimic_death} @self ~onDeath
+  - sound{s=entity.drowned.ambient_water;v=1;p=2;sc=HOSTILE} @self ~onTimer:100 ?hasaura{n=legendaryMimicOpened}

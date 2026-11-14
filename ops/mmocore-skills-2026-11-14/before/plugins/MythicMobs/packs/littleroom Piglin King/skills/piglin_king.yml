@@ -1,0 +1,614 @@
+﻿#########################################################
+## Developed by Little Room, patreon.com/littleroomdev ##
+#########################################################
+
+### INVULNERABILITY HANDLER ###
+
+LRD_PIGLINKING_INVULNERABLE:
+  Conditions:
+  - varequals{var=caster.stunned;val=true} false
+  Skills:
+  - potion{type=DAMAGE_RESISTANCE;duration=10;level=4} @self
+
+LRD_PIGLINKING_protection_spell:
+  Conditions:
+  - varequals{var=caster.stunned;val=true} false
+  TargetConditions:
+  - entitytype{t=ARROW} true
+  Skills:
+  - remove
+  - e:p{p=end_rod;a=15;vs=.15;hs=.15;s=0.1}
+
+### BOSSBAR ###
+
+LRD_PIGLINKING_bossbar_set:
+  Skills:
+  - barCreate{
+    name="LRD_PIGLINKING";
+    display="<caster.name>";
+    value=<caster.hp>/<caster.mhp>;color=RED;
+    style=SEGMENTED_6
+    } @self
+
+LRD_PIGLINKING_bossbar_damage:
+  Conditions:
+  - varequals{var=caster.stunned;val=true} true
+  Skills:
+  - barSet{name="LRD_PIGLINKING";display="<caster.name>";value=<caster.hp>/<caster.mhp>;color=WHITE;style=SOLID} @self
+  - delay 2
+  - barSet{name="LRD_PIGLINKING";display="<caster.name>";value=<caster.hp>/<caster.mhp>;color=RED;style=SOLID} @self
+  - delay 2
+  - barSet{name="LRD_PIGLINKING";display="<caster.name>";value=<caster.hp>/<caster.mhp>;color=WHITE;style=SOLID} @self
+  - delay 2
+  - barSet{name="LRD_PIGLINKING";display="<caster.name>";value=<caster.hp>/<caster.mhp>;color=RED;style=SOLID} @self
+
+### RECOIL ###
+
+LRD_PIGLINKING_recoil:
+  Skills:
+  - recoil{r=10;pitch=-.4}
+  - delay 1
+  - recoil{r=10;pitch=.3}
+  - delay 1
+  - recoil{r=10;pitch=-.2}
+  - delay 1
+  - recoil{r=10;pitch=.1}
+
+
+
+LRD_PIGLINKING_recoil_big:
+  Skills:
+  - recoil{r=20;pitch=-.8}
+  - delay 1
+  - recoil{r=20;pitch=.6}
+  - delay 1
+  - recoil{r=20;pitch=-.4}
+  - delay 1
+  - recoil{r=20;pitch=.2}
+
+## EAT GRAPES ##
+
+LRD_PIGLINKING_eat_grapes:
+  Cooldown: 10
+  Conditions:
+  - varequals{var=caster.stunned;val=true} false
+  - offgcd true
+  Skills:
+  - gcd{ticks=80}
+  - state{s=eat_grape;p=10} @self
+  - sound{s=littleroom_piglinking:grunt;v=2;sc=HOSTILE;pitch=<random.float.0.9to1.1>} @self
+  - partvis{pid=grapes;v=true;delay=5} @self
+  - partvis{pid=grapes;v=false;delay=65;lo=5} @self
+  - e:p{p=block;m=PURPLE_CONCRETE;a=10;hs=.15;vs=.15;delay=65;repeat=2;repeati=5} @modelpart{pid=king_mouth}
+  - e:p{p=composter;a=10;hs=1;vs=1;delay=65} @modelpart{pid=king_body}
+  - healpercent{m=0.01;repeat=5;repeati=1;delay=65} @self
+  - barSet{name="LRD_PIGLINKING";display="<caster.name>";value=<caster.hp>/<caster.mhp>;color=WHITE;style=SOLID;repeat=4;repeati=1;delay=65} @self
+  - barSet{name="LRD_PIGLINKING";display="<caster.name>";value=<caster.hp>/<caster.mhp>;color=RED;style=SOLID;delay=70} @self
+  
+  
+  
+  
+  
+### FAKE MOVEMENT ###
+
+LRD_PIGLINKING_forward_movement:
+  Conditions:
+  - varequals{var=caster.stunned;val=true} false
+  TargetConditions:
+  - distance{d=<4} false
+  #- fieldofview{angle=145} true
+  Skills:
+  - velocity{m=add;x=0;y=0;z=0.025;relative=true} @self
+
+### SLOW ROTATION ###
+
+LRD_PIGLINKING_stop_turn:
+  Conditions:
+  - varequals{var=caster.turning;v=true} false
+  TargetConditions:
+  - fieldofview{angle=90} true
+  Skills:
+  - state{s=turn_right;p=7;r=true} @self
+  - state{s=turn_left;p=7;r=true} @self
+  
+
+LRD_PIGLINKING_turn_right:
+  TargetConditions:
+  - fieldofview{angle=180;r=270} true
+  Skills:
+  #- skill{s=LRD_PIGLINKING_turn_loco} @target
+  - state{s=turn_right;cd=3;p=7;li=5;lo=5} @self
+  - setvar{var=caster.turning;val=true;type=STRING;d=20} @self
+  - setrotation{relative=true;yaw=1} @self
+
+LRD_PIGLINKING_turn_left:
+  TargetConditions:
+  - fieldofview{angle=180;r=90} true
+  Skills:
+  #- skill{s=LRD_PIGLINKING_turn_loco} @target
+  - state{s=turn_left;cd=3;p=7;li=5;lo=5} @self
+  - setvar{var=caster.turning;val=true;type=STRING;d=20} @self
+  - setrotation{relative=true;yaw=-1} @self
+
+
+LRD_PIGLINKING_turn_loco:
+  TargetConditions:
+  - fieldofview{angle=90} false
+  Skills:
+  - velocity{m=add;x=0;y=0;z=0.01;relative=true} @self
+  
+
+
+
+
+## SERVANTS ##
+
+LRD_PIGLINKING_SERVANT_remove_arrow:
+  TargetConditions:
+  - onground false
+  - entitytype{t=ARROW} true
+  Skills:
+  - remove
+  
+# FRONT LEFT #
+
+LRD_PIGLINKING_damage_frontleft_servant:
+  Skills:
+  - tint{c=f44336;pid=servant1;em=false} @self
+  - tint{c=ffffff;pid=servant1;em=false;delay=2} @self
+  - brightness{b=15;s=15;pid=servant1;em=false} @self
+  - brightness{b=-1;s=-1;pid=servant1;em=false;delay=2} @self
+  
+LRD_PIGLINKING_lose_frontleft_servant:
+  Skills:
+  - setvar{var=caster.frontleftservant;val=dead;type=STRING} @self
+  - variableadd{var=caster.servantsdead;amount=1} @self
+  - summon{t=LRD_PIGLINKING_DEAD_SERVANT} @modelpart{pid=servant1_body}
+  - state{s=servant_die_leftside;p=2} @self
+  - state{s=front_left_down;p=3;li=2} @self
+  - partvis{pid=servant1_body;child=true} @self
+  - skill{s=LRD_PIGLINKING_stun} @self
+  
+# FRONT RIGHT #
+
+LRD_PIGLINKING_damage_frontright_servant:
+  Skills:
+  - tint{c=f44336;pid=servant2;em=false} @self
+  - tint{c=ffffff;pid=servant2;em=false;delay=2} @self
+  - brightness{b=15;s=15;pid=servant2;em=false} @self
+  - brightness{b=-1;s=-1;pid=servant2;em=false;delay=2} @self
+  
+LRD_PIGLINKING_lose_frontright_servant:
+  Skills:
+  - setvar{var=caster.frontrightservant;val=dead;type=STRING} @self
+  - variableadd{var=caster.servantsdead;amount=1}
+  - summon{t=LRD_PIGLINKING_DEAD_SERVANT} @modelpart{pid=servant2_body}
+  - state{s=servant_die_rightside;p=2} @self
+  - state{s=front_right_down;p=3;li=2} @self
+  - partvis{pid=servant2_body;child=true} @self
+  - skill{s=LRD_PIGLINKING_stun} @self
+  
+ # BACK RIGHT #
+
+LRD_PIGLINKING_damage_backright_servant:
+  Skills:
+  - tint{c=f44336;pid=servant3;em=false} @self
+  - tint{c=ffffff;pid=servant3;em=false;delay=2} @self
+  - brightness{b=15;s=15;pid=servant3;em=false} @self
+  - brightness{b=-1;s=-1;pid=servant3;em=false;delay=2} @self
+  
+LRD_PIGLINKING_lose_backright_servant:
+  Skills:
+  - setvar{var=caster.backrightservant;val=dead;type=STRING} @self
+  - variableadd{var=caster.servantsdead;amount=1}
+  - summon{t=LRD_PIGLINKING_DEAD_SERVANT} @modelpart{pid=servant3_body}
+  - state{s=servant_die_leftside;p=2} @self
+  - state{s=back_right_down;p=3;li=2} @self
+  - partvis{pid=servant3_body;child=true} @self
+  - skill{s=LRD_PIGLINKING_stun} @self
+  
+ # BACK LEFT #
+
+LRD_PIGLINKING_damage_backleft_servant:
+  Skills:
+  - tint{c=f44336;pid=servant4;em=false} @self
+  - tint{c=ffffff;pid=servant4;em=false;delay=2} @self
+  - brightness{b=15;s=15;pid=servant4;em=false} @self
+  - brightness{b=-1;s=-1;pid=servant4;em=false;delay=2} @self
+  
+LRD_PIGLINKING_lose_backleft_servant:
+  Skills:
+  - setvar{var=caster.backleftservant;val=dead;type=STRING} @self
+  - variableadd{var=caster.servantsdead;amount=1}
+  - summon{t=LRD_PIGLINKING_DEAD_SERVANT} @modelpart{pid=servant4_body}
+  - state{s=servant_die_rightside;p=2} @self
+  - state{s=back_left_down;p=3;li=2} @self
+  - partvis{pid=servant4_body;child=true} @self
+  - skill{s=LRD_PIGLINKING_stun} @self
+ 
+ 
+## STUN ##
+
+
+
+LRD_PIGLINKING_stun:
+  Conditions:
+  - varequals{var=caster.stunned;val=true} false
+  - variableInRange{var=caster.servantsdead;val=>1} true
+  Skills:
+  - gcd{ticks=200}
+  - partvis{pid=root_fire;child=true;v=false;repeat=60;repeati=1} @self
+  - setvar{var=caster.flamecircle;val=false;type=STRING;repeat=60;repeati=1} @self
+  - setvar{var=caster.stunned;val=true;type=STRING} @self
+  - setvar{var=caster.stunned;val=false;type=STRING;delay=140} @self
+  - setvar{var=caster.servantsdead;val=0;type=INTEGER;delay=140} @self
+  - state{s=eat_grape;p=2;r=true} @self
+  - state{s=back_left_down;p=3;r=true} @self
+  - state{s=back_right_down;p=3;r=true} @self
+  - state{s=front_left_down;p=3;r=true} @self
+  - state{s=front_right_down;p=3;r=true} @self
+  - state{s=stun;p=4} @self
+  - sound{s=littleroom_piglinking:impact;v=5;sc=HOSTILE;pitch=<random.float.0.9to1.1>;delay=25} @self
+  - skill{s=LRD_PIGLINKING_recoil_big;delay=25} @pir{r=16}
+  - setspeed{s=0} @self
+  - setspeed{s=1;delay=200} @self
+  - lockmodel{l=true} @self
+  - lockmodel{l=false;delay=200} @self
+  - e:p{p=poof;a=30;hs=.25;vs=.25;delay=40} @modelpart{pid=servant1_body}
+  - e:p{p=poof;a=30;hs=.25;vs=.25;delay=50} @modelpart{pid=servant2_body}
+  - e:p{p=poof;a=30;hs=.25;vs=.25;delay=50} @modelpart{pid=servant3_body}
+  - e:p{p=poof;a=30;hs=.25;vs=.25;delay=50} @modelpart{pid=servant4_body}
+  - partvis{pid=servant1_body;child=true;v=true;delay=120} @self
+  - partvis{pid=servant2_body;child=true;v=true;delay=120} @self
+  - partvis{pid=servant3_body;child=true;v=true;delay=120} @self
+  - partvis{pid=servant4_body;child=true;v=true;delay=120} @self
+  - skill{s=LRD_PIGLINKING_reassign_servant_hitboxes;delay=200} @self
+  
+LRD_PIGLINKING_reassign_servant_hitboxes:
+  Skills:
+  - skill{s=LRD_PIGLINKING_reassign_frontleft} @self
+  - skill{s=LRD_PIGLINKING_reassign_frontright} @self
+  - skill{s=LRD_PIGLINKING_reassign_backright} @self
+  - skill{s=LRD_PIGLINKING_reassign_backleft} @self
+  
+LRD_PIGLINKING_reassign_frontleft:
+  Conditions:
+  - varequals{var=caster.frontleftservant;val=dead} true
+  Skills:
+  - setvar{var=caster.frontleftservant;val=alive;type=STRING} @self
+  - bindHitbox{mid=lrd_piglin_king;p=ob_fl_servant;t=LRD_PIGLINKING_FL_SERVANT_HITBOX} @self
+  - hitboxconfig{mid=lrd_piglin_king;pid=ob_fl_servant;pass=0} @self
+  
+LRD_PIGLINKING_reassign_frontright:
+  Conditions:
+  - varequals{var=caster.frontrightservant;val=dead} true
+  Skills:
+  - setvar{var=caster.frontrightservant;val=alive;type=STRING} @self
+  - bindHitbox{mid=lrd_piglin_king;p=ob_fr_servant;t=LRD_PIGLINKING_FR_SERVANT_HITBOX} @self
+  - hitboxconfig{mid=lrd_piglin_king;pid=ob_fr_servant;pass=0} @self
+  
+LRD_PIGLINKING_reassign_backright:
+  Conditions:
+  - varequals{var=caster.backrightservant;val=dead} true
+  Skills:
+  - setvar{var=caster.backrightservant;val=alive;type=STRING} @self
+  - bindHitbox{mid=lrd_piglin_king;p=ob_br_servant;t=LRD_PIGLINKING_BR_SERVANT_HITBOX} @self
+  - hitboxconfig{mid=lrd_piglin_king;pid=ob_br_servant;pass=0} @self
+  
+LRD_PIGLINKING_reassign_backleft:
+  Conditions:
+  - varequals{var=caster.backleftservant;val=dead} true
+  Skills:
+  - setvar{var=caster.backleftservant;val=alive;type=STRING} @self
+  - bindHitbox{mid=lrd_piglin_king;p=ob_bl_servant;t=LRD_PIGLINKING_BL_SERVANT_HITBOX} @self
+  - hitboxconfig{mid=lrd_piglin_king;pid=ob_bl_servant;pass=0} @self
+  
+  
+LRD_PIGLINKING_stun_hit:
+  Conditions:
+  - varequals{var=caster.stunned;val=true} true
+  Skills:
+  - sound{s=littleroom_piglinking:grunt;v=2;sc=HOSTILE;pitch=<random.float.0.9to1.1>} @self
+  - state{s=stun_hit_<random.1to3>;p=5;lo=1} @self
+  - tint{c=f44336;pid=king;em=false} @self
+  - tint{c=ffffff;pid=king;em=false;delay=2} @self
+  - brightness{b=15;s=15;pid=king;em=false} @self
+  - brightness{b=-1;s=-1;pid=king;em=false;delay=2} @self
+  
+## SPELLS ##
+
+
+LRD_PIGLINKING_spell_AOE:
+  Cooldown: 20
+  Conditions:
+  - incombat true
+  - offgcd true
+  - varequals{var=caster.stunned;val=true} false
+  Skills:
+  - gcd{ticks=60}
+  - sound{s=littleroom_piglinking:grunt;v=2;sc=HOSTILE;pitch=<random.float.0.9to1.1>} @self
+  - state{s=king_castspell_1} @self
+  - delay 20
+  - sound{s=littleroom_piglinking:meteor;v=2;sc=HOSTILE;pitch=<random.float.0.9to1.1>} @self
+  - summon{t=LRD_PIGLINKING_TELEGRAPH_METEOR;repeat=10;repeati=5} @RLNTE{r=5;a=1;minr=0}
+  
+LRD_PIGLINKING_meteor_tick:
+  Skills:
+  - e:p{p=large_smoke;a=4;hs=.5;vs=.5} @origin
+  
+LRD_PIGLINKING_meteor_impact:
+  Skills:
+  - sound{s=littleroom_piglinking:impact;v=2;sc=HOSTILE;pitch=<random.float.0.9to1.1>} @self
+  - totem{md=2;oH=LRD_PIGLINKING_meteor_impact_damage;hr=2;vr=2;drawhitbox=false;hp=true}
+  - summon{t=LRD_PIGLINKING_GROUND_FX} @origin
+  - e:p{p=lava;a=25;hs=.5;vs=.5} @origin
+  - partvis{pid=hexadecagon} @self
+  - remove{delay=2} @self
+  
+LRD_PIGLINKING_meteor_impact_damage:
+  Skills:
+  - throw{v=4;vy=4}
+  - damage{a=1}
+  - ignite{d=20}
+  
+## CIRCLE ##
+  
+LRD_PIGLINKING_spell_fire_circle:
+  Cooldown: 20
+  Conditions:
+  - incombat true
+  - offgcd true
+  - varequals{var=caster.flamecircle;val=true} false
+  - varequals{var=caster.stunned;val=true} false
+  Skills:
+  - gcd{ticks=60}
+  - sound{s=littleroom_piglinking:grunt;v=2;sc=HOSTILE;pitch=<random.float.0.9to1.1>} @self
+  - setvar{var=caster.flamecircle;val=true;type=STRING;delay=30} @self
+  - state{s=king_castspell_1} @self
+  - delay 20
+  - sound{s=littleroom_piglinking:firecircle;v=2;sc=HOSTILE;pitch=<random.float.0.9to1.1>} @self
+  - sound{s=littleroom_piglinking:firecirclespawn;v=2;sc=HOSTILE;pitch=<random.float.0.9to1.1>} @self
+  - partvis{pid=root_fire;child=true;v=true;delay=2} @self
+  - state{s=fire_spin_spawn;p=8} @self
+  - skill{s=LRD_PIGLINKING_spell_fire_circle_ember;repeat=100;repeati=2} @sphere{r=6;yo=16;p=1}
+  - delay 240
+  - setSkillCooldown{skill=LRD_PIGLINKING_spell_fire_circle;seconds=10} @self
+  - partvis{pid=root_fire;child=true;v=false} @self
+  - setvar{var=caster.flamecircle;val=false;type=STRING} @self
+  
+LRD_PIGLINKING_spell_fire_circle_ember:
+  Conditions:
+  - varequals{var=caster.flamecircle;val=true} true
+  Skills:
+  - projectile{bullet=MOB;
+               mob=LRD_PIGLINKING_EMBER;
+               se=false;
+               sb=false;
+               oT=LRD_PIGLINKING_spell_fire_circle_ember_setdirection;
+               d=60} @sphere{r=6;yo=16;p=1}
+  
+LRD_PIGLINKING_spell_fire_circle_ember_setdirection:
+  Skills:
+  - setprojectiledirection @ProjectileForward{y=1;f=10;rot=10}
+  
+LRD_PIGLINKING_spell_fire_circle_damage:
+  TargetConditions:
+  - samefaction false
+  Conditions:
+  - varequals{var=caster.flamecircle;val=true} true
+  Skills:
+  - throw{v=2;vy=2} 
+  - basedamage{m=1}
+  - ignite{d=60}
+  
+  
+### LOSE THRONE ###
+
+LRD_PIGLINKING_lose_throne:
+  Cooldown: 5
+  Skills:
+  #- setvar{var=caster.currenthealth;val="<caster.mhp>-<caster.hp>";type=INTEGER} @self
+  - sound{s=littleroom_piglinking:impact;v=2;sc=HOSTILE;pitch=<random.float.0.9to1.1>} @self
+  - summon{t=LRD_PIGLINKING_BROKEN_THRONE} @self
+  - summon{t=LRD_PIGLINKING_NO_THRONE} @self
+  #- message{m="<caster.var.currenthealth>"} @everyone
+  - sethealth{a=<caster.hp>} @children
+  - remove{delay=1} @self
+
+
+LRD_PIGLINKING_throneless_bossbar_set:
+  Skills:
+  #- message{m="<caster.hp>/<caster.mhp>"} @everyone
+  - propel{v=0.5} @selflocation{y=3}
+  - barCreate{name="LRD_PIGLINKING";display="<caster.name>";value=<caster.hp>/<caster.mhp>;color=RED;style=SEGMENTED_6} @self
+  
+LRD_PIGLINKING_throneless_bossbar_damage:
+  Skills:
+  - tint{c=f44336;pid=king;em=false} @self
+  - tint{c=ffffff;pid=king;em=false;delay=2} @self
+  - brightness{b=15;s=15;pid=king;em=false} @self
+  - brightness{b=-1;s=-1;pid=king;em=false;delay=2} @self
+  - barSet{name="LRD_PIGLINKING";display="<caster.name>";value=<caster.hp>/<caster.mhp>;color=WHITE;style=SOLID} @self
+  - delay 2
+  - barSet{name="LRD_PIGLINKING";display="<caster.name>";value=<caster.hp>/<caster.mhp>;color=RED;style=SOLID} @self
+  - delay 2
+  - barSet{name="LRD_PIGLINKING";display="<caster.name>";value=<caster.hp>/<caster.mhp>;color=WHITE;style=SOLID} @self
+  - delay 2
+  - barSet{name="LRD_PIGLINKING";display="<caster.name>";value=<caster.hp>/<caster.mhp>;color=RED;style=SOLID} @self
+  
+## BOUNCE ATTACK ##
+
+LRD_PIGLINKING_throneless_bounce_near:
+  Cooldown: 5
+  TargetConditions:
+  - distance{d=6to12} true
+  Conditions:
+  - incombat true
+  - offgcd true
+  - onground true
+  Skills:
+  - gcd{ticks=60}
+  - state{s=leap} @self
+  - summon{t=LRD_PIGLINKING_TELEGRAPH_BOUNCE} @target
+  - delay 5
+  - sound{s=littleroom_piglinking:leap;v=5;sc=HOSTILE;pitch=<random.float.0.9to1.1>} @self
+  - lockmodel{l=true} @self
+  - lunge{velocity=1;velocityY=2} @children{target=ARMORSTANDS}
+  - delay 15
+  - setvar{var=caster.inair;val=true;type=STRING} @self
+  - delay 5
+  - state{s=in_air} @self
+  - delay 15
+  - lunge{velocity=2;velocityY=-6} @children{target=ARMORSTANDS}
+  
+LRD_PIGLINKING_throneless_bounce_far:
+  Cooldown: 5
+  TargetConditions:
+  - distance{d=12to18} true
+  Conditions:
+  - incombat true
+  - offgcd true
+  - onground true
+  Skills:
+  - gcd{ticks=60}
+  - state{s=leap} @self
+  - summon{t=LRD_PIGLINKING_TELEGRAPH_BOUNCE} @target
+  - delay 5
+  - lockmodel{l=true} @self
+  - lunge{velocity=2;velocityY=2} @children{target=ARMORSTANDS}
+  - delay 15
+  - setvar{var=caster.inair;val=true;type=STRING} @self
+  - delay 5
+  - state{s=in_air} @self
+  - delay 15
+  - lunge{velocity=2;velocityY=-6} @children{target=ARMORSTANDS}
+
+  
+LRD_PIGLINKING_throneless_bounce_ground:
+  Cooldown: 1
+  Conditions:
+  - varequals{var=caster.inair;val=true} true
+  - altitude{a=<3} true
+  Skills:
+  - setSkillCooldown{skill=LRD_PIGLINKING_throneless_bounce_far;seconds=3} @self
+  - setSkillCooldown{skill=LRD_PIGLINKING_throneless_bounce_near;seconds=3} @self
+  - sound{s=littleroom_piglinking:impact;v=5;sc=HOSTILE;pitch=<random.float.0.9to1.1>} @self
+  - skill{s=LRD_PIGLINKING_recoil_big} @pir{r=16}
+  - totem{md=2;drawhitbox=false;oH=LRD_PIGLINKING_throneless_bounce_damage;hr=4;vr=2} @self
+  - projectile{v=20;i=2;oT=LRD_PIGLINKING_throneless_bounce_ground_tick;oH=LRD_PIGLINKING_throneless_bounce_ground_damage;sso=0;sfo=0;hs=true;hfs=0;se=false;drawhitbox=false;hr=1;vr=2} @ring{r=12;p=8}
+  - gcd{ticks=20}
+  - setvar{var=caster.inair;val=false;type=STRING} @self
+  - state{s=land} @self
+  - remove @children{target=ARMORSTANDS}
+  - summon{t=LRD_PIGLINKING_GROUND_FX} @self
+  - lockmodel{l=false;delay=20} @self
+  
+LRD_PIGLINKING_throneless_bounce_ground_tick:
+  Skills:
+  - summon{t=LRD_PIGLINKING_slash_fx}
+  
+LRD_PIGLINKING_throneless_bounce_ground_damage:
+  Skills:
+  - basedamage{m=1}
+  - throw{v=2;vy=10}
+  
+  
+LRD_PIGLINKING_throneless_bounce_damage:
+  Skills:
+  - basedamage{m=1}
+  - throw{v=12;vy=6}
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+## ROLL ATTACK ##
+
+LRD_PIGLINKING_throneless_roll_attack:
+  Cooldown: 5
+  TargetConditions:
+  - fieldofview{angle=145} true
+  Conditions:
+  - incombat true
+  - offgcd true
+  - onground true
+  Skills:
+  - gcd{ticks=40}
+  - state{s=begin_roll} @self
+  - bodyrotation{mb=0;mh=0;rde=0;rdu=0} @self
+  - look{force=true;repeat=14;repeati=1} @children{target=MARKERS}
+  - lockmodel{l=true;delay=14} @self
+  - setspeed{s=0} @self
+  - projectile{tickinterpolation=2;v=1000;mr=40;oE=[ - summon{t=LRD_PIGLINKING_dummy}];hs=true;sE=false;mch=1;mdh=1}
+  - delay 15
+  - sound{s=littleroom_piglinking:grunt;v=5;sc=HOSTILE;pitch=<random.float.0.9to1.1>} @self
+  - setvar{var=caster.rolling;val=true;type=STRING} @self
+  - state{s=rolling} @self
+  - skill{s=LRD_PIGLINKING_throneless_roll_attack_error_prevention;delay=30} @self
+
+LRD_PIGLINKING_throneless_roll_attack_error_prevention:
+  Cooldown: 5
+  Conditions:
+  - varequals{var=caster.rolling;val=true} true
+  Skills:
+  - gcd{ticks=20}
+  - state{s=end_roll} @self
+  - lunge{v=1;vy=0.5} @children{target=MARKERS}
+  - setvar{var=caster.rolling;val=false;type=STRING} @self
+  - totem{md=2;drawhitbox=false;oH=LRD_PIGLINKING_throneless_roll_damage;hr=2;vr=2;repeat=5;repeati=1} @self
+  - bodyrotation{mh=40;mb=40;rde=20;rdu=20} @self
+  - lockmodel{l=false;delay=15} @self
+  - setvar{var=caster.rolling;val=false;type=STRING} @self
+  - remove @children{target=markers}
+
+LRD_PIGLINKING_throneless_roll:
+  TargetConditions:
+  - blocktype{type=air} castinstead LRD_PIGLINKING_throneless_stop_roll
+  Conditions:
+  - varequals{var=caster.rolling;val=true} true
+  Skills:
+  - gcd{ticks=10}
+  - summon{t=LRD_PIGLINKING_TELEGRAPH_METEOR;sip=false;sio=false;cd=0.2} @self
+  - totem{md=2;drawhitbox=false;oH=LRD_PIGLINKING_throneless_roll_damage;hr=2;vr=2} @self
+  - e:p{p=campfire_cosy_smoke;a=1;hs=.25;vs=.1} @self
+  - lunge{v=1;vy=-1} @children{target=markers}
+  
+LRD_PIGLINKING_throneless_stop_roll:
+  Cooldown: 5
+  Conditions:
+  - varequals{var=caster.rolling;val=true} true
+  Skills:
+  - gcd{ticks=20}
+  - state{s=end_roll} @self
+  - lunge{v=1;vy=0.5} @children{target=MARKERS}
+  - setvar{var=caster.rolling;val=false;type=STRING} @self
+  - totem{md=2;drawhitbox=false;oH=LRD_PIGLINKING_throneless_roll_damage;hr=2;vr=2;repeat=5;repeati=1} @self
+  - bodyrotation{mh=40;mb=40;rde=20;rdu=20} @self
+  - lockmodel{l=false;delay=15} @self
+  - setvar{var=caster.rolling;val=false;type=STRING} @self
+  - remove @children{target=markers}
+  
+LRD_PIGLINKING_throneless_roll_damage:
+  Skills:
+  - skill{s=LRD_PIGLINKING_recoil_big}
+  - basedamage{m=1}
+  - throw{v=2;vy=10}
+  
+  
+LRD_PIGLINKING_throneless_death:
+  Skills:
+  - bodyrotation{mh=0;mb=0;rde=0;rdu=0} @self
+  - sound{s=littleroom_piglinking:squeal;v=5;sc=HOSTILE;pitch=<random.float.0.9to1.1>} @self
+  - tint{c=ffffff;pid=king;em=false;delay=2} @self
+  - brightness{b=-1;s=-1;pid=king;em=false;delay=2} @self
+  - delay 50
+  - sound{s=littleroom_piglinking:poof;v=5;sc=HOSTILE;pitch=<random.float.0.9to1.1>} @self
+  - e:p{p=poof;a=25;hs=.5;vs=.5} @modelpart{pid=king;em=false}
+  - remove @self
+  

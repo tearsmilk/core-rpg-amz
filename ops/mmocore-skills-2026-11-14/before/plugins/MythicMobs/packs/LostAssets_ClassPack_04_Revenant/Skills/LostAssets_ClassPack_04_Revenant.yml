@@ -1,0 +1,164 @@
+lostassets_revenant_lc:
+  Conditions:
+  - crouching false
+  - hasaura{n=lostassets_revenant_st} false
+  - hasaura{n=lostassets_revenant_pt} false
+  - hasaurastacks{n=lostassets_revenant_lc;s=1} castinstead lostassets_revenant_lc_2
+  - hasaurastacks{n=lostassets_revenant_lc;s=2} castinstead lostassets_revenant_lc_3
+  Skills:
+  - Aura{auraName=lostassets_revenant_lc;t=20;ms=2;delay=1} @self
+  - Aura{auraName=lostassets_revenant_pt;t=6} @self
+  - summon{t=lostassets_revenant_lc_1} @Forward{f=0.5;y=0.0;sideOffset=0;lockpitch=true}
+  - effect:sound{s=entity.wither.shoot;volume=0.1;pitch=2} @self
+  - effect:particles{particle=spell_witch;m=water;amount=40;hS=2;vS=1;y=0.6;speed=0;forwardOffset=0;sideOffset=0} @forward{f=1}
+  - totem{md=2;c=0;oH=lostassets_revenant_lc_damage;hnp=true;hp=true;hR=4;vR=2;i=1} @forward{f=1}
+lostassets_revenant_lc_2:
+  Conditions:
+  - crouching false
+  - hasaura{n=lostassets_revenant_st} false
+  - hasaura{n=lostassets_revenant_pt} false
+  Skills:
+  - Aura{auraName=lostassets_revenant_lc;t=20;ms=2;delay=1} @self
+  - Aura{auraName=lostassets_revenant_pt;t=6} @self
+  - effect:sound{s=entity.wither.shoot;volume=0.1;pitch=2} @self
+  - effect:particles{particle=spell_witch;m=water;amount=40;hS=2;vS=1;y=0.6;speed=0;forwardOffset=0;sideOffset=0} @forward{f=1}
+  - summon{t=lostassets_revenant_lc_2} @Forward{f=0.5;y=0.0;sideOffset=0;lockpitch=true}
+  - totem{md=2;c=0;oH=lostassets_revenant_lc_damage;hnp=true;hp=true;hR=4;vR=2;i=1} @forward{f=1}
+lostassets_revenant_lc_3:
+  Conditions:
+  - crouching false
+  - hasaura{n=lostassets_revenant_st} false
+  - hasaura{n=lostassets_revenant_pt} false
+  Skills:
+  - auraremove{aura=lostassets_revenant_lc;delay=1} @self
+  - Aura{auraName=lostassets_revenant_pt;t=20} @self
+  - summon{t=lostassets_revenant_skill3} @Forward{f=5;y=1;sideOffset=0;lockpitch=true}
+  - summon{t=lostassets_revenant_lc_3} @Forward{f=5;y=0;sideOffset=0;lockpitch=true}
+  - summon{t=lostassets_revenant_lc_3} @Forward{f=5;y=0.5;sideOffset=0;lockpitch=true}
+  - summon{t=lostassets_revenant_lc_3} @Forward{f=5;y=1;sideOffset=0;lockpitch=true}
+  - totem{md=2;c=0;oE=lostassets_revenant_lc_damage2;hnp=true;hp=true;hR=7;vR=2;i=1} @forward{f=5}
+  - delay 10
+lostassets_revenant_lc_damage:
+  Skills:
+  - delay 2
+  - setNoDamageTicks{ticks=0;delay=1}
+  - damage{a="<modifier.damage> + <caster.mmostat.skill_damage>";pkb=false;hnp=true;hp=false}
+lostassets_revenant_lc_damage2:
+  Skills:
+  - effect:sound{s=entity.iron_golem.death;volume=0.4;pitch=0.5} @self
+  - delay 6
+  - effect:particles{particle=spell_witch;m=water;amount=40;hS=2;vS=1;y=0.6;speed=0;forwardOffset=0;sideOffset=0} @forward{f=1}
+  - effect:sound{s=entity.wither.shoot;volume=0.1;pitch=1.5} @self
+  - setNoDamageTicks{ticks=0;delay=1} @ENO{r=5}
+  - damage{a="(<modifier.damage> + <caster.mmostat.skill_damage>) *1.5";pkb=false;hnp=true;hp=false} @ENO{r=5}
+  
+lostassets_revenant_rc:
+  Skills:
+  - Aura{auraName=lostassets_revenant_st;t=17} @self
+  - summon{t=lostassets_revenant_skill1} @Forward{f=0;y=1;sideOffset=0;lockpitch=true}
+  - summon{t=lostassets_revenant_rc_1} @Forward{f=5;y=0.0;sideOffset=0;lockpitch=true}
+  - summon{t=lostassets_revenant_rc_1} @Forward{f=5;y=0.5;sideOffset=0;lockpitch=true}
+  - summon{t=lostassets_revenant_rc_1} @Forward{f=5;y=1;sideOffset=0;lockpitch=true}
+  - summon{t=lostassets_revenant_rc_2} @Forward{f=5;y=0.0;sideOffset=0;lockpitch=true}
+  - summon{t=lostassets_revenant_rc_2} @Forward{f=5;y=0.5;sideOffset=0;lockpitch=true}
+  - summon{t=lostassets_revenant_rc_2} @Forward{f=5;y=1;sideOffset=0;lockpitch=true}
+  - totem{md=2;c=0;oE=lostassets_revenant_rc_pp;hnp=true;hp=true;hR=4;vR=2;i=1} @forward{f=0}
+lostassets_revenant_rc_pp:
+  Skills:
+  - effect:sound{s=entity.iron_golem.death;volume=0.4;pitch=0.5} @self
+  - delay 10
+  - effect:sound{s=entity.wither.shoot;volume=0.1;pitch=0.5} @self
+  - projectile{oH=lostassets_revenant_rc_damage;fo=true;bulletType=MOB;mob=lostassets_revenant_eff;g=0;v=50;i=1;hR=2.5;vR=1;mr=15;hnp=true;hO=180;vO=0;sE=false;sB=true;hs=true;hfs=1;sfo=0.1;syo=1;tyo=1.5} @origin{y=1}
+lostassets_revenant_rc_damage:
+  Skills:
+  - damage{a="<modifier.damage> + <caster.mmostat.skill_damage>";pkb=false;hnp=true;hp=false}
+lostassets_revenant_slc:
+  Skills:
+  - effect:sound{s=entity.iron_golem.death;volume=0.4;pitch=0.5} @self
+  - Aura{auraName=lostassets_revenant_st;t=17} @self
+  - summon{t=lostassets_revenant_skill4} @Forward{f=3;y=1;sideOffset=0.2;lockpitch=true}
+  - skill{s=lostassets_revenant_slc_totem} @forward{a=5;lockpitch=true}
+lostassets_revenant_slc_totem:
+  Skills: 
+  - totem{ch=1;onStart=lostassets_revenant_slc_damage;int=1;hR=3;md=1}
+lostassets_revenant_slc_damage:
+  Skills:
+  - DELAY 12
+  - effect:sound{s=entity.wither.shoot;volume=0.1;pitch=1.5} @self
+  - summon{t=lostassets_revenant_src_1} @origin
+  - summon{t=lostassets_revenant_src_2} @origin
+  - summon{t=lostassets_revenant_src_1} @origin
+  - summon{t=lostassets_revenant_src_2} @origin
+  - effect:particles{particle=spell_witch;m=water;amount=10;hS=2;vS=1;y=0.6;speed=0;forwardOffset=0;sideOffset=0} @origin
+  - setNoDamageTicks{ticks=0;delay=1} @EntitiesNearOrigin{r=7}
+  - damage{a="<modifier.damage> + <caster.mmostat.skill_damage>";pkb=false;hnp=true;hp=false} @EntitiesNearOrigin{r=7}
+  - delay 1
+  - effect:sound{s=entity.wither.shoot;volume=0.1;pitch=1.5} @self
+  - summon{t=lostassets_revenant_src_1} @origin
+  - summon{t=lostassets_revenant_src_2} @origin
+  - summon{t=lostassets_revenant_src_1} @origin
+  - summon{t=lostassets_revenant_src_2} @origin
+  - effect:particles{particle=spell_witch;m=water;amount=10;hS=2;vS=1;y=0.6;speed=0;forwardOffset=0;sideOffset=0} @origin
+  - setNoDamageTicks{ticks=0;delay=1} @EntitiesNearOrigin{r=7}
+  - damage{a="<modifier.damage> + <caster.mmostat.skill_damage>";pkb=false;hnp=true;hp=false} @EntitiesNearOrigin{r=7}
+  - delay 1
+  - effect:sound{s=entity.wither.shoot;volume=0.1;pitch=1.5} @self
+  - summon{t=lostassets_revenant_src_1} @origin
+  - summon{t=lostassets_revenant_src_2} @origin
+  - summon{t=lostassets_revenant_src_1} @origin
+  - summon{t=lostassets_revenant_src_2} @origin
+  - effect:particles{particle=spell_witch;m=water;amount=10;hS=2;vS=1;y=0.6;speed=0;forwardOffset=0;sideOffset=0} @origin
+  - setNoDamageTicks{ticks=0;delay=1} @EntitiesNearOrigin{r=7}
+  - damage{a="<modifier.damage> + <caster.mmostat.skill_damage>";pkb=false;hnp=true;hp=false} @EntitiesNearOrigin{r=7}
+  - delay 1
+  - effect:sound{s=entity.wither.shoot;volume=0.1;pitch=1.5} @self
+  - summon{t=lostassets_revenant_src_1} @origin
+  - summon{t=lostassets_revenant_src_2} @origin
+  - summon{t=lostassets_revenant_src_1} @origin
+  - summon{t=lostassets_revenant_src_2} @origin
+  - effect:particles{particle=spell_witch;m=water;amount=10;hS=2;vS=1;y=0.6;speed=0;forwardOffset=0;sideOffset=0} @origin
+  - setNoDamageTicks{ticks=0;delay=1} @EntitiesNearOrigin{r=7}
+  - damage{a="<modifier.damage> + <caster.mmostat.skill_damage>";pkb=false;hnp=true;hp=false} @EntitiesNearOrigin{r=7}
+  - delay 1
+  - effect:sound{s=entity.wither.shoot;volume=0.1;pitch=1.5} @self
+  - summon{t=lostassets_revenant_src_1} @origin
+  - summon{t=lostassets_revenant_src_2} @origin
+  - summon{t=lostassets_revenant_src_1} @origin
+  - summon{t=lostassets_revenant_src_2} @origin
+  - effect:particles{particle=spell_witch;m=water;amount=10;hS=2;vS=1;y=0.6;speed=0;forwardOffset=0;sideOffset=0} @origin
+  - setNoDamageTicks{ticks=0;delay=1} @EntitiesNearOrigin{r=7}
+  - damage{a="<modifier.damage> + <caster.mmostat.skill_damage>";pkb=false;hnp=true;hp=false} @EntitiesNearOrigin{r=7}
+lostassets_revenant_src:
+  Skills:
+  - Aura{auraName=lostassets_revenant_st;t=17} @self
+  - effect:sound{s=entity.iron_golem.death;volume=0.4;pitch=0.5} @self
+  - effect:sound{s=entity.wither.spawn;volume=0.2;pitch=1} @self
+  - summon{t=lostassets_revenant_skill2} @Forward{f=0;y=8;sideOffset=0;lockpitch=true}
+  - summon{t=lostassets_revenant_src_3} @Forward{f=10;y=0.0;sideOffset=0;lockpitch=true}
+  - skill{s=lostassets_revenant_src_totem} @forward{a=5;lockpitch=true}
+lostassets_revenant_src_totem:
+  Skills: 
+  - totem{ch=1;onStart=lostassets_revenant_src_dmg;int=1;hR=3;md=1}
+
+lostassets_revenant_src_dmg:
+  Skills:
+  - delay 44
+  - effect:sound{s=entity.zombie_villager.cure;volume=0.2;pitch=0.5} @self
+  - setNoDamageTicks{ticks=0;delay=1} @EntitiesNearOrigin{r=10}
+  - damage{a="<modifier.damage> + <caster.mmostat.skill_damage>";pkb=false;hnp=true;hp=false} @EntitiesNearOrigin{r=10}
+lostassets_revenant_src_pp:
+  Skills:
+  - projectile{onTick=lostassets_revenant_src_effects;g=0;v=40;i=1;hR=1;vR=1;mr=20;hnp=true;hO=0;vO=0;sE=false;sB=false;hs=false;hfs=0;sfo=1;syo=0;tyo=1.5} @Forward{f=15;y=0;lockpitch=true};
+  - projectile{onTick=lostassets_revenant_src_effects;g=0;v=40;i=1;hR=1;vR=1;mr=20;hnp=true;hO=45;vO=0;sE=false;sB=false;hs=false;hfs=0;sfo=1;syo=0;tyo=1.5} @Forward{f=15;y=0;lockpitch=true};
+  - projectile{onTick=lostassets_revenant_src_effects;g=0;v=40;i=1;hR=1;vR=1;mr=20;hnp=true;hO=90;vO=0;sE=false;sB=false;hs=false;hfs=0;sfo=1;syo=0;tyo=1.5} @Forward{f=15;y=0;lockpitch=true};
+  - projectile{onTick=lostassets_revenant_src_effects;g=0;v=40;i=1;hR=1;vR=1;mr=20;hnp=true;hO=135;vO=0;sE=false;sB=false;hs=false;hfs=0;sfo=1;syo=0;tyo=1.5} @Forward{f=15;y=0;lockpitch=true};
+  - projectile{onTick=lostassets_revenant_src_effects;g=0;v=40;i=1;hR=1;vR=1;mr=20;hnp=true;hO=180;vO=0;sE=false;sB=false;hs=false;hfs=0;sfo=1;syo=0;tyo=1.5} @Forward{f=15;y=0;lockpitch=true};
+  - projectile{onTick=lostassets_revenant_src_effects;g=0;v=40;i=1;hR=1;vR=1;mr=20;hnp=true;hO=225;vO=0;sE=false;sB=false;hs=false;hfs=0;sfo=1;syo=0;tyo=1.5} @Forward{f=15;y=0;lockpitch=true};
+  - projectile{onTick=lostassets_revenant_src_effects;g=0;v=40;i=1;hR=1;vR=1;mr=20;hnp=true;hO=270;vO=0;sE=false;sB=false;hs=false;hfs=0;sfo=1;syo=0;tyo=1.5} @Forward{f=15;y=0;lockpitch=true};
+  - projectile{onTick=lostassets_revenant_src_effects;g=0;v=40;i=1;hR=1;vR=1;mr=20;hnp=true;hO=315;vO=0;sE=false;sB=false;hs=false;hfs=0;sfo=1;syo=0;tyo=1.5} @Forward{f=15;y=0;lockpitch=true};
+lostassets_revenant_src_effects:
+  Skills:
+  - summon{t=lostassets_revenant_src_1} @origin
+  - summon{t=lostassets_revenant_src_2} @origin
+  - effect:particles{particle=spell_witch;m=water;amount=10;hS=2;vS=1;y=0.6;speed=0;forwardOffset=0;sideOffset=0}
+  - effect:particles{particle=smoke_normal;m=water;amount=5;hS=2;vS=1;y=0.6;speed=0;forwardOffset=0;sideOffset=0}

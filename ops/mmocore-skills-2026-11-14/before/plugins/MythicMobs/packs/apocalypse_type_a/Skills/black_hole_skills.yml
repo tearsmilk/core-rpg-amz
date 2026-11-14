@@ -1,0 +1,74 @@
+
+# ~Written by RopeFire~
+
+CancelEvent:
+  Conditions:
+  - incombat true
+  Skills:
+  - CancelEvent @self
+
+black_hole_summoned:
+  Skills:
+  - CancelEvent @self
+  - state{model=black_hole;state=black_hole} @self
+  - lockmodel @self
+  - sound{s=custom.black_hole;v=3;p=1} @self
+  - delay 20
+  - aura{auraName=blackHD1;oT=black_hole_damage1;duration=20} @self
+  - delay 20
+  - aura{auraName=blackHD2;oT=black_hole_damage2;duration=30} @self
+  - delay 30
+  - aura{auraName=blackHD3;oT=black_hole_damage3;duration=40} @self
+  - delay 40
+  - aura{auraName=blackHD4;oT=black_hole_damage4;duration=20} @self
+  - delay 20
+  - aura{auraName=blackHD5;oT=black_hole_damage5;duration=20} @self
+  - delay 20
+  - aura{auraName=blackHD6;oT=black_hole_damage6;duration=110} @self
+  - delay 110
+  - remove @self
+
+black_hole_damage1:
+  Skills:
+  - pull{v=3.5} @LivingInRadius{r=6;ignore=samefaction}
+  - totem{md=2;oH=[ - damage{a=0.1;is=true;pk=true;ie=true;ia=true;ir=true;ieff=true;pi=true} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=black_hole;pid=black_hole2}
+
+black_hole_damage2:
+  Skills:
+  - pull{v=3.5} @LivingInRadius{r=6;ignore=samefaction}
+  - pull{v=3} @EIRR{min=6;max=12;ignore=samefaction}
+  - totem{md=2;oH=[ - damage{a=0.1;is=true;pk=true;ie=true;ia=true;ir=true;ieff=true;pi=true} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=black_hole;pid=black_hole2}
+
+black_hole_damage3:
+  Skills:
+  - pull{v=3.5} @LivingInRadius{r=6;ignore=samefaction}
+  - pull{v=3} @EIRR{min=6;max=12;ignore=samefaction}
+  - pull{v=2.5} @EIRR{min=12;max=18;ignore=samefaction}
+  - totem{md=2;oH=[ - damage{a=0.1;is=true;pk=true;ie=true;ia=true;ir=true;ieff=true;pi=true} ];hnp=true;hp=true;hR=2;vR=2;i=1;drawhitbox=false} @ModelPart{mid=black_hole;pid=black_hole2}
+
+black_hole_damage4:
+  Skills:
+  - pull{v=3.5} @LivingInRadius{r=6;ignore=samefaction}
+  - pull{v=3} @EIRR{min=6;max=12;ignore=samefaction}
+  - pull{v=2.5} @EIRR{min=12;max=18;ignore=samefaction}
+  - pull{v=2} @EIRR{min=18;max=24;ignore=samefaction}
+  - totem{md=2;oH=[ - damage{a=0.1;is=true;pk=true;ie=true;ia=true;ir=true;ieff=true;pi=true} ];hnp=true;hp=true;hR=2.5;vR=2.5;i=1;drawhitbox=false} @ModelPart{mid=black_hole;pid=black_hole2}
+
+black_hole_damage5:
+  Skills:
+  - pull{v=3.5} @LivingInRadius{r=6;ignore=samefaction}
+  - pull{v=3} @EIRR{min=6;max=12;ignore=samefaction}
+  - pull{v=2.5} @EIRR{min=12;max=18;ignore=samefaction}
+  - pull{v=2} @EIRR{min=18;max=24;ignore=samefaction}
+  - pull{v=1.5} @EIRR{min=24;max=30;ignore=samefaction}
+  - totem{md=2;oH=[ - damage{a=0.1;is=true;pk=true;ie=true;ia=true;ir=true;ieff=true;pi=true} ];hnp=true;hp=true;hR=3;vR=3;i=1;drawhitbox=false} @ModelPart{mid=black_hole;pid=black_hole2}
+
+black_hole_damage6:
+  Skills:
+  - pull{v=3.5} @LivingInRadius{r=6;ignore=samefaction}
+  - pull{v=3} @EIRR{min=6;max=12;ignore=samefaction}
+  - pull{v=2.5} @EIRR{min=12;max=18;ignore=samefaction}
+  - pull{v=2} @EIRR{min=18;max=24;ignore=samefaction}
+  - pull{v=1.5} @EIRR{min=24;max=30;ignore=samefaction}
+  - pull{v=1} @EIRR{min=30;max=36;ignore=samefaction}
+  - totem{md=2;oH=[ - damage{a=0.1;is=true;pk=true;ie=true;ia=true;ir=true;ieff=true;pi=true} ];hnp=true;hp=true;hR=3.5;vR=3.5;i=1;drawhitbox=false} @ModelPart{mid=black_hole;pid=black_hole2}

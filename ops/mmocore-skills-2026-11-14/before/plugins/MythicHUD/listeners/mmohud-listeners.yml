@@ -1,0 +1,18 @@
+# mana listener is already defined in default-listeners.yml (same values) - removed here to avoid the duplicate warning
+  
+absorption:
+  value: '%player_absorption%'
+  max: '%player_max_health%'
+  
+mmoexp:
+  value: '%mmocore_experience%'
+  max: '%mmocore_next_level%'
+
+stamina:
+  value: '%mmocore_stamina%'
+  max: '%mmocore_stat_max_stamina%'
+
+# RoyalQuestClasses (PlaceholderAPI identifier 'hl')
+rqexp:
+  value: '%hl_exp%'
+  max: '%hl_exp_needed%'

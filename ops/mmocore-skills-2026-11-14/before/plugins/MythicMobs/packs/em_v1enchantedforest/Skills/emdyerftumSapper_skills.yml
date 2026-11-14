@@ -1,0 +1,992 @@
+em_dyerftumSapper_em_stepsound:
+  Conditions:
+  - variableEquals{var=caster.skillxd;value="none"} true
+  - variableEquals{var=caster.skillxd;value="hurtedvbad"} false
+  - stance{s=casting} false
+  - stance{s=normal} true
+  - variableEquals{var=caster.hurtened;value="1"} false
+  - variableEquals{var=caster.casting;value="1"} false
+  - onground true
+  Skills:
+  - blockstepsound{p=<random.float.1to1.2>;v=0.5} @selflocation{y=-0.3}
+em_dyerftumSapper_em_stepsound_run:
+  Conditions:
+  - variableEquals{var=caster.skillxd;value="hurtedvbad"} false
+  - variableEquals{var=caster.hurtened;value="1"} false
+  - onground true
+  Skills:
+  - blockstepsound{p=<random.float.1to1.2>;v=0.5} @selflocation{y=-0.3}
+
+em_dyerftumSapper_em_stepsound_skills:
+  Conditions:
+  - stance{s=casting} true
+  - variableEquals{var=caster.casting;value="1"} false
+  - onground true
+  Skills:
+  - blockstepsound{p=<random.float.1.1to1.3>;v=0.6} @selflocation{y=-0.3}
+dyerftumSapper_em_hp_check:
+  Cooldown: 9999
+  Conditions:
+  - playersinradius{a=>2;r=60} true
+  Skills:
+  - delay 5
+  - skill{s=dyerftumSapper_em_hp_checkB} @pir{r=80} #MODIFY THE RANGE TO CHECK FOR PLAYERS
+# GUIDE TO CUSTOMIZE HEALTH SCALING
+dyerftumSapper_em_hp_checkB:
+  Conditions:
+  Skills:
+  - setvariable{var=skill.amount_targets;val=<skill.targets>}
+  - setmaxhealth{amount=<caster.var.eichpee>+15*<skill.var.amount_targets>;mode=SCALE} @self
+# AMOUNT = (BASE HEALTH, modified in mob's hp) + (ADDITIONAL NET HEALTH PER PLAYER IN RANGE) * <skill.var.amount_targets>
+# (The last argument is just the variable for number of players, don't touch it.)
+
+# SOUNDSKILLS
+dyerftumSapper_em_idlesounds_trigger:
+  Skills:
+  - delay 0to20
+  - skill{s=dyerftumSapper_em_idlesounds}
+dyerftumSapper_em_idlesounds:
+  Cooldown: 5
+  Conditions:
+  - stance{s=casting} false
+  - stance{s=normal} true
+  - hasaura{n=bruttackrest} false
+  - hasaura{n=bruttackrest2} false
+  - hasaura{n=soundcooldown} false
+  Skills:
+  - Aura{auraName=soundcooldown;duration=120to200} @Self
+  - Aura{auraName=soundcooldown;duration=100to150} @EntitiesInRadius{r=15;limit=3;sort=RANDOM;conditions=[  - Mythicmobtype{t=dyerftumSapper_em} true ]} 0.6
+  - Aura{auraName=soundcooldown;duration=60to100} @EntitiesInRadius{r=15;limit=3;sort=RANDOM;conditions=[  - Mythicmobtype{t=dyerftum2_em} true ]} 0.4
+  - Aura{auraName=soundcooldown;duration=60to100} @EntitiesInRadius{r=15;limit=3;sort=RANDOM;conditions=[  - Mythicmobtype{t=dyerftum1_em} true ]} 0.4
+  - Aura{auraName=soundcooldown;duration=60to100} @EntitiesInRadius{r=15;limit=3;sort=RANDOM;conditions=[  - Mythicmobtype{t=dyerftumbrute_em} true ]} 0.4
+  - sound{s=emewoods1:custom.enchantedwoods1.dyerftum_idle;p=<random.float.1to1.3>;v=2} @selflocation 1 ?!variableEquals{var=caster.hurtened;value="1"} ?!hasaura{n=bruttackrest2} #SOUND
+
+# HURTSKILLS
+
+hurt1dyerftumSapper_em:
+  Cooldown: 0.5
+  Skills:
+  - Aura{auraName=nule_parry;duration=15;delay=1;mergeSameCaster=true} @self 0.9 ?!hasaura{n=nule_parry}
+  - Aura{auraName=nule_parry;duration=42;delay=1;mergeSameCaster=true} @self 0.9 ?hasaura{n=nule_parry} ?!hasaura{n=parried}
+  - skill{s=dyerftumSapper_em_backhurtCLEAR;sync=true} @Trigger 0.25
+  - variableadd{var=caster.hitrec;amount=1} @self
+  - variableadd{var=caster.ragestacks;amount=1} @self 0.77 ?!hasaura{n=checkragedyerftumSapper_em}
+  - variableadd{var=caster.ragestacks;amount=1} @self 0.5 ?hasaura{n=checkragedyerftumSapper_em}
+  - variableadd{var=caster.combor;amount=1} @self
+#
+  - randomskill{s=[
+      - state{state=hurt1;lo=6;remove=true} @self
+      - state{state=hurt2;lo=6;remove=true} @self
+      - state{state=hurt3;lo=6;remove=true} @self
+      - state{state=hurt4;lo=6;remove=true} @self
+      - state{state=hurt1;li=0;lo=0} @self
+    ],
+      [
+      - state{state=hurt1;lo=6;remove=true} @self
+      - state{state=hurt2;lo=6;remove=true} @self
+      - state{state=hurt3;lo=6;remove=true} @self
+      - state{state=hurt4;lo=6;remove=true} @self
+      - state{state=hurt2;li=0;lo=0} @self
+    ],
+      [
+      - state{state=hurt1;lo=6;remove=true} @self
+      - state{state=hurt2;lo=6;remove=true} @self
+      - state{state=hurt3;lo=6;remove=true} @self
+      - state{state=hurt4;lo=6;remove=true} @self
+      - state{state=hurt4;li=0;lo=0} @self
+    ],
+      [
+      - state{state=hurt1;lo=6;remove=true} @self
+      - state{state=hurt2;lo=6;remove=true} @self
+      - state{state=hurt3;lo=6;remove=true} @self
+      - state{state=hurt4;lo=6;remove=true} @self
+      - state{state=hurt3;li=0;lo=0} @self
+    ];sync=false}
+#  
+  - skill{s=countertacked_dyerftumSapper_em_A;cooldown=2;sync=true} @self ?variableEquals{var=caster.vulnerable;value="1"}
+  - Aura{auraName=shielderdyerftumSapper_em;onTick=dyerftumSapper_em_sdppcheck;interval=7;duration=40;mergeSameCaster=true} @self 0.35 ?variableInRange{var=caster.hitrec;value=5to8}
+  - Aura{auraName=shielderdyerftumSapper_em;onTick=dyerftumSapper_em_sdppcheck;interval=7;duration=40;mergeSameCaster=true} @self 0.58 ?variableInRange{var=caster.hitrec;value=>8}
+  - sound{s=emewoods1:custom.enchantedwoods1.dyerftum_hurt;p=<random.float.1to1.2>;v=1.5} @selflocation 1 #SOUND
+  # PARRY PROTOCOL
+
+  - skill{s=hurtbdyerftumSapper_em} @self <60% 0.15 ?!hasaura{n=largecast} ?!hasaura{n=parried} ?!hasaura{n=nule_parry}
+  - skill{s=hurtbdyerftumSapper_em} @self <60% 0.06 ?!hasaura{n=largecast} ?!hasaura{n=parried} ?hasaura{n=nule_parry}
+
+  - skill{s=hurtbdyerftumSapper_em} @self >60% 0.08 ?!hasaura{n=largecast} ?!hasaura{n=parried} ?!hasaura{n=nule_parry}
+  - skill{s=hurtbdyerftumSapper_em} @self >60% 0.03 ?!hasaura{n=largecast} ?!hasaura{n=parried} ?hasaura{n=nule_parry}
+  
+  - skill{s=hurtbdyerftumSapper_em} @self 0.05 ?hasaura{n=largecast}
+  - skill{s=hurtbdyerftumSapper_em} @self 0.62 ?hasaura{n=parried}
+  - delay 15
+  - skill{s=dyerftumSapper_em_rage_trigger} @Self 0.10 ?variableInRange{var=caster.hitrec;value=4to8}
+  - skill{s=dyerftumSapper_em_rage_trigger} @Self 0.20 ?variableInRange{var=caster.hitrec;value=8to12}
+  - skill{s=dyerftumSapper_em_rage_trigger} @Self 0.35 ?variableInRange{var=caster.hitrec;value=>12}
+  - skill{s=dyerftumSapper_em_meleetrigger2;sync=false} @LivingInCone{a=110.0;r=6.5;rot=0.0;ignore=samefaction} 0.2
+
+#HURTBAD
+hurtbdyerftumSapper_em:
+  Cooldown: 8
+  Conditions:
+  - damagecause{cause=FIRE} false
+  - damagecause{cause=FIRE_TICK} false
+  - damagecause{cause=FALL} false
+  - damagecause{cause=LAVA} false
+  - damagecause{cause=POISON} false
+  - damagecause{cause=THORNS} false
+  - damagecause{cause=CONTACT} false
+  - variableEquals{var=caster.casting;value="1"} false
+  - variableEquals{var=caster.running;value="2"} false
+  - hasaura{n=dyerftumSapper_em_hurtbad} false
+  - hasaura{n=hurtenedbad} false
+  Skills:
+  - effect:particles{particle=crit;amount=12;hS=0.3;vS=0.3;speed=0.005;y=1.5} @Self
+  #LEAFS VFX
+  - summon{mob=dyerftum_leafs_2;amount=1;noise=2;yr=0.8;repeat=3to4;repeatinterval=1} @RandomLocationsNearOrigin{a=1;r=1;s=0.3;minr=0.3;y=-2.8}
+  #
+  - lockmodel{l=true;delay=0} @Self
+  - setstance{stance=casting} @self ?stance{s=normal}
+  - skill{s=dyerftumSapper_em_hurtCLEAR;sync=true} 0.35
+  - variableadd{var=caster.hitrec;amount=2} @self
+  - variableadd{var=caster.combor;amount=1} @self
+  - variableadd{var=caster.combor;amount=1} @self 0.5
+  - setvariable{var=caster.casting;value="1";t=integer} @Self ?variableEquals{var=caster.casting;value="0"} 
+  - setvariable{var=caster.skillxd;value="hurtbad";t=string;delay=0} @Self
+  - state{remove=true;s=hurtbad1;lo=3} @self
+  - state{remove=true;s=hurtbad2;lo=3} @self
+  - state{remove=true;s=hurtbad3;lo=3} @self
+  - state{remove=true;s=hurtbad4;lo=3} @self
+
+  - randomskill{s=[
+      - state{state=hurtbad1;li=3;lo=8} @self
+    ],
+      [
+      - state{state=hurtbad2;li=3;lo=8} @self
+    ],
+      [
+      - state{state=hurtbad3;li=3;lo=8} @self
+    ],
+      [
+      - state{state=hurtbad4;li=3;lo=8} @self
+    ];sync=true}
+  - setvariable{var=caster.hurtened;value="1";t=integer} @Self
+  - potion{type=SLOW;duration=27;level=7;p=false;force=true} @Self
+  - potion{type=SLOW;duration=5;level=3;p=false;force=true;delay=27} @Self ?variableEquals{var=caster.rage;value="1"} 
+  
+  - sound{s=emewoods1:custom.enchantedwoods1.wood_hit;p=<random.float.1.3to1.6>;v=1.5} @selflocation #SOUND
+  - sound{s=emewoods1:custom.enchantedwoods1.dyerftum_hurtbad;p=<random.float.1to1.3>;v=1.5} @selflocation #SOUND
+#STATEREMOVE
+  - state{remove=true;s=drawback1;lo=3} @self
+  - state{remove=true;s=drawback2;lo=3} @self
+  - state{remove=true;s=attack3;lo=3} @self
+  - state{remove=true;s=attack1;lo=3} @self
+  - state{remove=true;s=attack2;lo=3} @self
+  
+#
+  - Aura{auraName=dyerftumSapper_em_hurtbad;duration=40} @self
+  - delay 12
+  - skill{s=[
+    - delay 0to4
+    - Aura{auraName=shielderdyerftumSapper_em;onTick=dyerftumSapper_em_sdppcheck;interval=7;duration=60;mergeSameCaster=true} @self
+    - setvariable{var=caster.hurtened;value="0";t=integer} @Self
+    - setstance{stance=normal} @self ?stance{s=casting}
+    - setvariable{var=caster.casting;value="0";t=integer} @Self
+    - Aura{auraName=bruttackrest;duration=20} @self
+    - lockmodel{l=false;delay=0} @Self];sync=false} @Self 0.4 ?!variableEquals{var=caster.skillxd;value="hurtedvbad"} ?variableEquals{var=caster.skillxd;value="hurtbad"}
+  - randomskill{s=dyerftumSapper_em_bruttack1;repeat=2;repeatinterval=5} @LivingInCone{a=110.0;r=6.5;rot=0.0;ignore=samefaction}
+  - skill{s=dyerftumSapper_em_rage_trigger} @Self =60%-95% 0.45 ?!variableEquals{var=caster.skillxd;value="hurtedvbad"} ?variableEquals{var=caster.skillxd;value="hurtbad"}
+  - skill{s=dyerftumSapper_em_rage_trigger} @Self =30%-60% 0.55 ?!variableEquals{var=caster.skillxd;value="hurtedvbad"} ?variableEquals{var=caster.skillxd;value="hurtbad"}
+  - skill{s=dyerftumSapper_em_rage_trigger} @Self <30% 0.65 ?!variableEquals{var=caster.skillxd;value="hurtedvbad"} ?variableEquals{var=caster.skillxd;value="hurtbad"}
+  - delay 12
+  - lockmodel{l=false;delay=0} @Self ?!variableEquals{var=caster.skillxd;value="hurtedvbad"} ?variableEquals{var=caster.skillxd;value="hurtbad"}
+  - setvariable{var=caster.hurtened;value="0";t=integer} @Self ?!variableEquals{var=caster.skillxd;value="hurtedvbad"} ?variableEquals{var=caster.skillxd;value="hurtbad"}
+  - setstance{stance=normal} @self ?stance{s=casting} ?!variableEquals{var=caster.skillxd;value="hurtedvbad"} ?variableEquals{var=caster.skillxd;value="hurtbad"}
+  - setvariable{var=caster.casting;value="0";t=integer} @Self ?variableEquals{var=caster.casting;value="1"} ?!variableEquals{var=caster.skillxd;value="hurtedvbad"} ?variableEquals{var=caster.skillxd;value="hurtbad"}
+  - setvariable{var=caster.skillxd;value="none";t=string;delay=0} @Self ?variableEquals{var=caster.skillxd;value="hurtbad"}
+  - skill{s=dyerftumSapper_em_meleetrigger2;cooldown=1;sync=false} @Trigger 0.6
+  - skill{s=dyerftumSapper_em_rage_trigger} @Self =60%-95% 0.65 ?!variableEquals{var=caster.skillxd;value="hurtedvbad"}
+  - skill{s=dyerftumSapper_em_rage_trigger} @Self =30%-60% 0.75 ?!variableEquals{var=caster.skillxd;value="hurtedvbad"}
+  - skill{s=dyerftumSapper_em_rage_trigger} @Self <30% 0.85 ?!variableEquals{var=caster.skillxd;value="hurtedvbad"}
+
+####
+
+#Dynamic AI ClearThreat
+dyerftumSapper_em_backhurtCLEAR:
+  Cooldown: 9
+  Conditions:
+  - hasaura{n=changedThreat} false
+  TriggerConditions:
+  - FieldOfView{angle=120;r=0} false
+  Skills:
+  - Aura{auraName=dyerftumSapper_em_seathe_impediment;duration=30;mergeSameCaster=true} @self
+  - Aura{auraName=changedThreat;duration=220} @self
+  - clearThreat{} @self
+  - threat{amount=150} @TargetedTarget
+dyerftumSapper_em_hurtCLEAR:
+  Cooldown: 6
+  Conditions:
+  - hasaura{n=changedThreat} false
+  TriggerConditions:
+  - FieldOfView{angle=30;r=0} false
+  Skills:
+  - Aura{auraName=dyerftumSapper_em_seathe_impediment;duration=30;mergeSameCaster=true} @self
+  - Aura{auraName=changedThreat;duration=200} @self
+  - clearThreat{} @self
+  - threat{amount=100} @TargetedTarget
+
+# ANTI KNOCKBACK
+hurtgendyerftumSapper_em:
+  Cooldown: 0
+  Conditions:
+  - damagecause{c=PROJECTILE} true
+  Skills:
+  - skill{s=hurtgendyerftumSapper_emCLEAR;sync=true} @Trigger 0.15
+  - onShoot{auraName=dyerftumSapper_em_arrowWarning;onShoot=signalcheckWarning_dyerftumSapper_em;interval=3;duration=200;charges=5;cooldown=5} @trigger 0.5
+  - variableadd{var=caster.projrec;amount=1} @self
+  - variableadd{var=caster.projrec;amount=1} @self 0.5
+  - variableadd{var=caster.ragestacks;amount=1} @self
+  - skill{s=hurtgendyerftumSapper_em_addstacksd1} @Trigger
+  - message{m="ragestacks <caster.var.ragestacks> STACKS"} @PlayersNearOrigin{r=75} 0 #DEBUGMESSAGE
+  - velocity{m=set;x=0;y=0;z=0;repeat=2;Repeatinterval=1} @self
+  - variableadd{var=caster.combor;amount=2} @self
+  - skill{s=dyerftumSapper_em_rage_trigger} @Trigger 0.4 ?variableInRange{var=caster.ragestacks;value=<4}
+  - skill{s=dyerftumSapper_em_rage_trigger} @Trigger 0.65 ?variableInRange{var=caster.ragestacks;value=4to8}
+  - skill{s=dyerftumSapper_em_rage_trigger} @Trigger 0.85 ?variableInRange{var=caster.ragestacks;value=8to12}
+  - skill{s=dyerftumSapper_em_rage_trigger} @Trigger 1 ?variableInRange{var=caster.ragestacks;value=>12}
+  - delay 3
+  - skill{s=dyerftumSapper_em_meleetrigger;sync=false} @Trigger 0.4 ?variableInRange{var=caster.ragestacks;value=<4}
+  - skill{s=dyerftumSapper_em_meleetrigger;sync=false} @Trigger 0.65 ?variableInRange{var=caster.ragestacks;value=4to8}
+  - skill{s=dyerftumSapper_em_meleetrigger;sync=false} @Trigger 0.85 ?variableInRange{var=caster.ragestacks;value=8to12}
+  - skill{s=dyerftumSapper_em_meleetrigger;sync=false} @Trigger 1 ?variableInRange{var=caster.ragestacks;value=>12}
+
+hurtgendyerftumSapper_em_addstacksd1:
+  TriggerConditions:
+  - distance{d=5to13} true
+  - distance{d=>13} castinstead hurtgendyerftumSapper_em_addstacksd2
+  Skills:
+  - variableadd{var=caster.ragestacks;amount=1} @self
+  - variableadd{var=caster.ragestacks;amount=1} @self 0.5
+hurtgendyerftumSapper_em_addstacksd2:
+  TriggerConditions:
+  - distance{d=>12} true
+  Skills:
+  - variableadd{var=caster.ragestacks;amount=1} @self
+  - variableadd{var=caster.ragestacks;amount=1} @self 0.9
+  - variableadd{var=caster.ragestacks;amount=1} @self 0.7
+  - variableadd{var=caster.ragestacks;amount=1} @self 0.5
+hurtgendyerftumSapper_emCLEAR:
+  Skills:
+  - Aura{auraName=dyerftumSapper_em_seathe_impediment;duration=30;mergeSameCaster=true} @self
+  - clearThreat{} @self
+  - threat{amount=100} @Trigger
+hurtgendyerftumSapper_em2:
+  Cooldown: 0
+  Conditions:
+  - damagecause{c=PROJECTILE} false
+  TriggerConditions:
+  - distance{d=>5} true
+  Skills:
+  - skill{s=hurtgendyerftumSapper_emCLEAR;sync=true} @Trigger 0.25
+  - variableadd{var=caster.projrec;amount=1} @self
+  - variableadd{var=caster.projrec;amount=1} @self 0.5
+  
+  - variableadd{var=caster.ragestacks;amount=2} @self
+  - skill{s=hurtgendyerftumSapper_em_addstacksd1} @Trigger
+  - velocity{m=set;x=0;y=0;z=0;repeat=2;Repeatinterval=1} @self
+  - variableadd{var=caster.combor;amount=2} @self
+  - skill{s=dyerftumSapper_em_rage_trigger} @Trigger 0.4 ?variableInRange{var=caster.ragestacks;value=<4}
+  - skill{s=dyerftumSapper_em_rage_trigger} @Trigger 0.65 ?variableInRange{var=caster.ragestacks;value=4to8}
+  - skill{s=dyerftumSapper_em_rage_trigger} @Trigger 0.85 ?variableInRange{var=caster.ragestacks;value=8to12}
+  - skill{s=dyerftumSapper_em_rage_trigger} @Trigger 1 ?variableInRange{var=caster.ragestacks;value=>12}
+  - delay 3
+  - skill{s=dyerftumSapper_em_meleetrigger;sync=false} @Trigger 0.4 ?variableInRange{var=caster.ragestacks;value=<4}
+  - skill{s=dyerftumSapper_em_meleetrigger;sync=false} @Trigger 0.65 ?variableInRange{var=caster.ragestacks;value=4to8}
+  - skill{s=dyerftumSapper_em_meleetrigger;sync=false} @Trigger 0.85 ?variableInRange{var=caster.ragestacks;value=8to12}
+  - skill{s=dyerftumSapper_em_meleetrigger;sync=false} @Trigger 1 ?variableInRange{var=caster.ragestacks;value=>12}
+
+outrun_aleviate_dyerftumSapper_em:
+  TargetConditions:
+  - lineofsight true
+  Skills:
+  - variablesubtract{var=caster.hitrec;amount=1} @self 0.8 ?variableInRange{var=caster.hitrec;value=>0}
+  - message{m="Hitrec <caster.var.projrec> SUBTRACT-1"} @PlayersNearOrigin{r=75}  0 #DEBUGMESSAGE
+
+## MELEE TRIGGERS
+
+dyerftumSapper_em_meleetrigger:
+  Conditions:
+  - incombat true
+  - variableEquals{var=caster.skillxd;value="hurtedvbad"} false
+  - variableEquals{var=caster.rage;value="1"} CastInstead dyerftumSapper_em_meleetrigger2
+  - variableEquals{var=caster.hurtened;value="1"} false
+  - variableEquals{var=caster.casting;value="1"} false
+  Skills:
+  - delay 1to14
+  - skill{s=[
+      - randomskill{s=dyerftumSapper_em_bruttack1;sync=false} @LivingInCone{a=100.0;r=4.5;rot=0.0;ignore=samefaction}
+      - randomskill{s=dyerftumSapper_em_bruttack1;sync=false} @LivingInCone{a=200.0;r=1;rot=0.0;ignore=samefaction}]} 1 ?targets{a=>0}
+  
+  - skill{s=[
+      - skill{s=dyerftumSapper_em_spitsap;sync=false} @LivingInCone{a=110.0;r=25;rot=0.0;ignore=samefaction}
+      - skill{s=dyerftumSapper_em_spitsap;sync=false} @LivingInCone{a=200.0;r=1;rot=0.0;ignore=samefaction}]} 1 ?!targets{a=>0}
+
+dyerftumSapper_em_meleetrigger2:
+  Conditions:
+  - incombat true
+  - variableEquals{var=caster.skillxd;value="hurtedvbad"} false
+#  - variableEquals{var=caster.rage;value="1"} true
+  Skills:
+  - delay 1to14
+  - skill{s=[
+      - randomskill{s=dyerftumSapper_em_bruttack1;sync=false} @LivingInCone{a=100.0;r=4.5;rot=0.0;ignore=samefaction}
+      - randomskill{s=dyerftumSapper_em_bruttack1;sync=false} @LivingInCone{a=200.0;r=1;rot=0.0;ignore=samefaction}]} 1 ?targets{a=>0}
+  
+  - skill{s=[
+      - skill{s=dyerftumSapper_em_spitsap;sync=false} @LivingInCone{a=110.0;r=25;rot=0.0;ignore=samefaction}
+      - skill{s=dyerftumSapper_em_spitsap;sync=false} @LivingInCone{a=200.0;r=1;rot=0.0;ignore=samefaction}]} 0.5 ?!targets{a=>0}
+
+###################################################
+# (PRIMITIVE) DEFENSE PROTOCOL
+#
+
+dyerftumSapper_em_sdppcheck:
+  Cooldown: 0.3
+  Conditions:
+  - playersinradius{a=>0;r=7}
+  - variableEquals{var=caster.running;value="2"} false
+  Skills:
+  - effect:particles{particle=reddust;color=#03c982;amount=2;hS=0.01;vS=0.01;size=0.75;forwardOffset=0.4;y=1.5} @Self 0 #DEBUGPARTICLES
+  - skill{s=dyerftumSapper_em_sdpcheckB;sync=true;delay=6;repeat=0;repeatinterval=3} @PlayersInRadius{r=7;limit=2;Sort=NEAREST;conditions=[  - distance{d=4to7}]}
+  - skill{s=dyerftumSapper_em_sdpcheckA;sync=true;delay=4;repeat=2;repeatinterval=3} @PlayersInRadius{r=4;limit=2;Sort=NEAREST;conditions=[  - distance{d=2to4}  - Moving{} true  - targetinlineofsight{} true]}
+dyerftumSapper_em_sdpcheckB:
+  Conditions:
+  - hasaura{n=ShieldennblockA} false
+  TargetConditions:
+  - isSprinting{} true
+  - distance{d=0to5}
+  Skills:
+  - skill{s=[
+    - skill{s=dyerftumSapper_emcommuterdefense;sync=false} @TargetedTarget
+    - message{m="&e<caster.name> &bcast &cdyerftumSapper_em_sdppcheckB &e@<target.name>"} @PlayersNearOrigin{r=75} 0
+    - Aura{auraName=ShieldennblockA;duration=20} @self];sync=true} @TargetedTarget{limit=1;Sort=NEAREST} 1 #debugSPECIAL
+  - effect:particles{particle=reddust;color=#1dd7ee;amount=105;hS=0.1;vS=0.1;size=0.8;repeat=1;repeatinterval=1} @Self 0 #DEBUGPARTICLES
+dyerftumSapper_em_sdpcheckA:
+  Conditions:
+  - hasaura{n=backstepB} false
+  - hasaura{n=ShieldennblockB} false
+  TargetConditions:
+  - distance{d=0to3}
+  Skills:
+  - skill{s=[
+    - skill{s=dyerftumSapper_emcommuterdefense;sync=false} @TargetedTarget
+    - message{m="&e<caster.name> &bcast &cdyerftumSapper_em_sdppcheckA &e@<target.name>"} @TargetedTarget 0
+    - Aura{auraName=ShieldennblockB;duration=15} @self];sync=true} @TargetedTarget{limit=1;Sort=NEAREST} 1 #debugSPECIAL
+  - effect:particles{particle=reddust;color=#1dd7ee;amount=105;hS=0.1;vS=0.1;size=0.8;repeat=1;repeatinterval=1} @Self 0 #DEBUGPARTICLES
+
+
+# COMMUTER
+
+dyerftumSapper_emcommuterdefense:
+  TargetConditions:
+  - FieldOfView{angle=110;r=0} orElseCast dyerftumSapper_emcommuterdefenseRear
+  Skills:
+  - message{m="&e<caster.name> &bcast &cdyerftumSapper_emcommuterdefense &e@<target.name>"} @TargetedTarget 0 #DEBUGMESSAGE
+  - randomskill{s=dyerftumSapper_em_drawback1} @TargetedTarget
+dyerftumSapper_emcommuterdefenseRear:
+  Skills:
+  - randomskill{s=dyerftumSapper_em_drawback1} @TargetedTarget
+  - skill{s=commuterdyerftumSapper_emCLEAR;sync=true} @TargetedTarget 0.45
+
+commuterdyerftumSapper_emCLEAR:
+  Skills:
+  - Aura{auraName=dyerftumSapper_em_seathe_impediment;duration=30;mergeSameCaster=true} @self
+  - clearThreat{} @self
+  - threat{amount=150} @TargetedTarget
+
+# QUICKBLOCKS
+
+dyerftumSapper_em_drawback_antilunge1:
+  Conditions:
+  - variableEquals{var=caster.skillxd;value="drawback"} true
+  - variableEquals{var=caster.hurtened;value="1"} false
+  - variableEquals{var=caster.skillxd;value="hurtedvbad"} false
+  Skills:
+  - lunge{v=<skill.lungeintensity>} @forward{f=-10}
+dyerftumSapper_em_drawback_antilunge2:
+  Conditions:
+  - variableEquals{var=caster.skillxd;value="drawback"} true
+  - variableEquals{var=caster.skillxd;value="bruttack1"}
+  - variableEquals{var=caster.hurtened;value="1"} false
+  - variableEquals{var=caster.skillxd;value="hurtedvbad"} false
+  Skills:
+  - lunge{v=<skill.lungeintensity>} @forward{f=-10}
+
+dyerftumSapper_em_drawback1:
+  Cooldown: 2
+  Conditions:
+  - variableEquals{var=caster.rage;value="1"} castinstead dyerftumSapper_em_meleetrigger
+  - hasaura{n=backstepB} false
+  - stance{s=normal} true
+  - stance{s=casting} false
+  - incombat true
+  TargetConditions:
+  - distance{d=0to8}
+  Skills:
+  - lockmodel{l=false;delay=0} @Self ?!variableEquals{var=caster.hurtened;value="1"}
+  - message{m="&e<caster.name> &bcast &cdyerftumSapper_em_drawback1 &e@<target.name>"} @PlayersNearOrigin{r=75} 0 #DEBUGMESSAGE
+#  - setstance{stance=casting} @self
+#  - setvariable{var=caster.casting;value="1";t=integer} @Self
+  - BodyClamp{maxbody=0;stable=0;rdelay=0;rduration=4} @self #BODYCLAMP START
+  - setvariable{var=caster.skillxd;value="drawback";t=string} @Self
+  
+  - Aura{auraName=ShieldennblockA;refreshDuration=true;duration=60} @self
+  - state{remove=true;s=drawback1;lo=3} @self
+  - state{remove=true;s=drawback2;lo=3} @self
+  - randomskill{s=[
+      - state{state=drawback1;li=3;lo=8} @self
+    ],
+      [
+      - state{state=drawback2;li=3;lo=8} @self
+    ];sync=true}
+
+# DRAWBACK STATE REMOVE
+  - state{remove=true;s=backstep;lo=3} @self
+  - state{remove=true;s=attack3;lo=3} @self
+  - state{remove=true;s=attack1;lo=3} @self
+  - state{remove=true;s=attack2;lo=3} @self
+  - state{remove=true;s=spit1;lo=3} @self
+  - state{remove=true;s=spit2;lo=3} @self
+  - state{remove=true;s=hurtbad1;lo=12} @self
+  - state{remove=true;s=hurtbad2;lo=12} @self
+  - state{remove=true;s=hurtbad3;lo=12} @self
+  - state{remove=true;s=hurtbad4;lo=12} @self
+#
+  - look{headOnly=false;immediately=true;repeat=40;repeatInterval=1} @TargetedTarget
+  - potion{type=SLOW;duration=31;level=5;p=false;force=true} @Self
+  - skill{s=dyerftumSapper_em_drawback_antilunge1;lungeintensity=-0.07;repeat=5;repeatInterval=1} @Self
+  - skill{s=dyerftumSapper_em_drawback_antilunge1;lungeintensity=-0.15;delay=6;repeat=16;repeatInterval=1} @Self
+  - skill{s=dyerftumSapper_em_drawback_antilunge1;lungeintensity=-0.07;delay=23;repeat=5;repeatInterval=1} @Self
+  
+  - delay 30
+  - randomskill{s=dyerftumSapper_em_bruttack1;repeat=3;repeatinterval=6} @LivingInCone{a=120.0;r=6;rot=0.0;ignore=samefaction} 0.7
+  - BodyClamp{maxbody=50;stable=15;rdelay=10;rduration=8} @self ?variableEquals{var=caster.skillxd;value="drawback"} ?!variableEquals{var=caster.hurtened;value="1"}
+  - setstance{stance=normal} @self ?variableEquals{var=caster.skillxd;value="drawback"}
+  - setvariable{var=caster.casting;value="0";t=integer} @Self ?variableEquals{var=caster.skillxd;value="drawback"} ?!variableEquals{var=caster.hurtened;value="1"}
+  - setvariable{var=caster.skillxd;value="none";t=string} @Self ?variableEquals{var=caster.skillxd;value="drawback"} ?!variableEquals{var=caster.hurtened;value="1"}
+  - lockmodel{l=false;delay=0} @Self ?variableEquals{var=caster.skillxd;value="drawback"} ?!variableEquals{var=caster.hurtened;value="1"}
+
+# AI: DISTANCE COMMUTERS
+
+distancecommuteA_dyerftumSapper_em:
+  Conditions:
+  - incombat true
+  Skills:
+#  - skill{s=raytrace_obstacleCheck_dyerftumSapper_em;sync=true} @Target #CHANGE
+  - skill{s=distancecommuteA2_dyerftumSapper_em} @Target 1 
+distancecommuteA2_dyerftumSapper_em:
+  Conditions:
+  - hasaura{n=distancecommuterB_dyerftumSapper_em} false
+  - variableEquals{var=caster.rage;value="1"} castinstead distancecommuteA2_rage_dyerftumSapper_em
+  TargetConditions:
+  - distance{d=0to11} true
+  
+  Skills:  
+  - message{m="casted distancecommuteA_dyerftumSapper_em"} @Playersinradius{r=75} 0 #DEBUGMESSAGE
+  - auraremove{aura=distancecommuterA_dyerftumSapper_em} @self
+  - Aura{auraName=distancecommuterB_dyerftumSapper_em;duration=9999999;i=25;onTick=distancecommuteB_dyerftumSapper_em} @Self
+  - Aura{auraName=hit_dyerftumSapper_em_bruttack1;duration=7} @Self
+  - runaigoalselector{goal=clear}
+  - runaigoalselector{goal=lookatplayers}
+  - runaigoalselector{goal=arrowattack}
+  - runaigoalselector{goal=float}
+  - DefaultState{type=IDLE;state=idle_combat;li=3;lo=2} @self ?variableEquals{var=caster.charged;value="0"}
+  - DefaultState{type=IDLE;state=idle_aiming;li=3;lo=2} @self ?variableEquals{var=caster.charged;value="1"} ?variableEquals{var=caster.unseathed;value="1"}
+  - Aura{auraName=shielderdyerftumSapper_em;onTick=dyerftumSapper_em_sdppcheck;interval=7;duration=500;mergeSameCaster=true} @self
+
+distancecommuteA2_rage_dyerftumSapper_em:
+  Conditions:
+  - hasaura{n=distancecommuterB_dyerftumSapper_em} false
+  - variableEquals{var=caster.rage;value="1"} true
+  TargetConditions:
+  - distance{d=0to7} true
+  Skills:  
+  - message{m="casted distancecommuteA_dyerftumSapper_em"} @Playersinradius{r=75} 0 #DEBUGMESSAGE
+  - auraremove{aura=distancecommuterA_dyerftumSapper_em} @self
+  - Aura{auraName=distancecommuterB_dyerftumSapper_em;duration=9999999;i=25;onTick=distancecommuteB_dyerftumSapper_em} @Self
+  - Aura{auraName=hit_dyerftumSapper_em_bruttack1;duration=7} @Self
+  - runaigoalselector{goal=clear}
+  - runaigoalselector{goal=lookatplayers}
+  - runaigoalselector{goal=arrowattack}
+  - runaigoalselector{goal=float}
+  - DefaultState{type=IDLE;state=idle_combat;li=3;lo=2} @self ?variableEquals{var=caster.charged;value="0"}
+  - DefaultState{type=IDLE;state=idle_aiming;li=3;lo=2} @self ?variableEquals{var=caster.charged;value="1"} ?variableEquals{var=caster.unseathed;value="1"}
+  - Aura{auraName=shielderdyerftumSapper_em;onTick=dyerftumSapper_em_sdppcheck;interval=7;duration=500;mergeSameCaster=true} @self
+
+distancecommuteB_dyerftumSapper_em:
+  Skills:
+#  - skill{s=raytrace_obstacleCheck_dyerftumSapper_em;sync=true} @Target #CHANGE
+  - skill{s=distancecommuteB2_dyerftumSapper_em} @Target 1 
+
+distancecommuteB2_dyerftumSapper_em:
+  Conditions:
+  - hasaura{n=distancecommuterA_dyerftumSapper_em} false
+#  - variableEquals{var=caster.rage;value="1"} false
+  TargetConditions:
+  - distance{d=>12} true
+  Skills:
+  - Aura{auraName=distancecommuterA_dyerftumSapper_em;duration=9999999;i=15;onTick=distancecommuteA_dyerftumSapper_em} @Self
+  - message{m="casted distancecommuteB_dyerftumSapper_em &6MELEE"} @Playersinradius{r=75} 0 #DEBUGMESSAGE
+  - auraremove{aura=distancecommuterB_dyerftumSapper_em} @self
+  - Aura{auraName=hit_dyerftumSapper_em_bruttack1;duration=7} @Self
+  - runaigoalselector{goal=clear}
+  - runaigoalselector{goal=lookatplayers}
+  - runaigoalselector{goal=meleeattack}
+  - runaigoalselector{goal=[  - fleeConditional{distance=3;speed=1;safespeed=1;conditions=[ - variableEquals{var=target.fleeable;value="1"} true ]}]}
+  - runaigoalselector{goal=float}
+  
+#COUNTERATTACKCS ===
+
+countertacked_dyerftumSapper_em_A:
+  Conditions:
+  - variableEquals{var=caster.vulnerable;value="1"} true
+  - hasaura{n=nule_parry} false
+  - variableEquals{var=caster.skillxd;value="bruttack1"} castinstead cakd_dyerftumSapper_em_cattack1
+  - variableEquals{var=caster.skillxd;value="bruttack2"} castinstead cakd_dyerftumSapper_em_cattack2
+  Skills:
+  - message{m="Casted &ecountertacked_dyerftumSapper_em_A"} @PlayersNearOrigin{r=75} 0 #DEBUGMESSAGE
+
+
+cakd_dyerftumSapper_em_cattack1:
+  Conditions:
+  - hasaura{n=nule_parry} false
+  - hasaura{n=parrycd} false
+  Skills:
+  #LEAFS VFX
+  - summon{mob=dyerftum_leafs_2;amount=1;noise=2;yr=0.8;repeat=1to2;repeatinterval=1} @RandomLocationsNearOrigin{a=1;r=1;s=0.3;minr=0.3;y=-2.8}
+  #
+  - Aura{auraName=justparried;duration=3} @self
+  - effect:particles{particle=crit;amount=22;hS=0.5;vS=0.7;speed=0.01;y=1.5} @Self
+  - sound{s=emewoods1:custom.enchantedwoods1.dyerftum_hurtbad;p=<random.float.1to1.3>;v=1.5} @selflocation #SOUND
+  - sound{s=emewoods1:custom.enchantedwoods1.emweaponclash;p=<random.float.1.2to1.6>;v=1.5} @selflocation #CHANGE
+  - message{m="Casted &eCountered attack 1"} @PlayersNearOrigin{r=75} 0 #DEBUGMESSAGE
+  - setstance{stance=casting} @self ?stance{s=normal}
+  - setvariable{var=caster.skillxd;value="caked";t=string} @Self
+  - variableadd{var=caster.hitrec;amount=3} @self
+  
+  - state{remove=true;s=hurtbad1;lo=3} @self
+  - state{remove=true;s=hurtbad2;lo=3} @self
+  - state{remove=true;s=hurtbad3;lo=3} @self
+  - state{remove=true;s=hurtbad4;lo=3} @self
+
+  - randomskill{s=[
+      - state{state=hurtbad1;li=1;lo=8} @self
+    ],
+      [
+      - state{state=hurtbad2;li=1;lo=8} @self
+    ],
+      [
+      - state{state=hurtbad3;li=1;lo=8} @self
+    ],
+      [
+      - state{state=hurtbad4;li=1;lo=8} @self
+    ];sync=true}
+
+  - Aura{auraName=parried;duration=35} @self
+  - Aura{auraName=dyerftumSapper_em_hurtbad;duration=35} @self
+  - Aura{auraName=parrycd;duration=70} @self
+  #
+  - potion{type=SLOW;duration=28;level=8;p=false;force=true} @Self
+  - state{remove=true;s=attack3;lo=3} @self
+  - state{remove=true;s=attack1;lo=3} @self
+  - state{remove=true;s=attack2;lo=3} @self
+  
+  
+  #
+  - setvariable{var=caster.hurtened;value="1";t=integer} @Self
+  - setvariable{var=caster.countered;value="1";t=integer} @Self
+  - setvariable{var=caster.casting;value="1";t=integer} @Self
+  - delay 8
+  - skill{s=[
+    - delay 0to4
+    - setvariable{var=caster.hurtened;value="0";t=integer} @Self
+    - setstance{stance=normal} @self ?stance{s=casting}
+    - setvariable{var=caster.casting;value="0";t=integer} @Self
+    - auraremove{aura=parried} @self
+    - lockmodel{l=false;delay=0} @Self
+    - state{remove=true;s=attack1_parried;lo=8} @self
+    - setvariable{var=caster.skillxd;value="none";t=string} @Self];sync=false} @Self 0.6
+  - skill{s=dyerftumSapper_em_meleetrigger2;repeat=3;repeatinterval=3} @LivingInCone{a=110.0;r=5.5;rot=0.0;ignore=samefaction} 0.7
+  - skill{s=dyerftumSapper_em_meleetrigger2;repeat=3;repeatinterval=3} @LivingInCone{a=180.0;r=0.9;rot=0.0;ignore=samefaction}
+  - delay 16
+  - skill{s=[
+    - setvariable{var=caster.hurtened;value="0";t=integer} @Self
+    - setstance{stance=normal} @self
+    - setvariable{var=caster.skillxd;value="none";t=string} @Self
+    - setvariable{var=caster.casting;value="0";t=integer} @Self];sync=false} @Self ?!variableEquals{var=caster.skillxd;value="bruttack1"} ?!variableEquals{var=caster.skillxd;value="bruttack2"} ?!variableEquals{var=caster.skillxd;value="bruttack3"} ?!variableEquals{var=caster.skillxd;value="bruttack4"} ?!variableEquals{var=caster.skillxd;value="bruttack5"} ?!variableEquals{var=caster.skillxd;value="hurtedvbad"}
+
+# NORMAL COMBO ATTACKS
+
+dyerftumSapper_em_bruttack1:
+  Cooldown: 2
+  Conditions:
+  - variableEquals{var=caster.skillxd;value="hurtedvbad"} false
+  - stance{s=casting} false
+  - stance{s=normal} true
+  - variableEquals{var=caster.hurtened;value="1"} false
+  - variableEquals{var=caster.casting;value="1"} false
+  - hasaura{n=bruttackrest} false
+  TargetConditions:
+  - distance{d=0to3} true
+  - fieldofview{angle=80} true
+  Skills:
+  - lockmodel{l=false;delay=2} @Self
+  - setstance{stance=casting} @self
+  - BodyClamp{maxbody=0;stable=0;rdelay=0;rduration=4} @self #BODYCLAMP START
+  - sound{s=emewoods1:custom.enchantedwoods1.wood_windup;p=<random.float.1to1.6>;v=1.5} @SelfLocation #SOUND
+#  - state{state=attack1;li=1;lo=10} @self 
+  - state{remove=true;s=attack1;lo=6} @self
+  - state{remove=true;s=attack2;lo=6} @self
+  - randomskill{s=[
+      - Aura{auraName=right_attack;duration=20} @Self
+      - state{state=attack1;li=1;lo=2} @self
+    ],
+      [
+      - Aura{auraName=left_attack;duration=20} @Self
+      - state{state=attack2;li=1;lo=2} @self
+    ];sync=true}
+# STATE REMOVE
+  - state{remove=true;s=attack3;lo=3} @self
+
+  - state{remove=true;s=hurtbad1;lo=3} @self
+  - state{remove=true;s=hurtbad2;lo=3} @self
+  - state{remove=true;s=hurtbad3;lo=3} @self
+  - state{remove=true;s=hurtbad4;lo=3} @self
+
+#
+  - setvariable{var=caster.skillxd;value="bruttack1";t=string;delay=0} @Self
+  - potion{type=SLOW;duration=32;level=7;p=false;force=false} @Self
+  - look{headOnly=false;immediately=false;repeat=5;repeatInterval=1} @Target
+  - spin{d=30;v=0;delay=2} @self
+  - lockmodel{l=true;delay=0} @Self
+  - message{m="VULNERABLE &dMADE BY &bENDESMAN";delay=15} @PlayersNearOrigin{r=75} 0 #debugMESSAGE
+  - setvariable{var=caster.vulnerable;value="1";t=integer;delay=15} @Self
+  - setvariable{var=caster.vulnerable;value="0";t=integer;delay=17} @Self
+  - message{m="NOVULNERABLE";delay=17} @PlayersNearOrigin{r=75} 0 #debugMESSAGE
+  - delay 11 #11
+  - sound{s=emewoods1:custom.enchantedwoods1.dyerftum_efforta;p=<random.float.1to1.3>;v=1.5} @selflocation 0.7 ?!variableEquals{var=caster.hurtened;value="1"} ?!hasaura{n=bruttackrest2} #CHANGE
+  - setvariable{var=caster.casting;value="1";t=integer;delay=2} @Self ?!variableEquals{var=caster.hurtened;value="1"} ?!hasaura{n=bruttackrest2} ?!hasaura{n=bruttackrest}
+
+  - delay 5 #16
+  - sound{s=emewoods1:custom.enchantedwoods1.attackwindup;p=<random.float.1.4to1.7>;v=1} @selflocation ?!variableEquals{var=caster.hurtened;value="1"} ?!hasaura{n=bruttackrest2} ?!hasaura{n=bruttackrest} #CHANGE
+
+  - delay 1 #17
+  - propel{v=-0.0006;repeat=10;repeatInterval=1} @forward{f=10} ?onground ?!variableEquals{var=caster.hurtened;value="1"} ?!hasaura{n=bruttackrest2}
+#  - skill{s=dyerftumSapper_em_bruttack1_adaptivelunge_reach;repeat=2;repeatInterval=1;delay=0} @Self ?!variableEquals{var=caster.hurtened;value="1"} ?!hasaura{n=bruttackrest2}
+  - Aura{auraName=attack1state;duration=19} @Self ?!variableEquals{var=caster.hurtened;value="1"}
+  
+  - skill{s=[
+      - skill{s=dyerftumSapper_em_bruttack1_hit;sync=true;repeat=2;repeatinterval=1} @LivingInCone{a=100.0;r=3;rot=60;ignore=samefaction} 
+      - skill{s=dyerftumSapper_em_bruttack1_hit;sync=true;repeat=2;repeatinterval=1} @LivingInCone{a=180.0;r=1.3;rot=70.0;ignore=samefaction} 
+  
+      - skill{s=dyerftumSapper_em_bruttack1_hit;sync=true;repeat=2;repeatinterval=1;delay=1} @LivingInCone{a=140.0;r=3.5;rot=0.0;ignore=samefaction}
+      - skill{s=dyerftumSapper_em_bruttack1_hit;sync=true;repeat=2;repeatinterval=1;delay=1} @LivingInCone{a=200.0;r=1;rot=0.0;ignore=samefaction}]} ?hasaura{n=right_attack} ?!variableEquals{var=caster.hurtened;value="1"} ?!hasaura{n=bruttackrest2} ?!hasaura{n=bruttackrest}
+
+  - skill{s=[
+      - skill{s=dyerftumSapper_em_bruttack1_hit;sync=true;repeat=2;repeatinterval=1} @LivingInCone{a=100.0;r=3;rot=300;ignore=samefaction} 
+      - skill{s=dyerftumSapper_em_bruttack1_hit;sync=true;repeat=2;repeatinterval=1} @LivingInCone{a=180.0;r=1.3;rot=290.0;ignore=samefaction} 
+  
+      - skill{s=dyerftumSapper_em_bruttack1_hit;sync=true;repeat=2;repeatinterval=1;delay=1} @LivingInCone{a=140.0;r=3.5;rot=0.0;ignore=samefaction}
+      - skill{s=dyerftumSapper_em_bruttack1_hit;sync=true;repeat=2;repeatinterval=1;delay=1} @LivingInCone{a=200.0;r=1;rot=0.0;ignore=samefaction}]} ?hasaura{n=left_attack} ?!variableEquals{var=caster.hurtened;value="1"} ?!hasaura{n=bruttackrest2} ?!hasaura{n=bruttackrest}
+
+  - delay 15 #32
+  - setstance{stance=normal} @self ?variableEquals{var=caster.skillxd;value="bruttack1"} ?!variableEquals{var=caster.hurtened;value="1"}
+  - setvariable{var=caster.casting;value="0";t=integer} @Self ?variableEquals{var=caster.skillxd;value="bruttack1"} ?!variableEquals{var=caster.hurtened;value="1"}
+  - lockmodel{l=false;delay=0} @Self ?variableEquals{var=caster.skillxd;value="bruttack1"} ?!variableEquals{var=caster.hurtened;value="1"}
+  - BodyClamp{maxbody=50;stable=15;rdelay=10;rduration=8} @self ?variableEquals{var=caster.skillxd;value="bruttack1"} ?!variableEquals{var=caster.hurtened;value="1"}
+  - setvariable{var=caster.skillxd;value="none";t=string} @Self ?variableEquals{var=caster.skillxd;value="bruttack1"} ?!variableEquals{var=caster.hurtened;value="1"}
+
+dyerftumSapper_em_bruttack1_hit:
+  TargetConditions:
+  - hasaura{n=hit_dyerftumSapper_em_bruttack1} false
+  - samefaction false
+  Skills:
+  - basedamage{m=1.3;ignorearmor=false} @TargetedTarget
+  - basedamage{m=0.4;ignorearmor=false;preventknockback=true;preventimmunity=true} @TargetedTarget{conditions=[  - distance{d=<1.3} true ]}
+  - sound{s=emewoods1:custom.enchantedwoods1.wood_hit;p=<random.float.1.6to2>;v=1.2} @TargetedTarget #SOUND
+  - sound{s=emewoods1:custom.enchantedwoods1.attackhit;p=<random.float.1.1to1.5>;v=1.2} @TargetedTarget #SOUND
+  - skill{s=outrun_aleviate_dyerftumSapper_em;sync=true} @TargetedTarget{limit=1;sort=NEAREST}
+  - Aura{auraName=hit_dyerftumSapper_em_bruttack1;duration=7} @TargetedTarget
+  - potion{type=SLOW;duration=10;lvl=7;particles=false} @TargetedTarget
+  
+  - effect:particles{particle=SNEEZE;amount=15;hS=0.5;vS=0.2;speed=0.3;directional=true;y=0} @TargetedTarget ?hasaura{n=dyerftumShaman_em_healingBuff}
+  - basedamage{m=0.2;ignorearmor=false;preventknockback=true;preventimmunity=true} @TargetedTarget ?hasaura{n=dyerftumShaman_em_healingBuff}
+  - onDamaged{auraName=poisoneffect_dyerftumShaman_em;duration=200;damageMultiplier=1.2
+    ;onHit=poisoneffect_dyerftumShaman_em_hit_minion;refreshDuration=true} @TargetedTarget ?hasaura{n=dyerftumShaman_em_healingBuff}
+  - potion{type=POISON;duration=80;level=0;p=false;delay=0} @TargetedTarget ?hasaura{n=dyerftumShaman_em_healingBuff}
+#  - randomskill{s=dyerftumSapper_em_bruttack1;sync=false;repeat=4;repeatinterval=4} @LivingInCone{a=100.0;r=6.4;rot=0.0;ignore=samefaction;limit=1;sort=NEAREST} 0.5 ?!variableEquals{var=caster.hurtened;value="1"} ?!hasaura{n=bruttackrest2} ?!hasaura{n=bruttackrest}
+
+# DIS SKILL TOS ROCC
+
+dyerftumSapper_em_spitsap:
+  Cooldown: 5
+  Conditions:
+  - variableEquals{var=caster.skillxd;value="hurtedvbad"} false
+  - stance{s=casting} false
+  - stance{s=normal} true
+  - variableEquals{var=caster.hurtened;value="1"} false
+  - variableEquals{var=caster.casting;value="1"} false
+  - hasaura{n=bruttackrest} false
+  TargetConditions:
+  - distance{d=0.5to12} true
+  - fieldofview{angle=80} true
+  Skills:
+  - lockmodel{l=false;delay=2} @Self
+  - setstance{stance=casting} @self
+  - BodyClamp{maxbody=0;stable=0;rdelay=0;rduration=4} @self #BODYCLAMP START
+  - sound{s=emewoods1:custom.enchantedwoods1.dyerftum_chargepuke;p=<random.float.1to1.3>;v=1.5} @selflocation ?!variableEquals{var=caster.hurtened;value="1"} ?!hasaura{n=bruttackrest2} #SOUND
+  - state{remove=true;s=spit1;lo=6} @self
+  - state{remove=true;s=spit2;lo=6} @self
+  - randomskill{s=[
+      - Aura{auraName=right_attack;duration=20} @Self
+      - state{state=spit1;li=1;lo=2} @self
+    ],
+      [
+      - Aura{auraName=left_attack;duration=20} @Self
+      - state{state=spit2;li=1;lo=2} @self
+    ];sync=true}
+
+# STATE REMOVE
+  - state{remove=true;s=attack2;lo=3} @self
+  - state{remove=true;s=attack1;lo=3} @self
+
+  - state{remove=true;s=hurtbad1;lo=3} @self
+  - state{remove=true;s=hurtbad2;lo=3} @self
+  - state{remove=true;s=hurtbad3;lo=3} @self
+  - state{remove=true;s=hurtbad4;lo=3} @self
+
+#
+  - setvariable{var=caster.skillxd;value="tossrocc";t=string;delay=0} @Self
+  - potion{type=SLOW;duration=32;level=7;p=false;force=false} @Self
+  - look{headOnly=false;immediately=false;repeat=5;repeatInterval=1} @Target
+  - spin{d=30;v=0;delay=2} @self
+  - lockmodel{l=true;delay=0} @Self
+  - message{m="VULNERABLE &dMADE BY &bENDESMAN";delay=15} @PlayersNearOrigin{r=75} 0 #debugMESSAGE
+  - setvariable{var=caster.vulnerable;value="1";t=integer;delay=15} @Self
+  - setvariable{var=caster.vulnerable;value="0";t=integer;delay=17} @Self
+  - message{m="NOVULNERABLE";delay=17} @PlayersNearOrigin{r=75} 0 #debugMESSAGE
+  - delay 5 #5
+  - changepart{m=em_dyerftum2;pid=right_forearm;nm=em_dyerftum2;npid=right_forearm2} @self
+  - delay 6 #11
+  
+  - setvariable{var=caster.casting;value="1";t=integer;delay=2} @Self ?!variableEquals{var=caster.hurtened;value="1"} ?!hasaura{n=bruttackrest2} ?!hasaura{n=bruttackrest}
+
+  - delay 6 #17
+  - tracklocation @TargetLocation
+  - sound{s=emewoods1:custom.enchantedwoods1.cpacidcast;p=<random.float.0.9to1.1>;v=3.6} @Self ?!variableEquals{var=caster.hurtened;value="1"} ?!hasaura{n=bruttackrest2} ?!hasaura{n=bruttackrest} #CHANGE
+  - delay 1 #18
+  - propel{v=-0.0006;repeat=10;repeatInterval=1} @forward{f=10} ?onground ?!variableEquals{var=caster.hurtened;value="1"} ?!hasaura{n=bruttackrest2}
+#  - skill{s=dyerftumSapper_em_spitsap_adaptivelunge_reach;repeat=2;repeatInterval=1;delay=0} @Self ?!variableEquals{var=caster.hurtened;value="1"} ?!hasaura{n=bruttackrest2}
+  - Aura{auraName=attack1state;duration=19} @Self ?!variableEquals{var=caster.hurtened;value="1"}
+  - summon{mob=sapspill_em_spill;amount=1;noise=0.3;yr=0} @ModelPart{p=trompamarker;offset=GLOBAL;y=-6}
+  - projectile{onTick=dyerftumSapper_em_spitsap_tick;bulletType=MOB;mob=sapspill_em_projectile;onEnd=dyerftumSapper_em_spitsap_end;onhit=dyerftumSapper_em_spitsap_hit
+    ;hitConditions=[  - faction{faction=Dyerftum} false ];mr=45;v=14;g=0.17;i=1;hR=1;hp=true;hnp=true;vR=0.6
+    ;sB=true;sE=true;d=150;sfo=2;syo=1.6;origin=@ModelPart{p=trompamarker;offset=GLOBAL;y=0}} @Forward{f=5;y=1.8} ?!variableEquals{var=caster.hurtened;value="1"} ?!hasaura{n=bruttackrest2} ?!hasaura{n=bruttackrest}
+  - changepart{m=em_dyerftum2;pid=right_forearm;nm=em_dyerftum2;npid=right_forearm} @self
+  - delay 14 #32
+  - setstance{stance=normal} @self ?variableEquals{var=caster.skillxd;value="tossrocc"} ?!variableEquals{var=caster.hurtened;value="1"}
+  - setvariable{var=caster.casting;value="0";t=integer} @Self ?variableEquals{var=caster.skillxd;value="tossrocc"} ?!variableEquals{var=caster.hurtened;value="1"}
+  - lockmodel{l=false;delay=0} @Self ?variableEquals{var=caster.skillxd;value="tossrocc"} ?!variableEquals{var=caster.hurtened;value="1"}
+  - BodyClamp{maxbody=50;stable=15;rdelay=10;rduration=8} @self ?variableEquals{var=caster.skillxd;value="tossrocc"} ?!variableEquals{var=caster.hurtened;value="1"}
+  - setvariable{var=caster.skillxd;value="none";t=string} @Self ?variableEquals{var=caster.skillxd;value="tossrocc"} ?!variableEquals{var=caster.hurtened;value="1"}
+dyerftumSapper_em_spitsap_tick:
+  Conditions:
+  - hasaura{n=dyerftumShaman_em_healingBuff} true
+  Skills:
+  - effect:particles{particle=reddust;color=#8ee044;amount=2;hS=0.15;vS=0.15;speed=1;size=0.8} @Projectileforward{f=-1;y=-0.5} ?hasaura{n=dyerftumShaman_em_healingBuff}
+dyerftumSapper_em_spitsap_hit:
+  TargetConditions:
+  - hasaura{n=hit_dyerftumSapper_em_spitsap} false
+  - samefaction false
+  Skills:
+  - sound{s=emewoods1:custom.enchantedwoods1.cpacid_hit;p=<random.float.0.9to1.1>;v=1.7} @TargetedTarget #CHANGE
+  - basedamage{m=1.3;ignorearmor=false} @TargetedTarget
+  - basedamage{m=0.4;ignorearmor=false;preventknockback=true;preventimmunity=true} @TargetedTarget{conditions=[  - distance{d=<1.3} true ]}
+  - skill{s=outrun_aleviate_dyerftumSapper_em;sync=true} @TargetedTarget{limit=1;sort=NEAREST}
+  - Aura{auraName=hit_dyerftumSapper_em_spitsap;duration=7} @TargetedTarget
+  - potion{type=SLOW;duration=10;lvl=7;particles=false} @TargetedTarget
+  - potion{type=SLOW;duration=30;level=4;p=false;force=true;delay=10}
+  - potion{type=SLOW;duration=20;level=3;p=false;force=true;delay=40}
+  - potion{type=SLOW;duration=20;level=2;p=false;force=true;delay=60}
+  - potion{type=SLOW;duration=20;level=1;p=false;force=true;delay=80}
+  - potion{type=SLOW;duration=20;level=0;p=false;force=true;delay=100}
+  
+  - effect:particles{particle=SNEEZE;amount=15;hS=0.5;vS=0.2;speed=0.3;directional=true;y=0} @TargetedTarget ?hasaura{n=dyerftumShaman_em_healingBuff}
+  - basedamage{m=0.3;ignorearmor=false;preventknockback=true;preventimmunity=true} @TargetedTarget ?hasaura{n=dyerftumShaman_em_healingBuff}
+  - onDamaged{auraName=poisoneffect_dyerftumShaman_em;duration=200;damageMultiplier=1.2
+    ;onHit=poisoneffect_dyerftumShaman_em_hit_minion2;refreshDuration=true} @TargetedTarget ?hasaura{n=dyerftumShaman_em_healingBuff}
+  - potion{type=POISON;duration=80;level=0;p=false;delay=0} @TargetedTarget ?hasaura{n=dyerftumShaman_em_healingBuff}
+
+  - delay 10to12
+#  - randomskill{s=dyerftumSapper_em_spitsap;sync=false;repeat=4;repeatinterval=4} @LivingInCone{a=100.0;r=6.4;rot=0.0;ignore=samefaction;limit=1;sort=NEAREST} 0.5 ?!variableEquals{var=caster.hurtened;value="1"} ?!hasaura{n=bruttackrest2} ?!hasaura{n=bruttackrest}
+
+dyerftumSapper_em_spitsap_end:
+  Skills:
+  
+  - skill{s=[
+    - summon{mob=sapspill_em_spill;amount=1;radius=0.3;yr=0.3} @TargetedLocation{y=-5}];repeat=3;repeatinterval=1} @RandomLocationsNearOrigin{a=1;r=0.01;minr=0.1;spacing=0}
+  - summon{mob=sapspill_em_spill;amount=1;noise=1;r=0.3;yr=0} @projectileforward{f=1.3;y=-6}
+
+  - effect:particles{p=block_crack;m=honey_block;a=15;hs=0.2;y=0;vs=0.2;s=0.2} @Origin
+  
+  - sound{s=emewoods1:custom.enchantedwoods1.cpacid_hit;p=<random.float.0.9to1.1>;v=1.7} @Origin
+
+  - basedamage{m=1.1;ignorearmor=false;preventknockback=true;preventimmunity=true} @EntitiesNearOrigin{r=1;conditions=[  - hasaura{n=hit_dyerftumSapper_em_spitsap} false ]}
+  - potion{type=SLOW;duration=30;level=4;p=false;force=true;delay=0} @EntitiesNearOrigin{r=1}
+  - potion{type=SLOW;duration=20;level=3;p=false;force=true;delay=30} @EntitiesNearOrigin{r=1}
+  - potion{type=SLOW;duration=20;level=2;p=false;force=true;delay=50} @EntitiesNearOrigin{r=1}
+  - potion{type=SLOW;duration=20;level=1;p=false;force=true;delay=70} @EntitiesNearOrigin{r=1}
+  - potion{type=SLOW;duration=20;level=0;p=false;force=true;delay=90} @EntitiesNearOrigin{r=1}
+
+#RAGETRIGGERS
+dyerftumSapper_em_rage_trigger:
+  Conditions:
+  - incombat true
+  Skills:
+  - Aura{auraName=dyerftumSapper_em_rage_aura;onTick=dyerftumSapper_em_rage_trigger_execute;interval=5;duration=300;mergeSameCaster=true} @self
+dyerftumSapper_em_rage_trigger_execute:
+  Cooldown: 10
+  Conditions:
+  - incombat true
+  - variableEquals{var=caster.skillxd;value="hurtedvbad"} false
+  - stance{s=casting} false
+  - stance{s=normal} true
+  - variableEquals{var=caster.hurtened;value="1"} false
+  - variableEquals{var=caster.casting;value="1"} false
+  Skills:
+  - effect:particles{particle=angryVillager;amount=5;hS=2.5;vS=0.5;speed=1} @SelfLocation{y=1.8}
+  - auraremove{aura=dyerftumSapper_em_rage_trigger} @self
+  - sound{s=emewoods1:custom.enchantedwoods1.dyerftum_rage;p=<random.float.1to1.2>;v=1.5} @selflocation 0.6 #SOUND
+
+#  - Aura{auraName=shielderdyerftumSapper_em;onTick=dyerftumSapper_em_sdppcheck;interval=7;duration=140;mergeSameCaster=true} @self 0.8
+  - DefaultState{type=WALK;state=walk_fast;li=10;lo=10} @self
+  - setspeed{speed=1.35;type=walking;delay=0} @Self
+  - setspeed{speed=1.43;type=walking;delay=1} @Self
+  - setspeed{speed=1.52;type=walking;delay=2} @Self
+  - setspeed{speed=1.64;type=walking;delay=3} @Self
+  - Aura{desot=true;auraName=checkragedyerftumSapper_em;onTick=dyerftumSapper_em_rageproximitycheck;onEnd=dyerftumSapper_em_rageproximitycheckEND;interval=15;duration=400} @self
+  - setvariable{var=caster.ragestacks;value="15";t=integer} @Self ?variableInRange{var=caster.ragestacks;value=<10}
+  - setvariable{var=caster.rage;value="1";t=integer} @Self
+  - delay 10
+  - randomskill{s=dyerftumSapper_em_bruttack1,dyerftumSapper_em_bruttack1,dyerftumSapper_em_bruttack1;repeat=3;repeatinterval=6} @LivingInCone{a=110.0;r=5;rot=0.0;ignore=samefaction} 0.5
+
+  
+
+
+dyerftumSapper_em_rageproximitycheck:
+  Conditions:
+  - targetwithin{d=8} castinstead dyerftumSapper_em_rageproximitycheckb
+  - incombat orElseCast dyerftumSapper_em_rageproximitycheck_nocombat
+  - variableInRange{var=caster.ragestacks;value=<1} castinstead dyerftumSapper_em_rageproximitycheckc
+  Skills:
+  - variablesubtract{var=caster.ragestacks;amount=1} @self 0.7
+  - message{m="ragestax <caster.var.ragestacks> STACKS"} @PlayersNearOrigin{r=75} 0 #DEBUGMESSAGE
+dyerftumSapper_em_rageproximitycheck_nocombat:
+  Conditions:
+  - variableEquals{var=caster.rage;value="1"} true
+  - incombat false
+  Skills:
+  - auraremove{aura=checkragedyerftumSapper_em} @self
+  - auraremove{aura=checkragedyerftumSapper_em1b} @self
+  - Aura{auraName=ragecooldown;duration=40} @self
+  - effect:particles{particle=reddust;color=#e2eb32;amount=15;hS=0.1;vS=0.1;size=0.8;repeat=2;repeatinterval=1} @Origin{y=2.4} 0 #DEBUG
+  - setvariable{var=caster.rage;value="0";t=integer} @Self
+  - potion{type=SLOW;duration=8;level=5;p=false;force=true} @Self
+  - DefaultState{type=WALK;state=walk;li=10;lo=15} @self ?!variableEquals{var=caster.running;value="2"} ?!variableEquals{var=caster.running;value="1"}
+  - DefaultState{type=IDLE;state=idle;li=14;lo=15;delay=1} @self
+  - setspeed{speed=1;type=walking} @self
+dyerftumSapper_em_rageproximitycheckb:
+  Conditions:
+  - targetwithin{d=8} true
+  - variableEquals{var=caster.running;value="2"} false
+  Skills:
+  - variablesubtract{var=caster.ragestacks;amount=1} @self 1
+  - variablesubtract{var=caster.ragestacks;amount=1} @self 0.55
+  - variablesubtract{var=caster.ragestacks;amount=1} @self 0.3
+  - skill{s=[
+    - auraremove{aura=checkragedyerftumSapper_em} @self
+    - auraremove{aura=checkragedyerftumSapper_em1b} @self
+    - setvariable{var=caster.rage;value="0";t=integer} @Self
+    - Aura{auraName=ragecooldown;duration=120} @self
+    - setvariable{var=caster.ragestacks;value="0";t=integer} @Self
+    - potion{type=SLOW;duration=8;level=5;p=false;force=true} @Self
+    - DefaultState{type=WALK;state=walk_combat;li=10;lo=15} @self
+    - DefaultState{type=IDLE;state=idle_combat;li=14;lo=15;delay=1} @self
+    - setspeed{speed=1.3;type=walking} @self];sync=true} @self 0.3 ############## 0.25
+
+dyerftumSapper_em_rageproximitycheckc:
+  Conditions:
+  - variableEquals{var=caster.rage;value="1"} true
+  Skills:
+  - auraremove{aura=checkragedyerftumSapper_em} @self
+  - auraremove{aura=checkragedyerftumSapper_em1b} @self
+  - Aura{auraName=ragecooldown;duration=120} @self
+  - effect:particles{particle=reddust;color=#e2eb32;amount=15;hS=0.1;vS=0.1;size=0.8;repeat=2;repeatinterval=1} @Origin{y=2.4} 0 #DEBUG
+  - setvariable{var=caster.rage;value="0";t=integer} @Self
+  - setvariable{var=caster.ragestacks;value="0";t=integer} @Self
+  - potion{type=SLOW;duration=8;level=5;p=false;force=true} @Self
+  
+  - DefaultState{type=WALK;state=walk_combat;li=10;lo=15} @self ?!variableEquals{var=caster.running;value="2"} ?!variableEquals{var=caster.running;value="1"}
+  - DefaultState{type=IDLE;state=idle_combat;li=14;lo=15;delay=1} @self
+  - setspeed{speed=1.3;type=walking} @self
+dyerftumSapper_em_rageproximitycheckEND:
+  Conditions:
+  - variableEquals{var=caster.rage;value="1"} true
+  Skills:
+  - Aura{auraName=ragecooldown;duration=120} @self
+  - effect:particles{particle=reddust;color=#e2eb32;amount=15;hS=0.1;vS=0.1;size=0.8;repeat=2;repeatinterval=1} @Origin{y=2.4} 0 #DEBUG
+  - setvariable{var=caster.rage;value="0";t=integer} @Self
+  - setvariable{var=caster.ragestacks;value="0";t=integer} @Self
+  - potion{type=SLOW;duration=8;level=5;p=false;force=true} @Self
+  
+  - DefaultState{type=WALK;state=walk_combat;li=10;lo=15} @self ?!variableEquals{var=caster.running;value="2"} ?!variableEquals{var=caster.running;value="1"}
+  - DefaultState{type=IDLE;state=idle_combat;li=14;lo=15;delay=1} @self
+  - setspeed{speed=1.3;type=walking} @self
+dyerftumSapper_em_rageproximitycheckd:
+  Conditions:
+  - variableEquals{var=caster.rage;value="1"} true
+  Skills:
+  - auraremove{aura=checkragedyerftumSapper_em} @self
+  - auraremove{aura=checkragedyerftumSapper_em1b} @self
+  - Aura{auraName=ragecooldown;duration=180} @self
+  - effect:particles{particle=reddust;color=#e2eb32;amount=15;hS=0.1;vS=0.1;size=0.8;repeat=2;repeatinterval=1} @Origin{y=2.4} 0 #DEBUG
+  - setvariable{var=caster.rage;value="0";t=integer} @Self
+  - setvariable{var=caster.ragestacks;value="0";t=integer} @Self
+  
+  - potion{type=SLOW;duration=8;level=5;p=false;force=true} @Self
+  - DefaultState{type=WALK;state=walk_combat;li=10;lo=15} @self ?!variableEquals{var=caster.running;value="2"} ?!variableEquals{var=caster.running;value="1"}
+  - DefaultState{type=IDLE;state=idle_combat;li=14;lo=15;delay=1} @self
+  - setspeed{speed=1.3;type=walking} @self
+
+####RUNNER PROTOCOL
+
+dyerftumSapper_em_runprotocolcheck:
+  Conditions:
+  - incombat true
+  - variableEquals{var=caster.rage;value="1"} false
+  Skills:
+  - skill{s=dyerftumSapper_em_runprotocol_addstacks} @Target
+  - message{m="Casted &EdyerftumSapper_em_runprotocol_addstacks"} @PlayersNearOrigin{r=75} 0 #debugmessaGE
+  - message{m="ragestacks <caster.var.ragestacks> STACKS"} @PlayersNearOrigin{r=75} 0 #debugmessaGE
+  - randomskill{s=dyerftumSapper_em_rage_trigger;sync=true} @Target 0.6 ?variableInRange{var=caster.ragestacks;value=>10}
+  - randomskill{s=dyerftumSapper_em_rage_trigger;sync=true} @Target{conditions=[  - distance{d=>6} true ]} 0.3 ?variableInRange{var=caster.ragestacks;value=5to10}
+dyerftumSapper_em_runprotocol_addstacks:
+  TargetConditions:
+  - distance{d=>10} true
+  Conditions:
+  - incombat true
+  - hasaura{n=rageprotocoled} false
+  Skills:
+  - variableadd{var=caster.ragestacks;amount=1} @self 1
+  - variableadd{var=caster.ragestacks;amount=1} @self 0.4 ?variableInRange{var=caster.ragestacks;value=>4}
+  - variableadd{var=caster.ragestacks;amount=1} @self 0.7 ?targetnotwithin{d=12}
+  - variableadd{var=caster.ragestacks;amount=1} @self 0.56 ?targetnotwithin{d=16}
+

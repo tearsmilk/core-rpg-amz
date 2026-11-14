@@ -1,0 +1,501 @@
+###################################################
+# Level & Experience
+###################################################
+
+level-up:
+  sound: ENTITY_PLAYER_LEVELUP,1,2
+  # Runs a script on level up. This script is implemented
+  # inside file MythicLib/scripts/mmocore_scripts.yml
+  script: mmocore_level_up_effect
+  message:
+    - ''
+    - '&eПоздравляем, вы достигли &6{level}&e уровня!'
+    - '&eВведите &6/p&e, чтобы посмотреть новые характеристики!'
+    - ''
+profession-level-up:
+  sound: ENTITY_PLAYER_LEVELUP,1,2
+  message:
+    - ''
+    - '&eТеперь ваш уровень в профессии &6{profession}&e — &6{level}&e!'
+    - ''
+exp-notification:
+  message: '&f{profession} &e{progress} &e{ratio}%'
+  action-bar: true
+  #sound: ENTITY_EXPERIENCE_ORB_PICKUP # Not recommended, can be spammy
+death-exp-loss:
+  - ''
+  - '&4Вы умерли и потеряли {loss} опыта.'
+  - ''
+
+# Experience boosters
+new-exp-booster-main:
+  message:
+    - '&e'
+    - '&eАктивирован множитель опыта &6×{multiplier}&e!'
+    - '&e'
+  sound: ENTITY_EXPERIENCE_ORB_PICKUP
+new-exp-booster-profession:
+  message:
+    - '&e'
+    - '&eАктивирован множитель опыта &6×{multiplier}&e для профессии &6{profession}&e!'
+    - '&e'
+  sound: ENTITY_EXPERIENCE_ORB_PICKUP
+
+###################################################
+# Class selection
+###################################################
+
+already-on-class: '&cВы уже {class}.'
+cant-choose-new-class:
+  message: '&cДля этого нужно 1 очко класса.'
+  sound: ENTITY_VILLAGER_NO
+no-permission-for-class:
+  message: "&cУ вас нет прав, чтобы выбрать класс {class}."
+  sound: ENTITY_VILLAGER_NO
+
+class-select:
+  message: '&eТеперь вы &6{class}&e!'
+  sound: UI_TOAST_CHALLENGE_COMPLETE
+
+###################################################
+# Misc
+###################################################
+
+not-enough-perms: '&cНедостаточно прав.'
+close-loot-chest:
+  #message: '&eClosing the loot chest. The content will be dropped on the ground.'
+  sound: ITEM_ARMOR_EQUIP_LEATHER
+
+# Placeholders and holograms
+exp-hologram: '&e+{exp} опыта!' # Can only be a string
+
+caught-fish: '&cВы поймали рыбу!' # Can only be a string
+fish-out-water: '&aОтлично!' # Can only be a string
+fish-out-water-crit: '&aКритический улов!' # Can only be a string
+
+no-skill-placeholder: 'noskill' # Can only be a string
+
+###################################################
+# PvP Mode
+###################################################
+pvp-mode:
+  cooldown: '&cПодождите {remaining} с, прежде чем снова использовать эту команду.'
+
+  # When you cannot hit another player
+  cannot-hit:
+    high-level-difference: '&cСлишком большая разница в уровнях, чтобы сражаться с этим игроком.'
+    low-level-target: '&cВы не можете сражаться с этим игроком: его уровень слишком низок.'
+    low-level-self: '&cВаш уровень слишком низок, чтобы сражаться с другими игроками.'
+    pvp-mode-disabled-target: '&cУ этого игрока выключен режим PvP.'
+    pvp-mode-disabled-self: '&cУ вас выключен режим PvP.'
+    invulnerable-self: '&cВы ещё неуязвимы {left} с.'
+    invulnerable-target: '&cЭтот игрок ещё в неуязвимости {left} с.'
+
+  # When using /pvpmode
+  toggle:
+    on-safe: '&aТеперь вы сможете сражаться с игроками в специальных зонах.'
+    on-invulnerable: '&aВы сможете сражаться с игроками через {time} с.'
+    off-safe: '&cВы больше не можете сражаться с другими игроками.'
+
+  # Entering/leaving regions
+  leave:
+    pvp-allowed: '&cВы покинули зону PvP, но ещё уязвимы {remaining} с!'
+    pvp-denied: '&cВы покинули зону PvP.'
+  enter:
+    pvp-mode-on: '&aВы вошли в зону PvP и получили неуязвимость на {time} с!'
+    pvp-mode-off: '&aВы вошли в зону PvP. Введите /pvpmode, чтобы сражаться с игроками.'
+
+###################################################
+# Specific Professions
+###################################################
+
+# Mining
+cannot-break: '%&cЧтобы сломать этот блок, нужен подходящий инструмент.'
+
+###################################################
+# Player Input
+###################################################
+
+player-input:
+  anvil:
+    friend-request: 'Имя друга..'
+    party-invite: 'Имя игрока..'
+    guild-invite: 'Имя игрока..'
+    guild-creation-tag: 'Тег гильдии..'
+    guild-creation-name: 'Название гильдии..'
+  chat:
+    friend-request:
+      - '&eНапишите в чат имя игрока.'
+      - '&eНапишите &c''cancel''&e, чтобы отменить.'
+    friend-request-cancel: ''
+    party-invite:
+      - '&eНапишите в чат имя игрока, которого хотите пригласить.'
+      - '&eНапишите &c''cancel''&e, чтобы отменить.'
+    party-invite-cancel: ''
+    guild-invite:
+      - '&eНапишите в чат имя игрока, которого хотите пригласить.'
+      - '&eНапишите &c''cancel''&e, чтобы отменить.'
+    guild-invite-cancel: ''
+    guild-creation-tag:
+      - '&eНапишите в чат ТЕГ гильдии, которую хотите создать.'
+      - '&eНапишите &c''cancel''&e, чтобы отменить.'
+    guild-creation-cancel: ''
+    guild-creation-name:
+      - '&eНапишите в чат название гильдии, которую хотите создать.'
+      - '&eНапишите &c''cancel''&e, чтобы отменить.'
+
+###################################################
+# Combat Log
+###################################################
+
+now-in-combat: '%&cВы в бою!'
+leave-combat: '%&aВы вышли из боя.'
+
+###################################################
+# Waypoints
+###################################################
+
+waypoint:
+  unlock:
+    message: '&eВы открыли точку телепорта &6{waypoint}&e!'
+    # Runs a script on waypoint unlock. This script is implemented
+    # inside file MythicLib/scripts/mmocore_scripts.yml
+    script: mmocore_waypoint_unlock_effect
+    sound: UI_TOAST_CHALLENGE_COMPLETE,1,1.2
+  unlock-book:
+    message: '&eВы открыли точку телепорта &6{waypoint}&e!'
+    sound: UI_TOAST_CHALLENGE_COMPLETE,1,1.2
+  teleport:
+    charge:
+      message: '&cНЕ ДВИГАЙТЕСЬ!&e Телепортация через {left} с'
+      action-bar: true
+      sound: ENTITY_EXPERIENCE_ORB_PICKUP
+    done:
+      #message: '&aYou have been teleported to the &6{waypoint}&a waypoint!'
+      action-bar: true
+      sound: ENTITY_ENDERMAN_TELEPORT,1,0.5
+    cancel:
+      message: '&cТелепортация отменена.'
+      action-bar: true
+      sound: ENTITY_VILLAGER_NO,1,0.5
+  missing-stellium: '&cНе хватает {more} стеллиума для этой точки телепорта.'
+  missing-access: '&cУ вас нет доступа к этой точке телепорта.'
+  on-cooldown: '&cПодождите {cooldown}, прежде чем снова использовать точку телепорта.'
+  locked: '&cВы ещё не открыли эту точку телепорта.'
+  standing-on: '&cВы уже стоите на этой точке телепорта.'
+
+###################################################
+# Economy features
+###################################################
+
+gold-pouch-ui-name: 'Мешочек с золотом'
+deposit-ui-name: 'Вклад'
+deposit:
+  success:
+    message: '&eВы внесли &6{worth}з&e.'
+    sound: ENTITY_EXPERIENCE_ORB_PICKUP
+withdraw:
+  prompt: '&eНапишите в чат сумму &6золота&e, которую хотите &6снять&e.'
+  cancel: '&eСнятие отменено.'
+  success:
+    message: '&eВы сняли &6{worth}з&e.'
+    sound: ENTITY_EXPERIENCE_ORB_PICKUP
+  invalid-amount: '&c{arg} — некорректное число.'
+  not-enough-money: '&cНедостаточно денег, не хватает {left} золота.'
+
+###################################################
+# Friends
+###################################################
+
+friend-not-online-player:
+  message: '&c{player} сейчас не в сети.'
+  sound: ENTITY_VILLAGER_NO
+friend-request-cooldown:
+  message: '&cПодождите {cooldown}.'
+  sound: ENTITY_VILLAGER_NO
+friend-cant-friend-yourself:
+  message: '&cНельзя отправить запрос самому себе.'
+  sound: ENTITY_VILLAGER_NO
+friend-already:
+  message: '&cВы уже друзья с игроком {player}.'
+  sound: ENTITY_VILLAGER_NO
+friend-no-pending-invite:
+  message: '&cУ вас нет входящих запросов в друзья.'
+  sound: ENTITY_VILLAGER_NO
+friend-not-friend:
+  message: '&cВы не друзья с игроком {player}.'
+  sound: ENTITY_VILLAGER_NO
+
+friend-request-denied:
+  message: '&cВы отклонили запрос в друзья от &6{player}&c.'
+  sound: ENTITY_VILLAGER_NO
+friend-request-denied-creator:
+  message: '&6{player}&c отклонил(а) ваш запрос в друзья.'
+  sound: ENTITY_VILLAGER_NO
+friend-removed:
+  message: '&cВы и {unfriend} больше не друзья.'
+  sound: ENTITY_VILLAGER_NO
+
+friend-sent-request:
+  message: '&eВы отправили запрос в друзья игроку &6{player}&e.'
+  sound: ENTITY_EXPERIENCE_ORB_PICKUP
+friend-now: '&eТеперь вы друзья с &6{player}&e.'
+friend-request:
+  json: true
+  format:
+    - '{"text":""}'
+    - '{"text":"&6{player} &eотправил(а) вам запрос в друзья!"}'
+    - '[{"text":"        "},{"text":"&8[&a&lПРИНЯТЬ&8]","clickEvent":{"action":"run_command","value":"/friends accept {uuid}"},"hoverEvent":{"action":"show_text","value":"&eНажмите, чтобы принять!"}},{"text":"&r             "},{"text":"&8[&c&lОТКЛОНИТЬ&8]","clickEvent":{"action":"run_command","value":"/friends deny {uuid}"},"hoverEvent":{"action":"show_text","value":"&eНажмите, чтобы отклонить."}}]'
+    - '{"text":""}'
+
+###################################################
+# Parties
+###################################################
+
+party-chat: '&5[Группа] {player}: {message}'
+party-send-invite:
+  message: '&eВы отправили приглашение в группу игроку &6{player}&e.'
+  sound: ENTITY_EXPERIENCE_ORB_PICKUP
+party-invite:
+  json: true
+  format:
+    - '{"text":""}'
+    - '{"text":"&6{player} &eприглашает вас в свою группу!"}'
+    - '[{"text":"        "},{"text":"&8[&a&lПРИНЯТЬ&8]","clickEvent":{"action":"run_command","value":"/party accept {uuid}"},"hoverEvent":{"action":"show_text","value":"&eНажмите, чтобы принять!"}},{"text":"&r             "},{"text":"&8[&c&lОТКЛОНИТЬ&8]","clickEvent":{"action":"run_command","value":"/party deny {uuid}"},"hoverEvent":{"action":"show_text","value":"&eНажмите, чтобы отклонить."}}]'
+    - '{"text":""}'
+party-joined: '&eВы вступили в группу игрока &6{owner}&e.'
+party-joined-other: '&6{player}&e вступил(а) в вашу группу!'
+party-created:
+  message: '&eВы создали группу.'
+  sound: ENTITY_EXPERIENCE_ORB_PICKUP
+
+party-no-pending-invite:
+  message: '&cУ вас нет входящих приглашений в группу.'
+  sound: ENTITY_VILLAGER_NO
+party-is-full:
+  message: '&cВаша группа заполнена.'
+  sound: ENTITY_VILLAGER_NO
+party-not-online-player:
+  message: '&c{player} сейчас не в сети.'
+  sound: ENTITY_VILLAGER_NO
+party-already-in:
+  message: '&c{player} уже в вашей группе.'
+  sound: ENTITY_VILLAGER_NO
+party-invite-cooldown:
+  message: '&cПодождите {cooldown}, прежде чем приглашать другого игрока.' # {player}
+  sound: ENTITY_VILLAGER_NO
+party-high-level-difference:
+  message: '&cНельзя пригласить {player}: слишком большая разница в уровнях ({diff}).'
+  sound: ENTITY_VILLAGER_NO
+
+party-leave:
+  message: '&eВы покинули группу.'
+  sound: ENTITY_EXPERIENCE_ORB_PICKUP
+party-transfer-ownership: '&eВам передали лидерство в группе.'
+party-kick-player: '&eВы исключили игрока &6{player}&e.'
+party-kicked-from: '&cВас исключил(а) из группы игрок &6{player}&c.'
+party-already-has-party:
+  message: '&cВы уже в группе.'
+  sound: ENTITY_VILLAGER_NO
+party-no-party:
+  message: '&cДля этого нужно быть в группе.'
+  sound: ENTITY_VILLAGER_NO
+party-not-owner:
+  message: '&cЭто может сделать только лидер группы.'
+  sound: ENTITY_VILLAGER_NO
+party-not-member:
+  message: '&c{player} не в вашей группе.'
+  sound: ENTITY_VILLAGER_NO
+party-cant-kick-yourself:
+  message: '&cНельзя исключить себя, используйте /party leave.'
+  sound: ENTITY_VILLAGER_NO
+party-cant-invite-yourself:
+  message: '&cНельзя пригласить самого себя в свою группу.'
+  sound: ENTITY_VILLAGER_NO
+
+###################################################
+# Guilds
+###################################################
+
+guild-chat: '&a[{tag}] {player}: {message}'
+sent-guild-invite:
+  message: '&eВы отправили приглашение в гильдию игроку &6{player}&e.'
+  sound: ENTITY_EXPERIENCE_ORB_PICKUP
+guild-not-online-player:
+  message: '&c{player} сейчас не в сети.'
+  sound: ENTITY_VILLAGER_NO
+guild-no-pending-invite:
+  message: '&cУ вас нет входящих приглашений в гильдию.'
+  sound: ENTITY_VILLAGER_NO
+already-in-guild: '&c{player} уже в вашей гильдии.'
+guild-invite:
+  json: true
+  format:
+    - '{"text":""}'
+    - '{"text":"&6{player} &eприглашает вас в свою гильдию!"}'
+    - '[{"text":"        "},{"text":"&8[&a&lПРИНЯТЬ&8]","clickEvent":{"action":"run_command","value":"/guild accept {uuid}"},"hoverEvent":{"action":"show_text","value":"&eНажмите, чтобы принять!"}},{"text":"&r             "},{"text":"&8[&c&lОТКЛОНИТЬ&8]","clickEvent":{"action":"run_command","value":"/guild deny {uuid}"},"hoverEvent":{"action":"show_text","value":"&eНажмите, чтобы отклонить."}}]'
+    - '{"text":""}'
+guild-is-full: '&cВаша гильдия заполнена.'
+guild-joined: '&eВы вступили в гильдию игрока &6{owner}&e.'
+guild-joined-other: '&6{player}&e вступил(а) в вашу гильдию!'
+transfer-guild-ownership: '&eВам передали лидерство в гильдии.'
+guild-kick-player:
+  message: '&eВы исключили игрока &6{player}&e из гильдии.'
+  sound: ENTITY_EXPERIENCE_ORB_PICKUP
+guild-invite-cooldown: '&cПодождите {cooldown}, прежде чем приглашать игрока {player}.'
+fail-guild-creation:
+  invalid-characters: "&eНедопустимые символы!"
+  invalid-length: "&eДлина должна быть от {min} до {max}!"
+  already-exists: "&eТакой тег гильдии уже занят!"
+
+###################################################
+# Quests
+###################################################
+
+quest-already-active: '&cУ вас уже есть активное задание.'
+quest-cancel:
+  message: '&eВы отменили текущее задание.'
+  sound: ENTITY_VILLAGER_NO
+quest-level-restriction: '&cНужен {count} уровень.'
+quest-profession-level-restriction: '&cНужен {count} уровень в профессии {profession}.'
+quest-cannot-redo: '&cЭто задание нельзя начать повторно.'
+quest-cooldown: '&cНужно подождать {delay}.'
+quest-start:
+  message: '&eВы взяли задание &6{quest}&e.'
+  sound: ENTITY_EXPERIENCE_ORB_PICKUP
+
+###################################################
+# Attributes
+###################################################
+
+attribute-no-points-spent:
+  message: '&cВы не потратили ни одного очка характеристик.'
+  sound: ENTITY_VILLAGER_NO
+attribute-missing-reallocation-point:
+  message: '&cУ вас нет очка сброса характеристик.'
+  sound: ENTITY_VILLAGER_NO
+attribute-missing-point:
+  message: '&cУ вас нет очков характеристик.'
+  sound: ENTITY_VILLAGER_NO
+attribute-missing-point-shift:
+  message: '&cНужно &4{shift_points}&c очк. характеристик.'
+  sound: ENTITY_VILLAGER_NO
+attribute-max-points-hit:
+  message: '&cЭту характеристику больше нельзя повысить.'
+  sound: ENTITY_VILLAGER_NO
+
+attribute-points-reallocated:
+  message: '&eВы сбросили характеристики. Теперь у вас &6{points}&e очк. характеристик.'
+  sound: ENTITY_PLAYER_LEVELUP
+attribute-level-up:
+  message: '&eВы повысили характеристику &6{attribute}&e.' # {level}
+  sound: ENTITY_EXPERIENCE_ORB_PICKUP
+
+###################################################
+# Skills
+###################################################
+
+no-class-skill: '&cУ вашего класса нет скиллов.'
+not-enough-skill-points:
+  message: '&cНужно 1 очко скиллов.'
+  sound: ENTITY_VILLAGER_NO,1,2
+not-enough-skill-points-shift:
+  message: '&cНужно {shift_points} очк. скиллов.'
+  sound: ENTITY_VILLAGER_NO,1,2
+skill-level-not-met:
+  message: '&cВы ещё не можете использовать этот скилл.'
+  sound: ENTITY_VILLAGER_NO,1,2
+cannot-edit-hardbound-slot:
+  message: '&cЭтот слот скилла нельзя изменить.'
+  sound: ENTITY_VILLAGER_NO,1,2
+no-skill-bound:
+  message: '&cНа этот слот не назначен скилл.'
+  sound: ENTITY_VILLAGER_NO,1,2
+skill-cannot-be-bound:
+  message: '&cЭтот скилл всегда активен и не назначается в слот.'
+  sound: ENTITY_VILLAGER_NO,1,2
+not-compatible-skill:
+  message: '&cВыбранный скилл нельзя назначить в этот слот.'
+  sound: ENTITY_VILLAGER_NO,1,2
+cant-manually-bind:
+  message: "&cЭтот слот нельзя назначить или снять вручную."
+  sound: ENTITY_VILLAGER_NO,1,2
+skill-max-level-hit:
+  message: '&cЭтот скилл уже прокачан до максимума.'
+  sound: ENTITY_VILLAGER_NO,1,2
+not-skill-reallocation-point:
+  message: '&cУ вас нет очка сброса скиллов.'
+  sound: ENTITY_VILLAGER_NO,1,2
+no-skill-points-spent:
+  message: '&cВы не потратили ни одного очка скиллов.'
+  sound: ENTITY_VILLAGER_NO,1,2
+cannot-upgrade-skill:
+  message: '&cЭтот скилл нельзя улучшить.'
+  sound: ENTITY_VILLAGER_NO,1,2
+
+skill-ui-focus:
+  #message: '&eSwitching focus to &6{skill}&e.'
+  sound: UI_BUTTON_CLICK,1,2
+skill-bound-to-slot:
+  message: '&eВы назначили скилл &6{skill}&e в слот &6{slot}&e.' # {index}
+  sound: ENTITY_EXPERIENCE_ORB_PICKUP,1,2
+skill-unbound-from-slot:
+  message: '&eВы сняли скилл &6{skill}&e со слота &6{slot}&e.' # {index}
+  sound: ENTITY_EXPERIENCE_ORB_PICKUP,1,2
+skill-points-reallocated:
+  message: '&eВы сбросили очки скиллов. Теперь у вас &6{points}&e очк. скиллов.'
+  sound: ENTITY_PLAYER_LEVELUP
+upgrade-skill:
+  message: '&eСкилл &6{skill}&e теперь &6{level}&e уровня!'
+  sound: ENTITY_EXPERIENCE_ORB_PICKUP,1,2
+
+
+###################################################
+# Skill casting
+###################################################
+
+casting:
+  no-mana: '&cНедостаточно {mana}, не хватает ещё {mana-required}!' # {skill}, {mana-cost}
+  no-stamina: '&cНедостаточно выносливости, не хватает ещё {stamina-required}!' # {skill}, {stamina-cost}
+  on-cooldown: '&cСкилл ещё перезаряжается: {cooldown} с.' # {skill}
+
+###################################################
+# Skill Trees
+###################################################
+
+no-skill-tree-points-spent:
+  message: '&cВы не потратили ни одного очка дерева скиллов.'
+  sound: ENTITY_VILLAGER_NO,1,2
+skill-tree-node-locked:
+  message: '&cЭтот скилл заблокирован!'
+  sound: ENTITY_VILLAGER_NO,1,2
+skill-tree-node-max-level-hit:
+  message: '&cЭтот узел дерева уже прокачан до максимума.'
+  sound: ENTITY_VILLAGER_NO,1,2
+missing-skill-node-permission:
+  message: '&cУ вас нет прав, чтобы открыть этот узел дерева.'
+  sound: ENTITY_VILLAGER_NO,1,2
+not-enough-skill-tree-points:
+  message: '&cНужно {point} очк. дерева скиллов.'
+  sound: ENTITY_VILLAGER_NO,1,2
+not-skill-tree-reallocation-point:
+  message: '&cУ вас нет очка сброса дерева скиллов.'
+  sound: ENTITY_VILLAGER_NO,1,2
+no-skill-tree:
+  message: '&cУ вашего класса нет дерева скиллов.'
+  sound: ENTITY_VILLAGER_NO,1,2
+no-class-skill-tree:
+  message: '&cЭто дерево скиллов недоступно вашему классу.'
+  sound: ENTITY_VILLAGER_NO,1,2
+skill-tree-max-points-spent:
+  message: '&cВы потратили максимум очков. Чтобы что-то изменить, сначала сбросьте их.'
+  sound: ENTITY_VILLAGER_NO,1,2
+
+skill-tree-switch:
+  #message: '&eSwitching skill tree &6{skill-tree}&e.'
+  sound: ITEM_ARMOR_EQUIP_LEATHER
+
+skill-tree-upgrade-node: '&eУзел &6{skill-node}&e теперь &6{level}&e уровня!'
+skill-tree-reallocate:
+  message: '&eВы сбросили дерево скиллов {skill-tree}. &eТеперь у вас &6{points}&e очк. дерева скиллов.'
+  sound: ENTITY_PLAYER_LEVELUP

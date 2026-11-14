@@ -1,0 +1,234 @@
+
+dyerftumSapper_em:
+  Type: illusioner
+  Display: 'Dyerftum'
+  Modules:
+    ThreatTable: true
+  AITargetSelectors:
+  - 0 clear
+  - 1 players
+  - 2 attacker
+  AIGoalSelectors:
+  - clear
+  - meleeattack
+  - lookatplayers
+  - randomstroll
+  - randomlookaround
+  - float
+  Health: 45
+  Faction: Dyerftum
+  DamageModifiers:
+  - FIRE 0
+  - MAGIC 1.1
+  - PROJECTILE 0.25
+  Damage: 6 #This is the BASE damage. Applies for ALL skills Setting it to 12 will DOUBLE damage. Setting it to 3 will REDUCE damage in 50% from the original.
+  KillMessages:
+  - '<target.name> was killed by a Dyerftum.'
+  - 'A Dyerftum slashed <target.name>.'
+  - "<target.name> was slain by Dyerftums"
+  - "A group of Dyerftum killed <target.name>."
+  Equipment:
+  - air:4
+  - air:3
+  - air:2
+  - imboots_dyerftumSapper_em:1
+  - air:0
+  - air:5
+  Drops:
+  - exp 10-25 1
+  LevelModifiers:
+    Health: 0.5
+    Damage: 0.03
+  Skills:
+  - message{m="Hitrec <caster.var.hitrec> STACKS"} @PlayersNearOrigin{r=75} ~onDamaged 0 #DEBUGMESSAGE
+#====== MODEL ASSIGNEMENT =============
+  - model{m=em_dyerftum3;n=false;damagetint=false} @self ~onSpawn 1
+  - setlevel{a=set;l=0} ~onSpawn
+  - setvariable{var=caster.skillxd;value="none";t=string} @Self ~onSpawn
+  - skill{s=dyerftumSapper_em_hp_check} @Self ~onSpawn
+  - setvariable{var=caster.eichpee;value="<caster.mhp>";t=integer} @Self ~onSpawn
+  - DefaultState{type=WALK;state=walk_combat;li=3;lo=2} @self ~onEnterCombat
+  - DefaultState{type=IDLE;state=idle_combat;li=3;lo=2} @self ~onEnterCombat
+  - DefaultState{type=WALK;state=walk;li=3;lo=2} @self ~onDropCombat
+  - DefaultState{type=IDLE;state=idle;li=3;lo=2} @self ~onDropCombat
+  
+  - potion{type=JUMP;duration=999999;lvl=0;p=true} @Self ~OnSpawn
+#============ DISGUISE PROTOCOL =================
+  - submodel{mid=em_dyerftum3;partid=chest2;subpartid=chest2;remove=true} @self ~onSpawn 1
+  - submodel{mid=em_dyerftum3;partid=head2;subpartid=head2;remove=true} @self ~onSpawn 1
+
+  - submodel{mid=em_dyerftum3;partid=chest2;subpartid=chest2;remove=true} @self ~onLoad 1
+  - submodel{mid=em_dyerftum3;partid=head2;subpartid=head2;remove=true} @self ~onLoad 1
+
+  - changepart{m=em_dyerftum3;pid=head;nm=em_dyerftum3;npid=head2} @self ~onSpawn 0.5
+  - changepart{m=em_dyerftum3;pid=chest;nm=em_dyerftum3;npid=chest2} @self ~onSpawn 0.5
+#============ RANGED AI ==============
+  - Aura{auraName=distancecommuterA_dyerftumSapper_em;duration=9999999;i=15;onTick=distancecommuteA_dyerftumSapper_em} @Self ~onSpawn
+
+#============ ATTACK =================
+
+  - skill{s=dyerftumSapper_em_meleetrigger} @Trigger ~onSignal:DEBUG_TEST 1
+  - CancelEvent{sync=true} @self ~onAttack 1 #CANCEL ATTACKS
+  - CancelEvent{sync=true} @self ~onShoot 1 #CANCEL ATTACKS
+
+  - skill{s=[
+      - skill{s=dyerftumSapper_em_drawback1;sync=false} @LivingInCone{a=160.0;r=8;rot=0.0;ignore=samefaction}
+      - skill{s=dyerftumSapper_em_drawback1;sync=false} @LivingInCone{a=230.0;r=1;rot=0.0;ignore=samefaction}]} ~onTimer:4 0.75 ?!variableEquals{var=caster.rage;value="1"} ?incombat
+
+  - skill{s=[
+      - skill{s=dyerftumSapper_em_meleetrigger;sync=false} @LivingInCone{a=160.0;r=12;rot=0.0;ignore=samefaction}
+      - skill{s=dyerftumSapper_em_meleetrigger;sync=false} @LivingInCone{a=200.0;r=1;rot=0.0;ignore=samefaction}]} ~onTimer:14 0.8 ?!variableEquals{var=caster.rage;value="1"} ?incombat
+  - skill{s=[
+      - skill{s=dyerftumSapper_em_meleetrigger2;sync=false} @LivingInCone{a=160.0;r=5.5;rot=0.0;ignore=samefaction}
+      - skill{s=dyerftumSapper_em_meleetrigger2;sync=false} @LivingInCone{a=200.0;r=1;rot=0.0;ignore=samefaction}]} ~onTimer:9 0.9 ?variableEquals{var=caster.rage;value="1"} ?incombat
+  
+  - skill{s=dyerftumSapper_em_idlesounds_trigger;sync=false} ~onTimer:32 0.6 ?!incombat
+  - skill{s=dyerftumSapper_em_idlesounds_trigger;sync=false} ~onTimer:32 0.3 ?incombat
+
+  - skill{s=dyerftumSapper_em_spitsap;sync=false} @Target ~onTimer:70 0.4 ?incombat
+  - skill{s=dyerftumSapper_em_meleetrigger;sync=false} @LivingInCone{a=160.0;r=4.5;rot=0.0;ignore=samefaction} ~onAttack
+  - setvariable{var=caster.combor;value="0";t=integer} @Self ~onSpawn
+  - setvariable{var=caster.comboa;value="0";t=integer} @Self ~onSpawn
+  
+  - sound{s=emewoods1:custom.enchantedwoods1.wood_hit;p=<random.float.1to1.1>;v=1.2} @selflocation ~onDamaged 1 #Hurtmechanic SOUND
+  - setstance{stance=normal} @self ~onSpawn
+  - skill{s=hurt1dyerftumSapper_em} @self ~onDamaged 0.92 #Hurtmechanic
+  - setvariable{var=caster.vulnerable;value="0";t=integer} @Self ~onSpawn
+  - velocity{m=set;x=0;y=0;z=0} @self ~onDamaged
+  - setspeed{speed=1.3;type=walking} @self ~onEnterCombat
+  - setspeed{speed=0.7;type=walking} @self ~onDropCombat
+  - Aura{auraName=backstepB;duration=60} @self ~onSpawn
+#================ RIP IN PEPSI PROTOCOL
+  
+  #LEAFS VFX
+  - summon{mob=dyerftum_leafs_2;amount=1;noise=2;yr=0.8;repeat=3to4;repeatinterval=1} @RandomLocationsNearOrigin{a=1;r=1;s=0.3;minr=0.3;y=-2.8} ~onDeath
+  #
+  - sound{s=emewoods1:custom.enchantedwoods1.dyerftum_death;p=<random.float.1to1.3>;v=1.5} @selflocation ~onDeath
+  - sound{s=emewoods1:custom.enchantedwoods1.wood_hit;p=<random.float.0.8to0.9>;v=1.2;delay=15} @selflocation ~onDeath
+  - lockmodel{l=false;delay=0} @Self ~onDeath
+  - effect:particles{particle=cloud;amount=150;hS=1.1;vS=0.55;speed=0;size=4.5;repeat=0;repeatinterval=1;sideOffset=0;delay=60} @ModelPart{m=em_dyerftum3;p=hip;offset=GLOBAL;y=0.2} ~onDeath
+  - effect:particles{particle=cloud;amount=60;hS=0.6;vS=0.2;speed=0;size=4.5;repeat=0;repeatinterval=1;sideOffset=0;delay=60} @ModelPart{m=em_dyerftum3;p=head;offset=GLOBAL;y=0.2} ~onDeath
+
+
+# ========= Anti-ranged protocol
+  - setspeed{speed=0.8;type=walking;delay=1} @self ~onSpawn
+  - skill{s=hurtgendyerftumSapper_em;sync=true} @self ~onDamaged 1 #Hurtmechanic ANTIARROW
+  - skill{s=hurtgendyerftumSapper_em2;sync=true} @self ~onDamaged 1 #Hurtmechanic ANTIMMSkills
+
+  - setvariable{var=caster.projrec;value="0";t=integer} @Self ~OnSpawn #Hurtmechanic ANTIARROW
+  - setvariable{var=caster.running;value="0";t=integer} @Self ~onSpawn
+  - setvariable{var=caster.ragestacks;value="4";t=integer} @Self ~onSpawn
+  - setvariable{var=caster.hurtened;value="0";t=integer} @Self ~onSpawn
+#======== RUNNER PROTOCOL 
+  - Aura{auraName=checkrundyerftumSapper_em;onTick=dyerftumSapper_em_runprotocolcheck;interval=14;duration=99999} @self ~onSpawn 1 #=============== RUN MECHANICUS
+  - setvariable{var=caster.hitrec;value="0";t=integer} @Self ~OnSpawn #Hurtmechanic ANTIARROW
+  - message{m="Hitrec <caster.var.hitrec>"} @PlayersNearOrigin{r=75} ~onDamaged 0 #DEBUGMESSAGE
+  - message{m="&eCOMBOR &a<caster.var.combor>"} @PlayersNearOrigin{r=75} ~onDamaged 0 #DEBUGMESSAGE
+
+  Options:
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.32
+    Interactable: true
+    PreventOtherDrops: true
+    KnockbackResistance: 0.9
+    FollowRange: 24
+
+dyerftumSapper_em_summoned:
+  Template: dyerftumSapper_em
+  Health: 28
+  Damage: 4.5
+  Skills:
+  - signal{s=DIESUMMON} @Parent ~onDeath
+  Options:
+    FollowRange: 45
+
+sapspill_em_projectile:
+  Type: silverfish
+  Display: ''
+  Faction: Dyerftum
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+  - model{mid=feysap_projectile;damagetint=false} @self ~onSpawn 1
+  - cullconfig{vc=false;bkc=false;blc=false} @self ~onSpawn
+  - cancelEvent{sync=true} ~onAttack
+  Options:
+#    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.001
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Invincible: true
+    Despawn: true
+    Interactable: false
+    KnockbackResistance: 1
+    Collidable: false
+    NoGravity: true
+
+sapspill_em_spill:
+  Type: silverfish
+  Display: ''
+  Faction: Dyerftum
+  AITargetSelectors:
+  - 0 clear
+  AIGoalSelectors:
+  - 0 clear
+  Health: 150
+  Damage: 0
+  Drops:
+  Skills:
+   - model{mid=sapplosion1_marker;s=idle;n=false;scale=1.4} @self ~onSpawn 1
+   - cullconfig{vc=false;bkc=false;blc=false} @self ~onSpawn
+   - randomskill{s=[
+      - state{state=rot1;li=0;lo=3} @self
+    ],
+      [
+      - state{state=rot2;li=0;lo=3} @self
+    ],
+      [
+      - state{state=rot3;li=0;lo=3} @self
+    ],
+      [
+      - state{state=rot4;li=0;lo=3} @self
+    ],
+      [
+      - state{state=rot5;li=0;lo=3} @self
+    ];sync=true} ~onSpawn
+   - skill{s=[
+    - changepart{m=sapplosion1_marker;pid=frame1;nm=sapplosion1_resources;npid=ssp1_1;delay=1} @self
+    - changepart{m=sapplosion1_marker;pid=frame1;nm=sapplosion1_resources;npid=ssp1_2;delay=2} @self
+    - changepart{m=sapplosion1_marker;pid=frame1;nm=sapplosion1_resources;npid=ssp1_3;delay=3} @self
+    - changepart{m=sapplosion1_marker;pid=frame1;nm=sapplosion1_resources;npid=ssp1_4;delay=4} @self
+    - changepart{m=sapplosion1_marker;pid=frame1;nm=sapplosion1_resources;npid=ssp1_5;delay=5} @self
+    - changepart{m=sapplosion1_marker;pid=frame1;nm=sapplosion1_resources;npid=ssp1_6;delay=6} @self
+    - changepart{m=sapplosion1_marker;pid=frame1;nm=sapplosion1_resources;npid=ssp1_7;delay=7} @self
+    - changepart{m=sapplosion1_marker;pid=frame1;nm=sapplosion1_resources;npid=ssp1_8;delay=8} @self
+    - changepart{m=sapplosion1_marker;pid=frame1;nm=sapplosion1_resources;npid=ssp1_9;delay=9} @self
+    - changepart{m=sapplosion1_marker;pid=frame1;nm=sapplosion1_resources;npid=ssp1_10;delay=10} @self];sync=true;delay=1} @self ~onSpawn 1
+   - potion{type=INVISIBILITY;duration=99999;level=1;p=false} @Self ~onSpawn 1
+   - cancelEvent{sync=true} ~onAttack
+   - remove{delay=12} @Self ~onSpawn
+  Options:
+    ApplyInvisibility: true
+    Silent: true
+    AlwaysShowName: false
+    MovementSpeed: 0.56
+    MaxCombatDistance: 5
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    FollowRange: 50
+    Invincible: true
+    Despawn: true
+    Interactable: false
+    KnockbackResistance: 0
+    Collidable: false
+    NoGravity: true

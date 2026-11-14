@@ -1,0 +1,42 @@
+partyhud-mmo-layout:
+  elements:
+    partymember_1:
+      asset: 'partymember_1_mmo'
+      align: right
+      position:
+        x: 0
+        y: 100
+      offset:
+        x: 2
+        y: -2
+    partymember_2:
+      asset: 'partymember_2_mmo'
+      align: right
+      position:
+        x: 0
+        y: 100
+      offset:
+        x: 2
+        y: -28
+    partymember_3:
+      asset: 'partymember_3_mmo'
+      align: right
+      position:
+        x: 0
+        y: 100
+      offset:
+        x: 2
+        y: -54
+    partymember_4:
+      asset: 'partymember_4_mmo'
+      align: right
+      position:
+        x: 0
+        y: 100
+      offset:
+        x: 2
+        y: -80
+# DO NOT TOUCH
+# %%__USER__%%
+# DO NOT TOUCH
+# %%__NONCE__%%

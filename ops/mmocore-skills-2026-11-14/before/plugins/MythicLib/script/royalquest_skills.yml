@@ -1,0 +1,28 @@
+##################################
+# RoyalQuest custom scripts (Mia)
+##################################
+
+# LIGHT_DASH (Лёгкий рывок): like MythicLib's default Light Dash, but the dash
+# follows where the player is LOOKING every tick (incl. up/down pitch), not only
+# the direction at cast time. Same params: damage, length, mana, cooldown.
+rq_light_dash:
+  public: true
+  mechanics:
+    - 'script{name=rq_light_dash_tick;counter=rq_ld_i;iterations="10 * min(10, <modifier.length>)"}'
+
+rq_light_dash_tick:
+  mechanics:
+    - 'delay{amount="(<rq_ld_i> - 1) * 2"}'
+    - 'copy_vector{variable=rq_ld_dir;value=caster.eye_direction}'
+    - 'set_velocity{vector=rq_ld_dir;target=caster}'
+    - 'particle{particle=LARGE_SMOKE;amount=1;target_location={type=caster}}'
+    - 'sound{sound=ENTITY_ENDER_DRAGON_FLAP;volume=1;pitch=2}'
+    - 'script{name=rq_light_dash_hit;target={type=nearby_entities;radius=1.5}}'
+
+rq_light_dash_hit:
+  conditions:
+    cantarget:
+      type: can_target
+      interaction_type: OFFENSE_SKILL
+  mechanics:
+    - 'damage{amount="<modifier.damage>";knockback=false}'

@@ -1,0 +1,79 @@
+
+# ~Written by RopeFire~
+
+#Mimic Icon
+mimic_icon:
+  Display: "<white>Mimic Icon"
+  Material: PAPER
+  Model: 34323904
+  Generation: item/mimic_icon
+  Options:
+    PreventStacking: true
+
+#Common Mimic Tongue
+mimic_tongue:
+  Display: "<white>Mimic Tongue"
+  Material: PAPER
+  Model: 45624823
+  Generation: item/mimic_tongue
+  Consumable:
+    ConsumeSeconds: 10
+  Food:
+    Nutrition: 2
+    Saturation: 2
+    CanAlwaysEat: true
+
+#Common Key
+common_key:
+  Display: "<white>Common Key"
+  Material: PAPER
+  Model: 34798654
+  Generation: item/common_key
+  Options:
+    PreventStacking: true
+    
+#Rare Mimic Tongue
+rare_mimic_tongue:
+  Display: "<#8CC2F5>Rare Mimic Tongue"
+  Material: PAPER
+  Model: 83252408
+  Generation: item/rare_mimic_tongue
+  Consumable:
+    ConsumeSeconds: 10
+  Food:
+    Nutrition: 4
+    Saturation: 3
+    CanAlwaysEat: true
+
+#Rare Key
+rare_key:
+  Display: "<#8CC2F5>Rare Key"
+  Material: PAPER
+  Model: 57835484
+  Generation: item/rare_key
+  Options:
+    PreventStacking: true
+ 
+#Legendary Mimic Tongue
+legendary_mimic_tongue:
+  Display: "<#FFCC00>Legendary Mimic Tongue"
+  Material: PAPER
+  Model: 48957492
+  Generation: item/legendary_mimic_tongue
+  Consumable:
+    ConsumeSeconds: 10
+  Food:
+    Nutrition: 6
+    Saturation: 4
+    CanAlwaysEat: true
+
+#Legendary Key
+legendary_key:
+  Display: "<#FFCC00>Legendary Key"
+  Material: PAPER
+  Model: 56897442
+  Generation: item/legendary_key
+  Options:
+    PreventStacking: true
+
+# 670YBDJJ4PT0FGTSHH6

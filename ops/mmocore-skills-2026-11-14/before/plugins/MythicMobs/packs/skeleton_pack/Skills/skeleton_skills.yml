@@ -1,0 +1,277 @@
+######## created by samus2002 #########
+
+Changetarget:  
+  Cooldown: 0
+  Skills:
+  - runaitargetselector{target=clear}
+  - runaitargetselector{target=players}
+  
+Cancelattack:
+  Skills:
+  - CancelEvent
+  
+# Skeleton Warrior #
+  
+Skeleton_Warrior_Attack:
+  Conditions:
+  - offgcd
+  - targetwithin{d=3} true
+  Skills:
+  - gcd{ticks=44}
+  - setAI{ai=false} @self
+  - setAI{ai=true;delay=44} @self
+  - state{s=attack;li=2;lo=3} @self
+  - effect:sound{s=rms_skeleton_sounds:samus.skeleton_attack;volume=1;pitch=1} @self 0.5
+  - effect:sound{s=rms_skeleton_sounds:samus.sword_swing;volume=1;pitch=1;delay=17} @self
+  - delay 18
+  - totem{md=2;c=1;oH=Skeleton_Warrior_Attack_DAMAGE;hnp=false;hp=true;hR=2.5;vR=2;i=1} @forward{f=1}
+  
+Skeleton_Warrior_Attack_DAMAGE:
+  TargetConditions:
+  - isblocking false
+  Skills:
+  - damage{a=4;pkb=false;hnp=false;hp=true}
+  
+Skeleton_Warrior_Hit:
+  Cooldown: 1
+  Skills:
+  - effect:sound{s=entity.skeleton.hurt;volume=1;pitch=0.9} @self
+  
+Skeleton_Warrior_Parry:
+  Skills:
+  - onDamaged{auraName=parry;c=1;oH=Skeleton_Warrior_Parry_Skill;cE=true} @self
+  
+Skeleton_Warrior_Parry_Skill:
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=25}
+  - setAI{ai=false} @self
+  - setAI{ai=true;delay=25} @self
+  - state{s=parry;li=2;lo=3} @self
+  - effect:sound{s=rms_skeleton_sounds:samus.warrior_parry;volume=1;pitch=1;delay=6} @self
+
+# Skeleton Archer #
+  
+Skeleton_Archer_Attack:
+  Conditions:
+  - offgcd
+  - targetwithin{d=15} true
+  Skills:
+  - gcd{ticks=40}
+  - state{s=attack;li=10;lo=10} @self
+  - setAI{ai=false} @self
+  - setAI{ai=true;delay=27} @self
+  - effect:sound{s=rms_skeleton_sounds:samus.skeleton_attack;volume=1;pitch=1;delay=7} @self 0.5
+  - effect:sound{s=item.crossbow.loading_start;volume=1;pitch=1;delay=10} @self
+  - effect:sound{s=item.crossbow.shoot;volume=1;pitch=1;delay=18} @self
+  - delay 18
+  - shoot{type=ARROW;velocity=0.5;damage=5;accuracy=1} @target{ignore=samefaction}
+  
+# Skeleton Shaman #
+  
+Skeleton_Shaman_Attack:
+  Conditions:
+  - offgcd
+  - targetwithin{d=6} true
+  Skills:
+  - gcd{ticks=44}
+  - setAI{ai=false} @self
+  - setAI{ai=true;delay=44} @self
+  - state{s=attack;li=2;lo=3} @self
+  - effect:sound{s=rms_skeleton_sounds:samus.skeleton_attack;volume=1;pitch=1} @self 0.5
+  - effect:sound{s=entity.evoker.cast_spell;volume=1;pitch=1.15;delay=17} @self
+  - delay 18
+  - projectile{onTick=Skeleton_Shaman_TICK;onHit=Skeleton_Shaman_Attack_DAMAGE;v=10;i=1;hR=1;vR=1;mr=10;hnp=true;hO=0;sE=false;sB=true;hs=false;hfs=0;syo=1;tyo=0.7} @target
+  
+Skeleton_Shaman_TICK:
+  Skills:
+  - effect:particles{particle=redstone;color=#96f507;amount=15;hS=0.3;vS=0.1;y=0;speed=0;forwardOffset=0;sideOffset=0} @origin
+  
+Skeleton_Shaman_Attack_DAMAGE:
+  TargetConditions:
+  - isblocking false
+  Skills:
+  - damage{a=3;pkb=false;hnp=false;hp=true} @PlayersNearOrigin{r=3}
+  
+Skeleton_Shaman_Heal:
+  Conditions:
+  - offgcd
+  - targetwithin{d=20} true
+  - mobsInRadius{types=Skeleton_Warrior,Skeleton_Archer,Skeleton_Shaman;amount=1to100;radius=10} true
+  Skills:
+  - gcd{ticks=47}
+  - state{s=heal;li=2;lo=3} @self
+  - setAI{ai=false} @self
+  - setAI{ai=true;delay=47} @self
+  - effect:sound{s=rms_skeleton_sounds:samus.skeleton_attack;volume=1;pitch=1;delay=7} @self 0.5
+  - effect:sound{s=rms_skeleton_sounds:samus.shaman_heal;volume=1;pitch=1;delay=18} @self
+  - delay 18
+  - effect:particleline{particle=redstone;color=#96f507;amount=3;fromOrigin=false;syo=2.6;tyo=1;forwardOffset=0.5;repeat=5;repeatinterval=5;sso=-0.5} @MIR{r=10;t=Skeleton_Warrior,Skeleton_Archer,Skeleton_Shaman}
+  - heal{a=2;repeat=5;repeatinterval=5} @MIR{r=10;t=Skeleton_Warrior,Skeleton_Archer,Skeleton_Shaman}
+
+# Lich King #
+  
+Lich_King_Attack:
+  Skills:
+  - randomskill{skills=Lich_King_Attack_Basic,Lich_King_Attack_Spin}
+
+Lich_King_Skill:
+  Skills:
+  - randomskill{skills=Lich_King_Teleport,Lich_King_Scythe_Throw,Lich_King_Tornado}
+  
+Lich_King_Attack_Basic:
+  Conditions:
+  - offgcd
+  - targetwithin{d=5} true
+  Skills:
+  - gcd{ticks=50}
+  - setAI{ai=false} @self
+  - setAI{ai=true;delay=50} @self
+  - state{s=attack_basic;li=2;lo=3} @self
+  - effect:sound{s=rms_skeleton_sounds:samus.lich_king_attack;volume=1;pitch=1;delay=5} @self 0.5
+  - effect:sound{s=rms_skeleton_sounds:samus.scythe_slash;volume=1;pitch=1;delay=18} @self
+  - delay 19
+  - totem{md=2;c=1;oH=Lich_King_Attack_Basic_DAMAGE;hnp=false;hp=true;hR=4;vR=4;i=1} @forward{f=1}
+  
+Lich_King_Attack_Basic_DAMAGE:
+  TargetConditions:
+  - isblocking false
+  Skills:
+  - damage{a=5;pkb=false;hnp=false;hp=true}
+  - potion{type=WITHER;duration=80;level=1;hasParticles=false} 0.4
+  
+Lich_King_Attack_Spin:
+  Conditions:
+  - offgcd
+  - targetwithin{d=5} true
+  Skills:
+  - gcd{ticks=50}
+  - setAI{ai=false} @self
+  - setAI{ai=true;delay=50} @self
+  - state{s=attack_spin;li=2;lo=3} @self
+  - effect:sound{s=rms_skeleton_sounds:samus.lich_king_attack;volume=1;pitch=1;delay=5} @self 0.5
+  - effect:sound{s=rms_skeleton_sounds:samus.scythe_slash;volume=1;pitch=1;delay=13} @self
+  - delay 13
+  - damage{a=5;pkb=false;hnp=false;hp=true} @PIR{r=6}
+  - potion{type=WITHER;duration=80;level=1;hasParticles=false} @PIR{r=6} 0.4
+  
+Lich_King_Hit:
+  Cooldown: 0.7
+  Skills:
+  - effect:sound{s=entity.skeleton.hurt;volume=1;pitch=0.8} @self
+  - state{s=hit} @self
+  
+# Teleport #
+
+Lich_King_Teleport:
+  Conditions:
+  - offgcd
+  - targetwithin{d=20} true
+  Skills:
+  - gcd{ticks=10}
+  - setAI{ai=false} @self
+  - setAI{ai=true;delay=10} @self
+  - state{s=teleport_down} @self
+  - summon{type=Lich_King_Shadow;amount=1;radius=0;yRadius=0;onSurface=true} @self
+  - delay 10
+  - teleport{spreadh=4;spreadv=0} @PIR{r=20}
+  - state{s=teleport_up;delay=1} @self
+  - effect:sound{s=rms_skeleton_sounds:samus.lich_king_teleport;volume=1;pitch=1;delay=12} @self
+  - effect:sound{s=rms_skeleton_sounds:samus.lich_king_teleport_fx;volume=1;pitch=1;delay=7} @self
+  - delay 5
+  - summon{type=Lich_King_Shadow;amount=1;radius=0;yRadius=0;onSurface=true} @self
+  - skill{s=Lich_King_Attack;delay=2}
+
+# Scythe Throw #
+
+Lich_King_Scythe_Throw:
+  Conditions:
+  - offgcd
+  - targetwithin{d=20} true
+  Skills:
+  - gcd{ticks=65}
+  - setAI{ai=false} @self
+  - setAI{ai=true;delay=65} @self
+  - state{s=throw;li=2;lo=3} @self
+  - effect:sound{s=rms_skeleton_sounds:samus.lich_king_attack;volume=1;pitch=1} @self
+  - effect:sound{s=rms_skeleton_sounds:samus.lich_king_throw;volume=1;pitch=1;delay=23} @self
+  - delay 28
+  - partvisibility{p=scythe;v=false} @self
+  - partvisibility{p=scythe;v=true;delay=40} @self
+  - projectile{bulletType=MOB;mob=Lich_King_Scythe;onEnd=Lich_King_Scythe_Throw_Summon;onHit=Lich_King_Scythe_Throw_Attack_DAMAGE;v=31;i=1;hR=1;vR=1;mr=27;hnp=true;hO=0;sE=false;sB=false;hs=false;hfs=0;syo=1.5;tyo=1.5} @target
+
+Lich_King_Scythe_Throw_Summon:
+  Skills:
+  - summon{type=Lich_King_Scythe_Back;amount=1;radius=0;yRadius=0;onSurface=true} @origin
+  - delay 1
+  - skill{s=Lich_King_Scythe_Throw_Summon_SUDO}
+  
+Lich_King_Scythe_Throw_Summon_SUDO:
+  TargetConditions:
+  - isChild{} true
+  Skills:
+  - SudoSkill{s=Lich_King_Scythe_Throw_Summon_MISSILE_SUDO;setcasterastrigger=true} @MIR{r=100;t=Lich_King_Scythe_Back;target=armorstands}
+  
+Lich_King_Scythe_Throw_Summon_MISSILE_SUDO:
+  Skills:
+  - missile{bulletType=MOB;mob=Lich_King_Scythe;onHit=Lich_King_Scythe_Throw_hit_Back;onEnd=Lich_King_Scythe_Throw_End_Back;md=100;mr=400;v=31;i=1;hR=1;vR=1;in=2;sE=false;sB=false;syo=0.8;tyo=0.8;HitTarget=true;HitTargetOnly=true} @Parent
+  
+Lich_King_Scythe_Throw_hit_Back:
+  TargetConditions:
+  - owner{} castinstead Lich_King_Scythe_Throw_Back_REMOVE
+  Skills:
+  - skill{s=Lich_King_Scythe_Throw_Attack_DAMAGE}
+  
+Lich_King_Scythe_Throw_Back_REMOVE:
+  Skills:
+  - effect:sound{s=entity.iron_golem.hurt;volume=1;pitch=1} @Parent
+  - delay 2
+  - remove @self
+  
+Lich_King_Scythe_Throw_End_Back:
+  Skills:
+  - effect:sound{s=entity.iron_golem.hurt;volume=1;pitch=1} @Parent
+  
+Lich_King_Scythe_Throw_Attack_DAMAGE:
+  TargetConditions:
+  - isblocking false
+  Skills:
+  - damage{a=6;pkb=false;hnp=false;hp=true} @PlayersNearOrigin{r=4.5}
+  - potion{type=WITHER;duration=80;level=1;hasParticles=false} @PlayersNearOrigin{r=4.5}
+
+# Shadow Tornado #
+
+Lich_King_Tornado:
+  Conditions:
+  - offgcd
+  - targetwithin{d=20} true
+  Skills:
+  - gcd{ticks=65}
+  - setAI{ai=false} @self
+  - setAI{ai=true;delay=65} @self
+  - state{s=summon;li=2;lo=3} @self
+  - effect:sound{s=rms_skeleton_sounds:samus.lich_king_attack;volume=1;pitch=1} @self
+  - effect:sound{s=rms_skeleton_sounds:samus.lich_king_summon;volume=1;pitch=1;delay=21} @self
+  - delay 25
+  - projectile{bulletType=MOB;mob=Lich_King_Shadow_Tornado;onHit=Lich_King_Tornado_DAMAGE;v=15;i=1;hR=1;vR=1;mr=35;hnp=true;hO=0;sE=false;sB=false;hs=true;hfs=1;syo=1.5;tyo=1.5} @target
+  - projectile{bulletType=MOB;mob=Lich_King_Shadow_Tornado;onHit=Lich_King_Tornado_DAMAGE;v=15;i=1;hR=1;vR=1;mr=35;hnp=true;hO=90;sE=false;sB=false;hs=true;hfs=1;syo=1.5;tyo=1.5} @target
+  - projectile{bulletType=MOB;mob=Lich_King_Shadow_Tornado;onHit=Lich_King_Tornado_DAMAGE;v=15;i=1;hR=1;vR=1;mr=35;hnp=true;hO=180;sE=false;sB=false;hs=true;hfs=1;syo=1.5;tyo=1.5} @target
+  - projectile{bulletType=MOB;mob=Lich_King_Shadow_Tornado;onHit=Lich_King_Tornado_DAMAGE;v=15;i=1;hR=1;vR=1;mr=35;hnp=true;hO=270;sE=false;sB=false;hs=true;hfs=1;syo=1.5;tyo=1.5} @target
+  - delay 20
+  - projectile{bulletType=MOB;mob=Lich_King_Shadow_Tornado;onHit=Lich_King_Tornado_DAMAGE;v=15;i=1;hR=1;vR=1;mr=35;hnp=true;hO=45;sE=false;sB=false;hs=true;hfs=1;syo=1.5;tyo=1.5} @target
+  - projectile{bulletType=MOB;mob=Lich_King_Shadow_Tornado;onHit=Lich_King_Tornado_DAMAGE;v=15;i=1;hR=1;vR=1;mr=35;hnp=true;hO=135;sE=false;sB=false;hs=true;hfs=1;syo=1.5;tyo=1.5} @target
+  - projectile{bulletType=MOB;mob=Lich_King_Shadow_Tornado;onHit=Lich_King_Tornado_DAMAGE;v=15;i=1;hR=1;vR=1;mr=35;hnp=true;hO=225;sE=false;sB=false;hs=true;hfs=1;syo=1.5;tyo=1.5} @target
+  - projectile{bulletType=MOB;mob=Lich_King_Shadow_Tornado;onHit=Lich_King_Tornado_DAMAGE;v=15;i=1;hR=1;vR=1;mr=35;hnp=true;hO=315;sE=false;sB=false;hs=true;hfs=1;syo=1.5;tyo=1.5} @target
+  - delay 20
+  - projectile{bulletType=MOB;mob=Lich_King_Shadow_Tornado;onHit=Lich_King_Tornado_DAMAGE;v=15;i=1;hR=1;vR=1;mr=35;hnp=true;hO=0;sE=false;sB=false;hs=true;hfs=1;syo=1.5;tyo=1.5} @target
+  - projectile{bulletType=MOB;mob=Lich_King_Shadow_Tornado;onHit=Lich_King_Tornado_DAMAGE;v=15;i=1;hR=1;vR=1;mr=35;hnp=true;hO=90;sE=false;sB=false;hs=true;hfs=1;syo=1.5;tyo=1.5} @target
+  - projectile{bulletType=MOB;mob=Lich_King_Shadow_Tornado;onHit=Lich_King_Tornado_DAMAGE;v=15;i=1;hR=1;vR=1;mr=35;hnp=true;hO=180;sE=false;sB=false;hs=true;hfs=1;syo=1.5;tyo=1.5} @target
+  - projectile{bulletType=MOB;mob=Lich_King_Shadow_Tornado;onHit=Lich_King_Tornado_DAMAGE;v=15;i=1;hR=1;vR=1;mr=35;hnp=true;hO=270;sE=false;sB=false;hs=true;hfs=1;syo=1.5;tyo=1.5} @target
+
+Lich_King_Tornado_DAMAGE:
+  TargetConditions:
+  - isblocking false
+  Skills:
+  - damage{a=6;pkb=false;hnp=false;hp=true} @PlayersNearOrigin{r=6}
+  - potion{type=WITHER;duration=80;level=1;hasParticles=false} @PlayersNearOrigin{r=6}

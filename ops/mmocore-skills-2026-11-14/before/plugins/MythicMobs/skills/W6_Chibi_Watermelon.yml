@@ -1,0 +1,68 @@
+##### W6 Chibi Watermelon - attack skills
+##### The "attack" animation fires the melon at 0.5 s -> projectile delay=10 ticks.
+
+w6_chibi_watermelon_attack:
+  Skills:
+  - CancelEvent
+  - skill{s=w6_chibi_watermelon_attack2}
+
+w6_chibi_watermelon_attack2:
+  Cooldown: 3
+  Skills:
+  - effect:sound{s=entity.allay.item_taken;volume=1.0;pitch=1.0} @self 0.5
+  - state{s=attack} @self
+  - setAI{ai=false} @self
+  - setAI{ai=true;delay=30} @self
+  - effect:sound{s=entity.slime.squish_small;volume=0.7;pitch=1.4;delay=5} @self
+  - effect:sound{s=entity.snow_golem.shoot;volume=0.8;pitch=0.7;delay=10} @self
+  - projectile{bulletType=MOB;mob=w6_watermelon_projectile;bulletmatchdirection=true;bulletYOffset=0.2;bulletForwardOffset=0;oH=w6_chibi_watermelon_damage;oE=w6_chibi_watermelon_splat;v=14;i=1;hR=0.7;vR=0.7;md=60;mr=25;hnp=true;hp=false;syo=0.45;sfo=0.6;tyo=0.9;sE=true;sB=true;delay=10} @target
+
+w6_chibi_watermelon_damage:
+  Skills:
+  - effect:particles{particle=block;material=MELON;amount=10;hS=.3;vS=.3;speed=0.1;y=0.5}
+  - damage{a=5}
+
+w6_chibi_watermelon_splat:
+  Skills:
+  - summon{type=w6_watermelon_splat;amount=1;noise=0} @origin
+  - effect:sound{s=entity.slime.squish;volume=1.0;pitch=0.8} @origin
+  - effect:sound{s=block.wood.break;volume=0.6;pitch=1.3} @origin
+  - effect:particles{particle=block;material=MELON;amount=25;hS=.4;vS=.2;speed=0.1;y=0.3} @origin
+  - effect:particles{particle=block;material=REDSTONE_BLOCK;amount=12;hS=.5;vS=.1;speed=0.1;y=0.1} @origin
+
+##### King: golden watermelons with a sparkle trail
+
+w6_chibi_watermelon_king_attack:
+  Skills:
+  - CancelEvent
+  - skill{s=w6_chibi_watermelon_king_attack2}
+
+w6_chibi_watermelon_king_attack2:
+  Cooldown: 3
+  Skills:
+  - effect:sound{s=entity.allay.item_taken;volume=1.0;pitch=1.0} @self 0.5
+  - state{s=attack} @self
+  - setAI{ai=false} @self
+  - setAI{ai=true;delay=30} @self
+  - effect:sound{s=entity.slime.squish_small;volume=0.7;pitch=1.4;delay=5} @self
+  - effect:sound{s=entity.snow_golem.shoot;volume=0.8;pitch=0.7;delay=10} @self
+  - effect:sound{s=block.amethyst_block.chime;volume=0.8;pitch=1.4;delay=10} @self
+  - projectile{bulletType=MOB;mob=w6_watermelon_projectile_gold;bulletmatchdirection=true;bulletYOffset=0.2;bulletForwardOffset=0;oT=w6_chibi_watermelon_king_trail;oH=w6_chibi_watermelon_king_damage;oE=w6_chibi_watermelon_king_splat;v=14;i=1;hR=0.7;vR=0.7;md=60;mr=25;hnp=true;hp=false;syo=0.45;sfo=0.6;tyo=0.9;sE=true;sB=true;delay=10} @target
+
+w6_chibi_watermelon_king_trail:
+  Skills:
+  - effect:particles{p=end_rod;amount=1;speed=0;hS=0.05;vS=0.05} @origin
+
+w6_chibi_watermelon_king_damage:
+  Skills:
+  - effect:particles{particle=block;material=GOLD_BLOCK;amount=10;hS=.3;vS=.3;speed=0.1;y=0.5}
+  - damage{a=5}
+
+w6_chibi_watermelon_king_splat:
+  Skills:
+  - summon{type=w6_watermelon_splat_gold;amount=1;noise=0} @origin
+  - effect:sound{s=entity.slime.squish;volume=1.0;pitch=0.8} @origin
+  - effect:sound{s=block.amethyst_block.break;volume=0.8;pitch=1.2} @origin
+  - effect:particles{particle=block;material=GOLD_BLOCK;amount=20;hS=.4;vS=.2;speed=0.1;y=0.3} @origin
+  - effect:particles{particle=block;material=REDSTONE_BLOCK;amount=12;hS=.5;vS=.1;speed=0.1;y=0.1} @origin
+  - effect:particles{p=end_rod;amount=8;hS=.4;vS=.4;speed=0.05;y=0.4} @origin

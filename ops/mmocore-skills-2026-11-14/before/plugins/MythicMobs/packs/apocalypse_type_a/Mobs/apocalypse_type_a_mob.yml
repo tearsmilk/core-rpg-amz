@@ -1,0 +1,53 @@
+
+# ~Written by RopeFire~
+
+apocalypse_type_a:
+  Type: HUSK
+  Display: 'APOCALYPSE TYPE-A'
+  Faction: SPACE
+  Health: 1000
+  Damage: 0
+  BossBar:
+    Enabled: true
+    Title: ""
+    Range: 40
+    Color: RED
+    Style: SEGMENTED_10
+  DamageModifiers:
+  - SUFFOCATION 0
+  - FALL 0
+  AIGoalSelectors:
+  - clear
+  - meleeattack
+  - movetowardstarget
+  - randomstroll
+  AITargetSelectors:
+  - clear
+  - attacker
+  - players
+  Modules:
+    ThreatTable: true
+  Options:
+    NoDamageTicks: 10
+    MovementSpeed: 0.35
+    FollowRange: 40
+    KnockbackResistance: 1
+    Silent: true
+    Despawn: false
+    Invincible: false
+    PreventSunburn: true
+    PreventBlockInfection: true
+    PreventOtherDrops: true
+    PreventRandomEquipment: true
+    PreventJockeyMounts: true
+    MaxCombatDistance: 40
+  Skills:
+  - skill{s=CancelEvent} @self ~onAttack
+  - model{mid=apocalypse_type_a;n=false;step=1;drive=true;ride=true;usm=true} @self ~onSpawn
+  - model{mid=apocalypse_type_a;n=false;step=1;drive=true;ride=true;usm=true} @self ~onLoad
+  - randomskill{skills=apocalypse_basic_attack,apocalypse_basic_attack2,apocalypse_teleport,
+                       apocalypse_white_void,apocalypse_combo,apocalypse_void_storm,
+                       apocalypse_buildings_collapse,apocalypse_blackbox,apocalypse_vanish,
+                       apocalypse_black_hole,apocalypse_grab,apocalypse_uppercut,
+                       apocalypse_black_star_field,apocalypse_beam} @self ~onTimer:40
+  - skill{s=apocalypse_reset} @self ~onPlayerKill

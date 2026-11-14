@@ -1,0 +1,564 @@
+
+# ~Written by RopeFire~
+
+apocalypse_setAItrue:
+  Conditions:
+  - incombat true
+  Skills:
+  - setAI{ai=true} @self
+
+CancelEvent:
+  Conditions:
+  - incombat true
+  Skills:
+  - CancelEvent @self
+
+#Basic Attack 1
+apocalypse_basic_attack:
+  Cooldown: 3
+  Conditions:
+  - incombat true
+  - targetwithin{d=4} true
+  - hasaura{n=basic1} false
+  - hasaura{n=basic2} false
+  - hasaura{n=teleporting} false
+  - hasaura{n=Wvoid} false
+  - hasaura{n=combo} false
+  - hasaura{n=voidS} false
+  - hasaura{n=Bcollapsing} false
+  - hasaura{n=blackbox} false
+  - hasaura{n=vanishing} false
+  - hasaura{n=blackH} false
+  - hasaura{n=grab} false
+  - hasaura{n=caught} false
+  - hasaura{n=uppercutting} false
+  - hasaura{n=blackSF} false
+  - hasaura{n=beaming} false
+  Skills:
+  - delay 1
+  - CancelEvent @self
+  - setspeed{speed=0;type=WALKING} @self
+  - aura{auraName=basic1;duration=29} @self
+  - state{model=apocalypse_type_a;state=basic_attack} @self
+  - delay 7
+  - lockmodel @self
+  - aura{auraName=basic1D;duration=4;oT=basic1_damage} @self
+  - sound{s=custom.basic_attack1;v=3;p=1} @self
+  - delay 22
+  - lockmodel{l=false} @self
+  - setspeed{speed=1;type=WALKING} @self
+
+basic1_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=15} ];hnp=true;hp=true;hR=2;vR=2;i=1;drawhitbox=false} @ModelPart{mid=apocalypse_type_a;pid=arm_sword}
+
+#Basic Attack 2
+apocalypse_basic_attack2:
+  Cooldown: 3
+  Conditions:
+  - incombat true
+  - targetwithin{d=4} true
+  - hasaura{n=basic1} false
+  - hasaura{n=basic2} false
+  - hasaura{n=teleporting} false
+  - hasaura{n=Wvoid} false
+  - hasaura{n=combo} false
+  - hasaura{n=voidS} false
+  - hasaura{n=Bcollapsing} false
+  - hasaura{n=blackbox} false
+  - hasaura{n=vanishing} false
+  - hasaura{n=blackH} false
+  - hasaura{n=grab} false
+  - hasaura{n=caught} false
+  - hasaura{n=uppercutting} false
+  - hasaura{n=blackSF} false
+  - hasaura{n=beaming} false
+  Skills:
+  - delay 1
+  - CancelEvent @self
+  - setspeed{speed=0;type=WALKING} @self
+  - aura{auraName=basic2;duration=36} @self
+  - state{model=apocalypse_type_a;state=basic_attack2} @self
+  - delay 7
+  - lockmodel @self
+  - aura{auraName=basic2D;duration=4;oT=basic2_damage} @self
+  - sound{s=custom.basic_attack1;v=3;p=1} @self
+  - delay 13
+  - aura{auraName=basic2D;duration=4;oT=basic2_damage} @self
+  - sound{s=custom.basic_attack2;v=3;p=1} @self
+  - delay 16
+  - lockmodel{l=false} @self
+  - setspeed{speed=1;type=WALKING} @self
+
+basic2_damage:
+  Skills:
+  - totem{md=2;oH=[ - damage{a=15} ];hnp=true;hp=true;hR=2;vR=2;i=1;drawhitbox=false} @ModelPart{mid=apocalypse_type_a;pid=arm_sword}
+
+#Teleport
+apocalypse_teleport:
+  Cooldown: 3
+  Conditions:
+  - incombat true
+  - chance{c=0.3} true
+  - targetnotwithin{d=10} true
+  - hasaura{n=basic1} false
+  - hasaura{n=basic2} false
+  - hasaura{n=teleporting} false
+  - hasaura{n=Wvoid} false
+  - hasaura{n=combo} false
+  - hasaura{n=voidS} false
+  - hasaura{n=Bcollapsing} false
+  - hasaura{n=blackbox} false
+  - hasaura{n=vanishing} false
+  - hasaura{n=blackH} false
+  - hasaura{n=grab} false
+  - hasaura{n=caught} false
+  - hasaura{n=uppercutting} false
+  - hasaura{n=blackSF} false
+  - hasaura{n=beaming} false
+  Skills:
+  - delay 1
+  - CancelEvent @self
+  - setspeed{speed=0;type=WALKING} @self
+  - aura{auraName=teleporting;duration=27} @self
+  - state{model=apocalypse_type_a;state=teleport} @self
+  - lockmodel @self
+  - delay 5
+  - teleport{sh=3} @PlayersInRadius{r=40;sort=FURTHEST}
+  - sound{s=custom.teleport;v=3;p=1} @self
+  - delay 22
+  - lockmodel{l=false} @self
+  - setspeed{speed=1;type=WALKING} @self
+
+#White Void
+apocalypse_white_void:
+  Cooldown: 20
+  Conditions:
+  - incombat true
+  - targetwithin{d=6} true
+  - hasaura{n=basic1} false
+  - hasaura{n=basic2} false
+  - hasaura{n=teleporting} false
+  - hasaura{n=Wvoid} false
+  - hasaura{n=combo} false
+  - hasaura{n=voidS} false
+  - hasaura{n=Bcollapsing} false
+  - hasaura{n=blackbox} false
+  - hasaura{n=vanishing} false
+  - hasaura{n=blackH} false
+  - hasaura{n=grab} false
+  - hasaura{n=caught} false
+  - hasaura{n=uppercutting} false
+  - hasaura{n=blackSF} false
+  - hasaura{n=beaming} false
+  Skills:
+  - delay 1
+  - CancelEvent @self
+  - setspeed{speed=0;type=WALKING} @self
+  - aura{auraName=Wvoid;duration=151} @self
+  - state{model=apocalypse_type_a;state=white_void} @self
+  - lockmodel @self
+  - summon{type=white_void;amount=1} @self
+  - delay 151
+  - lockmodel{l=false} @self
+  - setspeed{speed=1;type=WALKING} @self
+
+#Combo
+apocalypse_combo:
+  Cooldown: 4
+  Conditions:
+  - incombat true
+  - targetnotwithin{d=4} true
+  - targetwithin{d=10} true
+  - hasaura{n=basic1} false
+  - hasaura{n=basic2} false
+  - hasaura{n=teleporting} false
+  - hasaura{n=Wvoid} false
+  - hasaura{n=combo} false
+  - hasaura{n=voidS} false
+  - hasaura{n=Bcollapsing} false
+  - hasaura{n=blackbox} false
+  - hasaura{n=vanishing} false
+  - hasaura{n=blackH} false
+  - hasaura{n=grab} false
+  - hasaura{n=caught} false
+  - hasaura{n=uppercutting} false
+  - hasaura{n=blackSF} false
+  - hasaura{n=beaming} false
+  Skills:
+  - delay 1
+  - CancelEvent @self
+  - setspeed{speed=0;type=WALKING} @self
+  - aura{auraName=combo;duration=63} @self
+  - state{model=apocalypse_type_a;state=combo} @self
+  - delay 8
+  - skill{s=[ - projectile{bulletType=MOB;mob=combo_first;oH=[ - damage{a=10} ];bmd=true;sE=false;syo=2;tyo=2;d=15;v=30;hnp=true} @targetlocation ]} @ModelPart{mid=apocalypse_type_a;pid=crescent_1_tm_3}
+  - sound{s=custom.combo1;v=3;p=1} @self
+  - delay 11
+  - skill{s=[ - projectile{bulletType=MOB;mob=combo_second;oH=[ - damage{a=10} ];bmd=true;sE=false;syo=2;tyo=2;d=15;v=30;hnp=true} @targetlocation ]} @ModelPart{mid=apocalypse_type_a;pid=crescent_1_tm_3}
+  - sound{s=custom.combo2;v=3;p=1} @self
+  - delay 13
+  - skill{s=[ - projectile{bulletType=MOB;mob=combo_third;oH=[ - damage{a=10} ];bmd=true;sE=false;syo=2;tyo=2;d=15;v=30;hnp=true} @targetlocation ]} @ModelPart{mid=apocalypse_type_a;pid=crescent_1_tm_3}
+  - sound{s=custom.combo3;v=3;p=1} @self
+  - delay 22
+  - skill{s=[ - projectile{bulletType=MOB;mob=combo_x;oH=[ - damage{a=20} ];bmd=true;sE=false;syo=2;tyo=2;d=15;v=30;hnp=true} @targetlocation ]} @ModelPart{mid=apocalypse_type_a;pid=crescent_x}
+  - sound{s=custom.combo_x;v=3;p=1} @self
+  - delay 9
+  - setspeed{speed=1;type=WALKING} @self
+
+#Void Storm
+apocalypse_void_storm:
+  Cooldown: 20
+  Conditions:
+  - incombat true
+  - targetnotwithin{d=4} true
+  - targetwithin{d=12} true
+  - hasaura{n=basic1} false
+  - hasaura{n=basic2} false
+  - hasaura{n=teleporting} false
+  - hasaura{n=Wvoid} false
+  - hasaura{n=combo} false
+  - hasaura{n=voidS} false
+  - hasaura{n=Bcollapsing} false
+  - hasaura{n=blackbox} false
+  - hasaura{n=vanishing} false
+  - hasaura{n=blackH} false
+  - hasaura{n=grab} false
+  - hasaura{n=caught} false
+  - hasaura{n=uppercutting} false
+  - hasaura{n=blackSF} false
+  - hasaura{n=beaming} false
+  Skills:
+  - delay 1
+  - CancelEvent @self
+  - setspeed{speed=0;type=WALKING} @self
+  - aura{auraName=voidS;duration=53} @self
+  - state{model=apocalypse_type_a;state=void_storm} @self
+  - lockmodel @self
+  - summon{type=void_storm;amount=1} @forward{f=-3}
+  - delay 53
+  - lockmodel{l=false} @self
+  - setspeed{speed=1;type=WALKING} @self
+
+#Buildings Collapse
+apocalypse_buildings_collapse:
+  Cooldown: 8
+  Conditions:
+  - incombat true
+  - targetnotwithin{d=4} true
+  - targetwithin{d=8} true
+  - hasaura{n=basic1} false
+  - hasaura{n=basic2} false
+  - hasaura{n=teleporting} false
+  - hasaura{n=Wvoid} false
+  - hasaura{n=combo} false
+  - hasaura{n=voidS} false
+  - hasaura{n=Bcollapsing} false
+  - hasaura{n=blackbox} false
+  - hasaura{n=vanishing} false
+  - hasaura{n=blackH} false
+  - hasaura{n=grab} false
+  - hasaura{n=caught} false
+  - hasaura{n=uppercutting} false
+  - hasaura{n=blackSF} false
+  - hasaura{n=beaming} false
+  Skills:
+  - delay 1
+  - CancelEvent @self
+  - setspeed{speed=0;type=WALKING} @self
+  - aura{auraName=Bcollapsing;duration=64} @self
+  - state{model=apocalypse_type_a;state=buildings_collapse} @self
+  - lockmodel @self
+  - summon{type=buildings_collapse;amount=1} @targetlocation
+  - delay 64
+  - lockmodel{l=false} @self
+  - setspeed{speed=1;type=WALKING} @self
+
+#Blackbox
+apocalypse_blackbox:
+  Cooldown: 40
+  Conditions:
+  - incombat true
+  - targetnotwithin{d=5} true
+  - targetwithin{d=10} true
+  - hasaura{n=basic1} false
+  - hasaura{n=basic2} false
+  - hasaura{n=teleporting} false
+  - hasaura{n=Wvoid} false
+  - hasaura{n=combo} false
+  - hasaura{n=voidS} false
+  - hasaura{n=Bcollapsing} false
+  - hasaura{n=blackbox} false
+  - hasaura{n=vanishing} false
+  - hasaura{n=blackH} false
+  - hasaura{n=grab} false
+  - hasaura{n=caught} false
+  - hasaura{n=uppercutting} false
+  - hasaura{n=blackSF} false
+  - hasaura{n=beaming} false
+  Skills:
+  - delay 1
+  - CancelEvent @self
+  - setspeed{speed=0;type=WALKING} @self
+  - aura{auraName=blackbox;duration=339} @self
+  - state{model=apocalypse_type_a;state=blackbox} @self
+  - lockmodel @self
+  - summon{type=blackbox;amount=1} @forward{f=8;yoffset=0.2}
+  - delay 339
+  - lockmodel{l=false} @self
+  - setspeed{speed=1;type=WALKING} @self
+
+#Vanish
+apocalypse_vanish:
+  Cooldown: 10
+  Conditions:
+  - incombat true
+  - chance{c=0.3} true
+  - targetwithin{d=5} true
+  - hasaura{n=basic1} false
+  - hasaura{n=basic2} false
+  - hasaura{n=teleporting} false
+  - hasaura{n=Wvoid} false
+  - hasaura{n=combo} false
+  - hasaura{n=voidS} false
+  - hasaura{n=Bcollapsing} false
+  - hasaura{n=blackbox} false
+  - hasaura{n=vanishing} false
+  - hasaura{n=blackH} false
+  - hasaura{n=GandT} false
+  - hasaura{n=uppercutting} false
+  - hasaura{n=blackSF} false
+  - hasaura{n=beaming} false
+  Skills:
+  - delay 1
+  - CancelEvent @self
+  - setspeed{speed=0;type=WALKING} @self
+  - aura{auraName=vanishing;duration=65} @self
+  - state{model=apocalypse_type_a;state=vanish} @self
+  - lockmodel @self
+  - delay 8
+  - teleport{sh=3} @forward{f=-15;yoffset=0.5}
+  - sound{s=custom.vanish;v=3;p=1} @self
+  - delay 57
+  - lockmodel{l=false} @self
+  - setspeed{speed=1;type=WALKING} @self
+
+#Black Hole
+apocalypse_black_hole:
+  Cooldown: 40
+  Conditions:
+  - incombat true
+  - targetnotwithin{d=5} true
+  - targetwithin{d=15} true
+  - hasaura{n=basic1} false
+  - hasaura{n=basic2} false
+  - hasaura{n=teleporting} false
+  - hasaura{n=Wvoid} false
+  - hasaura{n=combo} false
+  - hasaura{n=voidS} false
+  - hasaura{n=Bcollapsing} false
+  - hasaura{n=blackbox} false
+  - hasaura{n=vanishing} false
+  - hasaura{n=blackH} false
+  - hasaura{n=grab} false
+  - hasaura{n=caught} false
+  - hasaura{n=uppercutting} false
+  - hasaura{n=blackSF} false
+  - hasaura{n=beaming} false
+  Skills:
+  - delay 1
+  - CancelEvent @self
+  - setspeed{speed=0;type=WALKING} @self
+  - aura{auraName=blackH;duration=260} @self
+  - state{model=apocalypse_type_a;state=black_hole} @self
+  - lockmodel @self
+  - summon{type=black_hole;amount=1} @ModelPart{mid=apocalypse_type_a;pid=black_hole3}
+  - delay 260
+  - lockmodel{l=false} @self
+  - setspeed{speed=1;type=WALKING} @self
+
+#Grab
+apocalypse_grab:
+  Cooldown: 12
+  Conditions:
+  - incombat true
+  - targetwithin{d=5} true
+  - hasaura{n=basic1} false
+  - hasaura{n=basic2} false
+  - hasaura{n=teleporting} false
+  - hasaura{n=Wvoid} false
+  - hasaura{n=combo} false
+  - hasaura{n=voidS} false
+  - hasaura{n=Bcollapsing} false
+  - hasaura{n=blackbox} false
+  - hasaura{n=vanishing} false
+  - hasaura{n=blackH} false
+  - hasaura{n=grab} false
+  - hasaura{n=caught} false
+  - hasaura{n=uppercutting} false
+  - hasaura{n=blackSF} false
+  - hasaura{n=beaming} false
+  Skills:
+  - CancelEvent @self
+  - setspeed{speed=0;type=WALKING} @self
+  - aura{auraName=grab;duration=40} @self
+  - state{model=apocalypse_type_a;state=grab} @self
+  - lockmodel @self
+  - delay 6
+  - totem{md=10;c=1;oH=apocalypse_catch;hnp=true;hp=true;hR=2.5;vR=2;i=1;drawhitbox=false} @target
+  - sound{s=custom.grab;v=3;p=1} @self
+  - delay 34
+  - lockmodel{l=false} @self ?!hasaura{n=caught}
+  - setspeed{speed=1;type=WALKING} @self ?!hasaura{n=caught}
+
+apocalypse_catch:
+  TargetConditions:
+  - isblocking false
+  Skills:
+  - skill{s=apocalypse_catch_skill}
+
+apocalypse_catch_skill:
+  Conditions:
+  - ModelHasPassenger{p=grab} false
+  Skills:
+  - mountmodel{mid=apocalypse_type_a;driver=false;mode=force_walking;pbone=grab;dmg=false} @target ?targetwithin{d=6}
+  - skill{s=apocalypse_throw} @self
+
+apocalypse_throw:
+  Conditions:
+  - ModelHasPassenger orElseCast apocalypse_setAItrue
+  - hasaura{n=caught} false
+  Skills:
+  - CancelEvent @self
+  - aura{auraName=caught;duration=42} @self
+  - delay 19
+  - state{model=apocalypse_type_a;state=throw} @self
+  - settarget @ModelPassengers{mid=apocalypse_type_a;pid=grab}
+  - delay 3
+  - dismountAllModel{mid=apocalypse_type_a;p=grab} @self
+  - delay 2
+  - throw{v=-15;vY=10} @target
+  - sound{s=custom.throw;v=3;p=1} @self
+  - delay 18
+  - lockmodel{l=false} @self
+  - setspeed{speed=1;type=WALKING} @self
+
+#Uppercut
+apocalypse_uppercut:
+  Cooldown: 5
+  Conditions:
+  - incombat true
+  - targetwithin{d=4} true
+  - hasaura{n=basic1} false
+  - hasaura{n=basic2} false
+  - hasaura{n=teleporting} false
+  - hasaura{n=Wvoid} false
+  - hasaura{n=combo} false
+  - hasaura{n=voidS} false
+  - hasaura{n=Bcollapsing} false
+  - hasaura{n=blackbox} false
+  - hasaura{n=vanishing} false
+  - hasaura{n=blackH} false
+  - hasaura{n=grab} false
+  - hasaura{n=caught} false
+  - hasaura{n=uppercutting} false
+  - hasaura{n=blackSF} false
+  - hasaura{n=beaming} false
+  Skills:
+  - delay 1
+  - CancelEvent @self
+  - setspeed{speed=0;type=WALKING} @self
+  - aura{auraName=uppercutting;duration=25} @self
+  - state{model=apocalypse_type_a;state=uppercut} @self
+  - delay 21
+  - potion{type=LEVITATION;duration=2;l=2} @target ?targetwithin{d=4}
+  - sound{s=custom.uppercut;v=3;p=1} @self
+  - delay 2
+  - throw{vy=15} @target ?targetwithin{d=4}
+  - damage{a=10} @target ?targetwithin{d=4}
+  - delay 2
+  - setspeed{speed=1;type=WALKING} @self
+
+#Black Star Field
+apocalypse_black_star_field:
+  Cooldown: 10
+  Conditions:
+  - incombat true
+  - targetwithin{d=4} true
+  - hasaura{n=basic1} false
+  - hasaura{n=basic2} false
+  - hasaura{n=teleporting} false
+  - hasaura{n=Wvoid} false
+  - hasaura{n=combo} false
+  - hasaura{n=voidS} false
+  - hasaura{n=Bcollapsing} false
+  - hasaura{n=blackbox} false
+  - hasaura{n=vanishing} false
+  - hasaura{n=blackH} false
+  - hasaura{n=grab} false
+  - hasaura{n=caught} false
+  - hasaura{n=uppercutting} false
+  - hasaura{n=blackSF} false
+  - hasaura{n=beaming} false
+  Skills:
+  - delay 1
+  - CancelEvent @self
+  - setspeed{speed=0;type=WALKING} @self
+  - aura{auraName=blackSF;duration=58} @self
+  - state{model=apocalypse_type_a;state=black_star_field} @self
+  - lockmodel @self
+  - setAI{ai=false} @self
+  - sound{s=custom.black_star;v=3;p=1} @self
+  - delay 20
+  - aura{auraName=BSFD;oT=BSF_damage;duration=35} @self
+  - delay 38
+  - setAI{ai=true} @self
+  - lockmodel{l=false} @self
+  - setspeed{speed=1;type=WALKING} @self
+
+BSF_damage:
+  Skills:
+  - damage{a=15;is=true;pk=true} @LivingInRadius{r=7}
+
+#Beam
+apocalypse_beam:
+  Cooldown: 12
+  Conditions:
+  - incombat true
+  - targetnotwithin{d=10} true
+  - targetwithin{d=20} true
+  - hasaura{n=basic1} false
+  - hasaura{n=basic2} false
+  - hasaura{n=teleporting} false
+  - hasaura{n=Wvoid} false
+  - hasaura{n=combo} false
+  - hasaura{n=voidS} false
+  - hasaura{n=Bcollapsing} false
+  - hasaura{n=blackbox} false
+  - hasaura{n=vanishing} false
+  - hasaura{n=blackH} false
+  - hasaura{n=grab} false
+  - hasaura{n=caught} false
+  - hasaura{n=uppercutting} false
+  - hasaura{n=blackSF} false
+  - hasaura{n=beaming} false
+  Skills:
+  - delay 1
+  - CancelEvent @self
+  - setspeed{speed=0;type=WALKING} @self
+  - aura{auraName=beaming;duration=109} @self
+  - state{model=apocalypse_type_a;state=beam} @self
+  - summon{type=beam;amount=1} @ModelPart{mid=apocalypse_type_a;pid=beam}
+  - lockmodel @self
+  - setcollidable{c=false} @self
+  - delay 109
+  - setcollidable{c=true} @self
+  - lockmodel{l=false} @self
+  - setspeed{speed=1;type=WALKING} @self
+
+#Leave Combat
+apocalypse_reset:
+  Conditions:
+  - playersinradius{a=0;r=40} true
+  Skills:
+  - heal{a=1000} @self

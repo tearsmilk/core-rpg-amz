@@ -1,0 +1,22 @@
+
+# ~Written by RopeFire~
+
+CancelEvent:
+  Conditions:
+  - incombat true
+  Skills:
+  - CancelEvent @self
+
+buildings_collapse_summoned:
+  Skills:
+  - CancelEvent @self
+  - state{model=buildings_collapse;state=buildings_collapse} @self
+  - lockmodel @self
+  - delay 32
+  - sound{s=custom.buildings_collapse;v=3;p=1} @self
+  - delay 10
+  - damage{a=20;is=true;pk=true} @LivingInRadius{r=5;ignore=samefaction}
+  - delay 13
+  - remove @self
+
+# 03659UQDQ2SSQIGITHCSCBWR

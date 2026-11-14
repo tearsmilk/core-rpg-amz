@@ -1,0 +1,203 @@
+spider_melee:
+  Display: spider_melee
+  Type: HUSK
+  Health: 8
+  Damage: 5
+  Faction: spideys
+  Options:
+    Silent: true
+    MovementSpeed: 0.26
+    PreventSunburn: true
+    PreventJockeyMounts: true
+    KnockbackResistance: 0.25
+    Collidable: true
+    PreventOtherDrops: true
+    Invisible: true
+  Skills:
+  - settarget{delay="<random.1to20>"} @NearestPlayer{r=16} ~onTimer:40 ?inCombat
+  - model{mid=spider_melee_am} @self ~onSpawn
+  - randomskill{s=spdr_s1,spdr_s2,spdr_s3} @self ~onSpawn
+  - brightness{b=10;s=10;delay=1} @self ~onSpawn
+  - cancelevent{sync=true} @self ~onAttack
+  - sound{s=minecraft:entity.spider.step;v=1;p=1} @self ~onSpawn
+  - sound{s=minecraft:entity.spider.ambient;v=1;p=0.8} @selflocation ~onTimer:205
+  - sound{s=minecraft:entity.spider.death;v=1.2;p=0.8} @selflocation ~onDeath
+  - sound{s=minecraft:entity.spider.hurt;v=0.8;p=0.8} @selflocation ~onDamaged
+  - sound{s=minecraft:entity.spider.step;v=0.4;p=0.8} @self ~onTimer:12 ?ismoving
+  - particles{p=poof;a=25;hs=0.4;vs=0.4;delay=50} @modelpart{p=torso} ~onDeath
+  - particles{p=poof;size=0.5;a=15;hs=0.4;vs=0.4;delay=50} @modelpart{p=head} ~onDeath
+  - randomskill{s=spdr_atk,spdr_dash} @self ~onTimer:20
+
+
+spider_trapper:
+  Display: spider_trapper
+  Type: HUSK
+  Health: 8
+  Damage: 5
+  Faction: spideys
+  Options:
+    Silent: true
+    MovementSpeed: 0.26
+    PreventSunburn: true
+    PreventJockeyMounts: true
+    KnockbackResistance: 0.25
+    Collidable: true
+    PreventOtherDrops: true
+    Invisible: true
+  Skills:
+  - settarget{delay="<random.1to20>"} @NearestPlayer{r=16} ~onTimer:40 ?inCombat
+  - model{mid=spider_trapper_am} @self ~onSpawn
+  - randomskill{s=spdr_s1,spdr_s2,spdr_s3} @self ~onSpawn
+  - brightness{b=10;s=10;delay=1} @self ~onSpawn
+  - cancelevent{sync=true} @self ~onAttack
+  - sound{s=minecraft:entity.spider.step;v=1;p=1} @self ~onSpawn
+  - sound{s=minecraft:entity.spider.ambient;v=1;p=0.8} @selflocation ~onTimer:205
+  - sound{s=minecraft:entity.spider.death;v=1.2;p=0.8} @selflocation ~onDeath
+  - sound{s=minecraft:entity.spider.hurt;v=0.8;p=0.8} @selflocation ~onDamaged
+  - sound{s=minecraft:entity.spider.step;v=0.4;p=0.8} @self ~onTimer:12 ?ismoving
+  - particles{p=poof;a=25;hs=0.4;vs=0.4;delay=50} @modelpart{p=torso} ~onDeath
+  - particles{p=poof;size=0.5;a=15;hs=0.4;vs=0.4;delay=50} @modelpart{p=head} ~onDeath
+  - randomskill{s=spdr_atk,spdr_trap} @self ~onTimer:20
+spider_trap:
+  Display: spider_trap
+  Type: HUSK
+  Health: 4
+  Damage: 0
+  Faction: spideys
+  Options:
+    Silent: true
+    MovementSpeed: 0
+    PreventSunburn: true
+    PreventJockeyMounts: true
+    KnockbackResistance: 2
+    Collidable: false
+    PreventOtherDrops: true
+    Invisible: true
+  Skills:
+  - teleport @NearestPlayer{r=5} ~onSpawn
+  - model{mid=spdr_trap_vfx} @self ~onSpawn
+  - brightness{b=10;s=10;delay=1} @self ~onSpawn
+  - state{s=hit} @self ~onHurt
+  - cancelevent{sync=true} @self ~onAttack
+  - setai{ai=false;delay=15} @self ~onSpawn
+  - sound{s=minecraft:block.wet_grass.fall;v=0.8;p=0.8} @self ~onHurt
+  - particles{p=poof;a=30;hs=0.2;vs=1} @origin ~onDeath
+  - damage{a=100;delay=100} @self ~onSpawn
+  - pull{v=2} @PIR{r=1.5} ~onTimer:1
+
+spider_poison:
+  Display: spider_poison
+  Type: HUSK
+  Health: 8
+  Damage: 5
+  Faction: spideys
+  Options:
+    Silent: true
+    MovementSpeed: 0.26
+    PreventSunburn: true
+    PreventJockeyMounts: true
+    KnockbackResistance: 0.25
+    Collidable: true
+    PreventOtherDrops: true
+    Invisible: true
+  Skills:
+  - settarget{delay="<random.1to20>"} @NearestPlayer{r=16} ~onTimer:40 ?inCombat
+  - model{mid=spider_poison_am} @self ~onSpawn
+  - randomskill{s=spdr_s1,spdr_s2,spdr_s3} @self ~onSpawn
+  - brightness{b=10;s=10;delay=1} @self ~onSpawn
+  - cancelevent{sync=true} @self ~onAttack
+  - sound{s=minecraft:entity.spider.step;v=1;p=1} @self ~onSpawn
+  - sound{s=minecraft:entity.spider.ambient;v=1;p=0.8} @selflocation ~onTimer:205
+  - sound{s=minecraft:entity.spider.death;v=1.2;p=0.8} @selflocation ~onDeath
+  - sound{s=minecraft:entity.spider.hurt;v=0.8;p=0.8} @selflocation ~onDamaged
+  - sound{s=minecraft:entity.spider.step;v=0.4;p=0.8} @self ~onTimer:12 ?ismoving
+  - particles{p=poof;a=25;hs=0.4;vs=0.4;delay=50} @modelpart{p=torso} ~onDeath
+  - particles{p=poof;size=0.5;a=15;hs=0.4;vs=0.4;delay=50} @modelpart{p=head} ~onDeath
+  - randomskill{s=spdr_atk,spdr_pois} @self ~onTimer:20
+spider_pois:
+  Display: spider_pois
+  Skills:
+  Type: ARMOR_STAND
+  Options:
+    KnockbackResistance: 2
+    Collidable: false
+    PreventOtherDrops: true
+    Invisible: true
+    Silent: true
+    HasGravity: false
+  Skills:
+  - model{mid=spdr_pois_vfx} @self ~onSpawn
+  - brightness{b=10;s=10;delay=1} @self ~onSpawn
+  - sound{s=minecraft:entity.dolphin.eat;v=0.8;p=0.1} @self ~onSpawn
+  - remove{delay=41} @self ~onSpawn
+  - damage{a=1;repeat=6;repeati=6} @PIR{r=3.5} ~onSpawn
+
+spider_elite:
+  Display: spider_elite
+  Type: HUSK
+  Health: 8
+  Damage: 5
+  Faction: spideys
+  Options:
+    Silent: true
+    MovementSpeed: 0.20
+    PreventSunburn: true
+    PreventJockeyMounts: true
+    KnockbackResistance: 0.25
+    Collidable: true
+    PreventOtherDrops: true
+    Invisible: true
+  Skills:
+  - settarget{delay="<random.1to20>"} @NearestPlayer{r=16} ~onTimer:40 ?inCombat
+  - model{mid=spider_elite_am} @self ~onSpawn
+  - randomskill{s=spdr_s1,spdr_s2,spdr_s3} @self ~onSpawn
+  - brightness{b=10;s=10;delay=1} @self ~onSpawn
+  - cancelevent{sync=true} @self ~onAttack
+  - sound{s=minecraft:entity.spider.step;v=1;p=1} @self ~onSpawn
+  - sound{s=minecraft:entity.spider.ambient;v=1;p=0.6} @selflocation ~onTimer:205
+  - sound{s=minecraft:entity.spider.death;v=1.2;p=0.6} @selflocation ~onDeath
+  - sound{s=minecraft:entity.spider.hurt;v=0.8;p=0.6} @selflocation ~onDamaged
+  - sound{s=minecraft:entity.spider.step;v=0.4;p=0.6} @self ~onTimer:24 ?ismoving
+  - particles{p=poof;a=40;hs=0.5;vs=0.5;delay=50} @modelpart{p=torso} ~onDeath
+  - particles{p=poof;size=0.5;a=25;hs=0.5;vs=0.5;delay=50} @modelpart{p=head} ~onDeath
+  - randomskill{s=spdrelite_atk,spdrelite_atk_r,spdrelite_atk_l,spdrelite_rush} @self ~onTimer:20
+spdr_stomp_vfx_small:
+  Display: spdr_stomp_vfx_small
+  Skills:
+  Type: ARMOR_STAND
+  Options:
+    KnockbackResistance: 2
+    Collidable: false
+    PreventOtherDrops: true
+    Invisible: true
+    Silent: true
+    HasGravity: false
+  Skills:
+  - model{mid=spdr_stomp_vfx} @self ~onSpawn
+  - state{s=small} @self ~onSpawn
+  - brightness{b=15;s=15} @self ~onSpawn
+  - sound{s=minecraft:item.mace.smash_ground;v=0.8;p=2} @self ~onSpawn
+  - particles{p=block;m=STONE;a=15;hS=0.5;vS=0.1;y=0.1;delay=3} @self ~onSpawn
+  - remove{delay=50} @self ~onSpawn
+  - damage{a=1;delay=3} @PIR{r=3.5} ~onSpawn
+spdr_stomp_vfx:
+  Display: spdr_stomp_vfx
+  Skills:
+  Type: ARMOR_STAND
+  Options:
+    KnockbackResistance: 2
+    Collidable: false
+    PreventOtherDrops: true
+    Invisible: true
+    Silent: true
+    HasGravity: false
+  Skills:
+  - model{mid=spdr_stomp_vfx} @self ~onSpawn
+  - state{s=large} @self ~onSpawn
+  - brightness{b=15;s=15} @self ~onSpawn
+  - sound{s=minecraft:item.mace.smash_ground_heavy;v=0.8;p=1.3} @self ~onSpawn
+  - particles{p=block;m=STONE;a=80;hS=2;vS=0.1;y=0.1;delay=6} @self ~onSpawn
+  - remove{delay=70} @self ~onSpawn
+  - damage{a=1;delay=3} @PIR{r=6} ~onSpawn
+
+# 82027Z5WM

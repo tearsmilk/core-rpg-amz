@@ -1,0 +1,247 @@
+# Сгенерировано: кадры VFX через скиллы с построчным delay (inline delay= у equip в MythicMobs 5.14 не срабатывает)
+lostassets_vfx_lc_1:
+  Skills:
+  - delay 2
+  - equip{item=lostassets_1:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_2:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_3:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_4:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_5:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_6:HEAD} @self
+  - delay 1
+  - remove @self
+lostassets_vfx_lc_2:
+  Skills:
+  - delay 2
+  - equip{item=lostassets_1:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_2:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_3:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_4:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_5:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_6:HEAD} @self
+  - delay 1
+  - remove @self
+lostassets_vfx_lc_3:
+  Skills:
+  - delay 2
+  - equip{item=lostassets_1:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_2:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_3:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_4:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_5:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_6:HEAD} @self
+  - delay 1
+  - remove @self
+lostassets_vfx_target:
+  Skills:
+  - delay 2
+  - equip{item=lostassets_8:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_9:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_10:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_11:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_12:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_13:HEAD} @self
+  - delay 1
+  - remove @self
+lostassets_vfx_rc1:
+  Skills:
+  - delay 2
+  - equip{item=lostassets_8:HAND} @self
+  - delay 1
+  - equip{item=lostassets_9:HAND} @self
+  - delay 1
+  - equip{item=lostassets_10:HAND} @self
+  - delay 1
+  - equip{item=lostassets_11:HAND} @self
+  - delay 11
+  - equip{item=lostassets_12:HAND} @self
+  - delay 1
+  - equip{item=lostassets_13:HAND} @self
+  - delay 1
+  - remove @self
+lostassets_vfx_rc2:
+  Skills:
+  - delay 4
+  - equip{item=lostassets_1:HAND} @self
+  - delay 1
+  - equip{item=lostassets_2:HAND} @self
+  - delay 1
+  - equip{item=lostassets_3:HAND} @self
+  - delay 1
+  - equip{item=lostassets_4:HAND} @self
+  - delay 1
+  - equip{item=lostassets_5:HAND} @self
+  - delay 1
+  - equip{item=lostassets_6:HAND} @self
+  - delay 1
+  - remove @self
+lostassets_vfx_rc3:
+  Skills:
+  - delay 2
+  - equip{item=lostassets_22:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_23:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_24:HEAD} @self
+  - delay 4
+  - equip{item=lostassets_23:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_22:HEAD} @self
+  - delay 2
+  - remove @self
+lostassets_vfx_slc1:
+  Skills:
+  - delay 2
+  - equip{item=lostassets_22:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_23:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_24:HEAD} @self
+  - delay 4
+  - equip{item=lostassets_23:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_22:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_22:HEAD} @self
+  - delay 1
+  - remove @self
+lostassets_vfx_slc2:
+  Skills:
+  - delay 2
+  - equip{item=lostassets_22:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_23:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_24:HEAD} @self
+  - delay 4
+  - equip{item=lostassets_23:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_22:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_22:HEAD} @self
+  - delay 1
+  - remove @self
+lostassets_vfx_slc3:
+  Skills:
+  - delay 4
+  - equip{item=lostassets_14:HAND} @self
+  - delay 1
+  - equip{item=lostassets_15:HAND} @self
+  - delay 1
+  - equip{item=lostassets_16:HAND} @self
+  - delay 1
+  - equip{item=lostassets_17:HAND} @self
+  - delay 1
+  - equip{item=lostassets_18:HAND} @self
+  - delay 1
+  - equip{item=lostassets_19:HAND} @self
+  - delay 1
+  - equip{item=lostassets_20:HAND} @self
+  - delay 1
+  - equip{item=lostassets_21:HAND} @self
+  - delay 1
+  - remove @self
+lostassets_vfx_slc4:
+  Skills:
+  - delay 4
+  - equip{item=lostassets_14:HAND} @self
+  - delay 1
+  - equip{item=lostassets_15:HAND} @self
+  - delay 1
+  - equip{item=lostassets_16:HAND} @self
+  - delay 1
+  - equip{item=lostassets_17:HAND} @self
+  - delay 1
+  - equip{item=lostassets_18:HAND} @self
+  - delay 1
+  - equip{item=lostassets_19:HAND} @self
+  - delay 1
+  - equip{item=lostassets_20:HAND} @self
+  - delay 1
+  - equip{item=lostassets_21:HAND} @self
+  - delay 1
+  - remove @self
+lostassets_vfx_slc5:
+  Skills:
+  - delay 4
+  - equip{item=lostassets_7:HAND} @self
+  - delay 8
+  - remove @self
+lostassets_vfx_src1:
+  Skills:
+  - delay 1
+  - equip{item=lostassets_22:HAND} @self
+  - delay 39
+  - remove @self
+lostassets_vfx_src2:
+  Skills:
+  - delay 2
+  - equip{item=lostassets_8:HAND} @self
+  - delay 1
+  - equip{item=lostassets_9:HAND} @self
+  - delay 1
+  - equip{item=lostassets_10:HAND} @self
+  - delay 1
+  - equip{item=lostassets_11:HAND} @self
+  - delay 11
+  - equip{item=lostassets_12:HAND} @self
+  - delay 1
+  - equip{item=lostassets_13:HAND} @self
+  - delay 1
+  - remove @self
+lostassets_vfx_src3:
+  Skills:
+  - delay 2
+  - equip{item=lostassets_14:HAND} @self
+  - delay 1
+  - equip{item=lostassets_15:HAND} @self
+  - delay 1
+  - equip{item=lostassets_16:HAND} @self
+  - delay 1
+  - equip{item=lostassets_17:HAND} @self
+  - delay 1
+  - equip{item=lostassets_18:HAND} @self
+  - delay 1
+  - equip{item=lostassets_19:HAND} @self
+  - delay 1
+  - equip{item=lostassets_20:HAND} @self
+  - delay 1
+  - equip{item=lostassets_21:HAND} @self
+  - delay 1
+  - remove @self
+lostassets_vfx_src4:
+  Skills:
+  - delay 2
+  - equip{item=lostassets_1:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_2:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_3:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_4:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_5:HEAD} @self
+  - delay 1
+  - equip{item=lostassets_6:HEAD} @self
+  - delay 1
+  - remove @self

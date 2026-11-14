@@ -1,0 +1,804 @@
+
+
+wolfmobattackcancel:
+  Skills:
+  - CancelEvent
+
+wolfmob29spawner:
+  Cooldown: 99999999
+  Conditions:
+  - playerwithin{d=7}
+  Skills:
+  - state{s=skill1} @self
+  - partvisibility{m=wolfmob29spawner;p=body;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=rleg;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=rleg2;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=lleg;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=lleg2;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=body2;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=chest;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=neck;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=head;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=hat;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=hat2;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=hair2;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=rarm;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=rarm2;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=larm;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=larm2;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=weapon;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=wind;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=wind2;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=wind3;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=flower2;v=false} @self
+  - effect:sound{s=item.elytra.flying;v=1;p=1.3} @self
+  - delay 6
+  - partvisibility{m=wolfmob29spawner;p=wind;v=true} @self
+  - changepart{m=wolfmob29spawner;pid=wind;nm=wolfmob29wind;npid=main;delay=2} @self
+  - changepart{m=wolfmob29spawner;pid=wind;nm=wolfmob29wind;npid=main2;delay=4} @self
+  - changepart{m=wolfmob29spawner;pid=wind;nm=wolfmob29wind;npid=main3;delay=6} @self
+  - changepart{m=wolfmob29spawner;pid=wind;nm=wolfmob29wind;npid=main4;delay=8} @self
+  - changepart{m=wolfmob29spawner;pid=wind;nm=wolfmob29wind;npid=main5;delay=10} @self
+  - changepart{m=wolfmob29spawner;pid=wind;nm=wolfmob29wind;npid=main6;delay=12} @self
+  - changepart{m=wolfmob29spawner;pid=wind;nm=wolfmob29wind;npid=main7;delay=14} @self
+  - partvisibility{m=wolfmob29spawner;p=wind;v=false;delay=16} @self
+  - delay 4
+  - partvisibility{m=wolfmob29spawner;p=wind2;v=true} @self
+  - changepart{m=wolfmob29spawner;pid=wind2;nm=wolfmob29wind;npid=main;delay=2} @self
+  - changepart{m=wolfmob29spawner;pid=wind2;nm=wolfmob29wind;npid=main2;delay=4} @self
+  - changepart{m=wolfmob29spawner;pid=wind2;nm=wolfmob29wind;npid=main3;delay=6} @self
+  - changepart{m=wolfmob29spawner;pid=wind2;nm=wolfmob29wind;npid=main4;delay=8} @self
+  - changepart{m=wolfmob29spawner;pid=wind2;nm=wolfmob29wind;npid=main5;delay=10} @self
+  - changepart{m=wolfmob29spawner;pid=wind2;nm=wolfmob29wind;npid=main6;delay=12} @self
+  - changepart{m=wolfmob29spawner;pid=wind2;nm=wolfmob29wind;npid=main7;delay=14} @self
+  - partvisibility{m=wolfmob29spawner;p=wind2;v=false;delay=16} @self
+  - delay 10
+  - partvisibility{m=wolfmob29spawner;p=wind3;v=true} @self
+  - changepart{m=wolfmob29spawner;pid=wind3;nm=wolfmob29wind;npid=main;delay=2} @self
+  - changepart{m=wolfmob29spawner;pid=wind3;nm=wolfmob29wind;npid=main2;delay=4} @self
+  - changepart{m=wolfmob29spawner;pid=wind3;nm=wolfmob29wind;npid=main3;delay=6} @self
+  - changepart{m=wolfmob29spawner;pid=wind3;nm=wolfmob29wind;npid=main4;delay=8} @self
+  - changepart{m=wolfmob29spawner;pid=wind3;nm=wolfmob29wind;npid=main5;delay=10} @self
+  - changepart{m=wolfmob29spawner;pid=wind3;nm=wolfmob29wind;npid=main6;delay=12} @self
+  - changepart{m=wolfmob29spawner;pid=wind3;nm=wolfmob29wind;npid=main7;delay=14} @self
+  - partvisibility{m=wolfmob29spawner;p=wind3;v=false;delay=16} @self
+  - delay 68
+  - effect:particles{p=cloud;a=100;vs=2;hs=2;y=-2} @ModelPart{m=wolfmob29spawner;p=head;offset=LOCAL}
+  - partvisibility{m=wolfmob29spawner;p=body;v=true} @self
+  - partvisibility{m=wolfmob29spawner;p=rleg;v=true} @self
+  - partvisibility{m=wolfmob29spawner;p=rleg2;v=true} @self
+  - partvisibility{m=wolfmob29spawner;p=lleg;v=true} @self
+  - partvisibility{m=wolfmob29spawner;p=lleg2;v=true} @self
+  - partvisibility{m=wolfmob29spawner;p=body2;v=true} @self
+  - partvisibility{m=wolfmob29spawner;p=chest;v=true} @self
+  - partvisibility{m=wolfmob29spawner;p=neck;v=true} @self
+  - partvisibility{m=wolfmob29spawner;p=head;v=true} @self
+  - partvisibility{m=wolfmob29spawner;p=hat;v=true} @self
+  - partvisibility{m=wolfmob29spawner;p=hat2;v=true} @self
+  - partvisibility{m=wolfmob29spawner;p=hair2;v=true} @self
+  - partvisibility{m=wolfmob29spawner;p=rarm;v=true} @self
+  - partvisibility{m=wolfmob29spawner;p=rarm2;v=true} @self
+  - partvisibility{m=wolfmob29spawner;p=larm;v=true} @self
+  - partvisibility{m=wolfmob29spawner;p=larm2;v=true} @self
+  - partvisibility{m=wolfmob29spawner;p=flower2;v=true} @self
+  - partvisibility{m=wolfmob29spawner;p=flower1;v=false} @self
+  - effect:particles{p=flash;amount=4;speed=1;hS=1;vS=1;y=1} @ModelPart{m=wolfmob29spawner;p=flower2;offset=LOCAL}
+  - effect:sound{s=block.beacon.activate;v=1;p=1.7} @ModelPart{m=wolfmob29spawner;p=flower2;offset=LOCAL}
+  - delay 82
+  - delay 28
+  - partvisibility{m=wolfmob29spawner;p=flower1;v=true} @self
+  - partvisibility{m=wolfmob29spawner;p=flower2;v=false} @self
+  - delay 24
+  - effect:particles{p=blockcrack;material=stone;amount=160;hS=1.5;vS=1.3;speed=0;y=0.2} @self
+  - effect:sound{s=entity.zombie.break_wooden_door;v=1.2;p=1} @self
+  - partvisibility{m=wolfmob29spawner;p=cross;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=weapon;v=true} @self
+  - delay 13
+  - sound{s=entity.player.attack.sweep;p=0.8;v=1.6} @self
+  - delay 25
+  - partvisibility{m=wolfmob29spawner;p=body;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=rleg;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=rleg2;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=lleg;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=lleg2;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=body2;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=chest;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=neck;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=head;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=hat;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=hat2;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=hair2;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=rarm;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=rarm2;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=larm;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=larm2;v=false} @self
+  - partvisibility{m=wolfmob29spawner;p=weapon;v=false} @self
+  - effect:particles{p=flash;amount=4;speed=1;hS=1;vS=1} @ModelPart{m=wolfmob29spawner;p=flash;offset=LOCAL}
+  - summon{t=wolfmob29} @forward{a=-0.4;sideOffset=2}
+  - delay 60
+  - remove @self
+
+  
+wolfmob29healthbelow:
+  Cooldown: 9999999
+  Conditions:
+  - offgcd
+  Skills:
+  - gcd{ticks=70} @self
+  - setAI{ai=false} @self
+  - DefaultState{mid=wolfmob29;t=walk;s=walk2} @self 
+  - DefaultState{mid=wolfmob29;t=idle;s=idle2} @self 
+  - state{s=healthbelow} @self
+  - delay 10
+  - sound{s=entity.wither.spawn;p=1;v=2} @self
+  - partvisibility{m=wolfmob29;p=weapon2;v=true} @self
+  - partvisibility{m=wolfmob29;p=weapon;v=false} @self
+  - partvisibility{m=wolfmob29;p=angry;v=true;} @self
+  - delay 15
+  - effect:particles{particle=reddust;color=#8d38a1;amount=10;speed=0.25;hs=1;vs=1;repeat=16;repeatInterval=1} @ModelPart{m=wolfmob29;p=weapon;offset=LOCAL;y=3}
+  - delay 8
+  - throw{velocity=7;velocityY=4} @PIR{r=5}
+  - damage{a=1} @PIR{r=5}
+  - delay 27
+  - e:p{a=1;hs=0.3;vs=0.3;p=campfire_cosy_smoke;d=true;dr=true;speed=0.3} @RingAroundOrigin{yoffset=0.3;points=48;radius=4}
+  - effect:sound{s=entity.generic.big_fall;v=1.2;p=2} @self
+  - setspeed{speed=1.5;type=walking} @self
+  - setstance{stance=healthbelow} @self
+  - setAI{ai=true} @self
+
+wolfmob29attackrandom1:
+  Cooldown: 1
+  Conditions:
+  - incombat
+  - offgcd
+  - stance{s=healthbelow} false
+  Skills:
+  - randomskill{s=wolfmob29skill1,wolfmob29skill2,wolfmob29skill3,wolfmob29skill4,wolfmob29skill5,wolfmob29skill6,wolfmob29skill7,wolfmob29skill13} @target
+
+wolfmob29attackrandom2:
+  Cooldown: 1
+  Conditions:
+  - incombat
+  - offgcd
+  - stance{s=healthbelow} true
+  Skills:
+  - randomskill{s=wolfmob29skill8,wolfmob29skill9,wolfmob29skill10,wolfmob29skill11,wolfmob29skill12,wolfmob29skill14,wolfmob29skill15,wolfmob29skill13-b} @target
+
+wolfmob29skill1:
+  Cooldown: 1
+  Conditions:
+  - targetwithin{d=7}
+  Skills: 
+  - gcd{ticks=55} @self
+  - state{s=skill1} @self
+  - delay 17
+  - potion{t=SPEED;l=9;d=4;p=false} @self
+  - delay 4
+  - skill{s=wolfmob29skill1-1} @forward{a=2.5}
+  - effect:sound{s=entity.generic.explode;v=1;p=1.5} @self
+  - setAI{ai=false} @self
+  - delay 7
+  - setAI{ai=true} @self
+  - potion{t=SPEED;l=4;d=8;p=false} @self
+  - delay 8
+  - effect:sound{s=entity.zombie.break_wooden_door;v=1.4;p=1} @self
+  - skill{s=wolfmob29skill1-1} @forward{a=3.2}
+  - setAI{ai=false} @self
+  - delay 18
+  - setAI{ai=true} @self
+
+wolfmob29skill1-1:
+  Skills:
+  - effect:particles{particle=reddust;color=#39313b;amount=140;speed=0.25;hs=1.5;vs=2} 
+  - totem{ch=1;onStart=wolfmob29skill1-2;int=1;hR=3;md=1}
+
+wolfmob29skill1-2:
+  Skills:
+  - damage{a=1} @PlayersNearOrigin{r=3}
+  - throw{velocity=10;velocityY=6} @PlayersNearOrigin{r=3}
+  
+wolfmob29skill2:
+  Cooldown: 9
+  Conditions:
+  - targetwithin{d=17}
+  Skills: 
+  - gcd{ticks=61} @self
+  - state{s=skill2} @self
+  - stun{d=36;f=false} @self 
+  - delay 34
+  - setAI{ai=false} @self
+  - delay 2
+  - projectile{onTick=wolfmob29skill2-1;v=18;i=3;hR=1;vR=1;syo=0;hs=true;hfs=-0;sfo=-1;hp=false;mr=20} @Forward
+  - sound{s=entity.ghast.scream;p=0.7;v=2} @self
+  - delay 24
+  - setAI{ai=true} @self
+  
+
+wolfmob29skill2-1:
+  Skills:
+  - summon{t=wolfmob29skill2} @origin
+  
+wolfmob29skill3:
+  Cooldown: 30
+  Conditions:
+  - targetwithin{d=16}
+  Skills: 
+  - gcd{ticks=127} @self
+  - state{s=skill3} @self
+  - setAI{ai=false} @self
+  - delay 28
+  - effect:sound{s=item.armor.equip_leather;v=2;p=0} @self 
+  - effect:sound{s=entity.generic.explode;v=1;p=1.5} @self
+  - effect:particlesphere{particle=endRod;amount=1200;radius=8;yOffset=0} @self
+  - throw{velocity=16;velocityY=7} @PIR{r=8}
+  - delay 17
+  - Aura{auraName=wolfmob29skill3;onTick=wolfmob29skill3-tick;cosu=false;duration=60;i=5} @self
+  - onDamaged{oH=wolfmob29skill3-2;auraname=wolfmob29skill3cancel;cosu=false;d=50} @self
+  - delay 55
+  - skill{s=wolfmob29skill3-1} @self
+ 
+wolfmob29skill3-1:
+  Conditions:
+  - hasaura{auraName=wolfmob29skill3}
+  Skills: 
+  - gcd{ticks=78} @self
+  - heal{amount=30} @self
+  - effect:particlering{p=endRod;radius=6;points=128;amount=2;y=3} @self
+  - partvisibility{m=wolfmob29;p=wolfmob29skill3;v=true} @self 
+  - partvisibility{m=wolfmob29;p=wolfmob29skill3;v=false;delay=20} @self
+  - effect:sound{s=entity.experience_orb.pickup;v=3;p=0} @self
+  - delay 26
+  - setAI{ai=true} @self
+ 
+wolfmob29skill3-tick:
+  Skills:
+  - e:p{a=1;p=endRod;d=true;dr=true;speed=0.3} @RingAroundOrigin{yoffset=0;points=300;radius=8}
+ 
+wolfmob29skill3-2:
+  Cooldown: 5
+  Skills:
+  - gcd{ticks=81} @self
+  - auraremove{aura=wolfmob29skill3} @self
+  - effect:sound{s=entity.axolotl.hurt;v=3;p=1} @self
+  - state{s=skill3;r=true} @self
+  - state{s=skill3-cancel} @self
+  - partvisibility{m=wolfmob29;p=face2;v=true} @self
+  - delay 77
+  - partvisibility{m=wolfmob29;p=face2;v=false} @self
+  - setAI{ai=true} @self
+  
+wolfmob29skill4:
+  Cooldown: 20
+  Conditions:
+  - playernotwithin{d=4}
+  Skills: 
+  - gcd{ticks=61} @self
+  - state{s=skill4} @self
+  - setAI{ai=false} @self
+  - effect:particles{particle=reddust;color=#8d38a1;amount=10;speed=0.25;hs=1;vs=1;repeat=16;repeatInterval=2;delay=18} @ModelPart{m=wolfmob29;p=weapon;offset=LOCAL;y=3}
+  - effect:sound{s=entity.horse.breathe;v=2.3;p=1.6;delay=30} @self
+  - effect:sound{s=entity.horse.breathe;v=2.3;p=1.6;delay=37} @self
+  - effect:sound{s=entity.horse.breathe;v=2.3;p=1.6;delay=44} @self
+  - effect:sound{s=entity.horse.breathe;v=2.3;p=1.6;delay=54} @self
+  - summon{t=wolfmob29skill4;delay=30} @ModelPart{m=wolfmob29;p=weaponspawn;offset=LOCAL;y=-3}
+  - summon{t=wolfmob29skill4;delay=37} @ModelPart{m=wolfmob29;p=weaponspawn;offset=LOCAL;y=-3}
+  - summon{t=wolfmob29skill4;delay=44} @ModelPart{m=wolfmob29;p=weaponspawn;offset=LOCAL;y=-3}
+  - summon{t=wolfmob29skill4;delay=54} @ModelPart{m=wolfmob29;p=weaponspawn;offset=LOCAL;y=-3}
+  - delay 60
+  - setAI{ai=true} @self
+ 
+wolfmob29skill5:
+  Cooldown: 25
+  Conditions:
+  - playerwithin{d=14}
+  Skills: 
+  - gcd{ticks=61} @self
+  - state{s=skill5} @self
+  - setAI{ai=false} @self
+  - delay 34
+  - effect:sound{s=entity.evoker.prepare_summon;v=3;p=1.6} @self
+  - effect:sound{s=entity.wither.shoot;v=1.2;p=1} @self
+  - projectile{ot=wolfmob29skill5-1;oe=wolfmob29skill5-2;v=4;i=1;hR=1;vR=1;i=1;mr=10;md=100;hnp=false;sso=-1;syo=2} @RingAroundOrigin{yoffset=6;points=12;radius=6}
+  - effect:particlesphere{p=reddust;color=#1f1d20;amount=20;radius=0.4;yOffset=0} @forward{a=0;sideOffset=-1;y=2}
+  - delay 26
+  - setAI{ai=true} @self
+
+
+wolfmob29skill5-1:
+  Skills:
+  - effect:particles{p=reddust;color=#8d38a1;a=2} @origin
+  - effect:sound{s=block.amethyst_block.hit;p=1.4;v=3} @origin 0.1
+
+
+wolfmob29skill5-2:
+  Skills:
+   - missile{ot=wolfmob29skill5-4;oh=wolfmob29skill5-3;v=7;i=1;hnp=false;hR=0.1;vR=0.1;i=1;mr=60;md=100;fo=true} @PlayersInRadius{r=80;sort=RANDOM} 
+  
+wolfmob29skill5-3:
+  Skills:
+  - effect:particlesphere{p=reddust;color=#1f1d20;amount=20;radius=0.4;yOffset=0} @origin
+  - damage{a=1}
+  
+wolfmob29skill5-4:
+  Skills:
+  - effect:particles{p=reddust;color=#8d38a1;a=2} @origin
+  - effect:sound{s=block.amethyst_block.hit;p=1;v=3} @origin 0.1
+  - effect:sound{s=block.amethyst_block.hit;p=1.2;v=3} @origin 0.1
+ 
+wolfmob29skill6:
+  Cooldown: 28
+  Conditions:
+  - targetnotwithin{d=8}
+  Skills: 
+  - gcd{ticks=71} @self
+  - state{s=skill6} @self
+  - setAI{ai=false} @self
+  - delay 18
+  - effect:sound{s=entity.generic.explode;v=2;p=0} @self
+  - effect:particles{p=blockcrack;material=stone;amount=160;hS=1.5;vS=1.3;speed=0;y=0.2} @Forward{f=2;y=0.0}
+  - delay 21
+  - effect:sound{s=entity.zombie.break_wooden_door;v=2.3;p=1} @self
+  - effect:particles{particle=reddust;color=#39313b;amount=50;hS=2;vS=2;speed=0;y=0.5} @Forward{f=2;y=0.0}
+  - throw{velocity=8;velocityY=5} @PIR{r=5}
+  - delay 11
+  - setAI{ai=true} @self
+  - potion{t=SPEED;l=4;d=460;p=false} @self
+  - defaultstate{m=wolfmob29;t=idle;s=skill6-1} @self
+  - defaultstate{m=wolfmob29;t=walk;s=skill6-1} @self
+  - delay 6
+  - skill{s=wolfmob29skill6-1} @self
+  
+
+wolfmob29skill6-1:
+  Skills:
+  - gcd{ticks=400} @self
+  - state{s=skill6;r=true} @self
+  - Aura{auraName=wolfmob29skill6;onTick=wolfmob29skill6-2-tick;CancelOnSkillUse=true;interval=2;duration=400} @self
+  - delay 10
+  - skill{s=wolfmob29skill6-2;repeat=399;repeatInterval=1} @target
+ 
+wolfmob29skill6-2-tick:
+  Skills:
+  - effect:particles{p=blockcrack;material=stone;amount=80;hS=1.5;vS=0.3;speed=0;y=0.2} @self
+  - effect:particles{particle=reddust;color=#39313b;amount=50;hS=1.5;vS=0.3;speed=0;y=0.2} @self
+  - effect:sound{s=item.shovel.flatten;v=2;p=1} @self 0.1
+
+  
+wolfmob29skill6-2:
+  Cooldown: 23
+  Conditions:
+  - targetwithin{d=7}
+  Skills:
+  - gcd{ticks=41} @self
+  - auraremove{aura=wolfmob29skill6} @self
+  - state{s=skill6-1;r=true} @self
+  - state{s=skill6-2} @self
+  - defaultstate{m=wolfmob29;t=idle;s=idle} @self
+  - defaultstate{m=wolfmob29;t=walk;s=walk} @self
+  - potionclear @self
+  - delay 12
+  - effect:sound{s=entity.generic.explode;v=2;p=0} @self
+  - potion{t=SPEED;l=16;d=4;p=false} @self
+  - delay 4
+  - skill{s=wolfmob29skill6-3} @forward{a=2.8}
+  - setAI{ai=false} @self
+  - delay 23
+  - setAI{ai=true} @self
+ 
+
+wolfmob29skill6-3:
+  Skills:
+  - effect:particles{particle=reddust;color=#39313b;amount=140;speed=0.25;hs=1.5;vs=2} 
+  - totem{ch=1;onStart=wolfmob29skill6-4;int=1;hR=3;md=1}
+
+wolfmob29skill6-4:
+  Skills:
+  - damage{a=1} @PlayersNearOrigin{r=3}
+  - throw{velocity=10;velocityY=8} @PlayersNearOrigin{r=3}
+ 
+ 
+wolfmob29skill7:
+  Cooldown: 15
+  Conditions:
+  - targetwithin{d=7}
+  Skills:
+  - gcd{ticks=51} @self
+  - state{s=skill7} @self
+  - effect:particles{particle=endRod;amount=10;speed=0.25;hs=0.8;vs=0.8;repeat=11;repeatInterval=2} @ModelPart{m=wolfmob29;p=weapon;offset=LOCAL;y=0}
+  - delay 24
+  - potion{t=SPEED;l=14;d=4;p=false} @self
+  - delay 4
+  - skill{s=wolfmob29skill7-1} @forward{a=2.3}
+  - effect:sound{s=entity.generic.explode;v=2;p=0} @self
+  - summon{t=wolfmob29skill7} @ModelPart{m=wolfmob29;p=wolfmob29crack;offset=LOCAL}
+  - setAI{ai=false} @self
+  - delay 22
+  - setAI{ai=true} @self
+ 
+
+wolfmob29skill7-1:
+  Skills:
+  - effect:particles{particle=reddust;color=#39313b;amount=140;speed=0.25;hs=1.5;vs=2} 
+  - totem{ch=1;onStart=wolfmob29skill7-2;int=1;hR=3;md=1}
+
+wolfmob29skill7-2:
+  Skills:
+  - damage{a=1} @PlayersNearOrigin{r=3}
+  - throw{velocity=5;velocityY=12} @PlayersNearOrigin{r=3}
+ 
+wolfmob29skill13:
+  Cooldown: 18
+  Conditions:
+  - targetwithin{d=18}
+  Skills:
+  - gcd{ticks=81} @self
+  - state{s=skill13a1} @self
+  - stun{d=20;f=true} @self
+  - look{headOnly=false;immediately=true;repeat=45;repeatInterval=1} @Target
+  - partvisibility{m=wolfmob29;p=claw;v=true} @self 
+  - delay 20
+  - sound{s=entity.ghast.hurt;p=1.2;v=1} @self
+  - setAI{ai=false} @self
+  - delay 4
+  - effect:sound{s=entity.zombie.break_wooden_door;v=1.5;p=1} @self
+  - effect:sound{s=entity.wither.shoot;v=1.2;p=1} @self
+  - projectile{onTick=wolfmob29skill13-1;v=12;i=3;hR=1;vR=1;syo=0;hs=true;hfs=-0;hp=false;mr=20} @Forward{a=10}
+  - projectile{onTick=wolfmob29skill13-1;v=12;i=3;hR=1;vR=1;syo=0;hs=true;hfs=-0;hp=false;mr=20} @Forward{a=10;sideOffset=6}
+  - projectile{onTick=wolfmob29skill13-1;v=12;i=3;hR=1;vR=1;syo=0;hs=true;hfs=-0;hp=false;mr=20} @Forward{a=10;sideOffset=-6}
+  - damage{a=1} @PIR{r=3}
+  - delay 40
+  - partvisibility{m=wolfmob29;p=claw;v=false} @self 
+  - delay 16
+  - setAI{ai=true} @self
+
+wolfmob29skill13-1:
+  Skills:
+  - summon{t=wolfmob29skill13} @origin
+
+wolfmob29skill13-b:
+  Cooldown: 18
+  Conditions:
+  - targetwithin{d=18}
+  Skills:
+  - gcd{ticks=81} @self
+  - state{s=skill13a2} @self
+  - stun{d=20;f=true} @self
+  - look{headOnly=false;immediately=true;repeat=45;repeatInterval=1} @Target
+  - partvisibility{m=wolfmob29;p=claw;v=true} @self 
+  - delay 20
+  - sound{s=entity.ghast.hurt;p=1.2;v=1} @self
+  - setAI{ai=false} @self
+  - delay 4
+  - effect:sound{s=entity.zombie.break_wooden_door;v=1.5;p=1} @self
+  - effect:sound{s=entity.wither.shoot;v=1.2;p=1} @self
+  - projectile{onTick=wolfmob29skill13-1;v=12;i=3;hR=1;vR=1;syo=0;hs=true;hfs=-0;hp=false;mr=20} @Forward{a=10}
+  - projectile{onTick=wolfmob29skill13-1;v=12;i=3;hR=1;vR=1;syo=0;hs=true;hfs=-0;hp=false;mr=20} @Forward{a=10;sideOffset=6}
+  - projectile{onTick=wolfmob29skill13-1;v=12;i=3;hR=1;vR=1;syo=0;hs=true;hfs=-0;hp=false;mr=20} @Forward{a=10;sideOffset=-6}
+  - damage{a=1} @PIR{r=3}
+  - delay 40
+  - partvisibility{m=wolfmob29;p=claw;v=false} @self 
+  - delay 16
+  - setAI{ai=true} @self
+
+wolfmob29skill8:
+  Cooldown: 3
+  Conditions:
+  - targetwithin{d=5}
+  Skills:
+  - gcd{ticks=61} @self
+  - state{s=skill8} @self
+  - delay 17
+  - effect:particles{p=reddust;color=#9e35b6;amount=6;speed=0.25;hs=0.4;vs=0.4;repeat=18;repeatInterval=1} @ModelPart{m=wolfmob29;p=weapon2;offset=LOCAL;y=3}
+  - delay 1
+  - partvisibility{m=wolfmob29;p=slash;v=true} @self
+  - partvisibility{m=wolfmob29;p=slash;v=false;delay=3} @self
+  - delay 3
+  - skill{s=wolfmob29skill8-1} @forward{a=2.3}
+  - sound{s=entity.player.attack.sweep;p=1;v=1.5} @self
+  - delay 9
+  - skill{s=wolfmob29skill8-1} @forward{a=-2.3}
+  - delay 1
+  - partvisibility{m=wolfmob29;p=slash;v=true} @self
+  - partvisibility{m=wolfmob29;p=slash;v=false;delay=4} @self
+  - delay 2
+  - sound{s=entity.player.attack.sweep;p=0.8;v=1.5} @self
+  - delay 2
+  - skill{s=wolfmob29skill8-1} @forward{a=2.3}
+  - delay 9
+  - setAI{ai=false} @self
+  - delay 3
+  - sound{s=entity.player.attack.sweep;p=1.9;v=1.3} @self
+  - delay 13
+  - setAI{ai=true} @self
+ 
+
+wolfmob29skill8-1:
+  Skills:
+  - totem{ch=1;onStart=wolfmob29skill8-2;int=1;hR=3;md=1}
+
+wolfmob29skill8-2:
+  Skills:
+  - damage{a=1;pk=true} @PlayersNearOrigin{r=3}
+  - effect:particles{particle=reddust;amount=20;hS=0.4;vS=0.2;speed=0;y=1.2} @PlayersNearOrigin{r=3}
+
+
+wolfmob29skill9:
+  Cooldown: 5
+  Conditions:
+  - targetwithin{d=8}
+  Skills:
+  - gcd{ticks=45} @self
+  - setAI{ai=false} @self
+  - state{s=skill9} @self
+  - delay 18
+  - partvisibility{m=wolfmob29;p=slash;v=true} @self
+  - partvisibility{m=wolfmob29;p=slash;v=false;delay=4} @self
+  - setAI{ai=true} @self
+  - potion{t=SPEED;l=9;d=4;p=false} @self
+  - delay 4
+  - skill{s=wolfmob29skill9-1} @forward{a=2}
+  - throw{velocity=8;velocityY=0.1} @PIR{r=3}
+  - setAI{ai=false} @self
+  - randomskill{s=wolfmob29skill9-4,wolfmob29skill9-5} @self
+ 
+
+wolfmob29skill9-1:
+  Skills:
+  - totem{ch=1;onStart=wolfmob29skill9-2;int=1;hR=3;md=1}
+  - effect:particles{particle=reddust;color=#9c0bbd;amount=140;speed=0.25;hs=1.5;vs=2} 
+
+wolfmob29skill9-2:
+  Skills:
+  - damage{a=1} @PlayersNearOrigin{r=3}
+  - effect:particles{particle=reddust;amount=20;hS=0.4;vS=0.2;speed=0;y=1.2} @PlayersNearOrigin{r=3}
+  
+wolfmob29skill9-4:
+  Skills:
+  - delay 22
+  - setAI{ai=true} @self
+  
+wolfmob29skill9-5:
+  Skills:
+  - gcd{ticks=51} @self
+  - state{s=skill9;r=true} @self
+  - state{s=skill9-1} @self
+  - setAI{ai=true} @self
+  - effect:particles{p=endRod;amount=6;speed=0.01;hs=0.3;vs=0.3;repeat=26;repeatInterval=1} @ModelPart{m=wolfmob29;p=weapon2;offset=LOCAL;y=3}
+  - delay 21
+  - partvisibility{m=wolfmob29;p=slash;v=true} @self
+  - partvisibility{m=wolfmob29;p=slash;v=false;delay=4} @self
+  - potion{t=SPEED;l=7;d=4;p=false} @self
+  - delay 4
+  - skill{s=wolfmob29skill9-6} @ModelPart{m=wolfmob29;p=wolfmob29crack;offset=LOCAL}
+  - effect:sound{s=entity.generic.explode;v=2;p=1.5} @self
+  - summon{t=wolfmob29skill7} @ModelPart{m=wolfmob29;p=wolfmob29crack;offset=LOCAL}
+  - setAI{ai=false} @self
+  - delay 25
+  - setAI{ai=true} @self
+  
+wolfmob29skill9-6:
+  Skills:
+  - totem{ch=1;onStart=wolfmob29skill9-7;int=1;hR=3;md=1}
+  - effect:particles{particle=reddust;color=#2f2c30;amount=140;speed=0.25;hs=1.5;vs=2} 
+
+wolfmob29skill9-7:
+  Skills:
+  - damage{a=1;pk=true} @PlayersNearOrigin{r=3}
+  - throw{velocity=5;velocityY=7} @PlayersNearOrigin{r=3}
+  - effect:particles{particle=reddust;amount=20;hS=0.4;vS=0.2;speed=0;y=1.2} @PlayersNearOrigin{r=3}
+ 
+ 
+wolfmob29skill10:
+  Cooldown: 20
+  Conditions:
+  - targetwithin{d=10}
+  Skills:
+  - gcd{ticks=77} @self
+  - state{s=skill10} @self
+  - stun{d=20;f=true} @self
+  - delay 16
+  - effect:sound{s=item.trident.riptide_3;v=5} @self
+  - delay 4
+  - effect:sound{s=entity.wither.shoot;v=1.2;p=1} @self
+  - projectile{onTick=wolfmob29skill10-1;v=12;i=3;hR=1;vR=1;syo=0;hs=true;hfs=-0;sfo=0;hp=false;mr=12} @Forward
+  - setAI{ai=false} @self
+  - delay 26
+  - setAI{ai=true} @self
+  - potion{t=SPEED;l=11;d=5;p=false} @self
+  - delay 5
+  - setAI{ai=false} @self
+  - sound{s=entity.player.attack.sweep;p=1.5;v=3} @self
+  - skill{s=wolfmob29skill10-2} @forward{a=3}
+  - delay 25
+  - setAI{ai=true} @self
+  
+wolfmob29skill10-1:
+  Skills:
+  - summon{t=wolfmob29skill10} @origin
+ 
+
+wolfmob29skill10-2:
+  Skills:
+  - totem{ch=1;onStart=wolfmob29skill10-3;int=1;hR=3;md=1}
+  - effect:particles{particle=reddust;color=#8e05b1;amount=180;speed=0.25;hs=1.5;vs=2} 
+
+wolfmob29skill10-3:
+  Skills:
+  - damage{a=1;pk=true} @PlayersNearOrigin{r=4}
+  - effect:particles{particle=reddust;amount=20;hS=0.4;vS=0.2;speed=0;y=1.2} @PlayersNearOrigin{r=4}
+  
+wolfmob29skill11:
+  Cooldown: 25
+  Conditions:
+  - targetwithin{d=25}
+  Skills: 
+  - gcd{ticks=122} @self
+  - state{s=skill11} @self
+  - setAI{ai=false} @self
+  - delay 20
+  - effect:sound{s=block.fire.extinguish;v=3;p=0} @self
+  - effect:particles{p=cloud;a=100;vs=3;hs=1.5;y=1.5} @forward{a=-1}
+  - partvisibility{m=wolfmob29;p=body;v=false} @self
+  - partvisibility{m=wolfmob29;p=rleg;v=false} @self
+  - partvisibility{m=wolfmob29;p=rleg2;v=false} @self
+  - partvisibility{m=wolfmob29;p=lleg;v=false} @self
+  - partvisibility{m=wolfmob29;p=lleg2;v=false} @self
+  - partvisibility{m=wolfmob29;p=body2;v=false} @self
+  - partvisibility{m=wolfmob29;p=chest;v=false} @self
+  - partvisibility{m=wolfmob29;p=neck;v=false} @self
+  - partvisibility{m=wolfmob29;p=head;v=false} @self
+  - partvisibility{m=wolfmob29;p=hat;v=false} @self
+  - partvisibility{m=wolfmob29;p=hat2;v=false} @self
+  - partvisibility{m=wolfmob29;p=angry;v=false} @self
+  - partvisibility{m=wolfmob29;p=hair2;v=false} @self
+  - partvisibility{m=wolfmob29;p=rarm;v=false} @self
+  - partvisibility{m=wolfmob29;p=rarm2;v=false} @self
+  - partvisibility{m=wolfmob29;p=larm;v=false} @self
+  - partvisibility{m=wolfmob29;p=larm2;v=false} @self
+  - partvisibility{m=wolfmob29;p=weapon2;v=false} @self
+  - delay 40
+  - teleport{spreadh=0;spreadh=0} @RandomLocationsNearTarget{a=1;r=5;s=0;minr=3}
+  - delay 1
+  - state{s=skill11;r=true} @self
+  - state{s=skill11-1} @self
+  - effect:sound{s=entity.elder_guardian.curse;v=2;p=1.4} @self
+  - effect:particles{p=cloud;a=100;vs=3;hs=1.5;y=1.5} @self
+  - partvisibility{m=wolfmob29;p=body;v=true} @self
+  - partvisibility{m=wolfmob29;p=rleg;v=true} @self
+  - partvisibility{m=wolfmob29;p=rleg2;v=true} @self
+  - partvisibility{m=wolfmob29;p=lleg;v=true} @self
+  - partvisibility{m=wolfmob29;p=lleg2;v=true} @self
+  - partvisibility{m=wolfmob29;p=body2;v=true} @self
+  - partvisibility{m=wolfmob29;p=chest;v=true} @self
+  - partvisibility{m=wolfmob29;p=neck;v=true} @self
+  - partvisibility{m=wolfmob29;p=head;v=true} @self
+  - partvisibility{m=wolfmob29;p=hat;v=true} @self
+  - partvisibility{m=wolfmob29;p=hat2;v=true} @self
+  - partvisibility{m=wolfmob29;p=angry;v=true} @self
+  - partvisibility{m=wolfmob29;p=hair2;v=true} @self
+  - partvisibility{m=wolfmob29;p=rarm;v=true} @self
+  - partvisibility{m=wolfmob29;p=rarm2;v=true} @self
+  - partvisibility{m=wolfmob29;p=larm;v=true} @self
+  - partvisibility{m=wolfmob29;p=larm2;v=true} @self
+  - partvisibility{m=wolfmob29;p=weapon2;v=true} @self
+  - delay 20
+  - partvisibility{m=wolfmob29;p=slash;v=true} @self
+  - partvisibility{m=wolfmob29;p=slash;v=false;delay=12} @self
+  - setAI{ai=true} @self
+  - lunge{velocity=2;velocityY=.1} @target
+  - damage{a=3;pk=true;pi=true;repeat=3;repeatInterval=3} @PIR{r=3.5}
+  - sound{s=entity.player.attack.sweep;p=2.1;v=2;repeat=3;repeatInterval=3} @self
+  - effect:particles{particle=reddust;amount=20;hS=0.4;vS=0.2;speed=0;y=1.2;repeat=3;repeatInterval=3} @PlayersNearOrigin{r=3.5}
+  - effect:particles{particle=reddust;color=#8e05b1;amount=120;speed=0.25;hs=1.5;vs=2;repeat=3;repeatInterval=3} @self
+  - delay 12
+  - setAI{ai=false} @self
+  - delay 28
+  - setAI{ai=true} @self
+  
+wolfmob29skill12:
+  Cooldown: 5
+  Conditions:
+  - targetwithin{d=6}
+  Skills: 
+  - gcd{ticks=61} @self
+  - state{s=skill12} @self
+  - setAI{ai=false} @self
+  - delay 10
+  - partvisibility{m=wolfmob29;p=slash;v=true} @self
+  - partvisibility{m=wolfmob29;p=slash;v=false;delay=4} @self
+  - setAI{ai=true} @self
+  - potion{t=SPEED;l=8;d=4;p=false} @self
+  - delay 4
+  - setAI{ai=false} @self
+  - sound{s=entity.player.attack.sweep;p=1.3;v=3} @self
+  - skill{s=wolfmob29skill12-1} @forward{a=2.3}
+  - delay 16
+  - partvisibility{m=wolfmob29;p=slash;v=true} @self
+  - partvisibility{m=wolfmob29;p=slash;v=false;delay=4} @self
+  - setAI{ai=true} @self
+  - potion{t=SPEED;l=8;d=4;p=false} @self
+  - delay 4
+  - setAI{ai=false} @self
+  - sound{s=entity.player.attack.sweep;p=1.7;v=3} @self
+  - skill{s=wolfmob29skill12-1} @forward{a=2.3}
+  - delay 13
+  - setAI{ai=true} @self
+
+wolfmob29skill12-1:
+  Skills:
+  - totem{ch=1;onStart=wolfmob29skill12-2;int=1;hR=3;md=1}
+  - effect:particles{particle=reddust;color=#8e05b1;amount=180;speed=0.25;hs=1.5;vs=2} 
+
+wolfmob29skill12-2:
+  Skills:
+  - damage{a=1;pk=true} @PlayersNearOrigin{r=3.3}
+  - effect:particles{particle=reddust;amount=20;hS=0.4;vS=0.2;speed=0;y=1.2} @PlayersNearOrigin{r=4}
+  
+wolfmob29skill14:
+  Cooldown: 10
+  Conditions:
+  - targetwithin{d=16}
+  Skills: 
+  - gcd{ticks=61} @self
+  - state{s=skill14} @self
+  - potion{type=SLOW;duration=60;level=1} @self 
+  - delay 16
+  - partvisibility{m=wolfmob29;p=slash;v=true} @self
+  - partvisibility{m=wolfmob29;p=slash;v=false;delay=2} @self
+  - delay 2
+  - sound{s=entity.player.attack.sweep;p=1.3;v=3} @self
+  - skill{s=wolfmob29skill14-1} @forward{a=2.3}
+  - projectile{bulletType=MOB;mob=wolfmob29skill14a1;i=1;hs=true;sE=false;sb=false;hp=false;syo=2;sfo=1;v=15;mr=30} @forward
+  - delay 15
+  - sound{s=entity.player.attack.sweep;p=1.7;v=3} @self
+  - skill{s=wolfmob29skill14-1} @forward{a=2.3}
+  - projectile{bulletType=MOB;mob=wolfmob29skill14a2;i=1;hs=true;sE=false;sb=false;hp=false;syo=2;sfo=1;v=15;mr=30} @forward
+  - delay 7
+  - partvisibility{m=wolfmob29;p=slash;v=true} @self
+  - partvisibility{m=wolfmob29;p=slash;v=false;delay=7} @self
+  - delay 3
+  - skill{s=wolfmob29skill14-3} @self
+  - projectile{bulletType=MOB;mob=wolfmob29skill14a3;i=1;hs=true;sE=false;sb=false;hp=false;syo=2;sfo=1;v=15;mr=30} @forward
+  - setAI{ai=true} @self
+
+
+wolfmob29skill14-1:
+  Skills:
+  - totem{ch=1;onStart=wolfmob29skill14-2;int=1;hR=3;md=1}
+  - effect:particles{particle=reddust;color=#8e05b1;amount=180;speed=0.25;hs=1.5;vs=2} 
+
+wolfmob29skill14-2:
+  Skills:
+  - damage{a=1;pk=true} @PlayersNearOrigin{r=3.3}
+  - effect:particles{particle=reddust;amount=20;hS=0.4;vS=0.2;speed=0;y=1.2} @PlayersNearOrigin{r=3.5}
+  
+wolfmob29skill14-3:
+  Skills:
+  - totem{ch=1;onStart=wolfmob29skill14-2;int=1;hR=3;md=1}
+  - effect:particles{particle=reddust;color=#8e05b1;amount=180;speed=0.25;hs=1.5;vs=2} 
+
+wolfmob29skill14-4:
+  Skills:
+  - damage{a=1;pk=true} @PlayersNearOrigin{r=4}
+  - effect:particles{particle=reddust;amount=20;hS=0.4;vS=0.2;speed=0;y=1.2} @PlayersNearOrigin{r=4}
+  
+wolfmob29skill15:
+  Cooldown: 12
+  Conditions:
+  - targetwithin{d=7}
+  Skills: 
+  - gcd{ticks=41} @self
+  - state{s=skill15} @self
+  - setAI{ai=false} @self
+  - delay 16
+  - partvisibility{m=wolfmob29;p=slash;v=true} @self
+  - partvisibility{m=wolfmob29;p=slash;v=false;delay=12} @self
+  - setAI{ai=true} @self
+  - potion{t=SPEED;l=3;d=12;p=false} @self
+  - effect:particles{p=reddust;color=#010101;amount=8;speed=0.01;hs=0.3;vs=0.3;repeat=11;repeatInterval=1} @ModelPart{m=wolfmob29;p=weapon2;offset=LOCAL;y=3}
+  - effect:particles{particle=reddust;amount=20;hS=0.4;vS=0.2;speed=0;y=1.2;repeat=2;repeatInterval=4} @PlayersNearOrigin{r=4}
+  - damage{a=1;pi=true;repeat=2;repeatInterval=4} @PIR{r=4}
+  - delay 12
+  - setAI{ai=false} @self
+  - delay 12
+  - setAI{ai=true} @self
