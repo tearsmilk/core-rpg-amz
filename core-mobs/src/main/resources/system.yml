@@ -1,0 +1,7 @@
+# Описание системы. name и version подставляет сборка: name — rootProject.name из settings.gradle.kts, version — из build.gradle.kts.
+name: ${name}
+version: ${version}
+main: core.amazake.systems.coremobs.CoreMobsSystem
+description: "Свои мобы из mobs.yml, лут из инвентаря со всеми NBT, регионы спавна-полигоны с подсветкой и радиусом деспавна"
+authors: [tearsmilk]
+api-version: 2
