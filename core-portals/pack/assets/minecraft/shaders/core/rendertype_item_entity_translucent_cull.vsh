@@ -36,12 +36,14 @@ out vec2 texCoord0;
 out vec2 texCoord1;
 out vec2 texCoord2;
 
-const float MARKER_TOL = 1.5 / 255.0;
 const float CURSOR_DEPTH = 0.08;           // just behind the near plane (0.05): in front of every menu layer
 const ivec2 UI_LIGHT = ivec2(240, 224);
 
-bool isMarker(vec3 c) {
-    return abs(c.r - 254.0 / 255.0) <= MARKER_TOL && abs(c.b - 254.0 / 255.0) <= MARKER_TOL && c.g > 0.5 / 255.0;
+// Strict: exactly R = B = 254 (white 255 must never match — every untinted item has Color = 1.0), G 1..253, and only on
+// menu displays (brightness override block 15 / sky 14 -> UV2 = (240, 224)). Anything else stays vanilla.
+bool isMarker(vec3 c, ivec2 light) {
+    vec3 k = c * 255.0;
+    return light == UI_LIGHT && abs(k.r - 254.0) < 0.5 && abs(k.b - 254.0) < 0.5 && k.g > 0.5 && k.g < 253.5;
 }
 
 // Corner of the item quad: baked vertices go (u0,v0), (u0,v1), (u1,v1), (u1,v0) -> x right, y down, 0..1.
@@ -60,7 +62,7 @@ void main() {
     texCoord1 = UV1;
     texCoord2 = UV2;
 
-    if (isMarker(Color.rgb)) {
+    if (isMarker(Color.rgb, UV2)) {
         // View space: camera at the origin looking down -Z. Tangent of the tip, reflected through the centre.
         vec3 v = (ModelViewMat * vec4(Position, 1.0)).xyz;
         vec2 edge = vec2(1.0 / ProjMat[0][0], 1.0 / ProjMat[1][1]);   // visible half-extent in tangent units
