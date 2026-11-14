@@ -90,7 +90,7 @@ public final class MenuManager implements Listener {
 
     private void start(final Player player, final Screen.Calibration cal, final boolean calibrate) {
         final Settings s = this.settings.get();
-        final Screen screen = Screen.open(this.context.plugin(), player, cal, s.eyeOffset(), s.sensitivity());
+        final Screen screen = Screen.open(this.context.plugin(), player, cal, s.eyeOffset(), s.sensitivity(), s.playerScale());
         if (screen == null) {
             player.sendMessage(Text.mm(Text.prefix() + "<red>Сейчас меню не открыть: слезьте с транспорта.</red>"));
             return;

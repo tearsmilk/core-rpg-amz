@@ -14,6 +14,7 @@ public record Settings(
     List<MenuEntry> menus,
     double eyeOffset,
     double sensitivity,
+    double playerScale,
     boolean invulnerable,
     int refreshTicks,
     String phLevel,
@@ -57,7 +58,7 @@ public record Settings(
         "<gold>Меню сервера</gold>",
         "<gray>Выберите, что открыть.</gray>",
         List.of(new MenuEntry("rpg", "<gold>RPG-инвентарь</gold>", "<gray>Персонаж, снаряжение и инвентарь</gray>")),
-        0.18, 0.045, true, 10,
+        0.18, 0.045, 0.0625, true, 10,
         "%core_level%", "%core_exp%", "%core_exp_needed%", "%core_class%", "", "",
         DEFAULT_STATS, DEFAULT_EQUIPMENT);
 
@@ -86,6 +87,11 @@ public record Settings(
             warn.accept("rpg.cursor-speed: " + sensitivity + " вне 0.005..0.5, беру " + d.sensitivity());
             sensitivity = d.sensitivity();
         }
+        double playerScale = c.getDouble("rpg.player-scale", d.playerScale());
+        if (!(playerScale >= 0.0625 && playerScale <= 1.0)) {
+            warn.accept("rpg.player-scale: " + playerScale + " вне 0.0625..1, беру " + d.playerScale());
+            playerScale = d.playerScale();
+        }
         double eye = c.getDouble("rpg.eye-offset", d.eyeOffset());
         if (!(eye >= -1 && eye <= 1)) {
             eye = d.eyeOffset();
@@ -102,6 +108,7 @@ public record Settings(
             List.copyOf(menus),
             eye,
             sensitivity,
+            playerScale,
             c.getBoolean("rpg.invulnerable", d.invulnerable()),
             refresh,
             c.getString("rpg.placeholders.level", d.phLevel()),

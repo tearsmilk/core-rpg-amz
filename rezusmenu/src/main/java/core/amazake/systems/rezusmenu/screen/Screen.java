@@ -88,6 +88,10 @@ public final class Screen {
     }
 
     private static final double LAYER_STEP = 0.0015;
+    /** Модификатор масштаба игрока на время меню. */
+    private static final org.bukkit.NamespacedKey SCALE_KEY = new org.bukkit.NamespacedKey("rezusmenu", "menu_scale");
+    /** На сколько блоков выше лимита постройки уносим игрока: там нет блоков, которые лезут в экран. */
+    private static final int SKY = 64;
     /** Курсор-плюс: половина длины луча и толщина (единицы камеры), обводка вокруг. */
     private static final double CURSOR_ARM = 0.032;
     private static final double CURSOR_THICK = 0.007;
@@ -131,23 +135,33 @@ public final class Screen {
      * Перевести игрока в режим меню (наблюдатель, без движения, взгляд прямо) и поставить фон и курсор.
      * Поток игрока. null — сейчас нельзя (мёртв, едет на чём-то).
      *
-     * @param eyeOffset насколько точка пассажиров выше глаз (у игрока 1.8 − 1.62)
+     * @param eyeOffset насколько точка пассажиров выше глаз у игрока обычного размера (1.8 − 1.62)
      * @param sensitivity сколько единиц камеры проходит курсор за градус поворота мыши
+     * @param playerScale размер игрока на время меню (атрибут scale): чем меньше, тем ближе точка пассажиров
+     *                    к глазам и тем неподвижнее экран при движении мыши вверх-вниз
      */
     public static Screen open(final Plugin plugin, final Player player, final Calibration calibration,
-                              final double eyeOffset, final double sensitivity) {
+                              final double eyeOffset, final double sensitivity, final double playerScale) {
         if (player.isDead() || player.isInsideVehicle()) {
             return null;
         }
         final Saved saved = new Saved(player.getGameMode(), player.getLocation(), player.getWalkSpeed(),
             player.getFlySpeed(), player.getAllowFlight(), player.isFlying());
-        final Screen screen = new Screen(plugin, player, saved, calibration, eyeOffset, sensitivity);
+        final Screen screen = new Screen(plugin, player, saved, calibration, eyeOffset * playerScale, sensitivity);
+        // Высоко над миром: ни один блок не встанет между глазами и экраном.
         final Location look = player.getLocation();
+        look.setY(look.getWorld().getMaxHeight() + SKY);
         look.setPitch(0f);
-        player.teleport(look);
         player.setGameMode(GameMode.SPECTATOR);
+        player.teleport(look);
         player.setFlySpeed(0f);
         player.setWalkSpeed(0f);
+        final org.bukkit.attribute.AttributeInstance scale = player.getAttribute(org.bukkit.attribute.Attribute.SCALE);
+        if (scale != null) {
+            scale.removeModifier(SCALE_KEY);
+            scale.addTransientModifier(new org.bukkit.attribute.AttributeModifier(SCALE_KEY, playerScale - 1.0,
+                org.bukkit.attribute.AttributeModifier.Operation.MULTIPLY_SCALAR_1));
+        }
         screen.refYaw = look.getYaw();
         screen.refPitch = 0f;
         screen.backdrop();
@@ -461,6 +475,10 @@ public final class Screen {
     public static void restore(final Player player, final Saved saved) {
         if (!player.isOnline()) {
             return;
+        }
+        final org.bukkit.attribute.AttributeInstance scale = player.getAttribute(org.bukkit.attribute.Attribute.SCALE);
+        if (scale != null) {
+            scale.removeModifier(SCALE_KEY);
         }
         player.setGameMode(saved.mode());
         player.setWalkSpeed(saved.walkSpeed());
