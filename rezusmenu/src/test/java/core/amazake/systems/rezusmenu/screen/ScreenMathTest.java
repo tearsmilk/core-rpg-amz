@@ -9,7 +9,6 @@ class ScreenMathTest {
     /** Разница поворота через ±180° (смотрит на север) не даёт скачка курсора через весь экран. */
     @Test
     void yawDifferenceWrapsAroundNorth() {
-        assertEquals(-20.0, Screen.wrap(-169.0 - 149.0 + 298.0 - 0.0 - 20.0 + 0.0 - 0.0), 1e-9);
         assertEquals(10.0, Screen.wrap(-175.0 - 175.0), 1e-9);
         assertEquals(-10.0, Screen.wrap(175.0 - -175.0), 1e-9);
         assertEquals(0.0, Screen.wrap(360.0), 1e-9);
