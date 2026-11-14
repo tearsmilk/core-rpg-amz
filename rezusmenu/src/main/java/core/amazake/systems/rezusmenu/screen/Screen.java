@@ -88,7 +88,10 @@ public final class Screen {
     }
 
     private static final double LAYER_STEP = 0.0015;
-    private static final float CURSOR_SIZE = 0.07f;
+    /** Курсор-плюс: половина длины луча и толщина (единицы камеры), обводка вокруг. */
+    private static final double CURSOR_ARM = 0.032;
+    private static final double CURSOR_THICK = 0.007;
+    private static final double CURSOR_OUTLINE = 0.003;
 
     private final Plugin plugin;
     private final Player player;
@@ -101,7 +104,10 @@ public final class Screen {
     private double scale = 1.0;
     private double boundW;
     private double boundH;
-    private ItemDisplay cursor;
+    /** Курсор: обводка (2 плитки) и белый плюс (2 плитки). */
+    private final List<BlockDisplay> cursor = new ArrayList<>();
+    /** Невидимая кликабельная сущность вокруг глаз: наблюдатель шлёт клик только по сущности. */
+    private org.bukkit.entity.Interaction target;
     private double cu;
     private double cv;
     private float refYaw;
@@ -145,6 +151,7 @@ public final class Screen {
         screen.refYaw = look.getYaw();
         screen.refPitch = 0f;
         screen.backdrop();
+        screen.spawnTarget();
         return screen;
     }
 
@@ -188,11 +195,35 @@ public final class Screen {
         this.spawnRect(-4, -3, 8, 6, 1.6, Material.BLACK_CONCRETE, "base");
         this.spawnText(0, -0.15, 0.08, Text.item("<gold>Вы в режиме от третьего лица.\nНажмите F5, чтобы вернуться в меню.</gold>"),
             1.55, "base");
-        this.cursor = this.spawn(ItemDisplay.class, e -> {
-            e.setItemStack(new ItemStack(Material.ARROW));
-            e.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.GUI);
-            e.setTransformation(this.cursorTransform());
-        }, "base");
+        for (int i = 0; i < 4; i++) {
+            final int part = i;
+            this.cursor.add(this.spawn(BlockDisplay.class, e -> {
+                e.setBlock((part < 2 ? Material.BLACK_CONCRETE : Material.WHITE_CONCRETE).createBlockData());
+                e.setTransformation(this.cursorTransform(part));
+            }, "base"));
+        }
+    }
+
+    /**
+     * Невидимая кликабельная коробка вокруг глаз игрока. В режиме наблюдателя клиент не шлёт удар по воздуху, а
+     * ЛКМ по сущности шлёт: сервер пробует «вселить» игрока в неё — это событие и есть клик (см. MenuManager).
+     */
+    private void spawnTarget() {
+        final Location eye = this.player.getEyeLocation();
+        final Location at = new Location(eye.getWorld(), eye.getX(), eye.getY() - 0.7, eye.getZ());
+        this.target = eye.getWorld().spawn(at, org.bukkit.entity.Interaction.class, e -> {
+            e.setInteractionWidth(1.4f);
+            e.setInteractionHeight(1.4f);
+            e.setResponsive(false);
+            e.setPersistent(false);
+            e.setVisibleByDefault(false);
+        });
+        this.player.showEntity(this.plugin, this.target);
+    }
+
+    /** Это кликабельная коробка этого экрана. */
+    public boolean isTarget(final Entity entity) {
+        return this.target != null && entity != null && entity.getUniqueId().equals(this.target.getUniqueId());
     }
 
     // --- элементы (в единицах макета) ---
@@ -317,12 +348,16 @@ public final class Screen {
 
     // --- курсор ---
 
-    private Transformation cursorTransform() {
-        // Иконка стрелы смотрит остриём вправо-вверх; поворот на 90° — остриё влево-вверх, как у курсора мыши.
-        final float s = CURSOR_SIZE;
-        final Vector3f at = this.at(this.cu + s * 0.42, this.cv - s * 0.42, depth(60));
-        return new Transformation(at, new Quaternionf().rotationZ((float) (Math.PI / 2)), new Vector3f(s, s, 0.001f),
-            new Quaternionf());
+    /** Части курсора-плюса: 0–1 обводка (гор., верт.), 2–3 белый плюс (гор., верт.). Центр — точно в точке клика. */
+    private Transformation cursorTransform(final int part) {
+        final boolean outline = part < 2;
+        final boolean horizontal = part % 2 == 0;
+        final double arm = CURSOR_ARM + (outline ? CURSOR_OUTLINE : 0);
+        final double thick = CURSOR_THICK + (outline ? 2 * CURSOR_OUTLINE : 0);
+        final double w = horizontal ? 2 * arm : thick;
+        final double h = horizontal ? thick : 2 * arm;
+        final Vector3f at = this.at(this.cu - w / 2, this.cv - h / 2, depth(outline ? 60 : 61));
+        return new Transformation(at, new Quaternionf(), new Vector3f((float) w, (float) h, 0.0005f), new Quaternionf());
     }
 
     /** Курсор — в центр (пробел). */
@@ -355,10 +390,13 @@ public final class Screen {
         if (u != this.cu || v != this.cv) {
             this.cu = u;
             this.cv = v;
-            if (this.cursor.isValid()) {
-                this.cursor.setInterpolationDelay(0);
-                this.cursor.setInterpolationDuration(1);
-                this.cursor.setTransformation(this.cursorTransform());
+            for (int i = 0; i < this.cursor.size(); i++) {
+                final BlockDisplay part = this.cursor.get(i);
+                if (part.isValid()) {
+                    part.setInterpolationDelay(0);
+                    part.setInterpolationDuration(1);
+                    part.setTransformation(this.cursorTransform(i));
+                }
             }
         }
         this.updateHover();
@@ -412,6 +450,10 @@ public final class Screen {
         }
         this.elements.clear();
         this.buttons.clear();
+        this.cursor.clear();
+        if (this.target != null && this.target.isValid()) {
+            this.target.remove();
+        }
         restore(this.player, this.saved);
     }
 

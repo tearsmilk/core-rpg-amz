@@ -44,6 +44,7 @@ public final class MenuManager implements Listener {
         volatile ScheduledTask task;
         boolean built;
         int ticks;
+        int lastClickTick = -10;
 
         Session(final Screen screen) {
             this.screen = screen;
@@ -167,13 +168,25 @@ public final class MenuManager implements Listener {
 
     // --- ввод ---
 
-    /** ЛКМ (взмах рукой) — нажать кнопку под курсором. */
+    /**
+     * ЛКМ. Наблюдатель шлёт клик по сущности (невидимая коробка вокруг глаз) — сервер пытается «вселить» его в неё:
+     * отменяем и жмём кнопку под курсором. Взмах рукой тоже считаем кликом (другие клиенты), но не дважды за раз.
+     */
+    private void click(final Session s) {
+        final int now = Bukkit.getCurrentTick();
+        if (!s.built || now - s.lastClickTick <= 2) {
+            return;
+        }
+        s.lastClickTick = now;
+        s.screen.update();
+        s.screen.click();
+    }
+
     @EventHandler(priority = EventPriority.LOW)
     public void onSwing(final PlayerAnimationEvent event) {
         final Session s = this.sessions.get(event.getPlayer().getUniqueId());
-        if (s != null && s.built && event.getAnimationType() == PlayerAnimationType.ARM_SWING) {
-            s.screen.update();
-            s.screen.click();
+        if (s != null && event.getAnimationType() == PlayerAnimationType.ARM_SWING) {
+            this.click(s);
         }
     }
 
@@ -191,11 +204,16 @@ public final class MenuManager implements Listener {
         }
     }
 
-    /** Наблюдатель не «вселяется» в сущности, пока в меню. */
+    /** Наблюдатель не «вселяется» в сущности, пока в меню; клик по коробке экрана — это ЛКМ. */
     @EventHandler(priority = EventPriority.LOWEST)
     public void onSpectate(final PlayerStartSpectatingEntityEvent event) {
-        if (this.isOpen(event.getPlayer())) {
-            event.setCancelled(true);
+        final Session s = this.sessions.get(event.getPlayer().getUniqueId());
+        if (s == null) {
+            return;
+        }
+        event.setCancelled(true);
+        if (s.screen.isTarget(event.getNewSpectatorTarget())) {
+            this.click(s);
         }
     }
 
