@@ -153,6 +153,8 @@ public final class RpgScreen {
     private TextDisplay skillPoints;
     private TextDisplay attributePoints;
     private final List<TextDisplay> classList = new ArrayList<>();
+    private final List<ItemDisplay> classListIcons = new ArrayList<>();
+    private final List<Material> classListShown = new ArrayList<>();
     private TextDisplay expText;
     private TextDisplay hpText;
     private TextDisplay manaText;
@@ -295,7 +297,10 @@ public final class RpgScreen {
         this.attributePoints = s.text(634, 154, 44, 28, 18, Component.empty(), L_TEXT, STATIC);
         s.text(620, 192, 72, 16, 7, Text.item("<gold>Очки параметров</gold>"), L_TEXT, STATIC);
         for (int i = 0; i < 7; i++) {
-            this.classList.add(s.text(620, 224 + i * 16, 72, 16, 7, Component.empty(), L_TEXT, STATIC));
+            // строка 0 — заголовок во всю ширину; в остальных слева иконка класса, справа название
+            this.classList.add(i == 0 ? s.text(620, 224, 72, 16, 7, Component.empty(), L_TEXT, STATIC)
+                : s.text(634, 224 + i * 16, 58, 16, 7, Component.empty(), L_TEXT, STATIC));
+            this.classListIcons.add(i == 0 ? null : s.item(627, 232 + i * 16, 12, null, L_ICON, STATIC));
         }
     }
 
@@ -570,7 +575,7 @@ public final class RpgScreen {
             Placeholder.unparsed("name", this.player.getName()), Placeholder.unparsed("cls", cls == null ? "" : cls)));
 
         // крыло «Класс»
-        final Settings.ClassInfo info = classKey == null ? null : st.classes().get(classKey);
+        final Settings.ClassInfo info = classInfo(st, classKey, cls);
         final Material icon = info == null ? st.noClassIcon() : info.icon();
         if (icon != this.classIconShown && this.classIcon.isValid()) {
             this.classIconShown = icon;
@@ -654,10 +659,13 @@ public final class RpgScreen {
     /** Список под очками: профессии своего класса (своя — золотом) или, без класса, все классы. */
     private void updateClassList(final Settings.ClassInfo info, final String profKey, final String level) {
         final List<Component> lines = new ArrayList<>();
+        final List<Material> icons = new ArrayList<>();
+        icons.add(null);
         if (info == null) {
             lines.add(Text.item("<gold>Классы</gold>"));
             for (final Settings.ClassInfo c : this.settings.classes().values()) {
                 lines.add(Text.item("<white><n></white>", Placeholder.unparsed("n", c.name())));
+                icons.add(c.icon());
             }
         } else {
             lines.add(Text.item("<gold>Профессии</gold>"));
@@ -665,6 +673,7 @@ public final class RpgScreen {
                 final String name = this.settings.professions().getOrDefault(key, key);
                 lines.add(Text.item(key.equals(profKey) ? "<yellow>▶ <n></yellow>" : "<gray><n></gray>",
                     Placeholder.unparsed("n", name)));
+                icons.add(info.icon());
             }
             if (profKey == null) {
                 final boolean can = "true".equalsIgnoreCase(this.ph(this.settings.ph().needsProfession()));
@@ -673,6 +682,15 @@ public final class RpgScreen {
         }
         for (int i = 0; i < this.classList.size(); i++) {
             Screen.setText(this.classList.get(i), i < lines.size() ? lines.get(i) : Component.empty());
+            final ItemDisplay d = this.classListIcons.get(i);
+            final Material m = i < icons.size() ? icons.get(i) : null;
+            while (this.classListShown.size() <= i) {
+                this.classListShown.add(null);
+            }
+            if (d != null && d.isValid() && m != this.classListShown.get(i)) {
+                this.classListShown.set(i, m);
+                d.setItemStack(m == null ? null : new ItemStack(m));
+            }
         }
     }
 
@@ -958,6 +976,25 @@ public final class RpgScreen {
     }
 
     /** RoyalQuestClasses отвечает «???», если класса или профессии нет. */
+    /** Класс по ключу (%hl_class_key%), а если ключ не подставился — по названию (%hl_class%), без учёта регистра. */
+    static Settings.ClassInfo classInfo(final Settings st, final String classKey, final String className) {
+        if (classKey != null) {
+            final Settings.ClassInfo byKey = st.classes().get(classKey);
+            if (byKey != null) {
+                return byKey;
+            }
+        }
+        if (className != null) {
+            final String plain = className.replaceAll("(?i)[§&][0-9a-fk-orx]", "").replaceAll("<[^>]*>", "").strip();
+            for (final Settings.ClassInfo c : st.classes().values()) {
+                if (c.name().equalsIgnoreCase(plain) || c.key().equalsIgnoreCase(plain)) {
+                    return c;
+                }
+            }
+        }
+        return null;
+    }
+
     private static String known(final String value) {
         return value == null || value.isBlank() || value.equals("???") ? null : value;
     }
