@@ -59,9 +59,10 @@ expansions:
       # Party HUD: party member N name, or own name when the slot is empty (ParseOther throws on empty names)
       pm: '%changeoutput_equals_input:{mmocore_party_member_{0}}_matcher:_ifmatch:{player_name}_else:{mmocore_party_member_{0}}%'
       noskillcd_check: '%changeoutput_equals_input:{mmocore_bound_{0}}_matcher:noskill_ifmatch:0_else:{mmocore_cooldown_bound_{0}}%'
+      # Empty slot (noskill) -> noskillcd_check gives 0 -> result 0 (no Math error spam).
       # 1 while skill slot {0} was cast less than 2 s ago (remaining cooldown + 2 >= full cooldown after cooldown-reduction), else 0.
       # Used by MythicHUD skill_casting_bar 'skillnames' to show only the name of the skill just cast.
-      justcast: '%math_0:_max(0,min(1,floor({mmocore_cooldown_bound_{0}}+2-{mmocore_bound_skill_parameter_cooldown:{0}}*(1-{mmocore_stat_cooldown_reduction}/100))+1))*min(1,ceiling({mmocore_cooldown_bound_{0}}))%'
+      justcast: '%math_0:_max(0,min(1,floor({utils_shortcut_noskillcd_check:{0}}+2-{mmocore_bound_skill_parameter_cooldown:{0}}*(1-{mmocore_stat_cooldown_reduction}/100))+1))*min(1,ceiling({utils_shortcut_noskillcd_check:{0}}))%'
   string:
     replacements:
       nospace:
