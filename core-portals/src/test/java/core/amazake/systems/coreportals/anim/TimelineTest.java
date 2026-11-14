@@ -40,20 +40,21 @@ class TimelineTest {
     @Test
     void phasesOfDefaultLifetime() {
         final Timeline tl = Timeline.of(600);
-        assertEquals(560, tl.closeStart());
+        assertEquals(542, tl.closeStart());
         assertEquals(600, tl.end());
         assertEquals(Phase.CRACK, tl.phase(0));
         assertEquals(Phase.CRACK, tl.phase(9));
         assertEquals(Phase.RISE, tl.phase(10));
         assertEquals(Phase.OPEN, tl.phase(40));
         assertEquals(Phase.IDLE, tl.phase(60));
-        assertEquals(Phase.IDLE, tl.phase(559));
-        assertEquals(Phase.CLOSE_SURFACE, tl.phase(560));
-        assertEquals(Phase.CLOSE_FRAME, tl.phase(575));
+        assertEquals(Phase.IDLE, tl.phase(541));
+        assertEquals(Phase.CLOSE_SURFACE, tl.phase(542));
+        assertEquals(Phase.CLOSE_SURFACE, tl.phase(569));
+        assertEquals(Phase.CLOSE_FRAME, tl.phase(570));
         assertEquals(Phase.DONE, tl.phase(600));
         assertFalse(tl.enterable(59));
         assertTrue(tl.enterable(60));
-        assertFalse(tl.enterable(560));
+        assertFalse(tl.enterable(542));
     }
 
     @Test
@@ -86,18 +87,24 @@ class TimelineTest {
     void earlyCloseStartsFromCurrentState() {
         final Timeline tl = Timeline.of(600).closeAt(25);   // на середине подъёма
         assertEquals(25, tl.closeStart());
-        assertEquals(65, tl.end());
+        assertEquals(83, tl.end());
         assertEquals(0.5, tl.rise(30), 1e-9);              // держит высоту, пока «закрывается» поверхность
         assertEquals(0, tl.surface(30), 1e-9);
-        assertTrue(tl.rise(50) < 0.5);
-        assertEquals(0, tl.rise(65), 1e-9);
-        assertEquals(Phase.DONE, tl.phase(65));
+        assertEquals(0.5, tl.rise(52), 1e-9);              // и пока щель стягивается в точку
+        assertTrue(tl.rise(70) < 0.5);
+        assertEquals(0, tl.rise(83), 1e-9);
+        assertEquals(Phase.DONE, tl.phase(83));
         // Повторное закрытие позже — без изменений; раньше уже начатого — тоже.
         assertSame(tl, tl.closeAt(40));
         // Закрытие открытого портала.
         final Timeline open = Timeline.of(600).closeAt(200);
         assertEquals(1, open.surface(200), 1e-9);
         assertEquals(Phase.CLOSE_SURFACE, open.phase(200));
+        // Сначала сходится в щель на всю высоту, потом щель стягивается в точку.
+        assertEquals(0, open.surface(200 + Timeline.COLLAPSE), 1e-9);
+        assertEquals(1, open.surfaceHeight(200 + Timeline.COLLAPSE), 1e-9);
+        assertTrue(open.surfaceHeight(200 + Timeline.COLLAPSE + 4) < 1);
+        assertEquals(0, open.surfaceHeight(200 + Timeline.CLOSE_SURFACE), 1e-9);
     }
 
     @Test

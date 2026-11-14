@@ -32,13 +32,18 @@ final class PortalVisuals {
     /** Метка «это часть портала»: значение — id экземпляра системы, чтобы убрать хвосты прошлых запусков. */
     static final NamespacedKey PART = new NamespacedKey("coreportals", "part");
 
-    private static final float HALF = 1.0f;          // полуширина рамы
-    private static final float PILLAR = 0.18f;       // толщина стоек и перекладины
-    private static final float DEPTH = 0.3f;         // толщина рамы
+    private static final float HALF = 1.25f;         // полуширина рамы (проём 2.5 блока)
+    private static final float PILLAR = 0.08f;       // толщина стоек и перекладины (тонкая рама)
+    private static final float DEPTH = 0.14f;        // толщина рамы
     private static final float HEIGHT = 3.0f;        // высота рамы
     private static final float INNER_TOP = HEIGHT - PILLAR;
     private static final float SINK = 3.25f;         // на сколько рама уходит под землю
     private static final float MODEL_SCALE = 3.0f;   // масштаб моделей 1:3
+    /** Модель кромок нарисована под проём 1.64 × 2.82: растягиваем под новый проём. */
+    private static final float EDGE_X = 1.3f;
+    private static final float EDGE_Y = (HEIGHT - PILLAR) / 2.82f;
+    /** Щель при закрытии: самая узкая видимая доля проёма. */
+    private static final float SEAM = 0.015f;
     private static final float MIN_SCALE = 0.001f;
 
     private final List<Entity> entities = new ArrayList<>();
@@ -62,7 +67,6 @@ final class PortalVisuals {
         this.right = this.block(world, at, block, s, instance);
         this.top = this.block(world, at, block, s, instance);
         this.edges = this.item(world, at, s, instance, Markers.item("portal_edges", Markers.EDGE_VERTICAL, Markers.EDGE_HORIZONTAL));
-        this.flames = this.item(world, at, s, instance, Markers.item("portal_flames", Markers.FLAMES));
         this.ground = this.item(world, at, s, instance, Markers.item("portal_ground", Markers.GROUND));
         this.surface = this.item(world, at, s, instance, Markers.item("portal_surface", Markers.SURFACE));
         this.apply(tl, 0, 0);
@@ -85,17 +89,21 @@ final class PortalVisuals {
         set(this.right, duration, new Vector3f(HALF - PILLAR, off, -DEPTH / 2), new Vector3f(PILLAR, HEIGHT, DEPTH));
         set(this.top, duration, new Vector3f(-HALF + PILLAR, INNER_TOP + off, -DEPTH / 2),
             new Vector3f(2 * (HALF - PILLAR), PILLAR, DEPTH));
-        set(this.edges, duration, new Vector3f(0, MODEL_SCALE / 2 + off, 0),
-            new Vector3f(MODEL_SCALE, MODEL_SCALE, MODEL_SCALE));
-        final float f = Math.max((float) tl.flames(t), MIN_SCALE);
-        set(this.flames, duration, new Vector3f(0, MODEL_SCALE / 2 * f, 0),
-            new Vector3f(MODEL_SCALE, MODEL_SCALE * f, MODEL_SCALE));
+        set(this.edges, duration, new Vector3f(0, MODEL_SCALE * EDGE_Y / 2 + off, 0),
+            new Vector3f(MODEL_SCALE * EDGE_X, MODEL_SCALE * EDGE_Y, MODEL_SCALE));
         final float g = Math.max((float) tl.ground(t), MIN_SCALE);
         set(this.ground, duration, new Vector3f(0, MODEL_SCALE / 2, 0),
-            new Vector3f(MODEL_SCALE * g, MODEL_SCALE, MODEL_SCALE * g));
-        final float o = Math.max((float) tl.surface(t), MIN_SCALE);
+            new Vector3f(MODEL_SCALE * EDGE_X * g, MODEL_SCALE, MODEL_SCALE * g));
+        // Закрытие: поверхность сходится в светящуюся щель, щель стягивается к середине в точку.
+        final float hf = (float) tl.surfaceHeight(t);
+        float o = (float) tl.surface(t);
+        if (tl.closing(t) && hf > 0) {
+            o = Math.max(o, SEAM);
+        }
+        o = Math.max(o, MIN_SCALE);
+        final float h = Math.max((float) Spot.SURFACE_HEIGHT * hf, MIN_SCALE);
         set(this.surface, duration, new Vector3f(0, (float) Spot.SURFACE_HEIGHT / 2, 0),
-            new Vector3f((float) (2 * Spot.SURFACE_HALF_WIDTH) * o, (float) Spot.SURFACE_HEIGHT, 1f));
+            new Vector3f((float) (2 * Spot.SURFACE_HALF_WIDTH) * o, h, 1f));
     }
 
     /** Убрать все части. Поток региона портала. */

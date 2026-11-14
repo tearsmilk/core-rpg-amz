@@ -21,10 +21,10 @@ vec3 cp_fire(float x) {
     return mix(c, vec3(1.0, 0.98, 0.9), smoothstep(0.93, 1.0, x));
 }
 
-// ---- 1: portal surface — a swirling night sky with violet / blue clouds, pink horizon glow and sparks.
+// ---- 1: portal surface — a swirling crimson sky: dark red clouds, a hot orange horizon glow, red embers.
 vec4 cp_surface(vec2 uv, float t) {
-    const float W = 1.64;   // surface size in blocks (see PortalVisuals)
-    const float H = 2.82;
+    const float W = 2.34;   // surface size in blocks (see Spot.SURFACE_HALF_WIDTH / SURFACE_HEIGHT)
+    const float H = 2.92;
     vec2 p = vec2((uv.x - 0.5) * W, (0.5 - uv.y) * H);      // blocks, y up, centre of the surface
 
     // Swirl around a point a little above the middle: angular speed grows towards the centre.
@@ -39,22 +39,22 @@ vec4 cp_surface(vec2 uv, float t) {
     float clouds = cp_fbm(q * 2.4 + w * 1.8 + vec2(0.0, t * 0.04));
     float detail = cp_fbm(q * 5.0 - w * 2.0 + vec2(t * 0.1, 0.0));
 
-    // Sky: deep navy at the top, violet in the middle, pink-magenta horizon in the lower third, dusk below it.
+    // Sky: near-black crimson at the top, blood red in the middle, a hot orange-red horizon, dark ember below.
     float h = uv.y;
-    vec3 sky = mix(vec3(0.02, 0.02, 0.10), vec3(0.17, 0.06, 0.38), smoothstep(0.0, 0.6, h));
+    vec3 sky = mix(vec3(0.07, 0.01, 0.01), vec3(0.42, 0.03, 0.02), smoothstep(0.0, 0.6, h));
     float horizon = exp(-pow((h - 0.72) * 7.0, 2.0));
-    sky = mix(sky, vec3(0.98, 0.38, 0.62), horizon * 0.8);
-    sky = mix(sky, vec3(0.16, 0.04, 0.20), smoothstep(0.8, 1.0, h));
+    sky = mix(sky, vec3(1.0, 0.36, 0.10), horizon * 0.8);
+    sky = mix(sky, vec3(0.22, 0.03, 0.01), smoothstep(0.8, 1.0, h));
 
-    vec3 cloudCol = mix(vec3(0.10, 0.10, 0.42), vec3(0.50, 0.20, 0.78), clouds);
-    cloudCol = mix(cloudCol, vec3(1.0, 0.50, 0.70), horizon * 0.55 + detail * 0.15);
+    vec3 cloudCol = mix(vec3(0.30, 0.02, 0.02), vec3(0.85, 0.12, 0.05), clouds);
+    cloudCol = mix(cloudCol, vec3(1.0, 0.48, 0.18), horizon * 0.55 + detail * 0.15);
     float cloudMask = smoothstep(0.38, 0.82, clouds + detail * 0.25);
     vec3 col = mix(sky, cloudCol, cloudMask * 0.85);
 
     // Glowing heart of the swirl.
-    col += vec3(0.75, 0.40, 1.0) * pow(max(0.0, 1.0 - r * 1.35), 3.0) * (0.55 + 0.25 * sin(t * 1.7));
+    col += vec3(1.0, 0.30, 0.08) * pow(max(0.0, 1.0 - r * 1.35), 3.0) * (0.55 + 0.25 * sin(t * 1.7));
 
-    // Sparks drifting up (two layers, different speed).
+    // Red / orange embers drifting up (two layers, different speed), never white.
     for (int i = 0; i < 2; i++) {
         float fi = float(i);
         vec2 sp = vec2(uv.x * (12.0 + fi * 6.0), uv.y * (21.0 + fi * 10.0) + t * (0.7 + fi * 0.5));
@@ -65,14 +65,8 @@ vec4 cp_surface(vec2 uv, float t) {
         float d = length(f - off * 0.7);
         float tw = 0.5 + 0.5 * sin(t * (3.0 + rnd * 4.0) + rnd * 40.0);
         float spark = smoothstep(0.10, 0.0, d) * step(0.78, rnd) * tw;
-        col += mix(vec3(1.0, 0.70, 0.95), vec3(1.0, 0.75, 0.40), fi) * spark * 1.2;
+        col += mix(vec3(0.95, 0.12, 0.04), vec3(1.0, 0.42, 0.08), fi) * spark * 0.9;
     }
-
-    // Fire licking up from the bottom edge.
-    float fy = (1.0 - uv.y) * H;   // height above the bottom, blocks
-    float fn = cp_fbm(vec2(uv.x * 6.0, fy * 2.6 - t * 2.1));
-    float flame = clamp((fn * 1.2 - fy * 1.9 - 0.05) * 2.0, 0.0, 1.0);
-    col = mix(col, cp_fire(flame), smoothstep(0.05, 0.6, flame));
 
     // Hot rim along the frame, flickering.
     float edge = min(min(uv.x, 1.0 - uv.x) * W, min(uv.y, 1.0 - uv.y) * H);

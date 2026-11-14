@@ -18,10 +18,12 @@ final class PortalEffects {
 
     private static final Particle.DustOptions EMBER = new Particle.DustOptions(Color.fromRGB(255, 92, 20), 1.1f);
     private static final Particle.DustOptions DEEP_RED = new Particle.DustOptions(Color.fromRGB(170, 20, 8), 1.6f);
-    private static final Particle.DustOptions VIOLET = new Particle.DustOptions(Color.fromRGB(140, 60, 255), 1.3f);
-    private static final Particle.DustOptions PINK = new Particle.DustOptions(Color.fromRGB(255, 110, 200), 0.9f);
-    private static final Particle.DustTransition VIOLET_TO_PINK =
-        new Particle.DustTransition(Color.fromRGB(120, 50, 255), Color.fromRGB(255, 120, 190), 1.2f);
+    private static final Particle.DustOptions RED = new Particle.DustOptions(Color.fromRGB(220, 24, 10), 1.3f);
+    private static final Particle.DustOptions ORANGE = new Particle.DustOptions(Color.fromRGB(255, 96, 36), 0.9f);
+    private static final Particle.DustTransition RED_TO_ORANGE =
+        new Particle.DustTransition(Color.fromRGB(190, 12, 6), Color.fromRGB(255, 120, 40), 1.2f);
+    /** Стойки рамы (по x от середины). */
+    private static final double SIDE = 1.2;
 
     private final World world;
     private final Spot spot;
@@ -79,10 +81,17 @@ final class PortalEffects {
                 if (sinceClose == 0) {
                     this.play(Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 1.1f);
                 }
+                if (sinceClose == Timeline.COLLAPSE) {
+                    this.play(Sound.BLOCK_RESPAWN_ANCHOR_DEPLETE, 1.0f, 0.9f);
+                }
+                if (sinceClose == Timeline.CLOSE_SURFACE - 1) {
+                    this.play(Sound.ENTITY_GENERIC_EXTINGUISH_FIRE, 0.8f, 0.7f);
+                    this.play(Sound.BLOCK_AMETHYST_BLOCK_RESONATE, 0.9f, 0.6f);
+                }
             }
             case CLOSE_FRAME -> {
                 if (sinceClose == Timeline.CLOSE_SURFACE) {
-                    this.play(Sound.BLOCK_RESPAWN_ANCHOR_DEPLETE, 1.0f, 0.7f);
+                    this.play(Sound.BLOCK_GRINDSTONE_USE, 0.35f, 0.5f);
                 }
                 if (sinceClose == Timeline.CLOSING - 1) {
                     this.play(Sound.BLOCK_FIRE_EXTINGUISH, 0.6f, 0.8f);
@@ -99,7 +108,7 @@ final class PortalEffects {
             case CRACK -> {
                 // Трещина: угли и огонь вдоль основания, тёмно-красная пыль.
                 for (int i = 0; i < 3; i++) {
-                    this.spawn(Particle.DUST, this.at(r.nextDouble(-1.4, 1.4), 0.05, r.nextDouble(-0.6, 0.6)), 1, 0.05, 0, 0.05, 0, DEEP_RED);
+                    this.spawn(Particle.DUST, this.at(r.nextDouble(-1.6, 1.6), 0.05, r.nextDouble(-0.6, 0.6)), 1, 0.05, 0, 0.05, 0, DEEP_RED);
                 }
                 this.spawn(Particle.LAVA, this.at(r.nextDouble(-1.0, 1.0), 0.1, r.nextDouble(-0.3, 0.3)), 1, 0, 0, 0, 0, null);
                 this.spawn(Particle.SMALL_FLAME, this.at(r.nextDouble(-1.2, 1.2), 0.05, r.nextDouble(-0.4, 0.4)), 2, 0.05, 0.02, 0.05, 0.01, null);
@@ -108,7 +117,7 @@ final class PortalEffects {
             case RISE -> {
                 // Огонь лижет стойки по мере подъёма.
                 final double h = tl.rise(t) * 3.0;
-                for (final double side : new double[] {-0.91, 0.91}) {
+                for (final double side : new double[] {-SIDE, SIDE}) {
                     this.spawn(Particle.FLAME, this.at(side, r.nextDouble(0, Math.max(0.1, h)), r.nextDouble(-0.2, 0.2)), 1, 0.04, 0.05, 0.04, 0.01, null);
                     this.spawn(Particle.SMALL_FLAME, this.at(side + r.nextDouble(-0.15, 0.15), 0.05, r.nextDouble(-0.3, 0.3)), 1, 0, 0, 0, 0.02, null);
                 }
@@ -119,37 +128,49 @@ final class PortalEffects {
                 }
             }
             case OPEN -> {
-                // Раскрытие: искры и фиолетовая пыль от средней линии.
+                // Раскрытие: красная пыль от средней линии.
                 final double w = tl.surface(t) * Spot.SURFACE_HALF_WIDTH;
                 for (int i = 0; i < 4; i++) {
                     final double y = r.nextDouble(0.1, Spot.SURFACE_HEIGHT);
-                    this.spawn(Particle.DUST_COLOR_TRANSITION, this.at(r.nextBoolean() ? w : -w, y, 0), 1, 0.02, 0.05, 0.02, 0, VIOLET_TO_PINK);
+                    this.spawn(Particle.DUST_COLOR_TRANSITION, this.at(r.nextBoolean() ? w : -w, y, 0), 1, 0.02, 0.05, 0.02, 0, RED_TO_ORANGE);
                 }
                 if (t == Timeline.CRACK + Timeline.RISE) {
-                    this.spawn(Particle.END_ROD, this.at(0, 1.4, 0), 24, 0.05, 1.2, 0.05, 0.06, null);
-                    this.spawn(Particle.REVERSE_PORTAL, this.at(0, 1.4, 0), 40, 0.1, 1.2, 0.1, 0.05, null);
+                    this.spawn(Particle.DUST, this.at(0, 1.45, 0), 30, 0.08, 1.2, 0.08, 0, RED);
                 }
                 this.ambientFire(r, t);
             }
             case IDLE -> {
                 this.ambientFire(r, t);
-                // Искры дрейфуют из поверхности в обе стороны и вверх.
-                if (t % 3 == 0) {
-                    final double[] p = this.at(r.nextDouble(-0.7, 0.7), r.nextDouble(0.2, 2.6), 0);
-                    this.spawnDirected(Particle.END_ROD, p, r.nextDouble(-0.2, 0.2), r.nextDouble(0.25, 0.6), r.nextDouble(-1, 1), 0.04);
-                }
+                // Красные и оранжевые искры над поверхностью.
                 if (t % 4 == 0) {
-                    this.spawn(Particle.DUST, this.at(r.nextDouble(-0.75, 0.75), r.nextDouble(0.1, 2.7), r.nextDouble(-0.2, 0.2)), 1, 0, 0, 0, 0, r.nextBoolean() ? VIOLET : PINK);
+                    this.spawn(Particle.DUST, this.at(r.nextDouble(-1.05, 1.05), r.nextDouble(0.1, 2.8), r.nextDouble(-0.2, 0.2)), 1, 0, 0, 0, 0, r.nextBoolean() ? RED : ORANGE);
                 }
             }
             case CLOSE_SURFACE -> {
+                final long d = t - tl.closeStart();
                 final double w = tl.surface(t) * Spot.SURFACE_HALF_WIDTH;
-                this.spawn(Particle.DUST_COLOR_TRANSITION, this.at(r.nextBoolean() ? w : -w, r.nextDouble(0.1, Spot.SURFACE_HEIGHT), 0), 2, 0.02, 0.05, 0.02, 0, VIOLET_TO_PINK);
+                final double hh = tl.surfaceHeight(t) * Spot.SURFACE_HEIGHT / 2;
+                final double mid = Spot.SURFACE_HEIGHT / 2;
+                if (d < Timeline.COLLAPSE) {
+                    // Края поверхности сходятся к середине, за ними тянется красная пыль.
+                    for (int i = 0; i < 2; i++) {
+                        this.spawn(Particle.DUST_COLOR_TRANSITION, this.at(r.nextBoolean() ? w : -w, r.nextDouble(0.1, Spot.SURFACE_HEIGHT), 0), 1, 0.02, 0.04, 0.02, 0, RED_TO_ORANGE);
+                    }
+                } else {
+                    // Светящаяся щель стягивается в точку.
+                    this.spawn(Particle.DUST, this.at(0, mid + r.nextDouble(-hh, hh), 0), 2, 0.02, 0.02, 0.02, 0, RED);
+                    if (d == Timeline.CLOSE_SURFACE - 1) {
+                        // Схлопнулась: вспышка красной пыли и искр во все стороны.
+                        this.spawn(Particle.DUST, this.at(0, mid, 0), 40, 0.35, 0.35, 0.2, 0, RED);
+                        this.spawn(Particle.DUST, this.at(0, mid, 0), 20, 0.25, 0.25, 0.15, 0, ORANGE);
+                        this.spawn(Particle.LAVA, this.at(0, mid, 0), 4, 0.1, 0.1, 0.1, 0, null);
+                    }
+                }
                 this.ambientFire(r, t);
             }
             case CLOSE_FRAME -> {
                 final double h = tl.rise(t) * 3.0;
-                this.spawn(Particle.LARGE_SMOKE, this.at(r.nextDouble(-1.1, 1.1), 0.1, r.nextDouble(-0.3, 0.3)), 1, 0.05, 0.02, 0.05, 0.01, null);
+                this.spawn(Particle.LARGE_SMOKE, this.at(r.nextDouble(-1.35, 1.35), 0.1, r.nextDouble(-0.3, 0.3)), 1, 0.05, 0.02, 0.05, 0.01, null);
                 this.spawn(Particle.DUST, this.at(r.nextDouble(-1.0, 1.0), h, 0), 1, 0.1, 0.05, 0.1, 0, EMBER);
                 this.spawn(Particle.SMALL_FLAME, this.at(r.nextDouble(-1.1, 1.1), 0.05, r.nextDouble(-0.3, 0.3)), 1, 0, 0, 0, 0.01, null);
             }
@@ -164,7 +185,7 @@ final class PortalEffects {
             this.spawn(Particle.SMALL_FLAME, this.at(r.nextDouble(-1.2, 1.2), 0.05, r.nextDouble(-0.45, 0.45)), 1, 0.02, 0.02, 0.02, 0.012, null);
         }
         if (t % 4 == 0) {
-            final double side = r.nextBoolean() ? -0.91 : 0.91;
+            final double side = r.nextBoolean() ? -SIDE : SIDE;
             this.spawn(Particle.FLAME, this.at(side, r.nextDouble(0.0, 0.9), r.nextDouble(-0.22, 0.22)), 1, 0.02, 0.04, 0.02, 0.008, null);
             this.spawn(Particle.DUST, this.at(r.nextDouble(-1.1, 1.1), r.nextDouble(0.05, 0.6), r.nextDouble(-0.4, 0.4)), 1, 0, 0, 0, 0, EMBER);
         }
@@ -182,9 +203,9 @@ final class PortalEffects {
             } else if (Particle.FLASH.getDataType() == Void.class) {
                 this.world.spawnParticle(Particle.FLASH, eye, 1, 0, 0, 0, 0);
             }
-            this.world.spawnParticle(Particle.END_ROD, eye, 30, 0.3, 0.6, 0.3, 0.12);
+            this.world.spawnParticle(Particle.DUST, eye, 30, 0.3, 0.6, 0.3, 0, RED);
             this.world.spawnParticle(Particle.FLAME, player.getLocation(), 20, 0.3, 0.2, 0.3, 0.05);
-            this.world.spawnParticle(Particle.DUST_COLOR_TRANSITION, eye, 25, 0.4, 0.7, 0.4, 0, VIOLET_TO_PINK);
+            this.world.spawnParticle(Particle.DUST_COLOR_TRANSITION, eye, 25, 0.4, 0.7, 0.4, 0, RED_TO_ORANGE);
         }
         if (s.sounds()) {
             this.world.playSound(eye, Sound.ENTITY_ENDERMAN_TELEPORT, SoundCategory.BLOCKS, 1.0f, 0.7f);

@@ -24,8 +24,11 @@ public record Timeline(long lifetimeTicks, long closeStart) {
     public static final int CRACK = 10;
     public static final int RISE = 30;
     public static final int OPEN = 20;
-    public static final int CLOSE_SURFACE = 15;
-    public static final int CLOSE_FRAME = 25;
+    /** Закрытие: поверхность сходится в щель (COLLAPSE), щель стягивается в точку (SEAM), рама уходит в землю. */
+    public static final int COLLAPSE = 20;
+    public static final int SEAM = 8;
+    public static final int CLOSE_SURFACE = COLLAPSE + SEAM;
+    public static final int CLOSE_FRAME = 30;
     /** Тик, с которого портал открыт полностью. */
     public static final int OPENED = CRACK + RISE + OPEN;
     /** Длительность закрытия. */
@@ -108,7 +111,27 @@ public record Timeline(long lifetimeTicks, long closeStart) {
             return openingSurface(t);
         }
         final long d = t - this.closeStart;
-        return openingSurface(this.closeStart) * (1 - Easing.inCubic(d / (double) CLOSE_SURFACE));
+        if (d >= COLLAPSE) {
+            return 0;
+        }
+        return Math.min(1.0, openingSurface(this.closeStart)) * (1 - Easing.inOutCubic(d / (double) COLLAPSE));
+    }
+
+    /**
+     * Высота поверхности при закрытии: 1, пока она сходится в щель, затем щель стягивается к середине в точку.
+     */
+    public double surfaceHeight(final long t) {
+        if (t < this.closeStart) {
+            return 1;
+        }
+        final long d = t - this.closeStart;
+        if (d < COLLAPSE) {
+            return 1;
+        }
+        if (d >= CLOSE_SURFACE) {
+            return 0;
+        }
+        return 1 - Easing.inCubic((d - COLLAPSE) / (double) SEAM);
     }
 
     /** Размер светящейся трещины на земле: 0..1. */

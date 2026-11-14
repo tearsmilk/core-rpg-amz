@@ -186,7 +186,8 @@ public final class PortalManager implements Listener {
             return;
         }
         if (phase != Phase.IDLE && t % Timeline.KEY_STEP == 0) {
-            p.visuals.apply(tl, t + Timeline.KEY_STEP, Timeline.KEY_STEP);
+            // Длительность чуть больше шага: следующий кадр приходит, пока клиент ещё тянет этот, — без рывков.
+            p.visuals.apply(tl, t + Timeline.KEY_STEP, Timeline.KEY_STEP + 1);
         }
         final Settings s = this.settings.get();
         p.effects.tick(tl, t, s);
