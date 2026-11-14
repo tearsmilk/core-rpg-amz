@@ -176,6 +176,17 @@ public record Settings(
             c.getString(pp + "profession-key", p.professionKey()),
             c.getString(pp + "needs-profession", p.needsProfession()),
             c.getString(pp + "skill-points", p.skillPoints()), c.getString(pp + "attribute-points", p.attributePoints()));
+        // config.yml от v1: старые сдвиги глифов (0.5 / 2.0) теперь лишние — формула клиента учтена в коде.
+        double offX = c.getDouble("art.glyph-offset-x", d.glyphOffsetX());
+        double offY = c.getDouble("art.glyph-offset-y", d.glyphOffsetY());
+        if (c.contains("rpg.eye-offset") || c.contains("rpg.player-scale")) {
+            warn.accept("это config.yml от первой версии меню: rpg.eye-offset и rpg.player-scale больше не нужны, "
+                + "плейсхолдеры теперь RoyalQuestClasses/MMOCore — сверьте файл с новым (удалите его, и он создастся заново)");
+            if (offX == 0.5 && offY == 2.0) {
+                offX = 0;
+                offY = 0;
+            }
+        }
         Material noClass = material(c.getString("rpg.no-class-icon", d.noClassIcon().name()), warn, "rpg.no-class-icon");
         if (noClass == null) {
             noClass = d.noClassIcon();
@@ -200,8 +211,8 @@ public record Settings(
             commands(c, "hud.hide-commands"),
             commands(c, "hud.show-commands"),
             c.getBoolean("art.shader-cursor", d.shaderCursor()),
-            c.getDouble("art.glyph-offset-x", d.glyphOffsetX()),
-            c.getDouble("art.glyph-offset-y", d.glyphOffsetY()));
+            offX,
+            offY);
     }
 
     private static Resources resources(final ConfigurationSection r, final Resources fallback) {

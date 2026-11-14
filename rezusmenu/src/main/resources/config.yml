@@ -15,52 +15,83 @@ menus:
     label: "<gold>RPG-инвентарь</gold>"
     tooltip: "<gray>Персонаж, снаряжение и инвентарь</gray>"
 
-# RPG-меню во весь экран: на время меню игрок — наблюдатель и стоит на месте, мышь двигает курсор,
+# RPG-меню во весь экран: на время меню игрок — наблюдатель высоко над миром и стоит на месте, мышь двигает курсор,
 # ЛКМ — нажать, пробел — курсор в центр, Shift — выйти. При первом входе — калибровка экрана (око Края в угол).
-# Картинки меню — из ресурспака (assets/rezusmenu, см. pack/ в исходниках системы): без него — фиолетово-чёрные квадраты.
+# Картинки меню — из ресурспака (assets/rezusmenu и assets/minecraft/shaders, см. pack/ в исходниках системы):
+# без него — пустые квадраты, а шейдерный курсор идёт против мыши.
 rpg:
-  # Скорость курсора: сколько экрана проходит курсор за градус поворота мыши.
+  # Скорость курсора-глифа (art.shader-cursor: false) и ока при калибровке: сколько экрана за градус поворота мыши.
   cursor-speed: 0.045
-  # Насколько точка «пассажиров» игрока выше его глаз (1.8 − 1.62). Если меню съехало вверх или вниз — поправить.
-  eye-offset: 0.18
-  # Размер игрока на время меню (0.0625..1). Экран крепится над головой, а камера — в глазах; чем меньше игрок,
-  # тем меньше этот зазор и тем неподвижнее меню, когда водишь мышью вверх-вниз. 0.0625 — минимум.
-  player-scale: 0.0625
   # Пока меню открыто, игрок не получает урона.
   invulnerable: true
   # Как часто обновлять предметы и значения, тиков.
   refresh-ticks: 10
-  # Значения из PlaceholderAPI (core-rpg). Пусто или не подставилось — берётся ванильное или «—».
+  # Писать в консоль каждый клик: откуда пришёл (spectate — ЛКМ наблюдателя, right-click, swing), где курсор
+  # (пиксели холста 704×400) и какая кнопка под ним.
+  debug-clicks: false
+  # Значения из PlaceholderAPI. По умолчанию — RoyalQuestClasses (%hl_…%) и MMOCore (%mmocore_…%), как в MythicHUD.
+  # Не подставилось — «—» (уровень и опыт — ванильные).
   placeholders:
-    level: "%core_level%"
-    exp: "%core_exp%"
-    exp-needed: "%core_exp_needed%"
-    class: "%core_class%"
-    # Маны в core-rpg пока нет: полоска покажет «Мана —».
-    mana: ""
-    mana-max: ""
-  # Параметры в левой колонке (по два в строке).
+    level: "%hl_level%"
+    exp: "%hl_exp%"
+    exp-needed: "%hl_exp_needed%"
+    class: "%hl_class%"
+    class-key: "%hl_class_key%"
+    profession: "%hl_profession%"
+    profession-key: "%hl_profession_key%"
+    needs-profession: "%hl_needs_profession%"
+    skill-points: "%mmocore_skill_points%"
+    attribute-points: "%hl_stats_available%"
+  # Третья полоска — мана или энергия, как в MythicHUD. Сначала по ключу класса (class-key), иначе по имени ресурса
+  # MMOCore: равно energy-name — энергия, иначе мана.
+  resource:
+    name: "%mmocore_mana_name%"
+    energy-name: "Энергия"
+    classes:
+      swordsman: energy
+      archer: energy
+      thief: energy
+      mage: mana
+    types:
+      mana: {label: "Мана", current: "%mmocore_mana%", max: "%mmocore_stat_max_mana%"}
+      energy: {label: "Энергия", current: "%mmocore_mana%", max: "%mmocore_stat_max_mana%"}
+  # Параметры слева внизу (2 × 2). default — подпись, если плейсхолдер названия не подставился.
   stats:
-    - {name: "%core_stat_primary_name%", value: "%core_stat_primary_total%"}
-    - {name: "%core_stat_agility_name%", value: "%core_stat_agility_total%"}
-    - {name: "%core_stat_stamina_name%", value: "%core_stat_stamina_total%"}
-    - {name: "%core_stat_luck_name%", value: "%core_stat_luck_total%"}
+    - {name: "%hl_stats_primary_name%", default: "Сила", value: "%hl_stats_primary%"}
+    - {name: "Ловкость", value: "%hl_stats_agility%"}
+    - {name: "Выносливость", value: "%hl_stats_stamina%"}
+    - {name: "Удача", value: "%hl_stats_luck%"}
+  # Классы RoyalQuestClasses (ключ = %hl_class_key%): название, иконка в левом крыле и профессии.
+  classes:
+    swordsman: {name: "Мечник", icon: IRON_SWORD, professions: [crusader, dark_knight]}
+    archer: {name: "Стрелок", icon: BOW, professions: [hunter, sniper]}
+    mage: {name: "Маг", icon: BLAZE_ROD, professions: [wizard, warlock]}
+    thief: {name: "Вор", icon: GOLDEN_SWORD, professions: [rogue, assassin]}
+  professions:
+    crusader: "Крестоносец"
+    dark_knight: "Тёмный рыцарь"
+    hunter: "Охотник"
+    sniper: "Снайпер"
+    wizard: "Волшебник"
+    warlock: "Чернокнижник"
+    rogue: "Разбойник"
+    assassin: "Ассасин"
+  # Иконка в левом крыле, пока класс не выбран.
+  no-class-icon: BOOK
+  # Слоты бижутерии (амулет, два кольца, тотем, артефакт): что в них можно положить. types — типы MMOItems
+  # (MMOITEMS_ITEM_TYPE), materials — материалы; подходит что-то одно. Оба списка пустые — что угодно.
+  # Предметы хранятся в данных игрока и не выпадают. Характеристики бижутерии пока НЕ применяются.
+  jewelry:
+    amulet: {types: [AMULET, NECKLACE, ACCESSORY], materials: []}
+    ring: {types: [RING, ACCESSORY], materials: []}
+    totem: {types: [TOTEM], materials: [TOTEM_OF_UNDYING]}
+    artifact: {types: [ARTIFACT, RELIC, ORNAMENT, TALISMAN], materials: []}
   # Вкладка «Снаряжение»: строки характеристик. Строка, чей плейсхолдер не подставился, скрывается.
   equipment-lines:
-    - {name: "Урон (бонус)", value: "%core_aspect_attack_damage%"}
-    - {name: "Броня (бонус)", value: "%core_aspect_armor%"}
-    - {name: "Здоровье (бонус)", value: "%core_aspect_max_health%"}
-    - {name: "Шанс крита, %", value: "%core_crit_chance%"}
-    - {name: "Урон крита, %", value: "%core_aspect_crit_damage%"}
-    - {name: "Точность", value: "%core_aspect_accuracy%"}
-    - {name: "Уклонение", value: "%core_aspect_evasion%"}
-    - {name: "Сопротивление", value: "%core_aspect_resistance%"}
-    - {name: "Заточка в руке", value: "%core_sharpen_text%"}
-    - {name: "Печать в руке", value: "%core_seal%"}
+    - {name: "Уровень", value: "%hl_level%"}
+    - {name: "Свободные очки параметров", value: "%hl_stats_available%"}
+    - {name: "Очки навыков", value: "%mmocore_skill_points%"}
 
-# Чужой HUD (например, MythicHUD на боссбарах) поверх меню: спрятать на время меню и вернуть после.
-# Команды консоли, {player} — ник. Выполняются при открытии меню и при закрытии (выход, выключение системы,
-# возврат после падения сервера). Пусто — ничего не делать.
 # Чужой HUD (MythicHUD — боссбары с модельками) прячется, пока открыто меню: меню нарисовано в мире и не может
 # перекрыть интерфейс клиента. Команды консоли, {player} — ник. Если игрок вышел посреди меню, HUD вернётся при входе.
 hud:
@@ -73,8 +104,11 @@ hud:
     - "mythichud layout {player} add partyhud-mmo-layout -s"
     - "mythichud layout {player} add skill_casting_bar-layout -s"
 
-# Картинка меню — шрифт rezusmenu:ui из ресурспака Nexo. Если картинка в игре съехала на пиксель-два относительно
-# надписей и иконок, подвинуть её здесь (пиксели картинки; x — вправо, y — вверх).
+# Картинка меню — шрифт rezusmenu:ui из ресурспака. Глифы ставятся по формуле клиента 1.21.11, подстройка не нужна;
+# если всё же съехало — сдвиг картинок в пикселях текстуры (x — вправо, y — вверх).
+# shader-cursor: курсор рисует шейдер пака и он идёт за мышью с частотой кадров; false — запасной курсор-глиф,
+# который двигает сервер (раз в тик).
 art:
-  glyph-offset-x: 0.5
-  glyph-offset-y: 2.0
+  shader-cursor: true
+  glyph-offset-x: 0.0
+  glyph-offset-y: 0.0

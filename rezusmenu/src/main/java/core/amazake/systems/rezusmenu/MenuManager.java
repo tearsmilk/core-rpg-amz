@@ -3,17 +3,18 @@ package core.amazake.systems.rezusmenu;
 import com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent;
 import core.amazake.systems.api.SystemContext;
 import core.amazake.systems.rezusmenu.rpg.RpgScreen;
+import core.amazake.systems.rezusmenu.rpg.SkinService;
 import core.amazake.systems.rezusmenu.screen.CalibrationScreen;
 import core.amazake.systems.rezusmenu.screen.Screen;
 import core.amazake.systems.rezusmenu.util.Text;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import org.bukkit.Bukkit;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -55,11 +56,13 @@ public final class MenuManager implements Listener {
     private final Supplier<Settings> settings;
     private final PlayerStore store;
     private final Map<UUID, Session> sessions = new ConcurrentHashMap<>();
+    private final SkinService skins;
 
     public MenuManager(final SystemContext context, final Supplier<Settings> settings, final PlayerStore store) {
         this.context = context;
         this.settings = settings;
         this.store = store;
+        this.skins = new SkinService(context.plugin(), context.logger());
     }
 
     public boolean isOpen(final Player player) {
@@ -89,7 +92,8 @@ public final class MenuManager implements Listener {
 
     private void start(final Player player, final Screen.Calibration cal, final boolean calibrate) {
         final Settings s = this.settings.get();
-        final Screen screen = Screen.open(this.context.plugin(), player, cal, s.eyeOffset(), s.sensitivity(), s.playerScale());
+        final Screen screen = Screen.open(this.context.plugin(), player, cal, s.sensitivity(), s.glyphOffsetX(),
+            s.glyphOffsetY());
         if (screen == null) {
             player.sendMessage(Text.mm(Text.prefix() + "<red>Сейчас меню не открыть: слезьте с транспорта.</red>"));
             this.showHud(player);
@@ -105,7 +109,8 @@ public final class MenuManager implements Listener {
                 this.context.runOnceForPlayer(player, () -> this.open(player, "rpg"));
             });
         } else {
-            session.rpg = new RpgScreen(screen, s, () -> this.close(player),
+            session.rpg = new RpgScreen(screen, s, this.skins, r -> this.context.runOnceForPlayer(player, r),
+                () -> this.close(player),
                 () -> this.context.runOnceForPlayer(player, () -> this.openCalibration(player)));
         }
         this.sessions.put(player.getUniqueId(), session);
@@ -128,6 +133,11 @@ public final class MenuManager implements Listener {
             } else {
                 session.calibration.build();
             }
+            return;
+        }
+        if (session.screen.moved()) {
+            // Камера должна стоять на месте: кто-то сдвинул игрока — меню закрывается.
+            this.close(session.screen.player());
             return;
         }
         session.screen.update();
@@ -240,16 +250,30 @@ public final class MenuManager implements Listener {
     // --- ввод ---
 
     /**
-     * ЛКМ. Наблюдатель шлёт клик по сущности (невидимая коробка вокруг глаз) — сервер пытается «вселить» его в неё:
-     * отменяем и жмём кнопку под курсором. Взмах рукой тоже считаем кликом (другие клиенты), но не дважды за раз.
+     * Клик. Наблюдатель шлёт ЛКМ по сущности (невидимая коробка вокруг глаз) — сервер пытается «вселить» его в неё:
+     * отменяем и жмём кнопку под курсором. ПКМ по коробке и взмах рукой (не наблюдатель) — тоже клик, но не дважды
+     * за раз. {@code source} — для rpg.debug-clicks.
      */
-    private void click(final Session s) {
+    private void click(final Session s, final String source) {
         final int now = Bukkit.getCurrentTick();
+        final boolean debug = this.settings.get().debugClicks();
         if (!s.built || now - s.lastClickTick <= 2) {
+            if (debug) {
+                this.context.logger().info("click " + source + " от " + s.screen.player().getName() + ": пропущен ("
+                    + (s.built ? "повтор" : "меню ещё строится") + ")");
+            }
             return;
         }
         s.lastClickTick = now;
         s.screen.update();
+        final Player p = s.screen.player();
+        if (debug) {
+            final Screen.Button h = s.screen.hovered();
+            this.context.logger().info(String.format(java.util.Locale.ROOT,
+                "click %s от %s: курсор %.1f, %.1f px холста (%s), кнопка %s", source, p.getName(),
+                s.screen.cursorX(), s.screen.cursorY(), s.screen.cursorMode(), h == null ? "—" : h.name()));
+        }
+        p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 0.35f, 1.5f);
         s.screen.click();
     }
 
@@ -257,7 +281,7 @@ public final class MenuManager implements Listener {
     public void onSwing(final PlayerAnimationEvent event) {
         final Session s = this.sessions.get(event.getPlayer().getUniqueId());
         if (s != null && event.getAnimationType() == PlayerAnimationType.ARM_SWING) {
-            this.click(s);
+            this.click(s, "swing");
         }
     }
 
@@ -284,7 +308,7 @@ public final class MenuManager implements Listener {
         }
         event.setCancelled(true);
         if (s.screen.isTarget(event.getNewSpectatorTarget())) {
-            this.click(s);
+            this.click(s, "spectate");
         }
     }
 
@@ -295,10 +319,16 @@ public final class MenuManager implements Listener {
         }
     }
 
+    /** ПКМ по коробке экрана (приходит дважды — на каждую руку и ещё «interact at»): тоже клик. */
     @EventHandler(priority = EventPriority.LOWEST)
     public void onInteractEntity(final PlayerInteractEntityEvent event) {
-        if (this.isOpen(event.getPlayer())) {
-            event.setCancelled(true);
+        final Session s = this.sessions.get(event.getPlayer().getUniqueId());
+        if (s == null) {
+            return;
+        }
+        event.setCancelled(true);
+        if (s.screen.isTarget(event.getRightClicked())) {
+            this.click(s, "right-click");
         }
     }
 

@@ -63,7 +63,6 @@ public final class RezusMenuSystem implements AmazakeSystem, Listener {
         final Settings parsed = Settings.from(this.context.loadConfig(), w -> this.context.logger().warning("config.yml: " + w));
         this.settings.set(parsed);
         Text.setPrefix(parsed.prefix());
-        core.amazake.systems.rezusmenu.screen.Screen.glyphOffsets(parsed.glyphOffsetX(), parsed.glyphOffsetY());
     }
 
     /** Кнопка диалога /menuses. Событие может прийти не из потока игрока: само открытие — в его потоке. */
