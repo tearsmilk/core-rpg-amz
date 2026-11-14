@@ -50,7 +50,7 @@
 | HUNTER | SWIFTNESS | SWIFTNESS | скорость на себя | 0 | 0 | 0 | 13.7/14.8 | **PASS** | эффекты кастера: speed+2,jump_boost+2 |
 | HUNTER | LEAP | LEAP | прыжок (force 0.96) | 0 | 0 | 0 | 2/3.1 | **PASS** | смещение гориз. 4.2, вверх 0 |
 | HUNTER | SHULKER_MISSILE | SHULKER_MISSILE | 14 + левитация 2 с | 13.78 | 0 | 0 | 15.9/17 | **PASS** | левитация есть: цель поднялась на 3.28 бл. (эффект 2 с закончился до замера) |
-| HUNTER | SNOWMAN_TURRET | SNOWMAN_TURRET | 9.5/снежок, 9.6 с, r8.5 | 84.13 | 0 | 0 | 2.9/4 | **PASS** | перезапуск с финальной rq_snowman_turret (1 снежок/с) |
+| HUNTER | SNOWMAN_TURRET | rq_snowman_turret | 9.5/снежок, 9.6 с, r8.5 | 84.13 | 0 | 0 | 2.9/4 | **PASS** | перезапуск с финальной rq_snowman_turret (1 снежок/с) |
 | HUNTER | ITEM_BOMB | ITEM_BOMB | 11 АоЕ r4.8 + замедление 5.7 с | 10.82 | 10.82 | 10.82 | 9.9/11 | **PASS** |  |
 | HUNTER | FREEZE | rq_freeze | замедление III 2.9 с, r6.7 (цель+сосед) | 0 | 0 | 0 | 14.7/15.8 | **PASS** |  |
 | HUNTER | POWER_MARK | rq_power_mark | 55% урона по цели за 19.9 с + стан 2.4 с | 15.5 | 0 | 15.98 | 9.9/11 | **PASS** | после 3×10 урона метка добавила 15.5 (rq_power_mark: метка на цели под прицелом) |
