@@ -1,0 +1,70 @@
+# core-portals: тестовый предмет «Портал (смола)».
+# Применить без рестарта: /portals reload  (или /amazake system reload core-portals).
+# Тексты — MiniMessage: https://docs.advntr.dev/minimessage/format.html
+
+prefix: "<dark_gray>[<gradient:#ff2a12:#ff9a1f>Порталы</gradient>]</dark_gray> "
+
+item:
+  # Имя и описание предмета (RESIN_CLUMP с меткой coreportals:portal_item в PDC).
+  name: "<!i><gradient:#ff2a12:#ff9a1f>Портал</gradient>"
+  lore:
+    - "<!i><gray>Застывшая смола древнего разлома."
+    - "<!i><gray>ПКМ — открыть портал перед собой."
+  # item_model иконки. Пусто — обычная смола. С пакетом core-portals: coreportals:portal_item
+  model: ""
+  # Тратить предмет при открытии (в творческом режиме не тратится).
+  consume: true
+  # Задержка между открытиями одним игроком, секунды (0 — без задержки).
+  cooldown-seconds: 5
+
+portal:
+  # Сколько живёт портал от появления до исчезновения, секунды (минимум 6).
+  # Из них ~3 с — открытие и 2 с — закрытие; войти можно, пока он открыт полностью.
+  lifetime-seconds: 30
+  # На сколько рядов блоков перед игроком ставится портал (1..6).
+  distance: 3
+  # На сколько блоков вниз и вверх от ног игрока искать землю (0..8).
+  ground-search: 3
+  # Сколько порталов одного игрока могут стоять одновременно (0 — без ограничения).
+  max-per-player: 1
+  # Кто может войти: everyone — все, owner — только открывший.
+  entry: everyone
+  # Сколько секунд после входа портал не трогает игрока повторно.
+  immunity-seconds: 3
+  # Блок тёмной рамы (имя Material).
+  frame-block: POLISHED_BLACKSTONE
+  # Дальность видимости дисплеев (множитель; 1.0 ≈ 64 блока).
+  view-range: 1.5
+
+teleport:
+  # Кто выполняет команды: player (от имени вошедшего) или console.
+  # /warp AmazakeCore — только от имени игрока: из консоли он отвечает «только для игроков»
+  # и не умеет отправлять другого игрока. Поэтому по умолчанию player.
+  run-as: player
+  # Команды без «/». {player} — ник, {uuid} — UUID.
+  commands:
+    - "warp dungeon1"
+  # Права, которые выдаются игроку только на время выполнения команд (для run-as: player).
+  # amazakecore.essentials.warp — право на /warp: игрок без него всё равно пройдёт портал.
+  grant-permissions:
+    - amazakecore.essentials.warp
+
+effects:
+  particles: true
+  sounds: true
+
+messages:
+  no-room: "<red>Здесь не открыть портал: нужен свободный проём 2×3 на твёрдой земле в 2–3 блоках перед вами."
+  cooldown: "<red>Портал ещё не готов: подождите <yellow><seconds></yellow> с."
+  too-many: "<red>У вас уже открыт портал."
+  not-owner: "<red>Этот портал открыт не для вас."
+  # Сообщение вошедшему (пусто — без сообщения; /warp и так пишет своё).
+  entered: ""
+  given: "<green>Выдано порталов: <white><amount></white> игроку <white><player></white>."
+  received: "<green>Вы получили портал (<white><amount></white>)."
+  reloaded: "<green>Настройки core-portals перечитаны."
+  closed: "<yellow>Закрываю порталов: <white><count></white>."
+  player-not-found: "<red>Игрок <white><player></white> не в сети."
+  list: "<gold>Порталы (<count>):"
+  list-empty: "<gray>Открытых порталов нет."
+  usage: "<gray>/portals give [игрок] [кол-во] | reload | close | list"
