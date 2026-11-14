@@ -4,6 +4,7 @@
 enabled:
   - AmazakeCore
   - AmazakeTab
+  - core-effects
   - core-mobs
   - core-portals
   - core-skyrift

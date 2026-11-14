@@ -1,0 +1,110 @@
+{
+  "providers": [
+    {
+      "type": "space",
+      "advances": {
+        "\ue000": -1,
+        "\ue001": -289
+      }
+    },
+    {
+      "type": "bitmap",
+      "file": "coreeffects:font/overlay/dark.png",
+      "height": 144,
+      "ascent": 69,
+      "chars": [
+        "\ue010"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "coreeffects:font/overlay/vignette_top.png",
+      "height": 72,
+      "ascent": 69,
+      "chars": [
+        "\ue011\ue012"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "coreeffects:font/overlay/vignette_bottom.png",
+      "height": 72,
+      "ascent": -3,
+      "chars": [
+        "\ue013\ue014"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "coreeffects:font/overlay/blood_top.png",
+      "height": 72,
+      "ascent": 69,
+      "chars": [
+        "\ue015\ue016"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "coreeffects:font/overlay/blood_bottom.png",
+      "height": 72,
+      "ascent": -3,
+      "chars": [
+        "\ue017\ue018"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "coreeffects:font/overlay/heat_top.png",
+      "height": 72,
+      "ascent": 69,
+      "chars": [
+        "\ue019\ue01a"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "coreeffects:font/overlay/heat_bottom.png",
+      "height": 72,
+      "ascent": -3,
+      "chars": [
+        "\ue01b\ue01c"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "coreeffects:font/overlay/curse_top.png",
+      "height": 72,
+      "ascent": 69,
+      "chars": [
+        "\ue01d\ue01e"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "coreeffects:font/overlay/curse_bottom.png",
+      "height": 72,
+      "ascent": -3,
+      "chars": [
+        "\ue01f\ue020"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "coreeffects:font/overlay/panic_top.png",
+      "height": 72,
+      "ascent": 69,
+      "chars": [
+        "\ue021\ue022"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "coreeffects:font/overlay/panic_bottom.png",
+      "height": 72,
+      "ascent": -3,
+      "chars": [
+        "\ue023\ue024"
+      ]
+    }
+  ]
+}
