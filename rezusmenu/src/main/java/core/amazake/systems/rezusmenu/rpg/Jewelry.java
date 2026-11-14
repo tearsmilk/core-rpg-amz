@@ -118,6 +118,14 @@ final class Jewelry {
         if (r.materials().contains(item.getType())) {
             return true;
         }
+        if (!r.nbt().isEmpty() && item.hasItemMeta()) {
+            final String nbt = item.getItemMeta().getAsString();
+            for (final String tag : r.nbt()) {
+                if (nbt.contains(tag)) {
+                    return true;
+                }
+            }
+        }
         final String type = mmoType(item);
         return type != null && r.types().contains(type.toUpperCase(Locale.ROOT));
     }

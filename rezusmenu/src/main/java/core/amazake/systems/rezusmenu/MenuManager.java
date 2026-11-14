@@ -55,6 +55,8 @@ public final class MenuManager implements Listener {
     private final SystemContext context;
     private final Supplier<Settings> settings;
     private final PlayerStore store;
+    /** Система выключается: задачи игроков могут уже не выполниться — запись «что вернуть» пишем на диск сразу. */
+    private volatile boolean shuttingDown;
     private final Map<UUID, Session> sessions = new ConcurrentHashMap<>();
     private final SkinService skins;
 
@@ -163,6 +165,9 @@ public final class MenuManager implements Listener {
             }
             session.screen.close();
             this.store.forget(player.getUniqueId());
+            if (this.shuttingDown) {
+                this.store.saveNow();
+            }
         }
         if (!keepHud) {
             this.showHud(player);
@@ -227,6 +232,7 @@ public final class MenuManager implements Listener {
 
     /** Выключение системы: закрыть все меню (каждое — в потоке своего игрока). */
     public void closeAll() {
+        this.shuttingDown = true;
         // disable() — в глобальном потоке: HUD вернуть сейчас же, задачи системы после выключения уже не выполнятся.
         for (final Player p : Bukkit.getOnlinePlayers()) {
             if (this.store.isHudHidden(p.getUniqueId())) {
@@ -236,8 +242,8 @@ public final class MenuManager implements Listener {
         }
         for (final UUID id : List.copyOf(this.sessions.keySet())) {
             final Player player = Bukkit.getPlayer(id);
-            // Вернём сейчас же из задачи игрока: запись «что вернуть» можно снять заранее.
-            this.store.forget(id);
+            // Запись «что вернуть» снимает сама задача игрока, когда вернёт. Не успеет до выключения — запись
+            // останется в players.yml, и игрока вернут при следующем входе/включении.
             if (player == null) {
                 this.sessions.remove(id);
                 continue;

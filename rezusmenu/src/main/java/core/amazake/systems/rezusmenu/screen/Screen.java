@@ -161,6 +161,7 @@ public final class Screen {
 
     /** Шаг по глубине между слоями (единицы камеры), ближе к глазам — выше. */
     private static final double LAYER_STEP = 0.0015;
+    private static final double STANDING_EYE = 1.62;
     /** Слой подсветок под курсором и слой курсора-глифа (самый верхний). */
     public static final int HOVER_LAYER = 4;
     public static final int CURSOR_LAYER = 20;
@@ -205,6 +206,7 @@ public final class Screen {
     private final List<Button> buttons = new ArrayList<>();
     /** Подсветки «под курсором» по id текстуры: одна на экран, переезжает к кнопке под курсором. */
     private final Map<String, Quad> hoverQuads = new HashMap<>();
+    private final Map<String, Integer> hoverLayers = new HashMap<>();
     /** Пиксель холста → единицы камеры. */
     private final double scale;
     private double boundW;
@@ -239,7 +241,8 @@ public final class Screen {
         this.boundH = calibration.halfH();
         this.scale = PanelMath.scale(calibration.halfW(), calibration.halfH());
         this.feet = player.getLocation();
-        final Location eye = player.getEyeLocation();
+        // Глаза наблюдателя всегда на 1.62 над ногами; getEyeLocation() может ещё помнить старую позу (присел, плывёт).
+        final Location eye = player.getLocation().add(0, STANDING_EYE, 0);
         eye.setYaw(0f);
         eye.setPitch(0f);
         this.origin = eye;
@@ -265,7 +268,11 @@ public final class Screen {
         look.setY(look.getWorld().getMaxHeight() + SKY);
         look.setPitch(0f);
         player.setGameMode(GameMode.SPECTATOR);
-        player.teleport(look);
+        if (!player.teleport(look)) {
+            // Телепорт отменил другой плагин — меню в мире не открываем, всё как было.
+            player.setGameMode(saved.mode());
+            return null;
+        }
         player.setFlySpeed(0f);
         player.setWalkSpeed(0f);
         removeScale(player);
@@ -388,6 +395,11 @@ public final class Screen {
      * Накладка (размер — размер её текстуры), пока спрятана: {@link Quad#place} показывает её левым верхним углом в
      * точке. Живёт до закрытия экрана.
      */
+    /** Слой подсветки {@code hoverId} (по умолчанию {@link #HOVER_LAYER}) — чтобы подсветка легла поверх накладок. */
+    public void hoverLayer(final String hoverId, final int layer) {
+        this.hoverLayers.put(hoverId, layer);
+    }
+
     public Quad marker(final String id, final int layer) {
         final PanelMath.Glyph g = glyphOf(id);
         return this.spawnQuad(g, 0, 0, g.w(), layer, false, BASE);
@@ -447,7 +459,7 @@ public final class Screen {
                 continue;
             }
             final PanelMath.Fit f = PanelMath.fit(box, PanelMath.camX(x, this.scale),
-                PanelMath.camY(y + row * px, this.scale), w * px * this.scale, px * this.scale, 0, 0);
+                PanelMath.camY(y + row * px, this.scale), w * px * this.scale, px * this.scale, this.fineX, this.fineY);
             final Component text = line.build();
             final Transformation t = new Transformation(
                 new Vector3f((float) (f.tx() * k), (float) (f.ty() * k), (float) z), new Quaternionf(),
@@ -822,7 +834,7 @@ public final class Screen {
         }
         this.hovered = now;
         if (now != null && now.hoverId != null) {
-            this.hoverQuads.computeIfAbsent(now.hoverId, id -> this.marker(id, HOVER_LAYER))
+            this.hoverQuads.computeIfAbsent(now.hoverId, id -> this.marker(id, this.hoverLayers.getOrDefault(id, HOVER_LAYER)))
                 .place(now.rect.x(), now.rect.y());
         }
     }

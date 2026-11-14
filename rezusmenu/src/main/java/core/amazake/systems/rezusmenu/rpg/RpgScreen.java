@@ -58,7 +58,8 @@ public final class RpgScreen {
     private static final int L_FILL = 3;
     private static final int L_ICON = 6;
     private static final int L_LOCKED = 7;
-    private static final int L_TEXT = 8;
+    private static final int L_HOVER_SKILL = 8;
+    private static final int L_TEXT = 9;
 
     // Вкладки.
     private static final int[] TAB_X = {12, 136, 260, 384};
@@ -160,6 +161,7 @@ public final class RpgScreen {
     public RpgScreen(final Screen screen, final Settings settings, final SkinService skins,
                      final Consumer<Runnable> playerThread, final Runnable closeAction, final Runnable calibrateAction) {
         this.screen = screen;
+        screen.hoverLayer("skill_hover", L_HOVER_SKILL);
         this.player = screen.player();
         this.settings = settings;
         this.skins = skins;
@@ -216,7 +218,7 @@ public final class RpgScreen {
         this.slotSelected = s.marker("slot_selected", L_SELECTED);
 
         // верх и низ холста
-        s.text(240, 16, 224, 18, 11, Text.item("<gold><b>Персонаж</b></gold>"), L_TEXT, STATIC);
+        s.text(240, 12, 224, 32, 11, Text.item("<gold><b>Персонаж</b></gold>"), L_TEXT, STATIC);
         this.help = s.text(160, 358, 384, 24, 8, Text.item(HELP), L_TEXT, STATIC);
 
         // вкладки
@@ -768,6 +770,10 @@ public final class RpgScreen {
             this.set(to, b);
             this.set(from, a.getAmount() <= 0 ? null : a);
             return null;
+        }
+        // Обмен кладёт b в слот бижутерии — туда можно только один предмет.
+        if (Jewelry.isJewel(from) && !bEmpty && b.getAmount() > 1) {
+            return "Нельзя: в " + Jewelry.slotName(from).toLowerCase(Locale.ROOT) + " кладётся один предмет";
         }
         this.set(to, a);
         this.set(from, bEmpty ? null : b);

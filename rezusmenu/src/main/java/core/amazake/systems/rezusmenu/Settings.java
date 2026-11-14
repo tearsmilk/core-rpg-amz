@@ -72,11 +72,18 @@ public record Settings(
     public record ClassInfo(String key, String name, Material icon, List<String> professions) {
     }
 
-    /** Что можно положить в слот бижутерии: типы MMOItems и/или материалы. Оба списка пустые — что угодно. */
-    public record JewelRule(Set<String> types, Set<Material> materials) {
+    /**
+     * Что можно положить в слот бижутерии: типы MMOItems, материалы и/или NBT-метки (подстрока в NBT предмета, напр.
+     * {@code jewel:"ring"} или {@code myplugin:ring}). Все списки пустые — что угодно.
+     */
+    public record JewelRule(Set<String> types, Set<Material> materials, List<String> nbt) {
+
+        public JewelRule(final Set<String> types, final Set<Material> materials) {
+            this(types, materials, List.of());
+        }
 
         public boolean any() {
-            return this.types.isEmpty() && this.materials.isEmpty();
+            return this.types.isEmpty() && this.materials.isEmpty() && this.nbt.isEmpty();
         }
     }
 
@@ -305,7 +312,13 @@ public record Settings(
                     mats.add(mat);
                 }
             }
-            out.put(slot, new JewelRule(Set.copyOf(types), Set.copyOf(mats)));
+            final List<String> nbt = new ArrayList<>();
+            for (final String raw : e.getStringList("nbt")) {
+                if (!raw.isBlank()) {
+                    nbt.add(raw.strip());
+                }
+            }
+            out.put(slot, new JewelRule(Set.copyOf(types), Set.copyOf(mats), List.copyOf(nbt)));
         }
         return Map.copyOf(out);
     }

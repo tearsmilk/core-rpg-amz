@@ -4,8 +4,12 @@
 #moj_import <minecraft:fog.glsl>
 #moj_import <minecraft:dynamictransforms.glsl>
 #moj_import <minecraft:projection.glsl>
+// >>> coreportals hook (1/2): import >>>
+#moj_import <coreportals:portal_vertex.glsl>
+// <<< coreportals hook <<<
 
 // rezusmenu: vanilla 1.21.11 shader plus two cases for the in-world menu.
+// Shared file: identical copy in core-portals/pack and rezusmenu/pack (both systems need it in the same pack).
 //  1. Shader cursor: an item tinted with the marker colour (254, 0, 254) through the item model tint
 //     "minecraft:custom_model_data" is point-reflected through the screen centre, so a world-fixed quad moves
 //     with the mouse at frame rate. The server mirrors the same mapping for hover and clicks (MIRROR_K = 1).
@@ -59,4 +63,8 @@ void main() {
         gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
         vertexColor = minecraft_mix_light(Light0_Direction, Light1_Direction, Normal, Color) * texelFetch(Sampler2, UV2 / 16, 0);
     }
+
+    // >>> coreportals hook (2/2): portal vertices are unlit, the fragment shader paints them >>>
+    if (cp_vertex(Color, gl_VertexID)) vertexColor = vec4(1.0);
+    // <<< coreportals hook <<<
 }
