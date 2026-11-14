@@ -1,0 +1,7 @@
+# Описание системы. name и version подставляет сборка: name — rootProject.name из settings.gradle.kts, version — из build.gradle.kts.
+name: ${name}
+version: ${version}
+main: core.amazake.systems.coreskyrift.CoreSkyriftSystem
+description: "«Разлом небес» (незеритовый слиток): небо затягивает чёрным туманом, во всё небо раскрывается адский разлом, из него падают мобы core-mobs (дисплеи + core-шейдер)"
+authors: [tearsmilk]
+api-version: 2
