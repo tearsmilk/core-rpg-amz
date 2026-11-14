@@ -195,4 +195,95 @@ class SettingsTest {
         assertTrue(PortalType.parse("lava").isEmpty());
         assertTrue(PortalType.parse(null).isEmpty());
     }
+
+    @Test
+    void portalTypeParseLapis() {
+        assertEquals(PortalType.LAPIS, PortalType.parse("lapis").orElseThrow());
+        assertEquals(PortalType.LAPIS, PortalType.parse("Лазурит").orElseThrow());
+        assertEquals(PortalType.LAPIS, PortalType.parse("rift").orElseThrow());
+    }
+
+    @Test
+    void lapisInheritsSharedValues() throws Exception {
+        final List<String> warnings = new ArrayList<>();
+        final Settings s = parse("""
+            portal:
+              lifetime-seconds: 40
+              distance: 4
+            teleport:
+              commands: ["warp dungeon2"]
+            """, warnings);
+        assertEquals(List.of(), warnings);
+        assertEquals(800, s.lifetimeFor(PortalType.LAPIS));
+        assertEquals(4, s.distanceFor(PortalType.LAPIS));
+        assertEquals(List.of("warp dungeon2"), s.teleportFor(PortalType.LAPIS).commands());
+        assertEquals(5.0, s.lapis().size().width());
+        assertEquals(7.0, s.lapis().size().height());
+        assertEquals(3.6, s.lapis().size().centerUp());
+        assertEquals(10.0, s.lapis().radius());
+        assertEquals(0.05, s.lapis().pullStrength());
+    }
+
+    @Test
+    void lapisOwnSection() throws Exception {
+        final List<String> warnings = new ArrayList<>();
+        final Settings s = parse("""
+            lapis:
+              item:
+                name: "Разлом"
+                model: "coreportals:lapis_item"
+              portal:
+                lifetime-seconds: 20
+                distance: 5
+                width: 6
+                height: 8
+              screen:
+                radius: 0
+                cracks: false
+              pull:
+                strength: 0
+              teleport:
+                commands: ["warp dungeon3"]
+            """, warnings);
+        assertEquals(List.of(), warnings);
+        assertEquals("Разлом", s.lapis().itemName());
+        assertEquals("coreportals:lapis_item", s.lapis().itemModel());
+        assertEquals(400, s.lifetimeFor(PortalType.LAPIS));
+        assertEquals(600, s.lifetimeFor(PortalType.RESIN));
+        assertEquals(5, s.distanceFor(PortalType.LAPIS));
+        assertEquals(6.0, s.lapis().size().width());
+        assertEquals(8.0, s.lapis().size().height());
+        assertEquals(4.1, s.lapis().size().centerUp(), 1e-9);   // нет center-up: height / 2 + 0,1
+        assertEquals(0.0, s.lapis().radius());
+        assertFalse(s.lapis().screenCracks());
+        assertTrue(s.lapis().screenGlow());
+        assertEquals(0.0, s.lapis().pullStrength());
+        assertEquals(List.of("warp dungeon3"), s.teleportFor(PortalType.LAPIS).commands());
+        assertEquals(List.of("warp dungeon1"), s.teleportFor(PortalType.EMERALD).commands());
+    }
+
+    @Test
+    void lapisBadValuesWarn() throws Exception {
+        final List<String> warnings = new ArrayList<>();
+        final Settings s = parse("""
+            lapis:
+              portal:
+                width: 40
+                height: 7
+                center-up: 1
+                distance: 12
+              screen:
+                radius: -1
+              pull:
+                strength: 2
+                max-speed: 0
+            """, warnings);
+        assertEquals(5.0, s.lapis().size().width());
+        assertEquals(3.6, s.lapis().size().centerUp(), 1e-9);   // уходит в пол больше 0,5 — height / 2 + 0,1
+        assertEquals(3, s.lapis().distance());
+        assertEquals(10.0, s.lapis().radius());
+        assertEquals(0.05, s.lapis().pullStrength());
+        assertEquals(0.25, s.lapis().pullMaxSpeed());
+        assertEquals(6, warnings.size(), warnings.toString());
+    }
 }
