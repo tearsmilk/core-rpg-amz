@@ -1,7 +1,0 @@
-# Описание системы. name и version подставляет сборка: name — rootProject.name из settings.gradle.kts, version — из build.gradle.kts.
-name: rezusmenu
-version: 1.0.0
-main: core.amazake.systems.rezusmenu.RezusMenuSystem
-description: "/menuses — родная панель со списком меню; RPG-инвентарь на дисплеях, кнопки прицелом"
-authors: [tearsmilk]
-api-version: 2

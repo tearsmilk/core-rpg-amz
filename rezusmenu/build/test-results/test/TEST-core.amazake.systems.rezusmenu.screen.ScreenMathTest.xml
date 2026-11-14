@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="core.amazake.systems.rezusmenu.screen.ScreenMathTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-14T15:45:24.286Z" hostname="vm" time="0.062">
-  <properties/>
-  <testcase name="yawDifferenceWrapsAroundNorth()" classname="core.amazake.systems.rezusmenu.screen.ScreenMathTest" time="0.037"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
