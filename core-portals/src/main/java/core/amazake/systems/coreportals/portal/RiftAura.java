@@ -41,9 +41,13 @@ import org.joml.Vector3f;
  * переносит квад к глазам игрока, чтобы при сортировке прозрачного он рисовался последним. Яркость плавно идёт к
  * цели ({@link AuraMath#approach}); погасло — дисплей убирается.</p>
  *
- * <p><b>Затягивание.</b> Раз в {@link #PULL_STEP} тика стоящему на земле игроку с прямой видимостью до разлома
- * добавляется горизонтальный толчок к центру разлома (скорость по смещению за прошлый тик + толчок, к разлому не
- * больше {@code pull.max-speed}). Скорость ставится в потоке игрока ({@code runOnceForPlayer}).</p>
+ * <p><b>Затягивание</b> — мягкий дрейф, который не мешает ходить и прыгать. Раз в {@link #PULL_STEP} тика игроку,
+ * который спокойно стоит или идёт по земле ({@link AuraMath#grounded}: на земле {@link AuraMath#GROUND_TICKS} тика
+ * подряд без смещения по Y, клавиша прыжка не нажата, скорость по Y не вверх) и видит разлом, к его текущей
+ * горизонтальной скорости (смещение за тик × трение под ногами) <b>добавляется</b> маленький толчок к центру
+ * разлома ({@link AuraMath#pullVelocity}); к разлому не быстрее {@code pull.max-speed}. Вертикальная скорость не
+ * трогается: Y ставится тот, что у игрока сейчас, а в прыжке, в воздухе и сразу после приземления толчка нет
+ * вообще. Скорость ставится в потоке игрока ({@code runOnceForPlayer}), там же условия проверяются ещё раз.</p>
  *
  * <p>Потоки: всё, кроме {@code showEntity} и скорости, — в потоке региона разлома (его задача); игроки берутся
  * только принадлежащие этому региону. Если у игрока рядом несколько разломов, экран рисует один (первый занявший,
@@ -51,8 +55,8 @@ import org.joml.Vector3f;
  */
 final class RiftAura {
 
-    /** Раз во столько тиков — толчок затягивания. */
-    static final int PULL_STEP = 3;
+    /** Раз во столько тиков — толчок затягивания (маленький, но чаще — плавнее). */
+    static final int PULL_STEP = 2;
     /** Раз во столько тиков — проверка прямой видимости (луч). */
     static final int SIGHT_STEP = 4;
     /** Раз во столько тиков дисплей экрана догоняет глаза игрока (с интерполяцией). */
@@ -77,6 +81,8 @@ final class RiftAura {
         long sightTick = Long.MIN_VALUE;
         Vector lastPos;
         long lastPosTick = Long.MIN_VALUE;
+        /** Тиков подряд на земле без смещения по Y (после прыжка — 0). */
+        int groundTicks;
 
         Viewer(final Player player) {
             this.player = player;
@@ -247,7 +253,10 @@ final class RiftAura {
         this.screenOwners.remove(id, this);
     }
 
-    /** Толчок затягивания (раз в {@link #PULL_STEP} тика). Скорость ставится в потоке игрока. */
+    /**
+     * Затягивание: каждый тик — учёт смещения и «стоит ли на земле», раз в {@link #PULL_STEP} тика — толчок
+     * (добавка к горизонтальной скорости, Y не трогается). Скорость ставится в потоке игрока.
+     */
     private void pull(final Viewer v, final Player p, final long t, final double d, final double radius,
                       final double open, final Settings.Lapis l) {
         final Location at = p.getLocation();
@@ -256,33 +265,72 @@ final class RiftAura {
         final long prevTick = v.lastPosTick;
         v.lastPos = pos;
         v.lastPosTick = t;
-        if (t % PULL_STEP != 0 || prev == null || t - prevTick != 1) {
+        if (prev == null || t - prevTick != 1) {
+            v.groundTicks = 0;
+            return;
+        }
+        final double dy = pos.getY() - prev.getY();
+        final boolean onGround = onGround(p) && !p.isFlying() && !p.isGliding() && !p.isInsideVehicle()
+            && !p.isSwimming() && !p.isInWater();
+        v.groundTicks = onGround && Math.abs(dy) <= AuraMath.FLAT_DY ? Math.min(v.groundTicks + 1, 1000) : 0;
+        if (t % PULL_STEP != 0) {
             return;
         }
         final double nudge = AuraMath.pull(d, radius, open, v.sight, l.pullStrength());
-        if (nudge <= 0 || !onGround(p) || p.isFlying() || p.isGliding() || p.isInsideVehicle()) {
+        if (nudge <= 0) {
             return;
         }
-        final Vector est = pos.clone().subtract(prev);
-        est.setY(0);
-        if (est.length() > MAX_STEP) {
+        final double vy = p.getVelocity().getY();
+        if (!AuraMath.grounded(onGround, v.groundTicks, dy, vy, jumpKey(p))) {
             return;
         }
-        final Vector dir = new Vector(this.center.getX() - pos.getX(), 0, this.center.getZ() - pos.getZ());
-        if (dir.lengthSquared() < 0.04) {
+        final double dx = pos.getX() - prev.getX();
+        final double dz = pos.getZ() - prev.getZ();
+        if (dx * dx + dz * dz > MAX_STEP * MAX_STEP) {
+            return;   // телепорт, а не ходьба
+        }
+        final double dirX = this.center.getX() - pos.getX();
+        final double dirZ = this.center.getZ() - pos.getZ();
+        if (dirX * dirX + dirZ * dirZ < 0.04) {
             return;
         }
-        dir.normalize();
-        final double add = AuraMath.cap(est.dot(dir), nudge, l.pullMaxSpeed());
-        if (add <= 0) {
+        final double[] nv = AuraMath.pullVelocity(dx, vy, dz, this.friction(at), dirX, dirZ, nudge,
+            l.pullMaxSpeed(), true);
+        if (nv == null) {
             return;
         }
-        final Vector velocity = est.add(dir.multiply(add));
         this.context.runOnceForPlayer(p, () -> {
-            if (p.isOnline() && p.getWorld().equals(this.world) && onGround(p)) {
-                p.setVelocity(velocity);
+            if (!p.isOnline() || !p.getWorld().equals(this.world) || !onGround(p) || jumpKey(p)) {
+                return;
             }
+            // Y — тот, что у игрока сейчас (не наш): летит вверх — не трогаем вовсе.
+            final double nowY = p.getVelocity().getY();
+            if (nowY > 0) {
+                return;
+            }
+            p.setVelocity(new Vector(nv[0], nowY, nv[2]));
         });
+    }
+
+    /** Трение под ногами: скользкость блока × 0,91 (лёд скользит дольше). Поток региона игрока. */
+    @SuppressWarnings("deprecation")
+    private double friction(final Location at) {
+        try {
+            final float slip = this.world.getBlockAt(at.getBlockX(), (int) Math.floor(at.getY() - 0.5),
+                at.getBlockZ()).getType().getSlipperiness();
+            return slip > 0 ? slip * 0.91 : AuraMath.GROUND_FRICTION;
+        } catch (final RuntimeException e) {
+            return AuraMath.GROUND_FRICTION;
+        }
+    }
+
+    /** Нажата ли клавиша прыжка (ввод клиента, 1.21.2+). */
+    private static boolean jumpKey(final Player p) {
+        try {
+            return p.getCurrentInput().isJump();
+        } catch (final RuntimeException | LinkageError e) {
+            return false;
+        }
     }
 
     /** Прямая видимость от глаз до разлома: до середины ближней части или до центра. */

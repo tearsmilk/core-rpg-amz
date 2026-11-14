@@ -74,6 +74,71 @@ public final class AuraMath {
         return Math.max(0, Math.min(nudge, maxSpeed - toward));
     }
 
+    /** Скорость по Y у стоящего на земле (гравитация 0,08 × 0,98): «не прыгает и не падает». */
+    public static final double GROUND_VY = -0.0784;
+    /** Смещение по Y за тик больше этого — игрок не стоит (прыжок, шаг на ступеньку, падение). */
+    public static final double FLAT_DY = 0.01;
+    /** Столько тиков подряд на земле и без смещения по Y — только тогда толчок (после прыжка — пауза). */
+    public static final int GROUND_TICKS = 4;
+    /** Трение на земле по умолчанию: скользкость обычного блока 0,6 × 0,91. */
+    public static final double GROUND_FRICTION = 0.6 * 0.91;
+
+    /**
+     * Можно ли сейчас толкать: на земле (по клиенту), {@link #GROUND_TICKS} тиков подряд без смещения по Y,
+     * клавиша прыжка не нажата, скорость по Y не положительная. Иначе толчка нет совсем — прыжок не трогается.
+     *
+     * @param onGround    клиент говорит, что стоит на земле
+     * @param groundTicks сколько тиков подряд он стоит (на земле и |dy| ≤ {@link #FLAT_DY})
+     * @param dy          смещение по Y за последний тик
+     * @param vy          скорость по Y, какую знает сервер
+     * @param jumpKey     клавиша прыжка нажата (ввод клиента)
+     */
+    public static boolean grounded(final boolean onGround, final int groundTicks, final double dy, final double vy,
+                                   final boolean jumpKey) {
+        return onGround && !jumpKey && groundTicks >= GROUND_TICKS && Math.abs(dy) <= FLAT_DY && !(vy > 0);
+    }
+
+    /**
+     * Новая скорость игрока после толчка к разлому — или {@code null}, если толкать не нужно. Толчок
+     * <b>добавляется</b> к текущей горизонтальной скорости, вертикальная возвращается как есть:
+     * <ul>
+     *   <li>текущая горизонтальная скорость — смещение за прошлый тик × трение (столько у клиента после шага);</li>
+     *   <li>к ней — {@code nudge} по направлению к разлому, но не больше, чем позволяет {@link #cap}: скорость к
+     *       разлому (по смещению) не выше {@code maxSpeed}; от разлома игрок уходит свободно;</li>
+     *   <li>{@code vy} не меняется; не на земле ({@code grounded == false}) или {@code vy > 0} — {@code null}.</li>
+     * </ul>
+     *
+     * @param dx       смещение по X за прошлый тик, блоков
+     * @param vy       текущая скорость по Y (возвращается без изменений)
+     * @param dz       смещение по Z за прошлый тик, блоков
+     * @param friction трение под ногами (скользкость × 0,91)
+     * @param dirX     направление к разлому по X (горизонталь, нормируется здесь)
+     * @param dirZ     направление к разлому по Z
+     * @param nudge    толчок, блоков/тик ({@link #pull})
+     * @param maxSpeed скорость к разлому, выше которой не разгоняет, блоков/тик
+     * @param grounded {@link #grounded}
+     * @return {vx, vy, vz} или {@code null}
+     */
+    public static double[] pullVelocity(final double dx, final double vy, final double dz, final double friction,
+                                        final double dirX, final double dirZ, final double nudge,
+                                        final double maxSpeed, final boolean grounded) {
+        if (!grounded || vy > 0 || !(nudge > 0)) {
+            return null;
+        }
+        final double len = Math.sqrt(dirX * dirX + dirZ * dirZ);
+        if (!(len > 1e-6)) {
+            return null;
+        }
+        final double ux = dirX / len;
+        final double uz = dirZ / len;
+        final double add = cap(dx * ux + dz * uz, nudge, maxSpeed);
+        if (add <= 0) {
+            return null;
+        }
+        final double f = Math.max(0, Math.min(1, friction));
+        return new double[] {dx * f + ux * add, vy, dz * f + uz * add};
+    }
+
     /** Значение 0..1 → байт параметра маркера 0..{@link #MAX_BYTE}. */
     public static int toByte(final double value) {
         return (int) Math.round(clamp01(value) * MAX_BYTE);

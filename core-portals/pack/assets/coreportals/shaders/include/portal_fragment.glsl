@@ -8,6 +8,7 @@
 flat in int cpKind;
 flat in float cpParam;
 in vec2 cpLocal;
+in vec3 cpView;
 
 // Seconds, 0..1200 (GameTime wraps every 24000 ticks).
 float cp_time() {
@@ -296,15 +297,46 @@ vec4 cp_shard(vec2 uv, float t, float shade) {
 
 // ================================ lapis rift (kinds 17..20, markers G 80..83) ================================
 // cpParam is the marker's blue channel / 250 (0..1). Quad sizes match RiftVisuals: the rift quad is the oval times
-// (CP_RF_MX, CP_RF_MY), the haze quad the oval times (CP_HZ_MX, CP_HZ_MY). Patterns are drawn in blocks for the
-// default 5 x 7 oval (CP_RF_A, CP_RF_B); another size from config.yml simply stretches them.
+// (CP_RF_MX, CP_RF_MY), the haze quad the oval times (CP_HZ_MX, CP_HZ_MY).
+//
+// Size without stretching: the server sets the oval from config.yml (lapis.portal.width / height) only through the
+// display scale, and every marker channel is taken. So the shader measures the quad itself: cpView (view-space
+// position, blocks) and cpLocal (0..1 inside the quad) are both linear on the quad's plane, pos = P0 + u*U + v*V,
+// hence their screen derivatives obey dPos/dx = U*du/dx + V*dv/dx (same for y) exactly, with no curvature error.
+// Solving that 2x2 system gives U and V, and |U|, |V| are the quad's width and height in blocks — the same value in
+// every pixel, at any distance or angle. Patterns are then drawn in blocks / oval units of the real size.
+// Fallback (quad seen exactly edge-on, derivatives degenerate): the default 9 x 13 oval (CP_RF_A0, CP_RF_B0).
 
 const float CP_RF_MX = 1.3;      // RiftVisuals.RIFT_MX
 const float CP_RF_MY = 1.2;      // RiftVisuals.RIFT_MY
 const float CP_HZ_MX = 1.75;     // RiftVisuals.HAZE_MX
 const float CP_HZ_MY = 1.45;     // RiftVisuals.HAZE_MY
-const float CP_RF_A = 2.5;       // oval half-width, blocks (lapis.portal.width / 2 by default)
-const float CP_RF_B = 3.5;       // oval half-height, blocks
+const float CP_RF_A0 = 4.5;      // default oval half-width, blocks (lapis.portal.width / 2)
+const float CP_RF_B0 = 6.5;      // default oval half-height, blocks
+const float CP_RF_REF = 3.5;     // half-height the line widths were tuned for (the first 5 x 7 rift)
+
+// Size of the current quad in blocks (width, height), from screen derivatives; fallback when degenerate.
+// Must be called in uniform control flow per primitive: callers branch only on flat inputs (cpKind).
+vec2 cp_quad_size(vec2 fallback) {
+    vec3 px = dFdx(cpView);
+    vec3 py = dFdy(cpView);
+    vec2 ux = dFdx(cpLocal);
+    vec2 uy = dFdy(cpLocal);
+    float det = ux.x * uy.y - uy.x * ux.y;
+    // Degenerate when the two screen directions map to (almost) the same quad direction.
+    if (abs(det) <= 1e-4 * length(ux) * length(uy) || abs(det) < 1e-20) {
+        return fallback;
+    }
+    vec3 U = (px * uy.y - py * ux.y) / det;
+    vec3 V = (py * ux.x - px * uy.x) / det;
+    vec2 s = vec2(length(U), length(V));
+    // Sanity: config allows 1..16 blocks; anything far outside is a numerical accident.
+    if (!(s.x > 0.3 && s.x < 80.0 && s.y > 0.3 && s.y < 80.0)) {
+        return fallback;
+    }
+    return s;
+}
+
 const float CP_P_CRACK = 0.30;   // RiftTimeline.P_CRACK: the crack line has grown to full length
 const float CP_P_SPLIT = 0.45;   // RiftTimeline.P_SPLIT: the line has split, the edges start tearing apart
 
@@ -345,7 +377,11 @@ float cp_rift_inner(vec2 o, float t) {
 
 // ---- 17: the rift. p = tear (RiftTimeline.tear): a jagged crack appears and grows (0 .. 0.3), splits (.. 0.45),
 //      and its edges tear apart into the round portal (.. 1). Closing runs the same backwards.
-vec4 cp_rift(vec2 uv, float t, float p) {
+//      ab = oval semi-axes in blocks (real size of this rift, see cp_quad_size).
+vec4 cp_rift(vec2 uv, float t, float p, vec2 ab) {
+    float CP_RF_A = ab.x;
+    float CP_RF_B = ab.y;
+    float lw = clamp(sqrt(CP_RF_B / CP_RF_REF), 0.6, 2.2);                 // line widths grow gently with size
     vec2 q = vec2((uv.x - 0.5) * 2.0 * CP_RF_MX * CP_RF_A, (0.5 - uv.y) * 2.0 * CP_RF_MY * CP_RF_B);   // blocks
     vec2 o = q / vec2(CP_RF_A, CP_RF_B);                                  // oval units
     float len = clamp(p / CP_P_CRACK, 0.0, 1.0);                          // crack length, share of the half-height
@@ -355,7 +391,7 @@ vec4 cp_rift(vec2 uv, float t, float p) {
     float ease = open * open * (3.0 - 2.0 * open);
 
     // Centre line: jagged while it is a crack, straightening as the edges tear into an oval.
-    float cx = 0.42 * cp_jag(o.y, 1.3) * (1.0 - ease);
+    float cx = 0.42 * lw * cp_jag(o.y, 1.3) * (1.0 - ease);
     float side = q.x - cx;
     // Each edge is ragged on its own and crawls slowly; the round rim keeps a finer raggedness.
     float rag = side < 0.0 ? cp_noise(vec2(o.y * 7.0, 2.0 + t * 0.12)) : cp_noise(vec2(o.y * 7.0, 8.0 - t * 0.12));
@@ -369,27 +405,27 @@ vec4 cp_rift(vec2 uv, float t, float p) {
     float flick = 0.78 + 0.22 * cp_noise(vec2(t * 7.0, o.y * 6.0));
 
     // Interior (where the edges have parted).
-    float inside = A > 0.0 ? smoothstep(0.015, -0.035, sd) : 0.0;
-    float lum = cp_rift_inner(o, t) + 0.32 * exp(sd / 0.22) + 0.2 * (1.0 - ease);
+    float inside = A > 0.0 ? smoothstep(0.015 * lw, -0.035 * lw, sd) : 0.0;
+    float lum = cp_rift_inner(o, t) + 0.32 * exp(sd / (0.22 * lw)) + 0.2 * (1.0 - ease);
     vec3 inner = cp_azure(lum);
 
     // Bright line: the crack itself, then the two torn edges, then the icy rim of the oval.
     float dist = abs(sd);
-    float line = (exp(-dist / 0.035) + 0.5 * exp(-dist / 0.18)) * reach * flick;
+    float line = (exp(-dist / (0.035 * lw)) + 0.5 * exp(-dist / (0.18 * lw))) * reach * flick;
     line *= mix(1.25, 0.85, ease);
-    line += 0.55 * exp(-dist / 0.1) * ease * flick;                     // the icy glowing rim of the open rift
+    line += 0.55 * exp(-dist / (0.1 * lw)) * ease * flick;                     // the icy glowing rim of the open rift
     // Shattered space around the tear while it splits and tears (voronoi cell borders near the outline).
-    vec2 v = cp_voronoi(q * 1.5 + 5.0);
+    vec2 v = cp_voronoi(q * (1.5 / lw) + 5.0);
     float cell = 1.0 - smoothstep(0.0, 0.045, v.y - v.x);
     float zone = smoothstep(0.16, 0.36, p) * (1.0 - smoothstep(0.7, 0.92, p));
-    float far = 0.3 + 1.7 * smoothstep(0.2, 0.6, p);                     // blocks from the outline
+    float far = (0.3 + 1.7 * smoothstep(0.2, 0.6, p)) * lw;              // blocks from the outline
     float shatter = cell * zone * smoothstep(far, 0.0, max(sd, 0.0)) * step(0.0, sd)
-        * smoothstep(0.4, 0.62, cp_noise(q * 0.8 + 3.3)) * reach;
+        * smoothstep(0.4, 0.62, cp_noise(q * (0.8 / lw) + 3.3)) * reach;
 
     // Soft halo outside the outline and long light streaks radiating from the open rim.
     vec2 cs = normalize(o + vec2(1e-5));
-    float halo = exp(-max(sd, 0.0) / 0.4) * (0.35 * gap + 0.65 * ease) * step(0.0, sd);
-    float rays = pow(cp_noise(cs * 3.5 + vec2(t * 0.15, -t * 0.1)), 5.0) * exp(-max(sd, 0.0) / 0.9) * ease
+    float halo = exp(-max(sd, 0.0) / (0.4 * lw)) * (0.35 * gap + 0.65 * ease) * step(0.0, sd);
+    float rays = pow(cp_noise(cs * 3.5 + vec2(t * 0.15, -t * 0.1)), 5.0) * exp(-max(sd, 0.0) / (0.9 * lw)) * ease
         * step(0.0, sd) * 1.4;
     // Nothing reaches the quad border.
     float border = smoothstep(0.0, 0.09, min(uv.x, 1.0 - uv.x)) * smoothstep(0.0, 0.07, min(uv.y, 1.0 - uv.y));
@@ -408,8 +444,11 @@ vec4 cp_rift(vec2 uv, float t, float p) {
 }
 
 // ---- 18: haze — thin blue mist and drifting motes around the rift; k = strength (RiftTimeline.openness).
-vec4 cp_haze(vec2 uv, float t, float k) {
+//      ab = oval semi-axes in blocks; the ring follows the oval, the motes are round (laid out in blocks).
+vec4 cp_haze(vec2 uv, float t, float k, vec2 ab) {
     vec2 o = vec2((uv.x - 0.5) * 2.0 * CP_HZ_MX, (0.5 - uv.y) * 2.0 * CP_HZ_MY);   // oval units
+    vec2 qb = o * ab;                                                                // blocks
+    float lw = clamp(sqrt(ab.y / CP_RF_REF), 0.6, 2.2);
     float r = length(o);
     vec2 w = cp_rot(o, t * 0.06);
     vec2 warp = vec2(cp_fbm(w * 1.2 + vec2(t * 0.03, 0.0)), cp_fbm(w * 1.2 + vec2(5.1, -t * 0.03)));
@@ -417,7 +456,7 @@ vec4 cp_haze(vec2 uv, float t, float k) {
     float band = smoothstep(0.85, 1.08, r) * smoothstep(1.65, 1.15, r);
     float glow = exp(-pow((r - 1.03) / 0.22, 2.0));
 
-    vec2 sp = w * 6.0 + vec2(0.0, t * 0.3);
+    vec2 sp = cp_rot(qb, t * 0.06) * (2.0 / lw) + vec2(0.0, t * 0.3);              // ~2 cells per block
     vec2 g = floor(sp);
     vec2 f = fract(sp) - 0.5;
     float rnd = cp_hash(g + 2.0);
@@ -492,8 +531,14 @@ vec4 cp_fragment(int kind, vec2 local) {
     if (kind == 8) return cp_nebula(uv, t);
     if (kind == 9) return cp_spark(uv, t);
     if (kind == 10) return cp_shard(uv, t, cpParam);
-    if (kind == 17) return cp_rift(uv, t, cpParam);
-    if (kind == 18) return cp_haze(uv, t, cpParam);
+    if (kind == 17) {
+        vec2 sz = cp_quad_size(vec2(2.0 * CP_RF_MX * CP_RF_A0, 2.0 * CP_RF_MY * CP_RF_B0));
+        return cp_rift(uv, t, cpParam, sz / vec2(2.0 * CP_RF_MX, 2.0 * CP_RF_MY));
+    }
+    if (kind == 18) {
+        vec2 sz = cp_quad_size(vec2(2.0 * CP_HZ_MX * CP_RF_A0, 2.0 * CP_HZ_MY * CP_RF_B0));
+        return cp_haze(uv, t, cpParam, sz / vec2(2.0 * CP_HZ_MX, 2.0 * CP_HZ_MY));
+    }
     if (kind == 19) return cp_screen_glow(uv, t, cpParam);
     if (kind == 20) return cp_screen_cracks(uv, t, cpParam);
     return vec4(1.0, 0.0, 1.0, 1.0);                          // reserved marker without a painter: magenta

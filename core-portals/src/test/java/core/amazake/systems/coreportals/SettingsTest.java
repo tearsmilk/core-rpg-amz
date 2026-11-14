@@ -217,11 +217,12 @@ class SettingsTest {
         assertEquals(800, s.lifetimeFor(PortalType.LAPIS));
         assertEquals(4, s.distanceFor(PortalType.LAPIS));
         assertEquals(List.of("warp dungeon2"), s.teleportFor(PortalType.LAPIS).commands());
-        assertEquals(5.0, s.lapis().size().width());
-        assertEquals(7.0, s.lapis().size().height());
-        assertEquals(3.6, s.lapis().size().centerUp());
-        assertEquals(10.0, s.lapis().radius());
-        assertEquals(0.05, s.lapis().pullStrength());
+        assertEquals(9.0, s.lapis().size().width());
+        assertEquals(13.0, s.lapis().size().height());
+        assertEquals(6.6, s.lapis().size().centerUp());
+        assertEquals(16.0, s.lapis().radius());
+        assertEquals(0.03, s.lapis().pullStrength());
+        assertEquals(0.25, s.lapis().pullMaxSpeed());
     }
 
     @Test
@@ -278,11 +279,11 @@ class SettingsTest {
                 strength: 2
                 max-speed: 0
             """, warnings);
-        assertEquals(5.0, s.lapis().size().width());
+        assertEquals(9.0, s.lapis().size().width());
         assertEquals(3.6, s.lapis().size().centerUp(), 1e-9);   // уходит в пол больше 0,5 — height / 2 + 0,1
         assertEquals(3, s.lapis().distance());
-        assertEquals(10.0, s.lapis().radius());
-        assertEquals(0.05, s.lapis().pullStrength());
+        assertEquals(16.0, s.lapis().radius());
+        assertEquals(0.03, s.lapis().pullStrength());
         assertEquals(0.25, s.lapis().pullMaxSpeed());
         assertEquals(6, warnings.size(), warnings.toString());
     }

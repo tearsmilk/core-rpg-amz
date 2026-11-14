@@ -17,6 +17,9 @@ import org.bukkit.entity.Player;
 /**
  * Ванильные частицы и звуки лазуритового разлома: только синие и белые (DUST, DUST_COLOR_TRANSITION, ELECTRIC_SPARK
  * на трещине, END_ROD — светлые штрихи, которые затягивает внутрь, синяя вспышка FLASH). Поток региона разлома.
+ *
+ * <p>Нарисовано под эталонный 5 × 7; для другого размера места частиц идут по краю настоящего овала, а их число,
+ * разброс облаков и громкость (дальность слышимости) умножаются на {@link RiftPlacement.Size#scale()}.</p>
  */
 final class RiftEffects {
 
@@ -30,11 +33,19 @@ final class RiftEffects {
     private final World world;
     private final Spot spot;
     private final RiftPlacement.Size size;
+    /** Во сколько раз разлом больше эталонного 5 × 7 (не меньше 1 — частиц не меньше, чем было). */
+    private final double k;
 
     RiftEffects(final World world, final Spot spot, final RiftPlacement.Size size) {
         this.world = world;
         this.spot = spot;
         this.size = size;
+        this.k = Math.max(1, size.scale());
+    }
+
+    /** Число частиц, рассчитанное на 5 × 7, — для этого размера. */
+    private int n(final int base) {
+        return (int) Math.round(base * this.k);
     }
 
     void tick(final RiftTimeline tl, final long t, final Settings s) {
@@ -113,7 +124,7 @@ final class RiftEffects {
             case CRACK, SPLIT -> {
                 // Искры по трещине (её длина — tear / P_CRACK от полувысоты).
                 final double len = Math.min(1, tear / RiftTimeline.P_CRACK) * this.size.halfHeight();
-                for (int i = 0; i < 3; i++) {
+                for (int i = 0; i < this.n(3); i++) {
                     final double y = r.nextDouble(-len, len + 1e-6);
                     this.spawn(Particle.ELECTRIC_SPARK, this.local(r.nextDouble(-0.08, 0.08), y, 0), 1, 0.02, 0.02,
                         0.02, 0.02, null);
@@ -129,16 +140,16 @@ final class RiftEffects {
             }
             case TEAR -> {
                 if (t == RiftTimeline.CRACK + RiftTimeline.SPLIT) {
-                    this.spawn(Particle.DUST_COLOR_TRANSITION, this.local(0, 0, 0), 30, 0.2,
+                    this.spawn(Particle.DUST_COLOR_TRANSITION, this.local(0, 0, 0), this.n(30), 0.2 * this.k,
                         this.size.halfHeight() * 0.6, 0.1, 0, NAVY_TO_ICE);
                 }
                 // Пыль бежит по расходящимся краям, светлые штрихи летят от края наружу.
-                for (int i = 0; i < 6; i++) {
+                for (int i = 0; i < this.n(6); i++) {
                     final double a = r.nextDouble(Math.PI * 2);
                     this.spawn(Particle.DUST, this.tearRim(a, open, r.nextDouble(-0.1, 0.1)), 1, 0.03, 0.03, 0.03, 0,
                         i % 2 == 0 ? BLUE : ICE);
                 }
-                if (t % 2 == 0) {
+                for (int i = 0; t % 2 == 0 && i < this.n(1); i++) {
                     final double a = r.nextDouble(Math.PI * 2);
                     final double[] p = this.tearRim(a, open, 0);
                     final double[] o = this.rimDir(a);
@@ -146,11 +157,11 @@ final class RiftEffects {
                 }
             }
             case IDLE -> {
-                for (int i = 0; i < 2; i++) {
+                for (int i = 0; i < this.n(2); i++) {
                     this.spawn(Particle.DUST, this.rim(r.nextDouble(Math.PI * 2), 1.0 + r.nextDouble(-0.04, 0.06),
                         r.nextDouble(-0.12, 0.12)), 1, 0, 0, 0, 0, i == 0 ? BLUE : ICE);
                 }
-                if (t % 3 == 0) {
+                for (int i = 0; t % 3 == 0 && i < this.n(1); i++) {
                     // Светлые штрихи затягивает внутрь, к чёрной середине.
                     final double a = r.nextDouble(Math.PI * 2);
                     final double k = 1.25 + r.nextDouble(0.6);
@@ -163,28 +174,28 @@ final class RiftEffects {
                         1.1 + r.nextDouble(0.5), r.nextDouble(-0.4, 0.2)), 1, 0.05, 0.05, 0.05, 0, NAVY_TO_ICE);
                 }
                 if (t % 9 == 0) {
-                    this.spawn(Particle.DUST, this.local(r.nextDouble(-0.4, 0.4), r.nextDouble(-0.6, 0.6), 0), 1, 0.1,
-                        0.1, 0.05, 0, DEEP);
+                    this.spawn(Particle.DUST, this.local(r.nextDouble(-0.4, 0.4) * this.k,
+                        r.nextDouble(-0.6, 0.6) * this.k, 0), this.n(1), 0.1, 0.1, 0.05, 0, DEEP);
                 }
             }
             case SEAL -> {
                 final long d = t - tl.closeStart();
                 if (d < RiftTimeline.SEAL) {
-                    for (int i = 0; i < 5; i++) {
+                    for (int i = 0; i < this.n(5); i++) {
                         this.spawn(Particle.DUST, this.tearRim(r.nextDouble(Math.PI * 2), Math.max(0.03, open), 0), 1, 0.02,
                             0.02, 0.02, 0, i % 2 == 0 ? BLUE : ICE);
                     }
                 } else {
                     final double len = Math.min(1, tear / RiftTimeline.P_CRACK) * this.size.halfHeight();
-                    this.spawn(Particle.ELECTRIC_SPARK, this.local(0, r.nextDouble(-len, len + 1e-6), 0), 2, 0.03, 0.05,
+                    this.spawn(Particle.ELECTRIC_SPARK, this.local(0, r.nextDouble(-len, len + 1e-6), 0), this.n(2), 0.03, 0.05,
                         0.03, 0.02, null);
                 }
                 if (d == RiftTimeline.CLOSING - 8) {
                     final double[] c = this.local(0, 0, 0);
                     this.flash(c);
-                    this.spawn(Particle.DUST, c, 50, 0.4, this.size.halfHeight() * 0.4, 0.3, 0, BLUE);
-                    this.spawn(Particle.DUST, c, 25, 0.6, this.size.halfHeight() * 0.5, 0.4, 0, ICE);
-                    this.spawn(Particle.END_ROD, c, 20, 0.2, 0.6, 0.2, 0.12, null);
+                    this.spawn(Particle.DUST, c, this.n(50), 0.4 * this.k, this.size.halfHeight() * 0.4, 0.3, 0, BLUE);
+                    this.spawn(Particle.DUST, c, this.n(25), 0.6 * this.k, this.size.halfHeight() * 0.5, 0.4, 0, ICE);
+                    this.spawn(Particle.END_ROD, c, this.n(20), 0.2 * this.k, 0.6 * this.k, 0.2, 0.12, null);
                 }
             }
             default -> {
@@ -249,6 +260,8 @@ final class RiftEffects {
 
     private void play(final Sound sound, final float volume, final float pitch) {
         final double[] p = this.local(0, 0, 0);
-        this.world.playSound(new Location(this.world, p[0], p[1], p[2]), sound, SoundCategory.BLOCKS, volume, pitch);
+        // Громкость больше 1 только увеличивает дальность (16 блоков × громкость): огромный разлом слышно дальше.
+        this.world.playSound(new Location(this.world, p[0], p[1], p[2]), sound, SoundCategory.BLOCKS,
+            (float) (volume * this.k), pitch);
     }
 }

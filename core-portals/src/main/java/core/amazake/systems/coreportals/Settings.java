@@ -64,8 +64,8 @@ public record Settings(String prefix, String itemName, List<String> itemLore, St
             "<!i><gradient:#0a1f8f:#1a4cff:#9fe8ff:#1a4cff:#0a1f8f>Лазуритовый портал</gradient>",
             List.of("<!i><gray>В синей глубине камня спит разлом.",
                 "<!i><gray>ПКМ — разорвать пространство перед собой."),
-            "", 600L, 3, RiftPlacement.Size.DEFAULT, 10.0, true, true,
-            0.05, 0.25, null);
+            "", 600L, 3, RiftPlacement.Size.DEFAULT, 16.0, true, true,
+            0.03, 0.25, null);
 
         public Lapis {
             itemLore = List.copyOf(itemLore);
@@ -134,7 +134,7 @@ public record Settings(String prefix, String itemName, List<String> itemLore, St
         public static final Messages DEFAULTS = new Messages(
             "<red>Здесь не открыть портал: нужен свободный проём 2×4 на твёрдой земле в 2–3 блоках перед вами.",
             "<red>Здесь не открыть изумрудный портал: нужно свободное место 3×4 над твёрдой землёй в 2–3 блоках перед вами.",
-            "<red>Здесь не разорвать пространство: нужно свободное место <width>×<height> над твёрдой землёй в <distance> блоках перед вами.",
+            "<red>Здесь не разорвать пространство: нужно почти свободное место <width>×<height> над твёрдой землёй в <distance> блоках перед вами.",
             "<red>Портал ещё не готов: подождите <yellow><seconds></yellow> с.",
             "<red>У вас уже открыт портал.",
             "<green>Выдано порталов: <white><amount></white> игроку <white><player></white>.",
@@ -232,7 +232,7 @@ public record Settings(String prefix, String itemName, List<String> itemLore, St
         final var ds = d.size();
         final double width = real(c, "lapis.portal.width", ds.width(), 1, 16, warn);
         final double height = real(c, "lapis.portal.height", ds.height(), 1, 16, warn);
-        // Центр по умолчанию: низ овала на 0,1 над землёй (как 5 × 7 с центром 3,6).
+        // Центр по умолчанию: низ овала на 0,1 над землёй (как 9 × 13 с центром 6,6).
         final double defCenter = c.contains("lapis.portal.height") ? height / 2 + 0.1 : ds.centerUp();
         double center = real(c, "lapis.portal.center-up", defCenter, 0.5, 24, warn);
         if (center < height / 2 - 0.5) {

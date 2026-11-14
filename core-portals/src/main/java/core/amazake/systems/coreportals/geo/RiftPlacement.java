@@ -8,8 +8,21 @@ import java.util.Optional;
  *
  * <p>Место: ряд блоков на {@code distance} шагов впереди (взгляд округлён до стороны света), нечётное число столбцов
  * по ширине — средний напротив игрока (центр разлома — середина среднего блока), {@link #columnsPerSide} столбцов в
- * каждую сторону, {@link #clearHeight} блоков в высоту. Под средним столбцом — твёрдая опора, все блоки места —
- * свободны (проходимы, не лава). Уровень земли ищется как у «Портала»: 0, −1, +1, −2, +2… до {@code search}.</p>
+ * каждую сторону, {@link #clearHeight} блоков в высоту. Уровень земли ищется как у «Портала»: 0, −1, +1, −2, +2… до
+ * {@code search}.</p>
+ *
+ * <p>Правило места ({@link #fits}) — разлом огромный, поэтому «всё свободно» не требуется:</p>
+ * <ul>
+ *   <li>под средним столбцом — твёрдая опора;</li>
+ *   <li>проход — {@link #ENTRY_BLOCKS} нижних блока среднего столбца и соседних с ним (3 × 2; у разлома в 1 столбец
+ *       — 1 × 2) — свободен (проходим, не лава): в разлом можно войти, и он не «проваливается» в яму;</li>
+ *   <li>в овале (блоки, чей центр внутри овала разлома; углы описанного прямоугольника не считаются) занято не
+ *       больше {@link #MAX_BLOCKED} блоков;</li>
+ *   <li>в середине овала (центр блока внутри овала с полуосями × {@link #CORE}) занято не больше
+ *       {@link #MAX_CORE_BLOCKED}.</li>
+ * </ul>
+ * <p>«Занято» — непроходимый блок или лава; трава, цветы, снег-слой, воздух не мешают (см. {@link BlockQuery}).
+ * Блоки не меняются: разлом — только дисплеи, торчащие в нём блоки просто видны сквозь него.</p>
  *
  * <p>Вход: хитбокс игрока задевает овал входа (полуоси {@link #ENTRY_SCALE} от полуосей разлома) в слое
  * ±{@link #ENTRY_HALF_DEPTH} по нормали.</p>
@@ -22,6 +35,14 @@ public final class RiftPlacement {
     public static final double ENTRY_SCALE = 0.92;
     /** Допуск: край разлома может заходить в соседний блок на столько, не требуя его свободным. */
     static final double TOLERANCE = 0.2;
+    /** Свободных блоков прохода от земли (в среднем столбце и по одному соседнему с каждой стороны). */
+    public static final int ENTRY_BLOCKS = 2;
+    /** Доля занятых блоков в овале, которую ещё терпим. */
+    public static final double MAX_BLOCKED = 0.2;
+    /** Середина овала — доля полуосей. */
+    public static final double CORE = 0.5;
+    /** Доля занятых блоков в середине овала, которую ещё терпим. */
+    public static final double MAX_CORE_BLOCKED = 0.1;
 
     /**
      * Размер разлома.
@@ -32,8 +53,11 @@ public final class RiftPlacement {
      */
     public record Size(double width, double height, double centerUp) {
 
-        /** По умолчанию: 5 × 7, центр на 3,6 (низ — на 0,1 над землёй). */
-        public static final Size DEFAULT = new Size(5.0, 7.0, 3.6);
+        /** По умолчанию: огромный 9 × 13, центр на 6,6 (низ — на 0,1 над землёй, верх — 13,1). */
+        public static final Size DEFAULT = new Size(9.0, 13.0, 6.6);
+
+        /** Размер, под который нарисованы частицы и звуки (старый 5 × 7). */
+        public static final Size REFERENCE = new Size(5.0, 7.0, 3.6);
 
         public double halfWidth() {
             return this.width / 2;
@@ -51,6 +75,11 @@ public final class RiftPlacement {
         /** Верх овала над землёй. */
         public double top() {
             return this.centerUp + this.height / 2;
+        }
+
+        /** Во сколько раз разлом больше эталонного 5 × 7 (среднее по осям): им масштабируются частицы и звук. */
+        public double scale() {
+            return (this.width / REFERENCE.width + this.height / REFERENCE.height) / 2;
         }
     }
 
@@ -109,25 +138,72 @@ public final class RiftPlacement {
         final int y0 = (int) Math.floor(py + 1.0e-6);
         for (int i = 0; i <= search * 2; i++) {
             final int y = y0 + Placement.order(i);
-            if (fits(blocks, cols, side, height, y)) {
+            if (fits(blocks, cols, side, height, y, size)) {
                 return Optional.of(new Spot(cx, y, cz, f, cols));
             }
         }
         return Optional.empty();
     }
 
-    private static boolean fits(final BlockQuery q, final int[] cols, final int side, final int height, final int y) {
-        if (!q.solid(cols[2 * side], y - 1, cols[2 * side + 1])) {
+    /** Подсчёт блоков места на одном уровне земли (для правила и тестов). */
+    record Count(int oval, int blocked, int core, int coreBlocked) {
+
+        boolean ok() {
+            return this.blocked <= Math.floor(this.oval * MAX_BLOCKED + 1e-9)
+                && this.coreBlocked <= Math.floor(this.core * MAX_CORE_BLOCKED + 1e-9);
+        }
+    }
+
+    /** Помещается ли разлом на уровне земли {@code y}: правило — в описании класса. */
+    static boolean fits(final BlockQuery q, final int[] cols, final int side, final int height, final int y,
+                        final Size size) {
+        final int mx = cols[2 * side];
+        final int mz = cols[2 * side + 1];
+        if (!q.solid(mx, y - 1, mz)) {
             return false;
         }
-        for (int i = 0; i < cols.length / 2; i++) {
-            for (int h = 0; h < height; h++) {
+        final int entrySide = Math.min(1, side);
+        for (int i = side - entrySide; i <= side + entrySide; i++) {
+            for (int h = 0; h < Math.min(ENTRY_BLOCKS, height); h++) {
                 if (!q.passable(cols[2 * i], y + h, cols[2 * i + 1])) {
                     return false;
                 }
             }
         }
-        return true;
+        return count(q, cols, side, height, y, size).ok();
+    }
+
+    static Count count(final BlockQuery q, final int[] cols, final int side, final int height, final int y,
+                       final Size size) {
+        // Средний столбец всегда в овале, даже у разлома уже блока.
+        final double a = Math.max(size.halfWidth(), 0.5);
+        final double b = Math.max(size.halfHeight(), 0.5);
+        int oval = 0;
+        int blocked = 0;
+        int core = 0;
+        int coreBlocked = 0;
+        for (int i = 0; i < cols.length / 2; i++) {
+            final double u = (i - side) / a;
+            for (int h = 0; h < height; h++) {
+                final double v = (h + 0.5 - size.centerUp()) / b;
+                final double e = u * u + v * v;
+                if (e > 1) {
+                    continue;
+                }
+                final boolean free = q.passable(cols[2 * i], y + h, cols[2 * i + 1]);
+                oval++;
+                if (!free) {
+                    blocked++;
+                }
+                if (e <= CORE * CORE) {
+                    core++;
+                    if (!free) {
+                        coreBlocked++;
+                    }
+                }
+            }
+        }
+        return new Count(oval, blocked, core, coreBlocked);
     }
 
     /**

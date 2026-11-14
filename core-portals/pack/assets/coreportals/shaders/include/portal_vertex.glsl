@@ -13,6 +13,8 @@
 //   G 81 haze around the rift (B = strength)
 //   G 82 SCREEN glow overlay (B = intensity)   G 83 SCREEN crack overlay (B = opening progress)
 //   G 84..89 reserved (any B), 90..95 reserved (B = 0)
+// Rift and haze (80, 81) also pass their view-space position (cpView): the fragment shader recovers the quad's real
+// size in blocks from it (cp_quad_size), so any lapis.portal.width / height is drawn without stretching.
 // Screen kinds (82, 83) ignore where the display is: their quad is placed over the whole screen in clip space,
 // just behind the near plane (CP_SCREEN_DEPTH), so only the player the display is shown to sees it, at any
 // resolution, GUI scale or aspect ratio.
@@ -23,6 +25,7 @@
 flat out int cpKind;   // 0 = not a portal vertex, otherwise G - 63 (1..32)
 flat out float cpParam; // blue channel / 250, 0..1 (only meaningful for G 70..89)
 out vec2 cpLocal;      // position inside the quad: x 0..1 left to right, y 0..1 top to bottom
+out vec3 cpView;       // view-space position, blocks (only for the rift kinds 17, 18; otherwise 0)
 
 int cp_kind(vec4 color) {
     vec3 c = color.rgb * 255.0;
@@ -56,6 +59,13 @@ bool cp_vertex(vec4 color, int vertexId) {
     cpKind = cp_kind(color);
     cpParam = clamp(color.b * (255.0 / 250.0), 0.0, 1.0);
     cpLocal = cp_corner(vertexId);
+    cpView = vec3(0.0);
+    if (cpKind == 17 || cpKind == 18) {
+        // gl_Position = ProjMat * ModelViewMat * Position is already set; Position itself is declared after this
+        // include, so go back from clip space. View space is a rigid copy of the world: lengths are in blocks.
+        vec4 v = inverse(ProjMat) * gl_Position;
+        cpView = v.xyz / v.w;
+    }
     if (cpKind == 19 || cpKind == 20) {
         // Depth (and w) of a point straight ahead at CP_SCREEN_DEPTH: correct for any projection, view bobbing too.
         vec4 z = ProjMat * vec4(0.0, 0.0, -CP_SCREEN_DEPTH, 1.0);
