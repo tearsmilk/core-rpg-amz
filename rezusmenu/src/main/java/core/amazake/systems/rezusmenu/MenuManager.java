@@ -59,6 +59,13 @@ public final class MenuManager implements Listener {
     private volatile boolean shuttingDown;
     private final Map<UUID, Session> sessions = new ConcurrentHashMap<>();
     private final SkinService skins;
+    /** Клетки неба под открытые меню: два игрока в меню никогда не стоят ближе {@link SkySpots#CELL} блоков. */
+    private final SkySpots spots = new SkySpots();
+
+    private long claimSpot(final Player player) {
+        final org.bukkit.Location l = player.getLocation();
+        return this.spots.claim(player.getUniqueId(), l.getWorld().getName(), l.getX(), l.getZ());
+    }
 
     public MenuManager(final SystemContext context, final Supplier<Settings> settings, final PlayerStore store) {
         this.context = context;
@@ -94,8 +101,12 @@ public final class MenuManager implements Listener {
 
     private void start(final Player player, final Screen.Calibration cal, final boolean calibrate) {
         final Settings s = this.settings.get();
+        final long cell = this.claimSpot(player);
         final Screen screen = Screen.open(this.context.plugin(), player, cal, s.sensitivity(), s.glyphOffsetX(),
-            s.glyphOffsetY());
+            s.glyphOffsetY(), SkySpots.centerX(cell), SkySpots.centerZ(cell));
+        if (screen == null) {
+            this.spots.release(player.getUniqueId());
+        }
         if (screen == null) {
             player.sendMessage(Text.mm(Text.prefix() + "<red>Сейчас меню не открыть: слезьте с транспорта.</red>"));
             this.showHud(player);
@@ -159,6 +170,7 @@ public final class MenuManager implements Listener {
     /** {@code keepHud} — сразу откроется другое меню: HUD не возвращать, чтобы не мигал. */
     private void close(final Player player, final boolean keepHud) {
         final Session session = this.sessions.remove(player.getUniqueId());
+        this.spots.release(player.getUniqueId());
         if (session != null) {
             if (session.task != null) {
                 session.task.cancel();

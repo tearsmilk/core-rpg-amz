@@ -185,7 +185,10 @@ public final class Screen {
     private static final Display.Brightness ITEM_LIGHT = new Display.Brightness(15, 14);
     private static final Display.Brightness TEXT_LIGHT = new Display.Brightness(15, 15);
     /** Маркерный цвет шейдерного курсора (254, 0, 254) и модель предмета с тинтом custom_model_data. */
-    private static final Color MARKER = Color.fromRGB(254, 0, 254);
+    /** Маркер шейдерного курсора: R = B = 254, G = размер стрелки на экране × 1000 (единицы камеры). */
+    private static final int MARKER_RB = 254;
+    /** Взгляд круче этого (градусы) — камера мягко возвращается к горизонту, курсор остаётся на месте. */
+    private static final float PITCH_LIMIT = 70f;
     private static final NamespacedKey CURSOR_MODEL = new NamespacedKey("rezusmenu", "cursor_mirror");
     /** Шейдерный курсор ближе панели (она на глубине ~1), чтобы рисоваться поверх. */
     private static final double CURSOR_DIST = 0.6;
@@ -257,14 +260,18 @@ public final class Screen {
      * @param fineY       то же вверх (art.glyph-offset-y)
      */
     public static Screen open(final Plugin plugin, final Player player, final Calibration calibration,
-                              final double sensitivity, final double fineX, final double fineY) {
+                              final double sensitivity, final double fineX, final double fineY,
+                              final double spotX, final double spotZ) {
         if (player.isDead() || player.isInsideVehicle()) {
             return null;
         }
         final Saved saved = new Saved(player.getGameMode(), player.getLocation(), player.getWalkSpeed(),
             player.getFlySpeed(), player.getAllowFlight(), player.isFlying());
         // Высоко над миром: ни один блок не встанет между глазами и экраном.
+        // Своя точка у каждого открытого меню (MenuManager раздаёт клетки), чтобы игроки в меню не видели друг друга.
         final Location look = player.getLocation();
+        look.setX(spotX);
+        look.setZ(spotZ);
         look.setY(look.getWorld().getMaxHeight() + SKY);
         look.setPitch(0f);
         player.setGameMode(GameMode.SPECTATOR);
@@ -718,21 +725,21 @@ public final class Screen {
             this.cursor.teleport(loc);
             return;
         }
-        // Размер на глубине CURSOR_DIST: на экране — как 16 px холста. Локальный x дисплея смотрит влево от
-        // взгляда, y — вверх: сдвиг (+s/2, +s/2) ставит правый нижний угол квадрата в точку дисплея.
-        final float s = (float) (this.cursorSize * CURSOR_DIST);
+        // Модель — крошечный квадрат в точке дисплея (остриё). Стрелку строит шейдер в экранных координатах:
+        // размер из зелёного канала, отражение через центр, прижим к краю экрана.
+        final int g = (int) Math.max(1, Math.min(255, Math.round(this.cursorSize * 1000)));
         final ItemStack item = new ItemStack(Material.PAPER);
         item.editMeta(m -> {
             m.setItemModel(CURSOR_MODEL);
             final org.bukkit.inventory.meta.components.CustomModelDataComponent cmd = m.getCustomModelDataComponent();
-            cmd.setColors(List.of(MARKER));
+            cmd.setColors(List.of(Color.fromRGB(MARKER_RB, g, MARKER_RB)));
             m.setCustomModelDataComponent(cmd);
         });
         this.cursor = this.spawnAt(loc, ItemDisplay.class, Display.Billboard.FIXED, e -> {
             e.setItemStack(item);
             e.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
-            e.setTransformation(new Transformation(new Vector3f(s / 2, s / 2, 0f), new Quaternionf(),
-                new Vector3f(s, s, s), new Quaternionf()));
+            e.setTransformation(new Transformation(new Vector3f(), new Quaternionf(), new Vector3f(1f, 1f, 1f),
+                new Quaternionf()));
         }, BASE);
     }
 
@@ -767,6 +774,16 @@ public final class Screen {
 
     /** Сервер считает курсор тем же отражением, что и шейдер; у края экрана переставляет опорную точку. */
     private void updateShaderCursor(final float yaw, final float pitch) {
+        if (Math.abs(pitch) > PITCH_LIMIT) {
+            // Почти вертикальный взгляд: базис камеры вырождается, и курсор начинает прыгать. Курсор уже прижат
+            // к краю — возвращаем камеру к горизонту и ставим опору так, чтобы курсор остался там же.
+            final Location back = this.player.getLocation();
+            back.setPitch(0f);
+            this.player.teleport(back);
+            this.refPitch = 0f;
+            this.placeAnchor(yaw, 0f, this.cu, this.cv);
+            return;
+        }
         if (this.anchor == null) {
             this.placeAnchor(yaw, pitch, 0, 0);
         }

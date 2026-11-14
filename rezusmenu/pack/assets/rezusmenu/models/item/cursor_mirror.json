@@ -1,20 +1,52 @@
 {
   "textures": {
-    "0": "rezusmenu:item/cursor_mirror",
-    "particle": "rezusmenu:item/cursor_mirror"
+    "0": "rezusmenu:item/cursor",
+    "particle": "rezusmenu:item/cursor"
   },
   "elements": [
     {
-      "from": [0, 0, 8],
-      "to": [16, 16, 8],
+      "from": [
+        7.99,
+        7.99,
+        8
+      ],
+      "to": [
+        8.01,
+        8.01,
+        8
+      ],
       "shade": false,
       "faces": {
-        "south": {"uv": [0, 0, 16, 16], "texture": "#0", "tintindex": 0},
-        "north": {"uv": [16, 0, 0, 16], "texture": "#0", "tintindex": 0}
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#0",
+          "tintindex": 0
+        }
       }
     }
   ],
   "display": {
-    "fixed": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [1, 1, 1]}
+    "fixed": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
   }
 }
