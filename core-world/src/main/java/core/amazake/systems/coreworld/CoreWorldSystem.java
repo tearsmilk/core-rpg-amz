@@ -4,13 +4,14 @@ import core.amazake.systems.api.AmazakeSystem;
 import core.amazake.systems.api.SystemContext;
 import core.amazake.systems.coreworld.hunger.HungerModule;
 import core.amazake.systems.coreworld.module.WorldModule;
+import core.amazake.systems.coreworld.spawn.SpawnModule;
 import java.util.List;
 import java.util.logging.Level;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 /**
  * core-world — правила мира, собранные из модулей ({@link WorldModule}). Каждый модуль включается и настраивается
- * своим разделом config.yml. Сейчас один модуль: {@code hunger} (голода нет).
+ * своим разделом config.yml. Модули: {@code hunger} (голода нет), {@code spawn} (запрет мобов, по умолчанию летучих мышей).
  */
 public final class CoreWorldSystem implements AmazakeSystem {
 
@@ -19,7 +20,7 @@ public final class CoreWorldSystem implements AmazakeSystem {
 
     /** Все модули системы. Новый модуль — добавить сюда. */
     private static List<WorldModule> createModules() {
-        return List.of(new HungerModule());
+        return List.of(new HungerModule(), new SpawnModule());
     }
 
     @Override
