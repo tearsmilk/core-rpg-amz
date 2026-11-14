@@ -1,0 +1,533 @@
+###  PARTY HUD BY VOLYA • 1.0.0 • MMOCORE VERSION (FULL, RoyalQuest classes - edited by Mia)  ###
+partymember_1_mmo:
+  conditions:
+    - placeholder{ph=%mmocore_party_count%;v=0;o=>} true hide # show slot 1 only when party has more than 0 members
+    - 'placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:1}_{player_health_rounded}%;v=0;o==} true color #787878'
+  layers:
+    # Party leader crown (Mia). MMOCore always keeps the party owner as member #1, so the crown is drawn on slot 1 only
+    leader_icon:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_leader.png
+      offset:
+        x: 114  # Volya Parties version: x 91 (x1.25)
+        y: -2
+    # RoyalQuestClasses profession icon (drawn over the class icon; hidden when the member has no profession)
+    profession_icon:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/class/party_class_empty.png
+      conditions:
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:1}_{hl_profession_key}%;v=none} false hide
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:1}_{hl_profession_key}%;v=crusader} true texture assets/partyhud/class/party_class_paladin.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:1}_{hl_profession_key}%;v=dark_knight} true texture assets/partyhud/class/party_class_death_knight.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:1}_{hl_profession_key}%;v=hunter} true texture assets/partyhud/class/party_class_beastmaster.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:1}_{hl_profession_key}%;v=sniper} true texture assets/partyhud/class/party_class_gunner.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:1}_{hl_profession_key}%;v=wizard} true texture assets/partyhud/class/party_class_elementalist.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:1}_{hl_profession_key}%;v=warlock} true texture assets/partyhud/class/party_class_shadowmancer.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:1}_{hl_profession_key}%;v=rogue} true texture assets/partyhud/class/party_class_shadow_assassin.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:1}_{hl_profession_key}%;v=assassin} true texture assets/partyhud/class/party_class_assassin.png
+      offset:
+        x: 3
+        y: -2
+    # RoyalQuestClasses base class icon (only when no profession; empty frame when no class)
+    class_icon:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/class/party_class_empty.png
+      conditions:
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:1}_{hl_profession_key}%;v=none} true hide # base class icon only when no profession
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:1}_{hl_class_key}%;v=swordsman} true texture assets/partyhud/class/party_class_warrior.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:1}_{hl_class_key}%;v=archer} true texture assets/partyhud/class/party_class_archer.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:1}_{hl_class_key}%;v=mage} true texture assets/partyhud/class/party_class_mage.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:1}_{hl_class_key}%;v=thief} true texture assets/partyhud/class/party_class_ninja_samurai.png
+      offset:
+        x: 3
+        y: -2
+    name:
+      text: "%parseother_unsafe_{utils_shortcut_pm:1}_{hl_level}% | %mmocore_party_member_1%"
+      font: "volya"
+      outlined: true
+      align: right
+      scale: 0.75  # was 0.6, x1.25
+      offset:
+        x: 24
+        y: -2
+    hp_text:
+      text: "%parseother_unsafe_{utils_shortcut_pm:1}_{math_0_{player_health}+{player_absorption}}%"
+      font: "volya"
+      outlined: true
+      align: left
+      scale: 0.75  # was 0.6, x1.25
+      offset:
+        x: 70
+        y: -10
+      conditions:
+      - 'placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:1}_{player_absorption}%;v=0;o=>} true color #ffd782'
+      - 'placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:1}_{math_0_{player_health}+{player_absorption}}%;v=%parseother_unsafe_{utils_shortcut_pm:1}_{math_0_({player_max_health_rounded}+{player_absorption})/4}%;o=>} false color #ff0000'
+    hp_text_divider:
+      text: "/"
+      font: "volya"
+      outlined: true
+      align: center
+      scale: 0.75  # was 0.6, x1.25
+      offset:
+        x: 73
+        y: -10
+    hp_text_max:
+      text: "%parseother_unsafe_{utils_shortcut_pm:1}_{player_max_health_rounded}%"
+      font: "volya"
+      outlined: true
+      align: right
+      scale: 0.75  # was 0.6, x1.25
+      offset:
+        x: 76
+        y: -10
+    hp_bar_overlay_absorption:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_bar_fill_absorption.png
+      offset:
+        x: 25
+        y: -11
+      function:
+        listener: member1_absorption_mmo
+        increment: 30
+        orientation: horizontal
+    hp_bar_fill:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_bar_fill_health.png
+      offset:
+        x: 25
+        y: -11
+      function:
+        listener: member1_health_mmo
+        increment: 30
+        orientation: horizontal
+    hp_bar_outline:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_bar_outline_health.png
+      offset:
+        x: 24
+        y: -10
+    mana_bar_fill:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_bar_fill_mana.png
+      offset:
+        x: 25
+        y: -18
+      function:
+        listener: member1_mana_mmo
+        increment: 30
+        orientation: horizontal
+    mana_bar_outline:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_bar_outline_mana.png
+      offset:
+        x: 24
+        y: -17
+    background:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_background.png
+      offset:
+        x: 0
+        y: 0
+# DO NOT TOUCH
+partymember_2_mmo:
+  conditions:
+    - placeholder{ph=%mmocore_party_count%;v=1;o=>} true hide # show slot 2 only when party has more than 1 members
+    - 'placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:2}_{player_health}%;v=0;o==} true color #787878'
+  layers:
+    # RoyalQuestClasses profession icon (drawn over the class icon; hidden when the member has no profession)
+    profession_icon:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/class/party_class_empty.png
+      conditions:
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:2}_{hl_profession_key}%;v=none} false hide
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:2}_{hl_profession_key}%;v=crusader} true texture assets/partyhud/class/party_class_paladin.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:2}_{hl_profession_key}%;v=dark_knight} true texture assets/partyhud/class/party_class_death_knight.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:2}_{hl_profession_key}%;v=hunter} true texture assets/partyhud/class/party_class_beastmaster.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:2}_{hl_profession_key}%;v=sniper} true texture assets/partyhud/class/party_class_gunner.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:2}_{hl_profession_key}%;v=wizard} true texture assets/partyhud/class/party_class_elementalist.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:2}_{hl_profession_key}%;v=warlock} true texture assets/partyhud/class/party_class_shadowmancer.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:2}_{hl_profession_key}%;v=rogue} true texture assets/partyhud/class/party_class_shadow_assassin.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:2}_{hl_profession_key}%;v=assassin} true texture assets/partyhud/class/party_class_assassin.png
+      offset:
+        x: 3
+        y: -2
+    # RoyalQuestClasses base class icon (only when no profession; empty frame when no class)
+    class_icon:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/class/party_class_empty.png
+      conditions:
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:2}_{hl_profession_key}%;v=none} true hide # base class icon only when no profession
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:2}_{hl_class_key}%;v=swordsman} true texture assets/partyhud/class/party_class_warrior.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:2}_{hl_class_key}%;v=archer} true texture assets/partyhud/class/party_class_archer.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:2}_{hl_class_key}%;v=mage} true texture assets/partyhud/class/party_class_mage.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:2}_{hl_class_key}%;v=thief} true texture assets/partyhud/class/party_class_ninja_samurai.png
+      offset:
+        x: 3
+        y: -2
+    name:
+      text: "%parseother_unsafe_{utils_shortcut_pm:2}_{hl_level}% | %mmocore_party_member_2%"
+      font: "volya"
+      outlined: true
+      align: right
+      scale: 0.75  # was 0.6, x1.25
+      offset:
+        x: 24
+        y: -2
+    hp_text:
+      text: "%parseother_unsafe_{utils_shortcut_pm:2}_{math_0_{player_health}+{player_absorption}}%"
+      font: "volya"
+      outlined: true
+      align: left
+      scale: 0.75  # was 0.6, x1.25
+      offset:
+        x: 70
+        y: -10
+      conditions:
+      - 'placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:2}_{player_absorption}%;v=0;o=>} true color #ffd782'
+      - 'placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:2}_{math_0_{player_health}+{player_absorption}}%;v=%parseother_unsafe_{utils_shortcut_pm:2}_{math_0_({player_max_health_rounded}+{player_absorption})/4}%;o=>} false color #ff0000'
+    hp_text_divider:
+      text: "/"
+      font: "volya"
+      outlined: true
+      align: center
+      scale: 0.75  # was 0.6, x1.25
+      offset:
+        x: 73
+        y: -10
+    hp_text_max:
+      text: "%parseother_unsafe_{utils_shortcut_pm:2}_{player_max_health_rounded}%"
+      font: "volya"
+      outlined: true
+      align: right
+      scale: 0.75  # was 0.6, x1.25
+      offset:
+        x: 76
+        y: -10
+    hp_bar_overlay_absorption:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_bar_fill_absorption.png
+      offset:
+        x: 25
+        y: -11
+      function:
+        listener: member2_absorption_mmo
+        increment: 30
+        orientation: horizontal
+    hp_bar_fill:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_bar_fill_health.png
+      offset:
+        x: 25
+        y: -11
+      function:
+        listener: member2_health_mmo
+        increment: 30
+        orientation: horizontal
+    hp_bar_outline:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_bar_outline_health.png
+      offset:
+        x: 24
+        y: -10
+    mana_bar_fill:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_bar_fill_mana.png
+      offset:
+        x: 25
+        y: -18
+      function:
+        listener: member2_mana_mmo
+        increment: 30
+        orientation: horizontal
+    mana_bar_outline:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_bar_outline_mana.png
+      offset:
+        x: 24
+        y: -17
+    background:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_background.png
+      offset:
+        x: 0
+        y: 0
+# DO NOT TOUCH
+partymember_3_mmo:
+  conditions:
+    - placeholder{ph=%mmocore_party_count%;v=2;o=>} true hide # show slot 3 only when party has more than 2 members
+    - 'placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:3}_{player_health}%;v=0;o==} true color #787878'
+  layers:
+    # RoyalQuestClasses profession icon (drawn over the class icon; hidden when the member has no profession)
+    profession_icon:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/class/party_class_empty.png
+      conditions:
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:3}_{hl_profession_key}%;v=none} false hide
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:3}_{hl_profession_key}%;v=crusader} true texture assets/partyhud/class/party_class_paladin.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:3}_{hl_profession_key}%;v=dark_knight} true texture assets/partyhud/class/party_class_death_knight.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:3}_{hl_profession_key}%;v=hunter} true texture assets/partyhud/class/party_class_beastmaster.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:3}_{hl_profession_key}%;v=sniper} true texture assets/partyhud/class/party_class_gunner.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:3}_{hl_profession_key}%;v=wizard} true texture assets/partyhud/class/party_class_elementalist.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:3}_{hl_profession_key}%;v=warlock} true texture assets/partyhud/class/party_class_shadowmancer.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:3}_{hl_profession_key}%;v=rogue} true texture assets/partyhud/class/party_class_shadow_assassin.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:3}_{hl_profession_key}%;v=assassin} true texture assets/partyhud/class/party_class_assassin.png
+      offset:
+        x: 3
+        y: -2
+    # RoyalQuestClasses base class icon (only when no profession; empty frame when no class)
+    class_icon:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/class/party_class_empty.png
+      conditions:
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:3}_{hl_profession_key}%;v=none} true hide # base class icon only when no profession
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:3}_{hl_class_key}%;v=swordsman} true texture assets/partyhud/class/party_class_warrior.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:3}_{hl_class_key}%;v=archer} true texture assets/partyhud/class/party_class_archer.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:3}_{hl_class_key}%;v=mage} true texture assets/partyhud/class/party_class_mage.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:3}_{hl_class_key}%;v=thief} true texture assets/partyhud/class/party_class_ninja_samurai.png
+      offset:
+        x: 3
+        y: -2
+    name:
+      text: "%parseother_unsafe_{utils_shortcut_pm:3}_{hl_level}% | %mmocore_party_member_3%"
+      font: "volya"
+      outlined: true
+      align: right
+      scale: 0.75  # was 0.6, x1.25
+      offset:
+        x: 24
+        y: -2
+    hp_text:
+      text: "%parseother_unsafe_{utils_shortcut_pm:3}_{math_0_{player_health}+{player_absorption}}%"
+      font: "volya"
+      outlined: true
+      align: left
+      scale: 0.75  # was 0.6, x1.25
+      offset:
+        x: 70
+        y: -10
+      conditions:
+      - 'placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:3}_{player_absorption}%;v=0;o=>} true color #ffd782'
+      - 'placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:3}_{math_0_{player_health}+{player_absorption}}%;v=%parseother_unsafe_{utils_shortcut_pm:3}_{math_0_({player_max_health_rounded}+{player_absorption})/4}%;o=>} false color #ff0000'
+    hp_text_divider:
+      text: "/"
+      font: "volya"
+      outlined: true
+      align: center
+      scale: 0.75  # was 0.6, x1.25
+      offset:
+        x: 73
+        y: -10
+    hp_text_max:
+      text: "%parseother_unsafe_{utils_shortcut_pm:3}_{player_max_health_rounded}%"
+      font: "volya"
+      outlined: true
+      align: right
+      scale: 0.75  # was 0.6, x1.25
+      offset:
+        x: 76
+        y: -10
+    hp_bar_overlay_absorption:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_bar_fill_absorption.png
+      offset:
+        x: 25
+        y: -11
+      function:
+        listener: member3_absorption_mmo
+        increment: 30
+        orientation: horizontal
+    hp_bar_fill:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_bar_fill_health.png
+      offset:
+        x: 25
+        y: -11
+      function:
+        listener: member3_health_mmo
+        increment: 30
+        orientation: horizontal
+    hp_bar_outline:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_bar_outline_health.png
+      offset:
+        x: 24
+        y: -10
+    mana_bar_fill:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_bar_fill_mana.png
+      offset:
+        x: 25
+        y: -18
+      function:
+        listener: member3_mana_mmo
+        increment: 30
+        orientation: horizontal
+    mana_bar_outline:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_bar_outline_mana.png
+      offset:
+        x: 24
+        y: -17
+    background:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_background.png
+      offset:
+        x: 0
+        y: 0
+# DO NOT TOUCH
+partymember_4_mmo:
+  conditions:
+    - placeholder{ph=%mmocore_party_count%;v=3;o=>} true hide # show slot 4 only when party has more than 3 members
+    - 'placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:4}_{player_health}%;v=0;o==} true color #787878'
+  layers:
+    # RoyalQuestClasses profession icon (drawn over the class icon; hidden when the member has no profession)
+    profession_icon:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/class/party_class_empty.png
+      conditions:
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:4}_{hl_profession_key}%;v=none} false hide
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:4}_{hl_profession_key}%;v=crusader} true texture assets/partyhud/class/party_class_paladin.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:4}_{hl_profession_key}%;v=dark_knight} true texture assets/partyhud/class/party_class_death_knight.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:4}_{hl_profession_key}%;v=hunter} true texture assets/partyhud/class/party_class_beastmaster.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:4}_{hl_profession_key}%;v=sniper} true texture assets/partyhud/class/party_class_gunner.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:4}_{hl_profession_key}%;v=wizard} true texture assets/partyhud/class/party_class_elementalist.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:4}_{hl_profession_key}%;v=warlock} true texture assets/partyhud/class/party_class_shadowmancer.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:4}_{hl_profession_key}%;v=rogue} true texture assets/partyhud/class/party_class_shadow_assassin.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:4}_{hl_profession_key}%;v=assassin} true texture assets/partyhud/class/party_class_assassin.png
+      offset:
+        x: 3
+        y: -2
+    # RoyalQuestClasses base class icon (only when no profession; empty frame when no class)
+    class_icon:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/class/party_class_empty.png
+      conditions:
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:4}_{hl_profession_key}%;v=none} true hide # base class icon only when no profession
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:4}_{hl_class_key}%;v=swordsman} true texture assets/partyhud/class/party_class_warrior.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:4}_{hl_class_key}%;v=archer} true texture assets/partyhud/class/party_class_archer.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:4}_{hl_class_key}%;v=mage} true texture assets/partyhud/class/party_class_mage.png
+        - placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:4}_{hl_class_key}%;v=thief} true texture assets/partyhud/class/party_class_ninja_samurai.png
+      offset:
+        x: 3
+        y: -2
+    name:
+      text: "%parseother_unsafe_{utils_shortcut_pm:4}_{hl_level}% | %mmocore_party_member_4%"
+      font: "volya"
+      outlined: true
+      align: right
+      scale: 0.75  # was 0.6, x1.25
+      offset:
+        x: 24
+        y: -2
+    hp_text:
+      text: "%parseother_unsafe_{utils_shortcut_pm:4}_{math_0_{player_health}+{player_absorption}}%"
+      font: "volya"
+      outlined: true
+      align: left
+      scale: 0.75  # was 0.6, x1.25
+      offset:
+        x: 70
+        y: -10
+      conditions:
+      - 'placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:4}_{player_absorption}%;v=0;o=>} true color #ffd782'
+      - 'placeholder{ph=%parseother_unsafe_{utils_shortcut_pm:4}_{math_0_{player_health}+{player_absorption}}%;v=%parseother_unsafe_{utils_shortcut_pm:4}_{math_0_({player_max_health_rounded}+{player_absorption})/4}%;o=>} false color #ff0000'
+    hp_text_divider:
+      text: "/"
+      font: "volya"
+      outlined: true
+      align: center
+      scale: 0.75  # was 0.6, x1.25
+      offset:
+        x: 73
+        y: -10
+    hp_text_max:
+      text: "%parseother_unsafe_{utils_shortcut_pm:4}_{player_max_health_rounded}%"
+      font: "volya"
+      outlined: true
+      align: right
+      scale: 0.75  # was 0.6, x1.25
+      offset:
+        x: 76
+        y: -10
+    hp_bar_overlay_absorption:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_bar_fill_absorption.png
+      offset:
+        x: 25
+        y: -11
+      function:
+        listener: member4_absorption_mmo
+        increment: 30
+        orientation: horizontal
+    hp_bar_fill:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_bar_fill_health.png
+      offset:
+        x: 25
+        y: -11
+      function:
+        listener: member4_health_mmo
+        increment: 30
+        orientation: horizontal
+    hp_bar_outline:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_bar_outline_health.png
+      offset:
+        x: 24
+        y: -10
+    mana_bar_fill:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_bar_fill_mana.png
+      offset:
+        x: 25
+        y: -18
+      function:
+        listener: member4_mana_mmo
+        increment: 30
+        orientation: horizontal
+    mana_bar_outline:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_bar_outline_mana.png
+      offset:
+        x: 24
+        y: -17
+    background:
+      scale: 1.25  # party HUD enlarged x1.25 (Mia)
+      texture:
+        path: assets/partyhud/party_background.png
+      offset:
+        x: 0
+        y: 0
+# DO NOT TOUCH

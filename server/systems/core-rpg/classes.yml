@@ -1,0 +1,245 @@
+# Классы и профессии CoreRpg. После правки: /class admin reload.
+# Тексты — MiniMessage. Ключи классов и профессий (swordsman, crusader…) хранятся в профилях игроков — не меняйте
+# их у существующих классов.
+#
+# Поля класса:
+#   display-name   — название (в меню, сообщениях, плейсхолдерах)
+#   description    — описание: строка или список строк
+#   icon           — предмет в меню (Material)
+#   color          — цвет названия в меню (тег MiniMessage)
+#   primary-stat   — как называется главный параметр (Сила, Точность, Интеллект)
+#   aliases        — другие имена для /class choose <имя>
+#   menu-hint      — подсказка под иконкой в меню выбора, menu-hint-icon — её предмет
+#   bonuses        — бонусы (формат ниже)
+#   passives       — пассивки, их применяет бой: rage, headshot, backstab, dual_wield
+# Поля профессии — те же, кроме primary-stat и menu-hint, плюс:
+#   parent         — ключ класса, к которому относится профессия
+#   locked-aspects — закрытые аспекты: итог такого аспекта у игрока не может быть больше 0
+#
+# Форматы бонусов:
+#   aspect:<ключ>:<значение>        — аспект (основной формат). Ключи: attack_damage, armor, max_health,
+#                                     movement_speed, attack_speed, knockback, knockback_resistance, range, resistance,
+#                                     resistance_pvp, crit_chance, crit_damage, lifesteal, regen, heal_on_kill,
+#                                     stat_primary, stat_agility, stat_stamina, stat_luck, accuracy, evasion, exp_bonus,
+#                                     gold_bonus, status_bleed, status_poison, status_burn, armor_sharpen.
+#                                     Целевые: resistance:<цель> (доля 0..1), damage_vs:<цель> (%).
+#                                     Цели: fire, chaos, undead, humanoid, water, air, earth, poison, animal, arthropod,
+#                                     monster (только damage_vs).
+#   attribute:<ИМЯ>:<значение>      — совместимость со старым плагином: ATTACK_DAMAGE / GENERIC_ATTACK_DAMAGE,
+#                                     ARMOR, MAX_HEALTH, MOVEMENT_SPEED, ATTACK_SPEED, ATTACK_KNOCKBACK, KNOCKBACK_RESISTANCE,
+#                                     ENTITY_INTERACTION_RANGE — переводятся в аспекты.
+#   effect:<ЭФФЕКТ>:<уровень>[:<секунды>] — эффект зелья; уровень 0 = I; 0 секунд (или без них) = постоянно.
+#                                     Постоянные эффекты возвращаются при входе, респавне и после молока; временные
+#                                     даются один раз при выборе класса или профессии.
+#   permission:<узел>               — право, пока у игрока этот класс или профессия.
+#
+# Числа рассчитаны под масштаб Minecraft: 2 здоровья = одно сердце, скорость игрока по умолчанию 0.1,
+# скорость атаки 4.0; шансы и сила крита — в процентах.
+
+classes:
+  swordsman:
+    display-name: "Мечник"
+    description:
+      - "Ближний бой · танк / урон."
+      - "Воин с мечом, топором и щитом,"
+      - "крепкий и защищённый доспехами."
+    icon: IRON_SWORD
+    color: "<red>"
+    primary-stat: "Сила"
+    aliases: [мечник, воин, swordsman, sword, warrior]
+    menu-hint: "Ближний бой · Щит + Сила"
+    menu-hint-icon: SHIELD
+    bonuses:
+      - "aspect:max_health:4"
+      - "aspect:armor:2"
+      - "aspect:knockback:0.1"
+    passives: []
+
+  archer:
+    display-name: "Лучник"
+    description:
+      - "Дальний бой · контроль дистанции."
+      - "Мастер лука и арбалета: держит врага"
+      - "на расстоянии и бьёт точно в цель."
+    icon: BOW
+    color: "<green>"
+    primary-stat: "Точность"
+    aliases: [лучник, стрелок, archer, bow, ranger]
+    menu-hint: "Дальний бой · Лук + Ловушки"
+    menu-hint-icon: ARROW
+    bonuses:
+      - "aspect:movement_speed:0.01"
+      - "aspect:crit_chance:5"
+      - "aspect:range:0.5"
+    passives: [headshot]
+
+  mage:
+    display-name: "Маг"
+    description:
+      - "Магический урон · контроль."
+      - "Повелитель стихий и заклинаний:"
+      - "посох, жезл и книга."
+    icon: BLAZE_ROD
+    color: "<light_purple>"
+    primary-stat: "Интеллект"
+    aliases: [маг, волшебник, mage, magician]
+    menu-hint: "Магия · Стихии + Контроль"
+    menu-hint-icon: ENCHANTED_BOOK
+    bonuses:
+      - "aspect:max_health:2"
+      - "effect:NIGHT_VISION:0"
+      - "aspect:resistance:chaos:0.05"
+    passives: []
+
+  thief:
+    display-name: "Асассин"
+    description:
+      - "Скорость · критический урон."
+      - "Скрытный и ловкий боец ближнего боя:"
+      - "кинжалы и парные клинки."
+    icon: GOLDEN_SWORD
+    color: "<gray>"
+    primary-stat: "Сила"
+    aliases: [асассин, ассасин, вор, thief]
+    menu-hint: "Скрытность · Яды + Скорость"
+    menu-hint-icon: POTION
+    bonuses:
+      - "aspect:movement_speed:0.015"
+      - "aspect:attack_speed:0.16"
+      - "aspect:crit_chance:10"
+      - "aspect:evasion:4"
+    passives: [backstab]
+
+professions:
+  crusader:
+    display-name: "Паладин"
+    parent: swordsman
+    description:
+      - "Защитная ветка Мечника: больше здоровья"
+      - "и брони, постоянная регенерация."
+      - "Слуга Ауры, исцеление и защита союзников."
+    icon: GOLDEN_SWORD
+    color: "<gold>"
+    aliases: [паладин, paladin, крестоносец, crusader]
+    bonuses:
+      - "aspect:max_health:4"
+      - "aspect:armor:2"
+      - "effect:REGENERATION:0"
+    locked-aspects: [crit_damage]
+    passives: []
+
+  dark_knight:
+    display-name: "Берсерк"
+    parent: swordsman
+    description:
+      - "Атакующая ветка Мечника: урон и скорость"
+      - "атаки ценой защиты."
+      - "Ярость: чем меньше здоровья, тем сильнее удар."
+    icon: NETHERITE_SWORD
+    color: "<dark_red>"
+    aliases: [берсерк, berserk, berserker, тёмный рыцарь, темный рыцарь, тёмный, темный, dark knight]
+    bonuses:
+      - "aspect:attack_damage:2"
+      - "aspect:attack_speed:0.3"
+      - "aspect:knockback:0.3"
+    locked-aspects: [regen]
+    passives: [rage]
+
+  sniper:
+    display-name: "Снайпер"
+    parent: archer
+    description:
+      - "Ветка Лучника: точность и сила."
+      - "Тяжёлые выстрелы на огромные расстояния"
+      - "и сокрушительные криты."
+    icon: BOW
+    color: "<dark_green>"
+    aliases: [снайпер, sniper]
+    bonuses:
+      - "aspect:attack_damage:1.5"
+      - "aspect:crit_damage:25"
+      - "aspect:range:1.0"
+    locked-aspects: [attack_speed]
+    passives: []
+
+  hunter:
+    display-name: "Охотник"
+    parent: archer
+    description:
+      - "Ветка Лучника: скорость и темп."
+      - "Быстрый стрелок, мастер ловушек"
+      - "и уклонения."
+    icon: CROSSBOW
+    color: "<green>"
+    aliases: [охотник, hunter]
+    bonuses:
+      - "effect:SPEED:0"
+      - "aspect:evasion:4"
+    locked-aspects: [knockback]
+    passives: []
+
+  warlock:
+    display-name: "Чернокнижник"
+    parent: mage
+    description:
+      - "Ветка Мага: разрушение."
+      - "Тёмная магия хаоса, болезни и проклятия;"
+      - "особенно опасен для монстров."
+    icon: ENDER_PEARL
+    color: "<dark_purple>"
+    aliases: [чернокнижник, warlock, колдун]
+    bonuses:
+      - "effect:STRENGTH:0"
+      - "aspect:damage_vs:monster:10"
+    locked-aspects: [regen]
+    passives: []
+
+  wizard:
+    display-name: "Клирик"
+    parent: mage
+    description:
+      - "Ветка Мага: поддержка и исцеление."
+      - "Регенерация, защита и стойкость к огню."
+    icon: BLAZE_ROD
+    color: "<aqua>"
+    aliases: [клирик, cleric, wizard, волшебник, priest]
+    bonuses:
+      - "effect:FIRE_RESISTANCE:0"
+      - "aspect:regen:0.2"
+      - "aspect:armor:2"
+    locked-aspects: [crit_damage]
+    passives: []
+
+  rogue:
+    display-name: "Разбойник"
+    parent: thief
+    description:
+      - "Ветка Асассина: два тяжёлых клинка."
+      - "Оружие в обеих руках, мощные криты"
+      - "и вампиризм."
+    icon: IRON_SWORD
+    color: "<yellow>"
+    aliases: [разбойник, rogue, бандит]
+    bonuses:
+      - "aspect:movement_speed:0.01"
+      - "aspect:crit_damage:25"
+      - "aspect:lifesteal:3"
+    locked-aspects: [evasion]
+    passives: [dual_wield]
+
+  assassin:
+    display-name: "Жнец"
+    parent: thief
+    description:
+      - "Ветка Асассина: мобильность."
+      - "Скорость, уклонение и быстрые удары;"
+      - "яды и скрытные убийства."
+    icon: DIAMOND_SWORD
+    color: "<dark_aqua>"
+    aliases: [жнец, reaper, assassin, ассасин, асассин]
+    bonuses:
+      - "aspect:attack_speed:0.4"
+      - "aspect:movement_speed:0.015"
+      - "aspect:evasion:6"
+    locked-aspects: [knockback]
+    passives: []

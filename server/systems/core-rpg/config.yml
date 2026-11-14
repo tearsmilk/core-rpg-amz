@@ -1,0 +1,25 @@
+# Общие настройки системы CoreRpg. После правки: /amazake system reload core-rpg
+# Тексты — MiniMessage: https://docs.advntr.dev/minimessage/format.html
+#
+# Остальные файлы в этой же папке:
+#   progression.yml — уровни, опыт, очки и формулы параметров
+#   classes.yml     — классы и профессии
+#   combat.yml      — боевой расчёт: крит, уворот, сопротивление, вампиризм, статусы
+#   sharpen.yml     — заточка: камни, руны, шансы, бонусы
+#   seals.yml       — печати: расходники, цвета и каталог
+#   papi.yml        — плейсхолдеры PlaceholderAPI
+
+messages:
+  # Префикс всех сообщений системы.
+  prefix: "<dark_gray>[<gradient:#DC143C:#FFB6C1>CoreRpg</gradient>]</dark_gray> "
+
+settings:
+  # Как часто записывать изменённые профили игроков на диск (минуты, 1..60). При выходе игрока и выключении
+  # системы профиль пишется сразу.
+  save-interval-minutes: 2
+
+placeholderapi:
+  # Отдавать плейсхолдеры %core_...% в PlaceholderAPI (если он установлен).
+  enabled: true
+  # Префикс плейсхолдеров: %<identifier>_level%.
+  identifier: core

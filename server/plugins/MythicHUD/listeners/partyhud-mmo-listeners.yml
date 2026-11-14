@@ -1,0 +1,49 @@
+# Party HUD (MMOCore parties) - fixed by Mia: health value = current health (bundle had max_health / typo)
+
+member1_health_mmo:
+  value: '%parseother_unsafe_{utils_shortcut_pm:1}_{player_health}%'
+  max: '%parseother_unsafe_{utils_shortcut_pm:1}_{player_max_health}%'
+
+member1_mana_mmo:
+  value: '%parseother_unsafe_{utils_shortcut_pm:1}_{mmocore_mana}%'
+  max: '%parseother_unsafe_{utils_shortcut_pm:1}_{mmocore_stat_max_mana}%'
+
+member1_absorption_mmo:
+  value: '%parseother_unsafe_{utils_shortcut_pm:1}_{player_absorption}%'
+  max: '%parseother_unsafe_{utils_shortcut_pm:1}_{player_max_health}%'
+
+member2_health_mmo:
+  value: '%parseother_unsafe_{utils_shortcut_pm:2}_{player_health}%'
+  max: '%parseother_unsafe_{utils_shortcut_pm:2}_{player_max_health}%'
+
+member2_mana_mmo:
+  value: '%parseother_unsafe_{utils_shortcut_pm:2}_{mmocore_mana}%'
+  max: '%parseother_unsafe_{utils_shortcut_pm:2}_{mmocore_stat_max_mana}%'
+
+member2_absorption_mmo:
+  value: '%parseother_unsafe_{utils_shortcut_pm:2}_{player_absorption}%'
+  max: '%parseother_unsafe_{utils_shortcut_pm:2}_{player_max_health}%'
+
+member3_health_mmo:
+  value: '%parseother_unsafe_{utils_shortcut_pm:3}_{player_health}%'
+  max: '%parseother_unsafe_{utils_shortcut_pm:3}_{player_max_health}%'
+
+member3_mana_mmo:
+  value: '%parseother_unsafe_{utils_shortcut_pm:3}_{mmocore_mana}%'
+  max: '%parseother_unsafe_{utils_shortcut_pm:3}_{mmocore_stat_max_mana}%'
+
+member3_absorption_mmo:
+  value: '%parseother_unsafe_{utils_shortcut_pm:3}_{player_absorption}%'
+  max: '%parseother_unsafe_{utils_shortcut_pm:3}_{player_max_health}%'
+
+member4_health_mmo:
+  value: '%parseother_unsafe_{utils_shortcut_pm:4}_{player_health}%'
+  max: '%parseother_unsafe_{utils_shortcut_pm:4}_{player_max_health}%'
+
+member4_mana_mmo:
+  value: '%parseother_unsafe_{utils_shortcut_pm:4}_{mmocore_mana}%'
+  max: '%parseother_unsafe_{utils_shortcut_pm:4}_{mmocore_stat_max_mana}%'
+
+member4_absorption_mmo:
+  value: '%parseother_unsafe_{utils_shortcut_pm:4}_{player_absorption}%'
+  max: '%parseother_unsafe_{utils_shortcut_pm:4}_{player_max_health}%'

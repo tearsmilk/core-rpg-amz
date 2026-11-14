@@ -1,0 +1,102 @@
+mmocore:
+  verbose: ALL
+cast:
+  main: cast
+  aliases: []
+  description: Войти в режим применения скиллов
+  permission: mmocore.cast
+  verbose: ALL
+player:
+  main: player
+  aliases:
+  - p
+  - profile
+  description: Показать характеристики игрока
+  permission: mmocore.profile
+  verbose: ALL
+attributes:
+  main: attributes
+  aliases:
+  - att
+  - stats
+  description: Просмотр и прокачка характеристик
+  permission: mmocore.attributes
+  verbose: ALL
+class:
+  # renamed by Mia: RoyalQuestClasses provides /class (MMOCore classes are not used).
+  # MythicLib reads only main/aliases/description/permission/verbose here ('enabled' is ignored).
+  main: mmoclass
+  aliases: []
+  description: Выбрать новый класс
+  permission: mmocore.class-select
+  verbose: ALL
+waypoints:
+  main: waypoints
+  aliases:
+  - wp
+  description: Показать открытые точки телепорта
+  permission: mmocore.waypoints
+  verbose: ALL
+quests:
+  main: quests
+  aliases:
+  - q
+  - journal
+  description: Показать доступные задания
+  permission: mmocore.quests
+  verbose: ALL
+skills:
+  main: skills
+  aliases:
+  - s
+  description: Потратить очки скиллов на новые умения
+  permission: mmocore.skills
+  verbose: ALL
+friends:
+  main: friends
+  aliases:
+  - f
+  description: Показать друзей в сети и не в сети
+  permission: mmocore.friends
+  verbose: ALL
+party:
+  main: party
+  aliases: []
+  description: Пригласить игроков в группу для деления опыта
+  permission: mmocore.party
+  verbose: ALL
+guild:
+  main: guild
+  aliases: []
+  description: Показать игроков вашей гильдии
+  permission: mmocore.guild
+  verbose: ALL
+withdraw:
+  main: withdraw
+  aliases: []
+  description: Снять деньги монетами и банкнотами
+  permission: mmocore.currency
+  verbose: ALL
+skilltrees:
+  main: skilltrees
+  aliases:
+  - st
+  - trees
+  - tree
+  description: Открыть меню дерева скиллов
+  permission: mmocore.skilltrees
+  verbose: ALL
+deposit:
+  main: deposit
+  aliases:
+  - d
+  description: Открыть меню вклада валюты
+  permission: mmocore.currency
+  verbose: ALL
+pvpmode:
+  main: pvpmode
+  aliases:
+  - pvp
+  description: Включить или выключить режим PvP.
+  permission: mmocore.pvpmode
+  verbose: ALL

@@ -1,0 +1,250 @@
+# Прогрессия CoreRpg: уровни, опыт, очки и формулы параметров, сообщения.
+# После правки: /class admin reload (или /amazake system reload core-rpg).
+# Тексты — MiniMessage: https://docs.advntr.dev/minimessage/format.html
+# Неверное значение не ломает систему: в консоли будет предупреждение, а возьмётся значение по умолчанию.
+
+# Максимальный уровень персонажа (2..1000).
+max-level: 71
+
+# С какого уровня выбирается профессия (не больше max-level).
+profession-level: 21
+
+# Пока профессия не выбрана, опыт выше уровня профессии не начисляется (как в плагине RoyalQuestClasses).
+block-exp-until-profession: true
+
+# Без выбранного класса опыт не начисляется.
+require-class-for-exp: true
+
+# Как часто напоминать о блокировке опыта (секунды, 0..3600).
+exp-blocked-message-cooldown-seconds: 15
+
+# Открывать меню выбора класса при входе, пока класс не выбран.
+open-class-menu-on-first-join: true
+
+# Открывать меню профессии при входе, если она уже доступна, но не выбрана.
+open-profession-menu-on-join: true
+
+# Ванильные сферы опыта превращаются в опыт персонажа, ванильная полоска опыта не растёт.
+# Выключено: опыт за мобов начисляет RoyalQuestClasses (HUD берёт %hl_*%). Было: true
+convert-vanilla-exp: false
+# Множитель: сколько опыта персонажа даёт единица ванильного опыта (0..100000).
+vanilla-exp-multiplier: 1.0
+
+# Показывать в actionbar «+N опыта» при каждом начислении.
+show-exp-gain: false
+
+# Очки параметров: каждые points-every-levels уровней (5, 10, 15…) игрок получает points-per-step очков.
+# По умолчанию к 71 уровню — 56 очков.
+points-every-levels: 5
+points-per-step: 4
+
+# Повышение уровня: звук (ключ Minecraft, пусто — без звука), громкость, высота (0.5..2), заголовок на экране.
+level-up:
+  sound: "entity.player.levelup"
+  volume: 1.0
+  pitch: 1.0
+  title: true
+
+# Сколько опыта нужно ДЛЯ уровня N (переход N−1 → N). Таблица Royal Quest ÷ 200, продолжена до 71.
+# Повышение может пройти сразу через несколько уровней за одно начисление.
+# Уровень, которого нет в таблице, считается по формуле exp-formula.
+# Сколько опыта нужно ДЛЯ уровня N (переход N−1 → N).
+# Суммарно до 70 уровня: 50 000 000
+max-level: 70
+
+exp-table:
+  2: 4579
+  3: 5597
+  4: 6614
+  5: 7632
+  6: 8650
+  7: 9667
+  8: 10685
+  9: 11703
+  10: 12720
+  11: 13738
+  12: 14756
+  13: 15773
+  14: 16791
+  15: 17809
+  16: 18827
+  17: 19844
+  18: 20862
+  19: 21880
+  20: 22897
+  21: 33074
+  22: 40707
+  23: 48339
+  24: 55972
+  25: 63604
+  26: 71237
+  27: 78869
+  28: 86502
+  29: 94135
+  30: 101767
+  31: 109400
+  32: 117032
+  33: 124665
+  34: 132298
+  35: 139930
+  36: 147563
+  37: 155195
+  38: 162828
+  39: 170460
+  40: 178093
+  41: 244242
+  42: 284949
+  43: 325656
+  44: 366363
+  45: 407070
+  46: 447777
+  47: 488484
+  48: 529192
+  49: 569899
+  50: 610606
+  51: 651313
+  52: 692020
+  53: 732727
+  54: 773434
+  55: 814141
+  56: 1221212
+  57: 1424747
+  58: 1628283
+  59: 1831818
+  60: 2035354
+  61: 2238889
+  62: 2442424
+  63: 2645960
+  64: 2849495
+  65: 3053031
+  66: 3256566
+  67: 3460101
+  68: 3663637
+  69: 3867172
+  70: 4070708
+
+# Опыт для уровня без значения в таблице: base × уровень^exponent.
+exp-formula:
+  base: 100
+  exponent: 1.5
+
+# Формулы параметров. Эффективные очки = вложенные игроком + бонусные (печати, заточка +11).
+# Значения аспектов: урон и здоровье — единицы атрибутов Minecraft (2 здоровья = одно сердце),
+# шанс и сила крита — проценты.
+stats:
+  # Главный параметр класса (Сила / Точность / Интеллект).
+  primary:
+    # Урон: за каждое очко и дополнительно за каждые полные 10 очков.
+    attack-damage-per-point: 0.5
+    attack-damage-per-10: 3
+    # Попадание: главный параметр ÷ этот делитель (с округлением вниз).
+    accuracy-divisor: 5
+  # Выносливость.
+  stamina:
+    # Здоровье за очко.
+    max-health-per-point: 2
+  # Ловкость.
+  agility:
+    # Скорость атаки (база игрока 4.0) за очко и за каждые 10.
+    attack-speed-per-point: 0.01
+    attack-speed-per-10: 0.1
+    # Уворот за каждые 10.
+    evasion-per-10: 2
+  # Удача.
+  luck:
+    # Рейтинг крита: за очко и за каждые 10.
+    crit-rating-per-point: 0.33
+    crit-rating-per-10: 1
+    # Шанс крита, %: 100 × scale × (1 − base^(рейтинг × (a − уровень × b))) — формула Royal Quest.
+    crit-formula:
+      scale: 0.6
+      base: 0.999
+      a: 60.1007
+      b: 0.6491
+    # Потолок шанса крита от удачи, %.
+    crit-chance-cap: 57
+    # Попадание за каждые 10.
+    accuracy-per-10: 2
+    # Сила крита, %: база есть у всех, плюс за каждые 10 удачи.
+    crit-damage-base: 50
+    crit-damage-per-10: 5
+
+# Сообщения. Подстановки в угловых скобках (<level>, <class>…) заполняет система.
+messages:
+  only-players: "<red>Эта команда только для игроков.</red>"
+  no-permission: "<red>У вас нет прав на это.</red>"
+  profile-loading: "<yellow>Профиль ещё загружается, попробуйте через секунду.</yellow>"
+  class-already-chosen: "<red>Вы уже выбрали класс! Смена невозможна.</red>"
+  # <class> — название класса.
+  class-chosen: "<green>Вы выбрали класс: <yellow><class></yellow>!</green>"
+  # <input> — что ввёл игрок, <list> — доступные классы.
+  class-unknown: "<red>Нет такого класса: <white><input></white>.</red> <gray>Доступно: <list></gray>"
+  must-choose-class: "<red>Сначала выберите класс:</red> <aqua>/class</aqua>"
+  # <level> — уровень профессии, <current> — уровень игрока.
+  level-too-low: "<red>Профессию можно выбрать только с <level> уровня!</red> <gray>Сейчас: <current>.</gray>"
+  profession-already-chosen: "<red>Вы уже выбрали профессию! Смена невозможна.</red>"
+  # <profession> — название профессии.
+  profession-chosen: "<green>Вы стали <yellow><profession></yellow>!</green>"
+  invalid-profession: "<red>Профессия «<input>» не подходит вашему классу.</red> <gray>Доступно: <list></gray>"
+  # <level> — уровень профессии, <professions> — профессии класса. Можно списком строк.
+  need-profession:
+    - "<gold>Вы достигли <level> уровня!</gold>"
+    - "<yellow>Теперь нужно выбрать профессию.</yellow>"
+    - "<gray>Доступно: <professions></gray>"
+    - "<aqua>Откройте меню: /profession</aqua>"
+    - "<red>Пока профессия не выбрана — опыт не начисляется.</red>"
+  exp-blocked: "<red>Опыт заблокирован!</red> <yellow>Выберите профессию:</yellow> <aqua>/profession</aqua>"
+  exp-blocked-no-class: "<red>Опыт не начисляется без класса.</red> <yellow>Выберите класс:</yellow> <aqua>/class</aqua>"
+  # Actionbar при show-exp-gain: <amount> — начислено, <exp>/<needed> — прогресс уровня.
+  exp-gained: "<gray>+<amount> опыта</gray> <dark_gray>(<exp>/<needed>)</dark_gray>"
+  level-up: "<green>★ Вы достигли <yellow><level></yellow> уровня! ★</green>"
+  level-up-title: "<gold>Уровень <level>!</gold>"
+  level-up-subtitle: "<yellow>Персонаж стал сильнее</yellow>"
+  max-level: "<gold>Вы достигли максимального уровня <level>!</gold>"
+  # <points> — сколько очков получено.
+  points-gained: "<gold>+<points> очка параметров!</gold> <aqua>Распределите: /stats</aqua>"
+  # <every> — раз во сколько уровней приходят очки.
+  stats-no-points: "<red>Нет свободных очков параметров.</red> <gray>Очки дают каждые <every> уровней.</gray>"
+  # <stat> — параметр, <amount> — вложено, <free> — осталось.
+  stats-added: "<green><stat>: +<amount></green> <gray>(свободно очков: <free>)</gray>"
+  stats-unknown: "<red>Нет такого параметра: <white><input></white>.</red> <gray>Доступно: сила/точность/интеллект, ловкость, выносливость, удача</gray>"
+  bad-number: "<red>«<input>» — не подходящее число.</red>"
+  player-not-found: "<red>Игрок <white><input></white> не в сети.</red>"
+  # Админ-команды: <player> — игрок, <type> — что сброшено/изменено, <value> — новое значение.
+  admin-reset: "<green>Игроку <yellow><player></yellow> сброшено: <type>.</green>"
+  admin-reset-notify: "<yellow>Администратор сбросил ваши данные персонажа (<type>).</yellow>"
+  admin-setlevel: "<green>Уровень игрока <yellow><player></yellow> установлен на <level>.</green>"
+  admin-setlevel-notify: "<yellow>Администратор установил вам <level> уровень.</yellow>"
+  admin-giveexp: "<green>Игроку <yellow><player></yellow> выдано <amount> опыта.</green>"
+  # <reason> — почему опыт не начислен.
+  admin-giveexp-blocked: "<red>Опыт игроку <yellow><player></yellow> не начислен: <reason>.</red>"
+  admin-set: "<green>Игроку <yellow><player></yellow> установлено: <type> <value>.</green>"
+  admin-set-notify: "<yellow>Администратор изменил вам <type>: <value>.</yellow>"
+  admin-unknown-key: "<red>Нет такого ключа: <white><input></white>.</red> <gray>Доступно: <list></gray>"
+  admin-reload: "<green>CoreRpg перезагружен.</green>"
+  # <error> — текст ошибки.
+  admin-reload-failed: "<red>Ошибка перезагрузки: <error></red> <gray>Подробности — в консоли.</gray>"
+  # Сведения об игроке: /class admin info <ник>.
+  admin-info:
+    - "<gold>═══ <player> ═══</gold>"
+    - "<yellow>Класс:</yellow> <class>"
+    - "<yellow>Профессия:</yellow> <profession>"
+    - "<yellow>Уровень:</yellow> <level>/<max>"
+    - "<yellow>Опыт:</yellow> <exp>/<needed>"
+    - "<yellow>Параметры:</yellow> <primary-name> <primary>, ловкость <agility>, выносливость <stamina>, удача <luck>"
+    - "<yellow>Свободных очков:</yellow> <free>"
+    - "<yellow>Пассивки:</yellow> <passives>"
+  # Кратко о себе: /class info, /myclass text.
+  info:
+    - "<gold>═══ Ваш персонаж ═══</gold>"
+    - "<yellow>Класс:</yellow> <class>"
+    - "<yellow>Профессия:</yellow> <profession>"
+    - "<yellow>Уровень:</yellow> <level>"
+    - "<yellow>Опыт:</yellow> <exp>/<needed>"
+  no-class: "Класс не выбран"
+  no-profession: "Профессия не выбрана"
+  # Заголовки меню.
+  menu-class-title: "<gold>⚔ Выбор класса</gold>"
+  menu-profession-title: "<gold>⚔ Выбор профессии</gold>"
+  menu-character-title: "<gold>📜 Мой персонаж</gold>"
+  menu-stats-title: "<gold>Параметры</gold>"

@@ -1,0 +1,12 @@
+# Включённые системы ядра Amazake. Файл переписывается командами
+# /amazake system enable|disable <имя>; система, которой нет в списке, выключена.
+# При запуске сервер включает все системы из списка.
+enabled:
+  - AmazakeCore
+  - core-mobs
+  - core-portals
+  - core-skyrift
+  - core-world
+  - rezusmenu
+  - seal-magic
+  - zatochka

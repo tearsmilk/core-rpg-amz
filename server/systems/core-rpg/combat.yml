@@ -1,0 +1,210 @@
+# ============================================================================
+#  CoreRpg — боевой расчёт (модуль combat)
+# ============================================================================
+#  Файл перечитывается командой перезагрузки системы. Неверное значение не ломает
+#  систему: в консоль пишется предупреждение, берётся значение по умолчанию.
+#
+#  Порядок расчёта удара игрока (атакующий — игрок или его снаряд):
+#    1. заточка оружия: урон × (1 + бонус заточки % / 100);
+#    2. пассивки класса и профессии: двойное оружие, ярость, выстрел в голову,
+#       удар в спину;
+#    3. урон по монстрам (damage_vs:monster) и стихийный урон
+#       (damage_vs:fire|air|earth|water), уменьшенный сопротивлением цели;
+#    4. крит: шанс = аспект crit_chance (не выше потолка), урон × (1 + crit_damage/100);
+#    5. статусы с шансом из аспектов status_bleed / status_poison / status_burn;
+#    6. вампиризм (lifesteal) от итогового урона и здоровье за убийство (heal_on_kill).
+#  Защита игрока:
+#    7. уворот: шанс = (уворот цели − попадание атакующего) / 100, не выше потолка;
+#    8. заточка брони: урон ÷ (1 + armor_sharpen / 100);
+#    9. сопротивление: урон × (1 − min(потолок, resistance + resistance:<цель> + resistance_pvp)).
+#
+#  Причины урона (DamageCause): ENTITY_ATTACK, ENTITY_SWEEP_ATTACK, PROJECTILE, FIRE,
+#  FIRE_TICK, LAVA, HOT_FLOOR, CAMPFIRE, MAGIC, WITHER, DRAGON_BREATH, SONIC_BOOM,
+#  DROWNING, FALL, FLY_INTO_WALL, LIGHTNING, FALLING_BLOCK, SUFFOCATION, CONTACT,
+#  POISON, THORNS, BLOCK_EXPLOSION, ENTITY_EXPLOSION, VOID, STARVATION, SUICIDE, KILL,
+#  CUSTOM, WORLD_BORDER, FREEZE, CRAMMING, DRYOUT, MELTING.
+#  Звуки — ключи ресурсов Minecraft (entity.player.attack.crit); пустая строка — без звука.
+#  Сообщения — MiniMessage; пустая строка — не показывать.
+#  Раздел можно выключить и коротко: «bleed: false» = «bleed: {enabled: false}».
+# ============================================================================
+
+# --- Атака игрока ------------------------------------------------------------
+attack:
+  # Какие удары игрока усиливаются (шаги 1–6). Шипы, взрывы и прочее не трогаем.
+  causes: [ENTITY_ATTACK, ENTITY_SWEEP_ATTACK, PROJECTILE]
+  # Множитель урона от заточки оружия. Ближний бой — предмет в основной руке,
+  # стрела/болт/трезубец — снимок оружия в момент выстрела.
+  sharpen-weapon: true
+
+# --- Пассивки ----------------------------------------------------------------
+# Какие пассивки есть у игрока, решают класс и профессия (progression.yml).
+# Здесь — включение и числа.
+passives:
+  # Ярость: +percent-per-step % урона за каждые step-percent % потерянного здоровья,
+  # не больше max-percent. Для снарядов — по здоровью в момент выстрела.
+  rage:
+    enabled: true
+    percent-per-step: 2
+    step-percent: 5
+    max-percent: 40
+  # Выстрел в голову: снаряд из оружия попал выше уровня глаз цели минус eye-offset блока.
+  headshot:
+    enabled: true
+    multiplier: 1.5
+    eye-offset: 0.3
+    message: "<yellow>В голову!</yellow>"
+  # Удар в спину: угол между взглядом цели и направлением на атакующего больше angle
+  # градусов (в горизонтальной плоскости) — удар всегда критический.
+  backstab:
+    enabled: true
+    angle: 120
+    # true — только ближний бой; false — и снаряды (направление полёта снаряда).
+    melee-only: true
+    message: "<dark_red>Удар в спину!</dark_red>"
+  # Двойное оружие: если во второй руке меч или топор, к удару ближнего боя
+  # прибавляется percent % атаки этого предмета. Атака берётся из модификаторов
+  # ATTACK_DAMAGE предмета (если заданы), иначе из таблицы ниже.
+  dual_wield:
+    enabled: true
+    percent: 60
+    # Атака предмета, как в подсказке («Урон при атаке»), включая базовую единицу.
+    attack:
+      WOODEN_SWORD: 4
+      STONE_SWORD: 5
+      COPPER_SWORD: 5
+      IRON_SWORD: 6
+      GOLDEN_SWORD: 4
+      DIAMOND_SWORD: 7
+      NETHERITE_SWORD: 8
+      WOODEN_AXE: 7
+      STONE_AXE: 9
+      COPPER_AXE: 9
+      IRON_AXE: 9
+      GOLDEN_AXE: 7
+      DIAMOND_AXE: 9
+      NETHERITE_AXE: 10
+
+# --- Урон по целям -----------------------------------------------------------
+damage-vs:
+  # damage_vs:monster (%) работает против монстров.
+  monster: true
+  # Стихии damage_vs:<стихия> (%) работают против всех целей; если цель — игрок,
+  # бонус уменьшается на его resistance:<та же стихия> (доля): 10% и 0.04 → +6%.
+  elements: [fire, air, earth, water]
+
+# --- Крит --------------------------------------------------------------------
+crit:
+  enabled: true
+  # Потолок шанса крита, % (формула Royal Quest — 57%).
+  cap-percent: 57
+  # Нижняя граница силы крита, % (0 — без границы, ровно ×(1 + crit_damage/100) по контракту).
+  # База Royal Quest 50% уже входит в crit_damage из формулы удачи. Не ставьте больше 0,
+  # если профессии запирают crit_damage (Паладин, Клирик): иначе их крит снова станет ×1.5.
+  min-damage-percent: 0
+  # Частица у цели (имя Particle без данных, например CRIT, ENCHANTED_HIT; none — без частиц).
+  particle: CRIT
+  particle-count: 12
+  sound:
+    key: entity.player.attack.crit
+    volume: 1.0
+    pitch: 1.0
+  # Action bar атакующему.
+  message: "<gold>Критический удар!</gold>"
+
+# --- Статусы при ударе (шанс — аспекты status_bleed / status_poison / status_burn, %) ---
+statuses:
+  # Кровотечение — эффект иссушения.
+  bleed:
+    enabled: true
+    effect: wither
+    duration-ticks: 60   # 3 с
+    amplifier: 0
+  poison:
+    enabled: true
+    effect: poison
+    duration-ticks: 60
+    amplifier: 0
+  # Ожог — поджог цели на duration-ticks.
+  burn:
+    enabled: true
+    duration-ticks: 60
+
+# --- Уворот (защищается игрок) ---------------------------------------------
+evasion:
+  enabled: true
+  # Потолок шанса уворота, доля (0.85 = 85%).
+  cap: 0.85
+  # От каких ударов можно увернуться.
+  causes: [ENTITY_ATTACK, ENTITY_SWEEP_ATTACK, PROJECTILE]
+  sound:
+    key: entity.player.attack.nodamage
+    volume: 1.0
+    pitch: 1.4
+  # Action bar увернувшемуся и промахнувшемуся игроку.
+  message: "<green>Уворот!</green>"
+  attacker-message: "<gray>Промах!</gray>"
+
+# --- Заточка брони -----------------------------------------------------------
+armor-sharpen:
+  enabled: true
+  # Средний бонус заточки надетой брони (аспект armor_sharpen) делит входящий урон.
+  # Эти причины не уменьшаются:
+  ignore-causes: [VOID, STARVATION, SUICIDE, KILL, CUSTOM, WORLD_BORDER]
+
+# --- Сопротивление -----------------------------------------------------------
+resistance:
+  enabled: true
+  # Потолок суммарного сопротивления, доля (решение артефакта: 0.40 вместо 0.60).
+  cap: 0.40
+  # Причины, на которые сопротивление не действует.
+  ignore-causes: []
+  # Цели resistance:<цель>: срабатывают по причине урона (causes) или по тому, кто
+  # нанёс урон (attackers; для снаряда — стрелок). В attackers — типы сущностей
+  # (EntityType) или группы: #undead (нежить, тег «Небесная кара»), #arthropod
+  # (членистоногие, тег «Бич членистоногих»), #humanoid (игроки, жители, иллагеры,
+  # ведьмы, пиглины), #animal (животные и волки), #monster, #player.
+  # Если подходит несколько целей, их сопротивления складываются.
+  targets:
+    fire:
+      causes: [FIRE, FIRE_TICK, LAVA, HOT_FLOOR, CAMPFIRE]
+      attackers: [BLAZE, MAGMA_CUBE]
+    chaos:
+      causes: [MAGIC, WITHER, DRAGON_BREATH, SONIC_BOOM]
+    undead:
+      attackers: ["#undead"]
+    humanoid:
+      attackers: ["#humanoid"]
+    water:
+      causes: [DROWNING]
+      attackers: [DROWNED, GUARDIAN, ELDER_GUARDIAN]
+    air:
+      causes: [FALL, FLY_INTO_WALL, LIGHTNING]
+      attackers: [PHANTOM, BREEZE, GHAST]
+    earth:
+      causes: [FALLING_BLOCK, SUFFOCATION, CONTACT]
+    poison:
+      causes: [POISON]
+      attackers: [SPIDER, CAVE_SPIDER, BEE]
+    animal:
+      attackers: ["#animal"]
+    arthropod:
+      attackers: ["#arthropod"]
+
+# --- Вампиризм ---------------------------------------------------------------
+lifesteal:
+  enabled: true
+  # Потолок вампиризма, % от итогового урона.
+  cap-percent: 20
+  # false (по контракту) — от всего итогового урона. true — урон для вампиризма не больше
+  # оставшегося здоровья цели (нельзя «выпить» 100 HP из курицы).
+  limit-to-target-health: false
+
+# --- Здоровье за убийство (аспект heal_on_kill, HP) ------------------------------
+heal-on-kill:
+  enabled: true
+
+# --- Регенерация (аспект regen, HP в секунду) -----------------------------------
+regen:
+  enabled: true
+  # Как часто лечить, тиков (20 = раз в секунду). За раз — regen × period / 20.
+  period-ticks: 20

@@ -1,0 +1,31 @@
+# Регионы спавна core-mobs. Файл пишет система (команды /mobs region ...), но его можно править руками,
+# потом /mobs reload. points — вершины полигона (блоки x,y,z), min-y/max-y — высота региона.
+# despawn-radius — на сколько блоков моб может отойти за границу региона, дальше он пропадает (-1 — выключено).
+# spawn.mobs — какие мобы появляются и их веса (чем больше вес, тем чаще).
+
+regions:
+  test:
+    world: dungeon
+    points:
+    - -535,-27,-652
+    - -541,-27,-648
+    - -545,-27,-643
+    - -545,-27,-636
+    - -539,-27,-632
+    - -532,-27,-631
+    - -528,-27,-640
+    - -526,-27,-647
+    min-y: -27
+    max-y: -12
+    despawn-radius: 5
+    spawn:
+      enabled: true
+      interval-seconds: 10
+      max-alive: 10
+      amount: '1'
+      player-radius: 48
+      min-player-distance: 6
+      mobs:
+        forest_zombie: 1
+        cave_skeleton: 1
+        venom_spider: 1

@@ -1,0 +1,102 @@
+# MISCELLANEOUS
+commands:
+  enabled: true
+armor_effects:
+  enabled: true
+  delay: 1s
+custom:
+  enabled: true
+itemtype:
+  enabled: true
+soulbound:
+  enabled: true
+backpack:
+  enabled: true
+misc:
+  enabled: true
+  default_allowed_in_vanilla_recipes: false
+  # Disables items that prevent_breaking keeps alive, by stripping the components that make them function
+  # (tool, weapon, attribute-modifiers, glider...) until the item is repaired again
+  # A disabled tool mines at fist-speed and drops nothing, a disabled weapon deals base damage
+  # Enchantments are left on the item, so their effects still apply while it is disabled
+  # Bows, crossbows, tridents, fishing-rods and the like have no component behind their use and are unaffected
+  # Shields are only disabled on 1.21.5+, the component they need does not exist before that
+  disable_components_on_prevent_breaking: false
+trident:
+  enabled: true
+
+# GAMEPLAY
+custom_blocks:
+  enabled: true
+  # Can be overriden for sub-mechanics by specifying it in them aswell
+  tool_types:
+    - WOODEN
+    - STONE
+    - IRON
+    - GOLDEN
+    - DIAMOND
+    - NETHERITE
+  noteblock:
+    # Reimplements noteblock features while using custom blocks
+    # Adds instrument option in noteblock mechanics
+    reimplement_noteblock_features: false
+    enabled: true
+  stringblock:
+      sapling_growth_check_delay: 4000
+      disable_vanilla_strings: false
+      default_require_supporting: true
+      enabled: true
+  chorusblock:
+    enabled: true
+  custom_block_sounds:
+    enabled: true
+    # If false, plays for animals stepping/falling on blocks aswell
+    # Enable this if you are experiencing lag with noteblock-sounds
+    players_only: true
+furniture:
+  tool_types:
+    - WOODEN
+    - STONE
+    - IRON
+    - GOLDEN
+    - DIAMOND
+    - NETHERITE
+  # ticks between each check for plant growth
+  evolution_check_delay: 200
+  custom_block_sounds: true
+  default_rotatable_on_sneak: false
+  handle_non_player_barrier_collision: false
+  try_preventing_barrier_kick: false
+  lookup_block_on_light_remove: true
+  # Defaults for all furniture, each one can be overriden per furniture, which also takes `preview_placement: true`
+  preview_placement:
+    enabled: false
+    # 1 leaves the preview solid
+    opacity: 0.4
+    # nexo.furniture.preview_placement, or nexo.furniture.preview_placement.<itemid> for a single furniture
+    require_permission: false
+  default_properties:
+    display_transform: NONE
+    # Default state for culling for all furniture, can be specified per furniture too
+    # If NOT_SET this will use the `force_culling` property below
+    culling: NOT_SET
+  culling:
+    enabled: true
+    interval: 1t
+    force_culling: true
+    distance: 0..64
+    padding_width: 0.0
+    padding_height: 0.0
+    ignore_width: 0.0
+    ignore_height: 0.0
+  enabled: true
+
+# FARMING
+smelting:
+  enabled: true
+  blacklist_cooked: [ WET_SPONGE ]
+harvesting:
+  enabled: true
+repair:
+  enabled: true
+  nexo_durability_only: true
