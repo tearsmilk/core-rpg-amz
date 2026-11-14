@@ -16,7 +16,7 @@
 // Screen kinds (82, 83) ignore where the display is: their quad is placed over the whole screen in clip space,
 // just behind the near plane (CP_SCREEN_DEPTH), so only the player the display is shown to sees it, at any
 // resolution, GUI scale or aspect ratio.
-// B is never above 250: rezusmenu's cursor marker is R ~ 254, B ~ 254 (+-1.5), and R = 255 is inside its tolerance.
+// B is never above 250: a margin from rezusmenu's cursor marker (254, G, 254) in case its test is not exact.
 //
 // All names are prefixed with cp / cp_ so the file can share one core shader with other systems' hooks.
 

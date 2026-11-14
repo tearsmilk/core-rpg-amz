@@ -87,7 +87,7 @@ class AuraMathTest {
         for (final int shade : Markers.SHARD_SHADES) {
             assertTrue(shade <= Markers.MAX_PARAM);
         }
-        // rezusmenu узнаёт курсор по R ≈ 254, B ≈ 254 (±1,5): наш синий канал до 250 под это не попадает.
+        // Запас от маркера курсора rezusmenu (254, G, 254) даже при допуске ±1,5.
         assertTrue(Markers.param(Markers.RIFT, 1.0).getBlue() < 252.5);
     }
 }

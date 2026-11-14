@@ -338,8 +338,8 @@ float cp_rift_inner(vec2 o, float t) {
     float streak = pow(0.5 + 0.5 * cos(arm), 16.0) * smoothstep(0.16, 0.5, r) * smoothstep(1.05, 0.65, r);
     float fine = pow(0.5 + 0.5 * cos(arm * 2.0 + cloud * 7.0), 28.0) * smoothstep(0.25, 0.6, r);
     float core = smoothstep(0.36, 0.1, r);                                // black core
-    float lum = 0.14 + 0.62 * cloud * smoothstep(0.08, 0.6, r) + 0.22 * smoothstep(0.55, 1.0, r);
-    lum += streak * (0.45 + 0.5 * cloud) + fine * 0.35;
+    float lum = 0.08 + 0.45 * cloud * smoothstep(0.08, 0.6, r) + 0.14 * smoothstep(0.6, 1.0, r);
+    lum += streak * (0.4 + 0.45 * cloud) + fine * 0.3;
     return lum * (1.0 - 0.93 * core);
 }
 
@@ -370,13 +370,14 @@ vec4 cp_rift(vec2 uv, float t, float p) {
 
     // Interior (where the edges have parted).
     float inside = A > 0.0 ? smoothstep(0.015, -0.035, sd) : 0.0;
-    float lum = cp_rift_inner(o, t) + 0.5 * exp(sd / 0.3) + 0.25 * (1.0 - ease);
+    float lum = cp_rift_inner(o, t) + 0.32 * exp(sd / 0.22) + 0.2 * (1.0 - ease);
     vec3 inner = cp_azure(lum);
 
     // Bright line: the crack itself, then the two torn edges, then the icy rim of the oval.
     float dist = abs(sd);
     float line = (exp(-dist / 0.035) + 0.5 * exp(-dist / 0.18)) * reach * flick;
     line *= mix(1.25, 0.85, ease);
+    line += 0.55 * exp(-dist / 0.1) * ease * flick;                     // the icy glowing rim of the open rift
     // Shattered space around the tear while it splits and tears (voronoi cell borders near the outline).
     vec2 v = cp_voronoi(q * 1.5 + 5.0);
     float cell = 1.0 - smoothstep(0.0, 0.045, v.y - v.x);
@@ -444,13 +445,13 @@ vec4 cp_screen_glow(vec2 uv, float t, float i) {
     float e = length(c * vec2(0.94, 1.0));                // elliptic like the screen (vanilla vignette too)
     vec2 p = vec2(c.x * cp_aspect(), c.y);
     vec2 cs = normalize(p + vec2(1e-5));
-    float inner = mix(1.3, 0.5, i);
+    float inner = mix(1.2, 0.45, i);
     float v = smoothstep(inner, inner + 0.8, e);
     float streak = pow(cp_noise(cs * 9.0 + vec2(e * 2.2 + t * 1.5)), 3.0);
     float mist = cp_fbm(p * 1.3 + vec2(t * 0.12, -t * 0.09));
     float pulse = 0.88 + 0.12 * sin(t * 2.3);
     float k = v * (0.5 + 0.5 * mist) * pulse + v * streak * (0.3 + 0.5 * i);
-    float alpha = clamp(k * (0.22 + 0.55 * i), 0.0, 0.8);
+    float alpha = clamp(k * (0.3 + 0.5 * i), 0.0, 0.8);
     vec3 col = cp_azure(0.42 + 0.45 * v + 0.45 * streak * v);
     return vec4(col, alpha);
 }
@@ -464,7 +465,7 @@ vec4 cp_screen_cracks(vec2 uv, float t, float pr) {
     vec2 c = (uv - 0.5) * 2.0;
     vec2 p = vec2(c.x * cp_aspect(), c.y);
     float border = 1.0 - max(abs(c.x), abs(c.y));         // 0 at the screen edge, 1 in the middle
-    float reach = 0.06 + 0.5 * smoothstep(0.0, 0.7, pr);  // how far in the cracks have run
+    float reach = 0.06 + 0.38 * smoothstep(0.0, 0.7, pr); // how far in the cracks have run (the middle stays clear)
     float front = reach + 0.14 * (cp_noise(p * 2.6 + 1.3) - 0.5);
     float m = smoothstep(front, front - 0.12, border);
     float fade = 1.0 - smoothstep(0.8, 1.0, pr);
