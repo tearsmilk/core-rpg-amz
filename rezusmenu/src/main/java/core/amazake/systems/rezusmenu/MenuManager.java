@@ -74,6 +74,10 @@ public final class MenuManager implements Listener {
         this.skins = new SkinService(context.plugin(), context.logger());
     }
 
+    public PlayerStore store() {
+        return this.store;
+    }
+
     public boolean isOpen(final Player player) {
         return this.sessions.containsKey(player.getUniqueId());
     }
@@ -122,7 +126,8 @@ public final class MenuManager implements Listener {
                 this.context.runOnceForPlayer(player, () -> this.open(player, "rpg"));
             });
         } else {
-            session.rpg = new RpgScreen(screen, s, this.skins, r -> this.context.runOnceForPlayer(player, r),
+            session.rpg = new RpgScreen(screen, s, this.skins, this.store.stashExtraRows(player.getUniqueId()),
+                r -> this.context.runOnceForPlayer(player, r),
                 () -> this.close(player),
                 () -> this.context.runOnceForPlayer(player, () -> this.openCalibration(player)));
         }
@@ -383,6 +388,10 @@ public final class MenuManager implements Listener {
             event.setCancelled(true);
             return;
         }
+        final Session s = this.sessions.get(event.getPlayer().getUniqueId());
+        if (s != null && s.screen.selfTeleport()) {
+            return; // меню само поворачивает камеру
+        }
         this.close(event.getPlayer());
     }
 
@@ -395,6 +404,26 @@ public final class MenuManager implements Listener {
     }
 
     /** Вышел посреди меню: HUD вернём при следующем входе (сейчас команда уже не найдёт игрока). */
+    /**
+     * Клавиша F (сменить руки) открывает меню в выживании и приключении: нажатие E сервер не видит — клиент
+     * открывает свой инвентарь сам, без пакета. В творческом F работает как обычно, а E — ванильный инвентарь.
+     */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onSwapHands(final org.bukkit.event.player.PlayerSwapHandItemsEvent event) {
+        final Player player = event.getPlayer();
+        final Settings s = this.settings.get();
+        if (!s.swapHandsOpens() || this.isOpen(player) || s.swapHandsSneak() != player.isSneaking()) {
+            return;
+        }
+        final org.bukkit.GameMode mode = player.getGameMode();
+        if (mode != org.bukkit.GameMode.SURVIVAL && mode != org.bukkit.GameMode.ADVENTURE) {
+            return;
+        }
+        event.setCancelled(true);
+        // Открыть уже после события (меню меняет режим и телепортирует игрока).
+        this.context.runOnceForPlayer(player, () -> this.open(player, "rpg"));
+    }
+
     @EventHandler
     public void onQuit(final PlayerQuitEvent event) {
         this.close(event.getPlayer(), true);

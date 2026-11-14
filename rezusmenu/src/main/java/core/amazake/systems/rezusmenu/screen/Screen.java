@@ -210,6 +210,12 @@ public final class Screen {
     /** Подсветки «под курсором» по id текстуры: одна на экран, переезжает к кнопке под курсором. */
     private final Map<String, Quad> hoverQuads = new HashMap<>();
     private final Map<String, Integer> hoverLayers = new HashMap<>();
+    /** Меню само телепортирует игрока (поворот камеры) — MenuManager не должен из-за этого закрывать меню. */
+    private boolean selfTeleport;
+
+    public boolean selfTeleport() {
+        return this.selfTeleport;
+    }
     /** Пиксель холста → единицы камеры. */
     private final double scale;
     private double boundW;
@@ -420,6 +426,20 @@ public final class Screen {
         final TextDisplay d = this.spawnText(PanelMath.camX(x + w / 2, this.scale), PanelMath.camY(bottom, this.scale),
             lineHeight * this.scale, text, depth(layer), null, group);
         d.setLineWidth(Math.max(20, (int) Math.round(w / lineHeight * PanelMath.LINE_H)));
+        return d;
+    }
+
+    /**
+     * Текст с фоном, выровненный влево (всплывающая подсказка): нижний край — {@code bottom} px, по горизонтали —
+     * по центру {@code x + w / 2}; строки длиннее {@code wrapW} px переносятся.
+     */
+    public TextDisplay textBox(final double x, final double bottom, final double w, final double wrapW,
+                               final double lineHeight, final Component text, final int layer, final Color background,
+                               final String group) {
+        final TextDisplay d = this.spawnText(PanelMath.camX(x + w / 2, this.scale), PanelMath.camY(bottom, this.scale),
+            lineHeight * this.scale, text, depth(layer), background, group);
+        d.setAlignment(TextDisplay.TextAlignment.LEFT);
+        d.setLineWidth(Math.max(20, (int) Math.round(wrapW / lineHeight * PanelMath.LINE_H)));
         return d;
     }
 
@@ -779,7 +799,12 @@ public final class Screen {
             // к краю — возвращаем камеру к горизонту и ставим опору так, чтобы курсор остался там же.
             final Location back = this.player.getLocation();
             back.setPitch(0f);
-            this.player.teleport(back);
+            this.selfTeleport = true;
+            try {
+                this.player.teleport(back);
+            } finally {
+                this.selfTeleport = false;
+            }
             this.refPitch = 0f;
             this.placeAnchor(yaw, 0f, this.cu, this.cv);
             return;

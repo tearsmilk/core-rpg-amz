@@ -123,6 +123,14 @@ public final class RpgScreen {
     private final Runnable closeAction;
     private final Runnable calibrateAction;
     private final Jewelry jewelry;
+    private final Stash stash;
+    /** Верхний показанный ряд хранилища. */
+    private int stashOffset;
+    private TextDisplay stashRowsText;
+    private Screen.Button statsButton;
+    /** Плавающая подсказка предмета (полный тултип) — своя группа, пересоздаётся при смене наведения. */
+    private static final String TIP = "tip";
+    private static final int L_TIP = 10;
     private final Map<Integer, Slot> slots = new HashMap<>();
     private final Map<Screen.Button, Integer> slotOf = new HashMap<>();
     private final Map<Screen.Button, Mmocore.Skill> skillOf = new HashMap<>();
@@ -158,7 +166,7 @@ public final class RpgScreen {
     private TextDisplay equipmentText;
     private TextDisplay skillPointsLine;
 
-    public RpgScreen(final Screen screen, final Settings settings, final SkinService skins,
+    public RpgScreen(final Screen screen, final Settings settings, final SkinService skins, final int stashExtraRows,
                      final Consumer<Runnable> playerThread, final Runnable closeAction, final Runnable calibrateAction) {
         this.screen = screen;
         screen.hoverLayer("skill_hover", L_HOVER_SKILL);
@@ -169,6 +177,12 @@ public final class RpgScreen {
         this.closeAction = closeAction;
         this.calibrateAction = calibrateAction;
         this.jewelry = new Jewelry(this.player);
+        this.stash = new Stash(this.player, settings.stashBaseRows(), Math.min(stashExtraRows, settings.stashMaxExtraRows()));
+    }
+
+    /** Слоты, которые видны на всех вкладках (броня, вторая рука, бижутерия): их не убирает смена вкладки. */
+    private static boolean persistent(final int index) {
+        return index >= 36 && index <= Jewelry.ARTIFACT;
     }
 
     /** Пиксель панели → пиксель холста. */
@@ -344,8 +358,12 @@ public final class RpgScreen {
     private void switchTab(final Tab next) {
         this.tab = next;
         this.screen.clear(CONTENT);
-        this.slots.values().removeIf(s -> s.index() < 36);
-        this.slotOf.values().removeIf(i -> i < 36);
+        this.screen.clear(TIP);
+        this.tipSignature = "";
+        this.slots.values().removeIf(s -> !persistent(s.index()));
+        this.slotOf.values().removeIf(i -> !persistent(i));
+        this.stashRowsText = null;
+        this.statsButton = null;
         this.skillOf.clear();
         this.equipmentText = null;
         this.tooltip = null;
@@ -353,9 +371,8 @@ public final class RpgScreen {
         this.skillPointsLine = null;
         this.skillSignature = "";
         this.tabActive.place(X(TAB_X[next.ordinal()]), Y(TAB_Y));
-        if (this.picked != null && this.picked < 36 && next != Tab.INVENTORY) {
-            this.picked = null;
-        }
+        // Выбранный предмет остаётся выбранным при смене вкладки: так его можно перенести из инвентаря в
+        // хранилище и обратно (выбрать на одной вкладке, положить на другой).
         switch (next) {
             case INVENTORY -> {
                 this.heading("Инвентарь");
@@ -370,8 +387,8 @@ public final class RpgScreen {
                 this.rightCommon();
             }
             case EQUIPMENT -> {
-                this.heading("Снаряжение и характеристики");
-                this.equipmentText = this.text(RIGHT_X + 4, 74, RIGHT_W - 8, 128, 9, Component.empty(), L_TEXT, CONTENT);
+                this.heading("Хранилище");
+                this.buildStash();
                 this.rightCommon();
             }
             case SKILLS -> this.buildSkills(Mmocore.read(this.player, SKILL_MAX));
@@ -384,6 +401,49 @@ public final class RpgScreen {
         }
         this.repaintSlots();
         this.refresh();
+    }
+
+    /**
+     * Хранилище: три видимых ряда в колодцах сетки, под ними — прокрутка (▲ ▼), счётчик рядов и кнопка «≡»
+     * (характеристики снаряжения во всплывающей подсказке).
+     */
+    private void buildStash() {
+        final int rows = this.stash.rows();
+        this.stashOffset = Stash.clampOffset(this.stashOffset, rows);
+        for (int row = 0; row < Stash.VISIBLE_ROWS && this.stashOffset + row < rows; row++) {
+            for (int col = 0; col < Stash.COLS; col++) {
+                this.slot(Stash.BASE + (this.stashOffset + row) * Stash.COLS + col, GRID_X + col * GRID_STEP, GRID_Y[row]);
+            }
+        }
+        final boolean scroll = rows > Stash.VISIBLE_ROWS;
+        this.button(GRID_X, HOTBAR_Y, WELL, WELL, "slot_hover", CONTENT, "хранилище вверх", b -> this.scrollStash(-1));
+        this.text(GRID_X, HOTBAR_Y, WELL, WELL, 12, Text.item(scroll ? "<gold>▲</gold>" : "<dark_gray>▲</dark_gray>"), L_TEXT, CONTENT);
+        this.button(GRID_X + GRID_STEP, HOTBAR_Y, WELL, WELL, "slot_hover", CONTENT, "хранилище вниз", b -> this.scrollStash(1));
+        this.text(GRID_X + GRID_STEP, HOTBAR_Y, WELL, WELL, 12, Text.item(scroll ? "<gold>▼</gold>" : "<dark_gray>▼</dark_gray>"), L_TEXT, CONTENT);
+        this.stashRowsText = this.text(GRID_X + 2 * GRID_STEP, HOTBAR_Y, 6 * GRID_STEP - 3, WELL, 8, Component.empty(), L_TEXT, CONTENT);
+        this.statsButton = this.button(GRID_X + 8 * GRID_STEP, HOTBAR_Y, WELL, WELL, "slot_hover", CONTENT, "характеристики", b -> { });
+        this.text(GRID_X + 8 * GRID_STEP, HOTBAR_Y, WELL, WELL, 12, Text.item("<yellow>≡</yellow>"), L_TEXT, CONTENT);
+        this.updateStashRows();
+    }
+
+    private void updateStashRows() {
+        final int rows = this.stash.rows();
+        final int last = Math.min(rows, this.stashOffset + Stash.VISIBLE_ROWS);
+        final int extra = rows - this.settings.stashBaseRows();
+        final int canBuy = this.settings.stashMaxExtraRows() - Math.max(0, extra);
+        Screen.setText(this.stashRowsText, Text.item("<gray>Ряды <white>" + (this.stashOffset + 1) + "–" + last
+            + "</white> из <white>" + rows + "</white>" + (canBuy > 0 ? " · <gold>+" + canBuy + " за донат</gold>" : "") + "</gray>"));
+    }
+
+    private void scrollStash(final int delta) {
+        final int next = Stash.clampOffset(this.stashOffset + delta, this.stash.rows());
+        if (next == this.stashOffset) {
+            this.sound(Sound.BLOCK_NOTE_BLOCK_BASS);
+            return;
+        }
+        this.stashOffset = next;
+        this.sound(Sound.UI_BUTTON_CLICK);
+        this.switchTab(Tab.EQUIPMENT);
     }
 
     /** Подсказка предмета (две строки) и кнопки — у всех вкладок, кроме «Навыков» (её фон закрывает это место). */
@@ -668,9 +728,85 @@ public final class RpgScreen {
         }
         Screen.setText(this.tooltip, text);
         Screen.setText(this.tooltip2, second);
+        this.updateFloatingTip(index);
+    }
+
+    /** Подпись последней всплывающей подсказки: пересоздаём только когда она меняется. */
+    private String tipSignature = "";
+
+    /**
+     * Всплывающая подсказка как в ванильном инвентаре: полный тултип предмета под курсором (название, описание,
+     * зачарования, характеристики) — справа от слота (или слева, если не влезает), прижата к холсту.
+     */
+    private void updateFloatingTip(final Integer index) {
+        List<Component> lines = List.of();
+        double ax = 0;
+        double ay = 0;
+        if (index != null) {
+            final ItemStack item = this.get(index);
+            final Slot slot = this.slots.get(index);
+            if (item != null && !item.isEmpty() && slot != null) {
+                lines = tooltipLines(item, this.player);
+                ax = slot.x();
+                ay = slot.y();
+            }
+        } else if (this.lastHover != null && this.lastHover == this.statsButton) {
+            lines = new ArrayList<>();
+            lines.add(Text.item("<gold>Характеристики снаряжения</gold>"));
+            for (final String l : this.equipmentLines().split("\n")) {
+                lines.add(Text.item(l));
+            }
+            ax = GRID_X + 8 * GRID_STEP;
+            ay = HOTBAR_Y;
+        }
+        final String sig = lines.isEmpty() ? "" : ax + "," + ay + ":" + lines;
+        if (sig.equals(this.tipSignature)) {
+            return;
+        }
+        this.tipSignature = sig;
+        this.screen.clear(TIP);
+        if (lines.isEmpty()) {
+            return;
+        }
+        final TipLayout t = TipLayout.of(lines.stream().map(c ->
+            net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(c)).toList(),
+            ax, ay, WELL);
+        Component text = Component.empty();
+        for (int i = 0; i < t.lines(); i++) {
+            text = text.append(i == 0 ? lines.get(i) : Component.newline().append(lines.get(i)));
+        }
+        if (t.cut()) {
+            text = text.append(Component.newline()).append(Text.item("<dark_gray>…</dark_gray>"));
+        }
+        this.screen.textBox(t.left(), t.bottom(), t.width(), TipLayout.WRAP_W, TipLayout.LH, text, L_TIP, TIP_BG, TIP);
+    }
+
+    private static final org.bukkit.Color TIP_BG = org.bukkit.Color.fromARGB(236, 16, 6, 24);
+
+    /** Полный тултип предмета (Paper), а если не вышло — название и описание. */
+    static List<Component> tooltipLines(final ItemStack item, final Player player) {
+        try {
+            final List<Component> l = item.computeTooltipLines(
+                io.papermc.paper.inventory.tooltip.TooltipContext.create(false, false), player);
+            if (!l.isEmpty()) {
+                return l;
+            }
+        } catch (final RuntimeException | LinkageError e) {
+            // ниже — запасной вариант
+        }
+        final List<Component> out = new ArrayList<>();
+        out.add(item.effectiveName());
+        final List<Component> lore = item.lore();
+        if (lore != null) {
+            out.addAll(lore);
+        }
+        return out;
     }
 
     private static String slotName(final int index) {
+        if (Stash.isStash(index)) {
+            return "Хранилище";
+        }
         if (Jewelry.isJewel(index)) {
             return Jewelry.slotName(index);
         }
@@ -696,11 +832,16 @@ public final class RpgScreen {
     // --- управление инвентарём и бижутерией ---
 
     private ItemStack get(final int index) {
+        if (Stash.isStash(index)) {
+            return this.stash.open(index) ? this.stash.get(index) : null;
+        }
         return Jewelry.isJewel(index) ? this.jewelry.get(index) : this.player.getInventory().getItem(index);
     }
 
     private void set(final int index, final ItemStack item) {
-        if (Jewelry.isJewel(index)) {
+        if (Stash.isStash(index)) {
+            this.stash.set(index, item);
+        } else if (Jewelry.isJewel(index)) {
             this.jewelry.set(index, item);
         } else {
             this.player.getInventory().setItem(index, item == null || item.isEmpty() ? null : item);
@@ -708,6 +849,13 @@ public final class RpgScreen {
     }
 
     private void clickSlot(final int index) {
+        if (Stash.isStash(index) && (!this.stash.open(index) || this.stash.locked(index))) {
+            this.player.sendActionBar(Text.mm("<red>Слот хранилища не прочитался — обратитесь к администрации</red>"));
+            return;
+        }
+        if (this.picked != null && Stash.isStash(this.picked) && (!this.stash.open(this.picked) || this.stash.locked(this.picked))) {
+            this.picked = null;
+        }
         if (Jewelry.isJewel(index) && this.jewelry.locked(index)) {
             this.player.sendActionBar(Text.mm("<red>Слот не прочитался — обратитесь к администрации</red>"));
             return;

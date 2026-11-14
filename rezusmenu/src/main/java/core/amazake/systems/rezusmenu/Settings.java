@@ -32,7 +32,11 @@ public record Settings(
     List<String> hudShowCommands,
     boolean shaderCursor,
     double glyphOffsetX,
-    double glyphOffsetY
+    double glyphOffsetY,
+    boolean swapHandsOpens,
+    boolean swapHandsSneak,
+    int stashBaseRows,
+    int stashMaxExtraRows
 ) {
 
     /** Кнопка в диалоге /menuses. */
@@ -134,7 +138,7 @@ public record Settings(
         List.of(new MenuEntry("rpg", "<gold>RPG-инвентарь</gold>", "<gray>Персонаж, снаряжение и инвентарь</gray>")),
         0.045, true, 10, false,
         DEFAULT_PH, DEFAULT_RESOURCES, DEFAULT_STATS, DEFAULT_EQUIPMENT, DEFAULT_CLASSES, DEFAULT_PROFESSIONS,
-        Material.BOOK, DEFAULT_JEWELRY, List.of(), List.of(), true, 0.0, 0.0);
+        Material.BOOK, DEFAULT_JEWELRY, List.of(), List.of(), true, 0.0, 0.0, true, false, 3, 6);
 
     private static Map<String, ClassInfo> ordered(final ClassInfo... infos) {
         final Map<String, ClassInfo> m = new LinkedHashMap<>();
@@ -219,7 +223,11 @@ public record Settings(
             commands(c, "hud.show-commands"),
             c.getBoolean("art.shader-cursor", d.shaderCursor()),
             offX,
-            offY);
+            offY,
+            c.getBoolean("open-key.swap-hands", d.swapHandsOpens()),
+            c.getBoolean("open-key.sneak", d.swapHandsSneak()),
+            Math.max(1, Math.min(6, c.getInt("stash.base-rows", d.stashBaseRows()))),
+            Math.max(0, Math.min(30, c.getInt("stash.max-extra-rows", d.stashMaxExtraRows()))));
     }
 
     private static Resources resources(final ConfigurationSection r, final Resources fallback) {
