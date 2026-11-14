@@ -66,13 +66,13 @@ final class RingVisuals {
         this.nebula = this.item(world, at, s, instance, Markers.item("portal_nebula", Markers.NEBULA),
             Display.Billboard.FIXED);
         this.vortex = this.item(world, at, s, instance, vortexItem(1.0), Display.Billboard.FIXED);
-        this.phaseByte = 255;
+        this.phaseByte = Markers.MAX_PARAM;
         this.spark = this.item(world, at, s, instance, Markers.item("portal_spark", Markers.SPARK),
             Display.Billboard.CENTER);
         final ThreadLocalRandom r = ThreadLocalRandom.current();
         final Color[] shades = new Color[Markers.SHARD_SHADES.length];
         for (int i = 0; i < shades.length; i++) {
-            shades[i] = Markers.param(Markers.SHARD, Markers.SHARD_SHADES[i] / 255.0);
+            shades[i] = Markers.paramRaw(Markers.SHARD, Markers.SHARD_SHADES[i]);
         }
         final double start = r.nextDouble(Math.PI * 2);
         for (int i = 0; i < SHARDS; i++) {
@@ -114,10 +114,10 @@ final class RingVisuals {
             final float side = 2 * VORTEX_HALF * ring;
             set(this.vortex, duration, new Vector3f(0, 0, 0), new Quaternionf().rotateZ((float) tl.spin(t)),
                 new Vector3f(side, side, 1f));
-            final int pb = (int) Math.round(Math.max(0, Math.min(1, tl.shaderPhase(t))) * 255);
+            final int pb = Markers.paramByte(tl.shaderPhase(t));
             if (pb != this.phaseByte && this.vortex != null) {
                 this.phaseByte = pb;
-                this.vortex.setItemStack(vortexItem(pb / 255.0));
+                this.vortex.setItemStack(vortexItem(pb / (double) Markers.MAX_PARAM));
             }
             final float glow = Math.max((float) tl.glow(t), MIN_SCALE);
             set(this.nebula, duration, new Vector3f(0, 0, NEBULA_BACK), new Quaternionf(),

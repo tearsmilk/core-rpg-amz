@@ -1,5 +1,6 @@
 package core.amazake.systems.coreportals;
 
+import core.amazake.systems.coreportals.geo.RiftPlacement;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
@@ -27,12 +28,49 @@ import org.bukkit.configuration.ConfigurationSection;
  * @param sounds            звуки
  * @param messages          тексты
  * @param emerald           «Изумрудный портал»: свои предмет, срок жизни, расстояние и (по желанию) действие
+ * @param lapis             «Лазуритовый портал»: свои предмет, срок жизни, расстояние, размер разлома, эффекты на
+ *                          экране, затягивание и (по желанию) действие
  */
 public record Settings(String prefix, String itemName, List<String> itemLore, String itemModel, boolean consume,
                        long cooldownTicks, long lifetimeTicks, int distance, int groundSearch, int maxPerPlayer,
                        boolean ownerOnly, long immunityTicks, String frameBlock, float viewRange,
                        TeleportAction teleport, boolean particles, boolean sounds, Messages messages,
-                       Emerald emerald) {
+                       Emerald emerald, Lapis lapis) {
+
+    /**
+     * Раздел {@code lapis:} config.yml — «Лазуритовый портал» (разлом). Ключи, которых там нет, берутся из общих
+     * ({@code portal.lifetime-seconds}, {@code portal.distance}, {@code teleport.*}).
+     *
+     * @param itemName      имя предмета (MiniMessage)
+     * @param itemLore      описание предмета (MiniMessage)
+     * @param itemModel     item_model иконки (пусто — обычный лазурит)
+     * @param lifetimeTicks срок жизни разлома
+     * @param distance      на сколько рядов блоков впереди игрока ставится разлом
+     * @param size          ширина, высота и высота центра над землёй
+     * @param radius        радиус «ауры», блоков (от прямоугольника разлома): свечение и трещины на экране,
+     *                      затягивание; 0 — без эффектов на экране и без затягивания
+     * @param screenGlow    свечение по краям экрана у игроков в радиусе
+     * @param screenCracks  трещины на экране у игроков в радиусе, пока разлом раскрывается
+     * @param pullStrength  сила затягивания, блоков/тик за толчок вплотную к разлому (0 — без затягивания)
+     * @param pullMaxSpeed  скорость к разлому, выше которой затягивание не разгоняет, блоков/тик
+     * @param teleport      своё действие при входе; {@code null} — общее {@code teleport}
+     */
+    public record Lapis(String itemName, List<String> itemLore, String itemModel, long lifetimeTicks, int distance,
+                        RiftPlacement.Size size, double radius,
+                        boolean screenGlow, boolean screenCracks, double pullStrength, double pullMaxSpeed,
+                        TeleportAction teleport) {
+
+        public static final Lapis DEFAULTS = new Lapis(
+            "<!i><gradient:#0a1f8f:#1a4cff:#9fe8ff:#1a4cff:#0a1f8f>Лазуритовый портал</gradient>",
+            List.of("<!i><gray>В синей глубине камня спит разлом.",
+                "<!i><gray>ПКМ — разорвать пространство перед собой."),
+            "", 600L, 3, RiftPlacement.Size.DEFAULT, 10.0, true, true,
+            0.05, 0.25, null);
+
+        public Lapis {
+            itemLore = List.copyOf(itemLore);
+        }
+    }
 
     /**
      * Раздел {@code emerald:} config.yml. Ключи, которых там нет, берутся из общих ({@code portal.*},
@@ -61,27 +99,42 @@ public record Settings(String prefix, String itemName, List<String> itemLore, St
 
     /** Действие при входе в портал этого вида. */
     public TeleportAction teleportFor(final PortalType type) {
-        return type == PortalType.EMERALD && this.emerald.teleport() != null ? this.emerald.teleport() : this.teleport;
+        if (type == PortalType.EMERALD && this.emerald.teleport() != null) {
+            return this.emerald.teleport();
+        }
+        if (type == PortalType.LAPIS && this.lapis.teleport() != null) {
+            return this.lapis.teleport();
+        }
+        return this.teleport;
     }
 
     /** Срок жизни портала этого вида, тиков. */
     public long lifetimeFor(final PortalType type) {
-        return type == PortalType.EMERALD ? this.emerald.lifetimeTicks() : this.lifetimeTicks;
+        return switch (type) {
+            case EMERALD -> this.emerald.lifetimeTicks();
+            case LAPIS -> this.lapis.lifetimeTicks();
+            default -> this.lifetimeTicks;
+        };
     }
 
     /** Расстояние до портала этого вида, рядов блоков. */
     public int distanceFor(final PortalType type) {
-        return type == PortalType.EMERALD ? this.emerald.distance() : this.distance;
+        return switch (type) {
+            case EMERALD -> this.emerald.distance();
+            case LAPIS -> this.lapis.distance();
+            default -> this.distance;
+        };
     }
 
     /** Тексты игрокам (MiniMessage). */
-    public record Messages(String noRoom, String noRoomEmerald, String cooldown, String tooMany, String given, String received,
-                           String reloaded, String closed, String notOwner, String entered, String playerNotFound,
-                           String list, String listEmpty, String usage) {
+    public record Messages(String noRoom, String noRoomEmerald, String noRoomLapis, String cooldown, String tooMany,
+                           String given, String received, String reloaded, String closed, String notOwner,
+                           String entered, String playerNotFound, String list, String listEmpty, String usage) {
 
         public static final Messages DEFAULTS = new Messages(
             "<red>Здесь не открыть портал: нужен свободный проём 2×4 на твёрдой земле в 2–3 блоках перед вами.",
             "<red>Здесь не открыть изумрудный портал: нужно свободное место 3×4 над твёрдой землёй в 2–3 блоках перед вами.",
+            "<red>Здесь не разорвать пространство: нужно свободное место <width>×<height> над твёрдой землёй в <distance> блоках перед вами.",
             "<red>Портал ещё не готов: подождите <yellow><seconds></yellow> с.",
             "<red>У вас уже открыт портал.",
             "<green>Выдано порталов: <white><amount></white> игроку <white><player></white>.",
@@ -93,7 +146,7 @@ public record Settings(String prefix, String itemName, List<String> itemLore, St
             "<red>Игрок <white><player></white> не в сети.",
             "<gold>Порталы (<count>):",
             "<gray>Открытых порталов нет.",
-            "<gray>/portals give [игрок] [кол-во] [resin|emerald] | reload | close | list");
+            "<gray>/portals give [игрок] [кол-во] [resin|emerald|lapis] | reload | close | list");
 
         static Messages from(final ConfigurationSection s) {
             final Messages d = DEFAULTS;
@@ -101,7 +154,7 @@ public record Settings(String prefix, String itemName, List<String> itemLore, St
                 return d;
             }
             return new Messages(s.getString("no-room", d.noRoom()), s.getString("no-room-emerald", d.noRoomEmerald()),
-                s.getString("cooldown", d.cooldown()),
+                s.getString("no-room-lapis", d.noRoomLapis()), s.getString("cooldown", d.cooldown()),
                 s.getString("too-many", d.tooMany()), s.getString("given", d.given()),
                 s.getString("received", d.received()), s.getString("reloaded", d.reloaded()),
                 s.getString("closed", d.closed()), s.getString("not-owner", d.notOwner()),
@@ -116,7 +169,7 @@ public record Settings(String prefix, String itemName, List<String> itemLore, St
         "<!i><gradient:#ff2a12:#ff9a1f>Портал</gradient>",
         List.of("<!i><gray>Застывшая смола древнего разлома.", "<!i><gray>ПКМ — открыть портал перед собой."),
         "", true, 100L, 600L, 3, 3, 1, false, 60L, "POLISHED_BLACKSTONE", 1.5f,
-        TeleportAction.DEFAULT, true, true, Messages.DEFAULTS, Emerald.DEFAULTS);
+        TeleportAction.DEFAULT, true, true, Messages.DEFAULTS, Emerald.DEFAULTS, Lapis.DEFAULTS);
 
     public static Settings from(final ConfigurationSection c, final Consumer<String> warn) {
         final Settings d = DEFAULTS;
@@ -156,11 +209,59 @@ public record Settings(String prefix, String itemName, List<String> itemLore, St
             warn.accept("teleport.commands пуст: портал никуда не ведёт");
         }
         final Emerald emerald = emerald(c, lifetime, distance, teleport, warn);
+        final Lapis lapis = lapis(c, lifetime, distance, teleport, warn);
         return new Settings(c.getString("prefix", d.prefix()), c.getString("item.name", d.itemName()), lore,
             itemModel, c.getBoolean("item.consume", d.consume()), cooldown, lifetime, distance, search, max,
             ownerOnly, immunity, frameBlock, (float) view, teleport,
             c.getBoolean("effects.particles", d.particles()), c.getBoolean("effects.sounds", d.sounds()),
-            Messages.from(c.getConfigurationSection("messages")), emerald);
+            Messages.from(c.getConfigurationSection("messages")), emerald, lapis);
+    }
+
+    /** Раздел {@code lapis:}: чего нет — берётся из общих настроек. */
+    private static Lapis lapis(final ConfigurationSection c, final long lifetime, final int distance,
+                               final TeleportAction shared, final Consumer<String> warn) {
+        final Lapis d = Lapis.DEFAULTS;
+        final List<String> lore = c.isList("lapis.item.lore") ? c.getStringList("lapis.item.lore") : d.itemLore();
+        TeleportAction teleport = null;
+        if (c.isConfigurationSection("lapis.teleport")) {
+            teleport = teleport(c, "lapis.teleport", shared, warn);
+            if (teleport.commands().isEmpty()) {
+                warn.accept("lapis.teleport.commands пуст: лазуритовый портал никуда не ведёт");
+            }
+        }
+        final var ds = d.size();
+        final double width = real(c, "lapis.portal.width", ds.width(), 1, 16, warn);
+        final double height = real(c, "lapis.portal.height", ds.height(), 1, 16, warn);
+        // Центр по умолчанию: низ овала на 0,1 над землёй (как 5 × 7 с центром 3,6).
+        final double defCenter = c.contains("lapis.portal.height") ? height / 2 + 0.1 : ds.centerUp();
+        double center = real(c, "lapis.portal.center-up", defCenter, 0.5, 24, warn);
+        if (center < height / 2 - 0.5) {
+            warn.accept("lapis.portal.center-up: " + fmt(center) + " — низ разлома уходит в пол больше чем на 0,5 блока, беру "
+                + fmt(height / 2 + 0.1));
+            center = height / 2 + 0.1;
+        }
+        return new Lapis(c.getString("lapis.item.name", d.itemName()), lore,
+            model(c, "lapis.item.model", d.itemModel(), warn),
+            seconds(c, "lapis.portal.lifetime-seconds", lifetime, 6, 3600, warn),
+            range(c, "lapis.portal.distance", distance, 1, 8, warn),
+            new RiftPlacement.Size(width, height, center),
+            real(c, "lapis.screen.radius", d.radius(), 0, 32, warn),
+            c.getBoolean("lapis.screen.glow", d.screenGlow()), c.getBoolean("lapis.screen.cracks", d.screenCracks()),
+            real(c, "lapis.pull.strength", d.pullStrength(), 0, 0.3, warn),
+            real(c, "lapis.pull.max-speed", d.pullMaxSpeed(), 0.02, 1.0, warn), teleport);
+    }
+
+    private static double real(final ConfigurationSection c, final String path, final double def, final double min,
+                               final double max, final Consumer<String> warn) {
+        if (!c.contains(path)) {
+            return def;
+        }
+        final double v = c.getDouble(path, def);
+        if (!(v >= min && v <= max)) {
+            warn.accept(path + ": " + v + " вне " + fmt(min) + ".." + fmt(max) + ", беру " + fmt(def));
+            return def;
+        }
+        return v;
     }
 
     /** Раздел {@code emerald:}: чего нет — берётся из общих настроек. */
@@ -181,7 +282,7 @@ public record Settings(String prefix, String itemName, List<String> itemLore, St
             range(c, "emerald.portal.distance", distance, 1, 6, warn), teleport);
     }
 
-    /** Действие из раздела {@code path} ({@code teleport} или {@code emerald.teleport}); чего нет — из {@code base}. */
+    /** Действие из раздела {@code path} ({@code teleport}, {@code emerald.teleport}, {@code lapis.teleport}); чего нет — из {@code base}. */
     private static TeleportAction teleport(final ConfigurationSection c, final String path, final TeleportAction base,
                                            final Consumer<String> warn) {
         final String rawRunAs = c.getString(path + ".run-as");

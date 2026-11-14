@@ -8,7 +8,9 @@ public enum PortalType {
     /** «Портал» из смолы: рама 2×3,5 поднимается из земли, внутри — малиновое небо. */
     RESIN("resin"),
     /** «Изумрудный портал»: вертикальное кольцо-воронка с чёрной пустотой и звёздами внутри. */
-    EMERALD("emerald");
+    EMERALD("emerald"),
+    /** «Лазуритовый портал»: большой синий разлом, который рвётся из трещины в воздухе. */
+    LAPIS("lapis");
 
     private final String id;
 
@@ -34,6 +36,7 @@ public enum PortalType {
         return switch (s) {
             case "смола", "red", "fire" -> Optional.of(RESIN);
             case "изумруд", "green", "ring" -> Optional.of(EMERALD);
+            case "лазурит", "blue", "rift", "lapis_lazuli", "разлом" -> Optional.of(LAPIS);
             default -> Optional.empty();
         };
     }

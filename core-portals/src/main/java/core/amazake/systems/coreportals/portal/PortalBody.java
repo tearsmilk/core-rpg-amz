@@ -37,6 +37,11 @@ interface PortalBody {
     /** Середина портала в мире: от неё ищутся игроки для входа. */
     double[] center();
 
+    /** Радиус поиска игроков для входа вокруг {@link #center()}, блоков. */
+    default double scanRadius() {
+        return 3.5;
+    }
+
     /** Эффект входа игрока (его место — регион портала). */
     void enter(Player player, Settings s);
 

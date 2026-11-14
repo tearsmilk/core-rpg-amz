@@ -13,7 +13,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-/** /portals give [игрок] [кол-во] [resin|emerald] | reload | close | list — право coreportals.admin. */
+/** /portals give [игрок] [кол-во] [resin|emerald|lapis] | reload | close | list — право coreportals.admin. */
 final class PortalsCommand extends Command {
 
     private static final List<String> SUBS = List.of("give", "reload", "close", "list");
@@ -25,7 +25,7 @@ final class PortalsCommand extends Command {
 
     PortalsCommand(final SystemContext context, final Supplier<Settings> settings, final PortalManager portals,
                    final Runnable reload) {
-        super("portals", "Тестовые порталы core-portals", "/portals give [игрок] [кол-во] [resin|emerald] | reload | close | list",
+        super("portals", "Тестовые порталы core-portals", "/portals give [игрок] [кол-во] [resin|emerald|lapis] | reload | close | list",
             List.of("coreportals"));
         this.setPermission("coreportals.admin");
         this.context = context;

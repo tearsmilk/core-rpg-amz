@@ -16,9 +16,17 @@ import org.bukkit.inventory.ItemStack;
  * <p>Диапазон core-portals: <b>R = 255, G = 64..95, B = 0</b>. Занято: 64 поверхность, 65 вертикальная кромка,
  * 66 языки пламени, 67 трещина на земле, 68 горизонтальная кромка; 69 — запас.</p>
  *
- * <p>Изумрудный портал: <b>R = 255, G = 70..79, B — параметр 0..255</b> (шейдер читает его как {@code cpParam}
- * 0..1): 70 кольцо-воронка (B — фаза: 0 сформировано, 255 — только точка), 71 туманность (B = 0),
- * 72 точка/вспышка (B = 0), 73 осколок (B — яркость грани); 74..79 — запас. 80..95 — запас (B = 0).</p>
+ * <p>Изумрудный портал: <b>R = 255, G = 70..79, B — параметр 0..250</b> (шейдер читает его как {@code cpParam}
+ * 0..1 = B / 250): 70 кольцо-воронка (B — фаза: 0 сформировано, 250 — только точка), 71 туманность (B = 0),
+ * 72 точка/вспышка (B = 0), 73 осколок (B — яркость грани); 74..79 — запас.</p>
+ *
+ * <p>Лазуритовый разлом: <b>R = 255, G = 80..89, B — параметр 0..250</b>: 80 разлом (B — {@code tear}: вид от
+ * трещины до открытого разлома), 81 дымка вокруг (B — сила), 82 свечение на экране (B — яркость), 83 трещины на
+ * экране (B — доля раскрытия). 82 и 83 шейдер рисует поверх всего экрана, а не там, где стоит дисплей.
+ * 84..89 — запас (любой B). 90..95 — запас (B = 0).</p>
+ *
+ * <p>Синий канал не выше {@link #MAX_PARAM} (250): rezusmenu узнаёт свой курсор по R ≈ 254 и B ≈ 254 (допуск
+ * ±1,5), и наш R = 255 с B 253..255 попал бы под его маркер.</p>
  */
 public final class Markers {
 
@@ -31,8 +39,18 @@ public final class Markers {
     public static final int NEBULA = 71;
     public static final int SPARK = 72;
     public static final int SHARD = 73;
-    /** Яркость граней осколка (синий канал маркера 73): светлые, средние, тёмные. */
-    public static final int[] SHARD_SHADES = {255, 175, 105};
+    /** Яркость граней осколка (синий канал маркера 73, 0..{@link #MAX_PARAM}): светлые, средние, тёмные. */
+    public static final int[] SHARD_SHADES = {250, 172, 103};
+    /** Лазуритовый разлом: сам разлом (B — tear). */
+    public static final int RIFT = 80;
+    /** Лазуритовый разлом: дымка вокруг (B — сила). */
+    public static final int RIFT_HAZE = 81;
+    /** Свечение на экране игрока рядом с разломом (B — яркость). Рисуется во весь экран. */
+    public static final int SCREEN_GLOW = 82;
+    /** Трещины на экране игрока, пока разлом раскрывается (B — доля раскрытия). Рисуется во весь экран. */
+    public static final int SCREEN_CRACKS = 83;
+    /** Наибольшее значение синего канала-параметра (шейдер: cpParam = B / 250). */
+    public static final int MAX_PARAM = 250;
 
     private Markers() {
     }
@@ -41,9 +59,20 @@ public final class Markers {
         return Color.fromRGB(255, g, 0);
     }
 
-    /** Маркер с параметром в синем канале (только для G 70..79), {@code value} 0..1. */
+    /** Маркер с параметром в синем канале (только для G 70..89), {@code value} 0..1 → B 0..{@link #MAX_PARAM}. */
     public static Color param(final int g, final double value) {
-        return Color.fromRGB(255, g, (int) Math.round(Math.max(0, Math.min(1, value)) * 255));
+        return Color.fromRGB(255, g, paramByte(value));
+    }
+
+    /** Байт параметра 0..{@link #MAX_PARAM} для {@code value} 0..1. */
+    public static int paramByte(final double value) {
+        final double v = Double.isNaN(value) ? 0 : Math.max(0, Math.min(1, value));
+        return (int) Math.round(v * MAX_PARAM);
+    }
+
+    /** Маркер с готовым байтом параметра (0..{@link #MAX_PARAM}). */
+    public static Color paramRaw(final int g, final int b) {
+        return Color.fromRGB(255, g, Math.max(0, Math.min(MAX_PARAM, b)));
     }
 
     /** Предмет для ItemDisplay: модель {@code coreportals:<model>} и готовые цвета по порядку tintindex. */

@@ -5,10 +5,12 @@ import core.amazake.systems.coreportals.PortalItem;
 import core.amazake.systems.coreportals.PortalType;
 import core.amazake.systems.coreportals.Settings;
 import core.amazake.systems.coreportals.TeleportAction;
+import core.amazake.systems.coreportals.anim.RiftTimeline;
 import core.amazake.systems.coreportals.anim.RingTimeline;
 import core.amazake.systems.coreportals.anim.Timeline;
 import core.amazake.systems.coreportals.geo.BlockQuery;
 import core.amazake.systems.coreportals.geo.Placement;
+import core.amazake.systems.coreportals.geo.RiftPlacement;
 import core.amazake.systems.coreportals.geo.RingPlacement;
 import core.amazake.systems.coreportals.geo.Spot;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
@@ -18,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -50,7 +53,6 @@ public final class PortalManager implements Listener {
 
     /** Повторный ПКМ в течение этого времени игнорируется молча (событие приходит для обеих рук). */
     private static final long DEBOUNCE_MS = 250;
-    private static final double ENTRY_SCAN_RADIUS = 3.5;
 
     private final SystemContext context;
     private final Supplier<Settings> settings;
@@ -62,6 +64,8 @@ public final class PortalManager implements Listener {
     private final Map<UUID, Long> lastUse = new ConcurrentHashMap<>();
     private final Map<UUID, Long> immuneUntil = new ConcurrentHashMap<>();
     private final Map<UUID, Long> notOwnerNotified = new ConcurrentHashMap<>();
+    /** Какой лазуритовый разлом рисует экран игроку (если рядом несколько — только один). */
+    private final ConcurrentMap<UUID, Object> screenOwners = new ConcurrentHashMap<>();
 
     /** Отправка сообщений с префиксом и плейсхолдерами. */
     public interface Messenger {
@@ -118,12 +122,17 @@ public final class PortalManager implements Listener {
         final Location loc = player.getLocation();
         final World world = player.getWorld();
         final WorldBlocks blocks = new WorldBlocks(world);
-        final Optional<Spot> found = type == PortalType.EMERALD
-            ? RingPlacement.find(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), s.distanceFor(type), s.groundSearch(), blocks)
-            : Placement.find(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), s.distanceFor(type), s.groundSearch(), blocks);
-        final String noRoom = type == PortalType.EMERALD ? s.messages().noRoomEmerald() : s.messages().noRoom();
+        final int distance = s.distanceFor(type);
+        final Optional<Spot> found = switch (type) {
+            case EMERALD -> RingPlacement.find(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), distance,
+                s.groundSearch(), blocks);
+            case LAPIS -> RiftPlacement.find(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), distance,
+                s.groundSearch(), s.lapis().size(), blocks);
+            default -> Placement.find(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), distance, s.groundSearch(),
+                blocks);
+        };
         if (found.isEmpty()) {
-            this.messenger.send(player, noRoom);
+            this.noRoom(player, type, s);
             return;
         }
         final Spot spot = found.get();
@@ -131,7 +140,7 @@ public final class PortalManager implements Listener {
         final int cz = (int) Math.floor(spot.z()) >> 4;
         if (!Bukkit.isOwnedByCurrentRegion(world, cx, cz)) {
             // Место портала принадлежит другому потоку (граница региона): не трогаем.
-            this.messenger.send(player, noRoom);
+            this.noRoom(player, type, s);
             return;
         }
         if (s.consume() && player.getGameMode() != GameMode.CREATIVE) {
@@ -154,13 +163,30 @@ public final class PortalManager implements Listener {
         this.open(player.getUniqueId(), player.getName(), world, spot, type, s);
     }
 
+    private void noRoom(final Player player, final PortalType type, final Settings s) {
+        switch (type) {
+            case EMERALD -> this.messenger.send(player, s.messages().noRoomEmerald());
+            case LAPIS -> {
+                final RiftPlacement.Size size = s.lapis().size();
+                this.messenger.send(player, s.messages().noRoomLapis(),
+                    Placeholder.unparsed("width", Integer.toString(2 * RiftPlacement.columnsPerSide(size) + 1)),
+                    Placeholder.unparsed("height", Integer.toString(RiftPlacement.clearHeight(size))),
+                    Placeholder.unparsed("distance", Integer.toString(s.lapis().distance())));
+            }
+            default -> this.messenger.send(player, s.messages().noRoom());
+        }
+    }
+
     /** Поставить портал. Поток региона, которому принадлежит место портала. */
     private void open(final UUID owner, final String ownerName, final World world, final Spot spot,
                       final PortalType type, final Settings s) {
         final long life = s.lifetimeFor(type);
-        final PortalBody body = type == PortalType.EMERALD
-            ? new RingBody(world, spot, RingTimeline.of(life))
-            : new ResinBody(world, spot, Timeline.of(life));
+        final PortalBody body = switch (type) {
+            case EMERALD -> new RingBody(world, spot, RingTimeline.of(life));
+            case LAPIS -> new LapisBody(this.context, world, spot, s.lapis().size(), RiftTimeline.of(life),
+                this.instance, this.screenOwners);
+            default -> new ResinBody(world, spot, Timeline.of(life));
+        };
         final Portal portal = new Portal(owner, ownerName, world, spot, type, body);
         body.spawn(s, this.instance);
         this.portals.put(portal.id, portal);
@@ -200,7 +226,7 @@ public final class PortalManager implements Listener {
         final double[] c = p.body.center();
         final Location center = new Location(p.world, c[0], c[1], c[2]);
         final long now = System.currentTimeMillis();
-        for (final Player player : p.world.getNearbyPlayers(center, ENTRY_SCAN_RADIUS)) {
+        for (final Player player : p.world.getNearbyPlayers(center, p.body.scanRadius())) {
             if (!Bukkit.isOwnedByCurrentRegion(player) || player.isDead() || player.getGameMode() == GameMode.SPECTATOR) {
                 continue;
             }
@@ -334,6 +360,7 @@ public final class PortalManager implements Listener {
             }
         }
         this.portals.clear();
+        this.screenOwners.clear();
     }
 
     /** Хвосты прошлых запусков рядом с игроком (дисплеи с меткой другого экземпляра). Поток игрока. */
@@ -381,8 +408,9 @@ public final class PortalManager implements Listener {
     private record WorldBlocks(World world) implements BlockQuery {
 
         private Block at(final int x, final int y, final int z) {
+            // Блоки чужого региона не читаем: такое место считается занятым (портал туда не встаёт).
             if (y < this.world.getMinHeight() || y >= this.world.getMaxHeight()
-                || !this.world.isChunkLoaded(x >> 4, z >> 4)) {
+                || !this.world.isChunkLoaded(x >> 4, z >> 4) || !Bukkit.isOwnedByCurrentRegion(this.world, x >> 4, z >> 4)) {
                 return null;
             }
             return this.world.getBlockAt(x, y, z);

@@ -12,7 +12,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 /**
- * Предметы-порталы: «Портал» (RESIN_CLUMP) и «Изумрудный портал» (EMERALD), у каждого своя метка в PDC.
+ * Предметы-порталы: «Портал» (RESIN_CLUMP), «Изумрудный портал» (EMERALD) и «Лазуритовый портал» (LAPIS_LAZULI),
+ * у каждого своя метка в PDC.
  * Узнаются по метке и материалу, а не по имени.
  */
 public final class PortalItem {
@@ -21,6 +22,8 @@ public final class PortalItem {
     public static final NamespacedKey KEY = new NamespacedKey("coreportals", "portal_item");
     /** Метка «Изумрудного портала». */
     public static final NamespacedKey KEY_EMERALD = new NamespacedKey("coreportals", "emerald_portal_item");
+    /** Метка «Лазуритового портала». */
+    public static final NamespacedKey KEY_LAPIS = new NamespacedKey("coreportals", "lapis_portal_item");
 
     private PortalItem() {
     }
@@ -31,22 +34,47 @@ public final class PortalItem {
     }
 
     public static ItemStack create(final Settings s, final PortalType type, final int amount) {
-        final boolean emerald = type == PortalType.EMERALD;
-        final ItemStack stack = new ItemStack(emerald ? Material.EMERALD : Material.RESIN_CLUMP,
-            Math.max(1, Math.min(amount, 64)));
+        final Material material;
+        final String name;
+        final List<String> loreLines;
+        final String model;
+        final NamespacedKey key;
+        switch (type) {
+            case EMERALD -> {
+                material = Material.EMERALD;
+                name = s.emerald().itemName();
+                loreLines = s.emerald().itemLore();
+                model = s.emerald().itemModel();
+                key = KEY_EMERALD;
+            }
+            case LAPIS -> {
+                material = Material.LAPIS_LAZULI;
+                name = s.lapis().itemName();
+                loreLines = s.lapis().itemLore();
+                model = s.lapis().itemModel();
+                key = KEY_LAPIS;
+            }
+            default -> {
+                material = Material.RESIN_CLUMP;
+                name = s.itemName();
+                loreLines = s.itemLore();
+                model = s.itemModel();
+                key = KEY;
+            }
+        }
+        final ItemStack stack = new ItemStack(material, Math.max(1, Math.min(amount, 64)));
         final ItemMeta meta = stack.getItemMeta();
-        meta.displayName(Text.parse(emerald ? s.emerald().itemName() : s.itemName()));
+        meta.displayName(Text.parse(name));
         final List<Component> lore = new ArrayList<>();
-        for (final String line : emerald ? s.emerald().itemLore() : s.itemLore()) {
+        for (final String line : loreLines) {
             lore.add(Text.parse(line));
         }
         meta.lore(lore);
-        meta.getPersistentDataContainer().set(emerald ? KEY_EMERALD : KEY, PersistentDataType.BYTE, (byte) 1);
-        if (emerald) {
+        meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
+        if (type != PortalType.RESIN) {
             meta.setEnchantmentGlintOverride(true);
         }
         stack.setItemMeta(meta);
-        final String model = emerald ? s.emerald().itemModel() : s.itemModel();
         if (!model.isEmpty()) {
             stack.setData(DataComponentTypes.ITEM_MODEL, Key.key(model));
         }
@@ -59,7 +87,7 @@ public final class PortalItem {
             return null;
         }
         final Material m = stack.getType();
-        if (m != Material.RESIN_CLUMP && m != Material.EMERALD) {
+        if (m != Material.RESIN_CLUMP && m != Material.EMERALD && m != Material.LAPIS_LAZULI) {
             return null;
         }
         final var pdc = stack.getItemMeta().getPersistentDataContainer();
@@ -68,6 +96,9 @@ public final class PortalItem {
         }
         if (m == Material.EMERALD && pdc.has(KEY_EMERALD, PersistentDataType.BYTE)) {
             return PortalType.EMERALD;
+        }
+        if (m == Material.LAPIS_LAZULI && pdc.has(KEY_LAPIS, PersistentDataType.BYTE)) {
+            return PortalType.LAPIS;
         }
         return null;
     }
