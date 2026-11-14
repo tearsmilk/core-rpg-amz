@@ -1,0 +1,52 @@
+# rezusmenu — меню /menuses и RPG-инвентарь. После правки: /menuses reload (или amazake system reload rezusmenu).
+# Тексты — MiniMessage.
+
+messages:
+  prefix: "<dark_gray>[<gold>Меню</gold>]</dark_gray> "
+
+# Родная панель Minecraft по /menuses.
+dialog:
+  title: "<gold>Меню сервера</gold>"
+  body: "<gray>Выберите, что открыть.</gray>"
+
+# Кнопки панели — все кастомные меню. Готово пока одно: rpg.
+menus:
+  rpg:
+    label: "<gold>RPG-инвентарь</gold>"
+    tooltip: "<gray>Персонаж, снаряжение и инвентарь</gray>"
+
+# RPG-меню: экран перед игроком, игрок сидит на месте, кнопки — прицелом и ЛКМ, Shift — выйти.
+rpg:
+  # Расстояние от глаз до экрана, блоков. Ближе — экран больше на мониторе.
+  distance: 2.2
+  # Пока меню открыто, игрок не получает урона.
+  invulnerable: true
+  # Как часто обновлять предметы и значения, тиков.
+  refresh-ticks: 10
+  # Значения из PlaceholderAPI (core-rpg). Пусто или не подставилось — берётся ванильное или «—».
+  placeholders:
+    level: "%core_level%"
+    exp: "%core_exp%"
+    exp-needed: "%core_exp_needed%"
+    class: "%core_class%"
+    # Маны в core-rpg пока нет: полоска покажет «Мана —».
+    mana: ""
+    mana-max: ""
+  # Параметры в левой колонке (по два в строке).
+  stats:
+    - {name: "%core_stat_primary_name%", value: "%core_stat_primary_total%"}
+    - {name: "%core_stat_agility_name%", value: "%core_stat_agility_total%"}
+    - {name: "%core_stat_stamina_name%", value: "%core_stat_stamina_total%"}
+    - {name: "%core_stat_luck_name%", value: "%core_stat_luck_total%"}
+  # Вкладка «Снаряжение»: строки характеристик. Строка, чей плейсхолдер не подставился, скрывается.
+  equipment-lines:
+    - {name: "Урон (бонус)", value: "%core_aspect_attack_damage%"}
+    - {name: "Броня (бонус)", value: "%core_aspect_armor%"}
+    - {name: "Здоровье (бонус)", value: "%core_aspect_max_health%"}
+    - {name: "Шанс крита, %", value: "%core_crit_chance%"}
+    - {name: "Урон крита, %", value: "%core_aspect_crit_damage%"}
+    - {name: "Точность", value: "%core_aspect_accuracy%"}
+    - {name: "Уклонение", value: "%core_aspect_evasion%"}
+    - {name: "Сопротивление", value: "%core_aspect_resistance%"}
+    - {name: "Заточка в руке", value: "%core_sharpen_text%"}
+    - {name: "Печать в руке", value: "%core_seal%"}
