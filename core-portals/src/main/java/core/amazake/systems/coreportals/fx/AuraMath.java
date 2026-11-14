@@ -83,6 +83,12 @@ public final class AuraMath {
     /** Трение на земле по умолчанию: скользкость обычного блока 0,6 × 0,91. */
     public static final double GROUND_FRICTION = 0.6 * 0.91;
 
+    /** Игрок ничего не жмёт: ни вперёд/назад/вбок, ни прыжок. Только такого и толкаем (приседать можно). */
+    public static boolean idle(final boolean forward, final boolean backward, final boolean left, final boolean right,
+                               final boolean jump) {
+        return !(forward || backward || left || right || jump);
+    }
+
     /**
      * Можно ли сейчас толкать: на земле (по клиенту), {@link #GROUND_TICKS} тиков подряд без смещения по Y,
      * клавиша прыжка не нажата, скорость по Y не положительная. Иначе толчка нет совсем — прыжок не трогается.

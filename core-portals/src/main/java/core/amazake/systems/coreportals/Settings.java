@@ -65,7 +65,7 @@ public record Settings(String prefix, String itemName, List<String> itemLore, St
             List.of("<!i><gray>В синей глубине камня спит разлом.",
                 "<!i><gray>ПКМ — разорвать пространство перед собой."),
             "", 600L, 3, RiftPlacement.Size.DEFAULT, 16.0, true, true,
-            0.03, 0.25, null);
+            0.15, 0.25, null);
 
         public Lapis {
             itemLore = List.copyOf(itemLore);

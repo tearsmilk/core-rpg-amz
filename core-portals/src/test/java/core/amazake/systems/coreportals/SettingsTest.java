@@ -221,7 +221,7 @@ class SettingsTest {
         assertEquals(13.0, s.lapis().size().height());
         assertEquals(6.6, s.lapis().size().centerUp());
         assertEquals(16.0, s.lapis().radius());
-        assertEquals(0.03, s.lapis().pullStrength());
+        assertEquals(0.15, s.lapis().pullStrength());
         assertEquals(0.25, s.lapis().pullMaxSpeed());
     }
 
@@ -283,7 +283,7 @@ class SettingsTest {
         assertEquals(3.6, s.lapis().size().centerUp(), 1e-9);   // уходит в пол больше 0,5 — height / 2 + 0,1
         assertEquals(3, s.lapis().distance());
         assertEquals(16.0, s.lapis().radius());
-        assertEquals(0.03, s.lapis().pullStrength());
+        assertEquals(0.15, s.lapis().pullStrength());
         assertEquals(0.25, s.lapis().pullMaxSpeed());
         assertEquals(6, warnings.size(), warnings.toString());
     }

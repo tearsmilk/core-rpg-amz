@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.bukkit.Bukkit;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameMode;
+import org.bukkit.Input;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Display;
@@ -41,13 +42,14 @@ import org.joml.Vector3f;
  * переносит квад к глазам игрока, чтобы при сортировке прозрачного он рисовался последним. Яркость плавно идёт к
  * цели ({@link AuraMath#approach}); погасло — дисплей убирается.</p>
  *
- * <p><b>Затягивание</b> — мягкий дрейф, который не мешает ходить и прыгать. Раз в {@link #PULL_STEP} тика игроку,
- * который спокойно стоит или идёт по земле ({@link AuraMath#grounded}: на земле {@link AuraMath#GROUND_TICKS} тика
- * подряд без смещения по Y, клавиша прыжка не нажата, скорость по Y не вверх) и видит разлом, к его текущей
- * горизонтальной скорости (смещение за тик × трение под ногами) <b>добавляется</b> маленький толчок к центру
- * разлома ({@link AuraMath#pullVelocity}); к разлому не быстрее {@code pull.max-speed}. Вертикальная скорость не
- * трогается: Y ставится тот, что у игрока сейчас, а в прыжке, в воздухе и сразу после приземления толчка нет
- * вообще. Скорость ставится в потоке игрока ({@code runOnceForPlayer}), там же условия проверяются ещё раз.</p>
+ * <p><b>Затягивание</b> — мягкий дрейф, который не мешает ходить и прыгать. Раз в {@link #PULL_STEP} тиков
+ * игроку, который спокойно стоит на земле и ничего не жмёт ({@link #idle}: ни WASD, ни прыжок —
+ * {@link AuraMath#GROUND_TICKS} тика подряд; {@link AuraMath#grounded}: на земле столько же тиков без смещения по Y,
+ * скорость по Y не вверх) и видит разлом, к его остаточной горизонтальной скорости <b>добавляется</b> толчок к
+ * центру разлома ({@link AuraMath#pullVelocity}); к разлому не быстрее {@code pull.max-speed}. Идущему, прыгающему,
+ * в воздухе и сразу после приземления толчка нет вообще: {@code setVelocity} заменяет скорость клиента целиком, и
+ * перезаписанный шаг дёргался бы. Y ставится тот, что у игрока сейчас. Скорость ставится в потоке игрока
+ * ({@code runOnceForPlayer}), там же условия проверяются ещё раз.</p>
  *
  * <p>Потоки: всё, кроме {@code showEntity} и скорости, — в потоке региона разлома (его задача); игроки берутся
  * только принадлежащие этому региону. Если у игрока рядом несколько разломов, экран рисует один (первый занявший,
@@ -55,8 +57,12 @@ import org.joml.Vector3f;
  */
 final class RiftAura {
 
-    /** Раз во столько тиков — толчок затягивания (маленький, но чаще — плавнее). */
-    static final int PULL_STEP = 2;
+    /**
+     * Раз во столько тиков — толчок затягивания. Редко нарочно: {@code setVelocity} заменяет скорость клиента
+     * целиком (и Y), а пакет идёт к нему ≈ пинг; прыжок, нажатый в это окно, срезается. Чем реже толчки, тем
+     * меньше шанс: ≈ пинг / (PULL_STEP × 50 мс), т. е. ≈ 10 % при 50 мс.
+     */
+    static final int PULL_STEP = 10;
     /** Раз во столько тиков — проверка прямой видимости (луч). */
     static final int SIGHT_STEP = 4;
     /** Раз во столько тиков дисплей экрана догоняет глаза игрока (с интерполяцией). */
@@ -77,6 +83,8 @@ final class RiftAura {
         int crackByte = -1;
         volatile boolean shown;
         long showAsked = Long.MIN_VALUE;
+        /** Сколько тиков подряд игрок не жмёт ни WASD, ни прыжок (только таких толкаем). */
+        int idleTicks;
         boolean sight = true;
         long sightTick = Long.MIN_VALUE;
         Vector lastPos;
@@ -273,6 +281,7 @@ final class RiftAura {
         final boolean onGround = onGround(p) && !p.isFlying() && !p.isGliding() && !p.isInsideVehicle()
             && !p.isSwimming() && !p.isInWater();
         v.groundTicks = onGround && Math.abs(dy) <= AuraMath.FLAT_DY ? Math.min(v.groundTicks + 1, 1000) : 0;
+        v.idleTicks = idle(p) ? Math.min(v.idleTicks + 1, 1000) : 0;
         if (t % PULL_STEP != 0) {
             return;
         }
@@ -281,7 +290,9 @@ final class RiftAura {
             return;
         }
         final double vy = p.getVelocity().getY();
-        if (!AuraMath.grounded(onGround, v.groundTicks, dy, vy, jumpKey(p))) {
+        // Только тех, кто стоит и ничего не жмёт: идущему скорость не перезаписываем (смещение за тик региона
+        // скачет — шаг дёргался бы), прыгающему — тем более.
+        if (v.idleTicks < AuraMath.GROUND_TICKS || !AuraMath.grounded(onGround, v.groundTicks, dy, vy, false)) {
             return;
         }
         final double dx = pos.getX() - prev.getX();
@@ -300,7 +311,7 @@ final class RiftAura {
             return;
         }
         this.context.runOnceForPlayer(p, () -> {
-            if (!p.isOnline() || !p.getWorld().equals(this.world) || !onGround(p) || jumpKey(p)) {
+            if (!p.isOnline() || !p.getWorld().equals(this.world) || !onGround(p) || !idle(p)) {
                 return;
             }
             // Y — тот, что у игрока сейчас (не наш): летит вверх — не трогаем вовсе.
@@ -324,10 +335,11 @@ final class RiftAura {
         }
     }
 
-    /** Нажата ли клавиша прыжка (ввод клиента, 1.21.2+). */
-    private static boolean jumpKey(final Player p) {
+    /** Игрок ничего не жмёт: ни вперёд/назад/вбок, ни прыжок (ввод клиента, 1.21.2+; приседать можно). */
+    private static boolean idle(final Player p) {
         try {
-            return p.getCurrentInput().isJump();
+            final Input in = p.getCurrentInput();
+            return AuraMath.idle(in.isForward(), in.isBackward(), in.isLeft(), in.isRight(), in.isJump());
         } catch (final RuntimeException | LinkageError e) {
             return false;
         }

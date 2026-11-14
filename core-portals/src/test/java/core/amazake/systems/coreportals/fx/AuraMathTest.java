@@ -138,13 +138,23 @@ class AuraMathTest {
     }
 
     @Test
+    void onlyIdlePlayersArePushed() {
+        assertTrue(AuraMath.idle(false, false, false, false, false));
+        assertFalse(AuraMath.idle(true, false, false, false, false));
+        assertFalse(AuraMath.idle(false, true, false, false, false));
+        assertFalse(AuraMath.idle(false, false, true, false, false));
+        assertFalse(AuraMath.idle(false, false, false, true, false));
+        assertFalse(AuraMath.idle(false, false, false, false, true));
+    }
+
+    @Test
     void standingStillDriftsGently() {
-        // Стоит и не жмёт клавиш: скорость гаснет трением каждый тик, толчок раз в 2 тика (вплотную, сила 0.03).
+        // Стоит и не жмёт клавиш: скорость гаснет трением каждый тик, толчок раз в 10 тиков (вплотную, сила 0.15).
         double vx = 0;
         double x = 0;
         for (int t = 0; t < 200; t++) {
-            if (t % 2 == 0) {
-                final double[] nv = AuraMath.pullVelocity(vx, AuraMath.GROUND_VY, 0, 1, 1, 0, 0.03, 0.25, true);
+            if (t % 10 == 0) {
+                final double[] nv = AuraMath.pullVelocity(vx, AuraMath.GROUND_VY, 0, 1, 1, 0, 0.15, 0.25, true);
                 if (nv != null) {
                     vx = nv[0];
                 }
