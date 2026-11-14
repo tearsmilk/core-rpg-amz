@@ -2,24 +2,37 @@ package core.amazake.systems.rezusmenu.screen;
 
 import core.amazake.systems.rezusmenu.util.Text;
 import java.util.function.Consumer;
+import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.inventory.ItemStack;
 
 /**
- * Калибровка экрана: сервер не знает поле зрения и пропорции монитора игрока. Сначала — столбик чисел вверх
- * («нажмите на самое верхнее число, полностью видимое на экране»), потом — строка чисел вправо. По ответам видно,
- * где кончается экран, и меню ляжет ровно во весь монитор.
+ * Калибровка экрана: сервер не знает поле зрения и пропорции монитора игрока. Курсор — око Края; игрок уводит его в
+ * правый верхний угол, пока оно ещё видно целиком, и жмёт ЛКМ. Правый и верхний край ока — это и есть края экрана
+ * (половина ширины и высоты видимой области на расстоянии 1).
  *
- * <p>Рисует в единицах камеры (масштаб 1). Курсор на время калибровки может уйти далеко за типичный экран.</p>
+ * <p>Рисует в единицах камеры. Курсор на время калибровки может уйти далеко за любой разумный экран.</p>
  */
 public final class CalibrationScreen {
 
-    private static final String STEP = "step";
-    private static final double TEXT = 0.05;
+    /** Размер ока на экране (единицы камеры) и его половина — от центра до правого/верхнего края. */
+    static final double EYE_SIZE = 0.09;
+    static final double EYE_HALF = EYE_SIZE / 2;
+    /** Меньше этого — явно не угол экрана (нажали, не доведя око до края). */
+    static final double MIN_U = 0.5;
+    static final double MIN_V = 0.3;
+    /** Куда может уйти курсор при калибровке. */
+    private static final double BOUND_W = 3.2;
+    private static final double BOUND_H = 1.45;
+    /** Больше не бывает: поле зрения 110° даёт половину высоты tan 55° ≈ 1.43; ширина/высота — от 1:1 до 21:9. */
+    static final double MAX_V = 1.44;
+    static final double MIN_RATIO = 1.0;
+    static final double MAX_RATIO = 2.6;
 
     private final Screen screen;
     private final Consumer<Screen.Calibration> done;
-    private double halfH;
+    private boolean finished;
 
     public CalibrationScreen(final Screen screen, final Consumer<Screen.Calibration> done) {
         this.screen = screen;
@@ -27,59 +40,42 @@ public final class CalibrationScreen {
     }
 
     public void build() {
-        this.screen.scale(1.0);
-        this.screen.cursorBounds(2.8, 1.6);
-        this.vertical();
+        this.screen.cursorBounds(BOUND_W, BOUND_H);
+        this.screen.textAt(0, -0.22, 0.045, Text.item(
+            "<white><b>Двигайте око Края в правый верхний угол экрана —</b></white>\n"
+                + "<white><b>до края, пока оно ещё видно целиком.</b></white>\n"
+                + "<yellow>Нажмите ЛКМ.</yellow> <gray>Пробел — око в центр.</gray>"),
+            2, Color.fromARGB(230, 24, 18, 12), "step");
+        this.screen.itemCursor(new ItemStack(Material.ENDER_EYE), EYE_SIZE);
+        this.screen.onEmptyClick(this::pick);
     }
 
-    private void box(final String text) {
-        this.screen.rect(-0.42, -0.36, 0.84, 0.26, 2, Material.GRAY_CONCRETE, STEP);
-        this.screen.text(-0.42, -0.36, 0.84, 0.26, 0.055, Text.item(text), 3, STEP);
-    }
-
-    /** Шаг 1: числа вверх — верхний край экрана. */
-    private void vertical() {
-        this.screen.clear(STEP);
-        this.box("<white><b>Нажмите на самое верхнее\nчисло, ПОЛНОСТЬЮ видимое\nна экране.</b></white>\n<gray>Пробел — курсор в центр</gray>");
-        for (int n = 1; n <= 24; n++) {
-            final double top = 0.08 + n * 0.055;
-            final int number = n;
-            final double side = n % 2 == 0 ? 0.06 : -0.16;
-            this.screen.button(side, top - TEXT, 0.1, TEXT, 2, Material.BLACK_CONCRETE, Material.GRAY_CONCRETE, STEP,
-                b -> this.pickTop(top, number));
-            this.screen.text(side, top - TEXT, 0.1, TEXT, TEXT * 0.85, Text.item("<white>" + number + "</white>"), 3, STEP);
+    /** Калибровка по точке ока (центр, единицы камеры); null — око не у края экрана. */
+    static Screen.Calibration result(final double cu, final double cv) {
+        if (cu < MIN_U || cv < MIN_V || cv > MAX_V) {
+            return null;
         }
-    }
-
-    private void pickTop(final double top, final int number) {
-        // Число полностью видно, следующее — уже нет: край между ними.
-        this.halfH = top + 0.02;
-        this.sound();
-        this.horizontal();
-    }
-
-    /** Шаг 2: числа вправо — правый край экрана. */
-    private void horizontal() {
-        this.screen.clear(STEP);
-        this.box("<white><b>Теперь нажмите на самое\nправое число, ПОЛНОСТЬЮ\nвидимое на экране.</b></white>\n<gray>Пробел — курсор в центр</gray>");
-        for (int n = 1; n <= 30; n++) {
-            final double right = 0.40 + n * 0.08;
-            final double left = right - 0.07;
-            final int number = n;
-            final double v = n % 2 == 0 ? 0.0 : 0.09;
-            this.screen.button(left, v, 0.07, TEXT, 2, Material.BLACK_CONCRETE, Material.GRAY_CONCRETE, STEP,
-                b -> this.pickRight(right));
-            this.screen.text(left, v, 0.07, TEXT, TEXT * 0.85, Text.item("<white>" + number + "</white>"), 3, STEP);
+        final double w = cu + EYE_HALF;
+        final double h = cv + EYE_HALF;
+        if (w / h < MIN_RATIO || w / h > MAX_RATIO) {
+            return null;
         }
+        return new Screen.Calibration(w, h);
     }
 
-    private void pickRight(final double right) {
-        this.sound();
-        this.screen.clear(STEP);
-        this.done.accept(new Screen.Calibration(right + 0.03, this.halfH));
-    }
-
-    private void sound() {
+    private void pick() {
+        if (this.finished) {
+            return;
+        }
+        final Screen.Calibration cal = result(this.screen.cursorU(), this.screen.cursorV());
+        if (cal == null) {
+            this.screen.player().sendActionBar(Text.mm(
+                "<yellow>Уведите око Края в самый правый верхний угол экрана и нажмите ЛКМ</yellow>"));
+            this.screen.player().playSound(this.screen.player().getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.2f);
+            return;
+        }
+        this.finished = true;
         this.screen.player().playSound(this.screen.player().getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 1.2f);
+        this.done.accept(cal);
     }
 }

@@ -55,7 +55,6 @@ public final class MenuManager implements Listener {
     private final Supplier<Settings> settings;
     private final PlayerStore store;
     private final Map<UUID, Session> sessions = new ConcurrentHashMap<>();
-    private final Set<UUID> dropping = ConcurrentHashMap.newKeySet();
 
     public MenuManager(final SystemContext context, final Supplier<Settings> settings, final PlayerStore store) {
         this.context = context;
@@ -73,7 +72,7 @@ public final class MenuManager implements Listener {
             player.sendMessage(Text.mm(Text.prefix() + "<yellow>Это меню ещё не готово.</yellow>"));
             return;
         }
-        this.close(player);
+        this.close(player, true);
         final Screen.Calibration cal = this.store.calibration(player.getUniqueId());
         if (cal == null) {
             this.openCalibration(player);
@@ -84,7 +83,7 @@ public final class MenuManager implements Listener {
 
     /** Калибровка экрана (первый вход или кнопка «Калибровка»). */
     public void openCalibration(final Player player) {
-        this.close(player);
+        this.close(player, true);
         this.start(player, Screen.Calibration.DEFAULT, true);
     }
 
@@ -93,6 +92,7 @@ public final class MenuManager implements Listener {
         final Screen screen = Screen.open(this.context.plugin(), player, cal, s.eyeOffset(), s.sensitivity(), s.playerScale());
         if (screen == null) {
             player.sendMessage(Text.mm(Text.prefix() + "<red>Сейчас меню не открыть: слезьте с транспорта.</red>"));
+            this.showHud(player);
             return;
         }
         this.store.remember(player.getUniqueId(), screen.saved());
@@ -105,10 +105,11 @@ public final class MenuManager implements Listener {
                 this.context.runOnceForPlayer(player, () -> this.open(player, "rpg"));
             });
         } else {
-            session.rpg = new RpgScreen(screen, s, () -> this.close(player), this.dropping,
+            session.rpg = new RpgScreen(screen, s, () -> this.close(player),
                 () -> this.context.runOnceForPlayer(player, () -> this.openCalibration(player)));
         }
         this.sessions.put(player.getUniqueId(), session);
+        this.hideHud(player);
         session.task = this.context.runForPlayer(player, task -> this.tick(session), 1L);
         if (session.task == null) {
             this.close(player);
@@ -138,21 +139,91 @@ public final class MenuManager implements Listener {
         }
     }
 
-    /** Закрыть меню игрока и вернуть ему режим и место. Поток игрока. */
+    /** Закрыть меню игрока и вернуть ему режим, место и HUD. Поток игрока. */
     public void close(final Player player) {
+        this.close(player, false);
+    }
+
+    /** {@code keepHud} — сразу откроется другое меню: HUD не возвращать, чтобы не мигал. */
+    private void close(final Player player, final boolean keepHud) {
         final Session session = this.sessions.remove(player.getUniqueId());
-        if (session == null) {
+        if (session != null) {
+            if (session.task != null) {
+                session.task.cancel();
+            }
+            session.screen.close();
+            this.store.forget(player.getUniqueId());
+        }
+        if (!keepHud) {
+            this.showHud(player);
+        }
+    }
+
+    // --- чужой HUD (MythicHUD и т. п.) ---
+
+    private void hideHud(final Player player) {
+        if (!this.store.isHudHidden(player.getUniqueId())) {
+            this.store.hudHidden(player.getUniqueId(), true);
+            this.runCommands(this.settings.get().hudHideCommands(), player.getName(), false);
+        }
+    }
+
+    private void showHud(final Player player) {
+        if (this.store.isHudHidden(player.getUniqueId())) {
+            this.store.hudHidden(player.getUniqueId(), false);
+            this.runCommands(this.settings.get().hudShowCommands(), player.getName(), false);
+        }
+    }
+
+    /**
+     * Вернуть HUD тому, кому его спрятали и не вернули (вышел посреди меню, упал сервер): при входе, с задержкой —
+     * пусть HUD-плагин сначала загрузит игрока.
+     */
+    public void restoreHud(final Player player) {
+        if (!this.store.isHudHidden(player.getUniqueId())) {
             return;
         }
-        if (session.task != null) {
-            session.task.cancel();
+        this.store.hudHidden(player.getUniqueId(), false);
+        final List<String> commands = this.settings.get().hudShowCommands();
+        if (commands.isEmpty()) {
+            return;
         }
-        session.screen.close();
-        this.store.forget(player.getUniqueId());
+        final String name = player.getName();
+        Bukkit.getGlobalRegionScheduler().runDelayed(this.context.plugin(),
+            t -> this.dispatch(commands, name), 40L);
+    }
+
+    /** Команды консоли — в глобальном потоке; {@code now} — мы уже в нём (выключение системы). */
+    private void runCommands(final List<String> commands, final String name, final boolean now) {
+        if (commands.isEmpty()) {
+            return;
+        }
+        if (now) {
+            this.dispatch(commands, name);
+        } else {
+            Bukkit.getGlobalRegionScheduler().execute(this.context.plugin(), () -> this.dispatch(commands, name));
+        }
+    }
+
+    private void dispatch(final List<String> commands, final String name) {
+        for (final String cmd : commands) {
+            try {
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd.replace("{player}", name));
+            } catch (final RuntimeException e) {
+                this.context.logger().warning("hud: команда «" + cmd + "» упала: " + e);
+            }
+        }
     }
 
     /** Выключение системы: закрыть все меню (каждое — в потоке своего игрока). */
     public void closeAll() {
+        // disable() — в глобальном потоке: HUD вернуть сейчас же, задачи системы после выключения уже не выполнятся.
+        for (final Player p : Bukkit.getOnlinePlayers()) {
+            if (this.store.isHudHidden(p.getUniqueId())) {
+                this.store.hudHidden(p.getUniqueId(), false);
+                this.runCommands(this.settings.get().hudShowCommands(), p.getName(), true);
+            }
+        }
         for (final UUID id : List.copyOf(this.sessions.keySet())) {
             final Player player = Bukkit.getPlayer(id);
             // Вернём сейчас же из задачи игрока: запись «что вернуть» можно снять заранее.
@@ -233,7 +304,7 @@ public final class MenuManager implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onDrop(final PlayerDropItemEvent event) {
-        if (this.isOpen(event.getPlayer()) && !this.dropping.contains(event.getPlayer().getUniqueId())) {
+        if (this.isOpen(event.getPlayer())) {
             event.setCancelled(true);
         }
     }
@@ -275,8 +346,15 @@ public final class MenuManager implements Listener {
         }
     }
 
+    /** Вышел посреди меню: HUD вернём при следующем входе (сейчас команда уже не найдёт игрока). */
     @EventHandler
     public void onQuit(final PlayerQuitEvent event) {
+        this.close(event.getPlayer(), true);
+    }
+
+    /** Умер (например, /kill): закрыть меню, вернуть режим и HUD. */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onDeath(final org.bukkit.event.entity.PlayerDeathEvent event) {
         this.close(event.getPlayer());
     }
 
@@ -287,5 +365,6 @@ public final class MenuManager implements Listener {
         if (saved != null && !this.isOpen(event.getPlayer())) {
             Screen.restore(event.getPlayer(), saved);
         }
+        this.restoreHud(event.getPlayer());
     }
 }

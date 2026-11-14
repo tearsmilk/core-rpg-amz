@@ -29,6 +29,8 @@ public final class PlayerStore {
     private final Path file;
     private final Map<UUID, Screen.Calibration> calibrations = new ConcurrentHashMap<>();
     private final Map<UUID, Screen.Saved> pending = new ConcurrentHashMap<>();
+    /** Кому спрятали HUD другого плагина и ещё не вернули (выход посреди меню, падение сервера). */
+    private final java.util.Set<UUID> hudHidden = ConcurrentHashMap.newKeySet();
     private final AtomicBoolean dirty = new AtomicBoolean();
     private final Object ioLock = new Object();
 
@@ -53,6 +55,9 @@ public final class PlayerStore {
                             this.calibrations.put(UUID.fromString(id), new Screen.Calibration(w, h));
                         }
                     }
+                }
+                for (final String id : y.getStringList("hud-hidden")) {
+                    this.hudHidden.add(UUID.fromString(id));
                 }
                 final ConfigurationSection res = y.getConfigurationSection("restore");
                 if (res != null) {
@@ -110,6 +115,17 @@ public final class PlayerStore {
         return s;
     }
 
+    /** HUD спрятан / возвращён. Помним на диске: вернуть при входе, если игрок ушёл посреди меню. */
+    public void hudHidden(final UUID player, final boolean hidden) {
+        if (hidden ? this.hudHidden.add(player) : this.hudHidden.remove(player)) {
+            this.changed();
+        }
+    }
+
+    public boolean isHudHidden(final UUID player) {
+        return this.hudHidden.contains(player);
+    }
+
     private void changed() {
         this.dirty.set(true);
         Bukkit.getAsyncScheduler().runNow(this.context.plugin(), t -> this.saveNow());
@@ -122,6 +138,7 @@ public final class PlayerStore {
             }
             final YamlConfiguration y = new YamlConfiguration();
             y.options().setHeader(java.util.List.of("rezusmenu: калибровка экрана игроков и незакрытые меню. Пишет система."));
+            y.set("hud-hidden", this.hudHidden.stream().map(UUID::toString).sorted().toList());
             this.calibrations.forEach((id, c) -> {
                 y.set("calibration." + id + ".half-w", c.halfW());
                 y.set("calibration." + id + ".half-h", c.halfH());

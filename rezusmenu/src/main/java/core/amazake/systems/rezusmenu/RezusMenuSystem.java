@@ -37,6 +37,7 @@ public final class RezusMenuSystem implements AmazakeSystem, Listener {
                 final core.amazake.systems.rezusmenu.screen.Screen.Saved saved = this.store.takePending(p.getUniqueId());
                 if (saved != null) {
                     core.amazake.systems.rezusmenu.screen.Screen.restore(p, saved);
+                    this.menus.restoreHud(p);
                 }
             });
         }
@@ -62,6 +63,7 @@ public final class RezusMenuSystem implements AmazakeSystem, Listener {
         final Settings parsed = Settings.from(this.context.loadConfig(), w -> this.context.logger().warning("config.yml: " + w));
         this.settings.set(parsed);
         Text.setPrefix(parsed.prefix());
+        core.amazake.systems.rezusmenu.screen.Screen.glyphOffsets(parsed.glyphOffsetX(), parsed.glyphOffsetY());
     }
 
     /** Кнопка диалога /menuses. Событие может прийти не из потока игрока: само открытие — в его потоке. */

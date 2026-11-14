@@ -16,7 +16,8 @@ menus:
     tooltip: "<gray>Персонаж, снаряжение и инвентарь</gray>"
 
 # RPG-меню во весь экран: на время меню игрок — наблюдатель и стоит на месте, мышь двигает курсор,
-# ЛКМ — нажать, пробел — курсор в центр, Shift — выйти. При первом входе — калибровка экрана.
+# ЛКМ — нажать, пробел — курсор в центр, Shift — выйти. При первом входе — калибровка экрана (око Края в угол).
+# Картинки меню — из ресурспака (assets/rezusmenu, см. pack/ в исходниках системы): без него — фиолетово-чёрные квадраты.
 rpg:
   # Скорость курсора: сколько экрана проходит курсор за градус поворота мыши.
   cursor-speed: 0.045
@@ -56,3 +57,24 @@ rpg:
     - {name: "Сопротивление", value: "%core_aspect_resistance%"}
     - {name: "Заточка в руке", value: "%core_sharpen_text%"}
     - {name: "Печать в руке", value: "%core_seal%"}
+
+# Чужой HUD (например, MythicHUD на боссбарах) поверх меню: спрятать на время меню и вернуть после.
+# Команды консоли, {player} — ник. Выполняются при открытии меню и при закрытии (выход, выключение системы,
+# возврат после падения сервера). Пусто — ничего не делать.
+# Чужой HUD (MythicHUD — боссбары с модельками) прячется, пока открыто меню: меню нарисовано в мире и не может
+# перекрыть интерфейс клиента. Команды консоли, {player} — ник. Если игрок вышел посреди меню, HUD вернётся при входе.
+hud:
+  hide-commands:
+    - "mythichud layout {player} remove mmohud-layout -s"
+    - "mythichud layout {player} remove partyhud-mmo-layout -s"
+    - "mythichud layout {player} remove skill_casting_bar-layout -s"
+  show-commands:
+    - "mythichud layout {player} add mmohud-layout -s"
+    - "mythichud layout {player} add partyhud-mmo-layout -s"
+    - "mythichud layout {player} add skill_casting_bar-layout -s"
+
+# Картинка меню — шрифт rezusmenu:ui из ресурспака Nexo. Если картинка в игре съехала на пиксель-два относительно
+# надписей и иконок, подвинуть её здесь (пиксели картинки; x — вправо, y — вверх).
+art:
+  glyph-offset-x: 0.5
+  glyph-offset-y: 2.0

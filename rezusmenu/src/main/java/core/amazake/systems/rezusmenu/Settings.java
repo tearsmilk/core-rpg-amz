@@ -24,7 +24,11 @@ public record Settings(
     String phMana,
     String phManaMax,
     List<Stat> stats,
-    List<Stat> equipmentLines
+    List<Stat> equipmentLines,
+    List<String> hudHideCommands,
+    List<String> hudShowCommands,
+    double glyphOffsetX,
+    double glyphOffsetY
 ) {
 
     /** Кнопка в диалоге /menuses. */
@@ -60,7 +64,7 @@ public record Settings(
         List.of(new MenuEntry("rpg", "<gold>RPG-инвентарь</gold>", "<gray>Персонаж, снаряжение и инвентарь</gray>")),
         0.18, 0.045, 0.0625, true, 10,
         "%core_level%", "%core_exp%", "%core_exp_needed%", "%core_class%", "", "",
-        DEFAULT_STATS, DEFAULT_EQUIPMENT);
+        DEFAULT_STATS, DEFAULT_EQUIPMENT, List.of(), List.of(), 0.5, 2.0);
 
     public static Settings from(final ConfigurationSection c, final Consumer<String> warn) {
         final Settings d = DEFAULTS;
@@ -118,7 +122,23 @@ public record Settings(
             c.getString("rpg.placeholders.mana", d.phMana()),
             c.getString("rpg.placeholders.mana-max", d.phManaMax()),
             stats(c, "rpg.stats", d.stats()),
-            stats(c, "rpg.equipment-lines", d.equipmentLines()));
+            stats(c, "rpg.equipment-lines", d.equipmentLines()),
+            commands(c, "hud.hide-commands"),
+            commands(c, "hud.show-commands"),
+            c.getDouble("art.glyph-offset-x", d.glyphOffsetX()),
+            c.getDouble("art.glyph-offset-y", d.glyphOffsetY()));
+    }
+
+    /** Команды консоли без ведущего «/»; пустые строки пропускаются. */
+    private static List<String> commands(final ConfigurationSection c, final String path) {
+        final List<String> out = new ArrayList<>();
+        for (final String raw : c.getStringList(path)) {
+            final String cmd = raw.strip().startsWith("/") ? raw.strip().substring(1) : raw.strip();
+            if (!cmd.isEmpty()) {
+                out.add(cmd);
+            }
+        }
+        return List.copyOf(out);
     }
 
     private static List<Stat> stats(final ConfigurationSection c, final String path, final List<Stat> fallback) {

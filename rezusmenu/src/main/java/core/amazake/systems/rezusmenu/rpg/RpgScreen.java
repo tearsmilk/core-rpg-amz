@@ -12,12 +12,10 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
@@ -29,79 +27,97 @@ import org.bukkit.inventory.meta.SkullMeta;
 /**
  * RPG-меню игрока: вкладки Инвентарь / Снаряжение / Навыки / Задания, слева — персонаж, броня, уровень, полоски и
  * параметры, справа — содержимое вкладки. Инвентарь управляется: клик — выбрать предмет, клик по другой клетке —
- * переложить (сложить, поменять местами, надеть). Предметы никогда не покидают инвентарь, кроме кнопки «Выбросить».
+ * переложить (сложить, поменять местами, надеть). Предметы никогда не покидают инвентарь.
  *
- * <p>Экран {@code W×H = 4.6×2.7} блока, (0, 0) — центр. Всё — в потоке игрока.</p>
+ * <p>Рисуется по контракту пака на холсте 512 × 288 px (левый верхний угол — (0, 0), y вниз): фон — 4 тайла
+ * {@code panel_0..3}, подсветки — накладки, надписи и предметы — код. Всё — в потоке игрока.</p>
  */
 public final class RpgScreen {
 
-    private static final double W = 4.6;
-    private static final double H = 2.7;
     private static final String STATIC = "static";
     private static final String CONTENT = "content";
 
-    private static final Material FRAME = Material.BROWN_CONCRETE;
-    private static final Material BACK = Material.BLACK_CONCRETE;
-    private static final Material SECTION = Material.GRAY_CONCRETE;
-    private static final Material CELL = Material.BLACK_CONCRETE;
-    private static final Material CELL_HOVER = Material.LIGHT_GRAY_CONCRETE;
-    private static final Material PICKED = Material.ORANGE_CONCRETE;
-    private static final Material PICKED_HOVER = Material.YELLOW_CONCRETE;
-    private static final Material BTN = Material.BLACK_CONCRETE;
-    private static final Material BTN_HOVER = Material.LIGHT_GRAY_CONCRETE;
+    // Слои (больше — ближе к глазам).
+    private static final int L_PANEL = 0;
+    private static final int L_ACTIVE = 1;
+    private static final int L_SELECTED = 2;
+    private static final int L_FILL = 2;
+    private static final int L_ICON = 5;
+    private static final int L_TEXT = 6;
+
+    // Вкладки.
+    private static final int[] TAB_X = {12, 136, 260, 384};
+    private static final int TAB_Y = 10;
+    private static final int TAB_W = 118;
+    private static final int TAB_H = 32;
+
+    /** Колодец слота 28 × 28. */
+    private static final int WELL = 28;
+    private static final int[] ARMOR_Y = {74, 106, 138, 170};
+    private static final int ARMOR_X = 18;
+    private static final int OFFHAND_X = 172;
+    private static final int OFFHAND_Y = 170;
+    private static final int GRID_X = 218;
+    private static final int GRID_STEP = 31;
+    private static final int[] GRID_Y = {74, 105, 136};
+    private static final int HOTBAR_Y = 172;
+
+    /** Полоски: колодец x 18..200, высота 10; заливка — внутренняя часть (x BAR_X0..BAR_X1, y верх+2 .. низ−2). */
+    private static final int BAR_X = 18;
+    private static final int BAR_W = 182;
+    private static final int BAR_H = 10;
+    static final int BAR_X0 = 32;
+    static final int BAR_X1 = 198;
+    private static final int EXP_Y = 206;
+    private static final int HP_Y = 220;
+    private static final int MANA_Y = 234;
+
+    // Правая секция.
+    private static final int RIGHT_X = 216;
+    private static final int RIGHT_W = 280;
 
     /** Броня: индекс слота инвентаря → слот снаряжения. 39 — шлем … 36 — ботинки, 40 — вторая рука. */
     private static final Map<Integer, EquipmentSlot> ARMOR = Map.of(39, EquipmentSlot.HEAD, 38, EquipmentSlot.CHEST,
         37, EquipmentSlot.LEGS, 36, EquipmentSlot.FEET);
     private static final int OFFHAND = 40;
 
-    private static final NamespacedKey BOUND_CORE = new NamespacedKey("core-rpg", "seal_bound");
-    private static final NamespacedKey BOUND_LEGACY = new NamespacedKey("magicseals", "bound_to");
-
     enum Tab { INVENTORY, EQUIPMENT, SKILLS, QUESTS }
 
-    /** Клетка инвентаря на экране. */
-    private record Slot(int index, Screen.Button button, ItemDisplay icon, TextDisplay count) {
+    /** Клетка инвентаря на экране: левый верхний угол колодца (x, y). */
+    private record Slot(int index, int x, int y, Screen.Button button, ItemDisplay icon, TextDisplay count) {
     }
 
     private final Screen screen;
     private final Player player;
     private final Settings settings;
     private final Runnable closeAction;
-    private final java.util.Set<java.util.UUID> dropping;
     private final Runnable calibrateAction;
     private final Map<Integer, Slot> slots = new HashMap<>();
     private final Map<Screen.Button, Integer> slotOf = new HashMap<>();
-    private final Map<Tab, Screen.Button> tabs = new HashMap<>();
     private final Map<Integer, ItemStack> shown = new HashMap<>();
     private Tab tab = Tab.INVENTORY;
     private Integer picked;
     private Screen.Button lastHover;
 
+    private Screen.Quad tabActive;
+    private Screen.Quad slotSelected;
     private TextDisplay title;
     private TextDisplay expText;
     private TextDisplay hpText;
     private TextDisplay manaText;
-    private BlockDisplay expFill;
-    private BlockDisplay hpFill;
-    private BlockDisplay manaFill;
+    private Screen.Quad expFill;
+    private Screen.Quad hpFill;
+    private Screen.Quad manaFill;
     private TextDisplay statsText;
     private TextDisplay tooltip;
     private TextDisplay equipmentText;
 
-    private static final double BAR_U = -2.12;
-    private static final double BAR_W = 1.64;
-
-    /**
-     * @param dropping игроки, которым меню сейчас само выбрасывает предмет: их событие выброса меню не отменяет
-     */
     public RpgScreen(final Screen screen, final Settings settings, final Runnable closeAction,
-                     final java.util.Set<java.util.UUID> dropping, final Runnable calibrateAction) {
+                     final Runnable calibrateAction) {
         this.screen = screen;
         this.player = screen.player();
         this.settings = settings;
         this.closeAction = closeAction;
-        this.dropping = dropping;
         this.calibrateAction = calibrateAction;
     }
 
@@ -109,64 +125,54 @@ public final class RpgScreen {
 
     public void build() {
         final Screen s = this.screen;
-        // Макет 4.6 × 2.7 — во весь откалиброванный экран.
-        final Screen.Calibration c = s.calibration();
-        s.scale(Math.min(2 * c.halfW() * 0.98 / W, 2 * c.halfH() * 0.98 / H));
-        s.rect(-W / 2, -H / 2, W, H, 0, FRAME, STATIC);
-        s.rect(-W / 2 + 0.05, -H / 2 + 0.05, W - 0.1, H - 0.1, 1, BACK, STATIC);
+        // Фон: 4 тайла 256 × 144.
+        for (int i = 0; i < 4; i++) {
+            s.quad("panel_" + i, (i % 2) * 256, (i / 2) * 144, 256, 144, L_PANEL, STATIC);
+        }
+        this.tabActive = s.marker("tab_active", L_ACTIVE);
+        this.slotSelected = s.marker("slot_selected", L_SELECTED);
 
         // вкладки
         final String[] names = {"Инвентарь", "Снаряжение", "Навыки", "Задания"};
         final Material[] icons = {Material.CHEST, Material.IRON_SWORD, Material.ENCHANTED_BOOK, Material.FILLED_MAP};
-        final double tabW = (4.4 - 0.15) / 4;
         for (int i = 0; i < 4; i++) {
             final Tab t = Tab.values()[i];
-            final double u = -2.2 + i * (tabW + 0.05);
-            final Screen.Button b = s.button(u, 0.98, tabW, 0.26, 2, BTN, BTN_HOVER, STATIC, x -> this.switchTab(t));
-            this.tabs.put(t, b);
-            s.item(u + 0.16, 1.11, 0.2, new ItemStack(icons[i]), 3, STATIC);
-            s.text(u + 0.24, 0.98, tabW - 0.26, 0.26, 0.12, Text.item("<white>" + names[i] + "</white>"), 3, STATIC);
+            final int x = TAB_X[i];
+            s.button(x, TAB_Y, TAB_W, TAB_H, "tab_hover", STATIC, b -> this.switchTab(t));
+            s.item(x + 16, TAB_Y + TAB_H / 2.0, 16, new ItemStack(icons[i]), L_ICON, STATIC);
+            s.text(x + 26, TAB_Y, TAB_W - 30, TAB_H, 10, Text.item("<white>" + names[i] + "</white>"), L_TEXT, STATIC);
         }
 
-        // левая колонка: персонаж
-        s.rect(-2.2, -1.25, 1.8, 2.17, 2, SECTION, STATIC);
-        this.title = s.text(-2.15, 0.66, 1.7, 0.22, 0.11, Component.empty(), 3, STATIC);
-        final double[] armorV = {0.36, 0.09, -0.18, -0.45};
+        // левая секция: персонаж
+        this.title = s.text(16, 52, 186, 16, 9, Component.empty(), L_TEXT, STATIC);
         final int[] armorSlots = {39, 38, 37, 36};
         for (int i = 0; i < 4; i++) {
-            this.slot(armorSlots[i], -2.12, armorV[i], 0.25);
+            this.slot(armorSlots[i], ARMOR_X, ARMOR_Y[i]);
         }
-        this.slot(OFFHAND, -0.72, -0.45, 0.25);
-        s.text(-0.86, -0.2, 0.52, 0.2, 0.065, Text.item("<gray>Вторая\nрука</gray>"), 3, STATIC);
-        s.item(-1.3, -0.02, 0.62, this.head(), 3, STATIC);
+        this.slot(OFFHAND, OFFHAND_X, OFFHAND_Y);
+        s.text(OFFHAND_X - 12, 154, WELL + 24, 14, 7, Text.item("<gray>Вторая рука</gray>"), L_TEXT, STATIC);
+        s.item(106, 134, 64, this.head(), L_ICON, STATIC);
 
         // полоски
-        this.expFill = this.bar(-0.62, Material.LIME_CONCRETE);
-        this.expText = s.text(BAR_U, -0.62, BAR_W, 0.1, 0.075, Component.empty(), 5, STATIC);
-        this.hpFill = this.bar(-0.76, Material.RED_CONCRETE);
-        this.hpText = s.text(BAR_U, -0.76, BAR_W, 0.1, 0.075, Component.empty(), 5, STATIC);
-        this.manaFill = this.bar(-0.90, Material.BLUE_CONCRETE);
-        this.manaText = s.text(BAR_U, -0.90, BAR_W, 0.1, 0.075, Component.empty(), 5, STATIC);
-        this.statsText = s.text(-2.15, -1.23, 1.7, 0.3, 0.09, Component.empty(), 3, STATIC);
+        this.expFill = s.quad("bar_exp", BAR_X0, EXP_Y + 2, BAR_X1 - BAR_X0, BAR_H - 4, L_FILL, STATIC);
+        this.expText = s.text(BAR_X, EXP_Y, BAR_W, BAR_H, 8, Component.empty(), L_TEXT, STATIC);
+        this.hpFill = s.quad("bar_hp", BAR_X0, HP_Y + 2, BAR_X1 - BAR_X0, BAR_H - 4, L_FILL, STATIC);
+        this.hpText = s.text(BAR_X, HP_Y, BAR_W, BAR_H, 8, Component.empty(), L_TEXT, STATIC);
+        this.manaFill = s.quad("bar_mana", BAR_X0, MANA_Y + 2, BAR_X1 - BAR_X0, BAR_H - 4, L_FILL, STATIC);
+        this.manaText = s.text(BAR_X, MANA_Y, BAR_W, BAR_H, 8, Component.empty(), L_TEXT, STATIC);
+        this.statsText = s.text(16, 248, 186, 26, 10, Component.empty(), L_TEXT, STATIC);
 
-        // правая колонка
-        s.rect(-0.32, -1.25, 2.52, 2.17, 2, SECTION, STATIC);
-        this.tooltip = s.text(-0.3, -0.76, 2.48, 0.2, 0.1, Component.empty(), 3, STATIC);
-        s.button(-0.26, -1.1, 0.78, 0.24, 3, BTN, BTN_HOVER, STATIC, b -> this.dropPicked());
-        s.text(-0.26, -1.1, 0.78, 0.24, 0.1, Text.item("<red>Выбросить</red>"), 4, STATIC);
-        s.button(0.56, -1.1, 0.78, 0.24, 3, BTN, BTN_HOVER, STATIC, b -> this.calibrateAction.run());
-        s.text(0.56, -1.1, 0.78, 0.24, 0.09, Text.item("<yellow>Калибровка</yellow>"), 4, STATIC);
-        s.button(1.38, -1.1, 0.78, 0.24, 3, BTN, BTN_HOVER, STATIC, b -> this.closeAction.run());
-        s.text(1.38, -1.1, 0.78, 0.24, 0.1, Text.item("<white>Закрыть</white>"), 4, STATIC);
-        s.text(-0.3, -1.25, 2.48, 0.14, 0.06, Text.item("<gray>ЛКМ — нажать · Пробел — курсор в центр · Shift — выйти</gray>"), 3, STATIC);
+        // правая секция: подсказка, помощь, кнопки
+        this.tooltip = s.text(RIGHT_X, 206, RIGHT_W, 14, 9, Component.empty(), L_TEXT, STATIC);
+        s.text(RIGHT_X, 224, RIGHT_W, 12, 7,
+            Text.item("<gray>ЛКМ — нажать · Пробел — курсор в центр · Shift — выйти</gray>"), L_TEXT, STATIC);
+        s.button(218, 244, 134, 28, "button_hover", STATIC, b -> this.calibrateAction.run());
+        s.text(218, 244, 134, 28, 10, Text.item("<yellow>Калибровка</yellow>"), L_TEXT, STATIC);
+        s.button(360, 244, 134, 28, "button_hover", STATIC, b -> this.closeAction.run());
+        s.text(360, 244, 134, 28, 10, Text.item("<white>Закрыть</white>"), L_TEXT, STATIC);
 
+        s.arrowCursor();
         this.switchTab(Tab.INVENTORY);
-        this.refresh();
-    }
-
-    private BlockDisplay bar(final double v, final Material fill) {
-        this.screen.rect(BAR_U, v, BAR_W, 0.1, 3, Material.BLACK_CONCRETE, STATIC);
-        return this.screen.rect(BAR_U, v, BAR_W, 0.1, 4, fill, STATIC);
     }
 
     private ItemStack head() {
@@ -175,14 +181,13 @@ public final class RpgScreen {
         return head;
     }
 
-    /** Клетка слота инвентаря (броня и вторая рука — в левой колонке, всегда). */
-    private void slot(final int index, final double u, final double v, final double size) {
+    /** Клетка слота инвентаря (броня и вторая рука — в левой секции, всегда). (x, y) — левый верхний угол колодца. */
+    private void slot(final int index, final int x, final int y) {
         final String group = index >= 36 ? STATIC : CONTENT;
-        final Screen.Button b = this.screen.button(u, v, size, size, 3, CELL, CELL_HOVER, group, x -> this.clickSlot(index));
-        final ItemDisplay icon = this.screen.item(u + size / 2, v + size / 2, size * 0.8, null, 4, group);
-        final TextDisplay count = this.screen.text(u + size * 0.45, v, size * 0.55, size * 0.35, size * 0.3,
-            Component.empty(), 5, group);
-        this.slots.put(index, new Slot(index, b, icon, count));
+        final Screen.Button b = this.screen.button(x, y, WELL, WELL, "slot_hover", group, z -> this.clickSlot(index));
+        final ItemDisplay icon = this.screen.item(x + WELL / 2.0, y + WELL / 2.0, 22, null, L_ICON, group);
+        final TextDisplay count = this.screen.text(x + 12, y + 18, 16, 10, 8, Component.empty(), L_TEXT, group);
+        this.slots.put(index, new Slot(index, x, y, b, icon, count));
         this.slotOf.put(b, index);
         this.shown.remove(index);
     }
@@ -195,29 +200,26 @@ public final class RpgScreen {
         this.slots.values().removeIf(s -> s.index() < 36);
         this.slotOf.values().removeIf(i -> i < 36);
         this.equipmentText = null;
-        this.tabs.forEach((t, b) -> b.colors(t == next ? PICKED : BTN, t == next ? PICKED_HOVER : BTN_HOVER));
+        this.tabActive.place(TAB_X[next.ordinal()], TAB_Y);
         if (this.picked != null && this.picked < 36 && next != Tab.INVENTORY) {
             this.picked = null;
         }
         final Screen s = this.screen;
         switch (next) {
             case INVENTORY -> {
-                s.text(-0.3, 0.68, 2.48, 0.2, 0.12, Text.item("<gold>Инвентарь</gold>"), 3, CONTENT);
-                final double cell = 0.25;
-                final double step = 0.272;
-                final double[] rowV = {0.40, 0.128, -0.144};
+                this.heading("Инвентарь");
                 for (int row = 0; row < 3; row++) {
                     for (int col = 0; col < 9; col++) {
-                        this.slot(9 + row * 9 + col, -0.26 + col * step, rowV[row], cell);
+                        this.slot(9 + row * 9 + col, GRID_X + col * GRID_STEP, GRID_Y[row]);
                     }
                 }
                 for (int col = 0; col < 9; col++) {
-                    this.slot(col, -0.26 + col * step, -0.48, cell);
+                    this.slot(col, GRID_X + col * GRID_STEP, HOTBAR_Y);
                 }
             }
             case EQUIPMENT -> {
-                s.text(-0.3, 0.68, 2.48, 0.2, 0.12, Text.item("<gold>Снаряжение и характеристики</gold>"), 3, CONTENT);
-                this.equipmentText = s.text(-0.25, -0.5, 2.38, 1.12, 0.095, Component.empty(), 3, CONTENT);
+                this.heading("Снаряжение и характеристики");
+                this.equipmentText = s.text(RIGHT_X + 4, 74, RIGHT_W - 8, 128, 9, Component.empty(), L_TEXT, CONTENT);
             }
             case SKILLS -> this.placeholderTab(Material.ENCHANTED_BOOK, "Навыки");
             case QUESTS -> this.placeholderTab(Material.FILLED_MAP, "Задания");
@@ -226,10 +228,14 @@ public final class RpgScreen {
         this.refresh();
     }
 
+    private void heading(final String name) {
+        this.screen.text(RIGHT_X, 52, RIGHT_W, 16, 10, Text.item("<gold>" + name + "</gold>"), L_TEXT, CONTENT);
+    }
+
     private void placeholderTab(final Material icon, final String name) {
-        this.screen.text(-0.3, 0.68, 2.48, 0.2, 0.12, Text.item("<gold>" + name + "</gold>"), 3, CONTENT);
-        this.screen.item(0.94, 0.2, 0.5, new ItemStack(icon), 3, CONTENT);
-        this.screen.text(-0.3, -0.4, 2.48, 0.3, 0.13, Text.item("<gray>Скоро будет</gray>"), 3, CONTENT);
+        this.heading(name);
+        this.screen.item(RIGHT_X + RIGHT_W / 2.0, 120, 48, new ItemStack(icon), L_ICON, CONTENT);
+        this.screen.text(RIGHT_X, 160, RIGHT_W, 20, 12, Text.item("<gray>Скоро будет</gray>"), L_TEXT, CONTENT);
     }
 
     // --- обновление ---
@@ -277,20 +283,20 @@ public final class RpgScreen {
         final double exp = number(Papi.value(this.player, st.phExp()), -1);
         final double need = number(Papi.value(this.player, st.phExpNeeded()), -1);
         final double expPart = exp >= 0 && need > 0 ? exp / need : this.player.getExp();
-        this.screen.resize(this.expFill, BAR_W * clamp01(expPart), 0.1);
+        this.expFill.width((BAR_X1 - BAR_X0) * clamp01(expPart));
         Screen.setText(this.expText, Text.item(exp >= 0 && need > 0
             ? "<white>Опыт " + Text.num(exp) + " / " + Text.num(need) + "</white>"
             : "<white>Опыт " + Math.round(this.player.getExp() * 100) + "%</white>"));
 
         final AttributeInstance maxHp = this.player.getAttribute(Attribute.MAX_HEALTH);
         final double max = maxHp == null ? 20 : maxHp.getValue();
-        this.screen.resize(this.hpFill, BAR_W * clamp01(this.player.getHealth() / max), 0.1);
+        this.hpFill.width((BAR_X1 - BAR_X0) * clamp01(this.player.getHealth() / max));
         Screen.setText(this.hpText, Text.item("<white>Здоровье " + Text.num(Math.ceil(this.player.getHealth())) + " / "
             + Text.num(max) + "</white>"));
 
         final double mana = number(Papi.value(this.player, st.phMana()), -1);
         final double manaMax = number(Papi.value(this.player, st.phManaMax()), -1);
-        this.screen.resize(this.manaFill, mana >= 0 && manaMax > 0 ? BAR_W * clamp01(mana / manaMax) : 0.0001, 0.1);
+        this.manaFill.width(mana >= 0 && manaMax > 0 ? (BAR_X1 - BAR_X0) * clamp01(mana / manaMax) : 0);
         Screen.setText(this.manaText, Text.item(mana >= 0 && manaMax > 0
             ? "<white>Мана " + Text.num(mana) + " / " + Text.num(manaMax) + "</white>" : "<gray>Мана —</gray>"));
 
@@ -364,9 +370,11 @@ public final class RpgScreen {
     }
 
     private void repaintSlots() {
-        for (final Slot s : this.slots.values()) {
-            final boolean sel = this.picked != null && this.picked == s.index();
-            s.button().colors(sel ? PICKED : CELL, sel ? PICKED_HOVER : CELL_HOVER);
+        final Slot sel = this.picked == null ? null : this.slots.get(this.picked);
+        if (sel == null) {
+            this.slotSelected.hide();
+        } else {
+            this.slotSelected.place(sel.x(), sel.y());
         }
     }
 
@@ -438,56 +446,9 @@ public final class RpgScreen {
 
     /** Надетый предмет с проклятием несъёмности (в творческом снимать можно). */
     private boolean stuck(final int slot, final ItemStack item) {
-        return ARMOR.containsKey(slot) && this.player.getGameMode() != GameMode.CREATIVE
+        // Сейчас игрок — наблюдатель: решает режим, в котором он был до меню.
+        return ARMOR.containsKey(slot) && this.screen.saved().mode() != GameMode.CREATIVE
             && item.containsEnchantment(Enchantment.BINDING_CURSE);
-    }
-
-    private void dropPicked() {
-        if (this.picked == null) {
-            this.player.sendActionBar(Text.mm("<gray>Сначала выберите предмет</gray>"));
-            return;
-        }
-        final PlayerInventory inv = this.player.getInventory();
-        final ItemStack item = inv.getItem(this.picked);
-        if (item == null || item.isEmpty()) {
-            this.picked = null;
-            this.refresh();
-            return;
-        }
-        if (bound(item)) {
-            this.player.sendActionBar(Text.mm("<red>Персональный предмет нельзя выбросить</red>"));
-            this.sound(Sound.ENTITY_VILLAGER_NO);
-            return;
-        }
-        if (this.stuck(this.picked, item)) {
-            this.player.sendActionBar(Text.mm("<red>Проклятие несъёмности: снять нельзя</red>"));
-            return;
-        }
-        // Как клавиша Q: бросок вперёд с задержкой подбора и событием выброса (его могут запретить другие плагины).
-        final org.bukkit.entity.Item dropped;
-        this.dropping.add(this.player.getUniqueId());
-        try {
-            dropped = this.player.dropItem(this.picked, item.getAmount(), false, null);
-        } finally {
-            this.dropping.remove(this.player.getUniqueId());
-        }
-        if (dropped == null) {
-            this.player.sendActionBar(Text.mm("<red>Этот предмет нельзя выбросить</red>"));
-            this.sound(Sound.ENTITY_VILLAGER_NO);
-            return;
-        }
-        this.picked = null;
-        this.sound(Sound.ENTITY_ITEM_PICKUP);
-        this.repaintSlots();
-        this.refresh();
-    }
-
-    private static boolean bound(final ItemStack item) {
-        if (!item.hasItemMeta()) {
-            return false;
-        }
-        final var pdc = item.getItemMeta().getPersistentDataContainer();
-        return pdc.has(BOUND_CORE) || pdc.has(BOUND_LEGACY);
     }
 
     private void sound(final Sound sound) {

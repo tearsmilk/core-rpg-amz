@@ -42,6 +42,10 @@ final class MenusCommand extends Command {
             sender.sendMessage(Text.mm(Text.prefix() + "<red>Только для игрока.</red>"));
             return true;
         }
+        if (args.length >= 1 && args[0].equalsIgnoreCase("calibrate")) {
+            this.menus.openCalibration(player);
+            return true;
+        }
         if (args.length >= 2 && args[0].equalsIgnoreCase("open")) {
             this.menus.open(player, args[1].toLowerCase(Locale.ROOT));
             return true;
@@ -53,7 +57,7 @@ final class MenusCommand extends Command {
     @Override
     public List<String> tabComplete(final CommandSender sender, final String alias, final String[] args) {
         if (args.length == 1) {
-            final List<String> subs = sender.hasPermission(ADMIN) ? List.of("open", "reload") : List.of("open");
+            final List<String> subs = sender.hasPermission(ADMIN) ? List.of("open", "calibrate", "reload") : List.of("open", "calibrate");
             return subs.stream().filter(s -> s.startsWith(args[0].toLowerCase(Locale.ROOT))).toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("open")) {
