@@ -1,0 +1,1280 @@
+--- after/plugins/MythicLib/skill/default_skills.yml	2026-11-14 20:22:23.605673958 +0000
++++ after2/plugins/MythicLib/skill/default_skills.yml	2026-11-14 22:03:12.755725155 +0000
+@@ -21,9 +21,7 @@
+       name: 'Задержка'
+       item: 0
+     mana:
+-      player:
+-        base: 2.0
+-        per-level: 1.0
++      player: 0
+       format: 0.#
+       name: 'Мана'
+       item: 0
+@@ -92,7 +90,9 @@
+     duration:
+       player:
+         base: 4
+-        per-level: 1
++        per-level: 0.35
++        min: 4
++        max: 7
+       format: 0.#
+       name: 'Длительность'
+       item: 4.0
+@@ -201,9 +201,7 @@
+       name: 'Перезарядка'
+       item: 0
+     mana:
+-      player:
+-        base: 8.0
+-        per-level: 1.0
++      player: 0
+       format: 0.#
+       name: 'Мана'
+       item: 0
+@@ -251,18 +249,18 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 4.0
+-        per-level: -0.16
+-        min: 2.4
+-        max: 4.0
++        base: 6.0
++        per-level: -0.15
++        min: 4.5
++        max: 6.0
+       name: 'Перезарядка'
+       item: 35.0
+     duration:
+       player:
+         base: 3
+-        per-level: 0.2
++        per-level: 0.15
+         min: 3
+-        max: 5
++        max: 4.5
+       format: 0.#
+       name: 'Длительность'
+       item: 2.0
+@@ -313,8 +311,10 @@
+       item: 9.0
+     duration:
+       player:
+-        base: 5
+-        per-level: 1
++        base: 2
++        per-level: 0.1
++        min: 2
++        max: 3
+       format: 0.#
+       name: 'Длительность'
+       item: 5.0
+@@ -775,14 +775,18 @@
+       item: 6.0
+     knockback:
+       player:
+-        base: 2
+-        per-level: 1
++        base: 0.3
++        per-level: 0.03
++        min: 0.3
++        max: 0.6
+       name: 'Отбрасывание'
+       item: 1.0
+     radius:
+       player:
+         base: 3
+-        per-level: 1
++        per-level: 0.2
++        min: 3
++        max: 5
+       name: 'Радиус'
+       item: 3.0
+ COMBO_ATTACK:
+@@ -908,16 +912,18 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 8
++        base: 10
+         per-level: -0.2
+-        min: 5
+-        max: 8
++        min: 8
++        max: 10
+       name: 'Перезарядка'
+       item: 10.0
+     duration:
+       player:
+         base: 4
+-        per-level: 1
++        per-level: 0.4
++        min: 4
++        max: 8
+       format: 0.#
+       name: 'Длительность'
+       item: 8.0
+@@ -1083,6 +1089,7 @@
+       item: 10.0
+     radius:
+       player: 2.7
++      item: 2.7
+     duration:
+       player:
+         base: 4
+@@ -1247,8 +1254,8 @@
+       item: 3.0
+     damage:
+       player:
+-        base: 4
+-        per-level: 0.1
++        base: 5
++        per-level: 1.5
+       name: 'Урон'
+       item: 5.0
+     amplifier:
+@@ -1284,7 +1291,9 @@
+     mana:
+       player:
+         base: 8.0
+-        per-level: 3.0
++        per-level: 0.8
++        min: 8.0
++        max: 15.0
+       name: 'Мана'
+       item: 0
+     stamina:
+@@ -1413,16 +1422,18 @@
+       item: 0
+     radius:
+       player:
+-        base: 4.0
+-        per-level: 1.0
++        base: 3.0
++        per-level: 0.1
++        min: 3.0
++        max: 4.0
+       name: 'Радиус'
+       item: 0
+     ratio:
+       player:
+         base: 30.0
+-        per-level: 10.0
+-        max: 100.0
++        per-level: 3.0
+         min: 30.0
++        max: 60.0
+       name: 'Доля'
+       item: 0
+ EVADE:
+@@ -1449,7 +1460,9 @@
+     mana:
+       player:
+         base: 8.0
+-        per-level: 3.0
++        per-level: 0.8
++        min: 8.0
++        max: 15.0
+       name: 'Мана'
+       item: 0
+     stamina:
+@@ -1949,10 +1962,10 @@
+   parameters:
+     duration:
+       player:
+-        base: 3
+-        per-level: 0.3
+-        min: 3
+-        max: 6
++        base: 2
++        per-level: 0.1
++        min: 2
++        max: 3
+       format: 0.#
+       name: 'Длительность'
+       item: 4.0
+@@ -2226,7 +2239,9 @@
+     mana:
+       player:
+         base: 8.0
+-        per-level: 3.0
++        per-level: 0.8
++        min: 8.0
++        max: 15.0
+       name: 'Мана'
+       item: 0
+     stamina:
+@@ -2248,9 +2263,7 @@
+       name: 'Перезарядка'
+       item: 0
+     radius:
+-      player:
+-        base: 7.0
+-        per-level: 1.0
++      player: 5.0
+       name: 'Радиус'
+       item: 0
+     timer:
+@@ -2283,10 +2296,10 @@
+       item: 0.0
+     delay:
+       player:
+-        base: 2
+-        per-level: 1
+-        min: 0
+-        max: 0
++        base: 1.5
++        per-level: -0.1
++        min: 0.5
++        max: 1.5
+     mana:
+       player:
+         base: 2.5
+@@ -2314,7 +2327,9 @@
+     radius:
+       player:
+         base: 3
+-        per-level: 1
++        per-level: 0.4
++        min: 3
++        max: 7
+       name: 'Радиус'
+       item: 5.0
+ GREATER_HEALINGS:
+@@ -2382,10 +2397,10 @@
+       item: 0.0
+     delay:
+       player:
+-        base: 2
+-        per-level: 0.1
+-        min: 0
+-        max: 0
++        base: 1.0
++        per-level: -0.05
++        min: 0.5
++        max: 1.0
+     mana:
+       player:
+         base: 4
+@@ -2611,8 +2626,10 @@
+       item: 0
+     mana:
+       player:
+-        base: 15.0
+-        per-level: 1.5
++        base: 12.0
++        per-level: 0.5
++        min: 12.0
++        max: 16.0
+       name: 'Мана'
+       item: 0
+     low:
+@@ -2733,7 +2750,7 @@
+         per-level: 1.0
+       format: 0.#
+       name: 'Урон'
+-      item: 0
++      item: 3.0
+     mana:
+       player:
+         base: 20.0
+@@ -2745,7 +2762,7 @@
+         base: 4.0
+         per-level: 1.0
+       name: 'Замедление'
+-      item: 0
++      item: 4.0
+     stamina:
+       player: 0
+       name: 'Выносливость'
+@@ -2869,8 +2886,10 @@
+       item: 0.0
+     slow-duration:
+       player:
+-        base: 5
+-        per-level: 3
++        base: 3
++        per-level: 0.3
++        min: 3
++        max: 6
+       name: 'Длительность замедления'
+       item: 4.0
+     stamina:
+@@ -2900,7 +2919,9 @@
+     radius:
+       player:
+         base: 3
+-        per-level: 1
++        per-level: 0.2
++        min: 3
++        max: 5
+       name: 'Радиус'
+       item: 6.0
+ ITEM_THROW:
+@@ -2961,8 +2982,10 @@
+       item: 10.0
+     force:
+       player:
+-        base: 2
+-        per-level: 1
++        base: 1.0
++        per-level: 0.05
++        min: 1.0
++        max: 1.4
+       name: 'Сила'
+       item: 1.0
+ LEAP:
+@@ -3017,8 +3040,10 @@
+       item: 10.0
+     force:
+       player:
+-        base: 3
+-        per-level: 0.5
++        base: 0.6
++        per-level: 0.04
++        min: 0.6
++        max: 1.0
+       name: 'Сила'
+       item: 1.0
+ LIFE_ENDER:
+@@ -3153,8 +3178,10 @@
+       item: 10.0
+     length:
+       player:
+-        base: 4
+-        per-level: 1
++        base: 1.0
++        per-level: 0.05
++        min: 1.0
++        max: 1.5
+       name: 'Длина'
+       item: 1.0
+ LIGHTNING_BEAM:
+@@ -3289,8 +3316,10 @@
+   parameters:
+     duration:
+       player:
+-        base: 10
+-        per-level: 3
++        base: 5
++        per-level: 0.3
++        min: 5
++        max: 8
+       format: 0.#
+       name: 'Длительность'
+       item: 5.0
+@@ -3324,10 +3353,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 4.0
+-        per-level: -0.16
+-        min: 2.4
+-        max: 4.0
++        base: 12.0
++        per-level: -0.3
++        min: 9.0
++        max: 12.0
+       name: 'Перезарядка'
+       item: 35.0
+     power:
+@@ -3339,7 +3368,9 @@
+     radius:
+       player:
+         base: 3
+-        per-level: 1
++        per-level: 0.3
++        min: 3
++        max: 6
+       name: 'Радиус'
+       item: 5.0
+ MAGMA_FISSURE:
+@@ -3576,10 +3607,10 @@
+       item: 6.0
+     delay:
+       player:
+-        base: 4
+-        per-level: 1.1
+-        min: 0
+-        max: 0
++        base: 1.5
++        per-level: -0.1
++        min: 0.5
++        max: 1.5
+     mana:
+       player:
+         base: 10
+@@ -3605,7 +3636,9 @@
+     radius:
+       player:
+         base: 5
+-        per-level: 1
++        per-level: 0.2
++        min: 5
++        max: 7
+       name: 'Радиус'
+       item: 6.0
+ POISON:
+@@ -3623,8 +3656,10 @@
+   parameters:
+     duration:
+       player:
+-        base: 10
+-        per-level: 0.3
++        base: 4
++        per-level: 0.1
++        min: 4
++        max: 5
+       format: 0.#
+       name: 'Длительность'
+       item: 4.0
+@@ -3673,21 +3708,20 @@
+ POWER_MARK:
+   name: 'Метка силы'
+   lore:
+-    - 'Атака накладывает на врага смертельную'
+-    - 'магическую метку, которая расползается по земле.'
++    - 'Накладывает на врага под прицелом магическую метку.'
+     - 'Метка копит &6{ratio}%&7 урона, нанесённого'
+-    - 'исходной цели за &6{duration}&7 с.'
++    - 'этой цели за &6{duration}&7 с.'
+     - ''
+     - 'Затем метка взрывается, нанося накопленный'
+-    - 'урон врагам рядом и оглушая их на &6{stun}+&7 с.'
+-    - ''
+-    - 'Чем больше урон, тем дольше оглушение.'
++    - 'урон врагам в радиусе 5 бл. и оглушая их на &6{stun}&7 с.'
+     - ''
+     - '&eПерезарядка: {cooldown} с'
++    - '&9Стоимость: {mana} {mana_name}'
+   icon:
+     item: PAPER
+     item-model: royalquest:skill/power_mark
+-  source: default:POWER_MARK
++  # RQ fix 2026-11-14: was default:POWER_MARK (block-only ray -> mark landed behind the target)
++  source: mythiclib:rq_power_mark
+   parameters:
+     duration:
+       player:
+@@ -3695,7 +3729,7 @@
+         per-level: 1.1
+       format: 0.#
+       name: 'Длительность'
+-      item: 0
++      item: 10.0
+     mana:
+       player:
+         base: 2.0
+@@ -3716,16 +3750,18 @@
+       item: 0
+     stun:
+       player:
+-        base: 2.4
+-        per-level: 1.03
++        base: 1.5
++        per-level: 0.1
++        min: 1.5
++        max: 2.5
+       name: 'Оглушение'
+-      item: 0
++      item: 1.5
+     ratio:
+       player:
+         base: 10.0
+         per-level: 5.0
+       name: 'Доля'
+-      item: 0
++      item: 10.0
+     timer:
+       name: 'Таймер'
+       item: 0
+@@ -3868,8 +3904,10 @@
+   parameters:
+     duration:
+       player:
+-        base: 10
+-        per-level: 1
++        base: 5
++        per-level: 0.5
++        min: 5
++        max: 10
+       format: 0.#
+       name: 'Длительность'
+       item: 5.0
+@@ -3907,10 +3945,10 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 10.0
+-        per-level: -0.4
+-        min: 6.0
+-        max: 10.0
++        base: 14.0
++        per-level: -0.2
++        min: 12.0
++        max: 14.0
+       name: 'Перезарядка'
+       item: 35.0
+ SHOCK:
+@@ -4023,8 +4061,10 @@
+       item: 5.0
+     knock-up:
+       player:
+-        base: 5
+-        per-level: 1
++        base: 1.5
++        per-level: 0.05
++        min: 1.5
++        max: 2.0
+       name: 'Подброс'
+       item: 1.0
+ SHULKER_MISSILE:
+@@ -4116,10 +4156,10 @@
+       item: 3.0
+     delay:
+       player:
+-        base: 4
+-        per-level: 0.5
+-        min: 0
+-        max: 0
++        base: 1.0
++        per-level: -0.05
++        min: 0.5
++        max: 1.0
+     mana:
+       player:
+         base: 8.0
+@@ -4145,8 +4185,10 @@
+       item: 10.0
+     knock-up:
+       player:
+-        base: 2
+-        per-level: 0.3
++        base: 0.5
++        per-level: 0.03
++        min: 0.5
++        max: 0.8
+       name: 'Подброс'
+       item: 1.0
+ SLOW:
+@@ -4283,9 +4325,7 @@
+   source: default:SNEAKY_PICKY
+   parameters:
+     mana:
+-      player:
+-        base: 8.0
+-        per-level: 1.0
++      player: 0
+       format: 0.#
+       name: 'Мана'
+       item: 0
+@@ -4325,12 +4365,15 @@
+   icon:
+     item: PAPER
+     item-model: royalquest:skill/snowman_turret
+-  source: default:SNOWMAN_TURRET
++  # RQ fix 2026-11-14: was default:SNOWMAN_TURRET (block-only ray: turret behind the target; its snowballs also hit the caster)
++  source: mythiclib:rq_snowman_turret
+   parameters:
+     duration:
+       player:
+         base: 6
+-        per-level: 0.5
++        per-level: 0.4
++        min: 6
++        max: 9.6
+       format: 0.#
+       name: 'Длительность'
+       item: 6.0
+@@ -4371,16 +4414,18 @@
+       item: 0.0
+     cooldown:
+       player:
+-        base: 8.0
+-        per-level: -0.5
+-        min: 4.8
+-        max: 8.0
++        base: 12.0
++        per-level: -0.2
++        min: 10.0
++        max: 12.0
+       name: 'Перезарядка'
+       item: 35.0
+     radius:
+       player:
+         base: 4
+-        per-level: 1
++        per-level: 0.5
++        min: 4
++        max: 9
+       name: 'Радиус'
+       item: 20.0
+ SPARKLE:
+@@ -4520,8 +4565,10 @@
+   parameters:
+     duration:
+       player:
+-        base: 6
+-        per-level: 0.2
++        base: 1.0
++        per-level: 0.1
++        min: 1.0
++        max: 2.0
+       format: 0.#
+       name: 'Длительность'
+       item: 2.0
+@@ -4688,8 +4735,10 @@
+       item: 4.0
+     knock-up:
+       player:
+-        base: 3
+-        per-level: 0.5
++        base: 1.0
++        per-level: 0.05
++        min: 1.0
++        max: 1.5
+       name: 'Подброс'
+       item: 1.0
+ TARGETED_FIREBALL:
+@@ -4971,7 +5020,7 @@
+         base: 7
+         per-level: 1.0
+       name: Урон
+-      item: 0.0
++      item: 7.0
+     radius:
+       player:
+         base: 3.5
+@@ -4979,7 +5028,7 @@
+         min: 3.5
+         max: 5
+       name: Радиус
+-      item: 0.0
++      item: 3.5
+ VAMPIRISM:
+   name: 'Вампиризм'
+   lore:
+@@ -5003,9 +5052,7 @@
+     delay:
+       player: 0
+     mana:
+-      player:
+-        base: 2
+-        per-level: 1
++      player: 0
+       name: 'Мана'
+       item: 0.0
+     stamina:
+@@ -5289,8 +5336,10 @@
+       item: 8.0
+     duration:
+       player:
+-        base: 6
+-        per-level: 0.5
++        base: 3
++        per-level: 0.1
++        min: 3
++        max: 4
+       format: 0.#
+       name: 'Длительность'
+       item: 3.0
+--- after/plugins/MythicLib/script/royalquest_skills.yml	2026-11-14 20:22:23.605735273 +0000
++++ after2/plugins/MythicLib/script/royalquest_skills.yml	2026-11-14 22:17:47.847524444 +0000
+@@ -17,7 +17,13 @@
+     - 'set_velocity{vector=rq_ld_dir;target=caster}'
+     - 'particle{particle=LARGE_SMOKE;amount=1;target_location={type=caster}}'
+     - 'sound{sound=ENTITY_ENDER_DRAGON_FLAP;volume=1;pitch=2}'
+-    - 'script{name=rq_light_dash_hit;target={type=nearby_entities;radius=1.5}}'
++    - 'script{name=rq_light_dash_at;target_location={type=caster}}'
++
++# RQ fix 2026-11-14: nearby_entities without target_location was centred on the
++# cast origin (dash START point) -> nobody along the dash was hit.
++rq_light_dash_at:
++  mechanics:
++    - 'script{name=rq_light_dash_hit;target={type=nearby_entities;radius=1.5;ignore_caster=false}}'
+ 
+ rq_light_dash_hit:
+   conditions:
+@@ -42,7 +48,7 @@
+ rq_ice_spikes:
+   public: true
+   mechanics:
+-    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_ice_spikes_ent;hit_block=rq_ice_spikes_at}'
++    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_ice_spikes_ent;hit_block=rq_ice_spikes_at}'
+ rq_ice_spikes_ent:
+   mechanics:
+     - 'script{name=rq_ice_spikes_at;target_location={type=target;position=FEET}}'
+@@ -51,7 +57,7 @@
+     - 'sound{sound=BLOCK_GLASS_BREAK;volume=1.5;pitch=0.6}'
+     - 'sound{sound=ENTITY_PLAYER_HURT_FREEZE;volume=1;pitch=0.8}'
+     - 'script{name=rq_ice_spikes_fx;counter=rq_is_i;iterations=10}'
+-    - 'script{name=rq_ice_spikes_hit;target={type=nearby_entities;radius=3}}'
++    - 'script{name=rq_ice_spikes_hit;target={type=nearby_entities;radius=3;ignore_caster=false}}'
+ rq_ice_spikes_fx:
+   mechanics:
+     - 'particle{particle=SNOWFLAKE;amount=10;x=0.1;y=0.7;z=0.1;target={type=custom;relative=true;x="(random() * 2 - 1) * 2.5";y=0.8;z="(random() * 2 - 1) * 2.5"}}'
+@@ -67,7 +73,7 @@
+ rq_lightning_beam:
+   public: true
+   mechanics:
+-    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_lightning_beam_ent;hit_block=rq_lightning_beam_at}'
++    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_lightning_beam_ent;hit_block=rq_lightning_beam_at}'
+ rq_lightning_beam_ent:
+   mechanics:
+     - 'script{name=rq_lightning_beam_at;target_location={type=target;position=FEET}}'
+@@ -78,7 +84,7 @@
+     - 'particle{particle=ELECTRIC_SPARK;amount=80;x=0.12;y=5;z=0.12;target={type=custom;relative=true;x=0;y=5;z=0}}'
+     - 'particle{particle=END_ROD;amount=30;x=0.08;y=5;z=0.08;target={type=custom;relative=true;x=0;y=5;z=0}}'
+     - 'particle{particle=FIREWORK;amount=40;speed=0.2;target={type=custom;relative=true;x=0;y=0.3;z=0}}'
+-    - 'script{name=rq_lightning_beam_hit;target={type=nearby_entities;radius="<modifier.radius>"}}'
++    - 'script{name=rq_lightning_beam_hit;target={type=nearby_entities;radius="<modifier.radius>";ignore_caster=false}}'
+ rq_lightning_beam_hit:
+   conditions:
+     - 'can_target'
+@@ -89,7 +95,7 @@
+ rq_freeze:
+   public: true
+   mechanics:
+-    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_freeze_ent;hit_block=rq_freeze_at}'
++    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_freeze_ent;hit_block=rq_freeze_at}'
+ rq_freeze_ent:
+   mechanics:
+     - 'script{name=rq_freeze_at;target_location={type=target;position=FEET}}'
+@@ -99,7 +105,7 @@
+     - 'sound{sound=ENTITY_PLAYER_HURT_FREEZE;volume=1;pitch=1.2}'
+     - 'particle{particle=SNOWFLAKE;amount=70;x=2;y=0.4;z=2;speed=0.02;target={type=custom;relative=true;x=0;y=0.5;z=0}}'
+     - 'particle{particle=ITEM_SNOWBALL;amount=30;x=2;y=0.3;z=2;target={type=custom;relative=true;x=0;y=0.4;z=0}}'
+-    - 'script{name=rq_freeze_hit;target={type=nearby_entities;radius="<modifier.radius>"}}'
++    - 'script{name=rq_freeze_hit;target={type=nearby_entities;radius="<modifier.radius>";ignore_caster=false}}'
+ rq_freeze_hit:
+   conditions:
+     - 'can_target'
+@@ -111,7 +117,7 @@
+ rq_arcane_hail:
+   public: true
+   mechanics:
+-    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_arcane_hail_ent;hit_block=rq_arcane_hail_at}'
++    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_arcane_hail_ent;hit_block=rq_arcane_hail_at}'
+ rq_arcane_hail_ent:
+   mechanics:
+     - 'script{name=rq_arcane_hail_at;target_location={type=target;position=FEET}}'
+@@ -129,7 +135,7 @@
+     - 'particle{particle=WITCH;amount=12;x=0.1;y=0.1;z=0.1;speed=0.1}'
+     - 'particle{particle=SMOKE;amount=6;speed=0.05}'
+     - 'sound{sound=ENTITY_ENDERMAN_HURT;volume=0.5;pitch=2}'
+-    - 'script{name=rq_arcane_hail_hit;target={type=nearby_entities;radius=2}}'
++    - 'script{name=rq_arcane_hail_hit;target={type=nearby_entities;radius=2;ignore_caster=false}}'
+ rq_arcane_hail_hit:
+   conditions:
+     - 'can_target'
+@@ -140,7 +146,7 @@
+ rq_black_hole:
+   public: true
+   mechanics:
+-    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_black_hole_ent;hit_block=rq_black_hole_at}'
++    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_black_hole_ent;hit_block=rq_black_hole_at}'
+ rq_black_hole_ent:
+   mechanics:
+     - 'script{name=rq_black_hole_at;target_location={type=target;position=FEET}}'
+@@ -155,7 +161,7 @@
+     - 'particle{particle=PORTAL;amount=25;x=1;y=0.6;z=1;speed=0.6;target={type=custom;relative=true;x=0;y=0.8;z=0}}'
+     - 'particle{particle=SQUID_INK;amount=3;x=0.15;y=0.15;z=0.15;target={type=custom;relative=true;x=0;y=0.8;z=0}}'
+     - 'copy_vector{variable=rq_bh_c;value=target_location}'
+-    - 'script{name=rq_black_hole_pull;target={type=nearby_entities;radius="<modifier.radius>"}}'
++    - 'script{name=rq_black_hole_pull;target={type=nearby_entities;radius="<modifier.radius>";ignore_caster=false}}'
+ rq_black_hole_pull:
+   conditions:
+     - 'can_target'
+@@ -167,7 +173,7 @@
+ rq_contamination:
+   public: true
+   mechanics:
+-    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_contamination_ent;hit_block=rq_contamination_at}'
++    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_contamination_ent;hit_block=rq_contamination_at}'
+ rq_contamination_ent:
+   mechanics:
+     - 'script{name=rq_contamination_at;target_location={type=target;position=FEET}}'
+@@ -181,7 +187,7 @@
+     - 'particle{particle=DUST;amount=60;x=2.5;y=0.2;z=2.5;color={red=130;green=20;blue=170};target={type=custom;relative=true;x=0;y=0.3;z=0}}'
+     - 'particle{particle=WITCH;amount=15;x=2;y=0.3;z=2;target={type=custom;relative=true;x=0;y=0.3;z=0}}'
+     - 'sound{sound=BLOCK_BREWING_STAND_BREW;volume=0.6;pitch=0.7}'
+-    - 'script{name=rq_contamination_hit;target={type=nearby_entities;radius=5}}'
++    - 'script{name=rq_contamination_hit;target={type=nearby_entities;radius=5;ignore_caster=false}}'
+ rq_contamination_hit:
+   conditions:
+     - 'can_target'
+@@ -192,7 +198,7 @@
+ rq_corrosion:
+   public: true
+   mechanics:
+-    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_corrosion_ent;hit_block=rq_corrosion_at}'
++    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_corrosion_ent;hit_block=rq_corrosion_at}'
+ rq_corrosion_ent:
+   mechanics:
+     - 'script{name=rq_corrosion_at;target_location={type=target;position=FEET}}'
+@@ -202,7 +208,7 @@
+     - 'sound{sound=ENTITY_SLIME_SQUISH;volume=1;pitch=0.6}'
+     - 'particle{particle=DUST;amount=70;x=2;y=0.3;z=2;color={red=90;green=200;blue=40};target={type=custom;relative=true;x=0;y=0.3;z=0}}'
+     - 'particle{particle=ITEM_SLIME;amount=30;x=2;y=0.3;z=2;target={type=custom;relative=true;x=0;y=0.3;z=0}}'
+-    - 'script{name=rq_corrosion_hit;target={type=nearby_entities;radius="<modifier.radius>"}}'
++    - 'script{name=rq_corrosion_hit;target={type=nearby_entities;radius="<modifier.radius>";ignore_caster=false}}'
+ rq_corrosion_hit:
+   conditions:
+     - 'can_target'
+@@ -213,7 +219,7 @@
+ rq_corrupt:
+   public: true
+   mechanics:
+-    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_corrupt_ent;hit_block=rq_corrupt_at}'
++    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_corrupt_ent;hit_block=rq_corrupt_at}'
+ rq_corrupt_ent:
+   mechanics:
+     - 'script{name=rq_corrupt_at;target_location={type=target;position=FEET}}'
+@@ -222,7 +228,7 @@
+     - 'sound{sound=ENTITY_WITHER_AMBIENT;volume=0.7;pitch=1.5}'
+     - 'particle{particle=DUST;amount=50;x=1.3;y=0.3;z=1.3;color={red=110;green=0;blue=140};target={type=custom;relative=true;x=0;y=0.3;z=0}}'
+     - 'particle{particle=SQUID_INK;amount=10;x=1;y=0.2;z=1;target={type=custom;relative=true;x=0;y=0.3;z=0}}'
+-    - 'script{name=rq_corrupt_hit;target={type=nearby_entities;radius="<modifier.radius>"}}'
++    - 'script{name=rq_corrupt_hit;target={type=nearby_entities;radius="<modifier.radius>";ignore_caster=false}}'
+ rq_corrupt_hit:
+   conditions:
+     - 'can_target'
+@@ -234,7 +240,7 @@
+ rq_life_ender:
+   public: true
+   mechanics:
+-    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_life_ender_ent;hit_block=rq_life_ender_at}'
++    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_life_ender_ent;hit_block=rq_life_ender_at}'
+ rq_life_ender_ent:
+   mechanics:
+     - 'script{name=rq_life_ender_at;target_location={type=target;position=FEET}}'
+@@ -252,7 +258,7 @@
+     - 'particle{particle=EXPLOSION_EMITTER;amount=1}'
+     - 'particle{particle=FLAME;amount=60;x=1.5;y=0.3;z=1.5;speed=0.05}'
+     - 'copy_vector{variable=rq_le_c;value=target_location}'
+-    - 'script{name=rq_life_ender_hit;target={type=nearby_entities;radius="<modifier.radius>"}}'
++    - 'script{name=rq_life_ender_hit;target={type=nearby_entities;radius="<modifier.radius>";ignore_caster=false}}'
+ rq_life_ender_hit:
+   conditions:
+     - 'can_target'
+@@ -271,7 +277,7 @@
+   mechanics:
+     - 'sound{sound=ENTITY_TNT_PRIMED;volume=1;pitch=1.3}'
+     - 'sound{sound=ENTITY_SNOWBALL_THROW;volume=1;pitch=0.6}'
+-    - 'projectile{speed=20;life_span=24;size=0.4;offense=true;hits=1;stop_on_block=true;ignore_passable=true;tick=rq_tnt_tick;hit_entity=rq_tnt_ent;hit_block=rq_tnt_boom}'
++    - 'projectile{speed=20;life_span=25;size=0.4;offense=true;hits=1;stop_on_block=true;ignore_passable=true;source={type=custom;relative=true;source=true;x="-0.9 * (<caster.eye_direction.x>)";y="1.62 - 0.9 * (<caster.eye_direction.y>)";z="-0.9 * (<caster.eye_direction.z>)"};target={type=custom;relative=true;source=true;x="<caster.eye_direction.x>";y="1.62 + (<caster.eye_direction.y>)";z="<caster.eye_direction.z>"};tick=rq_tnt_tick;hit_entity=rq_tnt_ent;hit_block=rq_tnt_boom}'
+ rq_tnt_tick:
+   mechanics:
+     - 'particle{particle=SMOKE;amount=2;x=0.05;y=0.05;z=0.05}'
+@@ -286,7 +292,7 @@
+     - 'particle{particle=EXPLOSION;amount=8;x=1.2;y=0.6;z=1.2}'
+     - 'particle{particle=LARGE_SMOKE;amount=25;x=1.2;y=0.6;z=1.2;speed=0.05}'
+     - 'particle{particle=FLAME;amount=30;x=1;y=0.5;z=1;speed=0.08}'
+-    - 'script{name=rq_tnt_hit;target={type=nearby_entities;radius="<modifier.radius>"}}'
++    - 'script{name=rq_tnt_hit;target={type=nearby_entities;radius="<modifier.radius>";ignore_caster=false}}'
+ rq_tnt_hit:
+   conditions:
+     - 'can_target'
+@@ -326,3 +332,117 @@
+ rq_blink_wall:
+   mechanics:
+     - 'set_double{variable=rq_bl_d;value="min(<rq_bl_d>, ((<target_location.x>) - (<caster.location.x>)) * (<rq_bl_dx>) + ((<target_location.z>) - (<caster.location.z>)) * (<rq_bl_dz>))"}'
++
++# ---------------------------------------------------------------- POWER_MARK (Метка силы)
++# RQ fix 2026-11-14: replaces default:POWER_MARK. The built-in skill picks its
++# spot with a BLOCK-ONLY ray, so aiming at a mob put the mark on the ground
++# behind it and it never charged. Here the mark is put ON the enemy under the
++# crosshair: it stores <modifier.ratio>% of all damage that enemy takes during
++# <modifier.duration> s (health before - health after), then explodes: the
++# stored damage + stun (<modifier.stun> s) on enemies within 5 blocks of it.
++# Aiming at a block marks the nearest valid enemy within 2 blocks of that spot.
++rq_power_mark:
++  public: true
++  mechanics:
++    - 'set_double{variable=rq_pm_done;value=0}'
++    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_power_mark_ent;hit_block=rq_power_mark_blk}'
++rq_power_mark_blk:
++  mechanics:
++    - 'sound{sound=BLOCK_END_PORTAL_FRAME_FILL;volume=1;pitch=1.5}'
++    - 'script{name=rq_power_mark_pick;target={type=nearby_entities;radius=2;ignore_caster=false}}'
++# only the first valid enemy is marked (rq_pm_done guards the shared variables)
++rq_power_mark_pick:
++  conditions:
++    - 'can_target'
++    - 'boolean{formula="<rq_pm_done> < 1"}'
++  mechanics:
++    - 'script{name=rq_power_mark_ent}'
++rq_power_mark_ent:
++  mechanics:
++    - 'set_double{variable=rq_pm_done;value=1}'
++    - 'set_double{variable=rq_pm_h0;value="<target.health>"}'
++    - 'sound{sound=BLOCK_END_PORTAL_FRAME_FILL;volume=2;pitch=1}'
++    - 'script{name=rq_power_mark_tick;counter=rq_pm_i;iterations="<modifier.duration> * 5"}'
++    - 'delay{amount="<modifier.duration> * 20"}'
++    - 'script{name=rq_power_mark_boom;target_location={type=target;position=FEET}}'
++rq_power_mark_tick:
++  mechanics:
++    - 'delay{amount="(<rq_pm_i> - 1) * 4"}'
++    - 'particle{particle=WITCH;amount=6;x=0.6;y=0.05;z=0.6;target={type=target;position=FEET}}'
++    - 'sound{sound=BLOCK_NOTE_BLOCK_PLING;volume=0.4;pitch=1.6}'
++rq_power_mark_boom:
++  mechanics:
++    - 'set_double{variable=rq_pm_acc;value="max(0, (<rq_pm_h0>) - (<target.health>)) * (<modifier.ratio>) / 100"}'
++    - 'sound{sound=ENTITY_GENERIC_EXPLODE;volume=2;pitch=0.6}'
++    - 'particle{particle=EXPLOSION;amount=16;x=2;y=1;z=2;target={type=custom;relative=true;x=0;y=1;z=0}}'
++    - 'particle{particle=WITCH;amount=60;x=2.5;y=0.2;z=2.5;speed=0.3;target={type=custom;relative=true;x=0;y=0.3;z=0}}'
++    - 'script{name=rq_power_mark_hit;target={type=nearby_entities;radius=5;ignore_caster=false}}'
++rq_power_mark_hit:
++  conditions:
++    - 'can_target'
++  mechanics:
++    - 'potion{effect=SLOWNESS;level=10;ticks="<modifier.stun> * 20";particles=false}'
++    - 'script{name=rq_power_mark_dmg}'
++rq_power_mark_dmg:
++  conditions:
++    - 'boolean{formula="<rq_pm_acc> > 0.01"}'
++  mechanics:
++    - 'damage{amount="<rq_pm_acc>";knockback=false;ignore_immunity=true}'
++
++# ---------------------------------------------------------------- SNOWMAN_TURRET (Снеговик-турель)
++# RQ fix 2026-11-14: replaces default:SNOWMAN_TURRET. The built-in skill
++#  - put the turret on the block BEHIND the aimed enemy (block-only ray) and did
++#    not cast at all when aiming at the sky;
++#  - set <damage> on EVERY entity its vanilla snowballs hit: a snowball that
++#    missed the enemy flew on and hit the caster (measured: caster -9.5 HP) or
++#    allies, ignoring PvP / party rules.
++# Here the turret stands 2 blocks in front of the aimed enemy (or on the aimed
++# block) and, once per second, throws a MythicLib snowball projectile at one valid
++# enemy within <modifier.radius>; the projectile only collides with valid
++# enemies (can_target), so the caster / party members are never hit.
++# Lasts <modifier.duration> s (max 15 s, as built-in). The snowman is drawn
++# with particles (a real Snow Golem would need console commands).
++rq_snowman_turret:
++  public: true
++  mechanics:
++    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_turret_ent;hit_block=rq_turret_at}'
++rq_turret_ent:
++  mechanics:
++    - 'set_double{variable=rq_tu_h;value="max(0.001, sqrt(((<caster.location.x>) - (<target.location.x>))^2 + ((<caster.location.z>) - (<target.location.z>))^2))"}'
++    - 'set_double{variable=rq_tu_o;value="min(2, (<rq_tu_h>) * 0.5) / (<rq_tu_h>)"}'
++    - 'script{name=rq_turret_at;target_location={type=custom;relative=false;x="(<target.location.x>) + ((<caster.location.x>) - (<target.location.x>)) * (<rq_tu_o>)";y="<target.location.y>";z="(<target.location.z>) + ((<caster.location.z>) - (<target.location.z>)) * (<rq_tu_o>)"}}'
++rq_turret_at:
++  mechanics:
++    - 'sound{sound=BLOCK_SNOW_PLACE;volume=1.5;pitch=0.8}'
++    - 'sound{sound=ENTITY_SNOW_GOLEM_AMBIENT;volume=1;pitch=1}'
++    - 'script{name=rq_turret_fx;counter=rq_tu_j;iterations="min(<modifier.duration> * 20, 300) / 10"}'
++    - 'script{name=rq_turret_tick;counter=rq_tu_i;iterations="min(<modifier.duration> * 20, 300) / 20"}'
++rq_turret_fx:
++  mechanics:
++    - 'delay{amount="(<rq_tu_j> - 1) * 10"}'
++    - 'particle{particle=DUST;amount=14;x=0.22;y=0.22;z=0.22;color={red=245;green=250;blue=255};target={type=custom;relative=true;x=0;y=0.45;z=0}}'
++    - 'particle{particle=DUST;amount=10;x=0.16;y=0.16;z=0.16;color={red=245;green=250;blue=255};target={type=custom;relative=true;x=0;y=1.05;z=0}}'
++    - 'particle{particle=DUST;amount=3;x=0.05;y=0.05;z=0.05;color={red=230;green=120;blue=20};target={type=custom;relative=true;x=0;y=1.5;z=0}}'
++    - 'particle{particle=SNOWFLAKE;amount=3;x=0.4;y=0.6;z=0.4;target={type=custom;relative=true;x=0;y=0.8;z=0}}'
++rq_turret_tick:
++  mechanics:
++    - 'delay{amount="(<rq_tu_i> - 1) * 20 + 5"}'
++    - 'set_double{variable=rq_tu_shot;value=0}'
++    - 'script{name=rq_turret_aim;target={type=nearby_entities;radius="<modifier.radius>";ignore_caster=false}}'
++rq_turret_aim:
++  conditions:
++    - 'can_target'
++    - 'boolean{formula="<rq_tu_shot> < 1"}'
++  mechanics:
++    - 'set_double{variable=rq_tu_shot;value=1}'
++    - 'sound{sound=ENTITY_SNOWBALL_THROW;volume=1;pitch=1.3}'
++    - 'projectile{speed=26;life_span=20;size=0.3;offense=true;hits=1;stop_on_block=true;ignore_passable=true;source={type=custom;relative=true;x=0;y=1.3;z=0};target={type=target;position=BODY};tick=rq_turret_trail;hit_entity=rq_turret_hit;hit_block=rq_turret_trail}'
++rq_turret_trail:
++  mechanics:
++    - 'particle{particle=ITEM_SNOWBALL;amount=1}'
++rq_turret_hit:
++  conditions:
++    - 'can_target'
++  mechanics:
++    - 'particle{particle=ITEM_SNOWBALL;amount=8;x=0.2;y=0.2;z=0.2;target={type=target;position=BODY}}'
++    - 'damage{amount="<modifier.damage>";knockback=false;damage_type="SKILL,PROJECTILE"}'
+--- prod/plugins/MythicLib/config.yml	2026-11-14 21:47:15.873693382 +0000
++++ after2/plugins/MythicLib/config.yml	2026-11-14 21:39:32.813008458 +0000
+@@ -89,3 +89,26 @@
+     - PHYSICAL
+     DROWNING:
+     - PHYSICAL
++
++# RQ fix 2026-11-14: PvP/PvE interaction rules (were absent -> interactionRules = null ->
++# every skill hit / debuffed party members and any player regardless of PvP).
++# Offensive skills never hit yourself or party/guild allies; other players are hit only
++# when PvP is enabled in that world (gamerule pvp). Mobs are always valid targets.
++interaction_rules:
++  enabled: true
++  support_skills_on_mobs: true
++  rules:
++    support:
++      self: true
++      party_member: true
++      guild_ally: true
++      guild_enemy: '!{world_pvp}'
++      party_other: '!{world_pvp}'
++      guild_neutral: true
++    offense:
++      self: false
++      party_member: false
++      guild_ally: false
++      guild_enemy: '{world_pvp}'
++      guild_neutral: '{world_pvp}'
++      party_other: '{world_pvp}'
+--- prod/plugins/MythicLib/skill/LostAssets_ClassPack_01_Swordmaster.yml	2026-11-14 21:47:14.929283668 +0000
++++ after2/plugins/MythicLib/skill/LostAssets_ClassPack_01_Swordmaster.yml	2026-11-14 21:48:21.696481073 +0000
+@@ -19,7 +19,8 @@
+       name: 'Перезарядка'
+       item: 0
+   name: 'Удар меча'
+-  source: mythicmobs:lostassets_swordmaster_lc
++  # RQ fix 2026-11-14: was mythicmobs:lostassets_swordmaster_lc (MythicMobs is not installed)
++  source: mythiclib:la_swordmaster_lc
+ LOSTASSETS_SWORDMASTER_RC:
+   parameters:
+     damage:
+@@ -41,7 +42,8 @@
+       name: 'Перезарядка'
+       item: 0
+   name: 'Заряженный удар'
+-  source: mythicmobs:lostassets_swordmaster_rc
++  # RQ fix 2026-11-14: was mythicmobs:lostassets_swordmaster_rc (MythicMobs is not installed)
++  source: mythiclib:la_swordmaster_rc
+ LOSTASSETS_SWORDMASTER_SLC:
+   parameters:
+     damage:
+@@ -63,7 +65,8 @@
+       name: 'Перезарядка'
+       item: 0
+   name: 'Скрещённые клинки'
+-  source: mythicmobs:lostassets_swordmaster_slc
++  # RQ fix 2026-11-14: was mythicmobs:lostassets_swordmaster_slc (MythicMobs is not installed)
++  source: mythiclib:la_swordmaster_slc
+ LOSTASSETS_SWORDMASTER_SRC:
+   parameters:
+     damage:
+@@ -85,5 +88,6 @@
+       name: 'Перезарядка'
+       item: 0
+   name: 'Буря клинков'
+-  source: mythicmobs:lostassets_swordmaster_src
++  # RQ fix 2026-11-14: was mythicmobs:lostassets_swordmaster_src (MythicMobs is not installed)
++  source: mythiclib:la_swordmaster_src
+ # MTWyZjbiFXcCpXRlVFUpJ0bRdVT3FERPFTWU50MFRUT4l1Vj1GODVnTlFzRUlnc51UVMFmM
+--- prod/plugins/MythicLib/skill/LostAssets_ClassPack_04_Revenant.yml	2026-11-14 21:47:15.405522177 +0000
++++ after2/plugins/MythicLib/skill/LostAssets_ClassPack_04_Revenant.yml	2026-11-14 21:48:21.724840779 +0000
+@@ -18,7 +18,8 @@
+     cooldown:
+       name: 'Перезарядка'
+       item: 0
+-  source: mythicmobs:lostassets_revenant_lc
++  # RQ fix 2026-11-14: was mythicmobs:lostassets_revenant_lc (MythicMobs is not installed)
++  source: mythiclib:la_revenant_lc
+ LOSTASSETS_REVENANT_RC:
+   parameters:
+     damage:
+@@ -39,7 +40,8 @@
+     cooldown:
+       name: 'Перезарядка'
+       item: 0
+-  source: mythicmobs:lostassets_revenant_rc
++  # RQ fix 2026-11-14: was mythicmobs:lostassets_revenant_rc (MythicMobs is not installed)
++  source: mythiclib:la_revenant_rc
+ LOSTASSETS_REVENANT_SLC:
+   parameters:
+     damage:
+@@ -60,7 +62,8 @@
+     cooldown:
+       name: 'Перезарядка'
+       item: 0
+-  source: mythicmobs:lostassets_revenant_slc
++  # RQ fix 2026-11-14: was mythicmobs:lostassets_revenant_slc (MythicMobs is not installed)
++  source: mythiclib:la_revenant_slc
+ LOSTASSETS_REVENANT_SRC:
+   parameters:
+     damage:
+@@ -81,4 +84,5 @@
+     cooldown:
+       name: 'Перезарядка'
+       item: 0
+-  source: mythicmobs:lostassets_revenant_src
++  # RQ fix 2026-11-14: was mythicmobs:lostassets_revenant_src (MythicMobs is not installed)
++  source: mythiclib:la_revenant_src
+--- /dev/null	2026-11-13 23:33:36.205117372 +0000
++++ after2/plugins/MythicLib/script/lostassets_skills.yml	2026-11-14 21:48:10.109039207 +0000
+@@ -0,0 +1,172 @@
++##############################################################################
++# LostAssets ClassPack 01 Swordmaster / 04 Revenant -> MythicLib scripts
++# RQ fix 2026-11-14.
++#
++# The 8 MMOItems abilities LOSTASSETS_* (MMOItems/item/sword.yml) used
++# 'source: mythicmobs:lostassets_*', but MythicMobs is disabled on the server
++# (jar renamed to .jar1), so MythicLib could not load them at all ("Could not
++# find skill source 'mythicmobs'") and the weapons had no abilities.
++#
++# These scripts reproduce the DAMAGE part of the MythicMobs pack skills
++# (plugins/MythicMobs/packs/LostAssets_ClassPack_0*/Skills/*.yml): same hit
++# areas, radii, delays and number of hits. What can NOT be reproduced without
++# MythicMobs: the summoned ModelEngine/armor-stand models (slash/sword VFX) and
++# the 3-step left-click combo (MythicMobs auras); here every left click is the
++# first combo step. Visuals are replaced with vanilla particles and sounds.
++# Damage = <modifier.damage> (MMOItems ability 'damage'); MythicMobs added the
++# flat <caster.mmostat.skill_damage>, MythicLib applies the SKILL_DAMAGE stat
++# as a percentage to SKILL damage instead.
++##############################################################################
++
++# common: horizontal look direction (lockpitch=true in the pack)
++la_dir:
++  mechanics:
++    - 'set_double{variable=la_h;value="max(0.001, sqrt((<caster.eye_direction.x>)^2 + (<caster.eye_direction.z>)^2))"}'
++    - 'set_double{variable=la_dx;value="(<caster.eye_direction.x>) / (<la_h>)"}'
++    - 'set_double{variable=la_dz;value="(<caster.eye_direction.z>) / (<la_h>)"}'
++la_hit:
++  conditions:
++    - 'can_target'
++  mechanics:
++    - 'damage{amount="<modifier.damage>";knockback=false;damage_type="SKILL,PHYSICAL"}'
++# like MythicMobs 'setNoDamageTicks{ticks=0}' + damage: every wave hits
++la_hit_ii:
++  conditions:
++    - 'can_target'
++  mechanics:
++    - 'damage{amount="<modifier.damage>";knockback=false;ignore_immunity=true;damage_type="SKILL,PHYSICAL"}'
++la_hit_ii15:
++  conditions:
++    - 'can_target'
++  mechanics:
++    - 'damage{amount="<modifier.damage> * 1.5";knockback=false;ignore_immunity=true;damage_type="SKILL,PHYSICAL"}'
++
++# ============================================================ SWORDMASTER
++# LC: slash, enemies within 4 (h) x 2 (v) blocks of the point 1 block ahead
++la_swordmaster_lc:
++  public: true
++  mechanics:
++    - 'script{name=la_dir}'
++    - 'sound{sound=ENTITY_WITCH_THROW;volume=0.4;pitch=0.5}'
++    - 'sound{sound=ENTITY_PLAYER_ATTACK_SWEEP;volume=0.6;pitch=1.3}'
++    - 'particle{particle=SWEEP_ATTACK;amount=3;x=0.8;y=0.2;z=0.8;target={type=custom;relative=true;source=true;x="<la_dx>";y=1.1;z="<la_dz>"}}'
++    - 'particle{particle=CRIT;amount=40;x=1;y=0.5;z=1;speed=0.1;target={type=custom;relative=true;source=true;x="<la_dx>";y=0.6;z="<la_dz>"}}'
++    - 'script{name=la_swordmaster_lc_at;target_location={type=custom;relative=true;source=true;x="<la_dx>";y=0;z="<la_dz>"}}'
++la_swordmaster_lc_at:
++  mechanics:
++    - 'script{name=la_hit_ii;target={type=nearby_entities;radius=4;height=2;ignore_caster=false}}'
++
++# RC: big slash, 6 (h) x 5 (v) around the point 1 block ahead
++la_swordmaster_rc:
++  public: true
++  mechanics:
++    - 'script{name=la_dir}'
++    - 'sound{sound=ENTITY_GHAST_SHOOT;volume=0.5;pitch=0.5}'
++    - 'sound{sound=ENTITY_PLAYER_ATTACK_SWEEP;volume=1;pitch=0.7}'
++    - 'particle{particle=SOUL_FIRE_FLAME;amount=60;x=1.5;y=0.5;z=1.5;speed=0.1;target={type=custom;relative=true;source=true;x="<la_dx>";y=0.6;z="<la_dz>"}}'
++    - 'particle{particle=SMOKE;amount=60;x=1.5;y=0.5;z=1.5;target={type=custom;relative=true;source=true;x="<la_dx>";y=0.6;z="<la_dz>"}}'
++    - 'script{name=la_swordmaster_rc_at;target_location={type=custom;relative=true;source=true;x="<la_dx>";y=0;z="<la_dz>"}}'
++la_swordmaster_rc_at:
++  mechanics:
++    - 'script{name=la_hit_ii;target={type=nearby_entities;radius=6;height=5;ignore_caster=false}}'
++
++# SLC: flying slash 15 blocks forward (2.5 blocks/tick), hits everything within 4 blocks of it
++la_swordmaster_slc:
++  public: true
++  mechanics:
++    - 'script{name=la_dir}'
++    - 'sound{sound=ENTITY_GHAST_SHOOT;volume=0.5;pitch=0.5}'
++    - 'delay{amount=3}'
++    - 'sound{sound=ENTITY_WITHER_SHOOT;volume=0.4;pitch=0.5}'
++    - 'projectile{speed=50;life_span=6;size=0.5;step=1;offense=true;hits=1;stop_on_block=true;ignore_passable=true;source={type=custom;relative=true;source=true;x=0;y=1;z=0};target={type=custom;relative=true;source=true;x="<la_dx>";y=1;z="<la_dz>"};tick=la_swordmaster_slc_tick;hit_block=la_swordmaster_slc_tick}'
++la_swordmaster_slc_tick:
++  mechanics:
++    - 'particle{particle=SWEEP_ATTACK;amount=1}'
++    - 'particle{particle=SOUL_FIRE_FLAME;amount=4;x=0.5;y=0.3;z=0.5;speed=0.02}'
++    - 'script{name=la_hit;target={type=nearby_entities;radius=4;ignore_caster=false}}'
++
++# SRC: sword rain 5 blocks ahead: 4 waves (every 6 ticks), radius 7
++la_swordmaster_src:
++  public: true
++  mechanics:
++    - 'script{name=la_dir}'
++    - 'script{name=la_swordmaster_src_at;target_location={type=custom;relative=true;source=true;x="<la_dx> * 5";y=0;z="<la_dz> * 5"}}'
++la_swordmaster_src_at:
++  mechanics:
++    - 'sound{sound=ENTITY_BLAZE_HURT;volume=0.4;pitch=0.5}'
++    - 'script{name=la_swordmaster_src_wave;counter=la_sm_i;iterations=4}'
++la_swordmaster_src_wave:
++  mechanics:
++    - 'delay{amount="(<la_sm_i> - 1) * 6 + 2"}'
++    - 'sound{sound=ENTITY_GHAST_SHOOT;volume=0.4;pitch=0.5}'
++    - 'particle{particle=CRIT;amount=30;x=3;y=1.5;z=3;target={type=custom;relative=true;x=0;y=0.6;z=0}}'
++    - 'particle{particle=SOUL_FIRE_FLAME;amount=30;x=3;y=1.5;z=3;speed=0.2;target={type=custom;relative=true;x=0;y=0.6;z=0}}'
++    - 'particle{particle=SMOKE;amount=20;x=3;y=1.5;z=3;target={type=custom;relative=true;x=0;y=0.6;z=0}}'
++    - 'script{name=la_hit_ii;target={type=nearby_entities;radius=7;ignore_caster=false}}'
++
++# ============================================================ REVENANT
++# LC: claw, 4 (h) x 2 (v) around the point 1 block ahead, hits after 2 ticks
++la_revenant_lc:
++  public: true
++  mechanics:
++    - 'script{name=la_dir}'
++    - 'sound{sound=ENTITY_WITHER_SHOOT;volume=0.4;pitch=2}'
++    - 'particle{particle=WITCH;amount=40;x=1;y=0.5;z=1;target={type=custom;relative=true;source=true;x="<la_dx>";y=0.6;z="<la_dz>"}}'
++    - 'script{name=la_revenant_lc_at;target_location={type=custom;relative=true;source=true;x="<la_dx>";y=0;z="<la_dz>"}}'
++la_revenant_lc_at:
++  mechanics:
++    - 'delay{amount=2}'
++    - 'script{name=la_hit_ii;target={type=nearby_entities;radius=4;height=2;ignore_caster=false}}'
++
++# RC: after 10 ticks a soul wave flies 15 blocks forward, hits everything within 2.5 blocks of it
++la_revenant_rc:
++  public: true
++  mechanics:
++    - 'script{name=la_dir}'
++    - 'sound{sound=ENTITY_IRON_GOLEM_DEATH;volume=0.4;pitch=0.5}'
++    - 'delay{amount=10}'
++    - 'sound{sound=ENTITY_WITHER_SHOOT;volume=0.4;pitch=0.5}'
++    - 'projectile{speed=50;life_span=6;size=0.5;step=1;offense=true;hits=1;stop_on_block=true;ignore_passable=true;source={type=custom;relative=true;source=true;x=0;y=1;z=0};target={type=custom;relative=true;source=true;x="<la_dx>";y=1;z="<la_dz>"};tick=la_revenant_rc_tick;hit_block=la_revenant_rc_tick}'
++la_revenant_rc_tick:
++  mechanics:
++    - 'particle{particle=WITCH;amount=8;x=0.6;y=0.4;z=0.6}'
++    - 'particle{particle=SOUL;amount=2;x=0.3;y=0.3;z=0.3;speed=0.02}'
++    - 'script{name=la_hit;target={type=nearby_entities;radius=2.5;height=1;ignore_caster=false}}'
++
++# SLC: 5 blocks ahead, after 12 ticks 5 hits (every tick), radius 7
++la_revenant_slc:
++  public: true
++  mechanics:
++    - 'script{name=la_dir}'
++    - 'sound{sound=ENTITY_IRON_GOLEM_DEATH;volume=0.4;pitch=0.5}'
++    - 'script{name=la_revenant_slc_at;target_location={type=custom;relative=true;source=true;x="<la_dx> * 5";y=0;z="<la_dz> * 5"}}'
++la_revenant_slc_at:
++  mechanics:
++    - 'particle{particle=WITCH;amount=30;x=1.5;y=0.2;z=1.5;target={type=custom;relative=true;x=0;y=0.3;z=0}}'
++    - 'script{name=la_revenant_slc_wave;counter=la_rv_i;iterations=5}'
++la_revenant_slc_wave:
++  mechanics:
++    - 'delay{amount="11 + <la_rv_i>"}'
++    - 'sound{sound=ENTITY_WITHER_SHOOT;volume=0.3;pitch=1.5}'
++    - 'particle{particle=WITCH;amount=25;x=3;y=1;z=3;target={type=custom;relative=true;x=0;y=0.6;z=0}}'
++    - 'script{name=la_hit_ii;target={type=nearby_entities;radius=7;ignore_caster=false}}'
++
++# SRC: 5 blocks ahead, after 44 ticks one blast, radius 10
++la_revenant_src:
++  public: true
++  mechanics:
++    - 'script{name=la_dir}'
++    - 'sound{sound=ENTITY_IRON_GOLEM_DEATH;volume=0.4;pitch=0.5}'
++    - 'sound{sound=ENTITY_WITHER_SPAWN;volume=0.3;pitch=1}'
++    - 'script{name=la_revenant_src_at;target_location={type=custom;relative=true;source=true;x="<la_dx> * 5";y=0;z="<la_dz> * 5"}}'
++la_revenant_src_at:
++  mechanics:
++    - 'script{name=la_revenant_src_fx;counter=la_rs_i;iterations=11}'
++    - 'delay{amount=44}'
++    - 'sound{sound=ENTITY_ZOMBIE_VILLAGER_CURE;volume=0.6;pitch=0.5}'
++    - 'particle{particle=SOUL_FIRE_FLAME;amount=120;x=5;y=0.5;z=5;speed=0.05;target={type=custom;relative=true;x=0;y=0.5;z=0}}'
++    - 'script{name=la_hit_ii;target={type=nearby_entities;radius=10;ignore_caster=false}}'
++la_revenant_src_fx:
++  mechanics:
++    - 'delay{amount="(<la_rs_i> - 1) * 4"}'
++    - 'particle{particle=WITCH;amount=20;x=3;y=0.2;z=3;target={type=custom;relative=true;x=0;y=0.3;z=0}}'

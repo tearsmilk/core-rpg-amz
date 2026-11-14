@@ -1,0 +1,88 @@
+LOSTASSETS_REVENANT_LC:
+  parameters:
+    damage:
+      name: 'Урон'
+      item: 0
+    timer:
+      name: 'Таймер'
+      item: 0
+    delay:
+      name: 'Задержка'
+      item: 0
+    mana:
+      name: 'Мана'
+      item: 0
+    stamina:
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      name: 'Перезарядка'
+      item: 0
+  # RQ fix 2026-11-14: was mythicmobs:lostassets_revenant_lc (MythicMobs is not installed)
+  source: mythiclib:la_revenant_lc
+LOSTASSETS_REVENANT_RC:
+  parameters:
+    damage:
+      name: 'Урон'
+      item: 0
+    timer:
+      name: 'Таймер'
+      item: 0
+    delay:
+      name: 'Задержка'
+      item: 0
+    mana:
+      name: 'Мана'
+      item: 0
+    stamina:
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      name: 'Перезарядка'
+      item: 0
+  # RQ fix 2026-11-14: was mythicmobs:lostassets_revenant_rc (MythicMobs is not installed)
+  source: mythiclib:la_revenant_rc
+LOSTASSETS_REVENANT_SLC:
+  parameters:
+    damage:
+      name: 'Урон'
+      item: 0
+    timer:
+      name: 'Таймер'
+      item: 0
+    delay:
+      name: 'Задержка'
+      item: 0
+    mana:
+      name: 'Мана'
+      item: 0
+    stamina:
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      name: 'Перезарядка'
+      item: 0
+  # RQ fix 2026-11-14: was mythicmobs:lostassets_revenant_slc (MythicMobs is not installed)
+  source: mythiclib:la_revenant_slc
+LOSTASSETS_REVENANT_SRC:
+  parameters:
+    damage:
+      name: 'Урон'
+      item: 0
+    timer:
+      name: 'Таймер'
+      item: 0
+    delay:
+      name: 'Задержка'
+      item: 0
+    mana:
+      name: 'Мана'
+      item: 0
+    stamina:
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      name: 'Перезарядка'
+      item: 0
+  # RQ fix 2026-11-14: was mythicmobs:lostassets_revenant_src (MythicMobs is not installed)
+  source: mythiclib:la_revenant_src

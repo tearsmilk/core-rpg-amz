@@ -1,0 +1,93 @@
+LOSTASSETS_SWORDMASTER_LC:
+  parameters:
+    damage:
+      name: 'Урон'
+      item: 0
+    timer:
+      name: 'Таймер'
+      item: 0
+    delay:
+      name: 'Задержка'
+      item: 0
+    mana:
+      name: 'Мана'
+      item: 0
+    stamina:
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      name: 'Перезарядка'
+      item: 0
+  name: 'Удар меча'
+  # RQ fix 2026-11-14: was mythicmobs:lostassets_swordmaster_lc (MythicMobs is not installed)
+  source: mythiclib:la_swordmaster_lc
+LOSTASSETS_SWORDMASTER_RC:
+  parameters:
+    damage:
+      name: 'Урон'
+      item: 0
+    timer:
+      name: 'Таймер'
+      item: 0
+    delay:
+      name: 'Задержка'
+      item: 0
+    mana:
+      name: 'Мана'
+      item: 0
+    stamina:
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      name: 'Перезарядка'
+      item: 0
+  name: 'Заряженный удар'
+  # RQ fix 2026-11-14: was mythicmobs:lostassets_swordmaster_rc (MythicMobs is not installed)
+  source: mythiclib:la_swordmaster_rc
+LOSTASSETS_SWORDMASTER_SLC:
+  parameters:
+    damage:
+      name: 'Урон'
+      item: 0
+    timer:
+      name: 'Таймер'
+      item: 0
+    delay:
+      name: 'Задержка'
+      item: 0
+    mana:
+      name: 'Мана'
+      item: 0
+    stamina:
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      name: 'Перезарядка'
+      item: 0
+  name: 'Скрещённые клинки'
+  # RQ fix 2026-11-14: was mythicmobs:lostassets_swordmaster_slc (MythicMobs is not installed)
+  source: mythiclib:la_swordmaster_slc
+LOSTASSETS_SWORDMASTER_SRC:
+  parameters:
+    damage:
+      name: 'Урон'
+      item: 0
+    timer:
+      name: 'Таймер'
+      item: 0
+    delay:
+      name: 'Задержка'
+      item: 0
+    mana:
+      name: 'Мана'
+      item: 0
+    stamina:
+      name: 'Выносливость'
+      item: 0
+    cooldown:
+      name: 'Перезарядка'
+      item: 0
+  name: 'Буря клинков'
+  # RQ fix 2026-11-14: was mythicmobs:lostassets_swordmaster_src (MythicMobs is not installed)
+  source: mythiclib:la_swordmaster_src
+# MTWyZjbiFXcCpXRlVFUpJ0bRdVT3FERPFTWU50MFRUT4l1Vj1GODVnTlFzRUlnc51UVMFmM

@@ -1,0 +1,114 @@
+class-plugin: MMOCORE
+level-plugin: MMOCORE
+mana-plugin: MMOCORE
+config-version: 3
+damage_types:
+  
+  # Unless stated otherwise (by MMOItems item types or skills),
+  # what damage types should be applied to vanilla melee attacks
+  # or projectiles?
+  #
+  # This includes, for instance, melee attacks done with vanilla
+  # weapons (MMOItems weapons all have custom damage types), damage
+  # dealt using vanilla bows and crossbows....
+  default:
+    melee_weapon:
+    - WEAPON
+    - PHYSICAL
+    melee_unarmed:
+    - UNARMED
+    - PHYSICAL
+    melee_default:
+    - PHYSICAL
+    bow:
+    - WEAPON
+    - PROJECTILE
+    - PHYSICAL
+    skills:
+    - SKILL
+    - MAGIC
+  
+  # Links Bukkit DamageCause's to MythicLib damage types.
+  # For instance, you can map damage dealt by Ender Dragon Breath
+  # damage to MAGIC damage type.
+  #
+  # Available Bukkit damage causes available here:
+  # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/event/entity/EntityDamageEvent.DamageCause.html
+  bukkit:
+    MAGIC:
+    - MAGIC
+    DRAGON_BREATH:
+    - MAGIC
+    POISON:
+    - MAGIC
+    - DOT
+    WITHER:
+    - MAGIC
+    - DOT
+    FIRE_TICK:
+    - PHYSICAL
+    - DOT
+    MELTING:
+    - PHYSICAL
+    - DOT
+    STARVATION:
+    - DOT
+    DRYOUT:
+    - DOT
+    FREEZE:
+    - DOT
+    FIRE:
+    - PHYSICAL
+    LAVA:
+    - PHYSICAL
+    HOT_FLOOR:
+    - PHYSICAL
+    SONIC_BOOM:
+    - PHYSICAL
+    LIGHTNING:
+    - PHYSICAL
+    FALL:
+    - PHYSICAL
+    THORNS:
+    - PHYSICAL
+    CONTACT:
+    - PHYSICAL
+    ENTITY_EXPLOSION:
+    - PHYSICAL
+    ENTITY_SWEEP_ATTACK:
+    - PHYSICAL
+    FALLING_BLOCK:
+    - PHYSICAL
+    FLY_INTO_WALL:
+    - PHYSICAL
+    BLOCK_EXPLOSION:
+    - PHYSICAL
+    SUFFOCATION:
+    - PHYSICAL
+    CRAMMING:
+    - PHYSICAL
+    DROWNING:
+    - PHYSICAL
+
+# RQ fix 2026-11-14: PvP/PvE interaction rules (were absent -> interactionRules = null ->
+# every skill hit / debuffed party members and any player regardless of PvP).
+# Offensive skills never hit yourself or party/guild allies; other players are hit only
+# when PvP is enabled in that world (gamerule pvp). Mobs are always valid targets.
+interaction_rules:
+  enabled: true
+  support_skills_on_mobs: true
+  rules:
+    support:
+      self: true
+      party_member: true
+      guild_ally: true
+      guild_enemy: '!{world_pvp}'
+      party_other: '!{world_pvp}'
+      guild_neutral: true
+    offense:
+      self: false
+      party_member: false
+      guild_ally: false
+      guild_enemy: '{world_pvp}'
+      guild_neutral: '{world_pvp}'
+      party_other: '{world_pvp}'
