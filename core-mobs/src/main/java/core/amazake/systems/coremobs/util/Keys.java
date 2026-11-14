@@ -14,6 +14,11 @@ public final class Keys {
     /** На топорике региона. */
     public static final NamespacedKey WAND = new NamespacedKey("core-mobs", "wand");
 
+    /** На линии контура региона: «регион#номер». */
+    public static final NamespacedKey DISPLAY = new NamespacedKey("core-mobs", "display");
+    /** На линии контура: экземпляр системы, который её поставил. */
+    public static final NamespacedKey INSTANCE = new NamespacedKey("core-mobs", "instance");
+
     private Keys() {
     }
 }

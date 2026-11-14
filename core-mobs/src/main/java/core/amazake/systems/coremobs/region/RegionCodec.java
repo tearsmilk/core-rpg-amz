@@ -18,7 +18,8 @@ public final class RegionCodec {
         "Регионы спавна core-mobs. Файл пишет система (команды /mobs region ...), но его можно править руками,",
         "потом /mobs reload. points — вершины полигона (блоки x,y,z), min-y/max-y — высота региона.",
         "despawn-radius — на сколько блоков моб может отойти за границу региона, дальше он пропадает (-1 — выключено).",
-        "spawn.mobs — какие мобы появляются и их веса (чем больше вес, тем чаще).");
+        "spawn.mobs — какие мобы появляются и их веса (чем больше вес, тем чаще).",
+        "show — контур региона виден всем игрокам (/mobs region show <имя>).");
 
     private RegionCodec() {
     }
@@ -69,7 +70,8 @@ public final class RegionCodec {
         maxY = r.getInt("max-y", maxY);
         final int despawn = Math.max(-1, r.getInt("despawn-radius", 5));
         return Region.fromPoints(name, world, points, 0, despawn).withHeight(minY, maxY)
-            .withSpawn(readSpawn(r.getConfigurationSection("spawn"), warn));
+            .withSpawn(readSpawn(r.getConfigurationSection("spawn"), warn))
+            .withShow(r.getBoolean("show", false));
     }
 
     static SpawnSettings readSpawn(final ConfigurationSection s, final Consumer<String> warn) {
@@ -115,6 +117,7 @@ public final class RegionCodec {
             yaml.set(p + "min-y", region.minY());
             yaml.set(p + "max-y", region.maxY());
             yaml.set(p + "despawn-radius", region.despawnRadius());
+            yaml.set(p + "show", region.show());
             final SpawnSettings s = region.spawn();
             yaml.set(p + "spawn.enabled", s.enabled());
             yaml.set(p + "spawn.interval-seconds", s.intervalSeconds());

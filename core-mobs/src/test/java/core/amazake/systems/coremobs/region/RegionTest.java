@@ -90,8 +90,5 @@ class RegionTest {
         assertEquals(1, s.get(id).points().size());
         s.undo(id);
         assertNull(s.get(id));
-        assertTrue(s.toggleShown(id, "forest"));
-        assertFalse(s.toggleShown(id, "forest"));
-        assertTrue(s.shown(id).isEmpty());
     }
 }

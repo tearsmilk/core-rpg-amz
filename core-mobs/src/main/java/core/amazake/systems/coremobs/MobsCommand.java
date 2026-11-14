@@ -45,7 +45,7 @@ import org.bukkit.persistence.PersistentDataType;
  */
 final class MobsCommand extends Command {
 
-    private static final List<String> SUBS = List.of("help", "list", "spawn", "egg", "drops", "wand", "sel", "region", "reload");
+    private static final List<String> SUBS = List.of("help", "list", "spawn", "egg", "drops", "wand", "sel", "region", "world", "reload");
     private static final List<String> DROP_SUBS = List.of("save", "add", "list", "give", "remove", "clear");
     private static final List<String> SEL_SUBS = List.of("info", "undo", "clear");
     private static final List<String> REGION_SUBS = List.of("create", "redefine", "delete", "list", "info", "show", "tp",
@@ -61,11 +61,14 @@ final class MobsCommand extends Command {
     private final RegionStore regions;
     private final Selections selections;
     private final RegionSpawner spawner;
+    private final core.amazake.systems.coremobs.region.RegionDisplays displays;
+    private final core.amazake.systems.coremobs.world.WorldRules worlds;
     private final Runnable reload;
 
     MobsCommand(final SystemContext context, final Supplier<Settings> settings, final Supplier<MobCatalog> catalog,
                 final MobService mobs, final DropStore drops, final RegionStore regions, final Selections selections,
-                final RegionSpawner spawner, final Runnable reload) {
+                final RegionSpawner spawner, final core.amazake.systems.coremobs.region.RegionDisplays displays,
+                final core.amazake.systems.coremobs.world.WorldRules worlds, final Runnable reload) {
         super("mobs", "Мобы, лут и регионы спавна", "/mobs help", List.of("cmobs", "мобы"));
         setPermission(WandListener.PERMISSION);
         this.context = context;
@@ -76,6 +79,8 @@ final class MobsCommand extends Command {
         this.regions = regions;
         this.selections = selections;
         this.spawner = spawner;
+        this.displays = displays;
+        this.worlds = worlds;
         this.reload = reload;
     }
 
@@ -94,6 +99,7 @@ final class MobsCommand extends Command {
             case "wand", "топорик" -> this.wand(sender);
             case "sel", "selection" -> this.selection(sender, rest);
             case "region", "rg", "регион" -> this.region(sender, rest);
+            case "world", "мир" -> this.world(sender, rest);
             case "reload" -> {
                 Bukkit.getGlobalRegionScheduler().execute(this.context.plugin(), () -> {
                     this.reload.run();
@@ -120,10 +126,13 @@ final class MobsCommand extends Command {
         line(sender, "/mobs wand", "топорик региона (ЛКМ — точка, ПКМ — убрать, Shift+ПКМ — сброс)");
         line(sender, "/mobs sel info|undo|clear", "выделение");
         line(sender, "/mobs region create|redefine <имя>", "регион из выделения / заменить его точки");
-        line(sender, "/mobs region list · info|show|tp|delete <имя>", "регионы");
+        line(sender, "/mobs region list · info|tp|delete <имя>", "регионы");
         line(sender, "/mobs region addmob <имя> <моб> [вес] · removemob <имя> <моб>", "кто спавнится");
         line(sender, "/mobs region set <имя> <параметр> <значение>", String.join(", ", SET_KEYS));
         line(sender, "/mobs region expand <имя> up|down <блоков>", "поднять потолок / опустить пол");
+        line(sender, "/mobs region show <имя>", "показать контур региона всем / убрать у всех");
+        line(sender, "/mobs world disable|enable <мир>", "выключить / включить ванильных мобов в мире");
+        line(sender, "/mobs world list", "миры без ванильных мобов");
         line(sender, "/mobs reload", "перечитать конфиги, регионы и лут");
     }
 
@@ -397,21 +406,22 @@ final class MobsCommand extends Command {
         final String name = a[1].toLowerCase(Locale.ROOT);
         switch (sub) {
             case "create", "redefine" -> this.regionFromSelection(sender, name, sub.equals("create"));
-            case "delete", "remove" -> send(sender, this.regions.remove(name)
-                ? "<green>Регион <white>" + name + "</white> удалён. Его мобы пропадут.</green>"
-                : "<red>Региона <white>" + Text.escape(name) + "</white> нет.</red>");
+            case "delete", "remove" -> {
+                final boolean removed = this.regions.remove(name);
+                this.displays.remove(name);
+                send(sender, removed ? "<green>Регион <white>" + name + "</white> удалён. Его мобы пропадут.</green>"
+                    : "<red>Региона <white>" + Text.escape(name) + "</white> нет.</red>");
+            }
             case "info" -> this.regionInfo(sender, name);
             case "show" -> {
-                if (!(sender instanceof final Player player)) {
-                    send(sender, "<red>Только для игрока.</red>");
+                final Region r = this.regions.update(name, old -> old.withShow(!old.show()));
+                if (r == null) {
+                    send(sender, "<red>Региона <white>" + Text.escape(name) + "</white> нет. Список: /mobs region list.</red>");
                     return;
                 }
-                if (this.existing(sender, name) == null) {
-                    return;
-                }
-                final boolean on = this.selections.toggleShown(player.getUniqueId(), name);
-                send(sender, on ? "<green>Подсветка региона <white>" + name + "</white> включена.</green>"
-                    : "<yellow>Подсветка региона <white>" + name + "</white> выключена.</yellow>");
+                this.displays.rebuild(name);
+                send(sender, r.show() ? "<green>Контур региона <white>" + name + "</white> показан всем игрокам.</green>"
+                    : "<yellow>Контур региона <white>" + name + "</white> убран у всех.</yellow>");
             }
             case "tp" -> this.regionTp(sender, name);
             case "expand" -> {
@@ -429,6 +439,9 @@ final class MobsCommand extends Command {
                 final boolean up = a[2].equalsIgnoreCase("up") || a[2].equalsIgnoreCase("вверх");
                 final Region r = this.regions.update(name, old -> up ? old.withHeight(old.minY(), old.maxY() + n)
                     : old.withHeight(old.minY() - n, old.maxY()));
+                if (r != null) {
+                    this.displays.rebuild(name);
+                }
                 send(sender, r == null ? "<red>Региона <white>" + Text.escape(name) + "</white> нет.</red>"
                     : "<green>Высота региона <white>" + name + "</white>: Y " + r.minY() + "…" + r.maxY() + ".</green>");
             }
@@ -499,13 +512,14 @@ final class MobsCommand extends Command {
         }
         final Region fresh = Region.fromPoints(name, sel.world(), sel.points(), s.defaultHeight(), s.defaultDespawnRadius());
         final Region region = existing == null ? fresh : new Region(name, sel.world(), fresh.polygon(), fresh.minY(), fresh.maxY(),
-            existing.despawnRadius(), existing.spawn());
+            existing.despawnRadius(), existing.spawn(), existing.show());
         this.regions.put(region);
+        this.displays.rebuild(name);
         this.selections.clear(player.getUniqueId());
         send(sender, "<green>Регион <white>" + name + "</white> " + (create ? "создан" : "переопределён") + ": "
             + sel.points().size() + " точек, ~" + region.polygon().blockArea() + " блоков, Y " + region.minY() + "…" + region.maxY() + ".</green>");
         if (create) {
-            send(sender, "<gray>Дальше: /mobs region addmob " + name + " <моб> [вес]. Подсветка: /mobs region show " + name + ".</gray>");
+            send(sender, "<gray>Дальше: /mobs region addmob " + name + " <моб> [вес]. Показать контур всем: /mobs region show " + name + ".</gray>");
         }
     }
 
@@ -641,6 +655,75 @@ final class MobsCommand extends Command {
         });
     }
 
+    // --- миры ---
+
+    private void world(final CommandSender sender, final String[] a) {
+        final String sub = a.length == 0 ? "list" : a[0].toLowerCase(Locale.ROOT);
+        if (sub.equals("list")) {
+            final java.util.Set<String> off = this.worlds.disabled();
+            send(sender, off.isEmpty() ? "<gray>Ванильные мобы включены во всех мирах.</gray>"
+                : "<green>Ванильные мобы выключены в: <white>" + Text.escape(String.join(", ", new java.util.TreeSet<>(off))) + "</white>.</green>");
+            return;
+        }
+        if (a.length < 2 || !(sub.equals("disable") || sub.equals("enable"))) {
+            send(sender, "<red>/mobs world disable|enable <мир> · /mobs world list</red>");
+            return;
+        }
+        final World world = Bukkit.getWorld(a[1]);
+        if (world == null) {
+            send(sender, "<red>Мир <white>" + Text.escape(a[1]) + "</white> не найден. Есть: "
+                + Text.escape(String.join(", ", Bukkit.getWorlds().stream().map(World::getName).toList())) + ".</red>");
+            return;
+        }
+        final boolean disable = sub.equals("disable");
+        final boolean changed = this.worlds.set(world.getName(), disable);
+        if (!disable) {
+            send(sender, changed ? "<green>В мире <white>" + Text.escape(world.getName()) + "</white> ванильные мобы снова появляются.</green>"
+                : "<gray>В мире " + Text.escape(world.getName()) + " ванильные мобы и так включены.</gray>");
+            return;
+        }
+        send(sender, (changed ? "<green>В мире <white>" + Text.escape(world.getName()) + "</white> ванильные мобы выключены.</green>"
+            : "<gray>В мире " + Text.escape(world.getName()) + " ванильные мобы уже выключены.</gray>")
+            + " <gray>Мобы core-mobs появляются как обычно.</gray>");
+        if (this.settings.get().worldRemoveExisting()) {
+            this.sweep(sender, world);
+        }
+    }
+
+    /** Убрать ванильных мобов вокруг игроков этого мира (каждый — в своём потоке); остальные уйдут при загрузке чанков. */
+    private void sweep(final CommandSender sender, final World world) {
+        final List<Player> players = world.getPlayers();
+        if (players.isEmpty()) {
+            send(sender, "<gray>Игроков в мире нет: уже живые мобы уберутся, когда загрузятся их чанки.</gray>");
+            return;
+        }
+        final int radius = this.settings.get().adoptRadius();
+        final java.util.concurrent.atomic.AtomicInteger removed = new java.util.concurrent.atomic.AtomicInteger();
+        final java.util.concurrent.atomic.AtomicInteger left = new java.util.concurrent.atomic.AtomicInteger(players.size());
+        for (final Player p : players) {
+            final Runnable done = () -> {
+                if (left.decrementAndGet() == 0) {
+                    this.reply(sender, "<green>Убрано ванильных мобов рядом с игроками: <white>" + removed.get() + "</white>.</green>");
+                }
+            };
+            final boolean queued = this.context.runOnceForPlayer(p, () -> {
+                try {
+                    for (final org.bukkit.entity.Entity e : p.getNearbyEntities(radius, radius, radius)) {
+                        if (core.amazake.systems.coremobs.world.WorldListener.removable(e) && Bukkit.isOwnedByCurrentRegion(e)) {
+                            e.remove();
+                            removed.incrementAndGet();
+                        }
+                    }
+                } finally {
+                    done.run();
+                }
+            });
+            if (!queued) {
+                done.run();
+            }
+        }
+    }
+
     // --- общее ---
 
     private Region existing(final CommandSender sender, final String name) {
@@ -739,6 +822,8 @@ final class MobsCommand extends Command {
                 : args.length == 5 && args[1].equalsIgnoreCase("give") ? filter(players(), args[4]) : List.of();
             case "sel" -> args.length == 2 ? filter(SEL_SUBS, args[1]) : List.of();
             case "region", "rg" -> this.regionTab(args, regionNames, mobIds);
+            case "world" -> args.length == 2 ? filter(List.of("disable", "enable", "list"), args[1])
+                : args.length == 3 ? filter(Bukkit.getWorlds().stream().map(World::getName).toList(), args[2]) : List.of();
             default -> List.of();
         };
     }

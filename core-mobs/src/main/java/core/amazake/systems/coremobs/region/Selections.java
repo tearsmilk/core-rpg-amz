@@ -4,12 +4,11 @@ import core.amazake.systems.coremobs.geo.BlockPos;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Выделения топориком и регионы, которые игрок включил подсветкой. Всё — по игроку, неизменяемые снимки.
+ * Выделения топориком: по игроку, неизменяемые снимки.
  */
 public final class Selections {
 
@@ -25,7 +24,6 @@ public final class Selections {
     public enum AddResult { ADDED, SAME_AS_LAST, LIMIT, NEW_WORLD }
 
     private final Map<UUID, Selection> selections = new ConcurrentHashMap<>();
-    private final Map<UUID, Set<String>> shown = new ConcurrentHashMap<>();
 
     public Selection get(final UUID player) {
         return this.selections.get(player);
@@ -73,27 +71,7 @@ public final class Selections {
         this.selections.remove(player);
     }
 
-    /** Включить или выключить подсветку региона игроку; true — теперь включена. */
-    public boolean toggleShown(final UUID player, final String region) {
-        final boolean[] on = new boolean[1];
-        this.shown.compute(player, (id, old) -> {
-            final Set<String> next = old == null ? ConcurrentHashMap.newKeySet() : old;
-            if (!next.remove(region)) {
-                next.add(region);
-                on[0] = true;
-            }
-            return next.isEmpty() ? null : next;
-        });
-        return on[0];
-    }
-
-    public Set<String> shown(final UUID player) {
-        final Set<String> set = this.shown.get(player);
-        return set == null ? Set.of() : Set.copyOf(set);
-    }
-
     public void forget(final UUID player) {
         this.selections.remove(player);
-        this.shown.remove(player);
     }
 }

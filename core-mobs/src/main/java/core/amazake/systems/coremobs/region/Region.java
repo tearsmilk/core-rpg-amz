@@ -10,9 +10,10 @@ import java.util.regex.Pattern;
  * через команду создаёт новый объект и подменяет его в хранилище.
  *
  * @param despawnRadius на сколько блоков моб региона может отойти за границу; дальше он пропадает. −1 — не следить
+ * @param show контур показан всем игрокам ({@code /mobs region show})
  */
 public record Region(String name, String world, Polygon polygon, int minY, int maxY, int despawnRadius,
-                     SpawnSettings spawn) {
+                     SpawnSettings spawn, boolean show) {
 
     public static final Pattern NAME = Pattern.compile("[a-z0-9_\\-]{1,48}");
 
@@ -33,7 +34,7 @@ public record Region(String name, String world, Polygon polygon, int minY, int m
             minY = Math.min(minY, p.y());
             maxY = Math.max(maxY, p.y());
         }
-        return new Region(name, world, new Polygon(points), minY, maxY + extraHeight, despawnRadius, SpawnSettings.DEFAULTS);
+        return new Region(name, world, new Polygon(points), minY, maxY + extraHeight, despawnRadius, SpawnSettings.DEFAULTS, false);
     }
 
     public boolean contains(final double x, final double y, final double z) {
@@ -51,19 +52,23 @@ public record Region(String name, String world, Polygon polygon, int minY, int m
     }
 
     public Region withPoints(final List<BlockPos> points, final int minY, final int maxY) {
-        return new Region(this.name, this.world, new Polygon(points), minY, maxY, this.despawnRadius, this.spawn);
+        return new Region(this.name, this.world, new Polygon(points), minY, maxY, this.despawnRadius, this.spawn, this.show);
     }
 
     public Region withHeight(final int minY, final int maxY) {
-        return new Region(this.name, this.world, this.polygon, minY, maxY, this.despawnRadius, this.spawn);
+        return new Region(this.name, this.world, this.polygon, minY, maxY, this.despawnRadius, this.spawn, this.show);
     }
 
     public Region withDespawnRadius(final int value) {
-        return new Region(this.name, this.world, this.polygon, this.minY, this.maxY, value, this.spawn);
+        return new Region(this.name, this.world, this.polygon, this.minY, this.maxY, value, this.spawn, this.show);
     }
 
     public Region withSpawn(final SpawnSettings value) {
-        return new Region(this.name, this.world, this.polygon, this.minY, this.maxY, this.despawnRadius, value);
+        return new Region(this.name, this.world, this.polygon, this.minY, this.maxY, this.despawnRadius, value, this.show);
+    }
+
+    public Region withShow(final boolean value) {
+        return new Region(this.name, this.world, this.polygon, this.minY, this.maxY, this.despawnRadius, this.spawn, value);
     }
 
     /** Центр рамки региона (для телепорта и задач). */

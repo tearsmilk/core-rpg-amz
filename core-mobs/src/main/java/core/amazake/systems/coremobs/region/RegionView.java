@@ -7,7 +7,6 @@ import core.amazake.systems.coremobs.util.Keys;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
@@ -18,8 +17,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
 /**
- * Задача каждого игрока (его поток): запоминает позицию для спавнера и рисует частицами контуры — выделение и
- * регионы, когда в руке топорик, и регионы, включённые командой {@code /mobs region show}. Частицы видит только он.
+ * Задача каждого игрока (его поток): запоминает позицию для спавнера и, пока в руке топорик, рисует частицами
+ * выделение и регионы рядом. Частицы видит только он. Регионы, включённые для всех ({@code /mobs region show}),
+ * рисуются линиями в {@link RegionDisplays}.
  */
 public final class RegionView {
 
@@ -56,45 +56,35 @@ public final class RegionView {
         final Location loc = player.getLocation();
         this.positions.put(player.getUniqueId(), new PlayerPos(loc.getWorld().getUID(), loc.getX(), loc.getY(), loc.getZ()));
 
-        final boolean wand = isWand(player.getInventory().getItemInMainHand());
-        final Set<String> shown = this.selections.shown(player.getUniqueId());
-        if (!wand && shown.isEmpty()) {
+        if (!isWand(player.getInventory().getItemInMainHand())) {
             return;
         }
         final Settings s = this.settings.get();
         final int[] budget = {s.particleMaxPerDraw()};
         final String world = loc.getWorld().getName();
-        if (wand) {
-            final Selections.Selection sel = this.selections.get(player.getUniqueId());
-            if (sel != null && sel.world().equals(world)) {
-                this.drawSelection(player, loc, sel.points(), s, budget);
-            }
+        final Selections.Selection sel = this.selections.get(player.getUniqueId());
+        if (sel != null && sel.world().equals(world)) {
+            this.drawSelection(player, loc, sel.points(), s, budget);
         }
         for (final Region region : this.regions.all()) {
-            if (!region.world().equals(world) || !(wand || shown.contains(region.name()))) {
-                continue;
-            }
-            if (region.polygon().distanceOutside(loc.getX(), loc.getZ()) > s.particleViewDistance()) {
+            // Показанный всем регион уже нарисован линиями: частицы поверх не нужны.
+            if (region.show() || !region.world().equals(world)
+                || region.polygon().distanceOutside(loc.getX(), loc.getZ()) > s.particleViewDistance()) {
                 continue;
             }
             this.drawRegion(player, loc, region, s, budget);
         }
     }
 
+    /** Контур региона частицами: нижние рёбра по высоте точек и столбики на вершинах — как линии для всех. */
     private void drawRegion(final Player player, final Location eye, final Region region, final Settings s, final int[] budget) {
-        final Polygon polygon = region.polygon();
-        // Линия контура — на высоте игрока, но в пределах региона: так её видно и на склоне, и в пещере.
-        final double lineY = Math.max(region.minY() + 1.1, Math.min(region.maxY() + 1.0, Math.floor(eye.getY()) + 0.2));
         final Particle.DustOptions dust = new Particle.DustOptions(s.regionColor(), s.particleSize());
-        for (final double[] p : polygon.outline(s.particleSpacing())) {
-            if (!this.dot(player, eye, p[0], lineY, p[1], dust, s, budget)) {
-                return;
-            }
-        }
-        // Столбики на вершинах — от пола до потолка региона.
-        for (final BlockPos v : polygon.vertices()) {
-            for (double y = region.minY() + 1.0; y <= region.maxY() + 1.0; y += Math.max(0.5, s.particleSpacing())) {
-                if (!this.dot(player, eye, v.x() + 0.5, y, v.z() + 0.5, dust, s, budget)) {
+        for (final Outline.Segment seg : Outline.segments(region, 1000, true)) {
+            final int parts = Math.max(1, (int) Math.ceil(seg.length() / s.particleSpacing()));
+            for (int k = 0; k < parts; k++) {
+                final double t = (double) k / parts;
+                if (!this.dot(player, eye, seg.ax() + (seg.bx() - seg.ax()) * t, seg.ay() + (seg.by() - seg.ay()) * t,
+                    seg.az() + (seg.bz() - seg.az()) * t, dust, s, budget)) {
                     return;
                 }
             }

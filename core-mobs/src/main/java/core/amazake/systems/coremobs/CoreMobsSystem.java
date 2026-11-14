@@ -7,6 +7,7 @@ import core.amazake.systems.coremobs.mob.MobCatalog;
 import core.amazake.systems.coremobs.mob.MobListener;
 import core.amazake.systems.coremobs.mob.MobService;
 import core.amazake.systems.coremobs.region.Region;
+import core.amazake.systems.coremobs.region.RegionDisplays;
 import core.amazake.systems.coremobs.region.RegionSpawner;
 import core.amazake.systems.coremobs.region.RegionStore;
 import core.amazake.systems.coremobs.region.RegionView;
@@ -14,6 +15,8 @@ import core.amazake.systems.coremobs.region.Selections;
 import core.amazake.systems.coremobs.region.WandListener;
 import core.amazake.systems.coremobs.util.Text;
 import core.amazake.systems.coremobs.util.YamlFiles;
+import core.amazake.systems.coremobs.world.WorldListener;
+import core.amazake.systems.coremobs.world.WorldRules;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import java.time.Duration;
 import java.util.Map;
@@ -45,6 +48,8 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
     private volatile Selections selections;
     private volatile RegionView view;
     private volatile RegionSpawner spawner;
+    private volatile RegionDisplays displays;
+    private volatile WorldRules worlds;
     private volatile ScheduledTask spawnTimer;
 
     @Override
@@ -61,13 +66,19 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
         this.selections = new Selections();
         this.view = new RegionView(this.settings::get, this.regions, this.selections);
         this.spawner = new RegionSpawner(context.plugin(), this.regions, this.mobs, this.catalog::get, this.view);
+        this.displays = new RegionDisplays(context.plugin(), this.regions, this.settings::get);
+        this.worlds = new WorldRules(context);
+        this.worlds.load();
 
         context.registerListener(this);
         context.registerListener(new WandListener(this.settings::get, this.selections));
         context.registerListener(new MobListener(context.plugin(), this.mobs, this.catalog::get, this.drops));
+        context.registerListener(this.displays);
+        context.registerListener(new WorldListener(this.worlds, this.settings::get));
         context.registerCommand(new MobsCommand(context, this.settings::get, this.catalog::get, this.mobs, this.drops,
-            this.regions, this.selections, this.spawner, this::reloadAll));
+            this.regions, this.selections, this.spawner, this.displays, this.worlds, this::reloadAll));
         this.startSpawnTimer();
+        this.displays.rebuildAll();
 
         for (final Player player : Bukkit.getOnlinePlayers()) {
             this.startPlayer(player);
@@ -75,7 +86,7 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
         }
         this.checkRegionMobs();
         context.logger().info("core-mobs включён: мобов " + this.catalog.get().all().size() + ", регионов "
-            + this.regions.all().size() + ".");
+            + this.regions.all().size() + ", миров без ванильных мобов: " + this.worlds.disabled().size() + ".");
     }
 
     @Override
@@ -85,6 +96,9 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
         }
         if (this.drops != null) {
             this.drops.saveNow();
+        }
+        if (this.worlds != null) {
+            this.worlds.saveNow();
         }
         this.playerTasks.clear();
     }
@@ -100,9 +114,12 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
         this.drops.saveNow();
         this.loadSettings();
         this.loadCatalog();
+        this.worlds.saveNow();
         this.regions.load();
         this.drops.load();
+        this.worlds.load();
         this.startSpawnTimer();
+        this.displays.rebuildAll();
         for (final Player player : Bukkit.getOnlinePlayers()) {
             this.startPlayer(player);
             this.adoptNear(player);
@@ -168,6 +185,10 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
         final int r = this.settings.get().adoptRadius();
         this.context.runOnceForPlayer(player, () -> {
             for (final Entity e : player.getNearbyEntities(r, r, r)) {
+                if (this.displays.isStale(e)) {
+                    e.remove();
+                    continue;
+                }
                 final String region = MobService.regionOf(e);
                 final String mob = MobService.mobId(e);
                 if (region == null || mob == null || this.mobs.tracked().containsKey(e.getUniqueId())) {

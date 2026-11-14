@@ -27,7 +27,16 @@ public record Settings(
     Color vertexColor,
     long checkIntervalTicks,
     String nameFormat,
-    int adoptRadius
+    int adoptRadius,
+    Material displayBlock,
+    float displayThickness,
+    boolean displayGlow,
+    Color displayGlowColor,
+    float displayViewRange,
+    double displaySegment,
+    boolean displayPosts,
+    java.util.Set<org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason> worldAllowedReasons,
+    boolean worldRemoveExisting
 ) {
 
     public static final Settings DEFAULTS = new Settings(
@@ -37,11 +46,15 @@ public record Settings(
         List.of("<gray>ЛКМ по блоку — поставить точку</gray>", "<gray>ПКМ по блоку — убрать последнюю точку</gray>",
             "<gray>Shift + ПКМ — сбросить выделение</gray>", "<gray>/mobs region create <имя> — создать регион</gray>"),
         256, 5, 5,
-        10L, 0.5, 48.0, 1500, 1.2f,
+        4L, 0.5, 48.0, 1500, 1.2f,
         Color.fromRGB(0x00C853), Color.fromRGB(0x76FF03), Color.fromRGB(0xFFFFFF),
         20L,
         "<name> <red>❤ <health>/<max_health></red>",
-        128);
+        128,
+        Material.LIME_CONCRETE, 0.06f, false, Color.fromRGB(0x00C853), 2.0f, 8.0, true,
+        java.util.Set.of(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM,
+            org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.COMMAND),
+        true);
 
     public static Settings from(final ConfigurationSection c, final Consumer<String> warn) {
         final Settings d = DEFAULTS;
@@ -59,7 +72,7 @@ public record Settings(
             clamp(c.getInt("selection.max-points", d.maxPoints()), 3, 4096, "selection.max-points", warn),
             clamp(c.getInt("regions.default-height", d.defaultHeight()), 0, 512, "regions.default-height", warn),
             clamp(c.getInt("regions.default-despawn-radius", d.defaultDespawnRadius()), -1, 512, "regions.default-despawn-radius", warn),
-            clamp(c.getInt("particles.interval-ticks", (int) d.particleIntervalTicks()), 2, 200, "particles.interval-ticks", warn),
+            clamp(c.getInt("particles.interval-ticks", (int) d.particleIntervalTicks()), 1, 200, "particles.interval-ticks", warn),
             clampD(c.getDouble("particles.spacing", d.particleSpacing()), 0.1, 5.0, "particles.spacing", warn),
             clampD(c.getDouble("particles.view-distance", d.particleViewDistance()), 4.0, 256.0, "particles.view-distance", warn),
             clamp(c.getInt("particles.max-per-draw", d.particleMaxPerDraw()), 50, 20000, "particles.max-per-draw", warn),
@@ -69,7 +82,46 @@ public record Settings(
             color(c.getString("particles.vertex-color"), d.vertexColor(), "particles.vertex-color", warn),
             clamp(c.getInt("spawning.check-interval-ticks", (int) d.checkIntervalTicks()), 5, 1200, "spawning.check-interval-ticks", warn),
             c.getString("mobs.name-format", d.nameFormat()),
-            clamp(c.getInt("mobs.adopt-radius", d.adoptRadius()), 16, 512, "mobs.adopt-radius", warn));
+            clamp(c.getInt("mobs.adopt-radius", d.adoptRadius()), 16, 512, "mobs.adopt-radius", warn),
+            block(c.getString("display.block"), d.displayBlock(), warn),
+            (float) clampD(c.getDouble("display.thickness", d.displayThickness()), 0.01, 1.0, "display.thickness", warn),
+            c.getBoolean("display.glow", d.displayGlow()),
+            color(c.getString("display.glow-color"), d.displayGlowColor(), "display.glow-color", warn),
+            (float) clampD(c.getDouble("display.view-range", d.displayViewRange()), 0.1, 10.0, "display.view-range", warn),
+            clampD(c.getDouble("display.segment-length", d.displaySegment()), 1.0, 32.0, "display.segment-length", warn),
+            c.getBoolean("display.posts", d.displayPosts()),
+            reasons(c, d.worldAllowedReasons(), warn),
+            c.getBoolean("worlds.remove-existing", d.worldRemoveExisting()));
+    }
+
+    private static Material block(final String raw, final Material fallback, final Consumer<String> warn) {
+        if (raw == null || raw.isBlank()) {
+            return fallback;
+        }
+        final Material m = Material.matchMaterial(raw);
+        if (m == null || !m.isBlock() || m.isAir()) {
+            warn.accept("display.block: «" + raw + "» не блок, беру " + fallback);
+            return fallback;
+        }
+        return m;
+    }
+
+    private static java.util.Set<org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason> reasons(
+        final ConfigurationSection c, final java.util.Set<org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason> fallback,
+        final Consumer<String> warn) {
+        if (!c.isList("worlds.allowed-spawn-reasons")) {
+            return fallback;
+        }
+        final java.util.Set<org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason> out =
+            java.util.EnumSet.noneOf(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.class);
+        for (final String raw : c.getStringList("worlds.allowed-spawn-reasons")) {
+            try {
+                out.add(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.valueOf(raw.trim().toUpperCase(Locale.ROOT)));
+            } catch (final IllegalArgumentException e) {
+                warn.accept("worlds.allowed-spawn-reasons: «" + raw + "» — нет такой причины спавна (CUSTOM, COMMAND, SPAWNER_EGG...)");
+            }
+        }
+        return java.util.Set.copyOf(out);
     }
 
     public static Settings parse(final String yaml, final Consumer<String> warn) throws Exception {
