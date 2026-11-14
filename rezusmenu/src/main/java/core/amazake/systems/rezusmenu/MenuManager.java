@@ -1,112 +1,143 @@
 package core.amazake.systems.rezusmenu;
 
+import com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent;
 import core.amazake.systems.api.SystemContext;
 import core.amazake.systems.rezusmenu.rpg.RpgScreen;
+import core.amazake.systems.rezusmenu.screen.CalibrationScreen;
 import core.amazake.systems.rezusmenu.screen.Screen;
 import core.amazake.systems.rezusmenu.util.Text;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDismountEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerAnimationEvent;
 import org.bukkit.event.player.PlayerAnimationType;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
+import org.bukkit.event.player.PlayerInputEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
 /**
- * Открытые экраны игроков. Всё про игрока — в его потоке: события игрока и задача {@code runForPlayer}.
+ * Открытые экраны игроков. Всё про игрока — в его потоке: события игрока и задача {@code runForPlayer} (каждый тик).
  */
 public final class MenuManager implements Listener {
 
-    /** Открытое меню игрока. */
+    /** Открытый экран игрока: RPG-меню или калибровка. */
     private static final class Session {
         final Screen screen;
-        final RpgScreen rpg;
+        RpgScreen rpg;
+        CalibrationScreen calibration;
         volatile ScheduledTask task;
+        boolean built;
         int ticks;
-        int lastDropTick = -10;
 
-        Session(final Screen screen, final RpgScreen rpg) {
+        Session(final Screen screen) {
             this.screen = screen;
-            this.rpg = rpg;
         }
     }
 
     private final SystemContext context;
     private final Supplier<Settings> settings;
+    private final PlayerStore store;
     private final Map<UUID, Session> sessions = new ConcurrentHashMap<>();
-    private final java.util.Set<UUID> dropping = ConcurrentHashMap.newKeySet();
+    private final Set<UUID> dropping = ConcurrentHashMap.newKeySet();
 
-    public MenuManager(final SystemContext context, final Supplier<Settings> settings) {
+    public MenuManager(final SystemContext context, final Supplier<Settings> settings, final PlayerStore store) {
         this.context = context;
         this.settings = settings;
+        this.store = store;
     }
 
     public boolean isOpen(final Player player) {
         return this.sessions.containsKey(player.getUniqueId());
     }
 
-    /** Открыть меню по id из списка /menuses. Поток игрока. */
+    /** Открыть меню по id из списка /menuses. Поток игрока. Без калибровки — сначала она. */
     public void open(final Player player, final String id) {
         if (!"rpg".equals(id)) {
             player.sendMessage(Text.mm(Text.prefix() + "<yellow>Это меню ещё не готово.</yellow>"));
             return;
         }
         this.close(player);
+        final Screen.Calibration cal = this.store.calibration(player.getUniqueId());
+        if (cal == null) {
+            this.openCalibration(player);
+        } else {
+            this.start(player, cal, false);
+        }
+    }
+
+    /** Калибровка экрана (первый вход или кнопка «Калибровка»). */
+    public void openCalibration(final Player player) {
+        this.close(player);
+        this.start(player, Screen.Calibration.DEFAULT, true);
+    }
+
+    private void start(final Player player, final Screen.Calibration cal, final boolean calibrate) {
         final Settings s = this.settings.get();
-        final Screen screen = Screen.open(this.context.plugin(), player, s.distance());
+        final Screen screen = Screen.open(this.context.plugin(), player, cal, s.eyeOffset(), s.sensitivity());
         if (screen == null) {
-            player.sendMessage(Text.mm(Text.prefix() + "<red>Сейчас меню не открыть: слезьте с транспорта или смените режим игры.</red>"));
+            player.sendMessage(Text.mm(Text.prefix() + "<red>Сейчас меню не открыть: слезьте с транспорта.</red>"));
             return;
         }
-        final Session session = new Session(screen, new RpgScreen(screen, s, () -> this.close(player), this.dropping));
+        this.store.remember(player.getUniqueId(), screen.saved());
+        final Session session = new Session(screen);
+        if (calibrate) {
+            session.calibration = new CalibrationScreen(screen, result -> {
+                this.store.calibrate(player.getUniqueId(), result);
+                player.sendActionBar(Text.mm("<green>Экран откалиброван</green>"));
+                // Переоткрыть меню уже под этот экран — в следующем такте, не изнутри клика.
+                this.context.runOnceForPlayer(player, () -> this.open(player, "rpg"));
+            });
+        } else {
+            session.rpg = new RpgScreen(screen, s, () -> this.close(player), this.dropping,
+                () -> this.context.runOnceForPlayer(player, () -> this.openCalibration(player)));
+        }
         this.sessions.put(player.getUniqueId(), session);
-        session.task = this.context.runForPlayer(player, task -> this.tick(player, session), 2L);
+        session.task = this.context.runForPlayer(player, task -> this.tick(session), 1L);
         if (session.task == null) {
             this.close(player);
         }
     }
 
-    private void tick(final Player player, final Session session) {
+    private void tick(final Session session) {
         if (session.screen.closed()) {
             return;
         }
-        session.ticks += 2;
-        if (!session.screen.placed()) {
-            // Первый такт: игрок уже сидит, глаза на месте — ставим экран.
-            session.screen.place();
-            session.rpg.build();
-            player.sendActionBar(Text.mm("<gray>Наведите прицел на кнопку и нажмите ЛКМ · Shift — выйти</gray>"));
+        session.ticks++;
+        if (!session.built) {
+            session.built = true;
+            if (session.rpg != null) {
+                session.rpg.build();
+            } else {
+                session.calibration.build();
+            }
             return;
         }
-        if (!player.isInsideVehicle() || player.getVehicle() != session.screen.seat()) {
-            this.close(player);
-            return;
-        }
-        session.screen.updateHover();
-        session.rpg.tick();
-        if (session.ticks % this.settings.get().refreshTicks() < 2) {
-            session.rpg.refresh();
+        session.screen.update();
+        if (session.rpg != null) {
+            session.rpg.tick();
+            if (session.ticks % this.settings.get().refreshTicks() == 0) {
+                session.rpg.refresh();
+            }
         }
     }
 
-    /** Закрыть меню игрока. Поток игрока. */
+    /** Закрыть меню игрока и вернуть ему режим и место. Поток игрока. */
     public void close(final Player player) {
         final Session session = this.sessions.remove(player.getUniqueId());
         if (session == null) {
@@ -116,33 +147,56 @@ public final class MenuManager implements Listener {
             session.task.cancel();
         }
         session.screen.close();
+        this.store.forget(player.getUniqueId());
     }
 
     /** Выключение системы: закрыть все меню (каждое — в потоке своего игрока). */
     public void closeAll() {
         for (final UUID id : List.copyOf(this.sessions.keySet())) {
             final Player player = Bukkit.getPlayer(id);
+            // Вернём сейчас же из задачи игрока: запись «что вернуть» можно снять заранее.
+            this.store.forget(id);
             if (player == null) {
                 this.sessions.remove(id);
                 continue;
             }
             this.context.runOnceForPlayer(player, () -> this.close(player));
         }
+        this.store.saveNow();
     }
 
-    // --- клики ---
+    // --- ввод ---
 
+    /** ЛКМ (взмах рукой) — нажать кнопку под курсором. */
     @EventHandler(priority = EventPriority.LOW)
     public void onSwing(final PlayerAnimationEvent event) {
         final Session s = this.sessions.get(event.getPlayer().getUniqueId());
-        if (s == null || event.getAnimationType() != PlayerAnimationType.ARM_SWING || !s.screen.placed()) {
+        if (s != null && s.built && event.getAnimationType() == PlayerAnimationType.ARM_SWING) {
+            s.screen.update();
+            s.screen.click();
+        }
+    }
+
+    /** Пробел — курсор в центр, Shift — выйти. */
+    @EventHandler
+    public void onInput(final PlayerInputEvent event) {
+        final Session s = this.sessions.get(event.getPlayer().getUniqueId());
+        if (s == null) {
             return;
         }
-        // Q (выбросить) тоже машет рукой: такой взмах — не клик.
-        if (Bukkit.getCurrentTick() - s.lastDropTick <= 1) {
-            return;
+        if (event.getInput().isSneak()) {
+            this.close(event.getPlayer());
+        } else if (event.getInput().isJump()) {
+            s.screen.recenter();
         }
-        s.screen.click();
+    }
+
+    /** Наблюдатель не «вселяется» в сущности, пока в меню. */
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onSpectate(final PlayerStartSpectatingEntityEvent event) {
+        if (this.isOpen(event.getPlayer())) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -161,9 +215,7 @@ public final class MenuManager implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onDrop(final PlayerDropItemEvent event) {
-        final Session s = this.sessions.get(event.getPlayer().getUniqueId());
-        if (s != null && !this.dropping.contains(event.getPlayer().getUniqueId())) {
-            s.lastDropTick = Bukkit.getCurrentTick();
+        if (this.isOpen(event.getPlayer()) && !this.dropping.contains(event.getPlayer().getUniqueId())) {
             event.setCancelled(true);
         }
     }
@@ -184,35 +236,38 @@ public final class MenuManager implements Listener {
 
     // --- выход ---
 
-    /** Shift — слезть с сиденья — закрыть меню. */
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onDismount(final EntityDismountEvent event) {
-        if (event.getEntity() instanceof final Player p && this.isOpen(p)) {
-            this.close(p);
+    /** Телепорт наблюдателя (меню наблюдателя на цифрах) — запретить; любой другой — закрыть меню. */
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onTeleport(final PlayerTeleportEvent event) {
+        if (!this.isOpen(event.getPlayer())) {
+            return;
         }
+        if (event.getCause() == PlayerTeleportEvent.TeleportCause.SPECTATE) {
+            event.setCancelled(true);
+            return;
+        }
+        this.close(event.getPlayer());
     }
 
+    /** Кто-то сменил режим игры, пока игрок в меню, — выйти из меню. */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onTeleport(final PlayerTeleportEvent event) {
+    public void onGameMode(final PlayerGameModeChangeEvent event) {
         if (this.isOpen(event.getPlayer())) {
             this.close(event.getPlayer());
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onGameMode(final PlayerGameModeChangeEvent event) {
-        if (event.getNewGameMode() == GameMode.SPECTATOR) {
-            this.close(event.getPlayer());
-        }
-    }
-
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onDeath(final PlayerDeathEvent event) {
-        this.close(event.getPlayer());
-    }
-
     @EventHandler
     public void onQuit(final PlayerQuitEvent event) {
         this.close(event.getPlayer());
+    }
+
+    /** Сервер упал, пока игрок был в меню: вернуть ему режим, скорость и место. */
+    @EventHandler
+    public void onJoin(final PlayerJoinEvent event) {
+        final Screen.Saved saved = this.store.takePending(event.getPlayer().getUniqueId());
+        if (saved != null && !this.isOpen(event.getPlayer())) {
+            Screen.restore(event.getPlayer(), saved);
+        }
     }
 }

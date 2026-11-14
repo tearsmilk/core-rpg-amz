@@ -2,7 +2,6 @@ package core.amazake.systems.rezusmenu;
 
 import core.amazake.systems.api.AmazakeSystem;
 import core.amazake.systems.api.SystemContext;
-import core.amazake.systems.rezusmenu.util.Papi;
 import core.amazake.systems.rezusmenu.util.Text;
 import io.papermc.paper.connection.PlayerGameConnection;
 import io.papermc.paper.event.player.PlayerCustomClickEvent;
@@ -20,15 +19,27 @@ public final class RezusMenuSystem implements AmazakeSystem, Listener {
     private final AtomicReference<Settings> settings = new AtomicReference<>(Settings.DEFAULTS);
     private volatile SystemContext context;
     private volatile MenuManager menus;
+    private volatile PlayerStore store;
 
     @Override
     public void enable(final SystemContext context) {
         this.context = context;
         this.load();
-        this.menus = new MenuManager(context, this.settings::get);
+        this.store = new PlayerStore(context);
+        this.store.load();
+        this.menus = new MenuManager(context, this.settings::get, this.store);
         context.registerListener(this);
         context.registerListener(this.menus);
         context.registerCommand(new MenusCommand(this.settings::get, this.menus, this::load));
+        // Систему могли включить после падения, когда игроки уже онлайн: вернуть тем, кто остался наблюдателем.
+        for (final Player p : org.bukkit.Bukkit.getOnlinePlayers()) {
+            context.runOnceForPlayer(p, () -> {
+                final core.amazake.systems.rezusmenu.screen.Screen.Saved saved = this.store.takePending(p.getUniqueId());
+                if (saved != null) {
+                    core.amazake.systems.rezusmenu.screen.Screen.restore(p, saved);
+                }
+            });
+        }
         context.logger().info("rezusmenu включён: меню в списке " + this.settings.get().menus().size() + ".");
     }
 
@@ -37,7 +48,9 @@ public final class RezusMenuSystem implements AmazakeSystem, Listener {
         if (this.menus != null) {
             this.menus.closeAll();
         }
-        Papi.reset();
+        if (this.store != null) {
+            this.store.saveNow();
+        }
     }
 
     @Override

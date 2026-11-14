@@ -1,14 +1,15 @@
 package core.amazake.systems.rezusmenu.screen;
 
+import core.amazake.systems.rezusmenu.util.Text;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Color;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
@@ -22,14 +23,26 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 /**
- * Экран перед игроком из дисплеев: плитки (блок-дисплеи), текст и предметы. Видит его только этот игрок. Игрок сидит
- * на невидимом сиденье и не ходит; прицел — курсор: кнопка под прицелом подсвечивается, ЛКМ её нажимает.
+ * Экран во весь монитор, прибитый к камере. Игрок на время меню — наблюдатель (нет руки, хотбара и прицела) и стоит
+ * на месте; дисплеи едут на нём как пассажиры с поворотом «к камере» и стоят на расстоянии 1 блок перед глазами,
+ * поэтому, как ни крути мышью, картинка неподвижна. Сплошной фон закрывает мир.
  *
- * <p>Всё — в потоке игрока: экран стоит рядом с ним, в его регионе.</p>
+ * <p>Мышь всё равно поворачивает голову: сервер читает поворот и двигает по экрану курсор-стрелку. Кнопка под
+ * курсором подсвечивается, ЛКМ нажимает. Видит экран только этот игрок. Всё — в потоке игрока.</p>
+ *
+ * <p>Единицы: «камера» — блоки на расстоянии 1 перед глазами, (0, 0) — центр экрана; «макет» — координаты,
+ * которыми рисует меню, переводятся в камеру умножением на {@link #scale}.</p>
  */
 public final class Screen {
 
-    /** Кнопка: прямоугольник на экране и действие. */
+    /** Видимая половина экрана в единицах камеры (на расстоянии 1): узнаётся калибровкой. */
+    public record Calibration(double halfW, double halfH) {
+
+        /** Поле зрения 70°, монитор 16:9 — пока игрок не откалибровал. */
+        public static final Calibration DEFAULT = new Calibration(1.245, 0.700);
+    }
+
+    /** Кнопка: прямоугольник в единицах макета и действие. */
     public final class Button {
         final double u0;
         final double v0;
@@ -58,7 +71,7 @@ public final class Screen {
             return u >= this.u0 && u <= this.u1 && v >= this.v0 && v <= this.v1;
         }
 
-        /** Сменить цвета (выбранная клетка и т. п.). */
+        /** Сменить цвета (выбранная клетка, активная вкладка). */
         public void colors(final Material normalColor, final Material hoverColor) {
             this.normal = normalColor;
             this.hover = hoverColor;
@@ -66,146 +79,154 @@ public final class Screen {
         }
     }
 
+    /** Что вернуть игроку после меню. */
+    public record Saved(GameMode mode, Location location, float walkSpeed, float flySpeed, boolean allowFlight,
+                        boolean flying) {
+    }
+
     private record Element(Entity entity, String group) {
     }
 
+    private static final double LAYER_STEP = 0.0015;
+    private static final float CURSOR_SIZE = 0.07f;
+
     private final Plugin plugin;
     private final Player player;
-    private final ArmorStand seat;
-    private final float yaw;
-    private final double distance;
-    private final Location origin;
-    private ScreenFrame frame;
+    private final Saved saved;
+    private final Calibration calibration;
+    private final double eyeOffset;
+    private final double sensitivity;
     private final List<Element> elements = new ArrayList<>();
     private final List<Button> buttons = new ArrayList<>();
-    private Quaternionf facing = new Quaternionf();
+    private double scale = 1.0;
+    private double boundW;
+    private double boundH;
+    private ItemDisplay cursor;
+    private double cu;
+    private double cv;
+    private float refYaw;
+    private float refPitch;
     private Button hovered;
     private boolean closed;
 
-    private Screen(final Plugin plugin, final Player player, final ArmorStand seat, final float yaw,
-                   final double distance, final Location origin) {
+    private Screen(final Plugin plugin, final Player player, final Saved saved, final Calibration calibration,
+                   final double eyeOffset, final double sensitivity) {
         this.plugin = plugin;
         this.player = player;
-        this.seat = seat;
-        this.yaw = yaw;
-        this.distance = distance;
-        this.origin = origin;
+        this.saved = saved;
+        this.calibration = calibration;
+        this.eyeOffset = eyeOffset;
+        this.sensitivity = sensitivity;
+        this.boundW = calibration.halfW();
+        this.boundH = calibration.halfH();
     }
 
     /**
-     * Поставить плоскость экрана перед глазами сидящего игрока. Вызывается через тик после посадки, когда сервер уже
-     * пересадил игрока и его глаза на своём месте.
+     * Перевести игрока в режим меню (наблюдатель, без движения, взгляд прямо) и поставить фон и курсор.
+     * Поток игрока. null — сейчас нельзя (мёртв, едет на чём-то).
+     *
+     * @param eyeOffset насколько точка пассажиров выше глаз (у игрока 1.8 − 1.62)
+     * @param sensitivity сколько единиц камеры проходит курсор за градус поворота мыши
      */
-    public void place() {
-        final Location eye = this.player.getEyeLocation();
-        this.frame = ScreenFrame.facing(eye.getX(), eye.getY(), eye.getZ(), this.yaw, this.distance);
-        // Локальная ось Z элемента смотрит на игрока, X — вправо по экрану.
-        this.facing = new Quaternionf().rotationY((float) Math.atan2(-this.frame.fx(), -this.frame.fz()));
-    }
-
-    public boolean placed() {
-        return this.frame != null;
-    }
-
-    /**
-     * Посадить игрока и поставить пустой экран на {@code distance} блоков перед глазами. Поток игрока.
-     * null — игрок сейчас не может открыть экран (едет на чём-то, мёртв, наблюдатель).
-     */
-    public static Screen open(final Plugin plugin, final Player player, final double distance) {
-        if (player.isDead() || player.isInsideVehicle() || player.getGameMode() == org.bukkit.GameMode.SPECTATOR) {
+    public static Screen open(final Plugin plugin, final Player player, final Calibration calibration,
+                              final double eyeOffset, final double sensitivity) {
+        if (player.isDead() || player.isInsideVehicle()) {
             return null;
         }
-        final Location origin = player.getLocation();
-        final ScreenFrame frame = ScreenFrame.facing(0, 0, 0, origin.getYaw(), distance);
-        final Location seatAt = origin.clone();
-        seatAt.setYaw(frame.yaw());
-        seatAt.setPitch(0f);
-        player.teleport(seatAt);
-        final ArmorStand seat = origin.getWorld().spawn(seatAt, ArmorStand.class, a -> {
-            a.setInvisible(true);
-            a.setMarker(true);
-            a.setGravity(false);
-            a.setInvulnerable(true);
-            a.setSilent(true);
-            a.setPersistent(false);
-            a.setVisibleByDefault(false);
-        });
-        // Сиденье должен видеть сам игрок, иначе его клиент не знает, что сидит, и даёт ходить.
-        player.showEntity(plugin, seat);
-        seat.addPassenger(player);
-        return new Screen(plugin, player, seat, frame.yaw(), distance, origin);
+        final Saved saved = new Saved(player.getGameMode(), player.getLocation(), player.getWalkSpeed(),
+            player.getFlySpeed(), player.getAllowFlight(), player.isFlying());
+        final Screen screen = new Screen(plugin, player, saved, calibration, eyeOffset, sensitivity);
+        final Location look = player.getLocation();
+        look.setPitch(0f);
+        player.teleport(look);
+        player.setGameMode(GameMode.SPECTATOR);
+        player.setFlySpeed(0f);
+        player.setWalkSpeed(0f);
+        screen.refYaw = look.getYaw();
+        screen.refPitch = 0f;
+        screen.backdrop();
+        return screen;
     }
 
     public Player player() {
         return this.player;
     }
 
-    public ArmorStand seat() {
-        return this.seat;
+    public Saved saved() {
+        return this.saved;
+    }
+
+    public Calibration calibration() {
+        return this.calibration;
     }
 
     public boolean closed() {
         return this.closed;
     }
 
-    // --- элементы ---
+    /** Масштаб макета → камера. */
+    public void scale(final double value) {
+        this.scale = value;
+    }
 
-    /** Плитка-прямоугольник: левый нижний угол (u, v), размер w × h. */
+    public double scale() {
+        return this.scale;
+    }
+
+    /** Куда может уйти курсор (единицы камеры). По умолчанию — откалиброванный экран. */
+    public void cursorBounds(final double halfW, final double halfH) {
+        this.boundW = halfW;
+        this.boundH = halfH;
+    }
+
+    /** Фон во весь экран (с запасом) и табличка для вида от третьего лица. */
+    private void backdrop() {
+        final double w = this.calibration.halfW() * 3;
+        final double h = this.calibration.halfH() * 3;
+        this.spawnRect(-w, -h, 2 * w, 2 * h, -1.02, Material.BLACK_CONCRETE, "base");
+        // За спиной: видно только после F5 (камера отъезжает назад или встаёт спереди и смотрит на игрока).
+        this.spawnRect(-4, -3, 8, 6, 1.6, Material.BLACK_CONCRETE, "base");
+        this.spawnText(0, -0.15, 0.08, Text.item("<gold>Вы в режиме от третьего лица.\nНажмите F5, чтобы вернуться в меню.</gold>"),
+            1.55, "base");
+        this.cursor = this.spawn(ItemDisplay.class, e -> {
+            e.setItemStack(new ItemStack(Material.ARROW));
+            e.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.GUI);
+            e.setTransformation(this.cursorTransform());
+        }, "base");
+    }
+
+    // --- элементы (в единицах макета) ---
+
+    /** Плитка: левый нижний угол (u, v), размер w × h. */
     public BlockDisplay rect(final double u, final double v, final double w, final double h, final int layer,
                              final Material color, final String group) {
-        final double[] p = this.frame.point(u, v, layer);
-        final World world = this.seat.getWorld();
-        final BlockDisplay d = world.spawn(new Location(world, p[0], p[1], p[2]), BlockDisplay.class, e -> {
-            e.setBlock(color.createBlockData());
-            e.setTransformation(new Transformation(new Vector3f(), new Quaternionf(this.facing),
-                new Vector3f((float) w, (float) h, 0.002f), new Quaternionf()));
-            this.common(e);
-        });
-        this.track(d, group);
-        return d;
+        return this.spawnRect(u * this.scale, v * this.scale, w * this.scale, h * this.scale, depth(layer), color, group);
     }
 
-    /**
-     * Текст по центру прямоугольника (u, v, w, h). {@code lineHeight} — высота строки в блоках.
-     */
+    /** Текст по центру прямоугольника; {@code lineHeight} — высота строки (макет). */
     public TextDisplay text(final double u, final double v, final double w, final double h, final double lineHeight,
                             final Component text, final int layer, final String group) {
-        final float scale = (float) (lineHeight / 0.25);
         final int lines = Math.max(1, countLines(text));
-        final double textHeight = lineHeight * lines;
-        final double[] p = this.frame.point(u + w / 2, v + (h - textHeight) / 2, layer);
-        final World world = this.seat.getWorld();
-        final TextDisplay d = world.spawn(new Location(world, p[0], p[1], p[2]), TextDisplay.class, e -> {
-            e.text(text);
-            e.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
-            e.setDefaultBackground(false);
-            e.setShadowed(true);
-            e.setLineWidth(Math.max(20, (int) Math.round(w / 0.025 / scale)));
-            e.setTransformation(new Transformation(new Vector3f(), new Quaternionf(this.facing),
-                new Vector3f(scale, scale, scale), new Quaternionf()));
-            this.common(e);
-        });
-        this.track(d, group);
+        final double textH = lineHeight * lines;
+        final TextDisplay d = this.spawnText((u + w / 2) * this.scale, (v + (h - textH) / 2) * this.scale,
+            lineHeight * this.scale, text, depth(layer), group);
+        d.setLineWidth(Math.max(20, (int) Math.round(w / lineHeight * 10)));
         return d;
     }
 
-    /** Предмет по центру (u, v), размер {@code size} блоков. */
+    /** Предмет по центру (u, v), размер {@code size} (макет). */
     public ItemDisplay item(final double u, final double v, final double size, final ItemStack item, final int layer,
                             final String group) {
-        final double[] p = this.frame.point(u, v, layer);
-        final World world = this.seat.getWorld();
-        final ItemDisplay d = world.spawn(new Location(world, p[0], p[1], p[2]), ItemDisplay.class, e -> {
+        final float s = (float) (size * this.scale);
+        final Vector3f at = this.at(u * this.scale, v * this.scale, depth(layer));
+        return this.spawn(ItemDisplay.class, e -> {
             e.setItemStack(item == null ? null : item.clone());
             e.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.GUI);
-            e.setTransformation(new Transformation(new Vector3f(), new Quaternionf(this.facing),
-                new Vector3f((float) size, (float) size, 0.02f), new Quaternionf()));
-            this.common(e);
-        });
-        this.track(d, group);
-        return d;
+            e.setTransformation(new Transformation(at, new Quaternionf(), new Vector3f(s, s, 0.001f), new Quaternionf()));
+        }, group);
     }
 
-    /** Кнопка: плитка с подсветкой под прицелом. */
+    /** Кнопка: плитка с подсветкой под курсором. */
     public Button button(final double u, final double v, final double w, final double h, final int layer,
                          final Material normal, final Material hover, final String group, final Consumer<Button> action) {
         final BlockDisplay plate = this.rect(u, v, w, h, layer, normal, group);
@@ -214,22 +235,22 @@ public final class Screen {
         return b;
     }
 
-    /** Новый размер плитки (полоска здоровья, опыта). Левый нижний угол остаётся на месте. */
+    /** Новый размер плитки (полоски), левый нижний угол на месте. Размеры — макет. */
     public void resize(final BlockDisplay d, final double w, final double h) {
         if (d != null && d.isValid()) {
-            d.setTransformation(new Transformation(new Vector3f(), new Quaternionf(this.facing),
-                new Vector3f((float) Math.max(0.0001, w), (float) h, 0.002f), new Quaternionf()));
+            final Transformation t = d.getTransformation();
+            d.setTransformation(new Transformation(t.getTranslation(), new Quaternionf(),
+                new Vector3f((float) Math.max(0.00001, w * this.scale), (float) (h * this.scale), 0.0005f), new Quaternionf()));
         }
     }
 
-    /** Подвинуть текстовый дисплей на новый текст (без пересоздания). */
     public static void setText(final TextDisplay d, final Component text) {
         if (d != null && d.isValid()) {
             d.text(text);
         }
     }
 
-    /** Убрать все элементы и кнопки группы (содержимое вкладки). */
+    /** Убрать элементы и кнопки группы (содержимое вкладки). */
     public void clear(final String group) {
         this.elements.removeIf(e -> {
             if (e.group().equals(group)) {
@@ -244,35 +265,112 @@ public final class Screen {
         }
     }
 
-    private void common(final Display e) {
-        e.setBillboard(Display.Billboard.FIXED);
-        e.setBrightness(new Display.Brightness(15, 15));
-        e.setViewRange(0.3f);
-        e.setPersistent(false);
-        e.setVisibleByDefault(false);
+    // --- низкий уровень (единицы камеры) ---
+
+    private static double depth(final int layer) {
+        return -1.0 + layer * LAYER_STEP;
     }
 
-    private void track(final Entity e, final String group) {
-        this.player.showEntity(this.plugin, e);
-        this.elements.add(new Element(e, group));
+    private Vector3f at(final double x, final double y, final double z) {
+        return new Vector3f((float) x, (float) (y - this.eyeOffset), (float) z);
     }
 
-    // --- курсор и клики ---
+    private BlockDisplay spawnRect(final double x, final double y, final double w, final double h, final double z,
+                                   final Material color, final String group) {
+        final Vector3f at = this.at(x, y, z);
+        return this.spawn(BlockDisplay.class, e -> {
+            e.setBlock(color.createBlockData());
+            e.setTransformation(new Transformation(at, new Quaternionf(),
+                new Vector3f((float) w, (float) h, 0.0005f), new Quaternionf()));
+        }, group);
+    }
 
-    /** Пересчитать кнопку под прицелом. Поток игрока, каждые пару тиков. */
-    public void updateHover() {
-        if (this.closed || this.frame == null) {
+    private TextDisplay spawnText(final double cx, final double y, final double lineHeight, final Component text,
+                                  final double z, final String group) {
+        final float s = (float) (lineHeight / 0.25);
+        final Vector3f at = this.at(cx, y, z);
+        return this.spawn(TextDisplay.class, e -> {
+            e.text(text);
+            e.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
+            e.setDefaultBackground(false);
+            e.setShadowed(true);
+            e.setTransformation(new Transformation(at, new Quaternionf(), new Vector3f(s, s, s), new Quaternionf()));
+        }, group);
+    }
+
+    private <T extends Display> T spawn(final Class<T> type, final Consumer<T> setup, final String group) {
+        final World world = this.player.getWorld();
+        final T d = world.spawn(this.player.getEyeLocation(), type, e -> {
+            e.setBillboard(Display.Billboard.CENTER);
+            e.setBrightness(new Display.Brightness(15, 15));
+            e.setViewRange(1.0f);
+            e.setPersistent(false);
+            e.setVisibleByDefault(false);
+            e.setTeleportDuration(0);
+            setup.accept(e);
+        });
+        this.player.showEntity(this.plugin, d);
+        this.player.addPassenger(d);
+        this.elements.add(new Element(d, group));
+        return d;
+    }
+
+    // --- курсор ---
+
+    private Transformation cursorTransform() {
+        // Иконка стрелы смотрит остриём вправо-вверх; поворот на 90° — остриё влево-вверх, как у курсора мыши.
+        final float s = CURSOR_SIZE;
+        final Vector3f at = this.at(this.cu + s * 0.42, this.cv - s * 0.42, depth(60));
+        return new Transformation(at, new Quaternionf().rotationZ((float) (Math.PI / 2)), new Vector3f(s, s, 0.001f),
+            new Quaternionf());
+    }
+
+    /** Курсор — в центр (пробел). */
+    public void recenter() {
+        final Location l = this.player.getLocation();
+        this.refYaw = l.getYaw();
+        this.refPitch = l.getPitch();
+        this.cu = 0;
+        this.cv = 0;
+    }
+
+    /** Такт: курсор по повороту головы и подсветка кнопки под ним. Поток игрока, каждый тик. */
+    public void update() {
+        if (this.closed) {
             return;
         }
-        final Location eye = this.player.getEyeLocation();
-        final org.bukkit.util.Vector dir = eye.getDirection();
-        final double[] uv = this.frame.hit(eye.getX(), eye.getY(), eye.getZ(), dir.getX(), dir.getY(), dir.getZ());
+        final Location l = this.player.getLocation();
+        final double s = this.sensitivity;
+        double u = wrap(l.getYaw() - this.refYaw) * s;
+        double v = -(l.getPitch() - this.refPitch) * s;
+        // Упёрся в край — сдвигаем опору, чтобы обратное движение сразу вело курсор назад.
+        if (Math.abs(u) > this.boundW) {
+            u = Math.copySign(this.boundW, u);
+            this.refYaw = (float) (l.getYaw() - u / s);
+        }
+        if (Math.abs(v) > this.boundH) {
+            v = Math.copySign(this.boundH, v);
+            this.refPitch = (float) (l.getPitch() + v / s);
+        }
+        if (u != this.cu || v != this.cv) {
+            this.cu = u;
+            this.cv = v;
+            if (this.cursor.isValid()) {
+                this.cursor.setInterpolationDelay(0);
+                this.cursor.setInterpolationDuration(1);
+                this.cursor.setTransformation(this.cursorTransform());
+            }
+        }
+        this.updateHover();
+    }
+
+    private void updateHover() {
+        final double lu = this.cu / this.scale;
+        final double lv = this.cv / this.scale;
         Button now = null;
-        if (uv != null) {
-            for (final Button b : this.buttons) {
-                if (b.contains(uv[0], uv[1])) {
-                    now = b;
-                }
+        for (final Button b : this.buttons) {
+            if (b.contains(lu, lv)) {
+                now = b;
             }
         }
         if (now != this.hovered) {
@@ -286,9 +384,8 @@ public final class Screen {
         }
     }
 
-    /** ЛКМ: нажать кнопку под прицелом. */
+    /** ЛКМ: нажать кнопку под курсором. */
     public void click() {
-        this.updateHover();
         if (this.hovered != null && !this.closed) {
             this.hovered.action.accept(this.hovered);
         }
@@ -304,7 +401,7 @@ public final class Screen {
         }
     }
 
-    /** Убрать экран и сиденье, вернуть игрока на место. Поток игрока. */
+    /** Убрать экран и вернуть игроку режим, скорость и место. Поток игрока. */
     public void close() {
         if (this.closed) {
             return;
@@ -315,16 +412,35 @@ public final class Screen {
         }
         this.elements.clear();
         this.buttons.clear();
-        if (this.seat.isValid()) {
-            this.seat.eject();
-            this.seat.remove();
+        restore(this.player, this.saved);
+    }
+
+    /** Вернуть игроку сохранённое состояние (и после падения сервера — из файла). */
+    public static void restore(final Player player, final Saved saved) {
+        if (!player.isOnline()) {
+            return;
         }
-        if (this.player.isOnline() && !this.player.isDead() && this.player.getWorld().equals(this.origin.getWorld())) {
-            final Location back = this.origin.clone();
-            back.setYaw(this.player.getLocation().getYaw());
-            back.setPitch(this.player.getLocation().getPitch());
-            this.player.teleport(back);
+        player.setGameMode(saved.mode());
+        player.setWalkSpeed(saved.walkSpeed());
+        player.setFlySpeed(saved.flySpeed());
+        player.setAllowFlight(saved.allowFlight() || saved.mode() == GameMode.CREATIVE);
+        player.setFlying(saved.flying() && player.getAllowFlight());
+        if (!player.isDead() && saved.location().getWorld() != null) {
+            final Location back = saved.location().clone();
+            back.setYaw(player.getLocation().getYaw());
+            back.setPitch(player.getLocation().getPitch());
+            player.teleport(back);
         }
+    }
+
+    static double wrap(final double degrees) {
+        double d = degrees % 360.0;
+        if (d > 180) {
+            d -= 360;
+        } else if (d < -180) {
+            d += 360;
+        }
+        return d;
     }
 
     private static int countLines(final Component c) {

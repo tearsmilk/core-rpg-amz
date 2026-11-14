@@ -69,6 +69,7 @@ public final class RpgScreen {
     private final Settings settings;
     private final Runnable closeAction;
     private final java.util.Set<java.util.UUID> dropping;
+    private final Runnable calibrateAction;
     private final Map<Integer, Slot> slots = new HashMap<>();
     private final Map<Screen.Button, Integer> slotOf = new HashMap<>();
     private final Map<Tab, Screen.Button> tabs = new HashMap<>();
@@ -95,18 +96,22 @@ public final class RpgScreen {
      * @param dropping игроки, которым меню сейчас само выбрасывает предмет: их событие выброса меню не отменяет
      */
     public RpgScreen(final Screen screen, final Settings settings, final Runnable closeAction,
-                     final java.util.Set<java.util.UUID> dropping) {
+                     final java.util.Set<java.util.UUID> dropping, final Runnable calibrateAction) {
         this.screen = screen;
         this.player = screen.player();
         this.settings = settings;
         this.closeAction = closeAction;
         this.dropping = dropping;
+        this.calibrateAction = calibrateAction;
     }
 
     // --- постройка ---
 
     public void build() {
         final Screen s = this.screen;
+        // Макет 4.6 × 2.7 — во весь откалиброванный экран.
+        final Screen.Calibration c = s.calibration();
+        s.scale(Math.min(2 * c.halfW() * 0.98 / W, 2 * c.halfH() * 0.98 / H));
         s.rect(-W / 2, -H / 2, W, H, 0, FRAME, STATIC);
         s.rect(-W / 2 + 0.05, -H / 2 + 0.05, W - 0.1, H - 0.1, 1, BACK, STATIC);
 
@@ -147,11 +152,13 @@ public final class RpgScreen {
         // правая колонка
         s.rect(-0.32, -1.25, 2.52, 2.17, 2, SECTION, STATIC);
         this.tooltip = s.text(-0.3, -0.76, 2.48, 0.2, 0.1, Component.empty(), 3, STATIC);
-        s.button(-0.26, -1.1, 1.1, 0.24, 3, BTN, BTN_HOVER, STATIC, b -> this.dropPicked());
-        s.text(-0.26, -1.1, 1.1, 0.24, 0.1, Text.item("<red>Выбросить</red>"), 4, STATIC);
-        s.button(1.04, -1.1, 1.1, 0.24, 3, BTN, BTN_HOVER, STATIC, b -> this.closeAction.run());
-        s.text(1.04, -1.1, 1.1, 0.24, 0.1, Text.item("<white>Закрыть</white>"), 4, STATIC);
-        s.text(-0.3, -1.25, 2.48, 0.14, 0.06, Text.item("<gray>Наведите прицел и нажмите ЛКМ · Shift — выйти</gray>"), 3, STATIC);
+        s.button(-0.26, -1.1, 0.78, 0.24, 3, BTN, BTN_HOVER, STATIC, b -> this.dropPicked());
+        s.text(-0.26, -1.1, 0.78, 0.24, 0.1, Text.item("<red>Выбросить</red>"), 4, STATIC);
+        s.button(0.56, -1.1, 0.78, 0.24, 3, BTN, BTN_HOVER, STATIC, b -> this.calibrateAction.run());
+        s.text(0.56, -1.1, 0.78, 0.24, 0.09, Text.item("<yellow>Калибровка</yellow>"), 4, STATIC);
+        s.button(1.38, -1.1, 0.78, 0.24, 3, BTN, BTN_HOVER, STATIC, b -> this.closeAction.run());
+        s.text(1.38, -1.1, 0.78, 0.24, 0.1, Text.item("<white>Закрыть</white>"), 4, STATIC);
+        s.text(-0.3, -1.25, 2.48, 0.14, 0.06, Text.item("<gray>ЛКМ — нажать · Пробел — курсор в центр · Shift — выйти</gray>"), 3, STATIC);
 
         this.switchTab(Tab.INVENTORY);
         this.refresh();
