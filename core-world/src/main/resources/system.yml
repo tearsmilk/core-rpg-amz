@@ -1,0 +1,7 @@
+# Описание системы. name и version подставляет сборка: name — rootProject.name из settings.gradle.kts, version — из build.gradle.kts.
+name: ${name}
+version: ${version}
+main: core.amazake.systems.coreworld.CoreWorldSystem
+description: "Правила мира по модулям из config.yml: пока — отключение голода"
+authors: [tearsmilk]
+api-version: 2

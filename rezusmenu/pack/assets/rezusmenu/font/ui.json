@@ -116,6 +116,172 @@
       "chars": [
         "\ue00c"
       ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/bar_energy.png",
+      "ascent": 16,
+      "height": 16,
+      "chars": [
+        "\ue00d"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/skills_bg_0.png",
+      "ascent": 224,
+      "height": 224,
+      "chars": [
+        "\ue00e"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/skills_bg_1.png",
+      "ascent": 224,
+      "height": 224,
+      "chars": [
+        "\ue00f"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/skill_hover.png",
+      "ascent": 80,
+      "height": 80,
+      "chars": [
+        "\ue010"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/skill_locked.png",
+      "ascent": 80,
+      "height": 80,
+      "chars": [
+        "\ue011"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/cursor_mirror.png",
+      "ascent": 16,
+      "height": 16,
+      "chars": [
+        "\ue012"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/back_0_0.png",
+      "ascent": 144,
+      "height": 144,
+      "chars": [
+        "\ue013"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/back_0_1.png",
+      "ascent": 144,
+      "height": 144,
+      "chars": [
+        "\ue014"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/back_0_2.png",
+      "ascent": 144,
+      "height": 144,
+      "chars": [
+        "\ue015"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/back_1_0.png",
+      "ascent": 144,
+      "height": 144,
+      "chars": [
+        "\ue016"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/back_1_1.png",
+      "ascent": 144,
+      "height": 144,
+      "chars": [
+        "\ue017"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/back_1_2.png",
+      "ascent": 144,
+      "height": 144,
+      "chars": [
+        "\ue018"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/back_2_0.png",
+      "ascent": 112,
+      "height": 112,
+      "chars": [
+        "\ue019"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/back_2_1.png",
+      "ascent": 112,
+      "height": 112,
+      "chars": [
+        "\ue01a"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/back_2_2.png",
+      "ascent": 112,
+      "height": 112,
+      "chars": [
+        "\ue01b"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pixel.png",
+      "ascent": 1,
+      "height": 1,
+      "chars": [
+        "\ue0f0\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+        "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+        "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+        "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+        "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+        "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+        "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+        "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+        "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+        "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+        "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+        "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+        "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+        "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+        "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+        "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+      ]
+    },
+    {
+      "type": "space",
+      "advances": {
+        "\ue0f1": -1,
+        "\ue0f2": 1
+      }
     }
   ]
 }
