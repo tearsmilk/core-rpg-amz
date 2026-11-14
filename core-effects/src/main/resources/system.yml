@@ -1,0 +1,7 @@
+# Описание системы. name и version подставляет сборка: name — rootProject.name из settings.gradle.kts, version — из build.gradle.kts.
+name: ${name}
+version: ${version}
+main: core.amazake.systems.coreeffects.CoreEffectsSystem
+description: "Кастомные эффекты: кровотечение (обморок, бинт), паника (фантомы, дезориентация), тепло (смерть без молока), проклятье (пропажа обычных вещей); иконки и накладки на экран из пакета ресурсов"
+authors: [tearsmilk]
+api-version: 2

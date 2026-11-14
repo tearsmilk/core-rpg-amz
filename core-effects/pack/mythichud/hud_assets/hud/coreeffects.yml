@@ -1,0 +1,75 @@
+# core-effects: иконки эффектов для MythicHUD. Положить в plugins/MythicHUD/hud_assets/hud/coreeffects.yml.
+# Текстуры: plugins/MythicHUD/source-pack/assets/mythichud/textures/assets/coreeffects/*.png (из pack/mythichud/source-pack).
+# Плейсхолдеры даёт система core-effects (PlaceholderAPI, идентификатор coreeffects).
+coreeffects-bleeding:
+  conditions:
+    - placeholder{ph=%coreeffects_bleeding%;v=yes} true hide
+  layers:
+    icon:
+      texture:
+        path: assets/coreeffects/bleeding.png
+      offset:
+        x: -8
+        y: 0
+    time:
+      align: center
+      text: "<#ff4050>%coreeffects_bleeding_time%"
+      font: "default"
+      outlined: true
+      offset:
+        x: 0
+        y: -12
+coreeffects-panic:
+  conditions:
+    - placeholder{ph=%coreeffects_panic%;v=yes} true hide
+  layers:
+    icon:
+      texture:
+        path: assets/coreeffects/panic.png
+      offset:
+        x: -8
+        y: 0
+    time:
+      align: center
+      text: "<#a890ff>%coreeffects_panic_time%"
+      font: "default"
+      outlined: true
+      offset:
+        x: 0
+        y: -12
+coreeffects-warmth:
+  conditions:
+    - placeholder{ph=%coreeffects_warmth%;v=yes} true hide
+  layers:
+    icon:
+      texture:
+        path: assets/coreeffects/warmth.png
+      offset:
+        x: -8
+        y: 0
+    time:
+      align: center
+      text: "<#ffb050>%coreeffects_warmth_time%"
+      font: "default"
+      outlined: true
+      offset:
+        x: 0
+        y: -12
+coreeffects-curse:
+  conditions:
+    - placeholder{ph=%coreeffects_curse%;v=yes} true hide
+  layers:
+    icon:
+      texture:
+        path: assets/coreeffects/curse.png
+      offset:
+        x: -8
+        y: 0
+    time:
+      align: center
+      text: "<#c070ff>%coreeffects_curse_time%"
+      font: "default"
+      outlined: true
+      offset:
+        x: 0
+        y: -12

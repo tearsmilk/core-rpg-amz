@@ -1,0 +1,13 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "coreeffects:font/icons.png",
+      "height": 9,
+      "ascent": 8,
+      "chars": [
+        "\ue001\ue002\ue003\ue004"
+      ]
+    }
+  ]
+}
