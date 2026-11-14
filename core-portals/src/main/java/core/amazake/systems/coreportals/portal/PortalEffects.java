@@ -19,9 +19,10 @@ final class PortalEffects {
     private static final Particle.DustOptions EMBER = new Particle.DustOptions(Color.fromRGB(255, 92, 20), 1.1f);
     private static final Particle.DustOptions DEEP_RED = new Particle.DustOptions(Color.fromRGB(170, 20, 8), 1.6f);
     private static final Particle.DustOptions RED = new Particle.DustOptions(Color.fromRGB(220, 24, 10), 1.3f);
-    private static final Particle.DustOptions ORANGE = new Particle.DustOptions(Color.fromRGB(255, 96, 36), 0.9f);
-    private static final Particle.DustTransition RED_TO_ORANGE =
-        new Particle.DustTransition(Color.fromRGB(190, 12, 6), Color.fromRGB(255, 120, 40), 1.2f);
+    /** Поверхность — малиново-красная (#8a0a1a .. #ff6a6a), без оранжевого. */
+    private static final Particle.DustOptions PINK = new Particle.DustOptions(Color.fromRGB(255, 92, 110), 0.9f);
+    private static final Particle.DustTransition CRIMSON_TO_PINK =
+        new Particle.DustTransition(Color.fromRGB(150, 8, 28), Color.fromRGB(255, 100, 112), 1.2f);
     /** Стойки рамы (по x от середины). */
     private static final double SIDE = 1.2;
 
@@ -116,7 +117,7 @@ final class PortalEffects {
             }
             case RISE -> {
                 // Огонь лижет стойки по мере подъёма.
-                final double h = tl.rise(t) * 3.0;
+                final double h = tl.rise(t) * Spot.HEIGHT;
                 for (final double side : new double[] {-SIDE, SIDE}) {
                     this.spawn(Particle.FLAME, this.at(side, r.nextDouble(0, Math.max(0.1, h)), r.nextDouble(-0.2, 0.2)), 1, 0.04, 0.05, 0.04, 0.01, null);
                     this.spawn(Particle.SMALL_FLAME, this.at(side + r.nextDouble(-0.15, 0.15), 0.05, r.nextDouble(-0.3, 0.3)), 1, 0, 0, 0, 0.02, null);
@@ -132,7 +133,7 @@ final class PortalEffects {
                 final double w = tl.surface(t) * Spot.SURFACE_HALF_WIDTH;
                 for (int i = 0; i < 4; i++) {
                     final double y = r.nextDouble(0.1, Spot.SURFACE_HEIGHT);
-                    this.spawn(Particle.DUST_COLOR_TRANSITION, this.at(r.nextBoolean() ? w : -w, y, 0), 1, 0.02, 0.05, 0.02, 0, RED_TO_ORANGE);
+                    this.spawn(Particle.DUST_COLOR_TRANSITION, this.at(r.nextBoolean() ? w : -w, y, 0), 1, 0.02, 0.05, 0.02, 0, CRIMSON_TO_PINK);
                 }
                 if (t == Timeline.CRACK + Timeline.RISE) {
                     this.spawn(Particle.DUST, this.at(0, 1.45, 0), 30, 0.08, 1.2, 0.08, 0, RED);
@@ -141,9 +142,9 @@ final class PortalEffects {
             }
             case IDLE -> {
                 this.ambientFire(r, t);
-                // Красные и оранжевые искры над поверхностью.
+                // Красные и розовые искры над поверхностью.
                 if (t % 4 == 0) {
-                    this.spawn(Particle.DUST, this.at(r.nextDouble(-1.05, 1.05), r.nextDouble(0.1, 2.8), r.nextDouble(-0.2, 0.2)), 1, 0, 0, 0, 0, r.nextBoolean() ? RED : ORANGE);
+                    this.spawn(Particle.DUST, this.at(r.nextDouble(-1.05, 1.05), r.nextDouble(0.1, Spot.SURFACE_HEIGHT - 0.1), r.nextDouble(-0.2, 0.2)), 1, 0, 0, 0, 0, r.nextBoolean() ? RED : PINK);
                 }
             }
             case CLOSE_SURFACE -> {
@@ -154,7 +155,7 @@ final class PortalEffects {
                 if (d < Timeline.COLLAPSE) {
                     // Края поверхности сходятся к середине, за ними тянется красная пыль.
                     for (int i = 0; i < 2; i++) {
-                        this.spawn(Particle.DUST_COLOR_TRANSITION, this.at(r.nextBoolean() ? w : -w, r.nextDouble(0.1, Spot.SURFACE_HEIGHT), 0), 1, 0.02, 0.04, 0.02, 0, RED_TO_ORANGE);
+                        this.spawn(Particle.DUST_COLOR_TRANSITION, this.at(r.nextBoolean() ? w : -w, r.nextDouble(0.1, Spot.SURFACE_HEIGHT), 0), 1, 0.02, 0.04, 0.02, 0, CRIMSON_TO_PINK);
                     }
                 } else {
                     // Светящаяся щель стягивается в точку.
@@ -162,14 +163,14 @@ final class PortalEffects {
                     if (d == Timeline.CLOSE_SURFACE - 1) {
                         // Схлопнулась: вспышка красной пыли и искр во все стороны.
                         this.spawn(Particle.DUST, this.at(0, mid, 0), 40, 0.35, 0.35, 0.2, 0, RED);
-                        this.spawn(Particle.DUST, this.at(0, mid, 0), 20, 0.25, 0.25, 0.15, 0, ORANGE);
+                        this.spawn(Particle.DUST, this.at(0, mid, 0), 20, 0.25, 0.25, 0.15, 0, PINK);
                         this.spawn(Particle.LAVA, this.at(0, mid, 0), 4, 0.1, 0.1, 0.1, 0, null);
                     }
                 }
                 this.ambientFire(r, t);
             }
             case CLOSE_FRAME -> {
-                final double h = tl.rise(t) * 3.0;
+                final double h = tl.rise(t) * Spot.HEIGHT;
                 this.spawn(Particle.LARGE_SMOKE, this.at(r.nextDouble(-1.35, 1.35), 0.1, r.nextDouble(-0.3, 0.3)), 1, 0.05, 0.02, 0.05, 0.01, null);
                 this.spawn(Particle.DUST, this.at(r.nextDouble(-1.0, 1.0), h, 0), 1, 0.1, 0.05, 0.1, 0, EMBER);
                 this.spawn(Particle.SMALL_FLAME, this.at(r.nextDouble(-1.1, 1.1), 0.05, r.nextDouble(-0.3, 0.3)), 1, 0, 0, 0, 0.01, null);
@@ -205,7 +206,7 @@ final class PortalEffects {
             }
             this.world.spawnParticle(Particle.DUST, eye, 30, 0.3, 0.6, 0.3, 0, RED);
             this.world.spawnParticle(Particle.FLAME, player.getLocation(), 20, 0.3, 0.2, 0.3, 0.05);
-            this.world.spawnParticle(Particle.DUST_COLOR_TRANSITION, eye, 25, 0.4, 0.7, 0.4, 0, RED_TO_ORANGE);
+            this.world.spawnParticle(Particle.DUST_COLOR_TRANSITION, eye, 25, 0.4, 0.7, 0.4, 0, CRIMSON_TO_PINK);
         }
         if (s.sounds()) {
             this.world.playSound(eye, Sound.ENTITY_ENDERMAN_TELEPORT, SoundCategory.BLOCKS, 1.0f, 0.7f);

@@ -11,36 +11,69 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
-/** Предмет «Портал (смола)»: RESIN_CLUMP с меткой в PDC. Узнаётся по метке, а не по имени. */
+/**
+ * Предметы-порталы: «Портал» (RESIN_CLUMP) и «Изумрудный портал» (EMERALD), у каждого своя метка в PDC.
+ * Узнаются по метке и материалу, а не по имени.
+ */
 public final class PortalItem {
 
-    /** Метка предмета (постоянное пространство имён: предметы из прошлых запусков тоже узнаются). */
+    /** Метка «Портала» из смолы (постоянное пространство имён: предметы из прошлых запусков тоже узнаются). */
     public static final NamespacedKey KEY = new NamespacedKey("coreportals", "portal_item");
+    /** Метка «Изумрудного портала». */
+    public static final NamespacedKey KEY_EMERALD = new NamespacedKey("coreportals", "emerald_portal_item");
 
     private PortalItem() {
     }
 
+    /** «Портал» из смолы (как раньше). */
     public static ItemStack create(final Settings s, final int amount) {
-        final ItemStack stack = new ItemStack(Material.RESIN_CLUMP, Math.max(1, Math.min(amount, 64)));
+        return create(s, PortalType.RESIN, amount);
+    }
+
+    public static ItemStack create(final Settings s, final PortalType type, final int amount) {
+        final boolean emerald = type == PortalType.EMERALD;
+        final ItemStack stack = new ItemStack(emerald ? Material.EMERALD : Material.RESIN_CLUMP,
+            Math.max(1, Math.min(amount, 64)));
         final ItemMeta meta = stack.getItemMeta();
-        meta.displayName(Text.parse(s.itemName()));
+        meta.displayName(Text.parse(emerald ? s.emerald().itemName() : s.itemName()));
         final List<Component> lore = new ArrayList<>();
-        for (final String line : s.itemLore()) {
+        for (final String line : emerald ? s.emerald().itemLore() : s.itemLore()) {
             lore.add(Text.parse(line));
         }
         meta.lore(lore);
-        meta.getPersistentDataContainer().set(KEY, PersistentDataType.BYTE, (byte) 1);
+        meta.getPersistentDataContainer().set(emerald ? KEY_EMERALD : KEY, PersistentDataType.BYTE, (byte) 1);
+        if (emerald) {
+            meta.setEnchantmentGlintOverride(true);
+        }
         stack.setItemMeta(meta);
-        if (!s.itemModel().isEmpty()) {
-            stack.setData(DataComponentTypes.ITEM_MODEL, Key.key(s.itemModel()));
+        final String model = emerald ? s.emerald().itemModel() : s.itemModel();
+        if (!model.isEmpty()) {
+            stack.setData(DataComponentTypes.ITEM_MODEL, Key.key(model));
         }
         return stack;
     }
 
-    public static boolean is(final ItemStack stack) {
-        if (stack == null || stack.getType() != Material.RESIN_CLUMP || !stack.hasItemMeta()) {
-            return false;
+    /** Вид портала, который открывает предмет, или {@code null} — это не предмет-портал. */
+    public static PortalType type(final ItemStack stack) {
+        if (stack == null || !stack.hasItemMeta()) {
+            return null;
         }
-        return stack.getItemMeta().getPersistentDataContainer().has(KEY, PersistentDataType.BYTE);
+        final Material m = stack.getType();
+        if (m != Material.RESIN_CLUMP && m != Material.EMERALD) {
+            return null;
+        }
+        final var pdc = stack.getItemMeta().getPersistentDataContainer();
+        if (m == Material.RESIN_CLUMP && pdc.has(KEY, PersistentDataType.BYTE)) {
+            return PortalType.RESIN;
+        }
+        if (m == Material.EMERALD && pdc.has(KEY_EMERALD, PersistentDataType.BYTE)) {
+            return PortalType.EMERALD;
+        }
+        return null;
+    }
+
+    /** Любой предмет-портал. */
+    public static boolean is(final ItemStack stack) {
+        return type(stack) != null;
     }
 }

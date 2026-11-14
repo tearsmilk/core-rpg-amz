@@ -2,13 +2,14 @@ package core.amazake.systems.coreportals.portal;
 
 import core.amazake.systems.api.SystemContext;
 import core.amazake.systems.coreportals.PortalItem;
+import core.amazake.systems.coreportals.PortalType;
 import core.amazake.systems.coreportals.Settings;
 import core.amazake.systems.coreportals.TeleportAction;
-import core.amazake.systems.coreportals.anim.Phase;
+import core.amazake.systems.coreportals.anim.RingTimeline;
 import core.amazake.systems.coreportals.anim.Timeline;
 import core.amazake.systems.coreportals.geo.BlockQuery;
-import core.amazake.systems.coreportals.geo.Box;
 import core.amazake.systems.coreportals.geo.Placement;
+import core.amazake.systems.coreportals.geo.RingPlacement;
 import core.amazake.systems.coreportals.geo.Spot;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import java.util.ArrayList;
@@ -82,7 +83,8 @@ public final class PortalManager implements Listener {
             return;
         }
         final ItemStack item = event.getItem();
-        if (!PortalItem.is(item) || event.getHand() == null) {
+        final PortalType type = PortalItem.type(item);
+        if (type == null || event.getHand() == null) {
             return;
         }
         // Смолу нельзя ставить на блок: событие отменяем в любом случае.
@@ -96,11 +98,11 @@ public final class PortalManager implements Listener {
         if (last != null && now - last < DEBOUNCE_MS) {
             return;
         }
-        this.tryOpen(player, event.getHand());
+        this.tryOpen(player, event.getHand(), type);
     }
 
     /** Открыть портал перед игроком. Поток игрока. */
-    private void tryOpen(final Player player, final EquipmentSlot hand) {
+    private void tryOpen(final Player player, final EquipmentSlot hand, final PortalType type) {
         final Settings s = this.settings.get();
         final long now = System.currentTimeMillis();
         final Long until = this.cooldownUntil.get(player.getUniqueId());
@@ -115,10 +117,13 @@ public final class PortalManager implements Listener {
         }
         final Location loc = player.getLocation();
         final World world = player.getWorld();
-        final Optional<Spot> found = Placement.find(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(),
-            s.distance(), s.groundSearch(), new WorldBlocks(world));
+        final WorldBlocks blocks = new WorldBlocks(world);
+        final Optional<Spot> found = type == PortalType.EMERALD
+            ? RingPlacement.find(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), s.distanceFor(type), s.groundSearch(), blocks)
+            : Placement.find(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), s.distanceFor(type), s.groundSearch(), blocks);
+        final String noRoom = type == PortalType.EMERALD ? s.messages().noRoomEmerald() : s.messages().noRoom();
         if (found.isEmpty()) {
-            this.messenger.send(player, s.messages().noRoom());
+            this.messenger.send(player, noRoom);
             return;
         }
         final Spot spot = found.get();
@@ -126,13 +131,13 @@ public final class PortalManager implements Listener {
         final int cz = (int) Math.floor(spot.z()) >> 4;
         if (!Bukkit.isOwnedByCurrentRegion(world, cx, cz)) {
             // Место портала принадлежит другому потоку (граница региона): не трогаем.
-            this.messenger.send(player, s.messages().noRoom());
+            this.messenger.send(player, noRoom);
             return;
         }
         if (s.consume() && player.getGameMode() != GameMode.CREATIVE) {
             final PlayerInventory inv = player.getInventory();
             final ItemStack inHand = inv.getItem(hand);
-            if (!PortalItem.is(inHand)) {
+            if (PortalItem.type(inHand) != type) {
                 return;
             }
             final int left = inHand.getAmount() - 1;
@@ -146,20 +151,23 @@ public final class PortalManager implements Listener {
         if (s.cooldownTicks() > 0) {
             this.cooldownUntil.put(player.getUniqueId(), now + s.cooldownTicks() * 50L);
         }
-        this.open(player.getUniqueId(), player.getName(), world, spot, s);
+        this.open(player.getUniqueId(), player.getName(), world, spot, type, s);
     }
 
     /** Поставить портал. Поток региона, которому принадлежит место портала. */
-    private void open(final UUID owner, final String ownerName, final World world, final Spot spot, final Settings s) {
-        final Timeline tl = Timeline.of(s.lifetimeTicks());
-        final Portal portal = new Portal(owner, ownerName, world, spot, tl);
-        portal.visuals.spawn(world, spot, s, tl, this.instance);
-        portal.effects.tick(tl, 0, s);
+    private void open(final UUID owner, final String ownerName, final World world, final Spot spot,
+                      final PortalType type, final Settings s) {
+        final long life = s.lifetimeFor(type);
+        final PortalBody body = type == PortalType.EMERALD
+            ? new RingBody(world, spot, RingTimeline.of(life))
+            : new ResinBody(world, spot, Timeline.of(life));
+        final Portal portal = new Portal(owner, ownerName, world, spot, type, body);
+        body.spawn(s, this.instance);
         this.portals.put(portal.id, portal);
         final ScheduledTask task = Bukkit.getRegionScheduler().runAtFixedRate(this.context.plugin(), world,
             portal.chunkX, portal.chunkZ, t -> this.tick(portal, t), 1L, 1L);
         portal.task = task;
-        this.context.logger().info("Портал открыт: " + ownerName + " в " + world.getName() + " "
+        this.context.logger().info("Портал (" + type.id() + ") открыт: " + ownerName + " в " + world.getName() + " "
             + fmt(spot.x()) + " " + spot.y() + " " + fmt(spot.z()) + " (" + spot.facing() + ")");
     }
 
@@ -171,43 +179,32 @@ public final class PortalManager implements Listener {
             task.cancel();
             return;
         }
-        final long t = ++p.tick;
+        final long t = p.tick + 1;
+        p.tick = t;
         if (p.closeRequested) {
-            p.timeline = p.timeline.closeAt(t);
+            p.body.closeAt(t);
         }
-        if (!p.visuals.valid()) {
+        if (!p.body.valid() || p.body.done(t)) {
             this.remove(p);
             return;
-        }
-        final Timeline tl = p.timeline;
-        final Phase phase = tl.phase(t);
-        if (phase == Phase.DONE) {
-            this.remove(p);
-            return;
-        }
-        if (phase != Phase.IDLE && t % Timeline.KEY_STEP == 0) {
-            // Длительность чуть больше шага: следующий кадр приходит, пока клиент ещё тянет этот, — без рывков.
-            p.visuals.apply(tl, t + Timeline.KEY_STEP, Timeline.KEY_STEP + 1);
         }
         final Settings s = this.settings.get();
-        p.effects.tick(tl, t, s);
-        if (phase == Phase.IDLE) {
+        p.body.tick(t, s);
+        if (p.body.enterable(t)) {
             this.checkEntry(p, s);
         }
     }
 
-    /** Кто задел поверхность хитбоксом — входит. Поток региона портала. */
+    /** Кто задел объём входа хитбоксом — входит. Поток региона портала. */
     private void checkEntry(final Portal p, final Settings s) {
-        final Box box = p.spot.surfaceBox();
-        final double[] c = p.spot.toWorld(0, Spot.SURFACE_HEIGHT / 2, 0);
+        final double[] c = p.body.center();
         final Location center = new Location(p.world, c[0], c[1], c[2]);
         final long now = System.currentTimeMillis();
         for (final Player player : p.world.getNearbyPlayers(center, ENTRY_SCAN_RADIUS)) {
             if (!Bukkit.isOwnedByCurrentRegion(player) || player.isDead() || player.getGameMode() == GameMode.SPECTATOR) {
                 continue;
             }
-            final org.bukkit.util.BoundingBox bb = player.getBoundingBox();
-            if (!box.overlaps(bb.getMinX(), bb.getMinY(), bb.getMinZ(), bb.getMaxX(), bb.getMaxY(), bb.getMaxZ())) {
+            if (!p.body.touches(player.getBoundingBox())) {
                 continue;
             }
             final UUID id = player.getUniqueId();
@@ -224,15 +221,16 @@ public final class PortalManager implements Listener {
                 continue;
             }
             this.immuneUntil.put(id, now + Math.max(s.immunityTicks(), 20L) * 50L);
-            p.effects.enter(player, s);
-            this.context.logger().info("Игрок " + player.getName() + " вошёл в портал " + p.ownerName + ".");
-            this.context.runOnceForPlayer(player, () -> this.runAction(player, s));
+            p.body.enter(player, s);
+            this.context.logger().info("Игрок " + player.getName() + " вошёл в портал (" + p.type.id() + ") "
+                + p.ownerName + ".");
+            final TeleportAction action = s.teleportFor(p.type);
+            this.context.runOnceForPlayer(player, () -> this.runAction(player, s, action));
         }
     }
 
     /** Действие портала: команды от имени игрока (с временными правами) или консоли. Поток игрока. */
-    private void runAction(final Player player, final Settings s) {
-        final TeleportAction action = s.teleport();
+    private void runAction(final Player player, final Settings s, final TeleportAction action) {
         final List<String> commands = action.resolve(player.getName(), player.getUniqueId().toString());
         if (action.runAs() == TeleportAction.RunAs.CONSOLE) {
             Bukkit.getGlobalRegionScheduler().execute(this.context.plugin(), () -> {
@@ -280,7 +278,7 @@ public final class PortalManager implements Listener {
         if (task != null) {
             task.cancel();
         }
-        p.visuals.remove();
+        p.body.remove();
         this.portals.remove(p.id, p);
     }
 
@@ -330,9 +328,9 @@ public final class PortalManager implements Listener {
                 task.cancel();
             }
             if (Bukkit.isOwnedByCurrentRegion(p.world, p.chunkX, p.chunkZ)) {
-                p.visuals.remove();
+                p.body.remove();
             } else {
-                Bukkit.getRegionScheduler().execute(this.context.plugin(), p.world, p.chunkX, p.chunkZ, p.visuals::remove);
+                Bukkit.getRegionScheduler().execute(this.context.plugin(), p.world, p.chunkX, p.chunkZ, p.body::remove);
             }
         }
         this.portals.clear();
@@ -355,8 +353,8 @@ public final class PortalManager implements Listener {
         final List<String> out = new ArrayList<>();
         for (final Portal p : this.portals.values()) {
             final long t = p.tick;
-            out.add(p.ownerName + " " + p.world.getName() + " " + fmt(p.spot.x()) + " " + p.spot.y() + " "
-                + fmt(p.spot.z()) + " " + p.spot.facing() + " " + p.timeline.phase(t) + " (" + t / 20 + " с)");
+            out.add(p.type.id() + " " + p.ownerName + " " + p.world.getName() + " " + fmt(p.spot.x()) + " " + p.spot.y()
+                + " " + fmt(p.spot.z()) + " " + p.spot.facing() + " " + p.body.stage(t) + " (" + t / 20 + " с)");
         }
         return out;
     }

@@ -11,11 +11,13 @@ public record Spot(double x, int y, double z, Facing facing, int[] blocks) {
     /** Ширина проёма портала (по рамке), блоков. */
     public static final double WIDTH = 2.0;
     /** Высота портала (по рамке), блоков. */
-    public static final double HEIGHT = 3.0;
+    public static final double HEIGHT = 3.5;
+    /** Толщина стоек и перекладины тёмной рамы, блоков. */
+    public static final double PILLAR = 0.08;
     /** Полуширина светящейся поверхности внутри рамки. */
     public static final double SURFACE_HALF_WIDTH = 1.17;
-    /** Высота светящейся поверхности. */
-    public static final double SURFACE_HEIGHT = 2.92;
+    /** Высота светящейся поверхности: до перекладины рамы (шейдер: H в cp_surface). */
+    public static final double SURFACE_HEIGHT = HEIGHT - PILLAR;
     /** Полутолщина объёма, касание которого телепортирует. */
     public static final double ENTRY_HALF_DEPTH = 0.3;
 

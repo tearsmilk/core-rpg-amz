@@ -53,4 +53,10 @@ public final class Easing {
         final double t = clamp01(x) - 1;
         return 1 + (s + 1) * t * t * t + s * t * t;
     }
+
+    /** С замахом в начале: сперва чуть уходит ниже 0 (≈ −9 % при s = 1.4), затем разгоняется к 1. */
+    public static double inBack(final double x, final double s) {
+        final double t = clamp01(x);
+        return (s + 1) * t * t * t - s * t * t;
+    }
 }

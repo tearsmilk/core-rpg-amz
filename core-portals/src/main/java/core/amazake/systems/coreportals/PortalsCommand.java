@@ -13,7 +13,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-/** /portals give [игрок] [кол-во] | reload | close | list — право coreportals.admin. */
+/** /portals give [игрок] [кол-во] [resin|emerald] | reload | close | list — право coreportals.admin. */
 final class PortalsCommand extends Command {
 
     private static final List<String> SUBS = List.of("give", "reload", "close", "list");
@@ -25,7 +25,7 @@ final class PortalsCommand extends Command {
 
     PortalsCommand(final SystemContext context, final Supplier<Settings> settings, final PortalManager portals,
                    final Runnable reload) {
-        super("portals", "Тестовые порталы core-portals", "/portals give [игрок] [кол-во] | reload | close | list",
+        super("portals", "Тестовые порталы core-portals", "/portals give [игрок] [кол-во] [resin|emerald] | reload | close | list",
             List.of("coreportals"));
         this.setPermission("coreportals.admin");
         this.context = context;
@@ -88,6 +88,16 @@ final class PortalsCommand extends Command {
                 return;
             }
         }
+        PortalType type = PortalType.RESIN;   // по умолчанию — как раньше
+        if (args.length >= 4) {
+            final java.util.Optional<PortalType> parsed = PortalType.parse(args[3]);
+            if (parsed.isEmpty()) {
+                Text.send(sender, s, s.messages().usage());
+                return;
+            }
+            type = parsed.get();
+        }
+        final PortalType kind = type;
         final int total = amount;
         // Инвентарь игрока меняет только его поток.
         this.context.runOnceForPlayer(target, () -> {
@@ -95,7 +105,7 @@ final class PortalsCommand extends Command {
             while (left > 0) {
                 final int n = Math.min(64, left);
                 left -= n;
-                final ItemStack stack = PortalItem.create(s, n);
+                final ItemStack stack = PortalItem.create(s, kind, n);
                 for (final ItemStack rest : target.getInventory().addItem(stack).values()) {
                     target.getWorld().dropItem(target.getLocation(), rest);
                 }
@@ -127,6 +137,10 @@ final class PortalsCommand extends Command {
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("give")) {
             return List.of("1", "16", "64");
+        }
+        if (args.length == 4 && args[0].equalsIgnoreCase("give")) {
+            final String p = args[3].toLowerCase(Locale.ROOT);
+            return java.util.Arrays.stream(PortalType.values()).map(PortalType::id).filter(x -> x.startsWith(p)).toList();
         }
         return List.of();
     }

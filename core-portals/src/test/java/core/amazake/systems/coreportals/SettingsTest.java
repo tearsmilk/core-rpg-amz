@@ -117,4 +117,82 @@ class SettingsTest {
             List.of("//warp dungeon1", "  ", "tell {player} id {uuid}"), List.of());
         assertEquals(List.of("warp dungeon1", "tell Alex id 42"), a.resolve("Alex", "42"));
     }
+
+    @Test
+    void emeraldInheritsSharedValues() throws Exception {
+        final List<String> warnings = new ArrayList<>();
+        final Settings s = parse("""
+            portal:
+              lifetime-seconds: 12
+              distance: 2
+            teleport:
+              commands: ["warp dungeon7"]
+            """, warnings);
+        assertEquals(List.of(), warnings);
+        assertEquals(240, s.lifetimeFor(PortalType.EMERALD));
+        assertEquals(2, s.distanceFor(PortalType.EMERALD));
+        assertEquals(List.of("warp dungeon7"), s.teleportFor(PortalType.EMERALD).commands());
+        assertEquals(s.teleport(), s.teleportFor(PortalType.EMERALD));
+        assertEquals(Settings.Emerald.DEFAULTS.itemName(), s.emerald().itemName());
+        assertTrue(s.emerald().itemName().contains("Изумрудный портал"));
+    }
+
+    @Test
+    void emeraldOwnSection() throws Exception {
+        final List<String> warnings = new ArrayList<>();
+        final Settings s = parse("""
+            emerald:
+              item:
+                name: "<green>Изумруд"
+                lore: ["a"]
+                model: "coreportals:emerald_item"
+              portal:
+                lifetime-seconds: 20
+                distance: 4
+              teleport:
+                commands: ["warp dungeon2"]
+            """, warnings);
+        assertEquals(List.of(), warnings);
+        assertEquals(400, s.lifetimeFor(PortalType.EMERALD));
+        assertEquals(600, s.lifetimeFor(PortalType.RESIN));
+        assertEquals(4, s.distanceFor(PortalType.EMERALD));
+        assertEquals(3, s.distanceFor(PortalType.RESIN));
+        assertEquals("coreportals:emerald_item", s.emerald().itemModel());
+        assertEquals(List.of("a"), s.emerald().itemLore());
+        // Своё действие: команды свои, остальное (от игрока, временное право) — из общего.
+        final TeleportAction a = s.teleportFor(PortalType.EMERALD);
+        assertEquals(List.of("warp dungeon2"), a.commands());
+        assertEquals(TeleportAction.RunAs.PLAYER, a.runAs());
+        assertEquals(List.of("amazakecore.essentials.warp"), a.grantPermissions());
+        assertEquals(List.of("warp dungeon1"), s.teleportFor(PortalType.RESIN).commands());
+    }
+
+    @Test
+    void emeraldBadValuesWarn() throws Exception {
+        final List<String> warnings = new ArrayList<>();
+        final Settings s = parse("""
+            emerald:
+              item:
+                model: "Bad Key"
+              portal:
+                lifetime-seconds: 1
+                distance: 9
+              teleport:
+                run-as: console
+                commands: ["warp x"]
+            """, warnings);
+        assertEquals("", s.emerald().itemModel());
+        assertEquals(600, s.emerald().lifetimeTicks());
+        assertEquals(3, s.emerald().distance());
+        assertEquals(4, warnings.size(), warnings.toString());
+        assertTrue(warnings.stream().anyMatch(w -> w.startsWith("emerald.teleport")), warnings.toString());
+    }
+
+    @Test
+    void portalTypeParse() {
+        assertEquals(PortalType.RESIN, PortalType.parse("resin").orElseThrow());
+        assertEquals(PortalType.EMERALD, PortalType.parse(" Emerald ").orElseThrow());
+        assertTrue(PortalType.parse("lava").isEmpty());
+        assertTrue(PortalType.parse(null).isEmpty());
+    }
 }

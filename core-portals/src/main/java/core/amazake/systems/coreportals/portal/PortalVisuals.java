@@ -24,8 +24,8 @@ import org.joml.Vector3f;
  * (кромки, пламя, трещина, поверхность). Все стоят в одной точке — середине основания портала, повёрнуты по yaw
  * и двигаются только трансформацией с интерполяцией. Не сохраняются в чанк. Поток региона портала.
  *
- * <p>Модели кромок, пламени и трещины нарисованы в масштабе 1:3 (16 px модели = 3 блока) и растягиваются
- * дисплеем ×3; поверхность — единичный квадрат, растянутый на проём.</p>
+ * <p>Модели кромок и трещины нарисованы в масштабе 1:3 (16 px модели = 3 блока) и растягиваются дисплеем ×3;
+ * поверхность — единичный квадрат, растянутый на проём.</p>
  */
 final class PortalVisuals {
 
@@ -33,15 +33,20 @@ final class PortalVisuals {
     static final NamespacedKey PART = new NamespacedKey("coreportals", "part");
 
     private static final float HALF = 1.25f;         // полуширина рамы (проём 2.5 блока)
-    private static final float PILLAR = 0.08f;       // толщина стоек и перекладины (тонкая рама)
-    private static final float DEPTH = 0.14f;        // толщина рамы
-    private static final float HEIGHT = 3.0f;        // высота рамы
+    private static final float PILLAR = (float) Spot.PILLAR;   // толщина стоек и перекладины (тонкая рама)
+    static final float DEPTH = 0.14f;                // толщина рамы
+    private static final float HEIGHT = (float) Spot.HEIGHT;   // высота рамы (3.5)
     private static final float INNER_TOP = HEIGHT - PILLAR;
-    private static final float SINK = 3.25f;         // на сколько рама уходит под землю
-    private static final float MODEL_SCALE = 3.0f;   // масштаб моделей 1:3
-    /** Модель кромок нарисована под проём 1.64 × 2.82: растягиваем под новый проём. */
-    private static final float EDGE_X = 1.3f;
-    private static final float EDGE_Y = (HEIGHT - PILLAR) / 2.82f;
+    private static final float SINK = HEIGHT + 0.25f;          // на сколько рама уходит под землю
+    private static final float MODEL_SCALE = 3.0f;   // масштаб моделей 1:3 (16 px модели = 3 блока)
+    /**
+     * Модель кромок нарисована в масштабе 1:3 по всем осям точно по раме: середины полос лежат на внешней и
+     * внутренней границе стоек и перекладины, плоскости — на передней и задней гранях рамы (см. README).
+     * Центр модели (8 px) — на высоте {@link #EDGES_CENTER} над землёй.
+     */
+    private static final float EDGES_CENTER = MODEL_SCALE / 2;
+    /** Ширина трещины на земле: модель растягивается по ширине проёма. */
+    private static final float GROUND_X = 1.3f;
     /** Щель при закрытии: самая узкая видимая доля проёма. */
     private static final float SEAM = 0.015f;
     private static final float MIN_SCALE = 0.001f;
@@ -89,11 +94,11 @@ final class PortalVisuals {
         set(this.right, duration, new Vector3f(HALF - PILLAR, off, -DEPTH / 2), new Vector3f(PILLAR, HEIGHT, DEPTH));
         set(this.top, duration, new Vector3f(-HALF + PILLAR, INNER_TOP + off, -DEPTH / 2),
             new Vector3f(2 * (HALF - PILLAR), PILLAR, DEPTH));
-        set(this.edges, duration, new Vector3f(0, MODEL_SCALE * EDGE_Y / 2 + off, 0),
-            new Vector3f(MODEL_SCALE * EDGE_X, MODEL_SCALE * EDGE_Y, MODEL_SCALE));
+        set(this.edges, duration, new Vector3f(0, EDGES_CENTER + off, 0),
+            new Vector3f(MODEL_SCALE, MODEL_SCALE, MODEL_SCALE));
         final float g = Math.max((float) tl.ground(t), MIN_SCALE);
         set(this.ground, duration, new Vector3f(0, MODEL_SCALE / 2, 0),
-            new Vector3f(MODEL_SCALE * EDGE_X * g, MODEL_SCALE, MODEL_SCALE * g));
+            new Vector3f(MODEL_SCALE * GROUND_X * g, MODEL_SCALE, MODEL_SCALE * g));
         // Закрытие: поверхность сходится в светящуюся щель, щель стягивается к середине в точку.
         final float hf = (float) tl.surfaceHeight(t);
         float o = (float) tl.surface(t);

@@ -106,6 +106,9 @@ class PlacementTest {
         // Низкий потолок над одним из столбцов.
         final Grid ceiling = new Grid(64).block(10, 66, 8);
         assertFalse(Placement.find(10.3, 64, 5.5, 0f, 3, 0, ceiling).isPresent());
+        // Рама 3,5 блока: блок на высоте 3 тоже мешает, на высоте 4 — нет.
+        assertFalse(Placement.find(10.3, 64, 5.5, 0f, 3, 0, new Grid(64).block(9, 67, 8)).isPresent());
+        assertTrue(Placement.find(10.3, 64, 5.5, 0f, 3, 0, new Grid(64).block(9, 68, 8)).isPresent());
         // В воздухе (опоры нет ни на каком уровне).
         final Grid sky = new Grid(-1000);
         assertFalse(Placement.find(10.3, 64, 5.5, 0f, 3, 3, sky).isPresent());
@@ -115,6 +118,15 @@ class PlacementTest {
             half.hole(9, y, 8);
         }
         assertFalse(Placement.find(10.3, 64, 5.5, 0f, 3, 3, half).isPresent());
+    }
+
+    @Test
+    void frameSizesInSync() {
+        // Поверхность — до перекладины рамы; проём по высоте вмещает раму.
+        assertEquals(3.5, Spot.HEIGHT, 1e-9);
+        assertEquals(Spot.HEIGHT - Spot.PILLAR, Spot.SURFACE_HEIGHT, 1e-9);
+        assertEquals(3.42, Spot.SURFACE_HEIGHT, 1e-9);   // шейдер: H в cp_surface
+        assertTrue(Placement.CLEAR_HEIGHT >= Math.ceil(Spot.HEIGHT));
     }
 
     @Test

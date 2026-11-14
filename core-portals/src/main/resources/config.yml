@@ -1,11 +1,11 @@
-# core-portals: тестовый предмет «Портал (смола)».
+# core-portals: тестовые предметы «Портал» (смола) и «Изумрудный портал» (изумруд).
 # Применить без рестарта: /portals reload  (или /amazake system reload core-portals).
 # Тексты — MiniMessage: https://docs.advntr.dev/minimessage/format.html
 
 prefix: "<dark_gray>[<gradient:#ff2a12:#ff9a1f>Порталы</gradient>]</dark_gray> "
 
 item:
-  # Имя и описание предмета (RESIN_CLUMP с меткой coreportals:portal_item в PDC).
+  # «Портал» из смолы: имя и описание предмета (RESIN_CLUMP с меткой coreportals:portal_item в PDC).
   name: "<!i><gradient:#ff2a12:#ff9a1f>Портал</gradient>"
   lore:
     - "<!i><gray>Застывшая смола древнего разлома."
@@ -20,6 +20,7 @@ item:
 portal:
   # Сколько живёт портал от появления до исчезновения, секунды (минимум 6).
   # Из них ~3 с — открытие и 2 с — закрытие; войти можно, пока он открыт полностью.
+  # Эти ключи — общие: «Изумрудный портал» берёт их, если в разделе emerald нет своих.
   lifetime-seconds: 30
   # На сколько рядов блоков перед игроком ставится портал (1..6).
   distance: 3
@@ -49,12 +50,34 @@ teleport:
   grant-permissions:
     - amazakecore.essentials.warp
 
+# «Изумрудный портал» (EMERALD с меткой coreportals:emerald_portal_item): вертикальное кольцо-воронка ≈ 3 блока
+# в диаметре, центр на 1,8 над землёй. Нужно свободное место 3×4 блока. Остальные настройки portal.* — общие.
+emerald:
+  item:
+    name: "<!i><gradient:#0a7a35:#2bea7f:#b4ffd4:#2bea7f:#0a7a35>Изумрудный портал</gradient>"
+    lore:
+      - "<!i><gray>В глубине камня кружит крошечная бездна со звёздами."
+      - "<!i><gray>ПКМ — открыть портал перед собой."
+    # item_model иконки. Пусто — обычный изумруд (с блеском зачарования).
+    model: ""
+  portal:
+    # Срок жизни (минимум 6 с): ~2 с — открытие, 1,5 с — закрытие.
+    lifetime-seconds: 30
+    # На сколько рядов блоков перед игроком ставится кольцо (1..6).
+    distance: 3
+  # Своё действие при входе. Нет раздела — то же, что teleport выше (по умолчанию warp dungeon1).
+  # teleport:
+  #   run-as: player
+  #   commands: ["warp dungeon2"]
+  #   grant-permissions: [amazakecore.essentials.warp]
+
 effects:
   particles: true
   sounds: true
 
 messages:
-  no-room: "<red>Здесь не открыть портал: нужен свободный проём 2×3 на твёрдой земле в 2–3 блоках перед вами."
+  no-room: "<red>Здесь не открыть портал: нужен свободный проём 2×4 на твёрдой земле в 2–3 блоках перед вами."
+  no-room-emerald: "<red>Здесь не открыть изумрудный портал: нужно свободное место 3×4 над твёрдой землёй в 2–3 блоках перед вами."
   cooldown: "<red>Портал ещё не готов: подождите <yellow><seconds></yellow> с."
   too-many: "<red>У вас уже открыт портал."
   not-owner: "<red>Этот портал открыт не для вас."
@@ -67,4 +90,4 @@ messages:
   player-not-found: "<red>Игрок <white><player></white> не в сети."
   list: "<gold>Порталы (<count>):"
   list-empty: "<gray>Открытых порталов нет."
-  usage: "<gray>/portals give [игрок] [кол-во] | reload | close | list"
+  usage: "<gray>/portals give [игрок] [кол-во] [resin|emerald] | reload | close | list"
