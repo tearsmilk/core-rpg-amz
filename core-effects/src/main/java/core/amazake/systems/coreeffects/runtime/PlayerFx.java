@@ -377,10 +377,6 @@ public final class PlayerFx {
             final int f = (in.isForward() ? 1 : 0) - (in.isBackward() ? 1 : 0);
             final int l = (in.isLeft() ? 1 : 0) - (in.isRight() ? 1 : 0);
             final double[] dir = Disorient.direction(f, l, this.player.getLocation().getYaw(), this.twist);
-            if (this.now % 10 == 0) {
-                this.context.logger().info("DBG input f=" + f + " l=" + l + " yaw=" + this.player.getLocation().getYaw() + " twist=" + this.twist + " dir=" + (dir == null ? "null" : dir[0] + "," + dir[1]) + " v=" + this.player.getVelocity());
-            }
-            if (this.now % 10 == 0 && dir == null) { this.context.logger().info("DBG no-input f=" + f + " l=" + l); }
             if (dir != null) {
                 final Vector v = this.player.getVelocity();
                 final double[] nv = Disorient.blend(v.getX(), v.getZ(), dir, p.disorientSpeed(), p.disorientStrength());
@@ -594,9 +590,10 @@ public final class PlayerFx {
         return e.isAmbient() && !e.hasParticles() && !e.hasIcon() && e.getDuration() <= 80;
     }
 
+    /** Держим ли что-то после конца эффектов (модификаторы проверяются реже — это поиск по атрибутам). */
     private boolean ownAnything() {
         return this.ownDarkness || this.ownBlindness || this.ownNausea || this.phantoms.alive() > 0
-            || !this.overlaySent.isEmpty() || this.hasModifiers();
+            || !this.overlaySent.isEmpty() || (this.now % 100 == 0 && this.hasModifiers());
     }
 
     private boolean hasModifiers() {
