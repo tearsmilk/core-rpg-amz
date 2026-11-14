@@ -2,7 +2,7 @@
 """Снимок продакшена в server/: Nexo, конфиги систем Amazake, MMOCore, MythicLib, MythicHUD (исходники).
 Запуск: python3 ops/pull-prod.py  (доступ к панели даёт прокси сессии; ключи в репо не пишутся).
 Пропускаются кэши, собранные паки и данные игроков."""
-import json, os, subprocess, sys, urllib.parse
+import json, os, time, subprocess, sys, urllib.parse
 from concurrent.futures import ThreadPoolExecutor
 B = "https://mgr.hosting-minecraft.pro/api/client/servers/88635a9b"
 ROOTS = ["/plugins/Nexo", "/plugins/MMOCore", "/plugins/MythicLib", "/plugins/MythicHUD", "/systems"]
@@ -16,8 +16,15 @@ def curl(url, out=None):
     if r.returncode: raise RuntimeError(f"{url}: {r.stderr}")
     return r.stdout
 
+def listdir(d):
+    for i in range(6):  # панель иногда отвечает редиректом/лимитом — повторяем
+        try: return json.loads(curl(B + "/files/list?directory=" + urllib.parse.quote(d)))["data"]
+        except (ValueError, RuntimeError):
+            if i == 5: raise
+            time.sleep(2 * (i + 1))
+
 def walk(d):
-    for f in json.loads(curl(B + "/files/list?directory=" + urllib.parse.quote(d)))["data"]:
+    for f in listdir(d):
         a = f["attributes"]; p = d.rstrip("/") + "/" + a["name"]
         if a["name"] in SKIP_NAMES: continue
         if a["is_file"]: yield p

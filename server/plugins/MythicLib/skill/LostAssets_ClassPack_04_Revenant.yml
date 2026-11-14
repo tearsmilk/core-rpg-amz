@@ -18,7 +18,8 @@ LOSTASSETS_REVENANT_LC:
     cooldown:
       name: 'Перезарядка'
       item: 0
-  source: mythicmobs:lostassets_revenant_lc
+  # RQ fix 2026-11-14: was mythicmobs:lostassets_revenant_lc (MythicMobs is not installed)
+  source: mythiclib:la_revenant_lc
 LOSTASSETS_REVENANT_RC:
   parameters:
     damage:
@@ -39,7 +40,8 @@ LOSTASSETS_REVENANT_RC:
     cooldown:
       name: 'Перезарядка'
       item: 0
-  source: mythicmobs:lostassets_revenant_rc
+  # RQ fix 2026-11-14: was mythicmobs:lostassets_revenant_rc (MythicMobs is not installed)
+  source: mythiclib:la_revenant_rc
 LOSTASSETS_REVENANT_SLC:
   parameters:
     damage:
@@ -60,7 +62,8 @@ LOSTASSETS_REVENANT_SLC:
     cooldown:
       name: 'Перезарядка'
       item: 0
-  source: mythicmobs:lostassets_revenant_slc
+  # RQ fix 2026-11-14: was mythicmobs:lostassets_revenant_slc (MythicMobs is not installed)
+  source: mythiclib:la_revenant_slc
 LOSTASSETS_REVENANT_SRC:
   parameters:
     damage:
@@ -81,4 +84,5 @@ LOSTASSETS_REVENANT_SRC:
     cooldown:
       name: 'Перезарядка'
       item: 0
-  source: mythicmobs:lostassets_revenant_src
+  # RQ fix 2026-11-14: was mythicmobs:lostassets_revenant_src (MythicMobs is not installed)
+  source: mythiclib:la_revenant_src

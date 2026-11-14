@@ -89,3 +89,26 @@ damage_types:
     - PHYSICAL
     DROWNING:
     - PHYSICAL
+
+# RQ fix 2026-11-14: PvP/PvE interaction rules (were absent -> interactionRules = null ->
+# every skill hit / debuffed party members and any player regardless of PvP).
+# Offensive skills never hit yourself or party/guild allies; other players are hit only
+# when PvP is enabled in that world (gamerule pvp). Mobs are always valid targets.
+interaction_rules:
+  enabled: true
+  support_skills_on_mobs: true
+  rules:
+    support:
+      self: true
+      party_member: true
+      guild_ally: true
+      guild_enemy: '!{world_pvp}'
+      party_other: '!{world_pvp}'
+      guild_neutral: true
+    offense:
+      self: false
+      party_member: false
+      guild_ally: false
+      guild_enemy: '{world_pvp}'
+      guild_neutral: '{world_pvp}'
+      party_other: '{world_pvp}'

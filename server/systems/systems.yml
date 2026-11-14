@@ -3,6 +3,7 @@
 # При запуске сервер включает все системы из списка.
 enabled:
   - AmazakeCore
+  - AmazakeTab
   - core-mobs
   - core-portals
   - core-skyrift

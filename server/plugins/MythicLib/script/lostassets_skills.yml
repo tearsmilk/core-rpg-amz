@@ -1,0 +1,172 @@
+##############################################################################
+# LostAssets ClassPack 01 Swordmaster / 04 Revenant -> MythicLib scripts
+# RQ fix 2026-11-14.
+#
+# The 8 MMOItems abilities LOSTASSETS_* (MMOItems/item/sword.yml) used
+# 'source: mythicmobs:lostassets_*', but MythicMobs is disabled on the server
+# (jar renamed to .jar1), so MythicLib could not load them at all ("Could not
+# find skill source 'mythicmobs'") and the weapons had no abilities.
+#
+# These scripts reproduce the DAMAGE part of the MythicMobs pack skills
+# (plugins/MythicMobs/packs/LostAssets_ClassPack_0*/Skills/*.yml): same hit
+# areas, radii, delays and number of hits. What can NOT be reproduced without
+# MythicMobs: the summoned ModelEngine/armor-stand models (slash/sword VFX) and
+# the 3-step left-click combo (MythicMobs auras); here every left click is the
+# first combo step. Visuals are replaced with vanilla particles and sounds.
+# Damage = <modifier.damage> (MMOItems ability 'damage'); MythicMobs added the
+# flat <caster.mmostat.skill_damage>, MythicLib applies the SKILL_DAMAGE stat
+# as a percentage to SKILL damage instead.
+##############################################################################
+
+# common: horizontal look direction (lockpitch=true in the pack)
+la_dir:
+  mechanics:
+    - 'set_double{variable=la_h;value="max(0.001, sqrt((<caster.eye_direction.x>)^2 + (<caster.eye_direction.z>)^2))"}'
+    - 'set_double{variable=la_dx;value="(<caster.eye_direction.x>) / (<la_h>)"}'
+    - 'set_double{variable=la_dz;value="(<caster.eye_direction.z>) / (<la_h>)"}'
+la_hit:
+  conditions:
+    - 'can_target'
+  mechanics:
+    - 'damage{amount="<modifier.damage>";knockback=false;damage_type="SKILL,PHYSICAL"}'
+# like MythicMobs 'setNoDamageTicks{ticks=0}' + damage: every wave hits
+la_hit_ii:
+  conditions:
+    - 'can_target'
+  mechanics:
+    - 'damage{amount="<modifier.damage>";knockback=false;ignore_immunity=true;damage_type="SKILL,PHYSICAL"}'
+la_hit_ii15:
+  conditions:
+    - 'can_target'
+  mechanics:
+    - 'damage{amount="<modifier.damage> * 1.5";knockback=false;ignore_immunity=true;damage_type="SKILL,PHYSICAL"}'
+
+# ============================================================ SWORDMASTER
+# LC: slash, enemies within 4 (h) x 2 (v) blocks of the point 1 block ahead
+la_swordmaster_lc:
+  public: true
+  mechanics:
+    - 'script{name=la_dir}'
+    - 'sound{sound=ENTITY_WITCH_THROW;volume=0.4;pitch=0.5}'
+    - 'sound{sound=ENTITY_PLAYER_ATTACK_SWEEP;volume=0.6;pitch=1.3}'
+    - 'particle{particle=SWEEP_ATTACK;amount=3;x=0.8;y=0.2;z=0.8;target={type=custom;relative=true;source=true;x="<la_dx>";y=1.1;z="<la_dz>"}}'
+    - 'particle{particle=CRIT;amount=40;x=1;y=0.5;z=1;speed=0.1;target={type=custom;relative=true;source=true;x="<la_dx>";y=0.6;z="<la_dz>"}}'
+    - 'script{name=la_swordmaster_lc_at;target_location={type=custom;relative=true;source=true;x="<la_dx>";y=0;z="<la_dz>"}}'
+la_swordmaster_lc_at:
+  mechanics:
+    - 'script{name=la_hit_ii;target={type=nearby_entities;radius=4;height=2;ignore_caster=false}}'
+
+# RC: big slash, 6 (h) x 5 (v) around the point 1 block ahead
+la_swordmaster_rc:
+  public: true
+  mechanics:
+    - 'script{name=la_dir}'
+    - 'sound{sound=ENTITY_GHAST_SHOOT;volume=0.5;pitch=0.5}'
+    - 'sound{sound=ENTITY_PLAYER_ATTACK_SWEEP;volume=1;pitch=0.7}'
+    - 'particle{particle=SOUL_FIRE_FLAME;amount=60;x=1.5;y=0.5;z=1.5;speed=0.1;target={type=custom;relative=true;source=true;x="<la_dx>";y=0.6;z="<la_dz>"}}'
+    - 'particle{particle=SMOKE;amount=60;x=1.5;y=0.5;z=1.5;target={type=custom;relative=true;source=true;x="<la_dx>";y=0.6;z="<la_dz>"}}'
+    - 'script{name=la_swordmaster_rc_at;target_location={type=custom;relative=true;source=true;x="<la_dx>";y=0;z="<la_dz>"}}'
+la_swordmaster_rc_at:
+  mechanics:
+    - 'script{name=la_hit_ii;target={type=nearby_entities;radius=6;height=5;ignore_caster=false}}'
+
+# SLC: flying slash 15 blocks forward (2.5 blocks/tick), hits everything within 4 blocks of it
+la_swordmaster_slc:
+  public: true
+  mechanics:
+    - 'script{name=la_dir}'
+    - 'sound{sound=ENTITY_GHAST_SHOOT;volume=0.5;pitch=0.5}'
+    - 'delay{amount=3}'
+    - 'sound{sound=ENTITY_WITHER_SHOOT;volume=0.4;pitch=0.5}'
+    - 'projectile{speed=50;life_span=6;size=0.5;step=1;offense=true;hits=1;stop_on_block=true;ignore_passable=true;source={type=custom;relative=true;source=true;x=0;y=1;z=0};target={type=custom;relative=true;source=true;x="<la_dx>";y=1;z="<la_dz>"};tick=la_swordmaster_slc_tick;hit_block=la_swordmaster_slc_tick}'
+la_swordmaster_slc_tick:
+  mechanics:
+    - 'particle{particle=SWEEP_ATTACK;amount=1}'
+    - 'particle{particle=SOUL_FIRE_FLAME;amount=4;x=0.5;y=0.3;z=0.5;speed=0.02}'
+    - 'script{name=la_hit;target={type=nearby_entities;radius=4;ignore_caster=false}}'
+
+# SRC: sword rain 5 blocks ahead: 4 waves (every 6 ticks), radius 7
+la_swordmaster_src:
+  public: true
+  mechanics:
+    - 'script{name=la_dir}'
+    - 'script{name=la_swordmaster_src_at;target_location={type=custom;relative=true;source=true;x="<la_dx> * 5";y=0;z="<la_dz> * 5"}}'
+la_swordmaster_src_at:
+  mechanics:
+    - 'sound{sound=ENTITY_BLAZE_HURT;volume=0.4;pitch=0.5}'
+    - 'script{name=la_swordmaster_src_wave;counter=la_sm_i;iterations=4}'
+la_swordmaster_src_wave:
+  mechanics:
+    - 'delay{amount="(<la_sm_i> - 1) * 6 + 2"}'
+    - 'sound{sound=ENTITY_GHAST_SHOOT;volume=0.4;pitch=0.5}'
+    - 'particle{particle=CRIT;amount=30;x=3;y=1.5;z=3;target={type=custom;relative=true;x=0;y=0.6;z=0}}'
+    - 'particle{particle=SOUL_FIRE_FLAME;amount=30;x=3;y=1.5;z=3;speed=0.2;target={type=custom;relative=true;x=0;y=0.6;z=0}}'
+    - 'particle{particle=SMOKE;amount=20;x=3;y=1.5;z=3;target={type=custom;relative=true;x=0;y=0.6;z=0}}'
+    - 'script{name=la_hit_ii;target={type=nearby_entities;radius=7;ignore_caster=false}}'
+
+# ============================================================ REVENANT
+# LC: claw, 4 (h) x 2 (v) around the point 1 block ahead, hits after 2 ticks
+la_revenant_lc:
+  public: true
+  mechanics:
+    - 'script{name=la_dir}'
+    - 'sound{sound=ENTITY_WITHER_SHOOT;volume=0.4;pitch=2}'
+    - 'particle{particle=WITCH;amount=40;x=1;y=0.5;z=1;target={type=custom;relative=true;source=true;x="<la_dx>";y=0.6;z="<la_dz>"}}'
+    - 'script{name=la_revenant_lc_at;target_location={type=custom;relative=true;source=true;x="<la_dx>";y=0;z="<la_dz>"}}'
+la_revenant_lc_at:
+  mechanics:
+    - 'delay{amount=2}'
+    - 'script{name=la_hit_ii;target={type=nearby_entities;radius=4;height=2;ignore_caster=false}}'
+
+# RC: after 10 ticks a soul wave flies 15 blocks forward, hits everything within 2.5 blocks of it
+la_revenant_rc:
+  public: true
+  mechanics:
+    - 'script{name=la_dir}'
+    - 'sound{sound=ENTITY_IRON_GOLEM_DEATH;volume=0.4;pitch=0.5}'
+    - 'delay{amount=10}'
+    - 'sound{sound=ENTITY_WITHER_SHOOT;volume=0.4;pitch=0.5}'
+    - 'projectile{speed=50;life_span=6;size=0.5;step=1;offense=true;hits=1;stop_on_block=true;ignore_passable=true;source={type=custom;relative=true;source=true;x=0;y=1;z=0};target={type=custom;relative=true;source=true;x="<la_dx>";y=1;z="<la_dz>"};tick=la_revenant_rc_tick;hit_block=la_revenant_rc_tick}'
+la_revenant_rc_tick:
+  mechanics:
+    - 'particle{particle=WITCH;amount=8;x=0.6;y=0.4;z=0.6}'
+    - 'particle{particle=SOUL;amount=2;x=0.3;y=0.3;z=0.3;speed=0.02}'
+    - 'script{name=la_hit;target={type=nearby_entities;radius=2.5;height=1;ignore_caster=false}}'
+
+# SLC: 5 blocks ahead, after 12 ticks 5 hits (every tick), radius 7
+la_revenant_slc:
+  public: true
+  mechanics:
+    - 'script{name=la_dir}'
+    - 'sound{sound=ENTITY_IRON_GOLEM_DEATH;volume=0.4;pitch=0.5}'
+    - 'script{name=la_revenant_slc_at;target_location={type=custom;relative=true;source=true;x="<la_dx> * 5";y=0;z="<la_dz> * 5"}}'
+la_revenant_slc_at:
+  mechanics:
+    - 'particle{particle=WITCH;amount=30;x=1.5;y=0.2;z=1.5;target={type=custom;relative=true;x=0;y=0.3;z=0}}'
+    - 'script{name=la_revenant_slc_wave;counter=la_rv_i;iterations=5}'
+la_revenant_slc_wave:
+  mechanics:
+    - 'delay{amount="11 + <la_rv_i>"}'
+    - 'sound{sound=ENTITY_WITHER_SHOOT;volume=0.3;pitch=1.5}'
+    - 'particle{particle=WITCH;amount=25;x=3;y=1;z=3;target={type=custom;relative=true;x=0;y=0.6;z=0}}'
+    - 'script{name=la_hit_ii;target={type=nearby_entities;radius=7;ignore_caster=false}}'
+
+# SRC: 5 blocks ahead, after 44 ticks one blast, radius 10
+la_revenant_src:
+  public: true
+  mechanics:
+    - 'script{name=la_dir}'
+    - 'sound{sound=ENTITY_IRON_GOLEM_DEATH;volume=0.4;pitch=0.5}'
+    - 'sound{sound=ENTITY_WITHER_SPAWN;volume=0.3;pitch=1}'
+    - 'script{name=la_revenant_src_at;target_location={type=custom;relative=true;source=true;x="<la_dx> * 5";y=0;z="<la_dz> * 5"}}'
+la_revenant_src_at:
+  mechanics:
+    - 'script{name=la_revenant_src_fx;counter=la_rs_i;iterations=11}'
+    - 'delay{amount=44}'
+    - 'sound{sound=ENTITY_ZOMBIE_VILLAGER_CURE;volume=0.6;pitch=0.5}'
+    - 'particle{particle=SOUL_FIRE_FLAME;amount=120;x=5;y=0.5;z=5;speed=0.05;target={type=custom;relative=true;x=0;y=0.5;z=0}}'
+    - 'script{name=la_hit_ii;target={type=nearby_entities;radius=10;ignore_caster=false}}'
+la_revenant_src_fx:
+  mechanics:
+    - 'delay{amount="(<la_rs_i> - 1) * 4"}'
+    - 'particle{particle=WITCH;amount=20;x=3;y=0.2;z=3;target={type=custom;relative=true;x=0;y=0.3;z=0}}'

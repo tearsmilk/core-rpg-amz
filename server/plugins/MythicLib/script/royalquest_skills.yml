@@ -17,7 +17,13 @@ rq_light_dash_tick:
     - 'set_velocity{vector=rq_ld_dir;target=caster}'
     - 'particle{particle=LARGE_SMOKE;amount=1;target_location={type=caster}}'
     - 'sound{sound=ENTITY_ENDER_DRAGON_FLAP;volume=1;pitch=2}'
-    - 'script{name=rq_light_dash_hit;target={type=nearby_entities;radius=1.5}}'
+    - 'script{name=rq_light_dash_at;target_location={type=caster}}'
+
+# RQ fix 2026-11-14: nearby_entities without target_location was centred on the
+# cast origin (dash START point) -> nobody along the dash was hit.
+rq_light_dash_at:
+  mechanics:
+    - 'script{name=rq_light_dash_hit;target={type=nearby_entities;radius=1.5;ignore_caster=false}}'
 
 rq_light_dash_hit:
   conditions:
@@ -42,7 +48,7 @@ rq_light_dash_hit:
 rq_ice_spikes:
   public: true
   mechanics:
-    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_ice_spikes_ent;hit_block=rq_ice_spikes_at}'
+    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_ice_spikes_ent;hit_block=rq_ice_spikes_at}'
 rq_ice_spikes_ent:
   mechanics:
     - 'script{name=rq_ice_spikes_at;target_location={type=target;position=FEET}}'
@@ -51,7 +57,7 @@ rq_ice_spikes_at:
     - 'sound{sound=BLOCK_GLASS_BREAK;volume=1.5;pitch=0.6}'
     - 'sound{sound=ENTITY_PLAYER_HURT_FREEZE;volume=1;pitch=0.8}'
     - 'script{name=rq_ice_spikes_fx;counter=rq_is_i;iterations=10}'
-    - 'script{name=rq_ice_spikes_hit;target={type=nearby_entities;radius=3}}'
+    - 'script{name=rq_ice_spikes_hit;target={type=nearby_entities;radius=3;ignore_caster=false}}'
 rq_ice_spikes_fx:
   mechanics:
     - 'particle{particle=SNOWFLAKE;amount=10;x=0.1;y=0.7;z=0.1;target={type=custom;relative=true;x="(random() * 2 - 1) * 2.5";y=0.8;z="(random() * 2 - 1) * 2.5"}}'
@@ -67,7 +73,7 @@ rq_ice_spikes_hit:
 rq_lightning_beam:
   public: true
   mechanics:
-    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_lightning_beam_ent;hit_block=rq_lightning_beam_at}'
+    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_lightning_beam_ent;hit_block=rq_lightning_beam_at}'
 rq_lightning_beam_ent:
   mechanics:
     - 'script{name=rq_lightning_beam_at;target_location={type=target;position=FEET}}'
@@ -78,7 +84,7 @@ rq_lightning_beam_at:
     - 'particle{particle=ELECTRIC_SPARK;amount=80;x=0.12;y=5;z=0.12;target={type=custom;relative=true;x=0;y=5;z=0}}'
     - 'particle{particle=END_ROD;amount=30;x=0.08;y=5;z=0.08;target={type=custom;relative=true;x=0;y=5;z=0}}'
     - 'particle{particle=FIREWORK;amount=40;speed=0.2;target={type=custom;relative=true;x=0;y=0.3;z=0}}'
-    - 'script{name=rq_lightning_beam_hit;target={type=nearby_entities;radius="<modifier.radius>"}}'
+    - 'script{name=rq_lightning_beam_hit;target={type=nearby_entities;radius="<modifier.radius>";ignore_caster=false}}'
 rq_lightning_beam_hit:
   conditions:
     - 'can_target'
@@ -89,7 +95,7 @@ rq_lightning_beam_hit:
 rq_freeze:
   public: true
   mechanics:
-    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_freeze_ent;hit_block=rq_freeze_at}'
+    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_freeze_ent;hit_block=rq_freeze_at}'
 rq_freeze_ent:
   mechanics:
     - 'script{name=rq_freeze_at;target_location={type=target;position=FEET}}'
@@ -99,7 +105,7 @@ rq_freeze_at:
     - 'sound{sound=ENTITY_PLAYER_HURT_FREEZE;volume=1;pitch=1.2}'
     - 'particle{particle=SNOWFLAKE;amount=70;x=2;y=0.4;z=2;speed=0.02;target={type=custom;relative=true;x=0;y=0.5;z=0}}'
     - 'particle{particle=ITEM_SNOWBALL;amount=30;x=2;y=0.3;z=2;target={type=custom;relative=true;x=0;y=0.4;z=0}}'
-    - 'script{name=rq_freeze_hit;target={type=nearby_entities;radius="<modifier.radius>"}}'
+    - 'script{name=rq_freeze_hit;target={type=nearby_entities;radius="<modifier.radius>";ignore_caster=false}}'
 rq_freeze_hit:
   conditions:
     - 'can_target'
@@ -111,7 +117,7 @@ rq_freeze_hit:
 rq_arcane_hail:
   public: true
   mechanics:
-    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_arcane_hail_ent;hit_block=rq_arcane_hail_at}'
+    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_arcane_hail_ent;hit_block=rq_arcane_hail_at}'
 rq_arcane_hail_ent:
   mechanics:
     - 'script{name=rq_arcane_hail_at;target_location={type=target;position=FEET}}'
@@ -129,7 +135,7 @@ rq_arcane_hail_strike:
     - 'particle{particle=WITCH;amount=12;x=0.1;y=0.1;z=0.1;speed=0.1}'
     - 'particle{particle=SMOKE;amount=6;speed=0.05}'
     - 'sound{sound=ENTITY_ENDERMAN_HURT;volume=0.5;pitch=2}'
-    - 'script{name=rq_arcane_hail_hit;target={type=nearby_entities;radius=2}}'
+    - 'script{name=rq_arcane_hail_hit;target={type=nearby_entities;radius=2;ignore_caster=false}}'
 rq_arcane_hail_hit:
   conditions:
     - 'can_target'
@@ -140,7 +146,7 @@ rq_arcane_hail_hit:
 rq_black_hole:
   public: true
   mechanics:
-    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_black_hole_ent;hit_block=rq_black_hole_at}'
+    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_black_hole_ent;hit_block=rq_black_hole_at}'
 rq_black_hole_ent:
   mechanics:
     - 'script{name=rq_black_hole_at;target_location={type=target;position=FEET}}'
@@ -155,7 +161,7 @@ rq_black_hole_tick:
     - 'particle{particle=PORTAL;amount=25;x=1;y=0.6;z=1;speed=0.6;target={type=custom;relative=true;x=0;y=0.8;z=0}}'
     - 'particle{particle=SQUID_INK;amount=3;x=0.15;y=0.15;z=0.15;target={type=custom;relative=true;x=0;y=0.8;z=0}}'
     - 'copy_vector{variable=rq_bh_c;value=target_location}'
-    - 'script{name=rq_black_hole_pull;target={type=nearby_entities;radius="<modifier.radius>"}}'
+    - 'script{name=rq_black_hole_pull;target={type=nearby_entities;radius="<modifier.radius>";ignore_caster=false}}'
 rq_black_hole_pull:
   conditions:
     - 'can_target'
@@ -167,7 +173,7 @@ rq_black_hole_pull:
 rq_contamination:
   public: true
   mechanics:
-    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_contamination_ent;hit_block=rq_contamination_at}'
+    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_contamination_ent;hit_block=rq_contamination_at}'
 rq_contamination_ent:
   mechanics:
     - 'script{name=rq_contamination_at;target_location={type=target;position=FEET}}'
@@ -181,7 +187,7 @@ rq_contamination_tick:
     - 'particle{particle=DUST;amount=60;x=2.5;y=0.2;z=2.5;color={red=130;green=20;blue=170};target={type=custom;relative=true;x=0;y=0.3;z=0}}'
     - 'particle{particle=WITCH;amount=15;x=2;y=0.3;z=2;target={type=custom;relative=true;x=0;y=0.3;z=0}}'
     - 'sound{sound=BLOCK_BREWING_STAND_BREW;volume=0.6;pitch=0.7}'
-    - 'script{name=rq_contamination_hit;target={type=nearby_entities;radius=5}}'
+    - 'script{name=rq_contamination_hit;target={type=nearby_entities;radius=5;ignore_caster=false}}'
 rq_contamination_hit:
   conditions:
     - 'can_target'
@@ -192,7 +198,7 @@ rq_contamination_hit:
 rq_corrosion:
   public: true
   mechanics:
-    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_corrosion_ent;hit_block=rq_corrosion_at}'
+    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_corrosion_ent;hit_block=rq_corrosion_at}'
 rq_corrosion_ent:
   mechanics:
     - 'script{name=rq_corrosion_at;target_location={type=target;position=FEET}}'
@@ -202,7 +208,7 @@ rq_corrosion_at:
     - 'sound{sound=ENTITY_SLIME_SQUISH;volume=1;pitch=0.6}'
     - 'particle{particle=DUST;amount=70;x=2;y=0.3;z=2;color={red=90;green=200;blue=40};target={type=custom;relative=true;x=0;y=0.3;z=0}}'
     - 'particle{particle=ITEM_SLIME;amount=30;x=2;y=0.3;z=2;target={type=custom;relative=true;x=0;y=0.3;z=0}}'
-    - 'script{name=rq_corrosion_hit;target={type=nearby_entities;radius="<modifier.radius>"}}'
+    - 'script{name=rq_corrosion_hit;target={type=nearby_entities;radius="<modifier.radius>";ignore_caster=false}}'
 rq_corrosion_hit:
   conditions:
     - 'can_target'
@@ -213,7 +219,7 @@ rq_corrosion_hit:
 rq_corrupt:
   public: true
   mechanics:
-    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_corrupt_ent;hit_block=rq_corrupt_at}'
+    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_corrupt_ent;hit_block=rq_corrupt_at}'
 rq_corrupt_ent:
   mechanics:
     - 'script{name=rq_corrupt_at;target_location={type=target;position=FEET}}'
@@ -222,7 +228,7 @@ rq_corrupt_at:
     - 'sound{sound=ENTITY_WITHER_AMBIENT;volume=0.7;pitch=1.5}'
     - 'particle{particle=DUST;amount=50;x=1.3;y=0.3;z=1.3;color={red=110;green=0;blue=140};target={type=custom;relative=true;x=0;y=0.3;z=0}}'
     - 'particle{particle=SQUID_INK;amount=10;x=1;y=0.2;z=1;target={type=custom;relative=true;x=0;y=0.3;z=0}}'
-    - 'script{name=rq_corrupt_hit;target={type=nearby_entities;radius="<modifier.radius>"}}'
+    - 'script{name=rq_corrupt_hit;target={type=nearby_entities;radius="<modifier.radius>";ignore_caster=false}}'
 rq_corrupt_hit:
   conditions:
     - 'can_target'
@@ -234,7 +240,7 @@ rq_corrupt_hit:
 rq_life_ender:
   public: true
   mechanics:
-    - 'ray_trace{range=30;size=0.35;offense=true;ignore_passable=true;hit_entity=rq_life_ender_ent;hit_block=rq_life_ender_at}'
+    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_life_ender_ent;hit_block=rq_life_ender_at}'
 rq_life_ender_ent:
   mechanics:
     - 'script{name=rq_life_ender_at;target_location={type=target;position=FEET}}'
@@ -252,7 +258,7 @@ rq_life_ender_impact:
     - 'particle{particle=EXPLOSION_EMITTER;amount=1}'
     - 'particle{particle=FLAME;amount=60;x=1.5;y=0.3;z=1.5;speed=0.05}'
     - 'copy_vector{variable=rq_le_c;value=target_location}'
-    - 'script{name=rq_life_ender_hit;target={type=nearby_entities;radius="<modifier.radius>"}}'
+    - 'script{name=rq_life_ender_hit;target={type=nearby_entities;radius="<modifier.radius>";ignore_caster=false}}'
 rq_life_ender_hit:
   conditions:
     - 'can_target'
@@ -271,7 +277,7 @@ rq_tnt_throw:
   mechanics:
     - 'sound{sound=ENTITY_TNT_PRIMED;volume=1;pitch=1.3}'
     - 'sound{sound=ENTITY_SNOWBALL_THROW;volume=1;pitch=0.6}'
-    - 'projectile{speed=20;life_span=24;size=0.4;offense=true;hits=1;stop_on_block=true;ignore_passable=true;tick=rq_tnt_tick;hit_entity=rq_tnt_ent;hit_block=rq_tnt_boom}'
+    - 'projectile{speed=20;life_span=25;size=0.4;offense=true;hits=1;stop_on_block=true;ignore_passable=true;source={type=custom;relative=true;source=true;x="-0.9 * (<caster.eye_direction.x>)";y="1.62 - 0.9 * (<caster.eye_direction.y>)";z="-0.9 * (<caster.eye_direction.z>)"};target={type=custom;relative=true;source=true;x="<caster.eye_direction.x>";y="1.62 + (<caster.eye_direction.y>)";z="<caster.eye_direction.z>"};tick=rq_tnt_tick;hit_entity=rq_tnt_ent;hit_block=rq_tnt_boom}'
 rq_tnt_tick:
   mechanics:
     - 'particle{particle=SMOKE;amount=2;x=0.05;y=0.05;z=0.05}'
@@ -286,7 +292,7 @@ rq_tnt_boom:
     - 'particle{particle=EXPLOSION;amount=8;x=1.2;y=0.6;z=1.2}'
     - 'particle{particle=LARGE_SMOKE;amount=25;x=1.2;y=0.6;z=1.2;speed=0.05}'
     - 'particle{particle=FLAME;amount=30;x=1;y=0.5;z=1;speed=0.08}'
-    - 'script{name=rq_tnt_hit;target={type=nearby_entities;radius="<modifier.radius>"}}'
+    - 'script{name=rq_tnt_hit;target={type=nearby_entities;radius="<modifier.radius>";ignore_caster=false}}'
 rq_tnt_hit:
   conditions:
     - 'can_target'
@@ -326,3 +332,117 @@ rq_blink:
 rq_blink_wall:
   mechanics:
     - 'set_double{variable=rq_bl_d;value="min(<rq_bl_d>, ((<target_location.x>) - (<caster.location.x>)) * (<rq_bl_dx>) + ((<target_location.z>) - (<caster.location.z>)) * (<rq_bl_dz>))"}'
+
+# ---------------------------------------------------------------- POWER_MARK (Метка силы)
+# RQ fix 2026-11-14: replaces default:POWER_MARK. The built-in skill picks its
+# spot with a BLOCK-ONLY ray, so aiming at a mob put the mark on the ground
+# behind it and it never charged. Here the mark is put ON the enemy under the
+# crosshair: it stores <modifier.ratio>% of all damage that enemy takes during
+# <modifier.duration> s (health before - health after), then explodes: the
+# stored damage + stun (<modifier.stun> s) on enemies within 5 blocks of it.
+# Aiming at a block marks the nearest valid enemy within 2 blocks of that spot.
+rq_power_mark:
+  public: true
+  mechanics:
+    - 'set_double{variable=rq_pm_done;value=0}'
+    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_power_mark_ent;hit_block=rq_power_mark_blk}'
+rq_power_mark_blk:
+  mechanics:
+    - 'sound{sound=BLOCK_END_PORTAL_FRAME_FILL;volume=1;pitch=1.5}'
+    - 'script{name=rq_power_mark_pick;target={type=nearby_entities;radius=2;ignore_caster=false}}'
+# only the first valid enemy is marked (rq_pm_done guards the shared variables)
+rq_power_mark_pick:
+  conditions:
+    - 'can_target'
+    - 'boolean{formula="<rq_pm_done> < 1"}'
+  mechanics:
+    - 'script{name=rq_power_mark_ent}'
+rq_power_mark_ent:
+  mechanics:
+    - 'set_double{variable=rq_pm_done;value=1}'
+    - 'set_double{variable=rq_pm_h0;value="<target.health>"}'
+    - 'sound{sound=BLOCK_END_PORTAL_FRAME_FILL;volume=2;pitch=1}'
+    - 'script{name=rq_power_mark_tick;counter=rq_pm_i;iterations="<modifier.duration> * 5"}'
+    - 'delay{amount="<modifier.duration> * 20"}'
+    - 'script{name=rq_power_mark_boom;target_location={type=target;position=FEET}}'
+rq_power_mark_tick:
+  mechanics:
+    - 'delay{amount="(<rq_pm_i> - 1) * 4"}'
+    - 'particle{particle=WITCH;amount=6;x=0.6;y=0.05;z=0.6;target={type=target;position=FEET}}'
+    - 'sound{sound=BLOCK_NOTE_BLOCK_PLING;volume=0.4;pitch=1.6}'
+rq_power_mark_boom:
+  mechanics:
+    - 'set_double{variable=rq_pm_acc;value="max(0, (<rq_pm_h0>) - (<target.health>)) * (<modifier.ratio>) / 100"}'
+    - 'sound{sound=ENTITY_GENERIC_EXPLODE;volume=2;pitch=0.6}'
+    - 'particle{particle=EXPLOSION;amount=16;x=2;y=1;z=2;target={type=custom;relative=true;x=0;y=1;z=0}}'
+    - 'particle{particle=WITCH;amount=60;x=2.5;y=0.2;z=2.5;speed=0.3;target={type=custom;relative=true;x=0;y=0.3;z=0}}'
+    - 'script{name=rq_power_mark_hit;target={type=nearby_entities;radius=5;ignore_caster=false}}'
+rq_power_mark_hit:
+  conditions:
+    - 'can_target'
+  mechanics:
+    - 'potion{effect=SLOWNESS;level=10;ticks="<modifier.stun> * 20";particles=false}'
+    - 'script{name=rq_power_mark_dmg}'
+rq_power_mark_dmg:
+  conditions:
+    - 'boolean{formula="<rq_pm_acc> > 0.01"}'
+  mechanics:
+    - 'damage{amount="<rq_pm_acc>";knockback=false;ignore_immunity=true}'
+
+# ---------------------------------------------------------------- SNOWMAN_TURRET (Снеговик-турель)
+# RQ fix 2026-11-14: replaces default:SNOWMAN_TURRET. The built-in skill
+#  - put the turret on the block BEHIND the aimed enemy (block-only ray) and did
+#    not cast at all when aiming at the sky;
+#  - set <damage> on EVERY entity its vanilla snowballs hit: a snowball that
+#    missed the enemy flew on and hit the caster (measured: caster -9.5 HP) or
+#    allies, ignoring PvP / party rules.
+# Here the turret stands 2 blocks in front of the aimed enemy (or on the aimed
+# block) and, once per second, throws a MythicLib snowball projectile at one valid
+# enemy within <modifier.radius>; the projectile only collides with valid
+# enemies (can_target), so the caster / party members are never hit.
+# Lasts <modifier.duration> s (max 15 s, as built-in). The snowman is drawn
+# with particles (a real Snow Golem would need console commands).
+rq_snowman_turret:
+  public: true
+  mechanics:
+    - 'ray_trace{range=50;size=0.35;offense=true;neutral=false;ignore_passable=true;hit_entity=rq_turret_ent;hit_block=rq_turret_at}'
+rq_turret_ent:
+  mechanics:
+    - 'set_double{variable=rq_tu_h;value="max(0.001, sqrt(((<caster.location.x>) - (<target.location.x>))^2 + ((<caster.location.z>) - (<target.location.z>))^2))"}'
+    - 'set_double{variable=rq_tu_o;value="min(2, (<rq_tu_h>) * 0.5) / (<rq_tu_h>)"}'
+    - 'script{name=rq_turret_at;target_location={type=custom;relative=false;x="(<target.location.x>) + ((<caster.location.x>) - (<target.location.x>)) * (<rq_tu_o>)";y="<target.location.y>";z="(<target.location.z>) + ((<caster.location.z>) - (<target.location.z>)) * (<rq_tu_o>)"}}'
+rq_turret_at:
+  mechanics:
+    - 'sound{sound=BLOCK_SNOW_PLACE;volume=1.5;pitch=0.8}'
+    - 'sound{sound=ENTITY_SNOW_GOLEM_AMBIENT;volume=1;pitch=1}'
+    - 'script{name=rq_turret_fx;counter=rq_tu_j;iterations="min(<modifier.duration> * 20, 300) / 10"}'
+    - 'script{name=rq_turret_tick;counter=rq_tu_i;iterations="min(<modifier.duration> * 20, 300) / 20"}'
+rq_turret_fx:
+  mechanics:
+    - 'delay{amount="(<rq_tu_j> - 1) * 10"}'
+    - 'particle{particle=DUST;amount=14;x=0.22;y=0.22;z=0.22;color={red=245;green=250;blue=255};target={type=custom;relative=true;x=0;y=0.45;z=0}}'
+    - 'particle{particle=DUST;amount=10;x=0.16;y=0.16;z=0.16;color={red=245;green=250;blue=255};target={type=custom;relative=true;x=0;y=1.05;z=0}}'
+    - 'particle{particle=DUST;amount=3;x=0.05;y=0.05;z=0.05;color={red=230;green=120;blue=20};target={type=custom;relative=true;x=0;y=1.5;z=0}}'
+    - 'particle{particle=SNOWFLAKE;amount=3;x=0.4;y=0.6;z=0.4;target={type=custom;relative=true;x=0;y=0.8;z=0}}'
+rq_turret_tick:
+  mechanics:
+    - 'delay{amount="(<rq_tu_i> - 1) * 20 + 5"}'
+    - 'set_double{variable=rq_tu_shot;value=0}'
+    - 'script{name=rq_turret_aim;target={type=nearby_entities;radius="<modifier.radius>";ignore_caster=false}}'
+rq_turret_aim:
+  conditions:
+    - 'can_target'
+    - 'boolean{formula="<rq_tu_shot> < 1"}'
+  mechanics:
+    - 'set_double{variable=rq_tu_shot;value=1}'
+    - 'sound{sound=ENTITY_SNOWBALL_THROW;volume=1;pitch=1.3}'
+    - 'projectile{speed=26;life_span=20;size=0.3;offense=true;hits=1;stop_on_block=true;ignore_passable=true;source={type=custom;relative=true;x=0;y=1.3;z=0};target={type=target;position=BODY};tick=rq_turret_trail;hit_entity=rq_turret_hit;hit_block=rq_turret_trail}'
+rq_turret_trail:
+  mechanics:
+    - 'particle{particle=ITEM_SNOWBALL;amount=1}'
+rq_turret_hit:
+  conditions:
+    - 'can_target'
+  mechanics:
+    - 'particle{particle=ITEM_SNOWBALL;amount=8;x=0.2;y=0.2;z=0.2;target={type=target;position=BODY}}'
+    - 'damage{amount="<modifier.damage>";knockback=false;damage_type="SKILL,PROJECTILE"}'
