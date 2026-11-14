@@ -72,9 +72,9 @@ final class Phantoms {
             final Vector to = eye.toVector().subtract(at.toVector());
             to.setY(0);
             final double dist = to.length();
-            if (now >= g.dieAt() || dist < 1.6) {
+            if (now >= g.dieAt() || dist < s.vanishDistance()) {
                 it.remove();
-                this.vanish(e, s.sounds() && dist < 1.6);
+                this.vanish(e, s.sounds() && dist < s.vanishDistance());
                 continue;
             }
             final float yaw = (float) Math.toDegrees(Math.atan2(-to.getX(), to.getZ()));
@@ -101,7 +101,8 @@ final class Phantoms {
         }
         if (now >= this.nextSpawn) {
             this.nextSpawn = now + 20L * s.intervalSeconds().pick(ThreadLocalRandom.current());
-            if (this.ghosts.size() < s.maxAlive()) {
+            final int burst = s.burst().pick(ThreadLocalRandom.current());
+            for (int i = 0; i < burst && this.ghosts.size() < s.maxAlive(); i++) {
                 this.spawn(now, s);
             }
         }

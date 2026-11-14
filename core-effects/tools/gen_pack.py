@@ -72,7 +72,7 @@ def finish(rgb, alpha):
 def vignette():
     u, v = grid()
     r = frame_r(u, v)
-    a = smoothstep(0.45, 1.05, r) * 0.62
+    a = smoothstep(0.82, 1.1, r) * 0.55
     return finish((np.zeros_like(u),) * 3, a)
 
 
@@ -81,34 +81,22 @@ def panic():
     r = frame_r(u, v)
     n = smooth_noise(18, 5, 7)
     veins = np.abs(smooth_noise(10, 4, 8) - 0.5)
-    vein = smoothstep(0.05, 0.0, veins) * smoothstep(0.35, 0.9, r)
-    a = smoothstep(0.25, 0.95, r + (n - 0.5) * 0.25) * 0.72 + vein * 0.25
+    vein = smoothstep(0.05, 0.0, veins) * smoothstep(0.9, 1.05, r)
+    a = smoothstep(0.9, 1.12, r + (n - 0.5) * 0.12) * 0.68 + vein * 0.2
     col = (14 + 30 * vein, 0 * u, 22 + 40 * vein)
     return finish(col, a)
 
 
 def blood():
     u, v = grid()
-    r = frame_r(u, v)
+    # сверху полоса тоньше (кровь прижата к верхнему краю), по бокам и снизу — как у остальных
+    vs = np.where(v < 0, v * 1.12, v)
+    r = frame_r(u, vs)
     n = smooth_noise(14, 5, 3)
-    edge = smoothstep(0.62, 1.08, r + (n - 0.5) * 0.45)
-    # капли/потёки сверху: столбики разной длины от верхнего края экрана (v ≈ −0.47) вниз
-    drips = np.zeros_like(u)
-    cols = rng.choice(W, 34, replace=False)
-    for c in cols:
-        length = rng.uniform(0.05, 0.32)
-        width = rng.uniform(1.5, 4.5) / W * 2
-        x0 = (c + 0.5) / W * 2 - 1
-        top = -0.47 - 0.1
-        bottom = -0.47 + length
-        d = np.exp(-((u - x0) / width) ** 2)
-        body = d * smoothstep(top - 0.02, top, v) * smoothstep(bottom + 0.02, bottom - 0.01, v)
-        bulb = np.exp(-(((u - x0) / (width * 1.6)) ** 2 + ((v - bottom) / (width * 2.2)) ** 2))
-        drips = np.maximum(drips, np.maximum(body, bulb))
-    drips *= smoothstep(-0.2, -0.45, v) * 0 + 1
-    a = np.maximum(edge * 0.78, drips * 0.85)
+    edge = smoothstep(0.88, 1.12, r + (n - 0.5) * 0.22)
+    a = edge * 0.8
     shade = 0.75 + 0.5 * n
-    col = (110 * shade + 40 * drips, 0 * u, 6 * shade)
+    col = (110 * shade, 0 * u, 6 * shade)
     return finish(col, a)
 
 
@@ -116,7 +104,7 @@ def heat():
     u, v = grid()
     r = frame_r(u, v)
     n = smooth_noise(12, 4, 11)
-    a = smoothstep(0.62, 1.1, r + (n - 0.5) * 0.35) * 0.5
+    a = smoothstep(0.88, 1.12, r + (n - 0.5) * 0.2) * 0.45
     col = (255 * np.ones_like(u), 110 + 60 * n, 20 + 0 * u)
     return finish(col, a)
 
@@ -125,8 +113,8 @@ def curse():
     u, v = grid()
     r = frame_r(u, v)
     n = smooth_noise(9, 5, 21)
-    wisps = smoothstep(0.55, 0.75, n) * smoothstep(0.6, 1.0, r)
-    a = np.maximum(smoothstep(0.7, 1.15, r) * 0.45, wisps * 0.45)
+    wisps = smoothstep(0.55, 0.75, n) * smoothstep(0.9, 1.06, r)
+    a = np.maximum(smoothstep(0.9, 1.15, r) * 0.42, wisps * 0.4)
     col = (80 + 60 * wisps, 0 * u, 130 + 60 * wisps)
     return finish(col, a)
 

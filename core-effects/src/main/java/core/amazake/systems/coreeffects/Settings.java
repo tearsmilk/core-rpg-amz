@@ -51,7 +51,8 @@ public record Settings(
     }
 
     public record Phantoms(boolean enabled, Range intervalSeconds, int maxAlive, Range lifetimeSeconds,
-                           Range distance, double approachSpeed, List<String> types, boolean sounds) {
+                           Range distance, double approachSpeed, List<String> types, boolean sounds, Range burst,
+                           double vanishDistance) {
     }
 
     public record Warmth(double heal, int healIntervalTicks, int deadlineTicks, List<Integer> warnAtPercent,
@@ -60,7 +61,7 @@ public record Settings(
 
     public record Curse(Range intervalSeconds, Range amount, double wholeStackChance, boolean hotbar,
                         boolean offhand, boolean dropInstead, Set<String> protectMaterials, List<String> protectNbt,
-                        boolean protectNamed, boolean protectCustomModel) {
+                        boolean protectNamed, boolean protectCustomModel, int pickupDelayTicks) {
     }
 
     public record Bandage(String material, String model, String name, List<String> lore, int cooldownTicks,
@@ -102,6 +103,7 @@ public record Settings(
         Map.entry("warmth-warn-1", "<#ffb050>Вам жарко. Выпейте молока или зелье лечения.</#ffb050>"),
         Map.entry("warmth-warn-2", "<#ff7a30>Жар нарастает! Срочно выпейте молока или зелье лечения!</#ff7a30>"),
         Map.entry("warmth-warn-3", "<red><bold>Вы сгораете изнутри!</bold> Ещё немного — и конец.</red>"),
+        Map.entry("curse-dropped", "<#a040ff>Проклятье вырвало из рук: <white><item></white> ×<amount></#a040ff>"),
         Map.entry("curse-took", "<#a040ff>Проклятье забрало: <white><item></white> ×<amount></#a040ff>"),
         Map.entry("death-bleeding", "<player> истёк кровью"),
         Map.entry("death-warmth", "<player> сгорел изнутри от жара")
@@ -151,12 +153,14 @@ public record Settings(
             phantomTypes.addAll(List.of("ZOMBIE", "SKELETON", "HUSK", "ENDERMAN", "WITHER_SKELETON", "PLAYER"));
         }
         final Phantoms phantoms = new Phantoms(c.getBoolean("panic.phantoms.enabled", true),
-            range(c, "panic.phantoms.interval-seconds", new Range(3, 6), 1, 600, warn),
-            intIn(c, "panic.phantoms.max-alive", 3, 0, 16, warn),
-            range(c, "panic.phantoms.lifetime-seconds", new Range(3, 6), 1, 60, warn),
-            range(c, "panic.phantoms.distance", new Range(5, 9), 2, 32, warn),
-            dblIn(c, "panic.phantoms.approach-speed", 0.12, 0, 1, warn),
-            List.copyOf(phantomTypes), c.getBoolean("panic.phantoms.sounds", true));
+            range(c, "panic.phantoms.interval-seconds", new Range(1, 2), 1, 600, warn),
+            intIn(c, "panic.phantoms.max-alive", 10, 0, 40, warn),
+            range(c, "panic.phantoms.lifetime-seconds", new Range(2, 4), 1, 60, warn),
+            range(c, "panic.phantoms.distance", new Range(2, 5), 1, 32, warn),
+            dblIn(c, "panic.phantoms.approach-speed", 0.3, 0, 1, warn),
+            List.copyOf(phantomTypes), c.getBoolean("panic.phantoms.sounds", true),
+            range(c, "panic.phantoms.burst", new Range(2, 3), 1, 10, warn),
+            dblIn(c, "panic.phantoms.vanish-distance", 0.7, 0.2, 5, warn));
         final Panic panic = new Panic(
             dblIn(c, "panic.bonus-damage", 2.5, 0, 100, warn),
             dblIn(c, "panic.max-health-penalty", 4.0, 0, 100, warn),
@@ -194,14 +198,15 @@ public record Settings(
             protect.add(m.trim().toUpperCase(Locale.ROOT));
         }
         final Curse curse = new Curse(
-            range(c, "curse.interval-seconds", new Range(20, 40), 1, 3600, warn),
+            range(c, "curse.interval-seconds", new Range(8, 15), 1, 3600, warn),
             range(c, "curse.amount", new Range(1, 3), 1, 64, warn),
             dblIn(c, "curse.whole-stack-chance", 0.0, 0, 1, warn),
             c.getBoolean("curse.hotbar", true), c.getBoolean("curse.offhand", false),
-            c.getBoolean("curse.drop-instead", false), Set.copyOf(protect),
+            c.getBoolean("curse.drop-instead", true), Set.copyOf(protect),
             List.copyOf(c.contains("curse.protect-nbt") ? c.getStringList("curse.protect-nbt")
                 : List.of("MMOITEMS_ITEM_ID", "nexo:id", "coreskyrift:", "coreportals:", "rezusmenu:", "corerpg:", "zatochka", "magicseals")),
-            c.getBoolean("curse.protect-named", false), c.getBoolean("curse.protect-custom-model", true));
+            c.getBoolean("curse.protect-named", false), c.getBoolean("curse.protect-custom-model", true),
+            intIn(c, "curse.pickup-delay-ticks", 60, 0, 1200, warn));
 
         final Bandage bandage = new Bandage(str(c, "bandage.material", "PAPER").toUpperCase(Locale.ROOT),
             str(c, "bandage.model", "coreeffects:bandage"), str(c, "bandage.name", "<white>Бинт</white>"),

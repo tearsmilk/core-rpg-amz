@@ -478,12 +478,20 @@ public final class PlayerFx {
         }
         final Location l = this.player.getLocation();
         if (c.dropInstead()) {
-            this.player.getWorld().dropItemNaturally(l, taken);
+            // Вылетает из рук в случайную сторону; поднять обратно можно не сразу (pickup-delay).
+            final double a = r.nextDouble(0, Math.PI * 2);
+            final double v = r.nextDouble(0.12, 0.22);
+            final Location from = this.player.getEyeLocation().subtract(0, 0.35, 0);
+            final org.bukkit.entity.Item drop = this.player.getWorld().dropItem(from, taken, item -> {
+                item.setPickupDelay(c.pickupDelayTicks());
+                item.setVelocity(new org.bukkit.util.Vector(Math.cos(a) * v, 0.28, Math.sin(a) * v));
+            });
+            drop.setThrower(null);
         }
         this.player.getWorld().spawnParticle(Particle.WITCH, l.clone().add(0, 1, 0), 14, 0.3, 0.5, 0.3, 0.02);
         this.player.playSound(l, Sound.ENTITY_ALLAY_ITEM_TAKEN, SoundCategory.PLAYERS, 0.8f, 0.5f);
         this.player.playSound(l, Sound.ENTITY_VEX_AMBIENT, SoundCategory.PLAYERS, 0.5f, 0.6f);
-        Text.send(this.player, s, "curse-took", Placeholder.component("item", name),
+        Text.send(this.player, s, c.dropInstead() ? "curse-dropped" : "curse-took", Placeholder.component("item", name),
             Placeholder.unparsed("amount", Integer.toString(n)));
     }
 
