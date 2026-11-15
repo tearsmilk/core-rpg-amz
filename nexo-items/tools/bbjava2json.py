@@ -35,6 +35,10 @@ for e in j['elements']:
         out['rotation'] = {'angle': r(rot[axes[0]]), 'axis': 'xyz'[axes[0]], 'origin': [r(v) for v in e['origin']]}
         if e.get('rescale'):
             out['rotation']['rescale'] = True
+    if e.get('light_emission'):  # свечение куба 1..15 (Java 1.21.2+): светится и в темноте
+        out['light_emission'] = int(e['light_emission'])
+    if e.get('shade') is False:
+        out['shade'] = False
     faces = {}
     for side, f in e['faces'].items():
         if f.get('texture') is None:

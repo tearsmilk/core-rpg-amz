@@ -1,0 +1,7 @@
+# Описание системы. name и version подставляет сборка: name — rootProject.name из settings.gradle.kts, version — из build.gradle.kts.
+name: ${name}
+version: ${version}
+main: core.amazake.systems.coreweapons.CoreWeaponsSystem
+description: "Эффекты кастомного оружия Nexo: частицы вокруг клинка, кадры замаха, огненный след, дрожь земли при крите"
+authors: [tearsmilk]
+api-version: 2

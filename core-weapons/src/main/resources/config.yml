@@ -1,0 +1,70 @@
+# core-weapons — эффекты кастомного оружия. Оружие узнаётся по id предмета Nexo (PDC nexo:id) или по своей
+# метке coreweapons:id. Каждое оружие собирает себе нужные поведения: orbit, swing, crit-tremor (любое можно
+# убрать или выключить enabled: false). Перечитать: /cweapons reload.
+
+prefix: "<dark_gray>[<#ff4a3a>Оружие</#ff4a3a>]</dark_gray> "
+
+weapons:
+  azerus_crimson_scythe:
+    # Предмет для проверки без Nexo (/cweapons give): тот же item_model и метка nexo:id.
+    test-item:
+      material: NETHERITE_SWORD
+      item-model: "azerus:crimson_scythe"
+      name: "<gradient:#ff3b2f:#b3121f:#ff8a3d>Багровая коса</gradient>"
+
+    # Светящиеся частицы по кругу вокруг лезвия, пока коса в основной руке. Видят все рядом (до 32 блоков).
+    orbit:
+      enabled: true
+      period: 2              # раз в столько тиков
+      points: 3              # частиц на кольце за раз
+      radius: 0.75           # радиус кольца, блоки
+      degrees-per-tick: 14   # скорость вращения
+      tilt: 25               # наклон кольца, градусы
+      bob: 0.12              # покачивание вверх-вниз
+      # центр кольца от ног игрока: вправо, вверх, вперёд (лезвие в руке стоит над плечом)
+      center: [0.45, 2.15, 0.45]
+      colors: ["#ff3b2f", "#ff9a3d"]   # DUST_COLOR_TRANSITION: из какого в какой
+      size: 0.75
+      flame-every: 2         # каждая n-я точка — ещё и SMALL_FLAME (светится в темноте); 0 — без огня
+      hand-ember: true       # искорка у ладони раз в 4 тика
+
+    # Замах: при взмахе рукой предмет на несколько тиков получает строку custom_model_data (кадр), определение
+    # предмета в паке (items/crimson_scythe.json) показывает по ней модель кадра. Потом строка снимается.
+    swing:
+      enabled: true
+      frames: ["cw_swing_1:1", "cw_swing_2:2", "cw_swing_3:3"]   # кадр:тиков
+      min-interval: 6        # не чаще раза в столько тиков (кликер, копание)
+      trail: true            # огненный след по дуге перед игроком
+      trail-points: 5        # точек за тик
+      trail-radius: 1.35
+      trail-distance: 1.25   # дуга — на таком расстоянии перед глазами
+      trail-colors: ["#ff2a1f", "#ffb347"]
+      sound: "entity.player.attack.sweep:0.7:0.6"
+
+    # Крит (Paper isCritical — удар в падении): по земле от цели расходится кольцо дрожи.
+    crit-tremor:
+      enabled: true
+      radius: 6.0            # конечный радиус, блоки
+      duration: 12           # за столько тиков кольцо доходит до края
+      cooldown: 30           # тиков между дрожью одного игрока
+      particles: 3           # BLOCK-частиц на блок кольца
+      dust-pillar: true      # ещё DUST_PILLAR (столбик пыли блока)
+      shake-blocks: true     # BlockDisplay-копии верхних блоков подпрыгивают (мир не меняется)
+      shake-height: 0.22     # на сколько блоков подпрыгивают
+      max-displays: 90       # не больше стольких копий за одну дрожь
+      kick: 0.12             # толчок вверх игрокам на кольце (0 — без толчка)
+      kick-attacker: false
+      damage: 0.0            # урон существам на кольце (0 — только эффект)
+      sounds:
+        - "entity.warden.step:1.2:0.5"
+        - "entity.generic.explode:0.5:0.55"
+        - "block.deepslate.break:1.0:0.6"
+
+messages:
+  usage: "<gray>/cweapons give <оружие> [игрок] | list | reload"
+  reloaded: "<green>Настройки перечитаны."
+  no-player: "<red>Игрок <white><player></white> не в сети."
+  no-weapon: "<red>Нет оружия <white><weapon></white> в config.yml."
+  given: "<green>Выдано: <white><weapon></white> → <white><player></white>."
+  list: "<gray>Оружие: <white><list></white>"
+  console: "<red>Укажите игрока."
