@@ -2,6 +2,7 @@
 """Программный рендер JSON-модели предмета Minecraft (кубы с поворотом, текстуры граней) — проверить модель глазами.
 
     python3 tools/render_model.py <assets> <ns:item/модель> <папка вывода> [префикс]
+    python3 tools/render_model.py --fx-strip <assets> <ns:item/модель> <out.png> <кадров>   (анимированная текстура)
 
 Рисует: gui-иконку (как в слоте, по display.gui), модель с четырёх сторон, вид от третьего лица (простой манекен
 игрока, цепочка преобразований как у ItemInHandLayer: рука → X−90° → Y180° → сдвиг (1/16, 0.125, −0.625) →
@@ -31,9 +32,18 @@ def load_model(assets, ref):
     return j
 
 
+FRAME = int(os.environ.get('FRAME', '0'))  # кадр анимированной текстуры (.png.mcmeta)
+
+
 def tex_image(assets, ref):
     ns, path = ref.split(':', 1)
-    return np.asarray(Image.open(os.path.join(assets, ns, 'textures', path + '.png')).convert('RGBA')).astype(np.float32)
+    f = os.path.join(assets, ns, 'textures', path + '.png')
+    im = Image.open(f).convert('RGBA')
+    if os.path.exists(f + '.mcmeta') and im.height > im.width:
+        n = im.height // im.width
+        k = FRAME % n
+        im = im.crop((0, k * im.width, im.width, (k + 1) * im.width))
+    return np.asarray(im).astype(np.float32)
 
 
 # ------------------------------------------------------------------------------------------- матрицы
@@ -331,7 +341,25 @@ def render_first(model, qs, texs, w=640, h=360, ctx='firstperson_righthand'):
     return c.image()
 
 
+def fx_strip(assets, ref, out_png, frames):
+    """Полоса кадров анимированной текстуры: модель под углом 25°, кадры 0..frames−1 слева направо."""
+    global FRAME
+    tiles = []
+    for f in range(frames):
+        FRAME = f
+        model = load_model(assets, ref)
+        texs = {v: tex_image(assets, v) for v in model['textures'].values() if not v.startswith('#')}
+        tiles.append(render_turn(model, quads(model, texs), texs, 25, 15, size=256, night=True))
+    sheet = Image.new('RGB', (256 * frames, 256))
+    for i, im in enumerate(tiles):
+        sheet.paste(im, (256 * i, 0))
+    sheet.save(out_png)
+
+
 def main():
+    if sys.argv[1] == '--fx-strip':
+        fx_strip(sys.argv[2], sys.argv[3], sys.argv[4], int(sys.argv[5]))
+        return
     assets, ref, out = sys.argv[1:4]
     prefix = sys.argv[4] if len(sys.argv) > 4 else ref.split('/')[-1]
     os.makedirs(out, exist_ok=True)

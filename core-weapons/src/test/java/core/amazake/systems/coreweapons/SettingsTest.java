@@ -26,7 +26,7 @@ class SettingsTest {
         final Settings.Weapon w = s.weapon("azerus_crimson_scythe");
         assertNotNull(w);
         assertEquals("azerus:crimson_scythe", w.testItem().itemModel());
-        assertEquals(3, w.orbit().points());
+        assertNull(w.orbit()); // у косы кольцо — в модели, частицы выключены
         assertEquals(List.of("cw_swing_1", "cw_swing_2", "cw_swing_3"), w.swing().frames().names());
         assertEquals(6.0, w.tremor().radius());
         assertEquals(0.0, w.tremor().damage());

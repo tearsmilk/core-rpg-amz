@@ -47,7 +47,7 @@
    ],
    "fallback": {
     "type": "minecraft:model",
-    "model": "azerus:item/crimson_scythe"
+    "model": "azerus:item/crimson_scythe_held"
    }
   }
  }

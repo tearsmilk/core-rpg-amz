@@ -1,5 +1,5 @@
 {
- "parent": "azerus:item/crimson_scythe",
+ "parent": "azerus:item/crimson_scythe_held",
  "display": {
   "thirdperson_righthand": {
    "rotation": [
@@ -8,14 +8,14 @@
     153.55
    ],
    "translation": [
-    0.15,
-    0.7,
-    -5.8
+    0.14,
+    0.64,
+    -5.32
    ],
    "scale": [
-    0.72,
-    0.72,
-    0.72
+    0.66,
+    0.66,
+    0.66
    ]
   },
   "firstperson_righthand": {
@@ -25,14 +25,14 @@
     37.44
    ],
    "translation": [
-    -1.74,
-    -1.98,
+    1.04,
+    -2.95,
     -2.39
    ],
    "scale": [
-    0.6,
-    0.6,
-    0.6
+    0.36,
+    0.36,
+    0.36
    ]
   }
  }

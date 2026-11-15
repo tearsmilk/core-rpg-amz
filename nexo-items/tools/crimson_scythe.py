@@ -47,7 +47,8 @@ LIGHT = norm(LIGHT)
 # Контуры лезвия сняты с референса (x = (ix−130)/10+8, y = 31−(iy−70)/10): внешний — режущая кромка, внутренний — обух.
 OUTER = [(15.0, 20.5), (14.4, 24.6), (11.8, 28.0), (7.0, 29.6), (2.2, 28.4), (-0.8, 25.4), (-2.2, 21.4), (-2.9, 17.6), (-3.6, 14.0)]
 # Ширина лезвия по дуге (угол от центра дуги → ширина): массивное у верха, сужается к острию.
-WIDTH = [(8, 3.4), (40, 4.6), (90, 5.8), (130, 5.4), (165, 4.2), (190, 2.8), (204, 1.4), (214, 0.6)]
+# (после отзыва в игре: лезвие уже и тоньше — было слишком массивным от первого лица)
+WIDTH = [(8, 2.5), (40, 3.3), (90, 4.1), (130, 3.9), (165, 3.0), (190, 2.0), (204, 1.0), (214, 0.5)]
 
 
 def fit_circle(pts):
@@ -144,7 +145,7 @@ for k in range(k0, k1 + 1):
     tip = k == k1
     seg_len = 2 * math.pi * ro * HALF / 360 + (1.2 if not tip else 0.6)
     # толщина слоёв по радиусу: обух 45 %, середина 35 %, кромка остальное (не тоньше 0.8)
-    edge_w = max(0.8, w * 0.22)
+    edge_w = max(0.6, w * 0.24)
     back_w = (w - edge_w) * 0.55
     mid_w = w - edge_w - back_w
     rad = math.radians(th)
@@ -154,24 +155,17 @@ for k in range(k0, k1 + 1):
     eps = 0.01 * (k % 2)  # соседние отрезки чуть разнесены по z — без мерцания на стыках
     def at(r):
         return CX + ux * r, CY + uy * r
-    zb = 1.5 if not tip else 1.0
+    zb = 0.75 if not tip else 0.5  # обух 1.5 px, середина 1 px, кромка 0.5 px
     x, y = at(ri + back_w / 2)
     bar(f'Лезвие {k} / обух', 'blade', x, y, tangent, seg_len * (ri + back_w / 2) / ro, back_w, 8 - zb - eps, 8 + zb + eps,
         th=th, layer='back')
     x, y = at(ri + back_w + mid_w / 2)
     bar(f'Лезвие {k} / середина', 'blade', x, y, tangent, seg_len * (ri + back_w + mid_w / 2) / ro, mid_w,
-        7 - eps, 9 + eps, th=th, layer='mid', light=4)
+        7.5 - eps, 8.5 + eps, th=th, layer='mid', light=4)
     x, y = at(ro - edge_w / 2)
-    bar(f'Лезвие {k} / кромка', 'blade', x, y, tangent, seg_len, edge_w, 7.5 - eps, 8.5 + eps, light=15, th=th,
+    bar(f'Лезвие {k} / кромка', 'blade', x, y, tangent, seg_len, edge_w, 7.75 - eps, 8.25 + eps, light=15, th=th,
         layer='edge')
 
-# Неровный обух: тёмные «натёки» внутрь дуги (как рваный нижний край на референсе).
-for i, (th, ln) in enumerate(((60, 1.4), (92, 2.2), (126, 1.8), (158, 1.2))):
-    ri = r_in(th)
-    q = round(th / STEP) * STEP
-    ux, uy = math.cos(math.radians(th)), math.sin(math.radians(th))
-    bar(f'Натёк {i + 1}', 'blade', CX + ux * (ri - ln / 2 + 0.3), CY + uy * (ri - ln / 2 + 0.3), q, ln + 0.6, 1.2,
-        6.9, 9.1, th=th, layer='drip')
 
 # Древко: ломаная снизу вверх, направления — кратно 22.5°, на изломах узлы.
 SHAFT = [(15.6, -11.5), (14.8, -7.8), (15.2, -4.0), (14.0, 0.0), (11.6, 3.4), (9.2, 7.6), (8.2, 12.6), (8.6, 18.2),
@@ -183,26 +177,26 @@ for i, (x1, y1) in enumerate(SHAFT[1:], 1):
     q = round(ang / STEP) * STEP
     L = math.hypot(x1 - x0, y1 - y0)
     ex, ey = x0 + math.cos(math.radians(q)) * L, y0 + math.sin(math.radians(q)) * L
-    w = 2.0 if i < 7 else 1.8
-    bar(f'Древко {i}', 'shaft', (x0 + ex) / 2, (y0 + ey) / 2, q, L + 0.6, w, 7, 9, a=(x0, y0), b=(ex, ey))
+    w = 1.5 if i < 7 else 1.3
+    bar(f'Древко {i}', 'shaft', (x0 + ex) / 2, (y0 + ey) / 2, q, L + 0.5, w, 8 - w / 2, 8 + w / 2, a=(x0, y0), b=(ex, ey))
     joints.append((ex, ey))
     x0, y0 = ex, ey
 for i, (x, y) in enumerate(joints[:-1]):
-    s = 2.6 if i in (1, 3, 5) else 2.3
+    s = 2.0 if i in (1, 3, 5) else 1.75
     add(f'Узел {i + 1}', 'knot', (x - s / 2, y - s / 2, 8 - s / 2), (x + s / 2, y + s / 2, 8 + s / 2), c=(x, y))
 # комель: развилка корня внизу
-add('Комель', 'knot', (14.3, -13.2, 6.8), (17.0, -10.6, 9.2), c=(15.6, -11.9))
-bar('Корень', 'shaft', 13.2, -12.6, 157.5, 3.0, 1.2, 7.4, 8.6, a=(14.6, -12.0), b=(11.8, -13.2))
+add('Комель', 'knot', (14.6, -12.9, 7.1), (16.6, -10.9, 8.9), c=(15.6, -11.9))
+bar('Корень', 'shaft', 13.2, -12.6, 157.5, 3.0, 0.9, 7.55, 8.45, a=(14.6, -12.0), b=(11.8, -13.2))
 
 # Перекрещенная ветка у головы (светлая, как на референсе) и сучок на ней.
-bar('Ветка', 'twig', 9.7, 18.4, 33.75 - 11.25, 10.5, 1.4, 8.6, 9.8, a=(5.0, 16.0), b=(14.4, 20.8))
-bar('Сучок', 'twig', 5.6, 18.3, 112.5, 3.0, 1.0, 8.8, 9.6, a=(5.9, 16.9), b=(5.1, 19.7))
+bar('Ветка', 'twig', 9.7, 18.4, 33.75 - 11.25, 10.5, 1.0, 8.4, 9.2, a=(5.0, 16.0), b=(14.4, 20.8))
+bar('Сучок', 'twig', 5.6, 18.3, 112.5, 3.0, 0.8, 8.5, 9.1, a=(5.9, 16.9), b=(5.1, 19.7))
 
 # Красная обмотка: лента вдоль древка, перевязки сверху и снизу, яркая вставка.
-bar('Перевязка верх', 'cloth', 9.4, 7.2, 157.5, 3.2, 1.4, 6.6, 9.4, a=(10.8, 7.8), b=(8.0, 6.6), tone=2)
-bar('Лента', 'cloth', 9.7, 2.0, 112.5, 8.8, 1.0, 8.9, 9.7, a=(8.0, 6.1), b=(11.4, -2.1), tone=3)
-bar('Лента / блик', 'cloth', 9.1, 3.3, 112.5, 3.4, 0.6, 9.6, 9.9, a=(8.5, 4.9), b=(9.8, 1.8), tone=4, light=10)
-bar('Перевязка низ', 'cloth', 12.6, -2.6, 22.5, 3.6, 1.4, 6.6, 9.4, a=(11.0, -3.2), b=(14.3, -1.9), tone=1)
+bar('Перевязка верх', 'cloth', 9.4, 7.2, 157.5, 2.6, 1.0, 7.1, 8.9, a=(10.8, 7.8), b=(8.0, 6.6), tone=2)
+bar('Лента', 'cloth', 9.7, 2.0, 112.5, 8.8, 0.8, 8.7, 9.2, a=(8.0, 6.1), b=(11.4, -2.1), tone=3)
+bar('Лента / блик', 'cloth', 9.1, 3.3, 112.5, 3.4, 0.5, 9.15, 9.35, a=(8.5, 4.9), b=(9.8, 1.8), tone=4, light=10)
+bar('Перевязка низ', 'cloth', 12.6, -2.6, 22.5, 3.0, 1.0, 7.1, 8.9, a=(11.0, -3.2), b=(14.3, -1.9), tone=1)
 
 # Искры: жёлтый язычок над лезвием и уголёк справа от головы — светятся.
 bar('Язычок / низ', 'fire', 1.6, 30.4, 22.5, 3.6, 1.0, 7.6, 8.4, light=15, tone=3)
@@ -473,11 +467,12 @@ def aim(hand, up, blade, scale, grip=GRIP, offset=(0, 0, 0), spin=0.0):
 
 TP_UP, TP_BLADE = (0.06, 1, 0.22), (-0.12, -0.2, 1)       # стоит почти вертикально, лезвие вперёд
 FP_UP, FP_BLADE = (-0.35, 1, 0.15), (-0.5, 0.05, -1)  # от первого лица: вверх-влево, лезвие от себя
-TP_SCALE, FP_SCALE = 0.72, 0.6
+TP_SCALE, FP_SCALE = 0.66, 0.36  # от первого лица заметно мельче: коса не закрывает экран
+FP_OFFSET = (0.16, -0.14, 0.0)  # правее и ниже
 
 DISPLAY = {
     'thirdperson_righthand': aim(HAND_TP, TP_UP, TP_BLADE, TP_SCALE),
-    'firstperson_righthand': aim(HAND_FP, FP_UP, FP_BLADE, FP_SCALE, offset=(0.05, -0.05, 0.1)),
+    'firstperson_righthand': aim(HAND_FP, FP_UP, FP_BLADE, FP_SCALE, offset=FP_OFFSET),
     'gui': None,  # подгоняется под слот ниже (fit)
     'ground': {'translation': [0, 2, 0], 'scale': [0.3, 0.3, 0.3]},
     'fixed': None,
@@ -510,7 +505,7 @@ DISPLAY['fixed'] = fit([0, 0, 10], 15.0)
 SWING_SPIN = {1: -40, 2: 55, 3: 105}
 SWING_SPIN_FP = {1: 16, 2: -40, 3: -75}  # от первого лица вперёд — это −Z камеры
 SWING = {i: {'thirdperson_righthand': aim(HAND_TP, TP_UP, TP_BLADE, TP_SCALE, spin=a),
-             'firstperson_righthand': aim(HAND_FP, FP_UP, FP_BLADE, FP_SCALE, offset=(0.05, -0.05, 0.1), spin=SWING_SPIN_FP[i])}
+             'firstperson_righthand': aim(HAND_FP, FP_UP, FP_BLADE, FP_SCALE, offset=FP_OFFSET, spin=SWING_SPIN_FP[i])}
          for i, a in SWING_SPIN.items()}
 
 
@@ -566,12 +561,13 @@ def write_frames():
     for i, d in SWING.items():
         disp = dict(d)  # левая рука не задана — Minecraft берёт правую и сам отражает её
         with open(os.path.join(mdir, f'{MID}_swing_{i}.json'), 'w', encoding='utf-8') as fh:
-            json.dump({'parent': f'{NS}:item/{MID}', 'display': disp}, fh, indent=1)
-    base = {'type': 'minecraft:model', 'model': f'{NS}:item/{MID}'}
+            json.dump({'parent': f'{NS}:item/{MID}_held', 'display': disp}, fh, indent=1)
+    base = {'type': 'minecraft:model', 'model': f'{NS}:item/{MID}'}       # слот, земля, рамка — без угольков
+    held = {'type': 'minecraft:model', 'model': f'{NS}:item/{MID}_held'}  # в руках — с кольцом угольков
     swing = {'type': 'minecraft:select', 'property': 'minecraft:custom_model_data', 'index': 0,
              'cases': [{'when': f'cw_swing_{i}', 'model': {'type': 'minecraft:model', 'model': f'{NS}:item/{MID}_swing_{i}'}}
                        for i in SWING],
-             'fallback': base}
+             'fallback': held}
     item = {'hand_animation_on_swap': False,
             'model': {'type': 'minecraft:select', 'property': 'minecraft:display_context',
                       'cases': [{'when': ['gui', 'ground', 'fixed', 'head', 'none'], 'model': base}],
@@ -582,11 +578,75 @@ def write_frames():
         json.dump(item, fh, indent=1)
 
 
+# ------------------------------------------------------------------------------------------- кольцо угольков (модель)
+# Кольцо маленьких светящихся кубиков вокруг головы косы — только в руках (модель crimson_scythe_held). Каждый
+# уголёк берёт свою клетку 2×2 анимированной текстуры crimson_scythe_fx.png; по кадрам яркая «голова» с хвостом
+# переходит от клетки к клетке, поэтому кажется, что две искры бегут по кругу. Частиц сервера для этого не нужно.
+FX_N = 12               # угольков на кольце
+FX_CENTER = (6.0, 21.0)  # центр кольца (x, y) — голова косы
+FX_R = 10.5             # радиус кольца
+FX_TILT = 18            # наклон кольца к игроку, градусы
+FX_SIZE = 1.1
+FX_FRAMETIME = 2
+FX_TAIL = [(255, 242, 176), (248, 150, 58), (238, 70, 54), (156, 24, 40)]  # голова → хвост
+
+
+def fx_elements():
+    out = []
+    t = math.radians(FX_TILT)
+    for i in range(FX_N):
+        a = 2 * math.pi * i / FX_N
+        x = FX_CENTER[0] + FX_R * math.cos(a)
+        z = 8 + FX_R * math.sin(a) * math.cos(t)
+        y = FX_CENTER[1] + FX_R * math.sin(a) * math.sin(t)
+        h = FX_SIZE / 2 if i % 2 == 0 else FX_SIZE * 0.35
+        cx, cy = (i % 8) * 2, (i // 8) * 2
+        faces = {f: {'uv': [cx, cy, cx + 2, cy + 2], 'texture': '#1'} for f in FACES}
+        out.append({'from': [round(x - h, 3), round(y - h, 3), round(z - h, 3)],
+                    'to': [round(x + h, 3), round(y + h, 3), round(z + h, 3)],
+                    'light_emission': 15, 'shade': False, 'faces': faces})
+    return out
+
+
+def fx_texture():
+    frames = FX_N
+    img = Image.new('RGBA', (16, 16 * frames), (0, 0, 0, 0))
+    px = img.load()
+    for f in range(frames):
+        for i in range(FX_N):
+            d = min((f - i) % FX_N, (f + FX_N // 2 - i) % FX_N)  # две искры напротив друг друга
+            if d >= len(FX_TAIL):
+                continue
+            c = FX_TAIL[d]
+            lit = FX_TAIL[max(0, d - 1)]
+            cx, cy = (i % 8) * 2, (i // 8) * 2
+            for j in range(2):
+                for k in range(2):
+                    px[cx + k, f * 16 + cy + j] = (lit if (j, k) == (0, 0) else c) + (255,)
+    return img
+
+
+def write_fx():
+    tdir = os.path.join(ASSETS, NS, 'textures', 'item')
+    fx_texture().save(os.path.join(tdir, MID + '_fx.png'))
+    with open(os.path.join(tdir, MID + '_fx.png.mcmeta'), 'w', encoding='utf-8') as fh:
+        json.dump({'animation': {'frametime': FX_FRAMETIME, 'interpolate': True}}, fh, indent=1)
+    mdir = os.path.join(ASSETS, NS, 'models', 'item')
+    base = json.load(open(os.path.join(mdir, MID + '.json'), encoding='utf-8'))
+    held = dict(base)
+    held['textures'] = dict(base['textures'])
+    held['textures']['1'] = f'{NS}:item/{MID}_fx'
+    held['elements'] = base['elements'] + fx_elements()
+    with open(os.path.join(mdir, MID + '_held.json'), 'w', encoding='utf-8') as fh:
+        json.dump(held, fh, indent=1, ensure_ascii=False)
+
+
 def main():
     img, W, H = build_texture()
     write_bbmodel(img, W, H)
     subprocess.run([sys.executable, os.path.join(HERE, 'bbjava2json.py'), BB, ASSETS, NS, MID], check=True)
     # конвертер пишет display как есть; модель предмета не наследует ничего
+    write_fx()
     write_frames()
     print('лезвие: центр дуги', round(CX, 2), round(CY, 2), 'углы', round(TH0, 1), '…', round(TH1, 1),
           '| кубов', len(ELEMENTS), '| текстура', W, 'x', H)
