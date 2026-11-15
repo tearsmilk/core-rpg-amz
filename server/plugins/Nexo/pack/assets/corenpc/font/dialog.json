@@ -1,0 +1,47 @@
+{
+  "providers": [
+    {
+      "type": "space",
+      "advances": {
+        "": -1,
+        "": 1,
+        "": -2,
+        "": 2,
+        "": -4,
+        "": 4,
+        "": -8,
+        "": 8,
+        "": -16,
+        "": 16,
+        "": -32,
+        "": 32,
+        "": -64,
+        "": 64,
+        "": -128,
+        "": 128,
+        "": -256,
+        "": 256,
+        "": -512,
+        "": 512
+      }
+    },
+    {
+      "type": "bitmap",
+      "file": "corenpc:font/dialog/box0.png",
+      "height": 78,
+      "ascent": 63,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "corenpc:font/dialog/box1.png",
+      "height": 78,
+      "ascent": 63,
+      "chars": [
+        ""
+      ]
+    }
+  ]
+}
