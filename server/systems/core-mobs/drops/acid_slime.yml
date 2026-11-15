@@ -1,0 +1,22 @@
+# Лут моба. Предметы сохраняет команда /mobs drops save|add <моб> из инвентаря, со всеми NBT.
+# chance — шанс выпадения в процентах (0..100), можно дробный: 0.5
+# amount — сколько выпадает: число (3) или диапазон (1-4)
+# preview — подпись для вас, на предмет не влияет. item — сам предмет, его не меняйте.
+# После правки: /mobs reload
+
+items:
+  '1':
+    preview: amethyst_shard x64
+    chance: 100.0
+    amount: '64'
+    item: H4sIAAAAAAAA/+NiYGBm4HZJLEkMSy0qzszPY2AQsudgYMpMYZDIzcxLTS5KTCuxSsxNLcmoLC6JL85ILEphZmBNzi/NK2FgYHBgAAD3M1T0QQAAAA==
+  '2':
+    preview: amethyst_shard x64
+    chance: 100.0
+    amount: '64'
+    item: H4sIAAAAAAAA/+NiYGBm4HZJLEkMSy0qzszPY2AQsudgYMpMYZDIzcxLTS5KTCuxSsxNLcmoLC6JL85ILEphZmBNzi/NK2FgYHBgAAD3M1T0QQAAAA==
+  '3':
+    preview: amethyst_shard x64
+    chance: 100.0
+    amount: '64'
+    item: H4sIAAAAAAAA/+NiYGBm4HZJLEkMSy0qzszPY2AQsudgYMpMYZDIzcxLTS5KTCuxSsxNLcmoLC6JL85ILEphZmBNzi/NK2FgYHBgAAD3M1T0QQAAAA==
