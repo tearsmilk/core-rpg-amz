@@ -101,17 +101,16 @@ public final class CharacterRender {
             }
         }
         final int pad = 1;
-        final int w = (int) Math.ceil((maxX - minX) * scale) + 2 * pad;
-        final int h = (int) Math.ceil((maxY - minY) * scale) + 2 * pad;
+        final int w = (int) Math.ceil((maxX - minX) * scale - 1e-9) + 2 * pad;
+        final int h = (int) Math.ceil((maxY - minY) * scale - 1e-9) + 2 * pad;
         final int[] out = new int[w * h];
         final double[] depth = new double[w * h];
         java.util.Arrays.fill(depth, -Double.MAX_VALUE);
         final double ox = -minX * scale + pad;
         final double oy = maxY * scale + pad;
-        final double[] light = norm(-0.55, 0.55, 0.65);
         for (final Part p : parts) {
             for (int face = 0; face < 5; face++) {
-                drawFace(skin, p, face, out, depth, w, h, ox, oy, scale, cy, sy, cp, sp, light);
+                drawFace(skin, p, face, out, depth, w, h, ox, oy, scale, cy, sy, cp, sp);
             }
         }
         outline(out, w, h);
@@ -127,16 +126,10 @@ public final class CharacterRender {
         return new double[] {rx, y * cp - rz * sp, rz * cp + y * sp};
     }
 
-    private static double[] norm(final double x, final double y, final double z) {
-        final double n = Math.sqrt(x * x + y * y + z * z);
-        return new double[] {x / n, y / n, z / n};
-    }
-
     /** Грань: 0 перед (+z), 1 зад, 2 правый бок персонажа (−x), 3 левый (+x), 4 верх. */
     private static void drawFace(final int[] skin, final Part p, final int face, final int[] out, final double[] depth,
                                  final int w, final int h, final double ox, final double oy, final double scale,
-                                 final double cy, final double sy, final double cp, final double sp,
-                                 final double[] light) {
+                                 final double cy, final double sy, final double cp, final double sp) {
         final double[] n = switch (face) {
             case 0 -> new double[] {0, 0, 1};
             case 1 -> new double[] {0, 0, -1};
@@ -148,7 +141,13 @@ public final class CharacterRender {
         if (nv[2] <= 1e-6) {
             return; // грань отвёрнута от камеры
         }
-        final double lit = face == 4 ? 1.0 : 0.66 + 0.34 * Math.max(0, nv[0] * light[0] + nv[1] * light[1] + nv[2] * light[2]);
+        // как свет сущностей в игре: верх светлее всего, перед чуть темнее, бока заметно темнее
+        final double lit = switch (face) {
+            case 4 -> 1.0;
+            case 0 -> 0.9;
+            case 1 -> 0.62;
+            default -> 0.72;
+        };
         final double in = p.inflate();
         final double bx = p.x0() - in;
         final double by = p.y0() - in;

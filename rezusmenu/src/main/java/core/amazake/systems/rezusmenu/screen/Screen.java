@@ -430,6 +430,19 @@ public final class Screen {
     }
 
     /**
+     * Одна строка, прижатая к краю: левым краем к {@code anchorX} (или правым, {@code right}). {@code fontPx} — ширина
+     * строки в пикселях шрифта (см. {@code FontWidth}); по вертикали — по центру (y, h).
+     */
+    public TextDisplay label(final double anchorX, final double y, final double h, final double lineHeight,
+                             final Component text, final double fontPx, final boolean right, final int layer,
+                             final String group) {
+        final double w = Math.max(1, fontPx) * lineHeight / PanelMath.LINE_H;
+        final TextDisplay d = this.text(right ? anchorX - w : anchorX, y, w, h, lineHeight, text, layer, group);
+        d.setLineWidth(4096);
+        return d;
+    }
+
+    /**
      * Текст с фоном, выровненный влево (всплывающая подсказка): нижний край — {@code bottom} px, по горизонтали —
      * по центру {@code x + w / 2}; строки длиннее {@code wrapW} px переносятся.
      */

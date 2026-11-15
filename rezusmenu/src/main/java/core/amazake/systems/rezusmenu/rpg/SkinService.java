@@ -28,6 +28,8 @@ public final class SkinService {
     private final Plugin plugin;
     private final Logger logger;
     private final Map<String, int[]> cache = new ConcurrentHashMap<>();
+    /** Сам скин 64 × 64 ARGB (старые 64 × 32 приведены) по URL — для персонажа в меню профилей. */
+    private final Map<String, int[]> raw = new ConcurrentHashMap<>();
 
     public SkinService(final Plugin plugin, final Logger logger) {
         this.plugin = plugin;
@@ -43,10 +45,25 @@ public final class SkinService {
         Bukkit.getAsyncScheduler().runNow(this.plugin, t -> done.accept(this.load(url, slim)));
     }
 
+    /** Скин 64 × 64 из кэша; null — ещё не качали. */
+    public int[] rawCached(final String url) {
+        return this.raw.get(url);
+    }
+
+    /** Скачать скин (64 × 64 ARGB); ответ в асинхронном потоке, null — не вышло. */
+    public void fetchRaw(final String url, final boolean slim, final Consumer<int[]> done) {
+        Bukkit.getAsyncScheduler().runNow(this.plugin, t -> {
+            if (this.raw.get(url) == null || this.cache.get(key(url, slim)) == null) {
+                this.load(url, slim);
+            }
+            done.accept(this.raw.get(url));
+        });
+    }
+
     private int[] load(final String url, final boolean slim) {
         final String key = key(url, slim);
         final int[] hit = this.cache.get(key);
-        if (hit != null) {
+        if (hit != null && this.raw.containsKey(url)) {
             return hit;
         }
         try (HttpClient client = HttpClient.newBuilder().connectTimeout(TIMEOUT)
@@ -59,7 +76,16 @@ public final class SkinService {
                 this.logger.fine("скин " + url + ": HTTP " + res.statusCode());
                 return null;
             }
-            final int[] front = SkinFront.compose(ImageIO.read(new ByteArrayInputStream(res.body())), slim);
+            final java.awt.image.BufferedImage img = ImageIO.read(new ByteArrayInputStream(res.body()));
+            if (img != null) {
+                final int[] argb = img.getRGB(0, 0, img.getWidth(), img.getHeight(), null, 0, img.getWidth());
+                final int[] norm = core.amazake.systems.rezusmenu.profiles.CharacterRender.normalize(argb,
+                    img.getWidth(), img.getHeight());
+                if (norm != null) {
+                    this.raw.put(url, norm);
+                }
+            }
+            final int[] front = SkinFront.compose(img, slim);
             if (front != null) {
                 this.cache.put(key, front);
             }

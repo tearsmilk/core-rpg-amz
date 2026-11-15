@@ -20,6 +20,10 @@ public final class RezusMenuSystem implements AmazakeSystem, Listener {
     private volatile SystemContext context;
     private volatile MenuManager menus;
     private volatile PlayerStore store;
+    private final AtomicReference<core.amazake.systems.rezusmenu.profiles.ProfileConfig> profileConfig =
+        new AtomicReference<>(core.amazake.systems.rezusmenu.profiles.ProfileConfig.DEFAULTS);
+    private volatile core.amazake.systems.rezusmenu.profiles.AccountStore accounts;
+    private volatile core.amazake.systems.rezusmenu.profiles.ProfileService profiles;
 
     @Override
     public void enable(final SystemContext context) {
@@ -28,9 +32,17 @@ public final class RezusMenuSystem implements AmazakeSystem, Listener {
         this.store = new PlayerStore(context);
         this.store.load();
         this.menus = new MenuManager(context, this.settings::get, this.store);
+        this.accounts = new core.amazake.systems.rezusmenu.profiles.AccountStore(context.dataFolder().resolve("profiles"),
+            context.logger());
+        final MenuManager m = this.menus;
+        this.profiles = new core.amazake.systems.rezusmenu.profiles.ProfileService(context, this.profileConfig::get,
+            this.accounts, (p, forced) -> context.runOnceForPlayer(p, () -> m.open(p, "profiles", forced)), m::realLocation);
+        this.menus.profiles(this.profiles);
         context.registerListener(this);
         context.registerListener(this.menus);
-        context.registerCommand(new MenusCommand(this.settings::get, this.menus, this::load));
+        context.registerListener(this.profiles);
+        context.registerCommand(new MenusCommand(this.settings::get, this.menus, this::load, this.profiles));
+        context.registerCommand(new ProfilesCommand(this.menus));
         // Систему могли включить после падения, когда игроки уже онлайн: вернуть тем, кто остался наблюдателем.
         for (final Player p : org.bukkit.Bukkit.getOnlinePlayers()) {
             context.runOnceForPlayer(p, () -> {
@@ -52,6 +64,9 @@ public final class RezusMenuSystem implements AmazakeSystem, Listener {
         if (this.store != null) {
             this.store.saveNow();
         }
+        if (this.accounts != null) {
+            this.accounts.shutdown();
+        }
     }
 
     @Override
@@ -62,6 +77,8 @@ public final class RezusMenuSystem implements AmazakeSystem, Listener {
     private void load() {
         final Settings parsed = Settings.from(this.context.loadConfig(), w -> this.context.logger().warning("config.yml: " + w));
         this.settings.set(parsed);
+        this.profileConfig.set(core.amazake.systems.rezusmenu.profiles.ProfileConfig.from(this.context.loadConfig(),
+            w -> this.context.logger().warning("config.yml: " + w)));
         Text.setPrefix(parsed.prefix());
     }
 

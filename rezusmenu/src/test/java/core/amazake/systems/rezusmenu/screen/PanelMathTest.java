@@ -96,7 +96,7 @@ class PanelMathTest {
     /** Символы идут подряд с U+E000 в порядке списка (как в font/ui.json); ни одна текстура не шире 256 (атлас шрифта). */
     @Test
     void glyphTableIsDenseAndFitsFontAtlas() {
-        assertEquals(28, PanelMath.glyphIds().size());
+        assertEquals(54, PanelMath.glyphIds().size());
         for (int i = 0; i < PanelMath.ORDER.size(); i++) {
             final PanelMath.Glyph g = PanelMath.glyph(PanelMath.ORDER.get(i));
             assertEquals((char) (0xE000 + i), g.ch());

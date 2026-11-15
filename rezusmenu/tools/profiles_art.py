@@ -66,7 +66,7 @@ def scene():
     horizon = 104
     band = horizon // len(sky)
     for i, c in enumerate(sky):
-        rect(d, (0, i * band, W, horizon if i == len(sky) - 1 else (i + 1) * band), rgba(c))
+        rect(d, (0, i * band, W, H if i == len(sky) - 1 else (i + 1) * band), rgba(c))
     # blocky Minecraft clouds: flat light slabs with a shaded underside
     for cx, cy, w in ((40, 14, 46), (120, 26, 30), (196, 10, 54), (270, 30, 36), (318, 16, 28), (80, 40, 22)):
         rect(d, (cx, cy, cx + w, cy + 6), rgba((250, 252, 255)))

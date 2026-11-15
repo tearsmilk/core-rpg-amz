@@ -42,6 +42,9 @@ public final class MenuManager implements Listener {
         final Screen screen;
         RpgScreen rpg;
         CalibrationScreen calibration;
+        core.amazake.systems.rezusmenu.profiles.ProfilesScreen profiles;
+        /** Меню профилей при входе: Shift не закрывает, нужно выбрать профиль (или «В лобби»). */
+        boolean forced;
         volatile ScheduledTask task;
         boolean built;
         int ticks;
@@ -61,6 +64,18 @@ public final class MenuManager implements Listener {
     private final SkinService skins;
     /** Клетки неба под открытые меню: два игрока в меню никогда не стоят ближе {@link SkySpots#CELL} блоков. */
     private final SkySpots spots = new SkySpots();
+
+    private volatile core.amazake.systems.rezusmenu.profiles.ProfileService profileService;
+
+    public void profiles(final core.amazake.systems.rezusmenu.profiles.ProfileService service) {
+        this.profileService = service;
+    }
+
+    /** Настоящее место игрока: в меню он висит в небе — тогда место до меню. */
+    public org.bukkit.Location realLocation(final Player player) {
+        final Session s = this.sessions.get(player.getUniqueId());
+        return s != null ? s.screen.saved().location().clone() : player.getLocation();
+    }
 
     private long claimSpot(final Player player) {
         final org.bukkit.Location l = player.getLocation();
@@ -84,26 +99,50 @@ public final class MenuManager implements Listener {
 
     /** Открыть меню по id из списка /menuses. Поток игрока. Без калибровки — сначала она. */
     public void open(final Player player, final String id) {
-        if (!"rpg".equals(id)) {
+        this.open(player, id, false);
+    }
+
+    /** {@code forced} — меню профилей при входе: закрыть можно только выбором профиля или «В лобби». */
+    public void open(final Player player, final String id, final boolean forced) {
+        final boolean profiles = "profiles".equals(id);
+        if (!"rpg".equals(id) && !profiles) {
             player.sendMessage(Text.mm(Text.prefix() + "<yellow>Это меню ещё не готово.</yellow>"));
             return;
         }
+        if (profiles && (this.profileService == null || !this.profileService.config().enabled())) {
+            player.sendMessage(Text.mm(Text.prefix() + "<yellow>Профили выключены.</yellow>"));
+            return;
+        }
+        final Session open = this.sessions.get(player.getUniqueId());
+        if (open != null && open.profiles != null && profiles) {
+            return; // уже открыто (например, при входе и командой одновременно)
+        }
+        if (open != null && open.forced && !profiles) {
+            player.sendActionBar(Text.mm("<yellow>Сначала выберите профиль</yellow>"));
+            return;
+        }
         this.close(player, true);
+        player.closeInventory();
         final Screen.Calibration cal = this.store.calibration(player.getUniqueId());
         if (cal == null) {
-            this.openCalibration(player);
+            this.openCalibration(player, id, forced);
         } else {
-            this.start(player, cal, false);
+            this.start(player, cal, false, id, forced);
         }
     }
 
     /** Калибровка экрана (первый вход или кнопка «Калибровка»). */
     public void openCalibration(final Player player) {
-        this.close(player, true);
-        this.start(player, Screen.Calibration.DEFAULT, true);
+        this.openCalibration(player, "rpg", false);
     }
 
-    private void start(final Player player, final Screen.Calibration cal, final boolean calibrate) {
+    private void openCalibration(final Player player, final String then, final boolean forced) {
+        this.close(player, true);
+        this.start(player, Screen.Calibration.DEFAULT, true, then, forced);
+    }
+
+    private void start(final Player player, final Screen.Calibration cal, final boolean calibrate, final String id,
+                       final boolean forced) {
         final Settings s = this.settings.get();
         final long cell = this.claimSpot(player);
         final Screen screen = Screen.open(this.context.plugin(), player, cal, s.sensitivity(), s.glyphOffsetX(),
@@ -123,8 +162,18 @@ public final class MenuManager implements Listener {
                 this.store.calibrate(player.getUniqueId(), result);
                 player.sendActionBar(Text.mm("<green>Экран откалиброван</green>"));
                 // Переоткрыть меню уже под этот экран — в следующем такте, не изнутри клика.
-                this.context.runOnceForPlayer(player, () -> this.open(player, "rpg"));
+                this.context.runOnceForPlayer(player, () -> this.open(player, id, forced));
             });
+            session.forced = forced;
+        } else if ("profiles".equals(id)) {
+            session.forced = forced;
+            session.profiles = new core.amazake.systems.rezusmenu.profiles.ProfilesScreen(screen, this.profileService,
+                this.skins, s.shaderCursor(), r -> this.context.runOnceForPlayer(player, r),
+                () -> this.close(player),
+                () -> {
+                    this.close(player);
+                    this.profileService.lobby(player);
+                });
         } else {
             session.rpg = new RpgScreen(screen, s, this.skins, this.store.stashExtraRows(player.getUniqueId()),
                 r -> this.context.runOnceForPlayer(player, r),
@@ -148,6 +197,8 @@ public final class MenuManager implements Listener {
             session.built = true;
             if (session.rpg != null) {
                 session.rpg.build();
+            } else if (session.profiles != null) {
+                session.profiles.build();
             } else {
                 session.calibration.build();
             }
@@ -316,6 +367,10 @@ public final class MenuManager implements Listener {
             return;
         }
         if (event.getInput().isSneak()) {
+            if (s.forced || (s.profiles != null && s.profiles.busy())) {
+                event.getPlayer().sendActionBar(Text.mm("<yellow>Выберите профиль или нажмите «В лобби»</yellow>"));
+                return;
+            }
             this.close(event.getPlayer());
         } else if (event.getInput().isJump()) {
             s.screen.recenter();
@@ -352,6 +407,14 @@ public final class MenuManager implements Listener {
         event.setCancelled(true);
         if (s.screen.isTarget(event.getRightClicked())) {
             this.click(s, "right-click");
+        }
+    }
+
+    /** Пока открыт экран, чужие окна (меню выбора класса RQ при входе и т. п.) не открываются. */
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onOpenInventory(final org.bukkit.event.inventory.InventoryOpenEvent event) {
+        if (event.getPlayer() instanceof final Player p && this.isOpen(p)) {
+            event.setCancelled(true);
         }
     }
 
