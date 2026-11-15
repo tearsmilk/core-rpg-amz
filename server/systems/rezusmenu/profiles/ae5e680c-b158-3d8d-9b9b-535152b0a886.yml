@@ -1,0 +1,324 @@
+# rezusmenu: профили игрока ae5e680c-b158-3d8d-9b9b-535152b0a886. Пишет система, руками не править.
+
+extra-slots: 2
+active: 3
+generation: 5
+next-id: 4
+profiles:
+  '1':
+    created: 1794743953124
+    class: archer
+    summary:
+      level: 1
+      class-key: archer
+      class-name: Стрелок
+      location: Начальная деревня
+      stats:
+      - name: Точность
+        value: '0'
+      - name: Ловкость
+        value: '0'
+      - name: Выносливость
+        value: '0'
+    data:
+      inventory:
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      held-slot: 8
+      ender-chest:
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      location:
+        world: world
+        x: -36.49414630371739
+        y: 104.0
+        z: 4.24277999647831
+        yaw: -96.869384765625
+        pitch: 12.61842155456543
+      health: 20.0
+      food: 20
+      saturation: 20.0
+      exhaustion: 0.0
+      fire-ticks: -20
+      air: 300
+      xp:
+        level: 1
+        progress: 0.005814190488308668
+        total: 0
+      effects: []
+      class:
+        rq:
+          class: ARCHER
+          class-chosen: true
+          profession-chosen: false
+          level: 1
+          exp: 0
+          stats:
+            available: 0
+            primary: 0
+            agility: 0
+            stamina: 0
+            luck: 0
+          mmocore:
+            class: ARCHER
+            auto-bound:
+            - ITEM_THROW
+            skill-points-granted: 0
+            skill-points-pending: 0
+            skill-points-backfilled: true
+        mmocore:
+          class-id: ARCHER
+          level: 1
+          experience: 1.1628380606479587
+          skill-points: 0
+          attribute-points: 0
+          attribute-realloc-points: 0
+          skill-reallocation-points: 0
+          skill-tree-reallocation-points: 0
+          health: 20.0
+          mana: 20.0
+          stamina: 20.0
+          stellium: 20.0
+          attribute:
+            dexterity: 0
+            strength: 0
+            intelligence: 0
+          bound-skills:
+            '1': ITEM_THROW
+          unlocked-items: []
+        class-key: archer
+        level: 1
+      extra:
+        corevault-level: '0'
+  '2':
+    created: 1794743987206
+    class: mage
+    summary:
+      level: 1
+      class-key: mage
+      class-name: Маг
+      location: Начальная деревня
+      stats:
+      - name: Интеллект
+        value: '0'
+      - name: Ловкость
+        value: '0'
+      - name: Выносливость
+        value: '0'
+    data:
+      inventory:
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      held-slot: 0
+      ender-chest:
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      location:
+        world: world
+        x: -27.160778455581674
+        y: 100.0
+        z: 6.034323989041549
+        yaw: 15.457611083984375
+        pitch: 5.80497407913208
+      health: 20.0
+      food: 20
+      saturation: 20.0
+      exhaustion: 0.0
+      fire-ticks: -20
+      air: 300
+      xp:
+        level: 1
+        progress: 0.0
+        total: 0
+      effects: []
+      class:
+        rq:
+          class: MAGE
+          class-chosen: true
+          profession-chosen: false
+          level: 1
+          exp: 0
+          stats:
+            available: 0
+            primary: 0
+            agility: 0
+            stamina: 0
+            luck: 0
+          mmocore:
+            class: MAGE
+            auto-bound:
+            - FIREBOLT
+            skill-points-granted: 0
+            skill-points-pending: 0
+            skill-points-backfilled: true
+        mmocore:
+          class-id: MAGE
+          level: 1
+          experience: 0.0
+          skill-points: 0
+          attribute-points: 0
+          attribute-realloc-points: 0
+          skill-reallocation-points: 0
+          skill-tree-reallocation-points: 0
+          health: 20.0
+          mana: 10.29999999999998
+          stamina: 3.058
+          stellium: 15.07000000000002
+          attribute:
+            dexterity: 0
+            strength: 0
+            intelligence: 0
+          bound-skills:
+            '1': FIREBOLT
+          unlocked-items: []
+        class-key: mage
+        level: 1
+      extra:
+        corevault-level: '0'
+  '3':
+    created: 1794745084668
+    class: swordsman
+    summary:
+      level: 1
+      class-key: swordsman
+      class-name: Мечник
+      location: Начальная деревня
+      stats:
+      - name: Сила
+        value: '0'
+      - name: Ловкость
+        value: '0'
+      - name: Выносливость
+        value: '0'

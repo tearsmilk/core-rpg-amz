@@ -1,0 +1,215 @@
+# rezusmenu — меню /menuses и RPG-инвентарь. После правки: /menuses reload (или amazake system reload rezusmenu).
+# Тексты — MiniMessage.
+
+messages:
+  prefix: "<dark_gray>[<gold>Меню</gold>]</dark_gray> "
+
+# Родная панель Minecraft по /menuses.
+dialog:
+  title: "<gold>Меню сервера</gold>"
+  body: "<gray>Выберите, что открыть.</gray>"
+
+# Кнопки панели — все кастомные меню: rpg и profiles.
+menus:
+  rpg:
+    label: "<gold>RPG-инвентарь</gold>"
+    tooltip: "<gray>Персонаж, снаряжение и инвентарь</gray>"
+  profiles:
+    label: "<aqua>Профили</aqua>"
+    tooltip: "<gray>Персонажи: выбрать, создать новый</gray>"
+
+# RPG-меню во весь экран: на время меню игрок — наблюдатель высоко над миром и стоит на месте, мышь двигает курсор,
+# ЛКМ — нажать, пробел — курсор в центр, Shift — выйти. При первом входе — калибровка экрана (око Края в угол).
+# Картинки меню — из ресурспака (assets/rezusmenu и assets/minecraft/shaders, см. pack/ в исходниках системы):
+# без него — пустые квадраты, а шейдерный курсор идёт против мыши.
+rpg:
+  # Скорость курсора-глифа (art.shader-cursor: false) и ока при калибровке: сколько экрана за градус поворота мыши.
+  cursor-speed: 0.045
+  # Пока меню открыто, игрок не получает урона.
+  invulnerable: true
+  # Как часто обновлять предметы и значения, тиков.
+  refresh-ticks: 10
+  # Писать в консоль каждый клик: откуда пришёл (spectate — ЛКМ наблюдателя, right-click, swing), где курсор
+  # (пиксели холста 704×400) и какая кнопка под ним.
+  debug-clicks: false
+  # Значения из PlaceholderAPI. По умолчанию — RoyalQuestClasses (%hl_…%) и MMOCore (%mmocore_…%), как в MythicHUD.
+  # Не подставилось — «—» (уровень и опыт — ванильные).
+  placeholders:
+    level: "%hl_level%"
+    exp: "%hl_exp%"
+    exp-needed: "%hl_exp_needed%"
+    class: "%hl_class%"
+    class-key: "%hl_class_key%"
+    profession: "%hl_profession%"
+    profession-key: "%hl_profession_key%"
+    needs-profession: "%hl_needs_profession%"
+    skill-points: "%mmocore_skill_points%"
+    attribute-points: "%hl_stats_available%"
+  # Третья полоска — мана или энергия, как в MythicHUD. Сначала по ключу класса (class-key), иначе по имени ресурса
+  # MMOCore: равно energy-name — энергия, иначе мана.
+  resource:
+    name: "%mmocore_mana_name%"
+    energy-name: "Энергия"
+    classes:
+      swordsman: energy
+      archer: energy
+      thief: energy
+      mage: mana
+    types:
+      mana: {label: "Мана", current: "%mmocore_mana%", max: "%mmocore_stat_max_mana%"}
+      energy: {label: "Энергия", current: "%mmocore_mana%", max: "%mmocore_stat_max_mana%"}
+  # Параметры слева внизу (2 × 2). default — подпись, если плейсхолдер названия не подставился.
+  stats:
+    - {name: "%hl_stats_primary_name%", default: "Сила", value: "%hl_stats_primary%"}
+    - {name: "Ловкость", value: "%hl_stats_agility%"}
+    - {name: "Выносливость", value: "%hl_stats_stamina%"}
+    - {name: "Удача", value: "%hl_stats_luck%"}
+  # Классы RoyalQuestClasses (ключ = %hl_class_key%): название, иконка в левом крыле и профессии.
+  classes:
+    swordsman: {name: "Мечник", icon: IRON_SWORD, professions: [crusader, dark_knight]}
+    archer: {name: "Стрелок", icon: BOW, professions: [hunter, sniper]}
+    mage: {name: "Маг", icon: BLAZE_ROD, professions: [wizard, warlock]}
+    thief: {name: "Вор", icon: GOLDEN_SWORD, professions: [rogue, assassin]}
+  professions:
+    crusader: "Крестоносец"
+    dark_knight: "Тёмный рыцарь"
+    hunter: "Охотник"
+    sniper: "Снайпер"
+    wizard: "Волшебник"
+    warlock: "Чернокнижник"
+    rogue: "Разбойник"
+    assassin: "Ассасин"
+  # Иконка в левом крыле, пока класс не выбран.
+  no-class-icon: BOOK
+  # Слоты бижутерии (амулет, два кольца, тотем, артефакт): что в них можно положить. types — типы MMOItems
+  # (MMOITEMS_ITEM_TYPE), materials — материалы; подходит что-то одно. Оба списка пустые — что угодно.
+  # Предметы хранятся в данных игрока и не выпадают. Характеристики бижутерии пока НЕ применяются.
+  # Слоты бижутерии: что в них можно положить. types — типы MMOItems, materials — материалы, nbt — подстрока
+  # в NBT предмета (для обычных предметов, настроенных через NBT): например 'jewel:"ring"' для предмета с
+  # custom_data {jewel:"ring"} или 'myplugin:ring' для PDC-метки плагина. Подходит хоть одно правило — можно.
+  jewelry:
+    amulet: {types: [AMULET, NECKLACE, ACCESSORY], materials: [], nbt: ['jewel:"amulet"']}
+    ring: {types: [RING, ACCESSORY], materials: [], nbt: ['jewel:"ring"']}
+    totem: {types: [TOTEM], materials: [TOTEM_OF_UNDYING], nbt: ['jewel:"totem"']}
+    artifact: {types: [ARTIFACT, RELIC, ORNAMENT, TALISMAN], materials: [], nbt: ['jewel:"artifact"']}
+  # Вкладка «Снаряжение»: строки характеристик. Строка, чей плейсхолдер не подставился, скрывается.
+  equipment-lines:
+    - {name: "Уровень", value: "%hl_level%"}
+    - {name: "Свободные очки параметров", value: "%hl_stats_available%"}
+    - {name: "Очки навыков", value: "%mmocore_skill_points%"}
+
+# Чужой HUD (MythicHUD — боссбары с модельками) прячется, пока открыто меню: меню нарисовано в мире и не может
+# перекрыть интерфейс клиента. Команды консоли, {player} — ник. Если игрок вышел посреди меню, HUD вернётся при входе.
+hud:
+  hide-commands:
+    - "mythichud layout {player} remove mmohud-layout -s"
+    - "mythichud layout {player} remove partyhud-mmo-layout -s"
+    - "mythichud layout {player} remove skill_casting_bar-layout -s"
+  show-commands:
+    - "mythichud layout {player} add mmohud-layout -s"
+    - "mythichud layout {player} add partyhud-mmo-layout -s"
+    - "mythichud layout {player} add skill_casting_bar-layout -s"
+
+# Картинка меню — шрифт rezusmenu:ui из ресурспака. Глифы ставятся по формуле клиента 1.21.11, подстройка не нужна;
+# если всё же съехало — сдвиг картинок в пикселях текстуры (x — вправо, y — вверх).
+# shader-cursor: курсор рисует шейдер пака и он идёт за мышью с частотой кадров; false — запасной курсор-глиф,
+# который двигает сервер (раз в тик).
+art:
+  shader-cursor: true
+  glyph-offset-x: 0.0
+  glyph-offset-y: 0.0
+
+# Открыть RPG-меню клавишей. Нажатие E сервер не видит (клиент открывает свой инвентарь сам, без пакета),
+# поэтому используется F (сменить руки): в выживании и приключении F открывает меню, в творческом F и E — как обычно.
+open-key:
+  swap-hands: true
+  # true — только Shift + F (тогда обычная F меняет руки как всегда).
+  sneak: false
+
+# Хранилище во вкладке «Снаряжение»: base-rows рядов по 9 слотов бесплатно, ещё до max-extra-rows рядов
+# выдаются командой /menuses rows add <ник> [n] (для доната; работает из консоли и для игрока не в сети).
+stash:
+  base-rows: 3
+  max-extra-rows: 6
+
+# Профили (персонажи): /profiles или /menuses open profiles. У каждого профиля свои класс, уровень и опыт,
+# параметры и навыки (RoyalQuestClasses + MMOCore), инвентарь с бронёй и второй рукой, бижутерия и хранилище
+# rezusmenu, место, здоровье, голод, эффекты и ванильный опыт. Деньги общие на аккаунт (их держит экономика).
+# Данные — systems/rezusmenu/profiles/<uuid>.yml. Первый профиль — текущий персонаж игрока (при первом открытии).
+profiles:
+  enabled: true
+  # Бесплатных слотов и максимум; остальные покупаются в меню или выдаются /menuses slots add <ник> [n].
+  free-slots: 2
+  max-slots: 4
+  # Меню при входе: always — всегда; multiple — если профилей больше одного или у персонажа нет класса;
+  # new — только без класса (новичок); never — только командой.
+  open-on-join: always
+  # Меню при входе нельзя закрыть Shift: только выбрать профиль («Продолжить» у текущего) или «В лобби».
+  require-choice: true
+  # Сколько тиков подождать после загрузки пакета ресурсов, прежде чем открыть меню при входе.
+  join-delay-ticks: 40
+  # Покупка слота в меню (кнопка «+ цена» внизу панели, второе нажатие — подтверждение).
+  buy:
+    price: 649
+    # vault — экономика Vault (на проде — встроенная экономика форка Vault, та же, что у core-vault и /eco);
+    # command — баланс плейсхолдером balance-placeholder и списание командами take-commands ({player}, {price});
+    # none — бесплатно.
+    currency: vault
+    # Подпись цены на кнопке и значок рядом (предмет).
+    label: "649"
+    icon: DIAMOND
+    balance-placeholder: ""
+    take-commands: []
+  # Новый профиль: где появляется ("мир,x,y,z[,yaw,pitch]"; пусто — точка появления первого мира) и команды
+  # консоли после создания ({player}) — например, стартовый набор.
+  new-profile:
+    location: ""
+    commands: []
+  # Кнопка «В лобби»: команды консоли ({player}); пусто — телепорт на точку появления первого мира.
+  lobby:
+    commands: []
+  # Что у профилей своё (остальное — общее на аккаунт). pdc-prefixes — ключи данных игрока (PersistentDataContainer):
+  # бижутерия и хранилище rezusmenu.
+  separate:
+    ender-chest: true
+    vanilla-exp: true
+    effects: true
+    pdc-prefixes: ["rezusmenu:jewel_", "rezusmenu:stash_"]
+  # Класс и прогресс. auto — API RoyalQuestClasses + MMOCore, если RQ стоит (иначе только команды); api — только API;
+  # commands — только команды ниже; none — класс общий на аккаунт. Команды консоли: {player}, {uuid}, {class}
+  # (ключ класса), {level}, плейсхолдеры PlaceholderAPI. on-save — перед уходом из профиля, on-load — после
+  # загрузки профиля, on-create — после создания нового (и после выбора класса без API).
+  class-bridge:
+    mode: auto
+    on-save: []
+    on-load: []
+    on-create: []
+  # Свои у профиля значения, которых нет в данных игрока: read — плейсхолдер (читается при уходе из профиля),
+  # restore — команда при входе в профиль ({value}), fresh — команда для нового профиля. По умолчанию — уровень
+  # core-vault (модуль levels).
+  extra-values:
+    - {name: corevault-level, read: "%corevault_exp_total%", restore: "level set {player} exp {value}", fresh: "level set {player} exp 0"}
+  # Карточка профиля: уровень и ключ класса (если нет API RQ), характеристики (три строки).
+  card:
+    level: "%hl_level%"
+    class-key: "%hl_class_key%"
+    stats:
+      - {name: "%hl_stats_primary_name%", default: "Сила", value: "%hl_stats_primary%"}
+      - {name: "Ловкость", value: "%hl_stats_agility%"}
+      - {name: "Выносливость", value: "%hl_stats_stamina%"}
+  # Классы нового профиля (ключи RoyalQuestClasses): название, цвет, иконка, описание (до двух строк).
+  classes:
+    swordsman: {name: "Мечник", color: "<red>", icon: IRON_SWORD, description: ["Ближний бой: щит и доспехи,", "крепкий и защищённый."]}
+    archer: {name: "Стрелок", color: "<green>", icon: BOW, description: ["Дальний бой: лук и арбалет,", "бьёт точно издалека."]}
+    mage: {name: "Маг", color: "<aqua>", icon: BLAZE_ROD, description: ["Стихии и заклинания,", "урон и контроль."]}
+    thief: {name: "Вор", color: "<yellow>", icon: GOLDEN_SWORD, description: ["Скрытный и ловкий боец", "ближнего боя."]}
+  # Название места на карточке: сначала зоны (прямоугольники x/z), потом название мира, иначе имя мира.
+  locations:
+    worlds:
+      world: "Начальная деревня"
+    areas: []
+    #  - {name: "Зиркония", world: world, from: [-500, -500], to: [500, 500]}
+  # Персонаж по центру: поворот (градусы) и насколько камера смотрит сверху.
+  character:
+    yaw: 28
+    pitch: 10

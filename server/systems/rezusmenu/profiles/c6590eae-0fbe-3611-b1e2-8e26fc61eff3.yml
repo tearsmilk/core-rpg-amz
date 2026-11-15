@@ -1,8 +1,8 @@
 # rezusmenu: профили игрока c6590eae-0fbe-3611-b1e2-8e26fc61eff3. Пишет система, руками не править.
 
-extra-slots: 0
+extra-slots: 1
 active: 2
-generation: 2
+generation: 6
 next-id: 3
 profiles:
   '1':
@@ -96,11 +96,11 @@ profiles:
       - ''
       location:
         world: world
-        x: -17.66044483102215
+        x: -28.522707620193444
         y: 100.0
-        z: 30.21828313956469
-        yaw: -73.73765563964844
-        pitch: 2.8734498023986816
+        z: 5.022558722597733
+        yaw: -4.383331298828125
+        pitch: 7.7225189208984375
       health: 20.0
       food: 20
       saturation: 20.0
@@ -142,6 +142,10 @@ profiles:
           mana: 20.0
           stamina: 20.0
           stellium: 20.0
+          attribute:
+            dexterity: 0
+            strength: 0
+            intelligence: 0
           node-levels:
             warrior-paladin_d1: 0
             warrior-paladin_d2: 0
@@ -276,13 +280,144 @@ profiles:
     class: thief
     summary:
       level: 1
-      class-key: thief
-      class-name: Вор
+      class-key: ''
+      class-name: ''
       location: Начальная деревня
       stats:
-      - name: Сила
+      - name: Классовый
         value: '0'
       - name: Ловкость
         value: '0'
       - name: Выносливость
         value: '0'
+    data:
+      inventory:
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      held-slot: 0
+      ender-chest:
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      location:
+        world: world
+        x: -10.510130996883513
+        y: 100.0
+        z: 1.3799214736454894
+        yaw: -157.02684020996094
+        pitch: 11.796292304992676
+      health: 20.0
+      food: 20
+      saturation: 20.0
+      exhaustion: 0.0
+      fire-ticks: -20
+      air: 300
+      xp:
+        level: 0
+        progress: 0.0
+        total: 0
+      effects: []
+      class:
+        rq:
+          class-chosen: false
+          profession-chosen: false
+          level: 1
+          exp: 0
+          stats:
+            available: 0
+            primary: 0
+            agility: 0
+            stamina: 0
+            luck: 0
+          mmocore:
+            auto-bound: []
+            skill-points-granted: 0
+            skill-points-pending: 0
+            skill-points-backfilled: true
+        mmocore:
+          class-id: HUMAN
+          level: 1
+          experience: 0.0
+          skill-points: 0
+          attribute-points: 0
+          attribute-realloc-points: 0
+          skill-reallocation-points: 0
+          skill-tree-reallocation-points: 0
+          health: 20.0
+          mana: 20.0
+          stamina: 20.0
+          stellium: 12.327999999999973
+          attribute:
+            dexterity: 0
+            strength: 0
+            intelligence: 0
+          unlocked-items: []
+        class-key: ''
+        level: 1
+      extra:
+        corevault-level: '0'

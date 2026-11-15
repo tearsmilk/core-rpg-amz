@@ -1,0 +1,22 @@
+# rezusmenu: профили игрока 32b95cd7-5f20-395e-9983-bf9c8a309f4e. Пишет система, руками не править.
+
+extra-slots: 0
+active: 1
+generation: 1
+next-id: 2
+profiles:
+  '1':
+    created: 1794744215570
+    class: mage
+    summary:
+      level: 1
+      class-key: mage
+      class-name: Маг
+      location: Начальная деревня
+      stats:
+      - name: Интеллект
+        value: '0'
+      - name: Ловкость
+        value: '0'
+      - name: Выносливость
+        value: '0'
