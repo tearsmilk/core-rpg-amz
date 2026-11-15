@@ -1,0 +1,83 @@
+# Тестовое оружие AZERUS (модели — nexo-items/source/*.bbmodel, конвертер tools/bbjava2json.py).
+# Выдать: /nexo give <ник> <id>. Основа — ванильный меч: урон, скорость атаки, сметающий удар, прочность — как у него.
+# Файл: plugins/Nexo/items/azerus_weapons.yml, модели и текстуры: plugins/Nexo/pack/assets/azerus/.
+
+azerus_iron_vow:
+  itemname: "<white>Стандартный меч"
+  material: IRON_SWORD
+  lore:
+    - "<gray>Простой надёжный клинок."
+  Pack:
+    model: azerus:item/iron_vow
+
+azerus_moonwarden:
+  itemname: "<#b9c8ff>Лунный страж"
+  material: DIAMOND_SWORD
+  lore:
+    - "<gray>Холодный свет луны в стали."
+  Pack:
+    model: azerus:item/moonwarden
+
+azerus_tidekeeper:
+  itemname: "<#5fd3d6>Страж прилива"
+  material: DIAMOND_SWORD
+  lore:
+    - "<gray>Выкован там, где море встречает камень."
+  Pack:
+    model: azerus:item/tidekeeper
+
+azerus_ashen_oath:
+  itemname: "<#4fd17a>Изумрудная клятва"
+  material: DIAMOND_SWORD
+  lore:
+    - "<gray>Клинок данной однажды клятвы."
+  Pack:
+    model: azerus:item/ashen_oath
+
+azerus_ember_dawn:
+  itemname: "<#ff9a3c>Угольный рассвет"
+  material: DIAMOND_SWORD
+  lore:
+    - "<gray>Тлеет, как угли на рассвете."
+  Pack:
+    model: azerus:item/ember_dawn
+
+azerus_blood_raven:
+  itemname: "<#d4334a>Кровавый ворон"
+  material: DIAMOND_SWORD
+  lore:
+    - "<gray>Чёрные перья на рукояти."
+  Pack:
+    model: azerus:item/blood_raven
+
+azerus_sunleaf:
+  itemname: "<#ffe066>Солнечный лист"
+  material: DIAMOND_SWORD
+  lore:
+    - "<gray>Лёгкий, как лист на ветру."
+  Pack:
+    model: azerus:item/sunleaf
+
+azerus_night_watch:
+  itemname: "<#8a7cff>Ночной дозор"
+  material: IRON_SWORD
+  lore:
+    - "<gray>Кинжал тех, кто не спит."
+  Pack:
+    model: azerus:item/night_watch
+
+azerus_frost_needle:
+  itemname: "<#a8e6ff>Ледяной шип"
+  material: IRON_SWORD
+  lore:
+    - "<gray>Тонкий, как игла, и холодный, как лёд."
+  Pack:
+    model: azerus:item/frost_needle
+
+azerus_thundermaul:
+  itemname: "<#ffd84a>Громобой"
+  material: DIAMOND_SWORD
+  lore:
+    - "<gray>Молот, что гремит при каждом ударе."
+  Pack:
+    model: azerus:item/thundermaul

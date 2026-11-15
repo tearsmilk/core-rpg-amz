@@ -1,9 +1,9 @@
 # rezusmenu: профили игрока c6590eae-0fbe-3611-b1e2-8e26fc61eff3. Пишет система, руками не править.
 
-extra-slots: 1
-active: 2
-generation: 6
-next-id: 3
+extra-slots: 2
+active: 3
+generation: 8
+next-id: 4
 profiles:
   '1':
     created: 1794743413674
@@ -96,11 +96,11 @@ profiles:
       - ''
       location:
         world: world
-        x: -28.522707620193444
+        x: -25.007073228733496
         y: 100.0
-        z: 5.022558722597733
-        yaw: -4.383331298828125
-        pitch: 7.7225189208984375
+        z: 21.25346539694649
+        yaw: -172.40484619140625
+        pitch: 0.009559810161590576
       health: 20.0
       food: 20
       saturation: 20.0
@@ -146,130 +146,6 @@ profiles:
             dexterity: 0
             strength: 0
             intelligence: 0
-          node-levels:
-            warrior-paladin_d1: 0
-            warrior-paladin_d2: 0
-            warrior-paladin_d3: 0
-            general_e2: 0
-            general_e3: 0
-            general_e1: 0
-            combat_h1: 0
-            mage-arcane-mage_e1: 0
-            combat_h2: 0
-            combat_h3: 0
-            mage-arcane-mage_e3: 0
-            mage-arcane-mage_e2: 0
-            warrior-paladin_e1: 0
-            warrior-paladin_e2: 0
-            warrior-paladin_e3: 0
-            general_d1: 0
-            general_d2: 0
-            general_d3: 0
-            rogue-marksman_g3: 0
-            rogue-marksman_g1: 0
-            rogue-marksman_g2: 0
-            mage-arcane-mage_f2: 0
-            combat_g1: 0
-            mage-arcane-mage_f1: 0
-            combat_g2: 0
-            combat_g3: 0
-            mage-arcane-mage_f3: 0
-            warrior-paladin_b3: 0
-            warrior-paladin_b1: 0
-            warrior-paladin_b2: 0
-            combat_f3: 0
-            example_loop_e4: 0
-            example_loop_e3: 0
-            rogue-marksman_b1: 0
-            general_g1: 0
-            example_loop_e2: 0
-            example_loop_e1: 0
-            mage-arcane-mage_g1: 0
-            mage-arcane-mage_g3: 0
-            mage-arcane-mage_g2: 0
-            combat_f1: 0
-            rogue-marksman_b2: 0
-            combat_f2: 0
-            rogue-marksman_b3: 0
-            warrior-paladin_c1: 0
-            warrior-paladin_c2: 0
-            warrior-paladin_c3: 0
-            general_f3: 0
-            combat_e2: 0
-            combat_e3: 0
-            general_f1: 0
-            general_f2: 0
-            rogue-marksman_a3: 0
-            rogue-marksman_a1: 0
-            rogue-marksman_a2: 0
-            combat_e1: 0
-            mage-arcane-mage_a1: 0
-            mage-arcane-mage_a3: 0
-            mage-arcane-mage_a2: 0
-            general_j1: 0
-            rogue-marksman_d2: 0
-            combat_d1: 0
-            rogue-marksman_d3: 0
-            combat_d2: 0
-            combat_d3: 0
-            general_a1: 0
-            rogue-marksman_d1: 0
-            general_a2: 0
-            general_a3: 0
-            warrior-paladin_a2: 0
-            mage-arcane-mage_b2: 0
-            warrior-paladin_a3: 0
-            mage-arcane-mage_b1: 0
-            mage-arcane-mage_b3: 0
-            warrior-paladin_a1: 0
-            rogue-marksman_c1: 0
-            combat_c1: 0
-            rogue-marksman_c2: 0
-            combat_c2: 0
-            combat_c3: 0
-            general_h1: 0
-            rogue-marksman_c3: 0
-            mage-arcane-mage_c3: 0
-            mage-arcane-mage_c2: 0
-            warrior-paladin_f1: 0
-            warrior-paladin_f2: 0
-            warrior-paladin_f3: 0
-            general_c1: 0
-            rogue-marksman_f2: 0
-            general_c2: 0
-            combat_b1: 0
-            example_loop_a2: 0
-            rogue-marksman_f3: 0
-            general_c3: 0
-            combat_b2: 0
-            example_loop_a1: 0
-            combat_b3: 0
-            rogue-marksman_f1: 0
-            example_loop_a8: 0
-            example_loop_a7: 0
-            combat_j1: 0
-            combat_j2: 0
-            combat_j3: 0
-            example_loop_a4: 0
-            example_loop_a3: 0
-            mage-arcane-mage_c1: 0
-            example_loop_a6: 0
-            example_loop_a5: 0
-            mage-arcane-mage_d3: 0
-            warrior-paladin_g1: 0
-            warrior-paladin_g2: 0
-            warrior-paladin_g3: 0
-            rogue-marksman_e3: 0
-            general_b1: 0
-            rogue-marksman_e1: 0
-            general_b2: 0
-            combat_a1: 0
-            rogue-marksman_e2: 0
-            combat_a2: 0
-            combat_a3: 0
-            general_b3: 0
-            mage-arcane-mage_d2: 0
-            mage-arcane-mage_d1: 0
           unlocked-items: []
         class-key: ''
         level: 1
@@ -366,11 +242,11 @@ profiles:
       - ''
       location:
         world: world
-        x: -10.510130996883513
+        x: -26.215974389498403
         y: 100.0
-        z: 1.3799214736454894
-        yaw: -157.02684020996094
-        pitch: 11.796292304992676
+        z: -30.210821510839757
+        yaw: 7.28094482421875
+        pitch: 7.712953567504883
       health: 20.0
       food: 20
       saturation: 20.0
@@ -411,7 +287,7 @@ profiles:
           health: 20.0
           mana: 20.0
           stamina: 20.0
-          stellium: 12.327999999999973
+          stellium: 20.0
           attribute:
             dexterity: 0
             strength: 0
@@ -421,3 +297,18 @@ profiles:
         level: 1
       extra:
         corevault-level: '0'
+  '3':
+    created: 1794748015654
+    class: swordsman
+    summary:
+      level: 1
+      class-key: ''
+      class-name: ''
+      location: Начальная деревня
+      stats:
+      - name: Классовый
+        value: '0'
+      - name: Ловкость
+        value: '0'
+      - name: Выносливость
+        value: '0'
