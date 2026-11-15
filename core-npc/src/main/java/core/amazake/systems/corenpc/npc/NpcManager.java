@@ -359,7 +359,7 @@ public final class NpcManager implements Listener {
         }
         if (Bukkit.isOwnedByCurrentRegion(w, l.cx(), l.cz())) {
             this.removeEntities(w, l);
-        } else if (!this.closed.get() || true) {
+        } else {
             Bukkit.getRegionScheduler().execute(this.context.plugin(), w, l.cx(), l.cz(), () -> this.removeEntities(w, l));
         }
     }
