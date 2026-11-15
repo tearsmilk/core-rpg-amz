@@ -160,7 +160,7 @@ profiles:
     created: 1794743987206
     class: mage
     summary:
-      level: 1
+      level: 65
       class-key: mage
       class-name: Маг
       location: Начальная деревня

@@ -158,7 +158,7 @@ profiles:
       level: 1
       class-key: ''
       class-name: ''
-      location: Начальная деревня
+      location: dungeon
       stats:
       - name: Классовый
         value: '0'
