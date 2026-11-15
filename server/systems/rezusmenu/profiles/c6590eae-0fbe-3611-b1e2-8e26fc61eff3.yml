@@ -1,0 +1,288 @@
+# rezusmenu: профили игрока c6590eae-0fbe-3611-b1e2-8e26fc61eff3. Пишет система, руками не править.
+
+extra-slots: 0
+active: 2
+generation: 2
+next-id: 3
+profiles:
+  '1':
+    created: 1794743413674
+    class: ''
+    summary:
+      level: 1
+      class-key: ''
+      class-name: ''
+      location: Начальная деревня
+      stats:
+      - name: Классовый
+        value: '0'
+      - name: Ловкость
+        value: '0'
+      - name: Выносливость
+        value: '0'
+    data:
+      inventory:
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      held-slot: 0
+      ender-chest:
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      - ''
+      location:
+        world: world
+        x: -17.66044483102215
+        y: 100.0
+        z: 30.21828313956469
+        yaw: -73.73765563964844
+        pitch: 2.8734498023986816
+      health: 20.0
+      food: 20
+      saturation: 20.0
+      exhaustion: 0.0
+      fire-ticks: -20
+      air: 300
+      xp:
+        level: 1
+        progress: 0.0
+        total: 0
+      effects: []
+      class:
+        rq:
+          class-chosen: false
+          profession-chosen: false
+          level: 1
+          exp: 0
+          stats:
+            available: 0
+            primary: 0
+            agility: 0
+            stamina: 0
+            luck: 0
+          mmocore:
+            auto-bound: []
+            skill-points-granted: 0
+            skill-points-pending: 0
+            skill-points-backfilled: true
+        mmocore:
+          class-id: HUMAN
+          level: 1
+          experience: 0.0
+          skill-points: 0
+          attribute-points: 0
+          attribute-realloc-points: 0
+          skill-reallocation-points: 0
+          skill-tree-reallocation-points: 0
+          health: 20.0
+          mana: 20.0
+          stamina: 20.0
+          stellium: 20.0
+          node-levels:
+            warrior-paladin_d1: 0
+            warrior-paladin_d2: 0
+            warrior-paladin_d3: 0
+            general_e2: 0
+            general_e3: 0
+            general_e1: 0
+            combat_h1: 0
+            mage-arcane-mage_e1: 0
+            combat_h2: 0
+            combat_h3: 0
+            mage-arcane-mage_e3: 0
+            mage-arcane-mage_e2: 0
+            warrior-paladin_e1: 0
+            warrior-paladin_e2: 0
+            warrior-paladin_e3: 0
+            general_d1: 0
+            general_d2: 0
+            general_d3: 0
+            rogue-marksman_g3: 0
+            rogue-marksman_g1: 0
+            rogue-marksman_g2: 0
+            mage-arcane-mage_f2: 0
+            combat_g1: 0
+            mage-arcane-mage_f1: 0
+            combat_g2: 0
+            combat_g3: 0
+            mage-arcane-mage_f3: 0
+            warrior-paladin_b3: 0
+            warrior-paladin_b1: 0
+            warrior-paladin_b2: 0
+            combat_f3: 0
+            example_loop_e4: 0
+            example_loop_e3: 0
+            rogue-marksman_b1: 0
+            general_g1: 0
+            example_loop_e2: 0
+            example_loop_e1: 0
+            mage-arcane-mage_g1: 0
+            mage-arcane-mage_g3: 0
+            mage-arcane-mage_g2: 0
+            combat_f1: 0
+            rogue-marksman_b2: 0
+            combat_f2: 0
+            rogue-marksman_b3: 0
+            warrior-paladin_c1: 0
+            warrior-paladin_c2: 0
+            warrior-paladin_c3: 0
+            general_f3: 0
+            combat_e2: 0
+            combat_e3: 0
+            general_f1: 0
+            general_f2: 0
+            rogue-marksman_a3: 0
+            rogue-marksman_a1: 0
+            rogue-marksman_a2: 0
+            combat_e1: 0
+            mage-arcane-mage_a1: 0
+            mage-arcane-mage_a3: 0
+            mage-arcane-mage_a2: 0
+            general_j1: 0
+            rogue-marksman_d2: 0
+            combat_d1: 0
+            rogue-marksman_d3: 0
+            combat_d2: 0
+            combat_d3: 0
+            general_a1: 0
+            rogue-marksman_d1: 0
+            general_a2: 0
+            general_a3: 0
+            warrior-paladin_a2: 0
+            mage-arcane-mage_b2: 0
+            warrior-paladin_a3: 0
+            mage-arcane-mage_b1: 0
+            mage-arcane-mage_b3: 0
+            warrior-paladin_a1: 0
+            rogue-marksman_c1: 0
+            combat_c1: 0
+            rogue-marksman_c2: 0
+            combat_c2: 0
+            combat_c3: 0
+            general_h1: 0
+            rogue-marksman_c3: 0
+            mage-arcane-mage_c3: 0
+            mage-arcane-mage_c2: 0
+            warrior-paladin_f1: 0
+            warrior-paladin_f2: 0
+            warrior-paladin_f3: 0
+            general_c1: 0
+            rogue-marksman_f2: 0
+            general_c2: 0
+            combat_b1: 0
+            example_loop_a2: 0
+            rogue-marksman_f3: 0
+            general_c3: 0
+            combat_b2: 0
+            example_loop_a1: 0
+            combat_b3: 0
+            rogue-marksman_f1: 0
+            example_loop_a8: 0
+            example_loop_a7: 0
+            combat_j1: 0
+            combat_j2: 0
+            combat_j3: 0
+            example_loop_a4: 0
+            example_loop_a3: 0
+            mage-arcane-mage_c1: 0
+            example_loop_a6: 0
+            example_loop_a5: 0
+            mage-arcane-mage_d3: 0
+            warrior-paladin_g1: 0
+            warrior-paladin_g2: 0
+            warrior-paladin_g3: 0
+            rogue-marksman_e3: 0
+            general_b1: 0
+            rogue-marksman_e1: 0
+            general_b2: 0
+            combat_a1: 0
+            rogue-marksman_e2: 0
+            combat_a2: 0
+            combat_a3: 0
+            general_b3: 0
+            mage-arcane-mage_d2: 0
+            mage-arcane-mage_d1: 0
+          unlocked-items: []
+        class-key: ''
+        level: 1
+      extra:
+        corevault-level: '0'
+  '2':
+    created: 1794743473842
+    class: thief
+    summary:
+      level: 1
+      class-key: thief
+      class-name: Вор
+      location: Начальная деревня
+      stats:
+      - name: Сила
+        value: '0'
+      - name: Ловкость
+        value: '0'
+      - name: Выносливость
+        value: '0'

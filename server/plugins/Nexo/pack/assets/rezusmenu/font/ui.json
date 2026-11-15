@@ -254,6 +254,240 @@
     },
     {
       "type": "bitmap",
+      "file": "rezusmenu:ui/pf_bg_0_0.png",
+      "ascent": 144,
+      "height": 144,
+      "chars": [
+        "\ue01c"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_bg_0_1.png",
+      "ascent": 144,
+      "height": 144,
+      "chars": [
+        "\ue01d"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_bg_0_2.png",
+      "ascent": 144,
+      "height": 144,
+      "chars": [
+        "\ue01e"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_bg_1_0.png",
+      "ascent": 144,
+      "height": 144,
+      "chars": [
+        "\ue01f"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_bg_1_1.png",
+      "ascent": 144,
+      "height": 144,
+      "chars": [
+        "\ue020"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_bg_1_2.png",
+      "ascent": 144,
+      "height": 144,
+      "chars": [
+        "\ue021"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_bg_2_0.png",
+      "ascent": 112,
+      "height": 112,
+      "chars": [
+        "\ue022"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_bg_2_1.png",
+      "ascent": 112,
+      "height": 112,
+      "chars": [
+        "\ue023"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_bg_2_2.png",
+      "ascent": 112,
+      "height": 112,
+      "chars": [
+        "\ue024"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_logo.png",
+      "ascent": 112,
+      "height": 112,
+      "chars": [
+        "\ue025"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_lobby.png",
+      "ascent": 32,
+      "height": 32,
+      "chars": [
+        "\ue026"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_lobby_hover.png",
+      "ascent": 32,
+      "height": 32,
+      "chars": [
+        "\ue027"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_panel_0.png",
+      "ascent": 160,
+      "height": 160,
+      "chars": [
+        "\ue028"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_panel_1.png",
+      "ascent": 160,
+      "height": 160,
+      "chars": [
+        "\ue029"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_card.png",
+      "ascent": 96,
+      "height": 96,
+      "chars": [
+        "\ue02a"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_card_empty.png",
+      "ascent": 96,
+      "height": 96,
+      "chars": [
+        "\ue02b"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_btn.png",
+      "ascent": 32,
+      "height": 32,
+      "chars": [
+        "\ue02c"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_btn_green.png",
+      "ascent": 32,
+      "height": 32,
+      "chars": [
+        "\ue02d"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_btn_hover.png",
+      "ascent": 32,
+      "height": 32,
+      "chars": [
+        "\ue02e"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_buy.png",
+      "ascent": 32,
+      "height": 32,
+      "chars": [
+        "\ue02f"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_buy_hover.png",
+      "ascent": 32,
+      "height": 32,
+      "chars": [
+        "\ue030"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_arrow_up.png",
+      "ascent": 16,
+      "height": 16,
+      "chars": [
+        "\ue031"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_arrow_down.png",
+      "ascent": 16,
+      "height": 16,
+      "chars": [
+        "\ue032"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_arrow_hover.png",
+      "ascent": 16,
+      "height": 16,
+      "chars": [
+        "\ue033"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_row.png",
+      "ascent": 64,
+      "height": 64,
+      "chars": [
+        "\ue034"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/pf_row_hover.png",
+      "ascent": 64,
+      "height": 64,
+      "chars": [
+        "\ue035"
+      ]
+    },
+    {
+      "type": "bitmap",
       "file": "rezusmenu:ui/pixel.png",
       "ascent": 1,
       "height": 1,

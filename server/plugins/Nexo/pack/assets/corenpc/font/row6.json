@@ -10,9 +10,9 @@
     },
     {
       "type": "bitmap",
-      "file": "corenpc:font/dialog/glyphs_h8.png",
-      "height": 8,
-      "ascent": -3,
+      "file": "corenpc:font/dialog/glyphs_h69.png",
+      "height": 69,
+      "ascent": 69,
       "chars": [
         "!\"#$%&'()*+,-./0123456789:;<=>?@",
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`",
@@ -38,9 +38,9 @@
     },
     {
       "type": "bitmap",
-      "file": "corenpc:font/dialog/tall_h12.png",
-      "height": 12,
-      "ascent": 0,
+      "file": "corenpc:font/dialog/tall_h72.png",
+      "height": 72,
+      "ascent": 72,
       "chars": [
         "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖÙÚÛÜÝàáâã",
         "äåæçèéêëìíîïñòóôõöùúûüýÿĀāĂăĄąĆć",
@@ -64,8 +64,8 @@
     {
       "type": "bitmap",
       "file": "corenpc:font/dialog/highlight0.png",
-      "height": 16,
-      "ascent": -2,
+      "height": 88,
+      "ascent": 70,
       "chars": [
         ""
       ]
@@ -73,8 +73,8 @@
     {
       "type": "bitmap",
       "file": "corenpc:font/dialog/highlight1.png",
-      "height": 16,
-      "ascent": -2,
+      "height": 88,
+      "ascent": 70,
       "chars": [
         ""
       ]
@@ -82,8 +82,8 @@
     {
       "type": "bitmap",
       "file": "corenpc:font/dialog/next.png",
-      "height": 5,
-      "ascent": -6,
+      "height": 66,
+      "ascent": 66,
       "chars": [
         ""
       ]
