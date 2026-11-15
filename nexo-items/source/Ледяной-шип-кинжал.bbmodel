@@ -1,0 +1,4014 @@
+{
+  "meta": {
+    "format_version": "5.0",
+    "model_format": "java_block",
+    "box_uv": false
+  },
+  "name": "Frost Needle",
+  "parent": "",
+  "ambientocclusion": false,
+  "front_gui_light": true,
+  "resolution": {
+    "width": 256,
+    "height": 256
+  },
+  "elements": [
+    {
+      "name": "Silver / blade socket",
+      "uuid": "e45fb113-15b2-43d0-b4eb-9e147a77d73b",
+      "type": "cube",
+      "from": [
+        6.775,
+        7.725,
+        7.55
+      ],
+      "to": [
+        9.225,
+        8.375,
+        8.45
+      ],
+      "origin": [
+        8,
+        8.05,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1,
+            1,
+            11,
+            4
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            12,
+            1,
+            16,
+            4
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            17,
+            1,
+            27,
+            4
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            28,
+            1,
+            32,
+            4
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            33,
+            1,
+            43,
+            5
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            44,
+            1,
+            54,
+            5
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Silver / thin crossguard",
+      "uuid": "fa284ff3-74de-45c1-83d6-b2cab7030ab7",
+      "type": "cube",
+      "from": [
+        5.9,
+        7.3,
+        7.55
+      ],
+      "to": [
+        10.1,
+        7.7,
+        8.45
+      ],
+      "origin": [
+        8,
+        7.5,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            55,
+            1,
+            72,
+            3
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            73,
+            1,
+            77,
+            3
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            78,
+            1,
+            95,
+            3
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            96,
+            1,
+            100,
+            3
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            101,
+            1,
+            118,
+            5
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            119,
+            1,
+            136,
+            5
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blue steel / guard end",
+      "uuid": "0bda9762-2cb0-439a-9e61-87c9ad7f7373",
+      "type": "cube",
+      "from": [
+        5.8,
+        7.125,
+        7.49
+      ],
+      "to": [
+        6.2,
+        7.875,
+        8.51
+      ],
+      "origin": [
+        6.0,
+        7.5,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            137,
+            1,
+            139,
+            4
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            140,
+            1,
+            145,
+            4
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            146,
+            1,
+            148,
+            4
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            149,
+            1,
+            154,
+            4
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            155,
+            1,
+            157,
+            6
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            158,
+            1,
+            160,
+            6
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blue steel / guard end",
+      "uuid": "157b18d3-51fc-4195-b9ef-69635bb94062",
+      "type": "cube",
+      "from": [
+        9.8,
+        7.125,
+        7.49
+      ],
+      "to": [
+        10.2,
+        7.875,
+        8.51
+      ],
+      "origin": [
+        10.0,
+        7.5,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            161,
+            1,
+            163,
+            4
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            164,
+            1,
+            169,
+            4
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            170,
+            1,
+            172,
+            4
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            173,
+            1,
+            178,
+            4
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            179,
+            1,
+            181,
+            6
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            182,
+            1,
+            184,
+            6
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blue steel / horizontal seal frame",
+      "uuid": "d2e5f9b9-7cee-4c21-a9a2-6c05f68c9027",
+      "type": "cube",
+      "from": [
+        7.35,
+        7.15,
+        7.475
+      ],
+      "to": [
+        8.65,
+        7.85,
+        8.525
+      ],
+      "origin": [
+        8,
+        7.5,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            185,
+            1,
+            191,
+            4
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            192,
+            1,
+            197,
+            4
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            198,
+            1,
+            204,
+            4
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            205,
+            1,
+            210,
+            4
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            211,
+            1,
+            217,
+            6
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            218,
+            1,
+            224,
+            6
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Ice / horizontal inset",
+      "uuid": "cf563049-7634-4c3c-a8db-22adafdd9c7c",
+      "type": "cube",
+      "from": [
+        7.575,
+        7.36,
+        7.42
+      ],
+      "to": [
+        8.425,
+        7.64,
+        8.58
+      ],
+      "origin": [
+        8,
+        7.5,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            225,
+            1,
+            229,
+            3
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            230,
+            1,
+            235,
+            3
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            236,
+            1,
+            240,
+            3
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            241,
+            1,
+            246,
+            3
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            247,
+            1,
+            251,
+            6
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            1,
+            7,
+            5,
+            12
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Silver / upper grip collar",
+      "uuid": "c7aecbe8-1ac7-4eb7-92f7-aa909a184447",
+      "type": "cube",
+      "from": [
+        7.4,
+        6.6,
+        7.48
+      ],
+      "to": [
+        8.6,
+        7.3,
+        8.52
+      ],
+      "origin": [
+        8,
+        6.95,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6,
+            7,
+            11,
+            10
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            12,
+            7,
+            17,
+            10
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            18,
+            7,
+            23,
+            10
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            24,
+            7,
+            29,
+            10
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            30,
+            7,
+            35,
+            12
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            36,
+            7,
+            41,
+            12
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Leather / midnight wrap",
+      "uuid": "6c0ba1d3-67c7-4bbc-b302-e0561151994c",
+      "type": "cube",
+      "from": [
+        7.5,
+        2.65,
+        7.55
+      ],
+      "to": [
+        8.5,
+        6.65,
+        8.45
+      ],
+      "origin": [
+        8,
+        4.65,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            42,
+            7,
+            46,
+            23
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            47,
+            7,
+            51,
+            23
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            52,
+            7,
+            56,
+            23
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            57,
+            7,
+            61,
+            23
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            62,
+            7,
+            66,
+            11
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            67,
+            7,
+            71,
+            11
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Silver / lower grip collar",
+      "uuid": "c0522bb0-0c09-487c-86b7-2f779e8ba3c7",
+      "type": "cube",
+      "from": [
+        7.4,
+        2.05,
+        7.48
+      ],
+      "to": [
+        8.6,
+        2.65,
+        8.52
+      ],
+      "origin": [
+        8,
+        2.35,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            72,
+            7,
+            77,
+            10
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            78,
+            7,
+            83,
+            10
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            84,
+            7,
+            89,
+            10
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            90,
+            7,
+            95,
+            10
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            96,
+            7,
+            101,
+            12
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            102,
+            7,
+            107,
+            12
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Silver / pommel shoulder",
+      "uuid": "6d836b75-9d69-4f5a-8c9b-1627f5f2535f",
+      "type": "cube",
+      "from": [
+        7.42,
+        1.75,
+        7.49
+      ],
+      "to": [
+        8.58,
+        2.15,
+        8.51
+      ],
+      "origin": [
+        8,
+        1.95,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            108,
+            7,
+            113,
+            9
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            114,
+            7,
+            119,
+            9
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            120,
+            7,
+            125,
+            9
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            126,
+            7,
+            131,
+            9
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            132,
+            7,
+            137,
+            12
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            138,
+            7,
+            143,
+            12
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blue steel / pommel body",
+      "uuid": "0d865077-000d-4812-8e92-e6f1b212c038",
+      "type": "cube",
+      "from": [
+        7.25,
+        1.3,
+        7.44
+      ],
+      "to": [
+        8.75,
+        1.8,
+        8.56
+      ],
+      "origin": [
+        8,
+        1.55,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            144,
+            7,
+            150,
+            9
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            151,
+            7,
+            156,
+            9
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            157,
+            7,
+            163,
+            9
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            164,
+            7,
+            169,
+            9
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            170,
+            7,
+            176,
+            12
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            177,
+            7,
+            183,
+            12
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Silver / pommel end",
+      "uuid": "f78dd913-2b74-4281-b684-20f17e303093",
+      "type": "cube",
+      "from": [
+        7.475,
+        1.0,
+        7.5
+      ],
+      "to": [
+        8.525,
+        1.3,
+        8.5
+      ],
+      "origin": [
+        8,
+        1.15,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            184,
+            7,
+            189,
+            9
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            190,
+            7,
+            194,
+            9
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            195,
+            7,
+            200,
+            9
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            201,
+            7,
+            205,
+            9
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            206,
+            7,
+            211,
+            11
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            212,
+            7,
+            217,
+            11
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 01",
+      "uuid": "fe059148-9fc8-4923-9099-56cbe929d3e3",
+      "type": "cube",
+      "from": [
+        6.875,
+        8.0,
+        7.7
+      ],
+      "to": [
+        9.125,
+        8.25,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            27,
+            134,
+            9,
+            136
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            9,
+            134,
+            27,
+            136
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            134,
+            75,
+            136
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            134,
+            83,
+            136
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 02",
+      "uuid": "2c044178-9d01-4dbd-a67e-f9bf1f2bd3f3",
+      "type": "cube",
+      "from": [
+        6.875,
+        8.25,
+        7.7
+      ],
+      "to": [
+        9.125,
+        8.5,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            27,
+            132,
+            9,
+            134
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            9,
+            132,
+            27,
+            134
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            132,
+            75,
+            134
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            132,
+            83,
+            134
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 03",
+      "uuid": "9596d664-9800-4054-872f-f396dc73390c",
+      "type": "cube",
+      "from": [
+        6.875,
+        8.5,
+        7.7
+      ],
+      "to": [
+        9.125,
+        8.75,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            27,
+            130,
+            9,
+            132
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            9,
+            130,
+            27,
+            132
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            130,
+            75,
+            132
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            130,
+            83,
+            132
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 04",
+      "uuid": "bd445543-3560-4b4c-828e-330a9275ecd7",
+      "type": "cube",
+      "from": [
+        6.875,
+        8.75,
+        7.7
+      ],
+      "to": [
+        9.125,
+        9.0,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            27,
+            128,
+            9,
+            130
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            9,
+            128,
+            27,
+            130
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            128,
+            75,
+            130
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            128,
+            83,
+            130
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 05",
+      "uuid": "2d9abe09-a3a9-4601-a09c-05e3a4377522",
+      "type": "cube",
+      "from": [
+        6.875,
+        9.0,
+        7.7
+      ],
+      "to": [
+        9.125,
+        9.25,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            27,
+            126,
+            9,
+            128
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            9,
+            126,
+            27,
+            128
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            126,
+            75,
+            128
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            126,
+            83,
+            128
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 06",
+      "uuid": "cc6e3f6b-8eb9-4d88-a773-c06c5246f01c",
+      "type": "cube",
+      "from": [
+        7.0,
+        9.25,
+        7.7
+      ],
+      "to": [
+        9.0,
+        9.5,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            26,
+            124,
+            10,
+            126
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            10,
+            124,
+            26,
+            126
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            124,
+            75,
+            126
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            124,
+            83,
+            126
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 07",
+      "uuid": "17de7290-db71-471a-a63c-f446add68e0a",
+      "type": "cube",
+      "from": [
+        7.0,
+        9.5,
+        7.7
+      ],
+      "to": [
+        9.0,
+        9.75,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            26,
+            122,
+            10,
+            124
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            10,
+            122,
+            26,
+            124
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            122,
+            75,
+            124
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            122,
+            83,
+            124
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 08",
+      "uuid": "60fa5b8f-292d-4962-b509-883233efeb40",
+      "type": "cube",
+      "from": [
+        7.0,
+        9.75,
+        7.7
+      ],
+      "to": [
+        9.0,
+        10.0,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            26,
+            120,
+            10,
+            122
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            10,
+            120,
+            26,
+            122
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            120,
+            75,
+            122
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            120,
+            83,
+            122
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 09",
+      "uuid": "58dff97b-1eb8-4bf8-aa77-70713bd426c0",
+      "type": "cube",
+      "from": [
+        7.0,
+        10.0,
+        7.7
+      ],
+      "to": [
+        9.0,
+        10.25,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            26,
+            118,
+            10,
+            120
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            10,
+            118,
+            26,
+            120
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            118,
+            75,
+            120
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            118,
+            83,
+            120
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 10",
+      "uuid": "699a373b-febb-4ecd-8574-679898bdae9a",
+      "type": "cube",
+      "from": [
+        7.0,
+        10.25,
+        7.7
+      ],
+      "to": [
+        9.0,
+        10.5,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            26,
+            116,
+            10,
+            118
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            10,
+            116,
+            26,
+            118
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            116,
+            75,
+            118
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            116,
+            83,
+            118
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 11",
+      "uuid": "2aa00d1f-946c-4b83-bee0-2133e3ef62be",
+      "type": "cube",
+      "from": [
+        7.0,
+        10.5,
+        7.7
+      ],
+      "to": [
+        9.0,
+        10.75,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            26,
+            114,
+            10,
+            116
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            10,
+            114,
+            26,
+            116
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            114,
+            75,
+            116
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            114,
+            83,
+            116
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 12",
+      "uuid": "1b24585f-bda8-4b51-8921-31dfbbf48edf",
+      "type": "cube",
+      "from": [
+        7.125,
+        10.75,
+        7.7
+      ],
+      "to": [
+        8.875,
+        11.0,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            25,
+            112,
+            11,
+            114
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            11,
+            112,
+            25,
+            114
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            112,
+            75,
+            114
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            112,
+            83,
+            114
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 13",
+      "uuid": "b34e337f-66f2-48c7-8133-f46d3ceaa8a4",
+      "type": "cube",
+      "from": [
+        7.125,
+        11.0,
+        7.7
+      ],
+      "to": [
+        8.875,
+        11.25,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            25,
+            110,
+            11,
+            112
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            11,
+            110,
+            25,
+            112
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            110,
+            75,
+            112
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            110,
+            83,
+            112
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 14",
+      "uuid": "308dd4ef-9b12-4f52-9ffa-de01ea3741eb",
+      "type": "cube",
+      "from": [
+        7.125,
+        11.25,
+        7.7
+      ],
+      "to": [
+        8.875,
+        11.5,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            25,
+            108,
+            11,
+            110
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            11,
+            108,
+            25,
+            110
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            108,
+            75,
+            110
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            108,
+            83,
+            110
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 15",
+      "uuid": "f93408b1-de3b-4a10-8cc8-2233c91d52ae",
+      "type": "cube",
+      "from": [
+        7.125,
+        11.5,
+        7.7
+      ],
+      "to": [
+        8.875,
+        11.75,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            25,
+            106,
+            11,
+            108
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            11,
+            106,
+            25,
+            108
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            106,
+            75,
+            108
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            106,
+            83,
+            108
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 16",
+      "uuid": "50a7129a-3ee0-4518-b2bb-0226fcd31478",
+      "type": "cube",
+      "from": [
+        7.125,
+        11.75,
+        7.7
+      ],
+      "to": [
+        8.875,
+        12.0,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            25,
+            104,
+            11,
+            106
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            11,
+            104,
+            25,
+            106
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            104,
+            75,
+            106
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            104,
+            83,
+            106
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 17",
+      "uuid": "3975d51d-3d7a-4165-9f5d-e22c5dcb50c1",
+      "type": "cube",
+      "from": [
+        7.25,
+        12.0,
+        7.7
+      ],
+      "to": [
+        8.75,
+        12.25,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            24,
+            102,
+            12,
+            104
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            12,
+            102,
+            24,
+            104
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            102,
+            75,
+            104
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            102,
+            83,
+            104
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 18",
+      "uuid": "a3586cd0-bdaa-47e4-b0e8-ecd678389b78",
+      "type": "cube",
+      "from": [
+        7.25,
+        12.25,
+        7.7
+      ],
+      "to": [
+        8.75,
+        12.5,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            24,
+            100,
+            12,
+            102
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            12,
+            100,
+            24,
+            102
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            100,
+            75,
+            102
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            100,
+            83,
+            102
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 19",
+      "uuid": "f95e5810-f938-48f0-98ec-1da00bcbf2b1",
+      "type": "cube",
+      "from": [
+        7.25,
+        12.5,
+        7.7
+      ],
+      "to": [
+        8.75,
+        12.75,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            24,
+            98,
+            12,
+            100
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            12,
+            98,
+            24,
+            100
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            98,
+            75,
+            100
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            98,
+            83,
+            100
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 20",
+      "uuid": "ac5d87e3-9b28-4875-8aff-97d99f6fb7ef",
+      "type": "cube",
+      "from": [
+        7.25,
+        12.75,
+        7.7
+      ],
+      "to": [
+        8.75,
+        13.0,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            24,
+            96,
+            12,
+            98
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            12,
+            96,
+            24,
+            98
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            96,
+            75,
+            98
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            96,
+            83,
+            98
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 21",
+      "uuid": "fbd868e6-3f7d-4181-be11-7f253e1a8870",
+      "type": "cube",
+      "from": [
+        7.25,
+        13.0,
+        7.7
+      ],
+      "to": [
+        8.75,
+        13.25,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            24,
+            94,
+            12,
+            96
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            12,
+            94,
+            24,
+            96
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            94,
+            75,
+            96
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            94,
+            83,
+            96
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 22",
+      "uuid": "48b6fa65-b762-4740-8dad-859e68f524db",
+      "type": "cube",
+      "from": [
+        7.375,
+        13.25,
+        7.7
+      ],
+      "to": [
+        8.625,
+        13.5,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            23,
+            92,
+            13,
+            94
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            13,
+            92,
+            23,
+            94
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            92,
+            75,
+            94
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            92,
+            83,
+            94
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 23",
+      "uuid": "317dded5-b457-4607-9f23-afc424136816",
+      "type": "cube",
+      "from": [
+        7.375,
+        13.5,
+        7.7
+      ],
+      "to": [
+        8.625,
+        13.75,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            23,
+            90,
+            13,
+            92
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            13,
+            90,
+            23,
+            92
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            90,
+            75,
+            92
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            90,
+            83,
+            92
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 24",
+      "uuid": "94827ad6-d37b-4297-b89d-62cd0dd2acfb",
+      "type": "cube",
+      "from": [
+        7.375,
+        13.75,
+        7.7
+      ],
+      "to": [
+        8.625,
+        14.0,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            23,
+            88,
+            13,
+            90
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            13,
+            88,
+            23,
+            90
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            88,
+            75,
+            90
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            88,
+            83,
+            90
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 25",
+      "uuid": "7581183f-7563-4bc3-ad51-0b0eca505d80",
+      "type": "cube",
+      "from": [
+        7.375,
+        14.0,
+        7.7
+      ],
+      "to": [
+        8.625,
+        14.25,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            23,
+            86,
+            13,
+            88
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            13,
+            86,
+            23,
+            88
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            86,
+            75,
+            88
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            86,
+            83,
+            88
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 26",
+      "uuid": "a76fd082-741a-429a-abad-1052233ceeff",
+      "type": "cube",
+      "from": [
+        7.5,
+        14.25,
+        7.7
+      ],
+      "to": [
+        8.5,
+        14.5,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            22,
+            84,
+            14,
+            86
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14,
+            84,
+            22,
+            86
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            84,
+            75,
+            86
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            84,
+            83,
+            86
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 27",
+      "uuid": "659c287c-0f1a-4990-be5e-68ce47f1d7af",
+      "type": "cube",
+      "from": [
+        7.5,
+        14.5,
+        7.7
+      ],
+      "to": [
+        8.5,
+        14.75,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            22,
+            82,
+            14,
+            84
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14,
+            82,
+            22,
+            84
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            82,
+            75,
+            84
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            82,
+            83,
+            84
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 28",
+      "uuid": "a61cddad-d2e1-45ff-b3ff-b4b409792254",
+      "type": "cube",
+      "from": [
+        7.5,
+        14.75,
+        7.7
+      ],
+      "to": [
+        8.5,
+        15.0,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            22,
+            80,
+            14,
+            82
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14,
+            80,
+            22,
+            82
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            80,
+            75,
+            82
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            80,
+            83,
+            82
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 29",
+      "uuid": "ecd58580-3647-48f1-a89e-138ec00a926a",
+      "type": "cube",
+      "from": [
+        7.5,
+        15.0,
+        7.7
+      ],
+      "to": [
+        8.5,
+        15.25,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            22,
+            78,
+            14,
+            80
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14,
+            78,
+            22,
+            80
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            78,
+            75,
+            80
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            78,
+            83,
+            80
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 30",
+      "uuid": "5f2142fa-34bc-47c8-98c1-6088d7e597bb",
+      "type": "cube",
+      "from": [
+        7.625,
+        15.25,
+        7.7
+      ],
+      "to": [
+        8.375,
+        15.5,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            21,
+            76,
+            15,
+            78
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            15,
+            76,
+            21,
+            78
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            76,
+            75,
+            78
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            76,
+            83,
+            78
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 31",
+      "uuid": "d1b97f2b-6ccd-40da-8d9a-13e46b42a8d4",
+      "type": "cube",
+      "from": [
+        7.625,
+        15.5,
+        7.7
+      ],
+      "to": [
+        8.375,
+        15.75,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            21,
+            74,
+            15,
+            76
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            15,
+            74,
+            21,
+            76
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            74,
+            75,
+            76
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            74,
+            83,
+            76
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 32",
+      "uuid": "c5c0ce05-7818-48fd-ba74-3cd119604dcf",
+      "type": "cube",
+      "from": [
+        7.625,
+        15.75,
+        7.7
+      ],
+      "to": [
+        8.375,
+        16.0,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            21,
+            72,
+            15,
+            74
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            15,
+            72,
+            21,
+            74
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            72,
+            75,
+            74
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            72,
+            83,
+            74
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 33",
+      "uuid": "d71f8dfa-2cf4-4f4e-8e41-d1b5a73de8da",
+      "type": "cube",
+      "from": [
+        7.75,
+        16.0,
+        7.7
+      ],
+      "to": [
+        8.25,
+        16.25,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            20,
+            70,
+            16,
+            72
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            16,
+            70,
+            20,
+            72
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            70,
+            75,
+            72
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            70,
+            83,
+            72
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 34",
+      "uuid": "d1fbf17e-de9f-4cf4-829e-9a5608e2f7bd",
+      "type": "cube",
+      "from": [
+        7.75,
+        16.25,
+        7.7
+      ],
+      "to": [
+        8.25,
+        16.5,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            20,
+            68,
+            16,
+            70
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            16,
+            68,
+            20,
+            70
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            68,
+            75,
+            70
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            68,
+            83,
+            70
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 35",
+      "uuid": "e8af15ad-dc1d-4a0a-a7fe-576658d6432b",
+      "type": "cube",
+      "from": [
+        7.75,
+        16.5,
+        7.7
+      ],
+      "to": [
+        8.25,
+        16.75,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            20,
+            66,
+            16,
+            68
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            16,
+            66,
+            20,
+            68
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            66,
+            75,
+            68
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            66,
+            83,
+            68
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 36",
+      "uuid": "13745e20-78b9-46c8-a41a-f12ae4edd49c",
+      "type": "cube",
+      "from": [
+        7.875,
+        16.75,
+        7.7
+      ],
+      "to": [
+        8.125,
+        17.0,
+        8.3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            19,
+            64,
+            17,
+            66
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            17,
+            64,
+            19,
+            66
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            64,
+            75,
+            66
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            64,
+            83,
+            66
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    }
+  ],
+  "display": {
+    "thirdperson_righthand": {
+      "rotation": [
+        7.25,
+        -90,
+        0
+      ],
+      "translation": [
+        0,
+        1.7,
+        0.75
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        7.25,
+        -90,
+        0
+      ],
+      "translation": [
+        0,
+        1.7,
+        0.75
+      ],
+      "scale": [
+        0.85,
+        0.85,
+        0.85
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        -90,
+        25
+      ],
+      "translation": [
+        -1.12,
+        4.45,
+        1.13
+      ],
+      "scale": [
+        0.75,
+        0.75,
+        0.75
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        -90,
+        25
+      ],
+      "translation": [
+        1.13,
+        3.7,
+        1.13
+      ],
+      "scale": [
+        0.68,
+        0.68,
+        0.68
+      ]
+    },
+    "ground": {
+      "translation": [
+        0,
+        3.25,
+        0
+      ],
+      "scale": [
+        0.45,
+        0.45,
+        0.45
+      ]
+    },
+    "gui": {
+      "rotation": [
+        0,
+        0,
+        30
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "head": {
+      "rotation": [
+        0,
+        0,
+        132.75
+      ],
+      "translation": [
+        4.75,
+        -11.5,
+        5
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        0,
+        30
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  "outliner": [
+    {
+      "name": "Blade",
+      "uuid": "d163cef8-3996-43f0-b177-fa04f8d724fe",
+      "origin": [
+        8,
+        7.5,
+        8
+      ],
+      "export": true,
+      "visibility": true,
+      "isOpen": false,
+      "children": [
+        "fe059148-9fc8-4923-9099-56cbe929d3e3",
+        "2c044178-9d01-4dbd-a67e-f9bf1f2bd3f3",
+        "9596d664-9800-4054-872f-f396dc73390c",
+        "bd445543-3560-4b4c-828e-330a9275ecd7",
+        "2d9abe09-a3a9-4601-a09c-05e3a4377522",
+        "cc6e3f6b-8eb9-4d88-a773-c06c5246f01c",
+        "17de7290-db71-471a-a63c-f446add68e0a",
+        "60fa5b8f-292d-4962-b509-883233efeb40",
+        "58dff97b-1eb8-4bf8-aa77-70713bd426c0",
+        "699a373b-febb-4ecd-8574-679898bdae9a",
+        "2aa00d1f-946c-4b83-bee0-2133e3ef62be",
+        "1b24585f-bda8-4b51-8921-31dfbbf48edf",
+        "b34e337f-66f2-48c7-8133-f46d3ceaa8a4",
+        "308dd4ef-9b12-4f52-9ffa-de01ea3741eb",
+        "f93408b1-de3b-4a10-8cc8-2233c91d52ae",
+        "50a7129a-3ee0-4518-b2bb-0226fcd31478",
+        "3975d51d-3d7a-4165-9f5d-e22c5dcb50c1",
+        "a3586cd0-bdaa-47e4-b0e8-ecd678389b78",
+        "f95e5810-f938-48f0-98ec-1da00bcbf2b1",
+        "ac5d87e3-9b28-4875-8aff-97d99f6fb7ef",
+        "fbd868e6-3f7d-4181-be11-7f253e1a8870",
+        "48b6fa65-b762-4740-8dad-859e68f524db",
+        "317dded5-b457-4607-9f23-afc424136816",
+        "94827ad6-d37b-4297-b89d-62cd0dd2acfb",
+        "7581183f-7563-4bc3-ad51-0b0eca505d80",
+        "a76fd082-741a-429a-abad-1052233ceeff",
+        "659c287c-0f1a-4990-be5e-68ce47f1d7af",
+        "a61cddad-d2e1-45ff-b3ff-b4b409792254",
+        "ecd58580-3647-48f1-a89e-138ec00a926a",
+        "5f2142fa-34bc-47c8-98c1-6088d7e597bb",
+        "d1b97f2b-6ccd-40da-8d9a-13e46b42a8d4",
+        "c5c0ce05-7818-48fd-ba74-3cd119604dcf",
+        "d71f8dfa-2cf4-4f4e-8e41-d1b5a73de8da",
+        "d1fbf17e-de9f-4cf4-829e-9a5608e2f7bd",
+        "e8af15ad-dc1d-4a0a-a7fe-576658d6432b",
+        "13745e20-78b9-46c8-a41a-f12ae4edd49c"
+      ]
+    },
+    {
+      "name": "Guard",
+      "uuid": "7172211d-6399-4803-83b4-024bde06b33e",
+      "origin": [
+        8,
+        7.5,
+        8
+      ],
+      "export": true,
+      "visibility": true,
+      "isOpen": false,
+      "children": [
+        "e45fb113-15b2-43d0-b4eb-9e147a77d73b",
+        "fa284ff3-74de-45c1-83d6-b2cab7030ab7",
+        "0bda9762-2cb0-439a-9e61-87c9ad7f7373",
+        "157b18d3-51fc-4195-b9ef-69635bb94062",
+        "d2e5f9b9-7cee-4c21-a9a2-6c05f68c9027",
+        "cf563049-7634-4c3c-a8db-22adafdd9c7c"
+      ]
+    },
+    {
+      "name": "Grip",
+      "uuid": "c1148f42-342f-4e71-a73e-311641f3520e",
+      "origin": [
+        8,
+        7.5,
+        8
+      ],
+      "export": true,
+      "visibility": true,
+      "isOpen": false,
+      "children": [
+        "c7aecbe8-1ac7-4eb7-92f7-aa909a184447",
+        "6c0ba1d3-67c7-4bbc-b302-e0561151994c",
+        "c0522bb0-0c09-487c-86b7-2f779e8ba3c7"
+      ]
+    },
+    {
+      "name": "Pommel",
+      "uuid": "0e3f5bee-79ae-40fd-901b-0c6c0ac3f5ba",
+      "origin": [
+        8,
+        7.5,
+        8
+      ],
+      "export": true,
+      "visibility": true,
+      "isOpen": false,
+      "children": [
+        "6d836b75-9d69-4f5a-8c9b-1627f5f2535f",
+        "0d865077-000d-4812-8e92-e6f1b212c038",
+        "f78dd913-2b74-4281-b684-20f17e303093"
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "name": "frost_needle.png",
+      "path": "",
+      "folder": "item",
+      "id": "0",
+      "uuid": "face4da9-8397-47b5-8530-79582a3e9a08",
+      "mode": "bitmap",
+      "visible": true,
+      "saved": true,
+      "particle": true,
+      "render_mode": "default",
+      "width": 256,
+      "height": 256,
+      "uv_width": 256,
+      "uv_height": 256,
+      "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAF6ElEQVR4nO3dzWscZRwH8NlkpRQ1B4tUhRqpiBaxrRfx4q3gpSB4FAT/gIJevfXiUahQ7wFPlSIUCkXoyR4UC3211tfYtLQx1EpfaItCGpkts063s83O7uzu7P4+n0N28swzT2Ymeb775JmZJEmAsBrph/NXb671Unnb03ONzrpFZaPcvoq6ZduZ1Lb7bWf3R5+12jm878P2cl6+vGydQbYt2/6jtskb1TbZuoW/bz+w7oOnHn+orFt52bqd9ZrphwuXryYXl5aTR7mwdDHprFtUNsrt16u795PPkyoUtTPMtns5xqrOVS/tXFu+nCz/dr69fGPlSrvOnVs3+q7TbXkY7efrd25zo0tbw9wmv+7gifvlZ48cb6/LyrqV91u3MAAWFr5MelVUd9Dth+XAvo8bw2pnmG3XzeKpbwuXy9apQ/u9rlvsY5t+Hd71UqOXsrJ1e9Es+0M4aGcoqlvXABmXqo6xqnZWfj7WKFouW6cO7fe6bqWPbSbR1BwI9bf55bfWsg6UX56U9teTfc1O+f0pWpcMye6jv67lfwVY+vQ9/R34XysRimYLi2aQu80sj6J80/zr7fINT2xKrpw72tiy/e21W39date7fuXHxotvvtuq9++d262yS2e+bjz36q5W2cYn51plv3/3Vave9eU/2tteWzpZWFa381C38rrPsPd6PNtKHHs/5ympqWa32cLOGeRuM8ujKk87fSbryGnnn31swwMHlHX8fDBk9bN1ZdTtPHS7+lBVedn9OX7kYGE7j1rXzzb9zrCXOf69JeqWPU+1DoAyE0hVlZeVdeJ8R047fz4Y8h0/HwxFodCrup2HbhOuVZWXVfcJtjLHf2DI52qiAmAUP2h37v7Tc3n+3TvryGnnzwdDvuPng6EoFHpVt/MwCnXbnzpaGHLQjz0A6nYC8+/eWUdOO3/nsD7r+PlgKAqFdB6g82sUlUX7Qarb/ozjunwvpmW0MDE7W/Uk4OiPAOpnbCOAssY1CQjTbGICYFyTgDDNJiYAxjUJCNNsYgKg6klAYIICIP/unXXktPN3DuuLft8vCgVgggLAJCAEDgCTgBA4AEwCQuAAMAkIgQPAJCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH1pJBVYunl3LX2dn9tYSXt1cOjUhbXT55fan+/YNp+8s/OF9vF9f/Ha2tnF5fb617Y+m7zx/KapOX5imBn3DgDj06zi3f/U4kp7eZpGATDtjAAgMAEAgQkACEwAQGACAAJrVnEFYP/+L1qf79nzvisBMEGMACAwAQCBCQAIbOA7AVOrq6tVNAOMmBEABNYc9ArAyRPn2mXZsmcCYDIYAUBgAgACEwAQmACAwAQABCYAIDABAIE1q7oHIONeAJgcRgAQ2EDPAszOzha+ApPBCAACEwAQmACAwAQABCYAILBmv/cA/HD2l2Rm5n5+dL6m67K6/lcg1JcRAAQmACAwAQCBCQAITABAYH0/C3Dv3r2HlvNlQP0ZAUBgAgACEwAQ2Ew/dwGeOf1Tu+ybY8cLl9M6ad10m6p2FqiWEQAEJgAgMAEAgQkACEwAQGACAAITABCYAIDABAAE1hzkLsD1ZHX9bUCoJyMACEwAQGACAAIr/ReBVldXS30O1JcRAAQmACAwAQCBCQAITABAYAIAAhMAEFizzHMAJ0+cK/0Fsm08DwD1YwQAgQkACEwAQGClngWYnZ1dt6yoDlBPRgAQmACAwAQABCYAIDABAAAAAABTrjHuHYgie6Iy1et/V9q+45XW686tm5P5uY2+V1TOVQAITABAYAIAAhMAAAAAEINryyNy5tKfA90HsH3LM75XVM4kIAQmACAwAQCBCQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACApJT/AJAJ5IWID7JfAAAAAElFTkSuQmCC"
+    }
+  ]
+}

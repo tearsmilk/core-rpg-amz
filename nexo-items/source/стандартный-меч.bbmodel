@@ -1,0 +1,1259 @@
+{
+  "meta": {
+    "format_version": "5.0",
+    "model_format": "java_block",
+    "box_uv": false
+  },
+  "name": "Iron Vow Sword",
+  "parent": "",
+  "ambientocclusion": false,
+  "front_gui_light": true,
+  "resolution": {
+    "width": 256,
+    "height": 256
+  },
+  "elements": [
+    {
+      "name": "Blade / straight steel",
+      "type": "cube",
+      "uuid": "fa172753-43f7-4801-98a5-8b38dce8413a",
+      "from": [
+        6.4,
+        9.5,
+        7.7
+      ],
+      "to": [
+        9.6,
+        29.5,
+        8.3
+      ],
+      "origin": [
+        8,
+        19.5,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1,
+            1,
+            14,
+            81
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            15,
+            1,
+            18,
+            81
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            19,
+            1,
+            32,
+            81
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            33,
+            1,
+            36,
+            81
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            37,
+            1,
+            50,
+            4
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            51,
+            1,
+            64,
+            4
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / solid point",
+      "type": "cube",
+      "uuid": "5f2237e9-687e-4764-b7d7-23d8502b591c",
+      "from": [
+        6.86862915,
+        28.36862915,
+        7.7001
+      ],
+      "to": [
+        9.13137085,
+        30.63137085,
+        8.2999
+      ],
+      "origin": [
+        8,
+        29.5,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            65,
+            1,
+            84,
+            20
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            85,
+            1,
+            88,
+            11
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            89,
+            1,
+            108,
+            20
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            109,
+            1,
+            112,
+            11
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            113,
+            1,
+            123,
+            4
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            124,
+            1,
+            134,
+            4
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false,
+      "rotation": [
+        0,
+        0,
+        45
+      ]
+    },
+    {
+      "name": "Brass / blade socket",
+      "type": "cube",
+      "uuid": "e70c6363-81b1-4c86-a6e1-129662e10e6f",
+      "from": [
+        6.3,
+        9.2,
+        7.58
+      ],
+      "to": [
+        9.7,
+        10.0,
+        8.42
+      ],
+      "origin": [
+        8,
+        9.6,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            135,
+            1,
+            149,
+            5
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            150,
+            1,
+            154,
+            5
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            155,
+            1,
+            169,
+            5
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            170,
+            1,
+            174,
+            5
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            175,
+            1,
+            189,
+            5
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            190,
+            1,
+            204,
+            5
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Iron / single crossguard",
+      "type": "cube",
+      "uuid": "a7f3b75a-1dd3-4a79-bdc6-e2335d7aa8b2",
+      "from": [
+        4.4,
+        8.625,
+        7.525
+      ],
+      "to": [
+        11.6,
+        9.275,
+        8.475
+      ],
+      "origin": [
+        8,
+        8.95,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            205,
+            1,
+            234,
+            4
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            235,
+            1,
+            239,
+            4
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            1,
+            82,
+            30,
+            85
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            31,
+            82,
+            35,
+            85
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            36,
+            82,
+            65,
+            86
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            66,
+            82,
+            95,
+            86
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Brass / left end cap",
+      "type": "cube",
+      "uuid": "128640a3-dd28-4dff-8779-892a10cd1124",
+      "from": [
+        4.325,
+        8.5,
+        7.465
+      ],
+      "to": [
+        4.775,
+        9.4,
+        8.535
+      ],
+      "origin": [
+        4.55,
+        8.95,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            96,
+            82,
+            98,
+            86
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            99,
+            82,
+            104,
+            86
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            105,
+            82,
+            107,
+            86
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            108,
+            82,
+            113,
+            86
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            114,
+            82,
+            116,
+            87
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            117,
+            82,
+            119,
+            87
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Brass / right end cap",
+      "type": "cube",
+      "uuid": "5df9a61a-b469-4930-9e47-c22635da1e8f",
+      "from": [
+        11.225,
+        8.5,
+        7.465
+      ],
+      "to": [
+        11.675,
+        9.4,
+        8.535
+      ],
+      "origin": [
+        11.45,
+        8.95,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            120,
+            82,
+            122,
+            86
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            123,
+            82,
+            128,
+            86
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            129,
+            82,
+            131,
+            86
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            132,
+            82,
+            137,
+            86
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            138,
+            82,
+            140,
+            87
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            141,
+            82,
+            143,
+            87
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Brass / rectangular seal setting",
+      "type": "cube",
+      "uuid": "e0603846-011a-42bf-9081-24e1dc3b1e11",
+      "from": [
+        7.3,
+        8.4,
+        7.44
+      ],
+      "to": [
+        8.7,
+        9.5,
+        8.56
+      ],
+      "origin": [
+        8,
+        8.95,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            144,
+            82,
+            150,
+            87
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            151,
+            82,
+            156,
+            87
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            157,
+            82,
+            163,
+            87
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            164,
+            82,
+            169,
+            87
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            170,
+            82,
+            176,
+            87
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            177,
+            82,
+            183,
+            87
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Garnet / inset seal",
+      "type": "cube",
+      "uuid": "8a29797f-50f1-4aa1-9ed2-78a1d0162004",
+      "from": [
+        7.675,
+        8.63,
+        7.38
+      ],
+      "to": [
+        8.325,
+        9.27,
+        8.62
+      ],
+      "origin": [
+        8,
+        8.95,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            184,
+            82,
+            187,
+            85
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            188,
+            82,
+            193,
+            85
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            194,
+            82,
+            197,
+            85
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            198,
+            82,
+            203,
+            85
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            204,
+            82,
+            207,
+            87
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            208,
+            82,
+            211,
+            87
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Brass / upper handle collar",
+      "type": "cube",
+      "uuid": "c6a6ba61-ea7c-488b-b74c-2f24e49c7ade",
+      "from": [
+        7.325,
+        7.9,
+        7.46
+      ],
+      "to": [
+        8.675,
+        8.4,
+        8.54
+      ],
+      "origin": [
+        8,
+        8.15,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            212,
+            82,
+            218,
+            84
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            219,
+            82,
+            224,
+            84
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            225,
+            82,
+            231,
+            84
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            232,
+            82,
+            237,
+            84
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            238,
+            82,
+            244,
+            87
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            245,
+            82,
+            251,
+            87
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Leather / single wrapped grip",
+      "type": "cube",
+      "uuid": "a085f854-698a-425c-afc0-de03975d2367",
+      "from": [
+        7.44,
+        2.1,
+        7.53
+      ],
+      "to": [
+        8.56,
+        7.9,
+        8.47
+      ],
+      "origin": [
+        8,
+        5.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1,
+            88,
+            6,
+            112
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            7,
+            88,
+            11,
+            112
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            12,
+            88,
+            17,
+            112
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            18,
+            88,
+            22,
+            112
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            23,
+            88,
+            28,
+            92
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            29,
+            88,
+            34,
+            92
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Brass / lower handle collar",
+      "type": "cube",
+      "uuid": "3671185b-8543-4a5e-92c2-3ddf99b051f6",
+      "from": [
+        7.325,
+        1.75,
+        7.46
+      ],
+      "to": [
+        8.675,
+        2.15,
+        8.54
+      ],
+      "origin": [
+        8,
+        1.95,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            35,
+            88,
+            41,
+            90
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            42,
+            88,
+            47,
+            90
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            48,
+            88,
+            54,
+            90
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            55,
+            88,
+            60,
+            90
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            61,
+            88,
+            67,
+            93
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            68,
+            88,
+            74,
+            93
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Iron / flat pommel",
+      "type": "cube",
+      "uuid": "7e6fede4-1f9a-4871-b82b-30ae1eb9d0a0",
+      "from": [
+        7.175,
+        1.025,
+        7.43
+      ],
+      "to": [
+        8.825,
+        1.775,
+        8.57
+      ],
+      "origin": [
+        8,
+        1.4,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            75,
+            88,
+            82,
+            91
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            83,
+            88,
+            88,
+            91
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            89,
+            88,
+            96,
+            91
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            97,
+            88,
+            102,
+            91
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            103,
+            88,
+            110,
+            93
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            111,
+            88,
+            118,
+            93
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Brass / pommel end plate",
+      "type": "cube",
+      "uuid": "9e08491d-e0c1-44ea-bf1c-fce4c0ecaef2",
+      "from": [
+        7.175,
+        0.775,
+        7.43
+      ],
+      "to": [
+        8.825,
+        1.025,
+        8.57
+      ],
+      "origin": [
+        8,
+        0.9,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            119,
+            88,
+            126,
+            89
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            127,
+            88,
+            132,
+            89
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            133,
+            88,
+            140,
+            89
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            141,
+            88,
+            146,
+            89
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            147,
+            88,
+            154,
+            93
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            155,
+            88,
+            162,
+            93
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    }
+  ],
+  "outliner": [
+    {
+      "name": "Blade",
+      "uuid": "8c31f962-7a46-455a-b0be-9b085893f3d1",
+      "origin": [
+        8,
+        7.5,
+        8
+      ],
+      "export": true,
+      "visibility": true,
+      "isOpen": false,
+      "children": [
+        "fa172753-43f7-4801-98a5-8b38dce8413a",
+        "5f2237e9-687e-4764-b7d7-23d8502b591c"
+      ]
+    },
+    {
+      "name": "Guard",
+      "uuid": "c3177397-9e77-4c07-8751-65a1ed0ed7d1",
+      "origin": [
+        8,
+        7.5,
+        8
+      ],
+      "export": true,
+      "visibility": true,
+      "isOpen": false,
+      "children": [
+        "e70c6363-81b1-4c86-a6e1-129662e10e6f",
+        "a7f3b75a-1dd3-4a79-bdc6-e2335d7aa8b2",
+        "128640a3-dd28-4dff-8779-892a10cd1124",
+        "5df9a61a-b469-4930-9e47-c22635da1e8f",
+        "e0603846-011a-42bf-9081-24e1dc3b1e11",
+        "8a29797f-50f1-4aa1-9ed2-78a1d0162004"
+      ]
+    },
+    {
+      "name": "Grip",
+      "uuid": "eeae491c-be2d-4343-ba9c-160a4a4f49e8",
+      "origin": [
+        8,
+        7.5,
+        8
+      ],
+      "export": true,
+      "visibility": true,
+      "isOpen": false,
+      "children": [
+        "c6a6ba61-ea7c-488b-b74c-2f24e49c7ade",
+        "a085f854-698a-425c-afc0-de03975d2367",
+        "3671185b-8543-4a5e-92c2-3ddf99b051f6"
+      ]
+    },
+    {
+      "name": "Pommel",
+      "uuid": "ac5a0eff-921e-40ea-a9a6-cb506875b4ee",
+      "origin": [
+        8,
+        7.5,
+        8
+      ],
+      "export": true,
+      "visibility": true,
+      "isOpen": false,
+      "children": [
+        "7e6fede4-1f9a-4871-b82b-30ae1eb9d0a0",
+        "9e08491d-e0c1-44ea-bf1c-fce4c0ecaef2"
+      ]
+    }
+  ],
+  "display": {
+    "thirdperson_righthand": {
+      "rotation": [
+        7.25,
+        -90,
+        0
+      ],
+      "translation": [
+        0,
+        0.5,
+        0.75
+      ],
+      "scale": [
+        0.85,
+        0.85,
+        0.85
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        7.25,
+        -90,
+        0
+      ],
+      "translation": [
+        0,
+        0.5,
+        0.75
+      ],
+      "scale": [
+        0.85,
+        0.85,
+        0.85
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        -90,
+        25
+      ],
+      "translation": [
+        -1.12,
+        3.7,
+        1.13
+      ],
+      "scale": [
+        0.68,
+        0.68,
+        0.68
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        -90,
+        25
+      ],
+      "translation": [
+        1.13,
+        3.7,
+        1.13
+      ],
+      "scale": [
+        0.68,
+        0.68,
+        0.68
+      ]
+    },
+    "ground": {
+      "translation": [
+        0,
+        3.25,
+        0
+      ],
+      "scale": [
+        0.45,
+        0.45,
+        0.45
+      ]
+    },
+    "gui": {
+      "rotation": [
+        0,
+        0,
+        35
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.7,
+        0.7,
+        0.7
+      ]
+    },
+    "head": {
+      "rotation": [
+        0,
+        0,
+        132.75
+      ],
+      "translation": [
+        4.75,
+        -11.5,
+        5
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        0,
+        -35
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.75,
+        0.75,
+        0.75
+      ]
+    }
+  },
+  "textures": [
+    {
+      "name": "iron_vow_sword.png",
+      "path": "",
+      "folder": "item",
+      "id": "0",
+      "uuid": "887fa7d5-1d0f-4428-ac05-aee2bac1940f",
+      "mode": "bitmap",
+      "visible": true,
+      "saved": true,
+      "particle": true,
+      "render_mode": "default",
+      "width": 256,
+      "height": 256,
+      "uv_width": 256,
+      "uv_height": 256,
+      "source": "data:image/png;base64,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"
+    }
+  ]
+}

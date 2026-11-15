@@ -1,0 +1,2523 @@
+{
+  "meta": {
+    "format_version": "5.0",
+    "model_format": "java_block",
+    "box_uv": false
+  },
+  "name": "Tidekeeper",
+  "parent": "",
+  "ambientocclusion": false,
+  "front_gui_light": true,
+  "resolution": {
+    "width": 256,
+    "height": 256
+  },
+  "elements": [
+    {
+      "name": "Brass / blade socket",
+      "uuid": "29e0f70c-5b6d-4af2-a876-3a17678622aa",
+      "type": "cube",
+      "from": [
+        6.375,
+        9.55,
+        7.5
+      ],
+      "to": [
+        9.625,
+        10.45,
+        8.5
+      ],
+      "origin": [
+        8,
+        10.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1,
+            1,
+            14,
+            5
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            15,
+            1,
+            19,
+            5
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            20,
+            1,
+            33,
+            5
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            34,
+            1,
+            38,
+            5
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            39,
+            1,
+            52,
+            5
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            53,
+            1,
+            66,
+            5
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Iron / anchor center",
+      "uuid": "74855689-fa37-4920-8b36-0c1d79e33c9e",
+      "type": "cube",
+      "from": [
+        6.75,
+        8.85,
+        7.425
+      ],
+      "to": [
+        9.25,
+        9.65,
+        8.575
+      ],
+      "origin": [
+        8,
+        9.25,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            67,
+            1,
+            77,
+            5
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            78,
+            1,
+            83,
+            5
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            84,
+            1,
+            94,
+            5
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            95,
+            1,
+            100,
+            5
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            101,
+            1,
+            111,
+            6
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            112,
+            1,
+            122,
+            6
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Iron / swept anchor arm",
+      "uuid": "36111075-b7ed-48e4-8964-c4a03df2aef9",
+      "type": "cube",
+      "from": [
+        4.2,
+        8.575,
+        7.475
+      ],
+      "to": [
+        7.2,
+        9.225,
+        8.525
+      ],
+      "origin": [
+        5.7,
+        8.9,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            123,
+            1,
+            135,
+            4
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            136,
+            1,
+            141,
+            4
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            142,
+            1,
+            154,
+            4
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            155,
+            1,
+            160,
+            4
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            161,
+            1,
+            173,
+            6
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            174,
+            1,
+            186,
+            6
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false,
+      "rotation": [
+        0,
+        0,
+        22.5
+      ]
+    },
+    {
+      "name": "Iron / upright anchor fluke",
+      "uuid": "05248060-ea86-46b2-8536-7b39685c21b5",
+      "type": "cube",
+      "from": [
+        4.075,
+        8.1,
+        7.435
+      ],
+      "to": [
+        4.625,
+        9.9,
+        8.565
+      ],
+      "origin": [
+        4.35,
+        9.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            187,
+            1,
+            190,
+            9
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            191,
+            1,
+            196,
+            9
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            197,
+            1,
+            200,
+            9
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            201,
+            1,
+            206,
+            9
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            207,
+            1,
+            210,
+            6
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            211,
+            1,
+            214,
+            6
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Brass / fluke end",
+      "uuid": "cb96d2ba-e5e8-4aac-b235-7f962dd1621c",
+      "type": "cube",
+      "from": [
+        3.96,
+        9.545,
+        7.375
+      ],
+      "to": [
+        4.74,
+        9.895,
+        8.625
+      ],
+      "origin": [
+        4.35,
+        9.72,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            215,
+            1,
+            219,
+            3
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            220,
+            1,
+            225,
+            3
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            226,
+            1,
+            230,
+            3
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            231,
+            1,
+            236,
+            3
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            237,
+            1,
+            241,
+            6
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            242,
+            1,
+            246,
+            6
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Iron / swept anchor arm",
+      "uuid": "7ef81763-d2ec-4353-bf3a-7c9ff1d69fe7",
+      "type": "cube",
+      "from": [
+        8.8,
+        8.575,
+        7.475
+      ],
+      "to": [
+        11.8,
+        9.225,
+        8.525
+      ],
+      "origin": [
+        10.3,
+        8.9,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1,
+            10,
+            13,
+            13
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            14,
+            10,
+            19,
+            13
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            20,
+            10,
+            32,
+            13
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            33,
+            10,
+            38,
+            13
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            39,
+            10,
+            51,
+            15
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            52,
+            10,
+            64,
+            15
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false,
+      "rotation": [
+        0,
+        0,
+        -22.5
+      ]
+    },
+    {
+      "name": "Iron / upright anchor fluke",
+      "uuid": "874cbb1b-5584-473b-9c68-3630f97c2839",
+      "type": "cube",
+      "from": [
+        11.375,
+        8.1,
+        7.435
+      ],
+      "to": [
+        11.925,
+        9.9,
+        8.565
+      ],
+      "origin": [
+        11.65,
+        9.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            65,
+            10,
+            68,
+            18
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            69,
+            10,
+            74,
+            18
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            75,
+            10,
+            78,
+            18
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            79,
+            10,
+            84,
+            18
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            85,
+            10,
+            88,
+            15
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            89,
+            10,
+            92,
+            15
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Brass / fluke end",
+      "uuid": "6a2f4e29-de60-4c9e-bf3e-549da9221176",
+      "type": "cube",
+      "from": [
+        11.26,
+        9.545,
+        7.375
+      ],
+      "to": [
+        12.04,
+        9.895,
+        8.625
+      ],
+      "origin": [
+        11.65,
+        9.72,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            93,
+            10,
+            97,
+            12
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            98,
+            10,
+            103,
+            12
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            104,
+            10,
+            108,
+            12
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            109,
+            10,
+            114,
+            12
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            115,
+            10,
+            119,
+            15
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            120,
+            10,
+            124,
+            15
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Brass / central setting",
+      "uuid": "eba35bfa-0cca-4d5f-98e9-0794d538ba6b",
+      "type": "cube",
+      "from": [
+        7.3,
+        8.7,
+        7.35
+      ],
+      "to": [
+        8.7,
+        9.8,
+        8.65
+      ],
+      "origin": [
+        8,
+        9.25,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            125,
+            10,
+            131,
+            15
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            132,
+            10,
+            138,
+            15
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            139,
+            10,
+            145,
+            15
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            146,
+            10,
+            152,
+            15
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            153,
+            10,
+            159,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            160,
+            10,
+            166,
+            16
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Aquamarine / tide seal",
+      "uuid": "a383fe9a-b764-4966-ab71-6cb33ef453fc",
+      "type": "cube",
+      "from": [
+        7.675,
+        8.925,
+        7.28
+      ],
+      "to": [
+        8.325,
+        9.575,
+        8.72
+      ],
+      "origin": [
+        8,
+        9.25,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            167,
+            10,
+            170,
+            13
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            171,
+            10,
+            177,
+            13
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            178,
+            10,
+            181,
+            13
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            182,
+            10,
+            188,
+            13
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            189,
+            10,
+            192,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            193,
+            10,
+            196,
+            16
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Brass / upper grip collar",
+      "uuid": "c21ec2ae-4d64-409f-83e6-a6ea3e328ee7",
+      "type": "cube",
+      "from": [
+        7.275,
+        8.05,
+        7.41
+      ],
+      "to": [
+        8.725,
+        8.85,
+        8.59
+      ],
+      "origin": [
+        8,
+        8.45,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            197,
+            10,
+            203,
+            14
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            204,
+            10,
+            209,
+            14
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            210,
+            10,
+            216,
+            14
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            217,
+            10,
+            222,
+            14
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            223,
+            10,
+            229,
+            15
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            230,
+            10,
+            236,
+            15
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Leather / sea green wrap",
+      "uuid": "5d39a08d-8b8e-4e42-8575-7346af9bb37d",
+      "type": "cube",
+      "from": [
+        7.4,
+        2.7,
+        7.48
+      ],
+      "to": [
+        8.6,
+        8.3,
+        8.52
+      ],
+      "origin": [
+        8,
+        5.5,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            237,
+            10,
+            242,
+            33
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            243,
+            10,
+            248,
+            33
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            249,
+            10,
+            254,
+            33
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            1,
+            34,
+            6,
+            57
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            7,
+            34,
+            12,
+            39
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            13,
+            34,
+            18,
+            39
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Brass / lower grip collar",
+      "uuid": "48a45f16-25b5-499b-a0a7-8aaa352f6dc5",
+      "type": "cube",
+      "from": [
+        7.275,
+        2.3,
+        7.41
+      ],
+      "to": [
+        8.725,
+        2.9,
+        8.59
+      ],
+      "origin": [
+        8,
+        2.6,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            19,
+            34,
+            25,
+            37
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            26,
+            34,
+            31,
+            37
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            32,
+            34,
+            38,
+            37
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            39,
+            34,
+            44,
+            37
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            45,
+            34,
+            51,
+            39
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            52,
+            34,
+            58,
+            39
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Iron / hexagonal pommel shoulder",
+      "uuid": "d22f516b-7217-4f2f-b549-0a98b476fca0",
+      "type": "cube",
+      "from": [
+        7.3,
+        1.775,
+        7.45
+      ],
+      "to": [
+        8.7,
+        2.325,
+        8.55
+      ],
+      "origin": [
+        8,
+        2.05,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            59,
+            34,
+            65,
+            37
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            66,
+            34,
+            71,
+            37
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            72,
+            34,
+            78,
+            37
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            79,
+            34,
+            84,
+            37
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            85,
+            34,
+            91,
+            39
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            92,
+            34,
+            98,
+            39
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Brass / broad pommel",
+      "uuid": "b16e64a2-6d1a-41df-9234-0c84b5c83aaf",
+      "type": "cube",
+      "from": [
+        7.075,
+        1.3,
+        7.35
+      ],
+      "to": [
+        8.925,
+        1.8,
+        8.65
+      ],
+      "origin": [
+        8,
+        1.55,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            99,
+            34,
+            107,
+            36
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            108,
+            34,
+            114,
+            36
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            115,
+            34,
+            123,
+            36
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            124,
+            34,
+            130,
+            36
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            131,
+            34,
+            139,
+            40
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            140,
+            34,
+            148,
+            40
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Iron / narrow pommel end",
+      "uuid": "b1d17582-e1d4-486e-ac44-070dcc77f9ae",
+      "type": "cube",
+      "from": [
+        7.325,
+        1.0,
+        7.46
+      ],
+      "to": [
+        8.675,
+        1.3,
+        8.54
+      ],
+      "origin": [
+        8,
+        1.15,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            149,
+            34,
+            155,
+            36
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            156,
+            34,
+            161,
+            36
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            162,
+            34,
+            168,
+            36
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            169,
+            34,
+            174,
+            36
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            175,
+            34,
+            181,
+            39
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            182,
+            34,
+            188,
+            39
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 01",
+      "uuid": "e72cc512-71e6-4600-8b98-33de3aed58b5",
+      "type": "cube",
+      "from": [
+        6.5,
+        10.0,
+        7.65
+      ],
+      "to": [
+        9.5,
+        27.0,
+        8.35
+      ],
+      "origin": [
+        8,
+        10,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            38,
+            88,
+            14,
+            224
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14,
+            88,
+            38,
+            224
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            88,
+            75,
+            224
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            88,
+            83,
+            224
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 69",
+      "uuid": "764d5e73-5b8b-4bc0-b0df-47380df2fa99",
+      "type": "cube",
+      "from": [
+        6.5,
+        27.0,
+        7.65
+      ],
+      "to": [
+        9.25,
+        27.25,
+        8.35
+      ],
+      "origin": [
+        8,
+        10,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            36,
+            86,
+            14,
+            88
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14,
+            86,
+            36,
+            88
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            86,
+            75,
+            88
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            86,
+            83,
+            88
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 70",
+      "uuid": "8162df45-5e6e-483b-878d-1b07756f8a49",
+      "type": "cube",
+      "from": [
+        6.5,
+        27.25,
+        7.65
+      ],
+      "to": [
+        9.0,
+        27.5,
+        8.35
+      ],
+      "origin": [
+        8,
+        10,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            34,
+            84,
+            14,
+            86
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14,
+            84,
+            34,
+            86
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            84,
+            75,
+            86
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            84,
+            83,
+            86
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 71",
+      "uuid": "e8380400-25df-434e-8082-fcc6fd2aaad1",
+      "type": "cube",
+      "from": [
+        6.5,
+        27.5,
+        7.65
+      ],
+      "to": [
+        8.875,
+        27.75,
+        8.35
+      ],
+      "origin": [
+        8,
+        10,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            33,
+            82,
+            14,
+            84
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14,
+            82,
+            33,
+            84
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            82,
+            75,
+            84
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            82,
+            83,
+            84
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 72",
+      "uuid": "81f387e2-af4b-4a43-bf25-0332f1266b88",
+      "type": "cube",
+      "from": [
+        6.5,
+        27.75,
+        7.65
+      ],
+      "to": [
+        8.625,
+        28.0,
+        8.35
+      ],
+      "origin": [
+        8,
+        10,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            31,
+            80,
+            14,
+            82
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14,
+            80,
+            31,
+            82
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            80,
+            75,
+            82
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            80,
+            83,
+            82
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 73",
+      "uuid": "9adafa0d-1bcc-4aba-9fb5-4e7521097366",
+      "type": "cube",
+      "from": [
+        6.5,
+        28.0,
+        7.65
+      ],
+      "to": [
+        8.375,
+        28.25,
+        8.35
+      ],
+      "origin": [
+        8,
+        10,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            29,
+            78,
+            14,
+            80
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14,
+            78,
+            29,
+            80
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            78,
+            75,
+            80
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            78,
+            83,
+            80
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 74",
+      "uuid": "7ceaa05b-85fd-42a3-a44e-f6de947e5898",
+      "type": "cube",
+      "from": [
+        6.5,
+        28.25,
+        7.65
+      ],
+      "to": [
+        8.125,
+        28.5,
+        8.35
+      ],
+      "origin": [
+        8,
+        10,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            27,
+            76,
+            14,
+            78
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14,
+            76,
+            27,
+            78
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            76,
+            75,
+            78
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            76,
+            83,
+            78
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 75",
+      "uuid": "82a59b7a-38f0-4de0-982c-ef2585a86e34",
+      "type": "cube",
+      "from": [
+        6.5,
+        28.5,
+        7.65
+      ],
+      "to": [
+        7.875,
+        28.75,
+        8.35
+      ],
+      "origin": [
+        8,
+        10,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            25,
+            74,
+            14,
+            76
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14,
+            74,
+            25,
+            76
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            74,
+            75,
+            76
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            74,
+            83,
+            76
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 76",
+      "uuid": "19471acd-063e-4e42-9754-9e284c5b43e4",
+      "type": "cube",
+      "from": [
+        6.5,
+        28.75,
+        7.65
+      ],
+      "to": [
+        7.75,
+        29.0,
+        8.35
+      ],
+      "origin": [
+        8,
+        10,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            24,
+            72,
+            14,
+            74
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14,
+            72,
+            24,
+            74
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            72,
+            75,
+            74
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            72,
+            83,
+            74
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 77",
+      "uuid": "d638777d-5b55-43c2-a256-0be384536feb",
+      "type": "cube",
+      "from": [
+        6.5,
+        29.0,
+        7.65
+      ],
+      "to": [
+        7.5,
+        29.25,
+        8.35
+      ],
+      "origin": [
+        8,
+        10,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            22,
+            70,
+            14,
+            72
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14,
+            70,
+            22,
+            72
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            70,
+            75,
+            72
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            70,
+            83,
+            72
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 78",
+      "uuid": "de224e89-d1b5-4739-bcc7-9ae5dd3671fb",
+      "type": "cube",
+      "from": [
+        6.5,
+        29.25,
+        7.65
+      ],
+      "to": [
+        7.25,
+        29.5,
+        8.35
+      ],
+      "origin": [
+        8,
+        10,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            20,
+            68,
+            14,
+            70
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14,
+            68,
+            20,
+            70
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            68,
+            75,
+            70
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            68,
+            83,
+            70
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 79",
+      "uuid": "e297829c-a14a-48c9-8f6a-21c25981788f",
+      "type": "cube",
+      "from": [
+        6.5,
+        29.5,
+        7.65
+      ],
+      "to": [
+        7.0,
+        29.75,
+        8.35
+      ],
+      "origin": [
+        8,
+        10,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            18,
+            66,
+            14,
+            68
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14,
+            66,
+            18,
+            68
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            66,
+            75,
+            68
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            66,
+            83,
+            68
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / shared taper 80",
+      "uuid": "649cdbcd-ab42-4cc4-904e-b2b3ba83bf5b",
+      "type": "cube",
+      "from": [
+        6.5,
+        29.75,
+        7.65
+      ],
+      "to": [
+        6.625,
+        30.0,
+        8.35
+      ],
+      "origin": [
+        8,
+        10,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            15,
+            64,
+            14,
+            66
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14,
+            64,
+            15,
+            66
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            70,
+            64,
+            75,
+            66
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            78,
+            64,
+            83,
+            66
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            90,
+            140,
+            106,
+            145
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            90,
+            148,
+            106,
+            153
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    }
+  ],
+  "display": {
+    "thirdperson_righthand": {
+      "rotation": [
+        7.25,
+        -90,
+        0
+      ],
+      "translation": [
+        0,
+        0.5,
+        0.75
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        7.25,
+        -90,
+        0
+      ],
+      "translation": [
+        0,
+        0.5,
+        0.75
+      ],
+      "scale": [
+        0.85,
+        0.85,
+        0.85
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        -90,
+        25
+      ],
+      "translation": [
+        -1.12,
+        4.45,
+        1.13
+      ],
+      "scale": [
+        0.75,
+        0.75,
+        0.75
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        -90,
+        25
+      ],
+      "translation": [
+        1.13,
+        3.7,
+        1.13
+      ],
+      "scale": [
+        0.68,
+        0.68,
+        0.68
+      ]
+    },
+    "ground": {
+      "translation": [
+        0,
+        3.25,
+        0
+      ],
+      "scale": [
+        0.45,
+        0.45,
+        0.45
+      ]
+    },
+    "gui": {
+      "rotation": [
+        0,
+        0,
+        30
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.65,
+        0.65,
+        0.65
+      ]
+    },
+    "head": {
+      "rotation": [
+        0,
+        0,
+        132.75
+      ],
+      "translation": [
+        4.75,
+        -11.5,
+        5
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        0,
+        30
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.65,
+        0.65,
+        0.65
+      ]
+    }
+  },
+  "outliner": [
+    {
+      "name": "Blade",
+      "uuid": "599505ce-405c-41df-a169-ce5858e21048",
+      "origin": [
+        8,
+        9.25,
+        8
+      ],
+      "export": true,
+      "visibility": true,
+      "isOpen": false,
+      "children": [
+        "e72cc512-71e6-4600-8b98-33de3aed58b5",
+        "764d5e73-5b8b-4bc0-b0df-47380df2fa99",
+        "8162df45-5e6e-483b-878d-1b07756f8a49",
+        "e8380400-25df-434e-8082-fcc6fd2aaad1",
+        "81f387e2-af4b-4a43-bf25-0332f1266b88",
+        "9adafa0d-1bcc-4aba-9fb5-4e7521097366",
+        "7ceaa05b-85fd-42a3-a44e-f6de947e5898",
+        "82a59b7a-38f0-4de0-982c-ef2585a86e34",
+        "19471acd-063e-4e42-9754-9e284c5b43e4",
+        "d638777d-5b55-43c2-a256-0be384536feb",
+        "de224e89-d1b5-4739-bcc7-9ae5dd3671fb",
+        "e297829c-a14a-48c9-8f6a-21c25981788f",
+        "649cdbcd-ab42-4cc4-904e-b2b3ba83bf5b"
+      ]
+    },
+    {
+      "name": "Guard",
+      "uuid": "b336d0fd-62c3-4d4c-82e2-994ec52c3a9b",
+      "origin": [
+        8,
+        9.25,
+        8
+      ],
+      "export": true,
+      "visibility": true,
+      "isOpen": false,
+      "children": [
+        "29e0f70c-5b6d-4af2-a876-3a17678622aa",
+        "74855689-fa37-4920-8b36-0c1d79e33c9e",
+        "36111075-b7ed-48e4-8964-c4a03df2aef9",
+        "05248060-ea86-46b2-8536-7b39685c21b5",
+        "cb96d2ba-e5e8-4aac-b235-7f962dd1621c",
+        "7ef81763-d2ec-4353-bf3a-7c9ff1d69fe7",
+        "874cbb1b-5584-473b-9c68-3630f97c2839",
+        "6a2f4e29-de60-4c9e-bf3e-549da9221176",
+        "eba35bfa-0cca-4d5f-98e9-0794d538ba6b",
+        "a383fe9a-b764-4966-ab71-6cb33ef453fc"
+      ]
+    },
+    {
+      "name": "Grip",
+      "uuid": "301e9f72-15bc-44a1-b921-7a1eb6366c6c",
+      "origin": [
+        8,
+        9.25,
+        8
+      ],
+      "export": true,
+      "visibility": true,
+      "isOpen": false,
+      "children": [
+        "c21ec2ae-4d64-409f-83e6-a6ea3e328ee7",
+        "5d39a08d-8b8e-4e42-8575-7346af9bb37d",
+        "48a45f16-25b5-499b-a0a7-8aaa352f6dc5"
+      ]
+    },
+    {
+      "name": "Pommel",
+      "uuid": "19ae50a4-88a2-433e-af9a-8852bb0617df",
+      "origin": [
+        8,
+        9.25,
+        8
+      ],
+      "export": true,
+      "visibility": true,
+      "isOpen": false,
+      "children": [
+        "d22f516b-7217-4f2f-b549-0a98b476fca0",
+        "b16e64a2-6d1a-41df-9234-0c84b5c83aaf",
+        "b1d17582-e1d4-486e-ac44-070dcc77f9ae"
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "name": "tidekeeper.png",
+      "path": "",
+      "folder": "item",
+      "id": "0",
+      "uuid": "cb8f3a88-5b65-4757-9e27-fc0e0f225fbb",
+      "mode": "bitmap",
+      "visible": true,
+      "saved": true,
+      "particle": true,
+      "render_mode": "default",
+      "width": 256,
+      "height": 256,
+      "uv_width": 256,
+      "uv_height": 256,
+      "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAIIklEQVR4nO3dz6tcZxkH8Ll3iml21pTQSGlRkuJCoRBbunEhBOxSUDeCS1eC5i9wIS7EVS105UJEaMVu3AgVAoqxWNteCTYL28Sam0ha08SWijeruVdm4txOpmcmZ86898yZ+/18IGnm/Oq5J/N+88wz75zp9YBYG8Pftrd+srfojo+e/t7G9H5Vy7pwrLr7nfn22Vr7nfvpM5Xbzlre9jGW3bbkObZ5rEX2qXs+5xpuN3xc9zm9yPO/7rbDZb0a7hv+du3KW71/Xv1Xr67r12/2pverWtaFYy2y3/v//qD34a335m6785+dym1nLW/7GMtuW/Ic2zzWIvvUPZ+dhtuNH//4Rz/72LlULVt023uNlfGy2gFAhu2LF4vtU/JYh9VzL17YqLNs0W1LGgXAC798udHOVft19Viln6AlBkbbA+Lmm69vlNqn5LFY3M5/d2otqxUATZOmZGod9LFKP0FLDIxZ23Y5RA7CulYT21Pn0NY5lfzH0kuADioRIutkXauJm1Pn0NY5lfzHcrPIGQFrSQVAjLol+/aKSnuAVo1eN3RxUocJIgc3QWTWRKmurXvm5lv7684++NhdjydNr1tm27MPPrbw+Tb5GZe5Lg+c+txd64488Mneu6++svHQ6Sf2dm7cumv7D6+9vfGZp58ebX/7vY/Wvbv12sb+S4CuTeowQeRgJ4hUTZTq4roXf//G6L9Xzr951+PJZWMltr3y/8eLnG+Tn3HZ6zIc8JOOfurO4+Hg79//id608cCfDof9ADBBpF3rMEGE7hoP+OkBPhz80+EwOfCrwmEUACaI5E0QmTdppCvrXv761zbmPW667b28MOc99VnrmuzT9LpMlvKTA3w4+KfDYXLgV4VDp98FMEHkYCaINH2yNl23bp6bU2EtUqnda13j0Jgq5ccDfDj4p8NhcuBXhUOnA8AEkcXUfbnQ5Mm6zLqU4FhU0+s5XcqPB/hw8Fe9zh8P/Kpw6HQAkP1EPyglXy6sQvEmYDoTRIhuAqarO6d7VXO/IbIJCAQ3AYGP0wSEYEc0ASHXUU1AyHVbExBy7WgCQq6+mYCQ64gmIOQ6qgkIuW5rAkKuHU1AyNXXBIRcRzQBIdfRgk1AINjo8+wPPfnU3nS6/OOll0b3E//g71fu2uH9S3+bubzr91Of9Z0FTb6boOQ+43Wzzn3Zn72N/dfpOs87/zT3TZcUVZ8nrqvr91Ov+s6CJt9NUHKfyXWz7vc/ad42y+5fde3qXN/pbS784Y8z/x+z1jXZp+l1ZioAJgd91X3Dung75dJ3Ga77PXF11zVR5/54y95fr4178M27U1KTr1V356UDDoDJQb9Mo6Ct2yk3vZ+6J+a9zbuui2zDGgXA5KCv6iJ2TddvM91m1ZDMdT7gJmCB47NGvvONx+c2+IYVWZ1tip8YB2b0lzX+9tDJfsD420OBw6toExAIbgIC62Utm4BAwQCYHPRVXx4AHE5FZwIC60UTEIJpAkIwTUAIpgkIwTQBIZgmIATTBIRgmoAQTBMQgmkCQjBNQAAAAAAAAAA4PBrf+//yrRt7J48dP7TfHfD9X/x679Klq/uPT516pPeDb311/+d9/er23uV3Prp92skTx3pffOTRQ3s9OJw2V30CwJoGwK9e2dob/vrSN7879+uigG5SAUD6ZwGW9eQTn+99+sQP966/c6N3/vlnvQ6GNaECgGBFKoChhx8+PvqlEoD1oQKAYMUqgDGVAKwPFQAEO7AAuNMPON4zRwC6SwUAwYr0AAaDQeXyEyeOjX55ZwC6SQUAwYq/C1BFJQDdpAKAYK1UAGMqAegWFQAEa7UCGFMJQDeoACDYSgPgzhwBswVhVVQAEGwlPYBJ+gGwOioACFakAuj3+0sfw30EoH0qAAgmACCYAIBgAgCCCQAIVuRdgM1NOQLryMiFYAIAggkACCYAIJgAgGBF3gXY3d0tcRigZSoACCYAIJgAgGACAIIJAAgmACCYAIBgAgCCCQAIJgAgmACAYAIAggkACCYAIJgAgGACAIIJAAhW5I5Ag8GgxGGAlqkAIJgAgGACAIIJAAgmACCYAIBgAgCCCQAIJgAgmACAYAIAghX5LEC/3y9xGKBlKgAIJgAgmACAYAIAggkACFbkXYDNTTkC68jIhWACAIIJAAhWpAfAvV2+dWPvL5eujf785z9tLXTJXn3tYu/8889uuM6UpgKAYEUqgN3d3RKHAVqmAoBgAgCCaQK25OSx45p4dI4KAIIJAAjmJUBLtt6+tNQ8gL/+5udeQlCcCgCCCQAIJgAgmACAYJqALTn92VOaeHSOCgCCCQAIJgAgmACAYAIAggkACFbkbcDBYFDiMEDLVAAQTABAMAEAwQQABBMAEEwAQDABAMEEAAQTABBspTcEOfOVx/f/fO63F1Z5KhBJBQDBilQA/X6/0X6/O/fG0scAmlMBQDABAMEEAAQTABBMAECwIu8CbG7KEVhHRi4EEwAQTABAMAEAwQQABCvyLsDu7m6j/b585guVnwsA2qECgGArvR+Af/VhtVQAEEwAQDABAMEEAAQTABBMAEAwAQDBBAAEEwAQTABAMAEAwVb6WQCfBoTVUgFAMJ8GhGAqAAhWpAIYDAYlDgO0TAUAwQQABBMAEEwAQDABAMEEAAQTABBMAEAwAQDBBAAEEwAQrMhnAfr9fonDAC1TAUAwAQDBBAAEEwAQTABAsCLvAmxuyhFYR0YuBBMAEEwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAb7b/AStG9wtHaKntAAAAAElFTkSuQmCC"
+    }
+  ]
+}

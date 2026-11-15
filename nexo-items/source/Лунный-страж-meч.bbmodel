@@ -1,0 +1,1536 @@
+{
+  "meta": {
+    "format_version": "5.0",
+    "model_format": "java_block",
+    "box_uv": false
+  },
+  "name": "Moonwarden",
+  "parent": "",
+  "ambientocclusion": false,
+  "front_gui_light": true,
+  "resolution": {
+    "width": 256,
+    "height": 256
+  },
+  "elements": [
+    {
+      "name": "Blade / broad steel",
+      "type": "cube",
+      "uuid": "975ba0da-2363-437e-8059-427c8cb880e8",
+      "from": [
+        6.0,
+        11.3,
+        7.675
+      ],
+      "to": [
+        10.0,
+        28.0,
+        8.325
+      ],
+      "origin": [
+        8,
+        19.65,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1,
+            1,
+            17,
+            68
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            18,
+            1,
+            21,
+            68
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            22,
+            1,
+            38,
+            68
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            39,
+            1,
+            42,
+            68
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            43,
+            1,
+            59,
+            4
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            60,
+            1,
+            76,
+            4
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Blade / solid point",
+      "type": "cube",
+      "uuid": "6be11527-f9ba-4d09-aaa5-16a1b38eb572",
+      "from": [
+        6.58578644,
+        26.58578644,
+        7.6751
+      ],
+      "to": [
+        9.41421356,
+        29.41421356,
+        8.3249
+      ],
+      "origin": [
+        8,
+        28,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            77,
+            1,
+            94,
+            18
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            95,
+            1,
+            98,
+            13
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            99,
+            1,
+            116,
+            18
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            117,
+            1,
+            120,
+            13
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            121,
+            1,
+            133,
+            4
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            134,
+            1,
+            146,
+            4
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false,
+      "rotation": [
+        0,
+        0,
+        45
+      ]
+    },
+    {
+      "name": "Blade / narrow ricasso",
+      "type": "cube",
+      "uuid": "1b4dacf0-1a76-4f6e-885e-e7591a55408f",
+      "from": [
+        6.6,
+        9.4,
+        7.65
+      ],
+      "to": [
+        9.4,
+        11.4,
+        8.35
+      ],
+      "origin": [
+        8,
+        10.4,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            147,
+            1,
+            159,
+            9
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            160,
+            1,
+            163,
+            9
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            164,
+            1,
+            176,
+            9
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            177,
+            1,
+            180,
+            9
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            181,
+            1,
+            193,
+            4
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            194,
+            1,
+            206,
+            4
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Silver / blade collar",
+      "type": "cube",
+      "uuid": "e3fe94a0-b897-46ab-98ad-fc968ebea79c",
+      "from": [
+        6.475,
+        9.1,
+        7.55
+      ],
+      "to": [
+        9.525,
+        9.9,
+        8.45
+      ],
+      "origin": [
+        8,
+        9.5,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            207,
+            1,
+            220,
+            5
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            221,
+            1,
+            225,
+            5
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            226,
+            1,
+            239,
+            5
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            240,
+            1,
+            244,
+            5
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            1,
+            69,
+            14,
+            73
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            15,
+            69,
+            28,
+            73
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Silver / guard center",
+      "type": "cube",
+      "uuid": "b53ef9c7-3f3a-4980-9823-7b8cfb0a8eee",
+      "from": [
+        6.7,
+        8.35,
+        7.45
+      ],
+      "to": [
+        9.3,
+        9.25,
+        8.55
+      ],
+      "origin": [
+        8,
+        8.8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            29,
+            69,
+            40,
+            73
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            41,
+            69,
+            46,
+            73
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            47,
+            69,
+            58,
+            73
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            59,
+            69,
+            64,
+            73
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            65,
+            69,
+            76,
+            74
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            77,
+            69,
+            88,
+            74
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Silver / swept quillon",
+      "type": "cube",
+      "uuid": "c6c3bccf-b3b6-4624-98d4-8ed5cbec794e",
+      "from": [
+        3.95,
+        8.0,
+        7.5
+      ],
+      "to": [
+        7.15,
+        8.7,
+        8.5
+      ],
+      "origin": [
+        5.55,
+        8.35,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            89,
+            69,
+            102,
+            72
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            103,
+            69,
+            107,
+            72
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            108,
+            69,
+            121,
+            72
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            122,
+            69,
+            126,
+            72
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            127,
+            69,
+            140,
+            73
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            141,
+            69,
+            154,
+            73
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false,
+      "rotation": [
+        0,
+        0,
+        22.5
+      ]
+    },
+    {
+      "name": "Azure / quillon cap",
+      "type": "cube",
+      "uuid": "7595d0c9-c8f3-423f-93c4-40b1d325f856",
+      "from": [
+        3.845,
+        7.315,
+        7.44
+      ],
+      "to": [
+        4.295,
+        8.165,
+        8.56
+      ],
+      "origin": [
+        4.07,
+        7.74,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            155,
+            69,
+            157,
+            73
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            158,
+            69,
+            163,
+            73
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            164,
+            69,
+            166,
+            73
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            167,
+            69,
+            172,
+            73
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            173,
+            69,
+            175,
+            74
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            176,
+            69,
+            178,
+            74
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false,
+      "rotation": [
+        0,
+        0,
+        22.5
+      ]
+    },
+    {
+      "name": "Silver / swept quillon",
+      "type": "cube",
+      "uuid": "347f84d5-8526-4ced-9dad-b83e74111562",
+      "from": [
+        8.85,
+        8.0,
+        7.5
+      ],
+      "to": [
+        12.05,
+        8.7,
+        8.5
+      ],
+      "origin": [
+        10.45,
+        8.35,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            179,
+            69,
+            192,
+            72
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            193,
+            69,
+            197,
+            72
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            198,
+            69,
+            211,
+            72
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            212,
+            69,
+            216,
+            72
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            217,
+            69,
+            230,
+            73
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            231,
+            69,
+            244,
+            73
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false,
+      "rotation": [
+        0,
+        0,
+        -22.5
+      ]
+    },
+    {
+      "name": "Azure / quillon cap",
+      "type": "cube",
+      "uuid": "5cfb9514-5924-4115-993a-814e82343d11",
+      "from": [
+        11.705,
+        7.315,
+        7.44
+      ],
+      "to": [
+        12.155,
+        8.165,
+        8.56
+      ],
+      "origin": [
+        11.93,
+        7.74,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            245,
+            69,
+            247,
+            73
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            248,
+            69,
+            253,
+            73
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            1,
+            75,
+            3,
+            79
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            4,
+            75,
+            9,
+            79
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            10,
+            75,
+            12,
+            80
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            13,
+            75,
+            15,
+            80
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false,
+      "rotation": [
+        0,
+        0,
+        -22.5
+      ]
+    },
+    {
+      "name": "Silver / seal frame",
+      "type": "cube",
+      "uuid": "2863c9ff-1725-4bab-a7cb-0df67b0bf8df",
+      "from": [
+        7.325,
+        8.125,
+        7.375
+      ],
+      "to": [
+        8.675,
+        9.475,
+        8.625
+      ],
+      "origin": [
+        8,
+        8.8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            16,
+            75,
+            22,
+            81
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            23,
+            75,
+            28,
+            81
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            29,
+            75,
+            35,
+            81
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            36,
+            75,
+            41,
+            81
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            42,
+            75,
+            48,
+            80
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            49,
+            75,
+            55,
+            80
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false,
+      "rotation": [
+        0,
+        0,
+        45
+      ]
+    },
+    {
+      "name": "Azure / guard seal",
+      "type": "cube",
+      "uuid": "8804ff13-8423-4600-a052-0496f8bc02b5",
+      "from": [
+        7.565,
+        8.365,
+        7.3
+      ],
+      "to": [
+        8.435,
+        9.235,
+        8.7
+      ],
+      "origin": [
+        8,
+        8.8,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            56,
+            75,
+            60,
+            79
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            61,
+            75,
+            67,
+            79
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            68,
+            75,
+            72,
+            79
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            73,
+            75,
+            79,
+            79
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            80,
+            75,
+            84,
+            81
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            85,
+            75,
+            89,
+            81
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false,
+      "rotation": [
+        0,
+        0,
+        45
+      ]
+    },
+    {
+      "name": "Silver / upper grip ferrule",
+      "type": "cube",
+      "uuid": "739cec59-1eb9-4fd9-82d7-7ba778b88cd0",
+      "from": [
+        7.3,
+        7.725,
+        7.45
+      ],
+      "to": [
+        8.7,
+        8.375,
+        8.55
+      ],
+      "origin": [
+        8,
+        8.05,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            90,
+            75,
+            96,
+            78
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            97,
+            75,
+            102,
+            78
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            103,
+            75,
+            109,
+            78
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            110,
+            75,
+            115,
+            78
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            116,
+            75,
+            122,
+            80
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            123,
+            75,
+            129,
+            80
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Leather / wrapped handle",
+      "type": "cube",
+      "uuid": "c28dda63-1e64-48b7-b85f-015dcb54a2f0",
+      "from": [
+        7.425,
+        2.4,
+        7.51
+      ],
+      "to": [
+        8.575,
+        7.8,
+        8.49
+      ],
+      "origin": [
+        8,
+        5.1,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            130,
+            75,
+            135,
+            97
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            136,
+            75,
+            140,
+            97
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            141,
+            75,
+            146,
+            97
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            147,
+            75,
+            151,
+            97
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            152,
+            75,
+            157,
+            79
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            158,
+            75,
+            163,
+            79
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Silver / lower grip ferrule",
+      "type": "cube",
+      "uuid": "c9cf11ea-b209-4c30-b760-a7c49186de9a",
+      "from": [
+        7.3,
+        2.0,
+        7.45
+      ],
+      "to": [
+        8.7,
+        2.5,
+        8.55
+      ],
+      "origin": [
+        8,
+        2.25,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            164,
+            75,
+            170,
+            77
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            171,
+            75,
+            176,
+            77
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            177,
+            75,
+            183,
+            77
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            184,
+            75,
+            189,
+            77
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            190,
+            75,
+            196,
+            80
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            197,
+            75,
+            203,
+            80
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false
+    },
+    {
+      "name": "Silver / diamond pommel",
+      "type": "cube",
+      "uuid": "20c082f0-239f-4a5b-8090-837b04023736",
+      "from": [
+        7.25,
+        0.5,
+        7.4
+      ],
+      "to": [
+        8.75,
+        2.0,
+        8.6
+      ],
+      "origin": [
+        8,
+        1.25,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            204,
+            75,
+            210,
+            81
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            211,
+            75,
+            216,
+            81
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            217,
+            75,
+            223,
+            81
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            224,
+            75,
+            229,
+            81
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            230,
+            75,
+            236,
+            80
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            237,
+            75,
+            243,
+            80
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false,
+      "rotation": [
+        0,
+        0,
+        45
+      ]
+    },
+    {
+      "name": "Azure / pommel seal",
+      "type": "cube",
+      "uuid": "804a96d7-1446-47ac-a04f-c1eae55e035c",
+      "from": [
+        7.6,
+        0.85,
+        7.33
+      ],
+      "to": [
+        8.4,
+        1.65,
+        8.67
+      ],
+      "origin": [
+        8,
+        1.25,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            244,
+            75,
+            248,
+            79
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            249,
+            75,
+            255,
+            79
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            1,
+            98,
+            5,
+            102
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            6,
+            98,
+            12,
+            102
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            13,
+            98,
+            17,
+            104
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            18,
+            98,
+            22,
+            104
+          ],
+          "texture": 0
+        }
+      },
+      "autouv": 0,
+      "rescale": false,
+      "rotation": [
+        0,
+        0,
+        45
+      ]
+    }
+  ],
+  "outliner": [
+    {
+      "name": "Blade",
+      "uuid": "9e74406c-db58-4b05-acda-ccebe614160a",
+      "origin": [
+        8,
+        8.8,
+        8
+      ],
+      "export": true,
+      "visibility": true,
+      "isOpen": false,
+      "children": [
+        "975ba0da-2363-437e-8059-427c8cb880e8",
+        "6be11527-f9ba-4d09-aaa5-16a1b38eb572",
+        "1b4dacf0-1a76-4f6e-885e-e7591a55408f"
+      ]
+    },
+    {
+      "name": "Guard",
+      "uuid": "22061265-5324-4806-85d7-1b175fef770f",
+      "origin": [
+        8,
+        8.8,
+        8
+      ],
+      "export": true,
+      "visibility": true,
+      "isOpen": false,
+      "children": [
+        "e3fe94a0-b897-46ab-98ad-fc968ebea79c",
+        "b53ef9c7-3f3a-4980-9823-7b8cfb0a8eee",
+        "c6c3bccf-b3b6-4624-98d4-8ed5cbec794e",
+        "7595d0c9-c8f3-423f-93c4-40b1d325f856",
+        "347f84d5-8526-4ced-9dad-b83e74111562",
+        "5cfb9514-5924-4115-993a-814e82343d11",
+        "2863c9ff-1725-4bab-a7cb-0df67b0bf8df",
+        "8804ff13-8423-4600-a052-0496f8bc02b5"
+      ]
+    },
+    {
+      "name": "Grip",
+      "uuid": "12e98eb0-ec72-4999-ad78-1845599bcefa",
+      "origin": [
+        8,
+        8.8,
+        8
+      ],
+      "export": true,
+      "visibility": true,
+      "isOpen": false,
+      "children": [
+        "739cec59-1eb9-4fd9-82d7-7ba778b88cd0",
+        "c28dda63-1e64-48b7-b85f-015dcb54a2f0",
+        "c9cf11ea-b209-4c30-b760-a7c49186de9a"
+      ]
+    },
+    {
+      "name": "Pommel",
+      "uuid": "680648ff-260d-4943-9728-54bdf9098280",
+      "origin": [
+        8,
+        8.8,
+        8
+      ],
+      "export": true,
+      "visibility": true,
+      "isOpen": false,
+      "children": [
+        "20c082f0-239f-4a5b-8090-837b04023736",
+        "804a96d7-1446-47ac-a04f-c1eae55e035c"
+      ]
+    }
+  ],
+  "display": {
+    "thirdperson_righthand": {
+      "rotation": [
+        7.25,
+        -90,
+        0
+      ],
+      "translation": [
+        0,
+        0.5,
+        0.75
+      ],
+      "scale": [
+        0.85,
+        0.85,
+        0.85
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        7.25,
+        -90,
+        0
+      ],
+      "translation": [
+        0,
+        0.5,
+        0.75
+      ],
+      "scale": [
+        0.85,
+        0.85,
+        0.85
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        -90,
+        25
+      ],
+      "translation": [
+        -1.12,
+        3.7,
+        1.13
+      ],
+      "scale": [
+        0.68,
+        0.68,
+        0.68
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        -90,
+        25
+      ],
+      "translation": [
+        1.13,
+        3.7,
+        1.13
+      ],
+      "scale": [
+        0.68,
+        0.68,
+        0.68
+      ]
+    },
+    "ground": {
+      "translation": [
+        0,
+        3.25,
+        0
+      ],
+      "scale": [
+        0.45,
+        0.45,
+        0.45
+      ]
+    },
+    "gui": {
+      "rotation": [
+        0,
+        0,
+        35
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.7,
+        0.7,
+        0.7
+      ]
+    },
+    "head": {
+      "rotation": [
+        0,
+        0,
+        132.75
+      ],
+      "translation": [
+        4.75,
+        -11.5,
+        5
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        0,
+        -35
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.75,
+        0.75,
+        0.75
+      ]
+    }
+  },
+  "textures": [
+    {
+      "name": "moonwarden.png",
+      "path": "",
+      "folder": "item",
+      "id": "0",
+      "uuid": "bbe64823-1a31-45bc-b926-24be16761efc",
+      "mode": "bitmap",
+      "visible": true,
+      "saved": true,
+      "particle": true,
+      "render_mode": "default",
+      "width": 256,
+      "height": 256,
+      "uv_width": 256,
+      "uv_height": 256,
+      "source": "data:image/png;base64,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"
+    }
+  ]
+}
