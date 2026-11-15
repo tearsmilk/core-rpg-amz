@@ -64,3 +64,17 @@
 Деплой: `pack/assets/azerus/` → `plugins/Nexo/pack/assets/azerus/` (models/item/crimson_scythe*.json,
 textures/item/crimson_scythe.png, crimson_scythe_fx.png + .mcmeta, items/crimson_scythe.json), `items/azerus_weapons.yml` → `plugins/Nexo/items/`,
 затем `nexo reload all`. Эффекты сервера (кадры замаха, огненный след, дрожь) даёт система `core-weapons` (`dist/core-weapons.azs` → `systems/`).
+
+## azerus_shields.yml — щиты (7 шт.)
+
+Основа — ванильный щит. У каждого есть `<id>_blocking` — поза при блоке (сдвиг как у ванильного shield_blocking).
+
+| id | Название |
+|---|---|
+| azerus_north_wall | Северная стена |
+| azerus_oak_warden | Страж дубравы |
+| azerus_crimson_bulwark | Багровый оплот |
+| azerus_raven_wing | Крыло ворона |
+| azerus_moon_shard | Лунный осколок |
+| azerus_tide_seal | Печать прилива |
+| azerus_sun_bastion | Солнечный бастион |

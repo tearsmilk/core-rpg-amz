@@ -1,0 +1,66 @@
+# Щиты AZERUS (модели — nexo-items/source/щит-*.bbmodel). Выдать: /nexo give <ник> <id>.
+# Основа — ванильный щит: блокирование, прочность, перезарядка от топора — как у него.
+# blocking_model — тот же щит, поднятый к центру при блоке (позы как у ванильного shield_blocking).
+
+azerus_north_wall:
+  itemname: "<#b8c4d6>Северная стена"
+  material: SHIELD
+  lore:
+    - "<gray>Тяжёлый щит северных застав."
+  Pack:
+    model: azerus:item/north_wall
+    blocking_model: azerus:item/north_wall_blocking
+
+azerus_oak_warden:
+  itemname: "<#7fae4a>Страж дубравы"
+  material: SHIELD
+  lore:
+    - "<gray>Дуб, окованный бронзой."
+  Pack:
+    model: azerus:item/oak_warden
+    blocking_model: azerus:item/oak_warden_blocking
+
+azerus_crimson_bulwark:
+  itemname: "<#d4334a>Багровый оплот"
+  material: SHIELD
+  lore:
+    - "<gray>Не отступает ни на шаг."
+  Pack:
+    model: azerus:item/crimson_bulwark
+    blocking_model: azerus:item/crimson_bulwark_blocking
+
+azerus_raven_wing:
+  itemname: "<#7a6cff>Крыло ворона"
+  material: SHIELD
+  lore:
+    - "<gray>Чёрные перья, стальная кромка."
+  Pack:
+    model: azerus:item/raven_wing
+    blocking_model: azerus:item/raven_wing_blocking
+
+azerus_moon_shard:
+  itemname: "<#b9c8ff>Лунный осколок"
+  material: SHIELD
+  lore:
+    - "<gray>Холодный свет в ночи."
+  Pack:
+    model: azerus:item/moon_shard
+    blocking_model: azerus:item/moon_shard_blocking
+
+azerus_tide_seal:
+  itemname: "<#5fd3d6>Печать прилива"
+  material: SHIELD
+  lore:
+    - "<gray>Знак хранителей моря."
+  Pack:
+    model: azerus:item/tide_seal
+    blocking_model: azerus:item/tide_seal_blocking
+
+azerus_sun_bastion:
+  itemname: "<#ffe066>Солнечный бастион"
+  material: SHIELD
+  lore:
+    - "<gray>Сияет даже в пасмурный день."
+  Pack:
+    model: azerus:item/sun_bastion
+    blocking_model: azerus:item/sun_bastion_blocking
