@@ -1,0 +1,8 @@
+# Описание системы. name и version подставляет сборка: name — rootProject.name из settings.gradle.kts, version — из build.gradle.kts.
+name: ${name}
+version: ${version}
+main: core.amazake.systems.corenpc.CoreNpcSystem
+description: "Свои NPC без Citizens: манекены со скином или мобы, модели ModelEngine, диалоги в окне над хотбаром (как LuxDialogues) или в окне диалога клиента, команды по клику"
+authors: [tearsmilk]
+api-version: 2
+conflicts: [Citizens]

@@ -1,0 +1,58 @@
+# Пример диалога core-npc. Файл: systems/core-npc/dialogs/example.yml → id «example».
+# Привязать к NPC: /npc dialog <npc> example
+start: greet                       # стартовая страница (иначе первая)
+speaker: "Староста Ведан"          # имя по умолчанию для всех страниц
+# mode: native                     # этот диалог — в обычном окне клиента (иначе как в config.yml)
+on-end:                            # когда диалог дошёл до конца (не при уходе Shift-ом)
+  - "sound: minecraft:entity.villager.celebrate 0.6 1"
+
+pages:
+  greet:
+    sound: "minecraft:entity.villager.ambient 0.8 1"
+    lines:
+      - "Здравствуй, <white>{player}</white>.<wait:10> Давно у нас путников не было."
+      - "Ты по делу или так, <gray>поглазеть</gray>?"
+    answers:
+      - text: "Кто ты такой?"
+        goto: who
+      - text: "Есть работа?"
+        goto: work
+      - text: "Мне нужен хлеб."
+        requires:
+          - "!permission: volya.example.bread"
+        actions:
+          - "console: give {player} bread 3"
+          - "console: lp user {player} permission settemp volya.example.bread true 1h"
+          - "message: <gray>Ведан протягивает вам три буханки.</gray>"
+        goto: bread
+      - text: "Ничего, я пойду."
+        goto: end
+
+  who:
+    lines:
+      - "Я староста этой деревни. <wait:6>Слежу, чтобы"
+      - "амбары были полны, а ворота — заперты."
+    next: greet                    # без ответов: F / ЛКМ / клик по NPC — дальше
+
+  work:
+    speed: 1.5
+    lines:
+      - "<red>Волки</red> таскают овец у северной опушки."
+      - "Принесёшь пять шкур — заплачу <gold>серебром</gold>."
+    answers:
+      - text: "<green>Берусь.</green>"
+        actions:
+          - "player: quests start wolves"   # команда от имени игрока (пример)
+          - "sound: minecraft:entity.experience_orb.pickup"
+        goto: accepted
+      - text: "Не сейчас."
+        goto: greet
+
+  accepted:
+    lines:
+      - "Вот и славно. Возвращайся живым, {player}."
+    next: end
+
+  bread:
+    lines:
+      - "Держи, <white>{player}</white>. Ешь, пока тёплый."

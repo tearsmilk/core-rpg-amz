@@ -1,0 +1,61 @@
+# core-npc — настройки. После правки: /npc reload (или amazake system reload core-npc).
+prefix: "<dark_gray>[<gold>NPC</gold>]</dark_gray> "
+
+dialog:
+  # hud — окно над хотбаром (нужен пакет ресурсов corenpc, см. README); native — обычное окно диалога клиента 1.21.6+.
+  # Диалог может переопределить режим своим полем mode.
+  mode: hud
+  # Ответы ещё и в чат кликабельными строками (запасной ввод, если окно не видно).
+  chat-answers: true
+  # Дальше этого (блоков) от NPC — диалог закрывается. 0 — не следить.
+  max-distance: 6
+  # Не давать ходить во время диалога (повороты головы можно).
+  freeze: true
+  # Не давать и крутить головой.
+  camera-lock: false
+  # При открытии повернуть игрока к NPC.
+  face-npc: true
+  # Нельзя пропустить печать текста.
+  prevent-skip: false
+  # Скорость печати: символов за тик (страница может задать свою speed).
+  chars-per-tick: 1.0
+  # Как часто (тиков) переотправлять окно, когда текст не меняется. Чем меньше, тем короче «мигание», если другой
+  # плагин/система тоже пишет в actionbar (core-effects — раз в секунду при активном эффекте).
+  refresh-ticks: 2
+  # Метка corenpc:dialog (byte) в PDC игрока, пока открыт диалог, — по ней другие системы могут молчать в actionbar.
+  player-flag: true
+  typing-sound:
+    sound: "minecraft:block.note_block.hat"
+    volume: 0.25
+    pitch: 1.6
+    every: 2          # звук на каждые N букв
+  input:
+    scroll-selects: true      # колёсико/цифры 1–9 двигают выбор ответа (смена слота отменяется)
+    swap-hands-confirms: true # F — ответить / дальше / допечатать
+    left-click-confirms: true # ЛКМ — то же
+    sneak-closes: true        # Shift — уйти из диалога
+  format:
+    speaker: "<#ffd37a><speaker>"
+    text: "<#ece6d6>"
+    answer: "<#bdb6a6><index>. <text>"
+    answer-selected: "<#ffd37a>» <index>. <text>"
+    chat-answer: "<click><#ffd37a>[<index>]</#ffd37a> <white><text></white></click>"
+    chat-hint: "<dark_gray>колёсико — выбрать, F или ЛКМ — ответить, Shift — уйти</dark_gray>"
+  native:
+    width: 300
+    next-button: "<gray>Дальше</gray>"
+    close-button: "<gray>Уйти</gray>"
+
+npc:
+  look-interval-ticks: 4    # как часто NPC поворачивают голову к ближайшему игроку
+  look-radius: 8            # по умолчанию (у NPC — look-radius)
+  cooldown-seconds: 1.0     # по умолчанию между кликами одного игрока (у NPC — cooldown)
+  hologram-offset: 0.3      # высота TextDisplay над головой (hologram: display)
+
+modelengine:
+  enabled: true
+
+# Тексты сообщений (MiniMessage). Пустая строка — не отправлять. Полный список ключей — в README.
+messages:
+  no-permission: "<red>Вам нельзя с ним говорить.</red>"
+  cooldown: ""
