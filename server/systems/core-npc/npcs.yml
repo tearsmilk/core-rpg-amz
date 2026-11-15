@@ -1,0 +1,29 @@
+# NPC системы core-npc. Правится командами /npc; вручную — затем /npc reload.
+
+npcs:
+  ee:
+    type: mannequin
+    location:
+      world: world
+      x: -27.785
+      y: 100.0
+      z: 8.389
+      yaw: -174.961
+      pitch: 25.037
+    name: <white>ee
+    hologram: name
+    model:
+      id: janet
+      scale: 1.0
+      idle: ''
+      interact: ''
+    dialog: example
+    commands: []
+    permission: ''
+    cooldown: -1.0
+    left-click: false
+    look-at: false
+    look-radius: -1.0
+    gravity: false
+    collidable: false
+    scale: 1.0

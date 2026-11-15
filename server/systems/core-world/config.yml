@@ -31,3 +31,19 @@ weather:
   disabled: true
   # Миры, где дождя нет. Пустой список — во всех мирах.
   worlds: []
+
+# Взрывы.
+explosions:
+  # true — взрывы и мобы из sources не ломают блоки (карта целая). Урон по игрокам и мобам, отбрасывание и
+  # сам взрыв остаются — убирается только разрушение блоков.
+  protect-blocks: true
+  # Кто не ломает блоки (имена EntityType): TNT — ТНТ, TNT_MINECART — вагонетка с ТНТ, CREEPER — крипер,
+  # ENDER_DRAGON — дракон (взрывом и пролетая сквозь блоки). Можно добавить WITHER, WITHER_SKULL, FIREBALL (гаст),
+  # SMALL_FIREBALL (ифрит), END_CRYSTAL, WIND_CHARGE.
+  sources: [TNT, TNT_MINECART, CREEPER, ENDER_DRAGON]
+  # true — и взрывы блоков (кровать в аду/энде, якорь возрождения в обычном мире) не ломают блоки.
+  block-explosions: false
+  # true — картины и рамки тоже не срываются этими взрывами.
+  protect-hanging: true
+  # Миры, где действует. Пустой список — во всех мирах.
+  worlds: []

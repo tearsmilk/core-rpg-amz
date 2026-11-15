@@ -3,12 +3,12 @@
 start: greet                       # стартовая страница (иначе первая)
 speaker: "Староста Ведан"          # имя по умолчанию для всех страниц
 # mode: native                     # этот диалог — в обычном окне клиента (иначе как в config.yml)
-on-end:                            # когда диалог дошёл до конца (не при уходе Shift-ом)
-  - "sound: minecraft:entity.villager.celebrate 0.6 1"
+# on-end:                          # когда диалог дошёл до конца (не при уходе Shift-ом)
+#   - "sound: minecraft:entity.player.levelup 0.6 1"
 
 pages:
   greet:
-    sound: "minecraft:entity.villager.ambient 0.8 1"
+    # sound: "minecraft:block.amethyst_block.chime 0.8 1"   # звук при открытии страницы (по желанию)
     lines:
       - "Здравствуй, <white>{player}</white>.<wait:10> Давно не было путников."
       - "Ты по делу или так, <gray>поглазеть</gray>?"
