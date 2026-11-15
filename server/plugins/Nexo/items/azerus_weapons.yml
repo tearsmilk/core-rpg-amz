@@ -81,3 +81,21 @@ azerus_thundermaul:
     - "<gray>Молот, что гремит при каждом ударе."
   Pack:
     model: azerus:item/thundermaul
+
+# Багровая коса: объёмная модель (source/Багровая-коса.bbmodel, собирается tools/crimson_scythe.py).
+# item_model указывает на своё определение pack/assets/azerus/items/crimson_scythe.json: в руке оно выбирает кадр
+# замаха по custom_model_data (строки cw_swing_1..3 ставит система core-weapons), в слоте/на земле — всегда основа.
+# Частицы вокруг, замах, огненный след и дрожь земли при крите — система core-weapons (по id azerus_crimson_scythe).
+azerus_crimson_scythe:
+  itemname: "<gradient:#ff3b2f:#b3121f:#ff8a3d>Багровая коса</gradient>"
+  material: NETHERITE_SWORD
+  lore:
+    - "<gray>Выкована из закатного пламени,"
+    - "<gray>древко — корень мёртвого дерева."
+    - ""
+    - "<#ff6a3d>✦ <gray>Вокруг лезвия кружат угли."
+    - "<#ff6a3d>✦ <gray>Крит: <#ff8a3d>земля дрожит</#ff8a3d> вокруг цели."
+  Pack:
+    model: azerus:item/crimson_scythe
+  Components:
+    item_model: azerus:crimson_scythe

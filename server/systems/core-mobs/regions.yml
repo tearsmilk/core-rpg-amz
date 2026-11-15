@@ -19,7 +19,7 @@ regions:
     min-y: -27
     max-y: -12
     despawn-radius: 5
-    show: false
+    show: true
     spawn:
       enabled: true
       interval-seconds: 10

@@ -1,0 +1,54 @@
+{
+ "hand_animation_on_swap": false,
+ "model": {
+  "type": "minecraft:select",
+  "property": "minecraft:display_context",
+  "cases": [
+   {
+    "when": [
+     "gui",
+     "ground",
+     "fixed",
+     "head",
+     "none"
+    ],
+    "model": {
+     "type": "minecraft:model",
+     "model": "azerus:item/crimson_scythe"
+    }
+   }
+  ],
+  "fallback": {
+   "type": "minecraft:select",
+   "property": "minecraft:custom_model_data",
+   "index": 0,
+   "cases": [
+    {
+     "when": "cw_swing_1",
+     "model": {
+      "type": "minecraft:model",
+      "model": "azerus:item/crimson_scythe_swing_1"
+     }
+    },
+    {
+     "when": "cw_swing_2",
+     "model": {
+      "type": "minecraft:model",
+      "model": "azerus:item/crimson_scythe_swing_2"
+     }
+    },
+    {
+     "when": "cw_swing_3",
+     "model": {
+      "type": "minecraft:model",
+      "model": "azerus:item/crimson_scythe_swing_3"
+     }
+    }
+   ],
+   "fallback": {
+    "type": "minecraft:model",
+    "model": "azerus:item/crimson_scythe"
+   }
+  }
+ }
+}

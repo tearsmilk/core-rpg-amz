@@ -1,0 +1,39 @@
+{
+ "parent": "azerus:item/crimson_scythe",
+ "display": {
+  "thirdperson_righthand": {
+   "rotation": [
+    158.34,
+    -82.45,
+    153.55
+   ],
+   "translation": [
+    0.15,
+    4.9,
+    -3.19
+   ],
+   "scale": [
+    0.72,
+    0.72,
+    0.72
+   ]
+  },
+  "firstperson_righthand": {
+   "rotation": [
+    1.37,
+    -57.45,
+    37.44
+   ],
+   "translation": [
+    -1.74,
+    0.52,
+    -2.35
+   ],
+   "scale": [
+    0.6,
+    0.6,
+    0.6
+   ]
+  }
+ }
+}

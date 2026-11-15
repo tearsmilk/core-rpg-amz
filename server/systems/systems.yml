@@ -10,6 +10,7 @@ enabled:
   - core-portals
   - core-skyrift
   - core-vault
+  - core-weapons
   - core-world
   - rezusmenu
   - seal-magic
