@@ -59,6 +59,7 @@
 | `/npc dialog <id> <диалог\|none>` | Привязать диалог (`dialogs/<диалог>.yml`) |
 | `/npc command add <id> <player\|console\|message\|sound> <текст…>` | Действие по клику (`{player}`, `{npc}`, `%papi%`); `console` — с правом `corenpc.admin.console` |
 | `/npc command list <id>` / `remove <id> <номер>` | Список / удалить |
+| `/npc look <id> [on\|off\|me]` | Следить за игроком (`on`) или стоять статично (`off` — как поставили, `me` — лицом к вам); без аргумента — переключить |
 | `/npc set <id> <ключ> <значение>` | `look-at true/false`, `look-radius 8`, `gravity`, `collidable`, `permission <право\|->`, `cooldown 3s\|default`, `left-click true`, `hologram name\|display\|none`, `lines <строка \| строка>` (для `display`), `scale 1.2` |
 | `/npc talk <id> [игрок]` | Открыть диалог NPC игроку (без команд и кулдауна) |
 | `/npc open <диалог> <игрок> [npc]` | Открыть любой диалог — для других плагинов и систем (из консоли) |

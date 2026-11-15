@@ -34,7 +34,7 @@ final class NpcCommand extends Command {
     /** Добавлять NPC консольные команды: это доступ к консоли сервера, поэтому отдельное право (у OP есть). */
     static final String CONSOLE_PERMISSION = "corenpc.admin.console";
     private static final List<String> SUBS = List.of("create", "remove", "list", "info", "tp", "tphere", "rename", "skin",
-        "type", "model", "dialog", "command", "set", "talk", "open", "close", "reload");
+        "type", "model", "dialog", "command", "set", "look", "talk", "open", "close", "reload");
     private static final List<String> SET_KEYS = List.of("look-at", "look-radius", "gravity", "collidable", "permission",
         "cooldown", "left-click", "hologram", "lines", "scale");
 
@@ -174,6 +174,7 @@ final class NpcCommand extends Command {
             }
             case "command", "cmd" -> this.command(sender, args);
             case "set" -> this.set(sender, args);
+            case "look" -> this.look(sender, args);
             case "talk" -> this.talk(sender, args);
             case "open" -> this.open(sender, args);
             case "close" -> {
@@ -479,6 +480,46 @@ final class NpcCommand extends Command {
         this.msg(sender, "set", id(d.id()), Placeholder.unparsed("key", key), Placeholder.unparsed("value", raw));
     }
 
+    /**
+     * /npc look &lt;id&gt; [on|off|me] — следить за игроком или стоять статично. Без аргумента — переключить.
+     * off — стоит, как поставили (поворот из create/tphere); me — статично и лицом к вам.
+     */
+    private void look(final CommandSender sender, final String[] args) {
+        final NpcDef d = this.npc(sender, args, 1);
+        if (d == null) {
+            return;
+        }
+        final String mode = args.length >= 3 ? args[2].toLowerCase(Locale.ROOT) : (d.lookAt() ? "off" : "on");
+        switch (mode) {
+            case "on", "true", "вкл" -> {
+                this.npcs.update(d.id(), x -> x.withOption("look-at", Boolean.TRUE));
+                this.msg(sender, "look-on", id(d.id()));
+            }
+            case "off", "false", "выкл" -> {
+                this.npcs.update(d.id(), x -> x.withOption("look-at", Boolean.FALSE));
+                this.msg(sender, "look-off", id(d.id()));
+            }
+            case "me", "here" -> {
+                if (!(sender instanceof Player p)) {
+                    this.msg(sender, "no-player-sender");
+                    return;
+                }
+                if (!p.getWorld().getName().equals(d.world())) {
+                    this.msg(sender, "look-other-world", id(d.id()));
+                    return;
+                }
+                final Location e = p.getEyeLocation();
+                final double dx = e.getX() - d.x();
+                final double dz = e.getZ() - d.z();
+                final float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+                this.npcs.update(d.id(), x -> x.withOption("look-at", Boolean.FALSE)
+                    .withLocation(d.world(), d.x(), d.y(), d.z(), yaw, 0f));
+                this.msg(sender, "look-me", id(d.id()));
+            }
+            default -> this.msg(sender, "bad-value", Placeholder.unparsed("value", mode), Placeholder.unparsed("key", "look"));
+        }
+    }
+
     /** /npc talk &lt;id&gt; [игрок] — открыть диалог NPC игроку (как будто он кликнул, без команд и кулдауна). */
     private void talk(final CommandSender sender, final String[] args) {
         final NpcDef d = this.npc(sender, args, 1);
@@ -562,6 +603,7 @@ final class NpcCommand extends Command {
                 }
                 case "command", "cmd" -> out.addAll(ids);
                 case "set" -> out.addAll(SET_KEYS);
+                case "look" -> out.addAll(List.of("on", "off", "me"));
                 case "talk", "open" -> Bukkit.getOnlinePlayers().forEach(p -> out.add(p.getName()));
                 case "rename" -> out.add("<имя>");
                 default -> {
