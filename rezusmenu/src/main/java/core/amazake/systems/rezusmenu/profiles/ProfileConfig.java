@@ -26,6 +26,7 @@ public record ProfileConfig(
     String newLocation,
     List<String> newCommands,
     List<String> lobbyCommands,
+    List<String> classCommands,
     boolean separateEnderChest,
     boolean separateVanillaExp,
     boolean separateEffects,
@@ -93,7 +94,7 @@ public record ProfileConfig(
         new CardStat("Выносливость", "Выносливость", "%hl_stats_stamina%"));
 
     public static final ProfileConfig DEFAULTS = new ProfileConfig(true, 2, 4, JoinMode.ALWAYS, true, 40,
-        649, "vault", "649", Material.DIAMOND, "", List.of(), "", List.of(), List.of(), true, true, true,
+        649, "vault", "649", Material.DIAMOND, "", List.of(), "", List.of(), List.of(), List.of(), true, true, true,
         List.of("rezusmenu:jewel_", "rezusmenu:stash_"), "auto", List.of(), List.of(), List.of(),
         List.of(new Extra("corevault-level", "%corevault_exp_total%", "level set {player} exp {value}",
             "level set {player} exp 0")),
@@ -216,6 +217,7 @@ public record ProfileConfig(
             c.getString("new-profile.location", d.newLocation()),
             commands(c, "new-profile.commands"),
             commands(c, "lobby.commands"),
+            commands(c, "class-chosen.commands"),
             c.getBoolean("separate.ender-chest", d.separateEnderChest()),
             c.getBoolean("separate.vanilla-exp", d.separateVanillaExp()),
             c.getBoolean("separate.effects", d.separateEffects()),

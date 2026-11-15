@@ -278,6 +278,10 @@ public final class ProfileService implements Listener {
         a.summary(target, this.summary(p, dest, b));
         this.store.save(a, null);
         p.teleportAsync(dest);
+        if (data == null && a.profile(target) != null && a.profile(target).classKey() != null
+            && !a.profile(target).classKey().isBlank()) {
+            this.dispatch(c.classCommands(), p);   // новый профиль с выбранным классом
+        }
         this.context.logger().info("profiles: " + p.getName() + " — профиль №" + from + " → №" + target
             + (data == null ? " (новый)" : ""));
         p.sendMessage(Text.mm(Text.prefix() + "<green>Профиль загружен.</green>"));
@@ -359,6 +363,7 @@ public final class ProfileService implements Listener {
         a.setClassKey(a.active(), classKey);
         a.summary(a.active(), this.summary(p, this.realLocation.apply(p), this.bridge()));
         this.store.save(a, null);
+        this.dispatch(this.cfg.get().classCommands(), p);
         return true;
     }
 
@@ -409,8 +414,41 @@ public final class ProfileService implements Listener {
             return;
         }
         final String name = p.getName();
-        final List<String> ready = cmds.stream().map(x -> x.replace("{player}", name)
+        final List<String> all = cmds.stream().map(x -> x.replace("{player}", name)
             .replace("{uuid}", p.getUniqueId().toString())).toList();
+        // «player: команда» — от имени игрока (его права), в его потоке; остальные — от консоли
+        final List<String> own = all.stream().filter(x -> x.regionMatches(true, 0, "player:", 0, 7))
+            .map(x -> x.substring(7).strip()).map(x -> x.startsWith("/") ? x.substring(1) : x).toList();
+        final List<String> ready = all.stream().filter(x -> !x.regionMatches(true, 0, "player:", 0, 7)).toList();
+        if (!own.isEmpty()) {
+            // через ~10 тиков: меню успевает закрыться и вернуть игрока, телепорт профиля — завершиться
+            final int[] runs = {0};
+            this.context.runForPlayer(p, t -> {
+                if (runs[0]++ == 0) {
+                    return;
+                }
+                t.cancel();
+                for (final String cmd : own) {
+                    // право ровно на эту команду — только на время её выполнения (у игроков может не быть /warp)
+                    final org.bukkit.command.Command command = Bukkit.getCommandMap().getCommand(cmd.split(" ", 2)[0]);
+                    final String perm = command == null ? null : command.getPermission();
+                    final org.bukkit.permissions.PermissionAttachment grant = perm == null || perm.isBlank()
+                        ? null : p.addAttachment(this.context.plugin(), perm, true);
+                    try {
+                        p.performCommand(cmd);
+                    } catch (final RuntimeException e) {
+                        this.context.logger().warning("profiles: команда игрока «" + cmd + "» упала: " + e);
+                    } finally {
+                        if (grant != null) {
+                            p.removeAttachment(grant);
+                        }
+                    }
+                }
+            }, 10L);
+        }
+        if (ready.isEmpty()) {
+            return;
+        }
         Bukkit.getGlobalRegionScheduler().execute(this.context.plugin(), () -> {
             for (final String cmd : ready) {
                 try {
