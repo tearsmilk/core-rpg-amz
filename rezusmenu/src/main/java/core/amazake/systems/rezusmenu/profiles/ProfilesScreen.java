@@ -18,8 +18,8 @@ import org.bukkit.profile.PlayerTextures;
 
 /**
  * Меню выбора профилей — второй экран rezusmenu на том же холсте 704 × 400, курсоре и кликах, что и RPG-меню.
- * Фон — нарисованная поляна, по центру — персонаж игрока (его скин в три четверти, «пикселями»), слева вверху —
- * вывеска AZERUS QXCER, слева внизу — «В лобби», справа — панель «Ваши профили»: карточки по две (прокрутка
+ * Арт в стиле RPG-меню: тёмный зал замка, по центру — персонаж игрока (его скин в три четверти, «пикселями») на
+ * каменном помосте с рунным кругом, слева вверху — вывеска AZERUS QXCER (орех и золото), слева внизу — «В лобби», справа — панель «Ваши профили»: карточки по две (прокрутка
  * стрелками), под каждой кнопка, внизу — покупка слота. Новый профиль — выбор одного из классов. Поток игрока.
  */
 public final class ProfilesScreen implements ProfileService.Host {
@@ -49,7 +49,8 @@ public final class ProfilesScreen implements ProfileService.Host {
     private static final int L_BG = 0;
     private static final int L_PANEL = 1;
     private static final int L_CARD = 2;
-    private static final int L_ICON = 3;
+    /** Над подсветкой (слой 4): подсветки — непрозрачные «нажатые» версии кнопок и карточек, как в RPG-меню. */
+    private static final int L_ICON = 5;
     private static final int L_TEXT = 6;
     private static final String STATIC = "pf_static";
     private static final String LIST = "pf_list";
@@ -189,14 +190,15 @@ public final class ProfilesScreen implements ProfileService.Host {
         final Account.Summary sum = card.summary();
         final String className = cls != null ? cls.name() : card.classKey().isBlank() ? "Без класса" : card.classKey();
         final String color = cls != null ? cls.color() : "<gray>";
-        s.item(x + 80, y + 10, 10, new ItemStack(cls != null ? cls.icon() : Material.BOOK), L_ICON, LIST);
-        this.label(x + 88, y + 4, 12, 8, "<gold>" + Text.escape(className) + "</gold>", className, false, L_TEXT, LIST);
+        this.classIcon(cls != null ? cls.key() : card.classKey(), false, x + 76, y + 6, cls != null ? cls.icon() : Material.BOOK,
+            x + 84, y + 14, 12);
+        this.label(x + 96, y + 7, 12, 8, "<gold>" + Text.escape(className) + "</gold>", className, false, L_TEXT, LIST);
         final String lvl = "Уровень:";
-        this.label(x + 88, y + 16, 12, 8, "<white>" + lvl + "</white>", lvl, false, L_TEXT, LIST);
+        this.label(x + 88, y + 20, 12, 8, "<white>" + lvl + "</white>", lvl, false, L_TEXT, LIST);
         final String lv = String.valueOf(sum.level());
-        this.label(x + 201, y + 16, 12, 8, "<yellow>" + lv + "</yellow>", lv, true, L_TEXT, LIST);
+        this.label(x + 201, y + 20, 12, 8, "<yellow>" + lv + "</yellow>", lv, true, L_TEXT, LIST);
         final String loc = fit(sum.location().isBlank() ? "—" : sum.location(), 112 * 10 / 8);
-        this.label(x + 88, y + 30, 12, 8, "<white>" + Text.escape(loc) + "</white>", loc, false, L_TEXT, LIST);
+        this.label(x + 88, y + 32, 12, 8, "<white>" + Text.escape(loc) + "</white>", loc, false, L_TEXT, LIST);
         final List<Account.Stat> stats = sum.stats();
         for (int i = 0; i < Math.min(3, stats.size()); i++) {
             final String n = fit(stats.get(i).name(), 80 * 10 / 8) + ":";
@@ -270,7 +272,7 @@ public final class ProfilesScreen implements ProfileService.Host {
             final ProfileConfig.ClassChoice c = classes.get(i);
             final int y = ROW_Y0 + ROW_STEP * i;
             s.quad("pf_row", CARD_X, y, L_CARD, LIST);
-            s.item(CARD_X + 26, y + 28, 28, new ItemStack(c.icon()), L_ICON, LIST);
+            this.classIcon(c.key(), true, CARD_X + 14, y + 16, c.icon(), CARD_X + 26, y + 28, 28);
             this.label(CARD_X + 54, y + 7, 14, 10, c.color() + Text.escape(c.name()), c.name(), false, L_TEXT, LIST);
             for (int j = 0; j < Math.min(2, c.description().size()); j++) {
                 final String d = fit(c.description().get(j), 148 * 10 / 7);
@@ -294,6 +296,20 @@ public final class ProfilesScreen implements ProfileService.Host {
                 this.message("<red>Класс выдать не удалось.</red>");
             }
             this.showList();
+        }
+    }
+
+    /**
+     * Значок класса: нарисованный глиф {@code pf_cls_<ключ>} (16 px на карточке, 24 px в выборе класса), если он есть
+     * в паке, иначе — предмет-иконка из конфига (для своих классов).
+     */
+    private void classIcon(final String key, final boolean large, final double x, final double y, final Material icon,
+                           final double itemCx, final double itemCy, final double itemSize) {
+        final String id = "pf_cls_" + key + (large ? "_l" : "");
+        if (!key.isBlank() && PanelMath.glyph(id) != null) {
+            this.screen.quad(id, x, y, L_ICON, LIST);
+        } else {
+            this.screen.item(itemCx, itemCy, itemSize, new ItemStack(icon), L_ICON, LIST);
         }
     }
 

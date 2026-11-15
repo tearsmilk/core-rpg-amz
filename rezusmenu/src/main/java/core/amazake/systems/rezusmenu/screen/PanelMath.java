@@ -75,7 +75,10 @@ public final class PanelMath {
         "pf_bg_0_0", "pf_bg_0_1", "pf_bg_0_2", "pf_bg_1_0", "pf_bg_1_1", "pf_bg_1_2", "pf_bg_2_0", "pf_bg_2_1",
         "pf_bg_2_2", "pf_logo", "pf_lobby", "pf_lobby_hover", "pf_panel_0", "pf_panel_1", "pf_card", "pf_card_empty",
         "pf_btn", "pf_btn_green", "pf_btn_hover", "pf_buy", "pf_buy_hover", "pf_arrow_up", "pf_arrow_down",
-        "pf_arrow_hover", "pf_row", "pf_row_hover");
+        "pf_arrow_hover", "pf_row", "pf_row_hover",
+        // значки классов: 16 px (карточка) и 24 px в текстуре 32 × 32 (выбор класса)
+        "pf_cls_swordsman", "pf_cls_archer", "pf_cls_mage", "pf_cls_thief",
+        "pf_cls_swordsman_l", "pf_cls_archer_l", "pf_cls_mage_l", "pf_cls_thief_l");
 
     private static final Map<String, Size> SIZES = Map.ofEntries(
         Map.entry("panel_0", new Size(256, 144)), Map.entry("panel_1", new Size(256, 144)),
@@ -105,7 +108,11 @@ public final class PanelMath {
         Map.entry("pf_btn_hover", new Size(208, 32)), Map.entry("pf_buy", new Size(208, 32)),
         Map.entry("pf_buy_hover", new Size(208, 32)), Map.entry("pf_arrow_up", new Size(16, 16)),
         Map.entry("pf_arrow_down", new Size(16, 16)), Map.entry("pf_arrow_hover", new Size(16, 16)),
-        Map.entry("pf_row", new Size(208, 64)), Map.entry("pf_row_hover", new Size(208, 64)));
+        Map.entry("pf_row", new Size(208, 64)), Map.entry("pf_row_hover", new Size(208, 64)),
+        Map.entry("pf_cls_swordsman", new Size(16, 16)), Map.entry("pf_cls_archer", new Size(16, 16)),
+        Map.entry("pf_cls_mage", new Size(16, 16)), Map.entry("pf_cls_thief", new Size(16, 16)),
+        Map.entry("pf_cls_swordsman_l", new Size(32, 32)), Map.entry("pf_cls_archer_l", new Size(32, 32)),
+        Map.entry("pf_cls_mage_l", new Size(32, 32)), Map.entry("pf_cls_thief_l", new Size(32, 32)));
 
     private static final Map<String, Glyph> GLYPHS;
 

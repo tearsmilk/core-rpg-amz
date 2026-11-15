@@ -216,41 +216,41 @@ def compose(mode='list'):
     if mode == 'list':
         text(img, PANEL[0] + 10, PANEL[1] + 4, 'Ваши профили', WHITE, h=22, lh=11)
         text(img, 0, PANEL[1] + 4, '2 из 4', WHITE, h=22, lh=11, right=PANEL[0] + 214)
-        cards = [('Мечник', (200, 200, 220), '31', 'Зиркония', ('Сила', '22'), ('Ловкость', '0'), ('Выносливость', '8'), True),
-                 ('Маг', (230, 120, 40), '10', 'Начальная деревня', ('Интеллект', '10'), ('Ловкость', '0'), ('Выносливость', '0'), False)]
+        cards = [('Мечник', 'swordsman', '31', 'Зиркония', ('Сила', '22'), ('Ловкость', '0'), ('Выносливость', '8'), True),
+                 ('Маг', 'mage', '10', 'Начальная деревня', ('Интеллект', '10'), ('Ловкость', '0'), ('Выносливость', '0'), False)]
         for k, (cls, icol, lvl, loc, s1, s2, s3, active) in enumerate(cards):
             x, y = CARD_X, CARD_Y[k]
             img.alpha_composite(tex('pf_card'), (x, y))
             img.alpha_composite(bust, (x + 4, y + 12))
-            item_icon(img, x + 80, y + 10, 10, icol)
-            text(img, x + 88, y + 4, cls, GOLD)
-            text(img, x + 88, y + 16, 'Уровень:', WHITE)
-            text(img, 0, y + 16, lvl, YELLOW, right=x + 201)
-            text(img, x + 88, y + 30, loc, WHITE)
+            img.alpha_composite(tex('pf_cls_' + icol), (x + 76, y + 6))
+            text(img, x + 96, y + 7, cls, GOLD)
+            text(img, x + 88, y + 20, 'Уровень:', WHITE)
+            text(img, 0, y + 20, lvl, YELLOW, right=x + 201)
+            text(img, x + 88, y + 32, loc, WHITE)
             for i, (n, v) in enumerate((s1, s2, s3)):
                 text(img, x + 88, y + 52 + 14 * i, n + ':', WHITE)
                 text(img, 0, y + 52 + 14 * i, v, GREEN, right=x + 201)
             img.alpha_composite(tex('pf_btn_green' if active else 'pf_btn'), (x, y + BTN_DY))
             text(img, 0, y + BTN_DY, 'Продолжить' if active else 'Выбрать профиль', WHITE, h=18, lh=9, cx=x + 104)
         img.alpha_composite(tex('pf_btn_hover'), (CARD_X, CARD_Y[1] + BTN_DY))      # hover example
+        text(img, 0, CARD_Y[1] + BTN_DY, 'Выбрать профиль', WHITE, h=18, lh=9, cx=CARD_X + 104)
         img.alpha_composite(tex('pf_arrow_down'), (ARROW[0], ARROW[2]))
         img.alpha_composite(tex('pf_buy'), (CARD_X, BUY_Y))
         text(img, 0, BUY_Y + 2, '+ 649', WHITE, h=20, lh=10, cx=CARD_X + 98)
         item_icon(img, CARD_X + 124, BUY_Y + 12, 11, (90, 220, 230))
     else:
         text(img, PANEL[0] + 10, PANEL[1] + 4, 'Новый профиль: класс', WHITE, h=22, lh=11)
-        rows = [('Мечник', (255, 85, 85), ('Ближний бой: щит и доспехи,', 'крепкий и защищённый.'), (200, 200, 220)),
-                ('Стрелок', (85, 255, 85), ('Дальний бой: лук и арбалет,', 'бьёт точно издалека.'), (150, 110, 60)),
-                ('Маг', (85, 255, 255), ('Стихии и заклинания,', 'урон и контроль.'), (230, 160, 40)),
-                ('Вор', (255, 255, 85), ('Скрытный и ловкий боец', 'ближнего боя.'), (240, 200, 60))]
+        rows = [('Мечник', (255, 85, 85), ('Ближний бой: щит и доспехи,', 'крепкий и защищённый.'), 'swordsman'),
+                ('Стрелок', (85, 255, 85), ('Дальний бой: лук и арбалет,', 'бьёт точно издалека.'), 'archer'),
+                ('Маг', (85, 255, 255), ('Стихии и заклинания,', 'урон и контроль.'), 'mage'),
+                ('Вор', (255, 255, 85), ('Скрытный и ловкий боец', 'ближнего боя.'), 'thief')]
         for i, (n, c, desc, ic) in enumerate(rows):
             y = ROW_Y0 + ROW_STEP * i
-            img.alpha_composite(tex('pf_row'), (CARD_X, y))
-            item_icon(img, CARD_X + 26, y + 28, 28, ic)
+            img.alpha_composite(tex('pf_row_hover' if i == 1 else 'pf_row'), (CARD_X, y))   # row 2: hover example
+            img.alpha_composite(tex('pf_cls_' + ic + '_l'), (CARD_X + 14, y + 16))
             text(img, CARD_X + 54, y + 7, n, c, h=14, lh=10)
             for j, line in enumerate(desc):
                 text(img, CARD_X + 54, y + 24 + 11 * j, line, GRAY, h=10, lh=7)
-        img.alpha_composite(tex('pf_row_hover'), (CARD_X, ROW_Y0 + ROW_STEP))
         img.alpha_composite(tex('pf_buy'), (CARD_X, BUY_Y))
         text(img, 0, BUY_Y, 'Назад', WHITE, h=22, lh=9, cx=CARD_X + 104)
     # cursor arrow at a button
