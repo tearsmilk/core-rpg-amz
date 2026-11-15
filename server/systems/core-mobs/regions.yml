@@ -2,6 +2,7 @@
 # потом /mobs reload. points — вершины полигона (блоки x,y,z), min-y/max-y — высота региона.
 # despawn-radius — на сколько блоков моб может отойти за границу региона, дальше он пропадает (-1 — выключено).
 # spawn.mobs — какие мобы появляются и их веса (чем больше вес, тем чаще).
+# show — контур региона виден всем игрокам (/mobs region show <имя>).
 
 regions:
   test:
@@ -18,6 +19,7 @@ regions:
     min-y: -27
     max-y: -12
     despawn-radius: 5
+    show: false
     spawn:
       enabled: true
       interval-seconds: 10

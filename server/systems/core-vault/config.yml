@@ -1,0 +1,220 @@
+# core-vault — экономика, уровни с опытом и физические монеты.
+# После правки: /ceco reload (или amazake system reload core-vault). Модули включаются и выключаются на лету.
+# Тексты — MiniMessage: https://docs.advntr.dev/minimessage/format.html
+prefix: "<dark_gray>[<gold>Казна</gold>]</dark_gray> "
+
+modules:
+  # Баланс, /money, /mpay, /moneytop, /ceco и провайдер Vault.
+  economy: true
+  # Свои уровни и опыт (/level), опыт за мобов.
+  levels: true
+  # Физические монеты: падают с мобов, при подъёме сразу идут на баланс. Нужен модуль economy.
+  coins: true
+
+economy:
+  # Где лежат балансы:
+  #   internal — свои (players.yml), core-vault сам регистрируется провайдером Vault;
+  #   vault    — у другого провайдера Vault (например, Vault 2.x со встроенной экономикой): core-vault даёт
+  #              поверх него свои команды, монеты и плейсхолдеры, свой провайдер не регистрирует;
+  #   auto     — vault, если другой провайдер экономики уже есть, иначе internal.
+  backend: auto
+  currency:
+    # Знаков после запятой (0..4). Внутри суммы — целые «копейки», без ошибок округления.
+    decimals: 2
+    # 1 монета, 2 монеты (и 1,5 монеты), 5 монет.
+    singular: "монета"
+    genitive: "монеты"
+    plural: "монет"
+    group-separator: " "
+    decimal-separator: ","
+    # 10 вместо 10,00.
+    trim-zeros: true
+    # Как писать сумму: {amount} — число, {name} — название в нужной форме.
+    format: "{amount} {name}"
+  # Баланс нового игрока.
+  start-balance: 0
+  # Больше на счету быть не может (пополнение сверх — отказ).
+  max-balance: 1000000000
+  pay:
+    # Наименьший перевод.
+    min: 1
+    # Переводы от этой суммы — только с подтверждением (/mpay confirm). 0 — без подтверждения.
+    confirm-above: 10000
+    confirm-seconds: 30
+    # Можно ли переводить игрокам не в сети.
+    offline: true
+  top:
+    # Сколько мест считать (и для %corevault_top_<n>_…%).
+    size: 100
+    # Как часто пересчитывать (вне потоков тика).
+    refresh-seconds: 60
+    page-size: 10
+  vault:
+    # Регистрировать core-vault провайдером net.milkbowl.vault.economy.Economy (только при backend internal).
+    register: true
+    # Lowest, Low, Normal, High, Highest. Плагины берут провайдера с наибольшим приоритетом.
+    priority: High
+
+levels:
+  start-level: 1
+  max-level: 100
+  curve:
+    # Сколько опыта нужно с уровня level до следующего. Есть + - * / % ^, скобки, floor ceil round sqrt abs ln
+    # log10 min max.
+    formula: "100 * level^1.5"
+    # Точные значения для отдельных уровней (важнее формулы), например "1": 50
+    table: {}
+  # Показывать уровень и прогресс на ванильной полоске опыта. Выключено: полоску занимает MMOCore
+  # (override-vanilla-exp: true) — включайте, только если её никто больше не использует.
+  vanilla-bar: false
+  level-up:
+    # <level> — новый уровень, <player> — игрок.
+    message: "<gold>Новый уровень: <yellow><level></yellow>!</gold>"
+    title: "<gold>Уровень <level></gold>"
+    subtitle: "<gray>Так держать!</gray>"
+    sound: "minecraft:entity.player.levelup"
+    volume: 1.0
+    pitch: 1.0
+    # Консольные команды на каждый новый уровень: %player%, %uuid%, %level%.
+    commands: []
+  # Награды за конкретный уровень (консольные команды). Если игрок получил уровень не в сети,
+  # награда выдаётся при входе.
+  rewards: {}
+  #  "5":
+  #    - "give %player% diamond 1"
+  display:
+    # Сообщение над хотбаром при получении опыта: <exp> <level> <current> <needed> <percent>.
+    actionbar: true
+    actionbar-format: "<green>+<exp> опыта</green> <gray>· ур. <level> (<current>/<needed>)</gray>"
+    bossbar:
+      enabled: false
+      seconds: 4
+      # PINK, BLUE, RED, GREEN, YELLOW, PURPLE, WHITE
+      color: GREEN
+      title: "<green>Уровень <level></green> <gray><current>/<needed></gray>"
+  sources:
+    # Опыт за убийство моба игроком: число или min-max. Порядок: id моба core-mobs, ванильный тип,
+    # hostile (любой враждебный), default (любой).
+    mobs:
+      core-mobs: {}
+      #  forest_zombie: 20
+      types:
+        ZOMBIE: 5
+        HUSK: 5
+        DROWNED: 5
+        SKELETON: 6
+        STRAY: 6
+        SPIDER: 5
+        CAVE_SPIDER: 5
+        CREEPER: 7
+        ENDERMAN: 10
+        WITCH: 10
+        BLAZE: 10
+        WITHER_SKELETON: 12
+      hostile: 3
+      default: 0
+    # Мобы из спавнеров дают опыт с этим множителем (0 — не дают).
+    spawner-multiplier: 0.5
+    # Перевод ванильного опыта (сферы) в опыт core-vault.
+    vanilla-orbs:
+      enabled: false
+      ratio: 1.0
+      # Убирать ванильный опыт (не попадёт на полоску).
+      cancel-vanilla: false
+
+coins:
+  # Стоимость одной монеты.
+  value: 1
+  item:
+    material: SUNFLOWER
+    # Своя модель предмета (компонент item_model), например "corevault:coin". Пусто — обычный подсолнух.
+    item-model: ""
+    name: "<gold>Монета</gold>"
+    lore:
+      - "<gray>Поднимите — и она сразу в кошельке.</gray>"
+    glint: false
+  entity:
+    # Подсветка монет на земле.
+    glow: false
+    # Через сколько секунд монета на земле исчезает (ванильно 300). 0 — никогда.
+    despawn-seconds: 300
+    pickup-delay-ticks: 10
+  # Могут ли воронки (и вагонетки с воронкой) забирать монеты.
+  hoppers-pickup: false
+  # Могут ли мобы подбирать монеты.
+  mobs-pickup: false
+  pickup:
+    sound: "minecraft:entity.experience_orb.pickup"
+    volume: 0.6
+    pitch: 1.4
+    # <amount> — сколько, <name> — название, <balance> — баланс после.
+    actionbar: "<gold>+<amount></gold> <yellow><name></yellow> <gray>(баланс: <balance>)</gray>"
+  # Монеты, оказавшиеся в инвентаре (выдали командой, достали из сундука), — сразу на баланс.
+  convert:
+    on-join: true
+    on-click: true
+  drops:
+    # Монеты падают, только если моба убил игрок.
+    require-player-kill: true
+    # Падают ли монеты с мобов из спавнеров.
+    from-spawners: false
+    # Правило: chance — шанс в процентах, amount — сколько монет (число или min-max), value — стоимость одной
+    # (не указано — coins.value). Порядок поиска: core-mobs, types, hostile, default.
+    core-mobs: {}
+    #  forest_zombie: {chance: 80, amount: 2-4}
+    types:
+      ZOMBIE: {chance: 50, amount: 1-2}
+      HUSK: {chance: 50, amount: 1-2}
+      SKELETON: {chance: 50, amount: 1-2}
+      SPIDER: {chance: 40, amount: 1}
+      CREEPER: {chance: 60, amount: 1-3}
+      ENDERMAN: {chance: 70, amount: 2-4}
+      WITCH: {chance: 70, amount: 2-4}
+    hostile: {chance: 30, amount: 1}
+    default: {chance: 0, amount: 0}
+
+storage:
+  # Изменения пишутся в players.yml не чаще этого (вне потоков тика), и всегда при выключении.
+  save-interval-seconds: 10
+
+messages:
+  module-off: "<red>Модуль <white><module></white> выключен.</red>"
+  no-permission: "<red>Недостаточно прав.</red>"
+  player-only: "<red>Только для игрока.</red>"
+  unknown-player: "<red>Игрок <white><player></white> не найден (он ни разу не заходил?).</red>"
+  bad-amount: "<red>Сумма «<white><value></white>»: <reason>.</red>"
+  bad-number: "<red>Не число: <white><value></white>.</red>"
+  loading: "<gray>Данные ещё загружаются, повторите через секунду.</gray>"
+  balance-self: "<gray>Ваш баланс:</gray> <gold><balance></gold>"
+  balance-other: "<gray>Баланс <white><player></white>:</gray> <gold><balance></gold>"
+  pay-usage: "<gray>/mpay <игрок> <сумма></gray>"
+  pay-self: "<red>Нельзя перевести самому себе.</red>"
+  pay-min: "<red>Наименьший перевод — <white><min></white>.</red>"
+  pay-offline: "<red>Игрок <white><player></white> не в сети: переводить можно только тем, кто в сети.</red>"
+  pay-no-money: "<red>Недостаточно средств: на счету <white><balance></white>.</red>"
+  pay-target-full: "<red>У <white><player></white> не поместится столько: потолок счёта.</red>"
+  pay-confirm: "<yellow>Перевести <white><amount></white> игроку <white><player></white>? <click:run_command:'/mpay confirm'><green>[Подтвердить]</green></click> или /mpay confirm (<seconds> с).</yellow>"
+  pay-no-pending: "<gray>Нет перевода для подтверждения.</gray>"
+  pay-sent: "<green>Переведено <white><amount></white> игроку <white><player></white>. Баланс: <white><balance></white>.</green>"
+  pay-received: "<green>Вы получили <white><amount></white> от <white><player></white>.</green>"
+  top-header: "<gold>Самые богатые</gold> <gray>(стр. <page>/<pages>)</gray>"
+  top-line: "<gray><rank>.</gray> <white><player></white> <dark_gray>—</dark_gray> <gold><balance></gold>"
+  top-empty: "<gray>Пока пусто.</gray>"
+  top-stale: "<dark_gray>Обновлено <seconds> с назад.</dark_gray>"
+  eco-usage: "<gray>/ceco give|take|set|reset <игрок> <сумма> · drop <кол-во> [x y z [мир]] · coin <игрок> <кол-во> · import vault [replace] · info · reload</gray>"
+  eco-done: "<green><action>: <white><player></white> — <white><amount></white>. Баланс: <white><balance></white>.</green>"
+  eco-failed: "<red>Не вышло: <reason>.</red>"
+  eco-notify-give: "<green>Вам начислено <white><amount></white>.</green>"
+  eco-notify-take: "<yellow>С вашего счёта списано <white><amount></white>.</yellow>"
+  coins-dropped: "<green>Выброшено монет: <white><count></white> (<amount>) в <white><where></white>.</green>"
+  coins-given: "<green>Игроку <white><player></white> выдано монет: <white><count></white>.</green>"
+  import-started: "<gray>Импорт из <white><file></white>…</gray>"
+  import-done: "<green>Импортировано счетов: <white><count></white> (пропущено: <skipped>).</green>"
+  import-failed: "<red>Импорт не удался: <reason></red>"
+  reloaded: "<green>core-vault перечитан. Модули: <modules>.</green>"
+  info: "<gray>Модули: <white><modules></white>. Балансы: <white><backend></white>. Провайдер Vault: <white><provider></white>. Счетов: <white><accounts></white>.</gray>"
+  level-self: "<gray>Уровень <gold><level></gold>, опыт <white><current>/<needed></white> (<percent>%).</gray>"
+  level-other: "<gray><white><player></white>: уровень <gold><level></gold>, опыт <white><current>/<needed></white> (<percent>%).</gray>"
+  level-max: "<gray>Уровень <gold><level></gold> — максимальный.</gray>"
+  level-usage: "<gray>/level [игрок] · /level give|take|set <игрок> exp|levels <количество></gray>"
+  level-done: "<green><white><player></white>: уровень <gold><level></gold>, опыт <white><current>/<needed></white>.</green>"

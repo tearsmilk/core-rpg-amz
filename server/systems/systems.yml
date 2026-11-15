@@ -9,6 +9,7 @@ enabled:
   - core-npc
   - core-portals
   - core-skyrift
+  - core-vault
   - core-world
   - rezusmenu
   - seal-magic

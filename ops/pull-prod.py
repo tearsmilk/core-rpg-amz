@@ -33,7 +33,13 @@ def walk(d):
 def get(p):
     dst = os.path.normpath(OUT + p)
     os.makedirs(os.path.dirname(dst), exist_ok=True)
-    curl(B + "/files/contents?file=" + urllib.parse.quote(p), dst)  # сырые байты, работает и для png/zip
+    for i in range(5):  # панель иногда отвечает 502 — повторяем
+        try:
+            curl(B + "/files/contents?file=" + urllib.parse.quote(p), dst)  # сырые байты, работает и для png/zip
+            break
+        except RuntimeError:
+            if i == 4: raise
+            time.sleep(3 * (i + 1))
     return p
 
 if __name__ == "__main__":
