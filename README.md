@@ -9,6 +9,6 @@ RPG-сервер Minecraft. Хост Pterodactyl: `88635a9b` (lobby, mgr.hosting
 
 ## Что где
 
-- `core-effects`, `core-mobs`, `core-portals`, `core-rpg`, `core-skyrift`, `core-world`, `rezusmenu` — исходники систем Amazake; `dist/` — собранные `.azs`.
+- `core-effects`, `core-mobs`, `core-npc`, `core-portals`, `core-rpg`, `core-skyrift`, `core-world`, `rezusmenu` — исходники систем Amazake; `dist/` — собранные `.azs`. `core-npc` — свои NPC (манекены со скином, модели ModelEngine, диалоги как в LuxDialogues) вместо Citizens.
 - `server/` — снимок продакшена: Nexo (конфиги и пак, общие шейдеры), MMOCore, MythicLib, MythicHUD, конфиги систем. Обновить: `python3 ops/pull-prod.py`.
 - `ops/` — правки и бэкапы продакшена (навыки MMOCore и т.д.).

@@ -12,7 +12,7 @@ class ArgsTest {
 
     @Test
     void joinTail() {
-        assertEquals("give {player} bread 3", Args.join(new String[] {"command", "add", "x", "console", "give", "{player}", "bread", "3"}, 4).substring(8));
+        assertEquals("give {player} bread 3", Args.join(new String[] {"command", "add", "x", "console", "give", "{player}", "bread", "3"}, 4));
         assertEquals("", Args.join(new String[] {"a"}, 1));
         assertEquals("b c", Args.join(new String[] {"a", "b", "c"}, 1));
     }

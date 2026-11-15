@@ -8,6 +8,7 @@ import core.amazake.systems.corenpc.dialog.DialogRegistry;
 import core.amazake.systems.corenpc.hook.ModelHook;
 import core.amazake.systems.corenpc.hook.Papi;
 import core.amazake.systems.corenpc.hud.FontWidths;
+import core.amazake.systems.corenpc.hud.HudLayout;
 import core.amazake.systems.corenpc.hud.HudRenderer;
 import core.amazake.systems.corenpc.npc.NpcDef;
 import core.amazake.systems.corenpc.npc.NpcManager;
@@ -41,6 +42,7 @@ public final class CoreNpcSystem implements AmazakeSystem, Listener {
     private volatile Actions actions;
     private volatile ModelHook models;
     private volatile ScheduledTask lookTask;
+    private volatile java.util.function.ToIntFunction<String> measure;
 
     @Override
     public void enable(final SystemContext context) throws IOException {
@@ -61,8 +63,10 @@ public final class CoreNpcSystem implements AmazakeSystem, Listener {
         this.models = new ModelHook(context.logger());
         this.actions = new Actions(context, papi);
         final DialogRegistry registry = new DialogRegistry();
-        registry.load(dialogDir, context.logger());
-        this.dialogs = new DialogManager(context, this.settings::get, registry, this.actions, papi, new HudRenderer(widths));
+        final HudRenderer hud = new HudRenderer(widths);
+        this.measure = line -> hud.width(Text.parse(line));
+        registry.load(dialogDir, context.logger(), this.measure, HudLayout.TEXT_WIDTH);
+        this.dialogs = new DialogManager(context, this.settings::get, registry, this.actions, papi, hud);
         this.npcs = new NpcManager(context, this.settings::get, this.models);
         this.npcs.onClick(this::click);
         this.npcs.load();
@@ -101,7 +105,8 @@ public final class CoreNpcSystem implements AmazakeSystem, Listener {
 
     private void reloadNow() {
         this.loadSettings();
-        this.dialogs.registry().load(this.context.dataFolder().resolve("dialogs"), this.context.logger());
+        this.dialogs.registry().load(this.context.dataFolder().resolve("dialogs"), this.context.logger(), this.measure,
+            HudLayout.TEXT_WIDTH);
         try {
             this.npcs.reload();
         } catch (final IOException e) {

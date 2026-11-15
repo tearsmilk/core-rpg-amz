@@ -524,13 +524,14 @@ public final class DialogManager implements Listener {
     }
 
     // ------------------------------------------------------------------------------------------- ввод
+    // Приоритет LOWEST: событие отменяется раньше других систем (rezusmenu открывает меню по F с ignoreCancelled).
 
     private Session hudSession(final Player p) {
         final Session s = this.sessions.get(p.getUniqueId());
         return s != null && !s.closed && s.mode == Settings.Mode.HUD ? s : null;
     }
 
-    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onHeld(final PlayerItemHeldEvent event) {
         final Session s = this.hudSession(event.getPlayer());
         if (s == null || !this.settings.get().dialog().scrollSelects()) {
@@ -547,7 +548,7 @@ public final class DialogManager implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onSwap(final PlayerSwapHandItemsEvent event) {
         final Session s = this.hudSession(event.getPlayer());
         if (s == null || !this.settings.get().dialog().swapConfirms()) {
@@ -557,7 +558,7 @@ public final class DialogManager implements Listener {
         this.step(s, s.flow.confirm());
     }
 
-    @EventHandler(priority = EventPriority.LOW)
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onLeftClick(final PlayerInteractEvent event) {
         if (event.getAction() != Action.LEFT_CLICK_AIR && event.getAction() != Action.LEFT_CLICK_BLOCK
             || event.getHand() != EquipmentSlot.HAND) {

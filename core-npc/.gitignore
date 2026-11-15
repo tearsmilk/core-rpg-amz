@@ -2,3 +2,4 @@
 build
 libs/amazake-systems-api.jar
 tools/.cache
+tools/preview

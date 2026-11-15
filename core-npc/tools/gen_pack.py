@@ -9,7 +9,7 @@
 
 Как устроено окно (всё — обычный rendertype_text, общий core-шейдер не трогается):
   * actionbar рисуется на высоте экрана H−68 (верх строки — H−72, верх глифа с ascent a — H−65−a);
-  * окно — глиф U+E000 шрифта corenpc:dialog (248×74, ascent 61): от H−126 до H−52, над сердцами и бронёй;
+  * окно — глиф U+E000 шрифта corenpc:dialog (320×78, ascent 63): от H−128 до H−51, над сердцами и бронёй;
   * строки окна — 7 шрифтов corenpc:row0..row6 с одной и той же текстурой glyphs.png, но разным ascent:
     у каждого глифа ванильного шрифта снизу прозрачный запас 56 пикселей (клетка 8×64, height 64), поэтому
     ascent можно поднять до 63 (ascent не может быть больше height) — так строка встаёт выше обычного actionbar;
@@ -33,10 +33,10 @@ A = os.path.join(ROOT, 'pack', 'assets', 'corenpc')
 WIDTHS = os.path.join(ROOT, 'src', 'main', 'resources', 'font-widths.txt')
 
 CELL_W, CELL_H = 8, 64          # клетка глифа: 8×8 ванильного шрифта + 56 прозрачных снизу
-BOX_W, BOX_H, BOX_ASCENT = 248, 74, 61
-# верх глифа строки над экраном: H−122 (имя), H−110/−100/−90 (текст), H−80/−71/−62 (ответы)
-ROW_TOPS = [122, 110, 100, 90, 80, 71, 62]
-HL_W = 236
+BOX_W, BOX_H, BOX_ASCENT = 320, 78, 63
+# верх глифа строки над экраном: H−124 (имя), H−111/−101/−91 (текст), H−80/−71/−62 (ответы)
+ROW_TOPS = [124, 111, 101, 91, 80, 71, 62]
+HL_W = 308
 
 RANGES = [(0x20, 0x7E), (0xA0, 0x24F), (0x370, 0x3FF), (0x400, 0x52F), (0x2000, 0x206F), (0x20A0, 0x20CF),
           (0x2100, 0x214F), (0x2190, 0x21FF), (0x2200, 0x22FF), (0x2500, 0x25FF), (0x2600, 0x27BF)]
@@ -60,16 +60,18 @@ def wanted(cp):
     return any(a <= cp <= b for a, b in RANGES)
 
 
-def load_glyphs(jar):
-    """Символ → картинка 8×8 (RGBA) из ванильных ascii.png и nonlatin_european.png (первый провайдер важнее)."""
+def load_glyphs(jar, tall=False):
+    """Символ → картинка (RGBA) из ванильных шрифтов: 8×8 из ascii.png и nonlatin_european.png или (tall) 8×12 из
+    accented.png (буквы с надстрочными знаками: Й, Ё…; рисуются на 3 пикселя выше)."""
     z = zipfile.ZipFile(jar)
     default = json.loads(z.read('assets/minecraft/font/include/default.json'))
     out = {}
+    files = ('font/accented.png',) if tall else ('font/ascii.png', 'font/nonlatin_european.png')
     for p in default['providers']:
-        if p.get('type') != 'bitmap' or p.get('height', 8) != 8:
+        if p.get('type') != 'bitmap':
             continue
         name = p['file'].split(':', 1)[1]
-        if name not in ('font/ascii.png', 'font/nonlatin_european.png'):
+        if name not in files:
             continue
         img = Image.open(io.BytesIO(z.read('assets/minecraft/textures/' + name))).convert('RGBA')
         rows = p['chars']
@@ -116,7 +118,7 @@ def box():
     a[inner] = np.stack([14 * grad, 12 * grad, 18 * grad, np.full_like(grad, 205)], -1)[inner]
     a[border] = (196, 160, 92, 235)
     # полоса под именем и разделитель над ответами
-    for yy, col in ((14, (196, 160, 92, 150)), (45, (120, 104, 80, 110))):
+    for yy, col in ((14, (196, 160, 92, 150)), (46, (120, 104, 80, 110))):
         a[yy, 6:BOX_W - 6] = col
     return Image.fromarray(a, 'RGBA')
 
@@ -143,14 +145,12 @@ def highlight():
     return Image.fromarray(a, 'RGBA')
 
 
-def main():
-    glyphs = load_glyphs(client_jar())
+def atlas(glyphs, widths):
     cps = sorted(glyphs)
     cols = 32
     rows = (len(cps) + cols - 1) // cols
     tex = Image.new('RGBA', (cols * CELL_W, rows * CELL_H), (0, 0, 0, 0))
     chars = []
-    widths = {}
     for i, cp in enumerate(cps):
         r, c = divmod(i, cols)
         tex.paste(glyphs[cp], (c * CELL_W, r * CELL_H))
@@ -160,7 +160,19 @@ def main():
     for r in range(rows):
         row = ''.join(chr(cp) for cp in cps[r * cols:(r + 1) * cols])
         chars.append(row + '\u0000' * (cols - len(row)))
+    return tex, chars
+
+
+def main():
+    jar = client_jar()
+    widths = {}
+    base = load_glyphs(jar)
+    tall = {cp: g for cp, g in load_glyphs(jar, tall=True).items() if cp not in base}
+    tex, chars = atlas(base, widths)
+    tex_tall, chars_tall = atlas(tall, widths)
+    cps = sorted(widths)
     write_png(tex, 'font/dialog/glyphs.png')
+    write_png(tex_tall, 'font/dialog/glyphs_tall.png')
     write_png(box(), 'font/dialog/box.png')
     write_png(indicator(), 'font/dialog/next.png')
     write_png(highlight(), 'font/dialog/highlight.png')
@@ -179,6 +191,8 @@ def main():
         provs = [
             {'type': 'space', 'advances': {' ': 4, ' ': 4}},
             {'type': 'bitmap', 'file': 'corenpc:font/dialog/glyphs.png', 'height': CELL_H, 'ascent': asc, 'chars': chars},
+            {'type': 'bitmap', 'file': 'corenpc:font/dialog/glyphs_tall.png', 'height': CELL_H, 'ascent': asc + 3,
+             'chars': chars_tall},
             {'type': 'bitmap', 'file': 'corenpc:font/dialog/highlight.png', 'height': CELL_H, 'ascent': asc + 1,
              'chars': ['']},
             {'type': 'bitmap', 'file': 'corenpc:font/dialog/next.png', 'height': 5, 'ascent': asc - 3,
@@ -197,7 +211,7 @@ def main():
     prev.alpha_composite(box(), (10, 10))
     os.makedirs(os.path.join(HERE, 'preview'), exist_ok=True)
     prev.save(os.path.join(HERE, 'preview', 'box.png'))
-    print('glyphs:', len(cps), 'texture', tex.size)
+    print('glyphs:', len(base), '+', len(tall), 'tall; textures', tex.size, tex_tall.size)
 
 
 if __name__ == '__main__':

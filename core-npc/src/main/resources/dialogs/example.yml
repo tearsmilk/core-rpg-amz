@@ -10,7 +10,7 @@ pages:
   greet:
     sound: "minecraft:entity.villager.ambient 0.8 1"
     lines:
-      - "Здравствуй, <white>{player}</white>.<wait:10> Давно у нас путников не было."
+      - "Здравствуй, <white>{player}</white>.<wait:10> Давно не было путников."
       - "Ты по делу или так, <gray>поглазеть</gray>?"
     answers:
       - text: "Кто ты такой?"

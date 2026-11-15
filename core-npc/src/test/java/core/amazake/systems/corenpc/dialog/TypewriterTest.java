@@ -43,7 +43,7 @@ class TypewriterTest {
     @Test
     void escapedBracketIsOneLetter() {
         final Typewriter t = Typewriter.of("a \\<b> c");
-        assertEquals(6, t.length());
+        assertEquals(7, t.length());
         assertEquals("a \\<", t.slice(3));
         assertEquals("a <b> c", plain(t.full()));
     }

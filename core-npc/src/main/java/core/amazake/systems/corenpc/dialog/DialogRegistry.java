@@ -32,6 +32,14 @@ public final class DialogRegistry {
 
     /** Прочитать папку; проблемы — в лог. Возвращает число загруженных. */
     public int load(final Path dir, final Logger log) {
+        return this.load(dir, log, null, 0);
+    }
+
+    /**
+     * То же, и предупредить о строках шире окна. measure — ширина строки MiniMessage в пикселях GUI
+     * ({переменные} меряются как есть — ник длиннее, поэтому оставляйте запас).
+     */
+    public int load(final Path dir, final Logger log, final java.util.function.ToIntFunction<String> measure, final int max) {
         final Map<String, Dialog> out = new TreeMap<>();
         if (Files.isDirectory(dir)) {
             try (Stream<Path> files = Files.walk(dir)) {
@@ -48,6 +56,17 @@ public final class DialogRegistry {
                     final DialogParser.Result r = DialogParser.parse(id, y);
                     r.errors().forEach(e -> log.warning("dialogs/" + rel + ": ОШИБКА: " + e));
                     r.warnings().forEach(w -> log.warning("dialogs/" + rel + ": " + w));
+                    if (measure != null) {
+                        for (final Page p : r.dialog().pages().values()) {
+                            for (final String line : p.lines()) {
+                                final int w = measure.applyAsInt(line.replaceAll("(?i)<wait:\\d+>", ""));
+                                if (w > max) {
+                                    log.warning("dialogs/" + rel + ": страница «" + p.id() + "»: строка шире окна (" + w + " > "
+                                        + max + " пикс.), конец вылезет за рамку: " + line);
+                                }
+                            }
+                        }
+                    }
                     out.put(id, r.dialog());
                 }
             } catch (final IOException e) {
