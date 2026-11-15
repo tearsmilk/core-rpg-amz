@@ -90,6 +90,14 @@ public final class MobService {
     }
 
     private void configure(final Mob e, final MobDef def, final String region) {
+        // Размер — до атрибутов: Slime#setSize сам выставляет здоровье, урон и скорость под размер.
+        if (def.size() > 0) {
+            if (e instanceof final org.bukkit.entity.Slime slime) {          // слизень и магмовый куб
+                slime.setSize(def.size());
+            } else if (e instanceof final org.bukkit.entity.Phantom phantom) {
+                phantom.setSize(def.size());
+            }
+        }
         setBase(e, Attribute.MAX_HEALTH, def.health());
         setBase(e, Attribute.ATTACK_DAMAGE, def.damage());
         setBase(e, Attribute.MOVEMENT_SPEED, def.speed());

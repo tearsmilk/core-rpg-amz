@@ -36,7 +36,9 @@ public record MobDef(
     IntRange exp,
     Map<EquipmentSlot, Material> equipment,
     List<Effect> effects,
-    List<Effect> onHitEffects
+    List<Effect> onHitEffects,
+    int size,
+    boolean noFire
 ) {
 
     /**

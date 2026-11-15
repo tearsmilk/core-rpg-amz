@@ -163,6 +163,35 @@ public final class MobListener implements Listener {
         }
     }
 
+    /** Огненные шары мобов core-mobs (блейз, гаст) не поджигают блоки и не ломают их (no-fire, по умолчанию true). */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onIgnite(final org.bukkit.event.block.BlockIgniteEvent event) {
+        Entity source = event.getIgnitingEntity();
+        if (source instanceof final Projectile p && p.getShooter() instanceof final Entity shooter) {
+            source = shooter;
+        }
+        if (source != null) {
+            final MobDef def = this.mobs.defOf(source);
+            if (def != null && def.noFire()) {
+                event.setCancelled(true);
+            }
+        }
+        if (Boolean.getBoolean("coremobs.debugIgnite")) {
+            Bukkit.getLogger().info("[core-mobs] ignite " + event.getCause() + " by " + event.getIgnitingEntity()
+                + " cancelled=" + event.isCancelled());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onFireballExplode(final org.bukkit.event.entity.EntityExplodeEvent event) {
+        if (event.getEntity() instanceof final Projectile p && p.getShooter() instanceof final Entity shooter) {
+            final MobDef def = this.mobs.defOf(shooter);
+            if (def != null && def.noFire()) {
+                event.blockList().clear();
+            }
+        }
+    }
+
     /** Зомби не тонет в утопленника, скелет не становится зимогором: иначе пропадут настройки и лут. */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onTransform(final EntityTransformEvent event) {

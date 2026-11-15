@@ -134,7 +134,9 @@ public final class MobCatalog {
             exp,
             Collections.unmodifiableMap(equipment),
             effects(m, "effects", false, warn),
-            effects(m, "on-hit-effects", true, warn));
+            effects(m, "on-hit-effects", true, warn),
+            Math.max(0, Math.min(16, m.getInt("size", 0))),
+            m.getBoolean("no-fire", true));
     }
 
     private static Double positive(final ConfigurationSection m, final String key, final Consumer<String> warn) {
