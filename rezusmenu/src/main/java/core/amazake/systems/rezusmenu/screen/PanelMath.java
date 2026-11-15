@@ -70,7 +70,12 @@ public final class PanelMath {
         "panel_0", "panel_1", "panel_2", "panel_3", "tab_active", "tab_hover", "slot_hover", "slot_selected",
         "button_hover", "bar_exp", "bar_hp", "bar_mana", "cursor", "bar_energy", "skills_bg_0", "skills_bg_1",
         "skill_hover", "skill_locked", "cursor_mirror",
-        "back_0_0", "back_0_1", "back_0_2", "back_1_0", "back_1_1", "back_1_2", "back_2_0", "back_2_1", "back_2_2");
+        "back_0_0", "back_0_1", "back_0_2", "back_1_0", "back_1_1", "back_1_2", "back_2_0", "back_2_1", "back_2_2",
+        // меню профилей (tools/profiles_art.py)
+        "pf_bg_0_0", "pf_bg_0_1", "pf_bg_0_2", "pf_bg_1_0", "pf_bg_1_1", "pf_bg_1_2", "pf_bg_2_0", "pf_bg_2_1",
+        "pf_bg_2_2", "pf_logo", "pf_lobby", "pf_lobby_hover", "pf_panel_0", "pf_panel_1", "pf_card", "pf_card_empty",
+        "pf_btn", "pf_btn_green", "pf_btn_hover", "pf_buy", "pf_buy_hover", "pf_arrow_up", "pf_arrow_down",
+        "pf_arrow_hover", "pf_row", "pf_row_hover");
 
     private static final Map<String, Size> SIZES = Map.ofEntries(
         Map.entry("panel_0", new Size(256, 144)), Map.entry("panel_1", new Size(256, 144)),
@@ -87,7 +92,20 @@ public final class PanelMath {
         Map.entry("back_0_2", new Size(192, 144)), Map.entry("back_1_0", new Size(256, 144)),
         Map.entry("back_1_1", new Size(256, 144)), Map.entry("back_1_2", new Size(192, 144)),
         Map.entry("back_2_0", new Size(256, 112)), Map.entry("back_2_1", new Size(256, 112)),
-        Map.entry("back_2_2", new Size(192, 112)));
+        Map.entry("back_2_2", new Size(192, 112)),
+        Map.entry("pf_bg_0_0", new Size(256, 144)), Map.entry("pf_bg_0_1", new Size(256, 144)),
+        Map.entry("pf_bg_0_2", new Size(192, 144)), Map.entry("pf_bg_1_0", new Size(256, 144)),
+        Map.entry("pf_bg_1_1", new Size(256, 144)), Map.entry("pf_bg_1_2", new Size(192, 144)),
+        Map.entry("pf_bg_2_0", new Size(256, 112)), Map.entry("pf_bg_2_1", new Size(256, 112)),
+        Map.entry("pf_bg_2_2", new Size(192, 112)), Map.entry("pf_logo", new Size(192, 112)),
+        Map.entry("pf_lobby", new Size(80, 32)), Map.entry("pf_lobby_hover", new Size(80, 32)),
+        Map.entry("pf_panel_0", new Size(224, 160)), Map.entry("pf_panel_1", new Size(224, 160)),
+        Map.entry("pf_card", new Size(208, 96)), Map.entry("pf_card_empty", new Size(208, 96)),
+        Map.entry("pf_btn", new Size(208, 32)), Map.entry("pf_btn_green", new Size(208, 32)),
+        Map.entry("pf_btn_hover", new Size(208, 32)), Map.entry("pf_buy", new Size(208, 32)),
+        Map.entry("pf_buy_hover", new Size(208, 32)), Map.entry("pf_arrow_up", new Size(16, 16)),
+        Map.entry("pf_arrow_down", new Size(16, 16)), Map.entry("pf_arrow_hover", new Size(16, 16)),
+        Map.entry("pf_row", new Size(208, 64)), Map.entry("pf_row_hover", new Size(208, 64)));
 
     private static final Map<String, Glyph> GLYPHS;
 
