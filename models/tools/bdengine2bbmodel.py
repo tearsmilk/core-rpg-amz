@@ -66,7 +66,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('src'); ap.add_argument('out'); ap.add_argument('--name', required=True)
     ap.add_argument('--skins', default='skins'); ap.add_argument('--scale', type=float, default=1.0)
-    ap.add_argument('--head-y', default='-0.5,0'); ap.add_argument('--preview')
+    ap.add_argument('--head-y', default='-0.5,0')
+    ap.add_argument('--yaw', type=float, default=180.0, help='поворот всей модели вокруг Y: ModelEngine считает передом −Z, BDEngine — +Z'); ap.add_argument('--preview')
     a = ap.parse_args()
     global HEAD_Y
     HEAD_Y = tuple(float(x) for x in a.head_y.split(','))
@@ -94,6 +95,8 @@ def main():
 
     groups, elements, heads = [], [], []
     root_m = np.eye(4); root_m[:3, :3] *= a.scale
+    cy, sy = math.cos(math.radians(a.yaw)), math.sin(math.radians(a.yaw))
+    root_m = np.array([[cy, 0, sy, 0], [0, 1, 0, 0], [-sy, 0, cy, 0], [0, 0, 0, 1]]) @ root_m
     used_names = {}
 
     def uniq(n):
