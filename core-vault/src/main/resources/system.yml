@@ -1,0 +1,7 @@
+# Описание системы. name и version подставляет сборка: name — rootProject.name из settings.gradle.kts, version — из build.gradle.kts.
+name: ${name}
+version: ${version}
+main: core.amazake.systems.corevault.CoreVaultSystem
+description: "Экономика (баланс, переводы, топ, провайдер Vault), свои уровни с опытом и физические монеты, которые при подъёме сразу идут на баланс"
+authors: [tearsmilk]
+api-version: 2
