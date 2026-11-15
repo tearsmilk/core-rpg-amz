@@ -10,6 +10,7 @@ import core.amazake.systems.corenpc.npc.NpcDef;
 import core.amazake.systems.corenpc.util.Placeholders;
 import io.papermc.paper.connection.PlayerGameConnection;
 import io.papermc.paper.entity.LookAnchor;
+import io.papermc.paper.event.player.AsyncChatEvent;
 import io.papermc.paper.event.player.PlayerCustomClickEvent;
 import io.papermc.paper.registry.data.dialog.ActionButton;
 import io.papermc.paper.registry.data.dialog.DialogBase;
@@ -159,6 +160,10 @@ public final class DialogManager implements Listener {
         final Session ses = new Session(p, this.seqs.incrementAndGet(), npc, mode);
         ses.flow = new DialogFlow(d, s.dialog().charsPerTick(), s.dialog().preventSkip());
         this.sessions.put(p.getUniqueId(), ses);
+        if (old == null && s.dialog().clearChatLines() > 0) {
+            // «чистый» чат на время разговора: старые сообщения уезжают вверх
+            p.sendMessage(Component.text("\n".repeat(s.dialog().clearChatLines() - 1)));
+        }
         if (s.dialog().flag()) {
             p.getPersistentDataContainer().set(this.flagKey, PersistentDataType.BYTE, (byte) 1);
         }
@@ -652,6 +657,15 @@ public final class DialogManager implements Listener {
         if (close) {
             this.close(s, false);
         }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onChat(final AsyncChatEvent event) {
+        // пока игрок в диалоге, сообщения других игроков ему не приходят (асинхронно: только читаем карту сессий)
+        if (this.sessions.isEmpty() || !this.settings.get().dialog().hideChat()) {
+            return;
+        }
+        event.viewers().removeIf(a -> a instanceof Player pl && this.sessions.containsKey(pl.getUniqueId()));
     }
 
     @EventHandler
