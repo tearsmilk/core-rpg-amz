@@ -67,7 +67,7 @@ def main():
     ap.add_argument('src'); ap.add_argument('out'); ap.add_argument('--name', required=True)
     ap.add_argument('--skins', default='skins'); ap.add_argument('--scale', type=float, default=1.0)
     ap.add_argument('--head-y', default='-0.5,0')
-    ap.add_argument('--yaw', type=float, default=180.0, help='поворот всей модели вокруг Y: ModelEngine считает передом −Z, BDEngine — +Z'); ap.add_argument('--preview')
+    ap.add_argument('--yaw', type=float, default=0.0, help='поворот всей модели вокруг Y (перед и у BDEngine, и у ModelEngine — −Z)'); ap.add_argument('--preview')
     a = ap.parse_args()
     global HEAD_Y
     HEAD_Y = tuple(float(x) for x in a.head_y.split(','))
@@ -132,8 +132,9 @@ def main():
             hi = np.array([0.25 + grow, HEAD_Y[1] + grow, 0.25 + grow]) * s
             u0, v0 = (si % 4) * 64 + (32 if hat else 0), (si // 4) * 16
             uv = lambda x0, y0, x1, y1: [u0 + x0, v0 + y0, u0 + x1, v0 + y1]
-            faces = {'south': uv(8, 8, 16, 16), 'north': uv(24, 8, 32, 16), 'west': uv(0, 8, 8, 16),
-                     'east': uv(16, 8, 24, 16), 'up': uv(8, 0, 16, 8), 'down': uv(16, 8, 24, 0)}
+            # как у головы игрока (стандартная развёртка Blockbench): лицо — north (−Z), правая сторона — east (+X)
+            faces = {'north': uv(8, 8, 16, 16), 'south': uv(24, 8, 32, 16), 'east': uv(0, 8, 8, 16),
+                     'west': uv(16, 8, 24, 16), 'up': uv(8, 0, 16, 8), 'down': uv(16, 0, 24, 8)}
             el = {'name': 'hat' if hat else 'head', 'box_uv': False, 'rescale': False, 'locked': False,
                   'render_order': 'default', 'allow_mirror_modeling': True,
                   'from': list(np.round((t + lo) * 16, 4)), 'to': list(np.round((t + hi) * 16, 4)),
@@ -185,7 +186,7 @@ def main():
 
 def preview(heads, strips, out):
     """Грубый рендер точками: спереди (+Z), сбоку (+X), сзади — проверить сборку глазами."""
-    views = [('front', np.array([0, 0, 1.0])), ('side', np.array([1.0, 0, 0])), ('back', np.array([0, 0, -1.0]))]
+    views = [('front', None), ('side', None), ('back', None)]
     W = 220; img = Image.new('RGB', (W * 3, W * 2), (40, 40, 48))
     pts = []
     for t, r, s, si in heads:
@@ -200,19 +201,19 @@ def preview(heads, strips, out):
                     pts.append((t + r @ (p * s), c[:3]))
         y0, y1 = HEAD_Y
         X0, X1, Z0, Z1 = -0.25, 0.25, -0.25, 0.25
-        face(8, 8, np.array([X0, y1, Z1]), np.array([0.5, 0, 0]), np.array([0, y0 - y1, 0]))      # south: лицо
-        face(24, 8, np.array([X1, y1, Z0]), np.array([-0.5, 0, 0]), np.array([0, y0 - y1, 0]))    # north
-        face(0, 8, np.array([X0, y1, Z0]), np.array([0, 0, 0.5]), np.array([0, y0 - y1, 0]))      # west
-        face(16, 8, np.array([X1, y1, Z1]), np.array([0, 0, -0.5]), np.array([0, y0 - y1, 0]))    # east
-        face(8, 0, np.array([X0, y1, Z0]), np.array([0.5, 0, 0]), np.array([0, 0, 0.5]))          # up
+        face(8, 8, np.array([X1, y1, Z0]), np.array([-0.5, 0, 0]), np.array([0, y0 - y1, 0]))     # north: лицо
+        face(24, 8, np.array([X0, y1, Z1]), np.array([0.5, 0, 0]), np.array([0, y0 - y1, 0]))     # south: затылок
+        face(0, 8, np.array([X1, y1, Z1]), np.array([0, 0, -0.5]), np.array([0, y0 - y1, 0]))     # east: правая сторона
+        face(16, 8, np.array([X0, y1, Z0]), np.array([0, 0, 0.5]), np.array([0, y0 - y1, 0]))     # west: левая
+        face(8, 0, np.array([X1, y1, Z1]), np.array([-0.5, 0, 0]), np.array([0, 0, -0.5]))        # up
     P = np.array([p for p, _ in pts]); C = np.array([c for _, c in pts])
     lo, hi = P.min(0), P.max(0); span = (hi - lo).max()
     for vi, (name, d) in enumerate(views):
         zbuf = np.full((W * 2, W), -1e9); pix = np.zeros((W * 2, W, 3))
-        if name == 'front': u, depth = P[:, 0], P[:, 2]
+        if name == 'front': u, depth = -P[:, 0], -P[:, 2]   # камера на −Z смотрит на +Z
         elif name == 'side': u, depth = -P[:, 2], P[:, 0]
-        else: u, depth = -P[:, 0], -P[:, 2]
-        ui = ((u - (lo[0] + hi[0]) / 2 if name != 'side' else u + (lo[2] + hi[2]) / 2) / span * W * 1.6 + W / 2).astype(int)
+        else: u, depth = P[:, 0], P[:, 2]
+        ui = ((u - u.mean()) / span * W * 1.6 + W / 2).astype(int)
         vi_ = ((hi[1] - P[:, 1]) / span * W * 1.6 + 10).astype(int)
         for x, y, z, c in zip(ui, vi_, depth, C):
             for dx in (0, 1):
