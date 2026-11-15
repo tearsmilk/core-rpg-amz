@@ -67,6 +67,7 @@ def main():
     ap.add_argument('src'); ap.add_argument('out'); ap.add_argument('--name', required=True)
     ap.add_argument('--skins', default='skins'); ap.add_argument('--scale', type=float, default=1.0)
     ap.add_argument('--head-y', default='-0.5,0')
+    ap.add_argument('--no-center', action='store_true', help='не сдвигать модель: по умолчанию ноги ставятся на y=0, центр тела — в x=z=0')
     ap.add_argument('--yaw', type=float, default=0.0, help='поворот всей модели вокруг Y (перед и у BDEngine, и у ModelEngine — −Z)'); ap.add_argument('--preview')
     a = ap.parse_args()
     global HEAD_Y
@@ -146,6 +147,21 @@ def main():
         return bone
 
     outliner = [build(c, root_m) for c in scene['children']]
+    if not a.no_center:
+        # центр тела по объёму кубов (руки и пальцы мелкие — почти не тянут), ноги — на y=0
+        vol = lambda e: np.prod(np.array(e['to']) - np.array(e['from']))
+        w = np.array([vol(e) for e in elements])
+        cen = np.array([(np.array(e['from']) + np.array(e['to'])) / 2 for e in elements])
+        cx, cz = (cen[:, 0] * w).sum() / w.sum(), (cen[:, 2] * w).sum() / w.sum()
+        miny = min(e['from'][1] for e in elements)
+        d = np.array([-cx, -miny, -cz])
+        for e in elements:
+            for k in ('from', 'to', 'origin'):
+                e[k] = list(np.round(np.array(e[k], dtype=float) + d, 4))
+        for g in groups:
+            g['origin'] = list(np.round(np.array(g['origin'], dtype=float) + d, 4))
+        heads[:] = [(t + d / 16, r, s, si) for t, r, s, si in heads]
+        print(f'сдвиг в ноль: {np.round(d, 3)} px')
     rows = max(1, math.ceil(len(strips) / 4))
     size = 64
     while size < max(256, rows * 16): size *= 2
