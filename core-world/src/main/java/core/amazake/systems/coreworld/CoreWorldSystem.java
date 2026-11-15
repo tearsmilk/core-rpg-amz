@@ -6,6 +6,7 @@ import core.amazake.systems.coreworld.hunger.HungerModule;
 import core.amazake.systems.coreworld.module.WorldModule;
 import core.amazake.systems.coreworld.spawn.SpawnModule;
 import core.amazake.systems.coreworld.weather.WeatherModule;
+import core.amazake.systems.coreworld.explosion.ExplosionModule;
 import java.util.List;
 import java.util.logging.Level;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -21,7 +22,7 @@ public final class CoreWorldSystem implements AmazakeSystem {
 
     /** Все модули системы. Новый модуль — добавить сюда. */
     private static List<WorldModule> createModules() {
-        return List.of(new HungerModule(), new SpawnModule(), new WeatherModule());
+        return List.of(new HungerModule(), new SpawnModule(), new WeatherModule(), new ExplosionModule());
     }
 
     @Override
