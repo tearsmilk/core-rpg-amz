@@ -3,6 +3,7 @@ package core.amazake.systems.corenpc;
 import core.amazake.systems.api.AmazakeSystem;
 import core.amazake.systems.api.SystemContext;
 import core.amazake.systems.corenpc.dialog.Actions;
+import core.amazake.systems.corenpc.dialog.Dialog;
 import core.amazake.systems.corenpc.dialog.DialogManager;
 import core.amazake.systems.corenpc.dialog.DialogRegistry;
 import core.amazake.systems.corenpc.hook.ModelHook;
@@ -21,6 +22,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
@@ -35,6 +37,9 @@ import org.bukkit.event.server.PluginEnableEvent;
  */
 public final class CoreNpcSystem implements AmazakeSystem, Listener {
 
+    /** Как часто проверять, что NPC загруженных чанков стоят (их могли убрать другие плагины). */
+    private static final Duration HEAL_PERIOD = Duration.ofSeconds(5);
+
     private final AtomicReference<Settings> settings = new AtomicReference<>(Settings.DEFAULTS);
     private volatile SystemContext context;
     private volatile NpcManager npcs;
@@ -42,11 +47,14 @@ public final class CoreNpcSystem implements AmazakeSystem, Listener {
     private volatile Actions actions;
     private volatile ModelHook models;
     private volatile ScheduledTask lookTask;
+    private volatile ScheduledTask healTask;
+    private volatile boolean closed;
     private volatile java.util.function.ToIntFunction<String> measure;
 
     @Override
     public void enable(final SystemContext context) throws IOException {
         this.context = context;
+        this.closed = false;
         this.loadSettings();
         final Path dialogDir = context.dataFolder().resolve("dialogs");
         if (!Files.isDirectory(dialogDir)) {
@@ -73,7 +81,7 @@ public final class CoreNpcSystem implements AmazakeSystem, Listener {
         context.registerListener(this.npcs);
         context.registerListener(this.dialogs);
         context.registerListener(this);
-        context.registerCommand(new NpcCommand(context, this.settings::get, this.npcs, this.dialogs, this.models, this::reloadNow));
+        context.registerCommand(new NpcCommand(context, this.settings::get, this.npcs, this.dialogs, this.models, this::reloadAsync));
         this.dialogs.clearFlags(Bukkit.getOnlinePlayers());
         this.startLook();
         this.npcs.spawnAll();
@@ -84,10 +92,14 @@ public final class CoreNpcSystem implements AmazakeSystem, Listener {
 
     @Override
     public void disable(final SystemContext context) {
-        final ScheduledTask t = this.lookTask;
-        if (t != null) {
-            t.cancel();
+        this.closed = true;
+        for (final ScheduledTask t : new ScheduledTask[] {this.lookTask, this.healTask}) {
+            if (t != null) {
+                t.cancel();
+            }
         }
+        this.lookTask = null;
+        this.healTask = null;
         final DialogManager d = this.dialogs;
         if (d != null) {
             d.shutdown();
@@ -98,23 +110,66 @@ public final class CoreNpcSystem implements AmazakeSystem, Listener {
         }
     }
 
+    /** amazake system reload (глобальный поток): перечитать здесь же; ошибка — в лог, всё остаётся как было. */
     @Override
     public void reload(final SystemContext context) {
-        this.reloadNow();
+        try {
+            this.apply(this.readAll());
+        } catch (final IOException | RuntimeException e) {
+            context.logger().warning("core-npc: не перечитано, всё осталось как было: " + reason(e));
+        }
     }
 
-    private void reloadNow() {
-        this.loadSettings();
-        this.dialogs.registry().load(this.context.dataFolder().resolve("dialogs"), this.context.logger(), this.measure,
-            HudLayout.TEXT_WIDTH);
-        try {
-            this.npcs.reload();
-        } catch (final IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    /** Всё, что перечитывает reload: сначала прочитать, менять — только если прочиталось целиком. */
+    private record Reloaded(Settings settings, Map<String, Dialog> dialogs, Map<String, NpcDef> npcs) {
+    }
+
+    /** Файлы: config.yml, dialogs/, npcs.yml. Ничего не меняет; любой поток. */
+    private Reloaded readAll() throws IOException {
+        final Settings s = Settings.from(this.context.loadConfig(), w -> this.context.logger().warning("config.yml: " + w));
+        final Map<String, Dialog> d = DialogRegistry.read(this.context.dataFolder().resolve("dialogs"), this.context.logger(),
+            this.measure, HudLayout.TEXT_WIDTH);
+        final Map<String, NpcDef> n = this.npcs.read();
+        return new Reloaded(s, d, n);
+    }
+
+    /** Применить прочитанное (глобальный поток). */
+    private void apply(final Reloaded r) {
+        this.settings.set(r.settings());
+        this.dialogs.registry().set(r.dialogs());
+        this.npcs.apply(r.npcs());
         this.startLook();
         this.context.logger().info("core-npc: перечитано (" + this.npcs.all().size() + " NPC, "
             + this.dialogs.registry().size() + " диалогов).");
+    }
+
+    /**
+     * /npc reload: файлы читаются вне потоков тика, применяется в глобальном потоке; done получает null (успех) или
+     * причину ошибки — тогда ничего не изменилось.
+     */
+    private void reloadAsync(final Consumer<String> done) {
+        Bukkit.getAsyncScheduler().runNow(this.context.plugin(), t -> {
+            final Reloaded r;
+            try {
+                r = this.readAll();
+            } catch (final IOException | RuntimeException e) {
+                this.context.logger().warning("core-npc: не перечитано, всё осталось как было: " + reason(e));
+                done.accept(reason(e));
+                return;
+            }
+            Bukkit.getGlobalRegionScheduler().execute(this.context.plugin(), () -> {
+                if (this.closed) {
+                    return;
+                }
+                this.apply(r);
+                done.accept(null);
+            });
+        });
+    }
+
+    private static String reason(final Throwable e) {
+        final Throwable c = e instanceof UncheckedIOException && e.getCause() != null ? e.getCause() : e;
+        return c.getMessage() != null ? c.getMessage() : c.toString();
     }
 
     private void loadSettings() {
@@ -129,6 +184,9 @@ public final class CoreNpcSystem implements AmazakeSystem, Listener {
         final NpcManager n = this.npcs;
         this.lookTask = this.context.runGlobalTimer(t -> n.lookTick(),
             Duration.ofMillis(50L * this.settings.get().npc().lookIntervalTicks()));
+        if (this.healTask == null) {
+            this.healTask = this.context.runGlobalTimer(t -> n.healTick(), HEAL_PERIOD);
+        }
     }
 
     private void logModelEngine() {

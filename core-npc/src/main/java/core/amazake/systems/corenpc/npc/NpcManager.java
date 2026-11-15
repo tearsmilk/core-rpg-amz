@@ -42,6 +42,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.world.EntitiesLoadEvent;
@@ -78,6 +79,7 @@ public final class NpcManager implements Listener {
     private final Map<UUID, String> byEntity = new ConcurrentHashMap<>();
     private final Map<String, Long> cooldowns = new ConcurrentHashMap<>();
     private final Map<String, Boolean> warned = new ConcurrentHashMap<>();
+    private final Map<String, Long> respawned = new ConcurrentHashMap<>();
     private final AtomicBoolean closed = new AtomicBoolean();
     private final Object saveLock = new Object();
     private volatile ClickHandler clicks;
@@ -97,12 +99,17 @@ public final class NpcManager implements Listener {
 
     // ------------------------------------------------------------------------------------------- данные
 
-    /** Прочитать npcs.yml (вызывается при включении и /npc reload). */
+    /** Прочитать npcs.yml (при включении). */
     public int load() throws IOException {
-        final Map<String, NpcDef> read = NpcStore.load(this.file, w -> this.context.logger().warning(w));
+        final Map<String, NpcDef> read = this.read();
         this.defs.clear();
         this.defs.putAll(read);
         return read.size();
+    }
+
+    /** Прочитать npcs.yml, ничего не меняя (можно вне потоков тика). Битый файл — IOException. */
+    public Map<String, NpcDef> read() throws IOException {
+        return NpcStore.load(this.file, w -> this.context.logger().warning(w));
     }
 
     public NpcDef get(final String id) {
@@ -113,6 +120,11 @@ public final class NpcManager implements Listener {
         final List<NpcDef> out = new ArrayList<>(this.defs.values());
         out.sort(Comparator.comparing(NpcDef::id));
         return out;
+    }
+
+    /** Система выключена (поздние ответы — поиск скина и т. п. — игнорируются). */
+    public boolean isClosed() {
+        return this.closed.get();
     }
 
     public boolean isLive(final String id) {
@@ -159,6 +171,9 @@ public final class NpcManager implements Listener {
 
     /** Изменить NPC и поставить его заново. null — нет такого. */
     public NpcDef update(final String id, final UnaryOperator<NpcDef> change) {
+        if (this.closed.get()) {
+            return null;
+        }
         final NpcDef[] result = new NpcDef[1];
         this.defs.computeIfPresent(id, (k, d) -> result[0] = change.apply(d));
         if (result[0] == null) {
@@ -228,10 +243,19 @@ public final class NpcManager implements Listener {
         final Live cur = this.live.get(id);
         if (cur != null) {
             final Entity e = w.getEntity(cur.entity());
-            if (e != null && e.isValid()) {
+            final Entity h = cur.holo() == null ? null : w.getEntity(cur.holo());
+            if (e != null && e.isValid() && (cur.holo() == null || h != null && h.isValid())) {
                 return;
             }
+            // тело или голограмму убрал кто-то другой — убрать остаток и поставить заново
             this.forget(cur);
+            if (e != null) {
+                this.models.detach(e);
+                e.remove();
+            }
+            if (h != null) {
+                h.remove();
+            }
         }
         // хвосты прошлых запусков в этом чанке
         for (final Entity e : w.getChunkAt(cx, cz).getEntities()) {
@@ -348,20 +372,34 @@ public final class NpcManager implements Listener {
 
     /** Убрать NPC из мира. Любой поток: свой регион — сразу, иначе задачей региона. */
     public void despawn(final String id) {
+        this.despawn(id, true);
+    }
+
+    /**
+     * queue=false — при выключении: задачи регионов ядро отменяет после disable(), поэтому чужой регион не трогаем
+     * (false — сущность осталась). Она несохраняемая: пропадёт при выгрузке чанка, а при следующем включении её
+     * уберёт spawnHere/onEntitiesLoad как хвост с меткой corenpc:npc.
+     */
+    private boolean despawn(final String id, final boolean queue) {
         final Live l = this.live.remove(id);
         if (l == null) {
-            return;
+            return true;
         }
         final World w = Bukkit.getWorld(l.world());
         if (w == null) {
             this.forget(l);
-            return;
+            return true;
         }
         if (Bukkit.isOwnedByCurrentRegion(w, l.cx(), l.cz())) {
             this.removeEntities(w, l);
-        } else {
-            Bukkit.getRegionScheduler().execute(this.context.plugin(), w, l.cx(), l.cz(), () -> this.removeEntities(w, l));
+            return true;
         }
+        if (queue) {
+            Bukkit.getRegionScheduler().execute(this.context.plugin(), w, l.cx(), l.cz(), () -> this.removeEntities(w, l));
+            return true;
+        }
+        this.forget(l);
+        return false;
     }
 
     private void removeEntities(final World w, final Live l) {
@@ -379,23 +417,53 @@ public final class NpcManager implements Listener {
         this.forget(l);
     }
 
-    /** Выключение: убрать всех (свой регион — сразу). */
+    /**
+     * Выключение (глобальный поток): убрать тех, чей регион принадлежит этому потоку (сегодня Amazake тикает мир
+     * в одном потоке — это все). Задачам регионов здесь не доверяемся: ядро отменяет их после disable().
+     */
     public void shutdown() {
         this.closed.set(true);
+        int left = 0;
         for (final String id : new ArrayList<>(this.live.keySet())) {
-            this.despawn(id);
+            if (!this.despawn(id, false)) {
+                left++;
+            }
+        }
+        if (left > 0) {
+            this.context.logger().info(left + " NPC в регионах других потоков не убраны сразу: они несохраняемые и "
+                + "пропадут при выгрузке чанка (при следующем включении их уберёт сама система).");
         }
         this.saveNow();
     }
 
-    /** /npc reload: убрать всех, перечитать, поставить заново. */
-    public int reload() throws IOException {
+    /** /npc reload: заменить описания уже прочитанными (см. {@link #read}), убрать всех и поставить заново. */
+    public int apply(final Map<String, NpcDef> read) {
         for (final String id : new ArrayList<>(this.live.keySet())) {
             this.despawn(id);
         }
-        final int n = this.load();
+        this.defs.clear();
+        this.defs.putAll(read);
         this.spawnAll();
-        return n;
+        return read.size();
+    }
+
+    /**
+     * Раз в несколько секунд (глобальный поток): NPC, чей чанк загружен, а сущности нет или она невалидна (её убрал
+     * другой плагин или система, например чистка мобов), ставится заново в своём регионе.
+     */
+    public void healTick() {
+        if (this.closed.get()) {
+            return;
+        }
+        for (final NpcDef d : this.defs.values()) {
+            final World w = Bukkit.getWorld(d.world());
+            if (w == null) {
+                continue;
+            }
+            final int cx = (int) Math.floor(d.x()) >> 4;
+            final int cz = (int) Math.floor(d.z()) >> 4;
+            Bukkit.getRegionScheduler().execute(this.context.plugin(), w, cx, cz, () -> this.spawnHere(d.id()));
+        }
     }
 
     // ------------------------------------------------------------------------------------------- «смотреть на игрока»
@@ -422,6 +490,7 @@ public final class NpcManager implements Listener {
     private void look(final World w, final Live l, final NpcDef d, final double r) {
         final Entity e = w.getEntity(l.entity());
         if (!(e instanceof LivingEntity le) || !e.isValid()) {
+            this.spawnHere(l.id());   // убрали извне — поставить заново (сам проверит, что чанк загружен)
             return;
         }
         final Location eye = le.getEyeLocation();
@@ -484,7 +553,7 @@ public final class NpcManager implements Listener {
         final World w = event.getWorld();
         final long key = NpcDef.chunkKey(event.getChunk().getX(), event.getChunk().getZ());
         for (final NpcDef d : this.defs.values()) {
-            if (d.chunkKey() == key && d.world().equals(w.getName()) && !this.live.containsKey(d.id())) {
+            if (d.chunkKey() == key && d.world().equals(w.getName())) {   // spawnHere сам пропустит живого
                 this.spawn(d);
             }
         }
@@ -502,6 +571,45 @@ public final class NpcManager implements Listener {
                     this.forget(l);
                 }
             }
+        }
+    }
+
+    /**
+     * Сущность NPC убрал кто-то другой (не выгрузка чанка — её ловит onEntitiesUnload; свои удаления сначала
+     * убирают запись из live, поэтому сюда не попадают). Поток региона сущности: забыть и поставить заново в
+     * следующем тике, но не чаще раза в 10 с на NPC (иначе плагин, убивающий всё подряд, крутил бы цикл); остальное —
+     * healTick.
+     */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onEntityRemove(final EntityRemoveEvent event) {
+        if (event.getCause() == EntityRemoveEvent.Cause.UNLOAD) {
+            return;
+        }
+        final UUID uuid = event.getEntity().getUniqueId();
+        final String id = this.byEntity.get(uuid);
+        if (id == null) {
+            return;
+        }
+        final Live l = this.live.get(id);
+        if (l == null || !(uuid.equals(l.entity()) || uuid.equals(l.holo()))) {
+            return;
+        }
+        if (this.warned.putIfAbsent("removed:" + id + event.getCause(), Boolean.TRUE) == null) {
+            this.context.logger().warning("NPC " + id + ": сущность убрана извне (" + event.getCause() + ") — ставлю заново");
+        }
+        this.forget(l);
+        if (this.closed.get()) {
+            return;
+        }
+        final long now = System.currentTimeMillis();
+        final Long last = this.respawned.get(id);
+        if (last != null && now - last < 10_000) {
+            return;
+        }
+        this.respawned.put(id, now);
+        final World w = Bukkit.getWorld(l.world());
+        if (w != null) {
+            Bukkit.getRegionScheduler().execute(this.context.plugin(), w, l.cx(), l.cz(), () -> this.spawnHere(id));
         }
     }
 
@@ -600,8 +708,13 @@ public final class NpcManager implements Listener {
         };
         if (Bukkit.isOwnedByCurrentRegion(e)) {
             r.run();
-        } else {
-            Bukkit.getRegionScheduler().execute(this.context.plugin(), e.getLocation(), r);
+            return;
+        }
+        // место — из описания NPC: getLocation() сущности чужого региона читать нельзя
+        final World w = Bukkit.getWorld(d.world());
+        if (w != null) {
+            Bukkit.getRegionScheduler().execute(this.context.plugin(), w, (int) Math.floor(d.x()) >> 4,
+                (int) Math.floor(d.z()) >> 4, r);
         }
     }
 

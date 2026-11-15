@@ -40,6 +40,18 @@ public final class DialogRegistry {
      * ({переменные} меряются как есть — ник длиннее, поэтому оставляйте запас).
      */
     public int load(final Path dir, final Logger log, final java.util.function.ToIntFunction<String> measure, final int max) {
+        this.set(read(dir, log, measure, max));
+        return this.size();
+    }
+
+    /** Заменить снимок (после {@link #read} — например, прочитанного вне потоков тика). */
+    public void set(final Map<String, Dialog> read) {
+        this.dialogs = Map.copyOf(read);
+    }
+
+    /** Прочитать папку, ничего не меняя (можно вне потоков тика). */
+    public static Map<String, Dialog> read(final Path dir, final Logger log, final java.util.function.ToIntFunction<String> measure,
+                                           final int max) {
         final Map<String, Dialog> out = new TreeMap<>();
         if (Files.isDirectory(dir)) {
             try (Stream<Path> files = Files.walk(dir)) {
@@ -74,7 +86,6 @@ public final class DialogRegistry {
             }
         }
         DialogParser.validateExternal(out).forEach(e -> log.warning("dialogs: ОШИБКА: " + e));
-        this.dialogs = Map.copyOf(out);
-        return out.size();
+        return out;
     }
 }

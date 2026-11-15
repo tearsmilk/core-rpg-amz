@@ -17,7 +17,6 @@ import io.papermc.paper.registry.data.dialog.action.DialogAction;
 import io.papermc.paper.registry.data.dialog.body.DialogBody;
 import io.papermc.paper.registry.data.dialog.type.DialogType;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,8 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -39,12 +38,15 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.persistence.PersistentDataType;
@@ -57,6 +59,9 @@ public final class DialogManager implements Listener {
 
     private static final String KEY_NS = "corenpc";
     private static final int MAX_JUMPS = 16;
+    private static final BinaryTagHolder EMPTY_TAG = BinaryTagHolder.binaryTagHolder("{}");
+    /** Телепорт дальше этого (без NPC) закрывает диалог; с NPC — дальше dialog.max-distance от него. */
+    private static final double TELEPORT_CLOSE_DISTANCE = 16;
 
     /** Состояние одного игрока; поля трогает только его поток. */
     private static final class Session {
@@ -432,11 +437,9 @@ public final class DialogManager implements Listener {
         for (int i = 0; i < f.answers().size(); i++) {
             final int idx = i;
             final String txt = this.actions.mini(p, f.answers().get(i).text(), vars);
-            final ClickEvent click = ClickEvent.callback(a -> {
-                if (a instanceof Player pl) {
-                    this.context.runOnceForPlayer(pl, () -> this.choose(pl, seq, idx));
-                }
-            }, ClickCallback.Options.builder().uses(1).lifetime(Duration.ofMinutes(10)).build());
+            // custom-клик (corenpc:c<seq>_<i>) ловит onCustomClick: без ClickEvent.callback, который держал бы ссылку
+            // на классы системы в общем реестре Paper ещё 10 минут после выключения
+            final ClickEvent click = ClickEvent.custom(Key.key(KEY_NS, "c" + seq + "_" + idx), EMPTY_TAG);
             p.sendMessage(Text.parse(s.dialog().chatAnswerFormat(),
                 Placeholder.unparsed("index", Integer.toString(i + 1)), Placeholder.parsed("text", txt),
                 net.kyori.adventure.text.minimessage.tag.resolver.TagResolver.resolver("click",
@@ -483,11 +486,14 @@ public final class DialogManager implements Listener {
             .type(DialogType.multiAction(buttons).columns(1).exitAction(exit).build())));
     }
 
-    /** Кнопка обычного окна: может прийти не из потока игрока — дальше в его потоке. */
+    /**
+     * Кнопка обычного окна (corenpc:s<seq>_<i|next|close>) или ответ в чате (corenpc:c<seq>_<i>): может прийти не из
+     * потока игрока — дальше в его потоке. seq — номер сессии игрока: чужой или старый клик не сработает.
+     */
     @EventHandler
     public void onCustomClick(final PlayerCustomClickEvent event) {
         final Key k = event.getIdentifier();
-        if (!KEY_NS.equals(k.namespace()) || !k.value().startsWith("s")
+        if (!KEY_NS.equals(k.namespace()) || !(k.value().startsWith("s") || k.value().startsWith("c"))
             || !(event.getCommonConnection() instanceof final PlayerGameConnection game)) {
             return;
         }
@@ -504,6 +510,9 @@ public final class DialogManager implements Listener {
             return;
         }
         final String what = v.substring(us + 1);
+        if (v.charAt(0) == 'c' && (what.equals("close") || what.equals("next"))) {
+            return;
+        }
         this.context.runOnceForPlayer(p, () -> {
             final Session s = this.sessions.get(p.getUniqueId());
             if (s == null || s.seq != seq || s.closed) {
@@ -601,6 +610,47 @@ public final class DialogManager implements Listener {
                 fixed.setPitch(to.getPitch());
             }
             event.setTo(fixed);
+        }
+    }
+
+    /** Смерть — диалог закрывается (поток игрока). */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onDeath(final PlayerDeathEvent event) {
+        this.close(event.getPlayer());
+    }
+
+    /** Другой мир — закрыть (поток игрока). */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onWorldChange(final PlayerChangedWorldEvent event) {
+        this.close(event.getPlayer());
+    }
+
+    /**
+     * Телепорт в другой мир или далеко (от NPC — дальше dialog.max-distance или 16, если она 0; без NPC — дальше
+     * 16 блоков от места) закрывает
+     * диалог (поток игрока). Короткий телепорт рядом (например, командой из ответа) — нет.
+     */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onTeleport(final PlayerTeleportEvent event) {
+        final Session s = this.sessions.get(event.getPlayer().getUniqueId());
+        if (s == null) {
+            return;
+        }
+        final Location to = event.getTo();
+        final Location from = event.getFrom();
+        final boolean close;
+        if (to.getWorld() != from.getWorld()) {
+            close = true;
+        } else if (s.npc != null) {
+            final double md = this.settings.get().dialog().maxDistance();
+            final double max = md > 0 ? md : TELEPORT_CLOSE_DISTANCE;
+            close = !to.getWorld().getName().equals(s.npc.world())
+                || to.distanceSquared(new Location(to.getWorld(), s.npc.x(), s.npc.y(), s.npc.z())) > max * max;
+        } else {
+            close = to.distanceSquared(from) > TELEPORT_CLOSE_DISTANCE * TELEPORT_CLOSE_DISTANCE;
+        }
+        if (close) {
+            this.close(s, false);
         }
     }
 

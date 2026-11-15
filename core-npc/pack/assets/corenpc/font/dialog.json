@@ -27,11 +27,20 @@
     },
     {
       "type": "bitmap",
-      "file": "corenpc:font/dialog/box.png",
+      "file": "corenpc:font/dialog/box0.png",
       "height": 78,
       "ascent": 63,
       "chars": [
         ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "corenpc:font/dialog/box1.png",
+      "height": 78,
+      "ascent": 63,
+      "chars": [
+        ""
       ]
     }
   ]

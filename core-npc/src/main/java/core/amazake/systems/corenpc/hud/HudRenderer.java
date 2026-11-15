@@ -60,12 +60,13 @@ public final class HudRenderer {
         if (text == null) {
             return x;
         }
-        final int w = this.widths.width(text);
+        final Component safe = this.widths.sanitize(text);
+        final int w = this.widths.width(safe);
         if (w == 0) {
             return x;
         }
         b.append(shift(at - x));
-        b.append(Component.text().font(font).color(NamedTextColor.WHITE).append(text).build());
+        b.append(Component.text().font(font).color(NamedTextColor.WHITE).append(safe).build());
         return at + w;
     }
 

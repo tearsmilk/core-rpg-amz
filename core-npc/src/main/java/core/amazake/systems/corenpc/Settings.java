@@ -61,6 +61,8 @@ public record Settings(String prefix, Dialogs dialog, Npcs npc, boolean modelEng
         Map.entry("no-target", "<red>Игрок <white><player></white> не в сети.</red>"),
         Map.entry("talk-started", "<green>Диалог <white><dialog></white> открыт игроку <white><player></white>.</green>"),
         Map.entry("reloaded", "<green>core-npc: настройки, диалоги и NPC перечитаны (<npcs> NPC, <dialogs> диалогов).</green>"),
+        Map.entry("reload-failed", "<red>core-npc: не перечитано, всё осталось как было: <reason></red>"),
+        Map.entry("no-console-permission", "<red>Консольные команды NPC добавляет только право <white>corenpc.admin.console</white>.</red>"),
         Map.entry("no-permission", "<red>Вам нельзя с ним говорить.</red>"),
         Map.entry("cooldown", ""),
         Map.entry("dialog-broken", "<red>Диалог сломан: <reason></red>")

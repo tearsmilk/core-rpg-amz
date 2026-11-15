@@ -73,30 +73,94 @@ public final class ModelHook {
         }
     }
 
-    /** Публичный метод по имени и числу параметров (у интерфейсов API, а не скрытых классов реализации). */
-    private static Method find(final Class<?> type, final String name, final int params) {
+    /**
+     * Публичный метод по имени и типам аргументов: у ModelEngine есть перегрузки с тем же числом параметров
+     * ({@code createModeledEntity(Entity)} и {@code (BaseEntity)}, {@code createActiveModel(String)} и
+     * {@code (ModelBlueprint)}), а порядок {@code getMethods()} не задан — поэтому выбор только по тому, принимает ли
+     * метод именно эти аргументы (примитивы — через обёртки).
+     */
+    static Method find(final Class<?> type, final String name, final Object... args) {
         for (final Method m : type.getMethods()) {
-            if (m.getName().equals(name) && m.getParameterCount() == params) {
+            if (m.getName().equals(name) && m.getParameterCount() == args.length && accepts(m.getParameterTypes(), args)) {
                 return m;
             }
         }
         return null;
     }
 
-    private static Object call(final Object target, final String name, final Object... args) throws ReflectiveOperationException {
+    static boolean accepts(final Class<?>[] params, final Object[] args) {
+        for (int i = 0; i < params.length; i++) {
+            final Object a = args[i];
+            if (a == null) {
+                if (params[i].isPrimitive()) {
+                    return false;
+                }
+            } else if (!box(params[i]).isInstance(a)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static Class<?> box(final Class<?> c) {
+        if (!c.isPrimitive()) {
+            return c;
+        }
+        if (c == double.class) {
+            return Double.class;
+        }
+        if (c == boolean.class) {
+            return Boolean.class;
+        }
+        if (c == float.class) {
+            return Float.class;
+        }
+        if (c == int.class) {
+            return Integer.class;
+        }
+        if (c == long.class) {
+            return Long.class;
+        }
+        if (c == short.class) {
+            return Short.class;
+        }
+        if (c == byte.class) {
+            return Byte.class;
+        }
+        return Character.class;
+    }
+
+    /** Статический метод API, принимающий эти аргументы, — или NoSuchMethodException с понятным именем. */
+    private static Object callStatic(final Class<?> type, final String name, final Object... args) throws ReflectiveOperationException {
+        final Method m = find(type, name, args);
+        if (m == null) {
+            throw new NoSuchMethodException(type.getName() + "#" + name + describe(args));
+        }
+        return m.invoke(null, args);
+    }
+
+    private static String describe(final Object[] args) {
+        final StringBuilder sb = new StringBuilder("(");
+        for (int i = 0; i < args.length; i++) {
+            sb.append(i == 0 ? "" : ", ").append(args[i] == null ? "null" : args[i].getClass().getSimpleName());
+        }
+        return sb.append(')').toString();
+    }
+
+    static Object call(final Object target, final String name, final Object... args) throws ReflectiveOperationException {
         Method m = null;
         // ищем метод у публичных интерфейсов объекта (реализация может быть непубличным классом)
         for (final Class<?> i : interfaces(target.getClass())) {
-            m = find(i, name, args.length);
+            m = find(i, name, args);
             if (m != null) {
                 break;
             }
         }
         if (m == null) {
-            m = find(target.getClass(), name, args.length);
+            m = find(target.getClass(), name, args);
         }
         if (m == null) {
-            throw new NoSuchMethodException(target.getClass().getName() + "#" + name + "/" + args.length);
+            throw new NoSuchMethodException(target.getClass().getName() + "#" + name + describe(args));
         }
         m.setAccessible(true);
         return m.invoke(target, args);
@@ -126,7 +190,7 @@ public final class ModelHook {
             return false;
         }
         try {
-            final Method m = find(c, "getBlueprint", 1);
+            final Method m = find(c, "getBlueprint", id);
             return m == null || m.invoke(null, id) != null;
         } catch (final ReflectiveOperationException | RuntimeException e) {
             return true;
@@ -140,7 +204,7 @@ public final class ModelHook {
             return List.of();
         }
         try {
-            final Object apiObj = find(c, "getAPI", 0).invoke(null);
+            final Object apiObj = callStatic(c, "getAPI");
             final Object registry = call(apiObj, "getModelRegistry");
             for (final String getter : new String[] {"getOrderedId", "getKeys", "keys"}) {
                 try {
@@ -172,22 +236,22 @@ public final class ModelHook {
             return false;
         }
         try {
-            final Object modeled = find(c, "createModeledEntity", 1).invoke(null, entity);
-            final Object active = find(c, "createActiveModel", 1).invoke(null, modelId);
+            final Object modeled = callStatic(c, "createModeledEntity", entity);
+            final Object active = callStatic(c, "createActiveModel", modelId);
             if (active == null) {
                 this.warnOnce("model:" + modelId, "ModelEngine: нет модели «" + modelId + "»");
                 return false;
             }
             if (scale > 0 && scale != 1.0) {
                 try {
-                    call(active, "setScale", scale);
+                    call(active, "setScale", Double.valueOf(scale));
                 } catch (final ReflectiveOperationException e) {
                     this.warnOnce("scale", "ModelEngine: setScale не вызвался (" + e + "), модель в масштабе 1");
                 }
             }
-            call(modeled, "addModel", active, true);
+            call(modeled, "addModel", active, Boolean.TRUE);
             try {
-                call(modeled, "setBaseEntityVisible", false);
+                call(modeled, "setBaseEntityVisible", Boolean.FALSE);
             } catch (final ReflectiveOperationException e) {
                 entity.setInvisible(true);
             }
@@ -204,7 +268,8 @@ public final class ModelHook {
 
     private void play(final Object active, final String anim, final boolean force) throws ReflectiveOperationException {
         final Object handler = call(active, "getAnimationHandler");
-        call(handler, "playAnimation", anim, 0.25, 0.25, 1.0, force);
+        // playAnimation(String, double lerpIn, double lerpOut, double speed, boolean force) — по типам, не по числу
+        call(handler, "playAnimation", anim, 0.25, 0.25, 1.0, Boolean.valueOf(force));
     }
 
     /** Проиграть анимацию у всех моделей сущности (поток региона сущности). */

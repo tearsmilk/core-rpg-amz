@@ -9,11 +9,15 @@
 
 Как устроено окно (всё — обычный rendertype_text, общий core-шейдер не трогается):
   * actionbar рисуется на высоте экрана H−68 (верх строки — H−72, верх глифа с ascent a — H−65−a);
-  * окно — глиф U+E000 шрифта corenpc:dialog (320×78, ascent 63): от H−128 до H−51, над сердцами и бронёй;
-  * строки окна — 7 шрифтов corenpc:row0..row6 с одной и той же текстурой glyphs.png, но разным ascent:
-    у каждого глифа ванильного шрифта снизу прозрачный запас 56 пикселей (клетка 8×64, height 64), поэтому
-    ascent можно поднять до 63 (ascent не может быть больше height) — так строка встаёт выше обычного actionbar;
-  * row0 — имя говорящего, row1..row3 — текст, row4..row6 — ответы (U+E010 — подсветка выбранного ответа);
+  * окно (320×78, ascent 63): от H−128 до H−51, над сердцами и бронёй. Клиент собирает глифы в атлас 256×256
+    (FontTexture.SIZE) и глиф шире или выше 256 не влезает — вместо него «нет глифа». Поэтому окно — две половины
+    160×78: U+E000 и U+E001 шрифта corenpc:dialog, между ними сдвиг −1 (шаг глифа = ширина + 1);
+  * строки окна — 7 шрифтов corenpc:row0..row6 с разным ascent: у глифа ванильного шрифта снизу прозрачный запас
+    (клетка 8×h), поэтому ascent можно поднять до h (ascent не может быть больше height) — так строка встаёт выше
+    обычного actionbar. Высота клетки у каждой строки своя — max(8, ascent): чем ниже строка, тем меньше пустоты
+    в атласе (glyphs_h<h>.png; строки с одной высотой делят текстуру);
+  * row0 — имя говорящего, row1..row3 — текст, row4..row6 — ответы; подсветка выбранного ответа — две половины
+    154×16 (U+E010, U+E012, между ними сдвиг −1 — U+F801 есть и в шрифтах строк), только в row4..row6;
   * сдвиги по горизонтали — пробелы шрифта corenpc:dialog (U+F801.. = −1,−2,−4…−512; U+F821.. = +1…+512).
 Числа ниже должны совпадать с hud/HudLayout.java.
 """
@@ -32,11 +36,17 @@ ROOT = os.path.join(HERE, '..')
 A = os.path.join(ROOT, 'pack', 'assets', 'corenpc')
 WIDTHS = os.path.join(ROOT, 'src', 'main', 'resources', 'font-widths.txt')
 
-CELL_W, CELL_H = 8, 64          # клетка глифа: 8×8 ванильного шрифта + 56 прозрачных снизу
+CELL_W = 8                      # клетка глифа: 8×8 ванильного шрифта + прозрачный запас снизу (высота — по строке)
 BOX_W, BOX_H, BOX_ASCENT = 320, 78, 63
+BOX_PARTS = 2                   # окно режется на части не шире 256 (атлас клиента 256×256)
+HL_H = 16                       # высота клетки подсветки (полоса 10 пикселей сверху)
+HL_ROWS = (4, 5, 6)             # подсветка есть только в шрифтах ответов
+NEXT_ROW = 6                    # «▼ дальше» — только в последней строке
 # верх глифа строки над экраном: H−124 (имя), H−111/−101/−91 (текст), H−80/−71/−62 (ответы)
 ROW_TOPS = [124, 111, 101, 91, 80, 71, 62]
 HL_W = 308
+HL_PARTS = 2
+MAX_GLYPH = 256
 
 RANGES = [(0x20, 0x7E), (0xA0, 0x24F), (0x370, 0x3FF), (0x400, 0x52F), (0x2000, 0x206F), (0x20A0, 0x20CF),
           (0x2100, 0x214F), (0x2190, 0x21FF), (0x2200, 0x22FF), (0x2500, 0x25FF), (0x2600, 0x27BF)]
@@ -132,8 +142,8 @@ def indicator():
 
 
 def highlight():
-    """Подсветка выбранного ответа: клетка HL_W×CELL_H, полоса 10 пикселей сверху."""
-    a = np.zeros((CELL_H, HL_W, 4), dtype=np.uint8)
+    """Подсветка выбранного ответа: HL_W×HL_H, полоса 10 пикселей сверху."""
+    a = np.zeros((HL_H, HL_W, 4), dtype=np.uint8)
     xs = np.arange(HL_W)
     fade = np.clip(np.minimum(xs, HL_W - 1 - xs) / 30, 0, 1)
     a[0:10, :, 0] = 230
@@ -141,19 +151,41 @@ def highlight():
     a[0:10, :, 2] = 110
     a[0:10, :, 3] = (fade * 70 + 26).astype(np.uint8)[None, :]
     a[0:10, 0:2] = (230, 196, 120, 230)
-    a[CELL_H - 1, HL_W - 1, 3] = 1   # последний столбец не пустой — ширина глифа не урежется
     return Image.fromarray(a, 'RGBA')
 
 
-def atlas(glyphs, widths):
+def split(img, parts):
+    """Разрезать картинку по ширине на равные части (каждая — отдельный глиф не шире MAX_GLYPH)."""
+    w = img.width // parts
+    assert w * parts == img.width and w <= MAX_GLYPH and img.height <= MAX_GLYPH, img.size
+    out = [img.crop((i * w, 0, (i + 1) * w, img.height)) for i in range(parts)]
+    for o in out:   # последний столбец каждой части не пустой — шаг глифа = ширина + 1
+        assert np.asarray(o)[..., 3][:, -1].max() > 0
+    return out
+
+
+def check(provs, name):
+    """Правила клиента 1.21.11: ascent ≤ height (BitmapProvider.Definition.validate — иначе весь файл шрифта
+    отбрасывается: «Unable to load font»), глиф не больше 256×256 (FontTexture.SIZE)."""
+    for p in provs:
+        if p['type'] != 'bitmap':
+            continue
+        assert p['ascent'] <= p['height'], (name, p['file'], p['ascent'], p['height'])
+        img = Image.open(os.path.join(A, 'textures', p['file'].split(':', 1)[1]))
+        rows, cols = len(p['chars']), max(len(r) for r in p['chars'])
+        assert img.height % rows == 0 and img.width % cols == 0, (name, p['file'])
+        assert img.width // cols <= MAX_GLYPH and img.height // rows <= MAX_GLYPH, (name, p['file'], img.size)
+
+
+def atlas(glyphs, widths, cell_h):
     cps = sorted(glyphs)
     cols = 32
     rows = (len(cps) + cols - 1) // cols
-    tex = Image.new('RGBA', (cols * CELL_W, rows * CELL_H), (0, 0, 0, 0))
+    tex = Image.new('RGBA', (cols * CELL_W, rows * cell_h), (0, 0, 0, 0))
     chars = []
     for i, cp in enumerate(cps):
         r, c = divmod(i, cols)
-        tex.paste(glyphs[cp], (c * CELL_W, r * CELL_H))
+        tex.paste(glyphs[cp], (c * CELL_W, r * cell_h))
         alpha = np.asarray(glyphs[cp])[..., 3]
         used = np.nonzero(alpha.max(axis=0))[0]
         widths[cp] = int(used.max()) + 2      # как у клиента: ширина до последнего непустого столбца + 1
@@ -168,42 +200,74 @@ def main():
     widths = {}
     base = load_glyphs(jar)
     tall = {cp: g for cp, g in load_glyphs(jar, tall=True).items() if cp not in base}
-    tex, chars = atlas(base, widths)
-    tex_tall, chars_tall = atlas(tall, widths)
-    cps = sorted(widths)
-    write_png(tex, 'font/dialog/glyphs.png')
-    write_png(tex_tall, 'font/dialog/glyphs_tall.png')
-    write_png(box(), 'font/dialog/box.png')
+    for old in ('glyphs.png', 'glyphs_tall.png', 'box.png', 'highlight.png'):
+        path = os.path.join(A, 'textures', 'font', 'dialog', old)
+        if os.path.exists(path):
+            os.remove(path)
+    for name in os.listdir(os.path.join(A, 'textures', 'font', 'dialog')):
+        if name.startswith('glyphs_h') or name.startswith('tall_h'):
+            os.remove(os.path.join(A, 'textures', 'font', 'dialog', name))
+    boxes = split(box(), BOX_PARTS)
+    hls = split(highlight(), HL_PARTS)
+    for i, b in enumerate(boxes):
+        write_png(b, 'font/dialog/box%d.png' % i)
+    for i, h in enumerate(hls):
+        write_png(h, 'font/dialog/highlight%d.png' % i)
     write_png(indicator(), 'font/dialog/next.png')
-    write_png(highlight(), 'font/dialog/highlight.png')
 
     shifts = {}
     for i in range(10):
         shifts[chr(0xF801 + i)] = -(1 << i)
         shifts[chr(0xF821 + i)] = 1 << i
-    write_json({'providers': [
-        {'type': 'space', 'advances': shifts},
-        {'type': 'bitmap', 'file': 'corenpc:font/dialog/box.png', 'height': BOX_H, 'ascent': BOX_ASCENT,
-         'chars': ['']},
-    ]}, 'font/dialog.json')
+    provs = [{'type': 'space', 'advances': shifts}]
+    for i in range(BOX_PARTS):
+        provs.append({'type': 'bitmap', 'file': 'corenpc:font/dialog/box%d.png' % i, 'height': BOX_H,
+                      'ascent': BOX_ASCENT, 'chars': [chr(0xE000 + i)]})
+    check(provs, 'dialog')
+    write_json({'providers': provs}, 'font/dialog.json')
+
+    made = {}
+    chars = chars_tall = None
     for n, top in enumerate(ROW_TOPS):
         asc = top - 65
+        h = max(8, asc)
+        ht = max(12, asc + 3)
+        if ('b', h) not in made:
+            tex, chars = atlas(base, widths, h)
+            write_png(tex, 'font/dialog/glyphs_h%d.png' % h)
+            made[('b', h)] = (tex.size, chars)
+        if ('t', ht) not in made:
+            tex, chars_tall = atlas(tall, widths, ht)
+            write_png(tex, 'font/dialog/tall_h%d.png' % ht)
+            made[('t', ht)] = (tex.size, chars_tall)
+        chars = made[('b', h)][1]
+        chars_tall = made[('t', ht)][1]
         provs = [
-            {'type': 'space', 'advances': {' ': 4, ' ': 4}},
-            {'type': 'bitmap', 'file': 'corenpc:font/dialog/glyphs.png', 'height': CELL_H, 'ascent': asc, 'chars': chars},
-            {'type': 'bitmap', 'file': 'corenpc:font/dialog/glyphs_tall.png', 'height': CELL_H, 'ascent': asc + 3,
+            {'type': 'space', 'advances': {' ': 4, '\u00a0': 4, '\uf801': -1}},
+            {'type': 'bitmap', 'file': 'corenpc:font/dialog/glyphs_h%d.png' % h, 'height': h, 'ascent': asc,
+             'chars': chars},
+            {'type': 'bitmap', 'file': 'corenpc:font/dialog/tall_h%d.png' % ht, 'height': ht, 'ascent': asc + 3,
              'chars': chars_tall},
-            {'type': 'bitmap', 'file': 'corenpc:font/dialog/highlight.png', 'height': CELL_H, 'ascent': asc + 1,
-             'chars': ['']},
-            {'type': 'bitmap', 'file': 'corenpc:font/dialog/next.png', 'height': 5, 'ascent': asc - 3,
-             'chars': ['']},
         ]
+        if n in HL_ROWS:
+            assert asc + 1 <= HL_H
+            for i in range(HL_PARTS):
+                provs.append({'type': 'bitmap', 'file': 'corenpc:font/dialog/highlight%d.png' % i, 'height': HL_H,
+                              'ascent': asc + 1, 'chars': [chr(0xE010 + 2 * i)]})
+        if n == NEXT_ROW:
+            provs.append({'type': 'bitmap', 'file': 'corenpc:font/dialog/next.png', 'height': 5, 'ascent': asc - 3,
+                          'chars': ['\ue011']})
+        check(provs, 'row%d' % n)
         write_json({'providers': provs}, 'font/row%d.json' % n)
 
+    cps = sorted(widths)
     os.makedirs(os.path.dirname(WIDTHS), exist_ok=True)
     with open(WIDTHS, 'w', encoding='utf-8') as f:
         f.write('# Ширины (advance) глифов шрифтов corenpc:row*; генерирует tools/gen_pack.py. Код символа (hex) ширина\n')
-        f.write('20 4\na0 4\ne010 %d\ne011 8\n' % (HL_W + 1))
+        f.write('20 4\na0 4\n')
+        for i in range(HL_PARTS):
+            f.write('%x %d\n' % (0xE010 + 2 * i, hls[i].width + 1))
+        f.write('e011 8\n')
         for cp in cps:
             f.write('%x %d\n' % (cp, widths[cp]))
     # превью для проверки на глаз
@@ -211,7 +275,7 @@ def main():
     prev.alpha_composite(box(), (10, 10))
     os.makedirs(os.path.join(HERE, 'preview'), exist_ok=True)
     prev.save(os.path.join(HERE, 'preview', 'box.png'))
-    print('glyphs:', len(base), '+', len(tall), 'tall; textures', tex.size, tex_tall.size)
+    print('glyphs:', len(base), '+', len(tall), 'tall; textures', {k: v[0] for k, v in made.items()})
 
 
 if __name__ == '__main__':

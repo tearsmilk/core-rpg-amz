@@ -40,6 +40,34 @@ class HudTest {
         assertEquals(6 + 6 + 7 + 7, w.width(c));
     }
 
+    /** Символы вне набора шрифтов строк (нет запасного шрифта) заменяются на «?», ширина считается по замене. */
+    @Test
+    void unknownCharsAreReplaced() throws Exception {
+        final FontWidths w = widths();
+        assertTrue(!w.known(0x4E2D));
+        assertEquals("a?b", w.sanitize("a\u4E2Db"));
+        assertEquals("a?b", w.sanitize("a\uD83D\uDE00b"));
+        assertEquals("Привет", w.sanitize("Привет"));
+        final Component c = MiniMessage.miniMessage().deserialize("ок<red>\u4E2D</red>");
+        assertEquals("ок?", net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
+            .serialize(w.sanitize(c)));
+        final HudRenderer r = new HudRenderer(w);
+        final Component out = r.render(null, List.of(Component.text("\u4E2D\u4E2D")), List.of(), -1, false);
+        assertEquals(HudLayout.BOX_ADVANCE, advance(out, w));
+    }
+
+    /** Глифы окна и подсветки — части не шире 256 (атлас клиента), их шаги складываются в BOX/HIGHLIGHT_ADVANCE. */
+    @Test
+    void boxAndHighlightAreSlices() throws Exception {
+        final FontWidths w = widths();
+        assertEquals(155, w.width(0xE010, false));
+        assertEquals(155, w.width(0xE012, false));
+        assertEquals(HudLayout.HIGHLIGHT_ADVANCE, 155 - 1 + 155);
+        assertEquals(HudLayout.BOX_ADVANCE, 161 - 1 + 161);
+        assertEquals(-1, Shift.measure(HudLayout.BOX));
+        assertEquals(-1, Shift.measure(HudLayout.HIGHLIGHT));
+    }
+
     /** Перо проходит ровно ширину окна: сумма шагов глифов и сдвигов = BOX_ADVANCE. */
     @Test
     void renderedBoxIsCentered() throws Exception {
@@ -79,10 +107,10 @@ class HudTest {
         if (c instanceof TextComponent t) {
             for (int i = 0; i < t.content().length(); i++) {
                 final char ch = t.content().charAt(i);
-                if (ch == '\ue000') {
-                    sum += HudLayout.BOX_ADVANCE;
-                } else if (ch == '\ue010') {
-                    sum += HudLayout.HIGHLIGHT_ADVANCE;
+                if (ch == '\ue000' || ch == '\ue001') {
+                    sum += 161;
+                } else if (ch == '\ue010' || ch == '\ue012') {
+                    sum += 155;
                 } else if (ch == '\ue011') {
                     sum += 8;
                 } else if (ch >= 0xF801 && ch <= 0xF82A) {

@@ -4,13 +4,14 @@
       "type": "space",
       "advances": {
         " ": 4,
-        " ": 4
+        " ": 4,
+        "": -1
       }
     },
     {
       "type": "bitmap",
-      "file": "corenpc:font/dialog/glyphs.png",
-      "height": 64,
+      "file": "corenpc:font/dialog/glyphs_h8.png",
+      "height": 8,
       "ascent": 6,
       "chars": [
         "!\"#$%&'()*+,-./0123456789:;<=>?@",
@@ -37,8 +38,8 @@
     },
     {
       "type": "bitmap",
-      "file": "corenpc:font/dialog/glyphs_tall.png",
-      "height": 64,
+      "file": "corenpc:font/dialog/tall_h12.png",
+      "height": 12,
       "ascent": 9,
       "chars": [
         "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖÙÚÛÜÝàáâã",
@@ -62,8 +63,8 @@
     },
     {
       "type": "bitmap",
-      "file": "corenpc:font/dialog/highlight.png",
-      "height": 64,
+      "file": "corenpc:font/dialog/highlight0.png",
+      "height": 16,
       "ascent": 7,
       "chars": [
         ""
@@ -71,11 +72,11 @@
     },
     {
       "type": "bitmap",
-      "file": "corenpc:font/dialog/next.png",
-      "height": 5,
-      "ascent": 3,
+      "file": "corenpc:font/dialog/highlight1.png",
+      "height": 16,
+      "ascent": 7,
       "chars": [
-        ""
+        ""
       ]
     }
   ]

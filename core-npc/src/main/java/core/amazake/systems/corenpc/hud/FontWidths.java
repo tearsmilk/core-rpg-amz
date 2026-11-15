@@ -14,8 +14,10 @@ import net.kyori.adventure.text.format.TextDecoration;
 /** Ширины глифов шрифтов corenpc:row* (font-widths.txt из tools/gen_pack.py): сколько пикселей GUI займёт текст. */
 public final class FontWidths {
 
-    /** Ширина незнакомого символа (клиент нарисует его другим шрифтом). */
+    /** Ширина незнакомого символа (до {@link #sanitize} — для оценки ширины строк при загрузке диалогов). */
     public static final int UNKNOWN = 6;
+    /** Чем заменить символ, которого нет в шрифтах строк. */
+    public static final char REPLACEMENT = '?';
 
     private final Map<Integer, Integer> widths;
 
@@ -62,6 +64,52 @@ public final class FontWidths {
             i += Character.charCount(cp);
         }
         return sum;
+    }
+
+    /**
+     * У шрифтов строк нет запасного шрифта: символ вне сгенерированного набора клиент нарисует как «нет глифа». Такие
+     * символы (кроме пробелов) заменяются на «?».
+     */
+    public String sanitize(final String plain) {
+        StringBuilder sb = null;
+        for (int i = 0; i < plain.length(); ) {
+            final int cp = plain.codePointAt(i);
+            final int n = Character.charCount(cp);
+            if (!this.widths.containsKey(cp)) {
+                if (sb == null) {
+                    sb = new StringBuilder(plain.length()).append(plain, 0, i);
+                }
+                sb.append(REPLACEMENT);
+            } else if (sb != null) {
+                sb.appendCodePoint(cp);
+            }
+            i += n;
+        }
+        return sb == null ? plain : sb.toString();
+    }
+
+    /** {@link #sanitize(String)} для текста компонента и всех его детей. */
+    public Component sanitize(final Component c) {
+        Component out = c;
+        if (c instanceof TextComponent t) {
+            final String fixed = this.sanitize(t.content());
+            if (!fixed.equals(t.content())) {
+                out = t.content(fixed);
+            }
+        }
+        if (!c.children().isEmpty()) {
+            final java.util.List<Component> kids = new java.util.ArrayList<>(c.children().size());
+            boolean changed = false;
+            for (final Component child : c.children()) {
+                final Component f = this.sanitize(child);
+                changed |= f != child;
+                kids.add(f);
+            }
+            if (changed) {
+                out = out.children(kids);
+            }
+        }
+        return out;
     }
 
     /** Ширина компонента: текст детей с учётом жирного (+1 на символ). Не-текстовые компоненты — 0. */

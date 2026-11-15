@@ -18,15 +18,26 @@ def font(name):
 
 
 def main():
-    glyphs = Image.open(os.path.join(A, 'textures', 'font', 'dialog', 'glyphs.png')).convert('RGBA')
-    box = Image.open(os.path.join(A, 'textures', 'font', 'dialog', 'box.png')).convert('RGBA')
-    hl = Image.open(os.path.join(A, 'textures', 'font', 'dialog', 'highlight.png')).convert('RGBA')
-    tall_img = Image.open(os.path.join(A, 'textures', 'font', 'dialog', 'glyphs_tall.png')).convert('RGBA')
+    def tex(file):
+        return Image.open(os.path.join(A, 'textures', file.split(':', 1)[1])).convert('RGBA')
+
+    def joined(parts):   # части окна/подсветки (каждая ≤ 256) встык
+        out = Image.new('RGBA', (sum(p.width for p in parts), parts[0].height))
+        x = 0
+        for p in parts:
+            out.paste(p, (x, 0))
+            x += p.width
+        return out
+
+    box = joined([tex(p['file']) for p in font('dialog')['providers'][1:]])
+    hl = joined([tex(p['file']) for p in font('row4')['providers'] if 'highlight' in p.get('file', '')])
     cells = {}
-    for prov, src, h, up in ((font('row0')['providers'][2], tall_img, 12, 3), (font('row0')['providers'][1], glyphs, 8, 0)):
+    row0 = font('row0')['providers']
+    for prov, h, up in ((row0[2], 12, 3), (row0[1], 8, 0)):
+        src = tex(prov['file'])
         for r, line in enumerate(prov['chars']):
             for c, ch in enumerate(line):
-                cells[ch] = (src, c * 8, r * 64, h, up)
+                cells[ch] = (src, c * 8, r * prov['height'], h, up)
     widths = {}
     for line in open(os.path.join(HERE, '..', 'src', 'main', 'resources', 'font-widths.txt'), encoding='utf-8'):
         if not line.startswith('#'):

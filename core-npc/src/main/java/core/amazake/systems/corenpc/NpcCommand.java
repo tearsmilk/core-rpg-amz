@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -30,6 +31,8 @@ import org.bukkit.entity.Player;
 final class NpcCommand extends Command {
 
     static final String PERMISSION = "corenpc.admin";
+    /** Добавлять NPC консольные команды: это доступ к консоли сервера, поэтому отдельное право (у OP есть). */
+    static final String CONSOLE_PERMISSION = "corenpc.admin.console";
     private static final List<String> SUBS = List.of("create", "remove", "list", "info", "tp", "tphere", "rename", "skin",
         "type", "model", "dialog", "command", "set", "talk", "open", "close", "reload");
     private static final List<String> SET_KEYS = List.of("look-at", "look-radius", "gravity", "collidable", "permission",
@@ -40,10 +43,10 @@ final class NpcCommand extends Command {
     private final NpcManager npcs;
     private final DialogManager dialogs;
     private final ModelHook models;
-    private final Runnable reload;
+    private final Consumer<Consumer<String>> reload;
 
     NpcCommand(final SystemContext context, final Supplier<Settings> settings, final NpcManager npcs,
-               final DialogManager dialogs, final ModelHook models, final Runnable reload) {
+               final DialogManager dialogs, final ModelHook models, final Consumer<Consumer<String>> reload) {
         super("npc", "NPC core-npc: создание, скины, модели, диалоги, команды",
             "/npc create|remove|list|info|tp|tphere|rename|skin|type|model|dialog|command|set|talk|open|close|reload",
             List.of("cnpc", "corenpc"));
@@ -179,11 +182,15 @@ final class NpcCommand extends Command {
                     this.context.runOnceForPlayer(t, () -> this.dialogs.close(t));
                 }
             }
-            case "reload" -> {
-                this.reload.run();
-                this.msg(sender, "reloaded", Placeholder.unparsed("npcs", Integer.toString(this.npcs.all().size())),
-                    Placeholder.unparsed("dialogs", Integer.toString(this.dialogs.registry().size())));
-            }
+            case "reload" -> this.reload.accept(err -> {
+                // файлы читаются вне потоков тика; ответ — когда применено (или ничего не изменилось)
+                if (err == null) {
+                    this.reply(sender, "reloaded", Placeholder.unparsed("npcs", Integer.toString(this.npcs.all().size())),
+                        Placeholder.unparsed("dialogs", Integer.toString(this.dialogs.registry().size())));
+                } else {
+                    this.reply(sender, "reload-failed", Placeholder.unparsed("reason", err));
+                }
+            });
             default -> this.msg(sender, "usage");
         }
         return true;
@@ -290,6 +297,9 @@ final class NpcCommand extends Command {
         // Профиль ищется вне потоков тика (сеть), результат кладётся в npcs.yml и NPC ставится заново в его регионе.
         final PlayerProfile profile = Bukkit.createProfile(name);
         profile.update().whenComplete((pp, err) -> {
+            if (this.npcs.isClosed()) {
+                return;   // система выключена или перезапущена: не трогать npcs.yml новой копии
+            }
             ProfileProperty tex = null;
             if (err == null && pp != null) {
                 for (final ProfileProperty pr : pp.getProperties()) {
@@ -389,6 +399,10 @@ final class NpcCommand extends Command {
                 final Action a = Action.parse(args[3] + ": " + Args.join(args, 4));
                 if (a == null || a.value().isBlank() || a.type() == Action.Type.GOTO || a.type() == Action.Type.CLOSE) {
                     this.msg(sender, "usage");
+                    return;
+                }
+                if (a.type() == Action.Type.CONSOLE && !sender.hasPermission(CONSOLE_PERMISSION)) {
+                    this.msg(sender, "no-console-permission");
                     return;
                 }
                 final List<Action> list = new ArrayList<>(d.commands());
