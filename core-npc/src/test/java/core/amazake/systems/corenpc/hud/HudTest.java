@@ -60,10 +60,10 @@ class HudTest {
     @Test
     void boxAndHighlightAreSlices() throws Exception {
         final FontWidths w = widths();
-        assertEquals(155, w.width(0xE010, false));
-        assertEquals(155, w.width(0xE012, false));
-        assertEquals(HudLayout.HIGHLIGHT_ADVANCE, 155 - 1 + 155);
-        assertEquals(HudLayout.BOX_ADVANCE, 161 - 1 + 161);
+        assertEquals(123, w.width(0xE010, false));
+        assertEquals(123, w.width(0xE012, false));
+        assertEquals(HudLayout.HIGHLIGHT_ADVANCE, 123 - 1 + 123);
+        assertEquals(HudLayout.BOX_ADVANCE, 129 - 1 + 129);
         assertEquals(-1, Shift.measure(HudLayout.BOX));
         assertEquals(-1, Shift.measure(HudLayout.HIGHLIGHT));
     }
@@ -108,9 +108,9 @@ class HudTest {
             for (int i = 0; i < t.content().length(); i++) {
                 final char ch = t.content().charAt(i);
                 if (ch == '\ue000' || ch == '\ue001') {
-                    sum += 161;
+                    sum += 129;
                 } else if (ch == '\ue010' || ch == '\ue012') {
-                    sum += 155;
+                    sum += 123;
                 } else if (ch == '\ue011') {
                     sum += 8;
                 } else if (ch >= 0xF801 && ch <= 0xF82A) {

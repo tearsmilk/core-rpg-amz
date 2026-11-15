@@ -18,7 +18,7 @@ public record Settings(String prefix, Dialogs dialog, Npcs npc, boolean modelEng
                           float typingVolume, float typingPitch, int typingEvery, int refreshTicks, String speakerFormat,
                           String textColor, String answerFormat, String answerSelectedFormat, String chatAnswerFormat,
                           String chatHint, int nativeWidth, String nextButton, String closeButton, boolean flag,
-                          boolean hideChat, int clearChatLines) {
+                          boolean hideChat, int clearChatLines, int hudOffsetX) {
     }
 
     public record Npcs(int lookIntervalTicks, double lookRadius, double cooldown, double hologramOffset) {
@@ -78,7 +78,7 @@ public record Settings(String prefix, Dialogs dialog, Npcs npc, boolean modelEng
             "minecraft:block.note_block.hat", 0.25f, 1.6f, 2, 2, "<#ffd37a><speaker>", "<#ece6d6>",
             "<#bdb6a6><index>. <text>", "<#ffd37a>» <index>. <text>", "<click><#ffd37a>[<index>]</#ffd37a> <text></click>",
             "<dark_gray>колёсико — выбрать, F или ЛКМ — ответить, Shift — уйти</dark_gray>", 300, "<gray>Дальше</gray>",
-            "<gray>Уйти</gray>", true, true, 100),
+            "<gray>Уйти</gray>", true, true, 100, 110),
         new Npcs(4, 8, 1.0, 0.3), true, DEFAULT_MESSAGES);
 
     public String message(final String key) {
@@ -125,7 +125,8 @@ public record Settings(String prefix, Dialogs dialog, Npcs npc, boolean modelEng
             ds.getString("native.close-button", dd.closeButton()),
             ds.getBoolean("player-flag", dd.flag()),
             ds.getBoolean("hide-chat", dd.hideChat()),
-            (int) range(ds, "clear-chat-lines", dd.clearChatLines(), 0, 200, warn));
+            (int) range(ds, "clear-chat-lines", dd.clearChatLines(), 0, 200, warn),
+            (int) range(ds, "hud.offset-x", dd.hudOffsetX(), -400, 400, warn));
         final ConfigurationSection ns = section(c, "npc");
         final Npcs nd = d.npc();
         final Npcs npcs = new Npcs((int) range(ns, "look-interval-ticks", nd.lookIntervalTicks(), 1, 100, warn),

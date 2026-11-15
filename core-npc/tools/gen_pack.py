@@ -37,14 +37,16 @@ A = os.path.join(ROOT, 'pack', 'assets', 'corenpc')
 WIDTHS = os.path.join(ROOT, 'src', 'main', 'resources', 'font-widths.txt')
 
 CELL_W = 8                      # клетка глифа: 8×8 ванильного шрифта + прозрачный запас снизу (высота — по строке)
-BOX_W, BOX_H, BOX_ASCENT = 320, 78, 63
+LIFT = 72                       # всё окно поднято на столько пикселей GUI (над рукой NPC, а не у хотбара)
+BOX_W, BOX_H, BOX_ASCENT = 256, 78, 63 + LIFT
+BOX_CELL_H = BOX_H + LIFT       # клетка глифа окна: рисунок сверху, снизу прозрачный запас (ascent ≤ height)
 BOX_PARTS = 2                   # окно режется на части не шире 256 (атлас клиента 256×256)
-HL_H = 16                       # высота клетки подсветки (полоса 10 пикселей сверху)
+HL_H = 80 - 65 + LIFT + 1       # высота клетки подсветки ≥ ascent верхнего ответа + 1 (полоса 10 пикселей сверху)
 HL_ROWS = (4, 5, 6)             # подсветка есть только в шрифтах ответов
 NEXT_ROW = 6                    # «▼ дальше» — только в последней строке
 # верх глифа строки над экраном: H−124 (имя), H−111/−101/−91 (текст), H−80/−71/−62 (ответы)
-ROW_TOPS = [124, 111, 101, 91, 80, 71, 62]
-HL_W = 308
+ROW_TOPS = [t + LIFT for t in (124, 111, 101, 91, 80, 71, 62)]
+HL_W = 244
 HL_PARTS = 2
 MAX_GLYPH = 256
 
@@ -115,7 +117,8 @@ def write_json(obj, rel):
 
 def box():
     """Окно: тёмная полупрозрачная панель, тонкая рамка, скруглённые углы, полоса под именем."""
-    a = np.zeros((BOX_H, BOX_W, 4), dtype=np.uint8)
+    out = np.zeros((BOX_CELL_H, BOX_W, 4), dtype=np.uint8)
+    a = out[:BOX_H]
     y, x = np.mgrid[0:BOX_H, 0:BOX_W]
     r = 4
     cx = np.clip(x, r, BOX_W - 1 - r)
@@ -130,7 +133,7 @@ def box():
     # полоса под именем и разделитель над ответами
     for yy, col in ((14, (196, 160, 92, 150)), (46, (120, 104, 80, 110))):
         a[yy, 6:BOX_W - 6] = col
-    return Image.fromarray(a, 'RGBA')
+    return Image.fromarray(out, 'RGBA')
 
 
 def indicator():
@@ -221,7 +224,7 @@ def main():
         shifts[chr(0xF821 + i)] = 1 << i
     provs = [{'type': 'space', 'advances': shifts}]
     for i in range(BOX_PARTS):
-        provs.append({'type': 'bitmap', 'file': 'corenpc:font/dialog/box%d.png' % i, 'height': BOX_H,
+        provs.append({'type': 'bitmap', 'file': 'corenpc:font/dialog/box%d.png' % i, 'height': BOX_CELL_H,
                       'ascent': BOX_ASCENT, 'chars': [chr(0xE000 + i)]})
     check(provs, 'dialog')
     write_json({'providers': provs}, 'font/dialog.json')
@@ -255,7 +258,11 @@ def main():
                 provs.append({'type': 'bitmap', 'file': 'corenpc:font/dialog/highlight%d.png' % i, 'height': HL_H,
                               'ascent': asc + 1, 'chars': [chr(0xE010 + 2 * i)]})
         if n == NEXT_ROW:
-            provs.append({'type': 'bitmap', 'file': 'corenpc:font/dialog/next.png', 'height': 5, 'ascent': asc - 3,
+            nh = max(5, asc - 3)          # клетка ▼: рисунок 7×5 сверху, ниже прозрачно (ascent ≤ height)
+            cell = Image.new('RGBA', (7, nh), (0, 0, 0, 0))
+            cell.paste(indicator(), (0, 0))
+            write_png(cell, 'font/dialog/next.png')
+            provs.append({'type': 'bitmap', 'file': 'corenpc:font/dialog/next.png', 'height': nh, 'ascent': asc - 3,
                           'chars': ['\ue011']})
         check(provs, 'row%d' % n)
         write_json({'providers': provs}, 'font/row%d.json' % n)
@@ -271,7 +278,7 @@ def main():
         for cp in cps:
             f.write('%x %d\n' % (cp, widths[cp]))
     # превью для проверки на глаз
-    prev = Image.new('RGBA', (BOX_W + 20, BOX_H + 20), (90, 140, 90, 255))
+    prev = Image.new('RGBA', (BOX_W + 20, BOX_CELL_H + 20), (90, 140, 90, 255))
     prev.alpha_composite(box(), (10, 10))
     os.makedirs(os.path.join(HERE, 'preview'), exist_ok=True)
     prev.save(os.path.join(HERE, 'preview', 'box.png'))

@@ -28,8 +28,8 @@
     {
       "type": "bitmap",
       "file": "corenpc:font/dialog/box0.png",
-      "height": 78,
-      "ascent": 63,
+      "height": 150,
+      "ascent": 135,
       "chars": [
         ""
       ]
@@ -37,8 +37,8 @@
     {
       "type": "bitmap",
       "file": "corenpc:font/dialog/box1.png",
-      "height": 78,
-      "ascent": 63,
+      "height": 150,
+      "ascent": 135,
       "chars": [
         ""
       ]

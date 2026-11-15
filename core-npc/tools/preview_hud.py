@@ -51,7 +51,7 @@ def main():
     d.rectangle((W // 2 - 91, H - 39, W // 2 - 10, H - 31), fill=(200, 30, 30, 255))      # сердца
     d.rectangle((W // 2 - 91, H - 49, W // 2 - 10, H - 41), fill=(160, 160, 170, 255))    # броня
     d.rectangle((W // 2 + 10, H - 39, W // 2 + 91, H - 31), fill=(150, 90, 40, 255))      # еда
-    x0 = W // 2 - (box.width + 1) // 2
+    x0 = W // 2 - (box.width + 1) // 2 + 110   # dialog.hud.offset-x
     img.alpha_composite(box, (x0, H - 65 - box_asc))
 
     def text(s, row, color, x=8):

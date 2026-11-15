@@ -427,7 +427,7 @@ public final class DialogManager implements Listener {
                 }
             }
         }
-        p.sendActionBar(this.hud.render(speaker, rows, answers, selectedRow, blink));
+        p.sendActionBar(this.hud.render(speaker, rows, answers, selectedRow, blink, this.settings.get().dialog().hudOffsetX()));
     }
 
     /** Ответы в чат кликабельными строками (запасной ввод). */

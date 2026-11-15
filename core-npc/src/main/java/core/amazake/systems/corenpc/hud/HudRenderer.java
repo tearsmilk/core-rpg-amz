@@ -28,7 +28,19 @@ public final class HudRenderer {
      */
     public Component render(final Component speaker, final List<Component> lines, final List<Component> answers,
                             final int selectedRow, final boolean next) {
+        return this.render(speaker, lines, answers, selectedRow, next, 0);
+    }
+
+    /**
+     * offsetX — сдвиг окна вправо (влево, если &lt; 0) от центра экрана в пикселях GUI: пробел +offsetX в начале и
+     * −offsetX в конце, общая ширина строки не меняется — клиент центрирует так же, а окно стоит правее.
+     */
+    public Component render(final Component speaker, final List<Component> lines, final List<Component> answers,
+                            final int selectedRow, final boolean next, final int offsetX) {
         final TextComponent.Builder b = Component.text();
+        if (offsetX != 0) {
+            b.append(shift(offsetX));
+        }
         b.append(Component.text(HudLayout.BOX).font(HudLayout.DIALOG_FONT).color(NamedTextColor.WHITE)
             .shadowColor(ShadowColor.none()));
         int x = HudLayout.BOX_ADVANCE;   // где сейчас «перо» относительно левого края окна
@@ -52,6 +64,9 @@ public final class HudRenderer {
             x = HudLayout.NEXT_X + 8;
         }
         b.append(shift(HudLayout.BOX_ADVANCE - x));
+        if (offsetX != 0) {
+            b.append(shift(-offsetX));
+        }
         return b.build();
     }
 

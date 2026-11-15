@@ -10,7 +10,8 @@ pages:
   greet:
     # sound: "minecraft:block.amethyst_block.chime 0.8 1"   # звук при открытии страницы (по желанию)
     lines:
-      - "Здравствуй, <white>{player}</white>.<wait:10> Давно не было путников."
+      - "Здравствуй, <white>{player}</white>.<wait:10>"
+      - "Давно не было путников."
       - "Ты по делу или так, <gray>поглазеть</gray>?"
     answers:
       - text: "Кто ты такой?"
@@ -50,7 +51,8 @@ pages:
 
   accepted:
     lines:
-      - "Вот и славно. Возвращайся живым, {player}."
+      - "Вот и славно."
+      - "Возвращайся живым, {player}."
     next: end
 
   bread:
