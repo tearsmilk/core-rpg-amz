@@ -48,11 +48,17 @@ public record MobDef(
      *
      * @param id id модели (blueprint) ModelEngine
      * @param scale масштаб модели (1 — как в blueprint)
+     * @param hitboxScale масштаб хитбокса модели (по умолчанию = scale; 1 — как в blueprint)
      * @param hideBase прятать ванильного моба под моделью
      * @param attack анимация атаки (выстрел и удар); null — не проигрывать
      * @param hit анимация получения урона; null — не проигрывать
      */
-    public record Model(String id, double scale, boolean hideBase, String attack, String hit) {
+    public record Model(String id, double scale, double hitboxScale, boolean hideBase, String attack, String hit) {
+
+        /** Хитбокс в том же масштабе, что и модель. */
+        public Model(final String id, final double scale, final boolean hideBase, final String attack, final String hit) {
+            this(id, scale, scale, hideBase, attack, hit);
+        }
     }
 
     /**

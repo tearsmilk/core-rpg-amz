@@ -19,11 +19,16 @@ import org.bukkit.plugin.Plugin;
  * ModeledEntity me = ModelEngineAPI.getModeledEntity(entity);          // уже есть — не вешаем второй раз
  * if (me == null) me = ModelEngineAPI.createModeledEntity(entity);
  * ActiveModel am = ModelEngineAPI.createActiveModel("model_id");
- * am.setScale(scale); me.addModel(am, true); me.setBaseEntityVisible(false);
+ * am.setScale(scale); am.setHitboxScale(hitboxScale); me.addModel(am, true); me.setBaseEntityVisible(false);
  * am.getAnimationHandler().playAnimation("attack", 0.1, 0.2, 1.0, true);
  * </pre>
  *
  * <p>idle, walk и death ModelEngine проигрывает сам (обработчик состояний по умолчанию).</p>
+ *
+ * <p>Хитбокс: ModelEngine строит хитбокс сущности (серверный bbox и коробку взаимодействия у клиента) из хитбокса
+ * blueprint, умноженного на {@code ActiveModel#getHitboxScale()}, а {@code setScale} его не трогает. Поэтому вместе с
+ * масштабом модели ставим и {@code setHitboxScale} — до {@code addModel} (addModel с overrideHitbox берёт его при
+ * установке хитбокса), а у уже висящей модели — сразу (для главной модели ModelEngine пересчитывает хитбокс).</p>
  */
 public final class ModelHook {
 
@@ -232,7 +237,8 @@ public final class ModelHook {
      * сущности (в mobs.yml сменили {@code model}) снимаются. Blueprint ещё не загружен — тихо false (повесим, когда
      * ModelEngine догрузит модели). false — ModelEngine нет или вызов не удался (в лог — не чаще раза в 10 минут).
      */
-    public boolean ensure(final Entity entity, final String modelId, final double scale, final boolean hideBase) {
+    public boolean ensure(final Entity entity, final String modelId, final double scale, final double hitboxScale,
+                          final boolean hideBase) {
         final Class<?> c = this.api();
         if (c == null || entity == null || !entity.isValid()) {
             return false;
@@ -240,7 +246,10 @@ public final class ModelHook {
         Object created = null;
         try {
             Object modeled = invokeGet(c, entity);
-            if (modeled != null && hasActive(modeled, modelId)) {
+            final Object existing = modeled == null ? null : active(modeled, modelId);
+            if (existing != null) {
+                // модель уже висит (/mobs reload, повторная проверка): масштаб и хитбокс — как сейчас в mobs.yml
+                this.applyScales(existing, scale, hitboxScale, true);
                 return true;
             }
             if (this.blueprint(modelId) == Boolean.FALSE) {
@@ -256,13 +265,7 @@ public final class ModelHook {
             } else {
                 removeOthers(modeled, modelId);
             }
-            if (scale > 0 && scale != 1.0) {
-                try {
-                    call(active, "setScale", Double.valueOf(scale));
-                } catch (final ReflectiveOperationException e) {
-                    this.warnOnce("scale", "ModelEngine: setScale не вызвался (" + e + "), модель в масштабе 1");
-                }
-            }
+            this.applyScales(active, scale, hitboxScale, false);
             call(modeled, "addModel", active, Boolean.TRUE);
             created = null;
             // восстанавливает модель после загрузки чанка только core-mobs (MobModels#onAdd), не ModelEngine:
@@ -287,6 +290,50 @@ public final class ModelHook {
                 this.discard(c, entity, created);
             }
             return false;
+        }
+    }
+
+    /**
+     * Масштаб модели ({@code setScale}) и её хитбокса ({@code setHitboxScale}). Новая модель ({@code onlyChanged}
+     * false) — ставим только не 1 (1 — значение ModelEngine по умолчанию). Уже висящая — ставим, если текущий
+     * масштаб другой (не прочитался — ставим всё равно). Метод не вызвался — одно предупреждение на всё время работы,
+     * модель остаётся как есть.
+     */
+    void applyScales(final Object active, final double scale, final double hitboxScale, final boolean onlyChanged) {
+        this.applyScale(active, "Scale", scale, onlyChanged, "модель в масштабе blueprint");
+        this.applyScale(active, "HitboxScale", hitboxScale, onlyChanged, "хитбокс в масштабе blueprint");
+    }
+
+    private void applyScale(final Object active, final String what, final double value, final boolean onlyChanged,
+                            final String fallback) {
+        if (!(value > 0) || Double.isInfinite(value)) {
+            return;
+        }
+        if (onlyChanged ? !differs(active, "get" + what, value) : value == 1.0) {
+            return;
+        }
+        try {
+            call(active, "set" + what, Double.valueOf(value));
+        } catch (final ReflectiveOperationException | RuntimeException | LinkageError e) {
+            this.warnOnce("set" + what, "ModelEngine: set" + what + " не вызвался ("
+                + (e.getCause() != null ? e.getCause() : e) + "), " + fallback);
+        }
+    }
+
+    /**
+     * Отличается ли масштаб модели ({@code getScale()}/{@code getHitboxScale()} → Vector3fc, берём x) от нужного.
+     * Прочитать не вышло — true (лучше лишний раз поставить).
+     */
+    static boolean differs(final Object active, final String getter, final double want) {
+        try {
+            final Object v = call(active, getter);
+            if (v == null) {
+                return true;
+            }
+            final Object x = v instanceof Number ? v : call(v, "x");
+            return !(x instanceof Number n) || Math.abs(n.doubleValue() - want) > 1e-4;
+        } catch (final ReflectiveOperationException | RuntimeException | LinkageError e) {
+            return true;
         }
     }
 
@@ -324,16 +371,21 @@ public final class ModelHook {
 
     /** Есть ли у ModeledEntity активная модель с этим id ({@code getModel(String)} → Optional или карта моделей). */
     static boolean hasActive(final Object modeled, final String modelId) throws ReflectiveOperationException {
+        return active(modeled, modelId) != null;
+    }
+
+    /** Активная модель с этим id у ModeledEntity или null. */
+    static Object active(final Object modeled, final String modelId) throws ReflectiveOperationException {
         try {
             final Object o = unwrap(call(modeled, "getModel", modelId));
             if (o != null) {
-                return true;
+                return o;
             }
         } catch (final NoSuchMethodException ignored) {
             // ниже — по карте моделей
         }
         final Object models = call(modeled, "getModels");
-        return models instanceof Map<?, ?> m && m.containsKey(modelId);
+        return models instanceof Map<?, ?> m ? m.get(modelId) : null;
     }
 
     private void play(final Object active, final String anim) throws ReflectiveOperationException {

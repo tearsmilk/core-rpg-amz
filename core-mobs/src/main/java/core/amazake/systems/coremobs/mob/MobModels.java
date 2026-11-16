@@ -52,7 +52,7 @@ public final class MobModels implements Listener {
             return;
         }
         final MobDef.Model m = def.model();
-        this.hook.ensure(entity, m.id(), m.scale(), m.hideBase());
+        this.hook.ensure(entity, m.id(), m.scale(), m.hitboxScale(), m.hideBase());
     }
 
     /**
