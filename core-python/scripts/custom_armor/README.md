@@ -72,9 +72,15 @@ sets:
 один блок) на конвейерах брони (только у них одновременно `ALPHA_CUTOUT`, `NO_OVERLAY` и `PER_FACE_LIGHTING`) рисует
 такие пиксели без освещения и с волной яркости по строкам текстуры (период ~2 с, `GameTime`). Общий шейдер
 `rendertype_item_entity_translucent_cull` (rezusmenu/core-portals/core-skyrift) **не тронут**; вершинный `entity.vsh`
-остаётся из rezusmenu. Проверка `python3 nexo-items/tools/armor_shader_check.py <client.jar> <паки…>`: маркер
+общий для rezusmenu и nexo-items (там же 3D-броня armor3d, см. `nexo-items/README.md`). Проверка `python3 nexo-items/tools/armor_shader_check.py <client.jar> <паки…>`: маркер
 срабатывает только на 251; в ванильной броне, отделке (trims), паке Nexo с прода и внешних паках нет ни одной текстуры
 брони с альфой 251 (альфу 251 имеют только баннеры/щиты — другой конвейер, без `ALPHA_CUTOUT`, — и HUD MythicHUD).
 GLSL проверен glslang для всех наборов define. В клиенте не проверялось (боты картинку не видят) — после заливки
 посмотреть глазами. Если Nexo при сборке пака (`compress_textures: true`) вдруг изменит альфу, руны просто не будут
 светиться — вреда нет.
+
+### Кузнечный стол и 3D-броня
+
+`main.py` слушает `PrepareSmithingEvent`: если основа — предмет Nexo с id на `azerus_reforged_` («перекованная»
+3D-броня на шейдере, `nexo-items/items/reforged_armor.yml`), результат пустой — ни отделки (trim лёг бы на ванильную
+коробку поверх 3D-модели), ни улучшения до незерита.

@@ -96,3 +96,59 @@ textures/item/crimson_scythe.png, crimson_scythe_fx.png + .mcmeta, items/crimson
   `<комплект>_glow.gif` — анимация свечения, посчитанная той же формулой, что в шейдере; `icons.png`).
 - Свечение — пиксели с альфой ровно 251 + `pack/assets/minecraft/shaders/core/entity.fsh` (только конвейеры брони).
   Проверка, что маркер не задевает чужое: `python3 tools/armor_shader_check.py <client-1.21.11.jar> <паки…>`.
+
+## reforged_armor.yml — «перекованная» 3D-броня на шейдере (7 комплектов × 4 части)
+
+Комплекты `leather`, `chainmail`, `copper`, `iron`, `golden`, `diamond`, `netherite`; id —
+`azerus_reforged_<комплект>_<часть>` (`helmet`, `chestplate`, `leggings`, `boots`), имена вида «Перекованный незеритовый
+нагрудник», основа — ванильная броня того же материала (медная — `COPPER_*`, она есть с 1.21.9), без блеска
+(`enchantment_glint_override: false`). Выдать: `/nexo give <ник> azerus_reforged_netherite_chestplate`.
+Характеристики — ванильные от основы (свои можно добавить в `core-python/scripts/custom_armor/sets.yml`).
+
+**Как это работает (MythicArmors-подобно, своя реализация по открытой технике objmc, MIT):**
+- **Шлем** — обычная 3D-модель предмета (`models/item/reforged/<комплект>_helmet.json`, повороты кубов по трём осям,
+  как разрешает 1.21.11; `display.head` scale 1.6 — модель стоит на голове ровно как в Blockbench). У шлема
+  `equippable` со слотом `HEAD` **без** `asset_id` (иначе клиент рисует броню, а не предмет — как `forest_helmet` у Nexo).
+  Шейдер для шлема не нужен — виден всем.
+- **Нагрудник, поножи, ботинки** — `equippable.asset_id: azerus:reforged_<комплект>` и своё описание
+  `pack/assets/azerus/equipment/reforged_<комплект>.json` (без `CustomArmor`: Nexo генерирует equipment только для
+  `CustomArmor.id`, наш файл кладётся в пак как есть). В нём слои `humanoid` (нагрудник + ботинки) и
+  `humanoid_leggings` (поножи):
+  - слой `00` — обычная 2D-броня 64x32 (раскладка ванильной брони; спроецирована из 3D-модели) + магический пиксель
+    (0,0) `A3 3D 7E` с альфой 16. Её видят клиенты без шейдера (Iris с шейдерпаком, macOS, старые драйверы);
+  - слои `01..NN` — **данные**: ряды 0..127 — цветовой атлас (текстура модели, непрозрачное = альфа 20), ряд 128 —
+    заголовок, ниже — по записи на ряд: 4 угла грани (xyz, 24 бита), 4 UV, флаги. Вся альфа ≤ 24, поэтому без
+    нашего шейдера (ALPHA_CUTOUT 0.1) такие слои не видны совсем.
+- **Шейдер** `pack/assets/minecraft/shaders/core/entity.vsh` + `include/armor3d.glsl` (только конвейеры брони):
+  каждый ванильный квад брони (6 граней × кость) превращается в одну грань модели. Позу конечности шейдер берёт из
+  четырёх вершин самого квада (расширение `GL_KHR_shader_subgroup_quad`, как в objmc PR #105): по UV угадывает,
+  какая это грань ванильной коробки и какой угол, по двум рёбрам и нормали восстанавливает поворот × масштаб части
+  (точно, включая масштаб игрока/атрибута scale/детей), левые руку/ногу узнаёт по зеркальности. Если квад не сошёлся
+  (другой порядок вершин у драйвера, нет расширения) — эта грань остаётся ванильной: слой данных невидим, 2D-слой
+  виден. `entity.fsh`: у 3D-граней альфа 0 — дырка, иначе непрозрачно, задние грани отбрасываются (у плоских
+  кубов — двусторонние), флаг «светится» — без теней и света. Свечение 251 (custom_armor) не тронуто.
+- **Кузнечный стол**: отделка (trim) легла бы на ванильную коробку поверх 3D — поэтому `PrepareSmithingEvent` в
+  `core-python/scripts/custom_armor/main.py` для `azerus_reforged_*` даёт пустой результат.
+
+**Новый комплект из .bbmodel** (Blockbench, формат Generic/free, одна текстура до 128×128, кости-группы верхнего
+уровня: `helmet`, `torso`, `right_arm`, `left_arm`, `hips`, `right_leg`, `left_leg`, `right_boot`, `left_boot`;
+шарниры как у шаблона: тело/бёдра (0,24,0), руки (±5,22,0), ноги/ботинки (±2,12,0); вложенные группы с любыми
+поворотами едут на своей верхней кости; `inflate`, повороты кубов и групп запекаются):
+1. `source/reforged/reforged_<комплект>_armor.bbmodel`; добавить строку в `SETS` в `tools/armor3d_build.py`.
+2. `python3 -I tools/armor3d_build.py [<комплект>]` — модели, текстуры слоёв, equipment, иконки, `items/reforged_armor.yml`,
+   `preview/reforged/budget.json`.
+3. `python3 -I tools/armor3d_preview.py` — `preview/reforged/<комплект>.png` (4 позы спереди/сзади + 2D-запаска),
+   `contact_sheet.png`, `fallback_2d.png` (развёртки слоёв 00), `icons.png`. Рендер идёт **той же математикой, что
+   шейдер** (Python-копия `armor3d_codec.shade_quad`).
+4. `python3 -I tools/armor3d_check.py` — маркеры не совпадают ни с чем в ванили/паках прода/репозитория, правила альфы,
+   запись↔модель туда-обратно, случайные позы (ошибка вершин < 1e-3 px), копии шейдера одинаковы.
+   `python3 -I tools/armor3d_glsl_check.py` — компиляция и линковка entity.vsh/fsh glslangValidator во всех
+   конвейерах core/entity с subgroup и без.
+Бюджет: на кость 6 граней на слой; слоёв в списке = max по костям списка ⌈граней/6⌉ (netherite: 18 humanoid, 6
+leggings; нагрудник 1368 вершин). Пустые места слоя шейдер сворачивает в точку вне экрана.
+
+Деплой (только по «заливай»): `pack/assets/azerus/{equipment,models/item/reforged,textures/item/reforged,
+textures/entity/equipment}` → `/plugins/Nexo/pack/assets/azerus/…`; `pack/assets/minecraft/shaders/core/entity.vsh`,
+`entity.fsh`, `include/armor3d.glsl` → `/plugins/Nexo/pack/assets/minecraft/shaders/…`; `items/reforged_armor.yml` →
+`/plugins/Nexo/items/`; `nexo reload all`; запрет кузнечного стола — `core-python/scripts/custom_armor/main.py`
+(`/python reload custom_armor`, когда core-python будет на проде).

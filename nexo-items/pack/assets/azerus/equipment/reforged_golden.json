@@ -1,0 +1,62 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "azerus:reforged_golden_00"
+      },
+      {
+        "texture": "azerus:reforged_golden_01"
+      },
+      {
+        "texture": "azerus:reforged_golden_02"
+      },
+      {
+        "texture": "azerus:reforged_golden_03"
+      },
+      {
+        "texture": "azerus:reforged_golden_04"
+      },
+      {
+        "texture": "azerus:reforged_golden_05"
+      },
+      {
+        "texture": "azerus:reforged_golden_06"
+      },
+      {
+        "texture": "azerus:reforged_golden_07"
+      },
+      {
+        "texture": "azerus:reforged_golden_08"
+      },
+      {
+        "texture": "azerus:reforged_golden_09"
+      },
+      {
+        "texture": "azerus:reforged_golden_10"
+      },
+      {
+        "texture": "azerus:reforged_golden_11"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "azerus:reforged_golden_00"
+      },
+      {
+        "texture": "azerus:reforged_golden_01"
+      },
+      {
+        "texture": "azerus:reforged_golden_02"
+      },
+      {
+        "texture": "azerus:reforged_golden_03"
+      },
+      {
+        "texture": "azerus:reforged_golden_04"
+      },
+      {
+        "texture": "azerus:reforged_golden_05"
+      }
+    ]
+  }
+}

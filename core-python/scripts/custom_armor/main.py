@@ -61,6 +61,23 @@ def 退出(event):
     bonuses.状態を消す(event.getPlayer())
 
 
+# 3D-броня на шейдере («перекованная», nexo-items/items/reforged_armor.yml): её слои брони — данные 3D-модели, отделка
+# (trim) поверх них легла бы на ванильную коробку и выглядела бы мусором. Поэтому кузнечный стол такие предметы
+# не принимает: ни отделку, ни улучшение до незерита (результат пустой).
+三次元防具 = ("azerus_reforged_",)
+
+
+@amazake.on("PrepareSmithingEvent")
+def 鍛冶台(event):
+    """Кузнечный стол (поток игрока): основа — 3D-броня → результата нет."""
+    物 = event.getInventory().getInputEquipment()
+    if 物 is None or 物.isEmpty():
+        return
+    nid = amazake.data(物).get_string(items.NEXOキー)
+    if nid and nid.startswith(三次元防具):
+        event.setResult(None)
+
+
 @amazake.on("EntityDamageByEntityEvent", priority="high", ignore_cancelled=True)
 def 攻撃前(event):
     bonuses.攻撃前(event)

@@ -1,0 +1,394 @@
+[
+ {
+  "set": "leather",
+  "bones": {
+   "torso": 12,
+   "right_arm": 12,
+   "left_arm": 12,
+   "right_boot": 12,
+   "left_boot": 12,
+   "hips": 6,
+   "right_leg": 12,
+   "left_leg": 12
+  },
+  "lists": {
+   "humanoid": {
+    "layers_3d": 2,
+    "layers_total": 3,
+    "faces": {
+     "torso": 12,
+     "right_arm": 12,
+     "left_arm": 12,
+     "right_boot": 12,
+     "left_boot": 12
+    },
+    "layers_needed": {
+     "torso": 2,
+     "right_arm": 2,
+     "left_arm": 2,
+     "right_boot": 2,
+     "left_boot": 2
+    }
+   },
+   "humanoid_leggings": {
+    "layers_3d": 2,
+    "layers_total": 3,
+    "faces": {
+     "hips": 6,
+     "right_leg": 12,
+     "left_leg": 12
+    },
+    "layers_needed": {
+     "hips": 1,
+     "right_leg": 2,
+     "left_leg": 2
+    }
+   }
+  },
+  "vertices": {
+   "chestplate": 216,
+   "leggings": 216,
+   "boots": 144
+  },
+  "helmet": {
+   "elements": 2,
+   "faces": 12
+  }
+ },
+ {
+  "set": "chainmail",
+  "bones": {
+   "torso": 12,
+   "right_arm": 18,
+   "left_arm": 18,
+   "right_boot": 18,
+   "left_boot": 18,
+   "hips": 6,
+   "right_leg": 12,
+   "left_leg": 12
+  },
+  "lists": {
+   "humanoid": {
+    "layers_3d": 3,
+    "layers_total": 4,
+    "faces": {
+     "torso": 12,
+     "right_arm": 18,
+     "left_arm": 18,
+     "right_boot": 18,
+     "left_boot": 18
+    },
+    "layers_needed": {
+     "torso": 2,
+     "right_arm": 3,
+     "left_arm": 3,
+     "right_boot": 3,
+     "left_boot": 3
+    }
+   },
+   "humanoid_leggings": {
+    "layers_3d": 2,
+    "layers_total": 3,
+    "faces": {
+     "hips": 6,
+     "right_leg": 12,
+     "left_leg": 12
+    },
+    "layers_needed": {
+     "hips": 1,
+     "right_leg": 2,
+     "left_leg": 2
+    }
+   }
+  },
+  "vertices": {
+   "chestplate": 288,
+   "leggings": 216,
+   "boots": 192
+  },
+  "helmet": {
+   "elements": 3,
+   "faces": 18
+  }
+ },
+ {
+  "set": "copper",
+  "bones": {
+   "torso": 30,
+   "right_arm": 30,
+   "left_arm": 30,
+   "right_boot": 18,
+   "left_boot": 18,
+   "hips": 30,
+   "right_leg": 36,
+   "left_leg": 36
+  },
+  "lists": {
+   "humanoid": {
+    "layers_3d": 5,
+    "layers_total": 6,
+    "faces": {
+     "torso": 30,
+     "right_arm": 30,
+     "left_arm": 30,
+     "right_boot": 18,
+     "left_boot": 18
+    },
+    "layers_needed": {
+     "torso": 5,
+     "right_arm": 5,
+     "left_arm": 5,
+     "right_boot": 3,
+     "left_boot": 3
+    }
+   },
+   "humanoid_leggings": {
+    "layers_3d": 6,
+    "layers_total": 7,
+    "faces": {
+     "hips": 30,
+     "right_leg": 36,
+     "left_leg": 36
+    },
+    "layers_needed": {
+     "hips": 5,
+     "right_leg": 6,
+     "left_leg": 6
+    }
+   }
+  },
+  "vertices": {
+   "chestplate": 432,
+   "leggings": 504,
+   "boots": 288
+  },
+  "helmet": {
+   "elements": 5,
+   "faces": 30
+  }
+ },
+ {
+  "set": "iron",
+  "bones": {
+   "torso": 98,
+   "right_arm": 60,
+   "left_arm": 60,
+   "right_boot": 18,
+   "left_boot": 18,
+   "hips": 30,
+   "right_leg": 36,
+   "left_leg": 36
+  },
+  "lists": {
+   "humanoid": {
+    "layers_3d": 17,
+    "layers_total": 18,
+    "faces": {
+     "torso": 98,
+     "right_arm": 60,
+     "left_arm": 60,
+     "right_boot": 18,
+     "left_boot": 18
+    },
+    "layers_needed": {
+     "torso": 17,
+     "right_arm": 10,
+     "left_arm": 10,
+     "right_boot": 3,
+     "left_boot": 3
+    }
+   },
+   "humanoid_leggings": {
+    "layers_3d": 6,
+    "layers_total": 7,
+    "faces": {
+     "hips": 30,
+     "right_leg": 36,
+     "left_leg": 36
+    },
+    "layers_needed": {
+     "hips": 5,
+     "right_leg": 6,
+     "left_leg": 6
+    }
+   }
+  },
+  "vertices": {
+   "chestplate": 1296,
+   "leggings": 504,
+   "boots": 864
+  },
+  "helmet": {
+   "elements": 15,
+   "faces": 90
+  }
+ },
+ {
+  "set": "golden",
+  "bones": {
+   "torso": 66,
+   "right_arm": 24,
+   "left_arm": 24,
+   "right_boot": 18,
+   "left_boot": 18,
+   "hips": 18,
+   "right_leg": 30,
+   "left_leg": 30
+  },
+  "lists": {
+   "humanoid": {
+    "layers_3d": 11,
+    "layers_total": 12,
+    "faces": {
+     "torso": 66,
+     "right_arm": 24,
+     "left_arm": 24,
+     "right_boot": 18,
+     "left_boot": 18
+    },
+    "layers_needed": {
+     "torso": 11,
+     "right_arm": 4,
+     "left_arm": 4,
+     "right_boot": 3,
+     "left_boot": 3
+    }
+   },
+   "humanoid_leggings": {
+    "layers_3d": 5,
+    "layers_total": 6,
+    "faces": {
+     "hips": 18,
+     "right_leg": 30,
+     "left_leg": 30
+    },
+    "layers_needed": {
+     "hips": 3,
+     "right_leg": 5,
+     "left_leg": 5
+    }
+   }
+  },
+  "vertices": {
+   "chestplate": 864,
+   "leggings": 432,
+   "boots": 576
+  },
+  "helmet": {
+   "elements": 9,
+   "faces": 54
+  }
+ },
+ {
+  "set": "diamond",
+  "bones": {
+   "torso": 72,
+   "right_arm": 66,
+   "left_arm": 72,
+   "right_boot": 12,
+   "left_boot": 12,
+   "hips": 30,
+   "right_leg": 48,
+   "left_leg": 48
+  },
+  "lists": {
+   "humanoid": {
+    "layers_3d": 12,
+    "layers_total": 13,
+    "faces": {
+     "torso": 72,
+     "right_arm": 66,
+     "left_arm": 72,
+     "right_boot": 12,
+     "left_boot": 12
+    },
+    "layers_needed": {
+     "torso": 12,
+     "right_arm": 11,
+     "left_arm": 12,
+     "right_boot": 2,
+     "left_boot": 2
+    }
+   },
+   "humanoid_leggings": {
+    "layers_3d": 8,
+    "layers_total": 9,
+    "faces": {
+     "hips": 30,
+     "right_leg": 48,
+     "left_leg": 48
+    },
+    "layers_needed": {
+     "hips": 5,
+     "right_leg": 8,
+     "left_leg": 8
+    }
+   }
+  },
+  "vertices": {
+   "chestplate": 936,
+   "leggings": 648,
+   "boots": 624
+  },
+  "helmet": {
+   "elements": 7,
+   "faces": 42
+  }
+ },
+ {
+  "set": "netherite",
+  "bones": {
+   "torso": 104,
+   "right_arm": 60,
+   "left_arm": 60,
+   "right_boot": 24,
+   "left_boot": 24,
+   "hips": 30,
+   "right_leg": 36,
+   "left_leg": 36
+  },
+  "lists": {
+   "humanoid": {
+    "layers_3d": 18,
+    "layers_total": 19,
+    "faces": {
+     "torso": 104,
+     "right_arm": 60,
+     "left_arm": 60,
+     "right_boot": 24,
+     "left_boot": 24
+    },
+    "layers_needed": {
+     "torso": 18,
+     "right_arm": 10,
+     "left_arm": 10,
+     "right_boot": 4,
+     "left_boot": 4
+    }
+   },
+   "humanoid_leggings": {
+    "layers_3d": 6,
+    "layers_total": 7,
+    "faces": {
+     "hips": 30,
+     "right_leg": 36,
+     "left_leg": 36
+    },
+    "layers_needed": {
+     "hips": 5,
+     "right_leg": 6,
+     "left_leg": 6
+    }
+   }
+  },
+  "vertices": {
+   "chestplate": 1368,
+   "leggings": 504,
+   "boots": 912
+  },
+  "helmet": {
+   "elements": 33,
+   "faces": 198
+  }
+ }
+]

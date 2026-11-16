@@ -331,5 +331,37 @@ NPC хранятся в `systems/core-npc/npcs.yml`, диалоги — `systems
 рисует их `nexo-items/tools/armor_textures.py`. Свечение — новый `minecraft/shaders/core/entity.fsh`
 (`nexo-items/pack/`), это **не** общий шейдер предметов из раздела 6: он трогает только конвейеры брони
 (`ALPHA_CUTOUT` + `NO_OVERLAY` + `PER_FACE_LIGHTING`) и только пиксели с альфой ровно 251. Вершинный `entity.vsh` —
-из rezusmenu (его не менять без сверки: `entity.fsh` берёт его выходы). Новые светящиеся детали брони рисовать
+**общий** для rezusmenu и nexo-items (хук меню UI_LIGHT + 3D-броня, ниже): две копии `rezusmenu/pack/...` и
+`nexo-items/pack/...` должны быть байт-в-байт одинаковы, вместе с `include/armor3d.glsl` (иначе импорт не найдётся);
+`entity.fsh` берёт его выходы. Новые светящиеся детали брони рисовать
 альфой 251; любые другие текстуры брони — только с альфой 0/255. Проверка: `nexo-items/tools/armor_shader_check.py`.
+
+### 3D-броня на шейдере (armor3d, «перекованные» комплекты)
+
+Броня как у MythicArmors: модель из Blockbench на игроке, мобе, стойке, в инвентаре, с анимацией конечностей. Своя
+реализация (код MythicArmors закрыт), техника — открытый objmc (Godlander/objmc, MIT). Подробно и по шагам —
+`nexo-items/README.md`, раздел «reforged_armor.yml».
+
+- **Шлем** — обычная 3D-модель предмета на голове (`equippable` слот `HEAD` без `asset_id`), шейдер не нужен.
+- **Нагрудник/поножи/ботинки** — своё equipment-описание `azerus:reforged_<комплект>` (без `CustomArmor`). Слой `00` —
+  2D-броня (видна без шейдера), слои `01..` — данные: атлас цвета (альфа 20) + записи граней (альфа 24). Альфа < 25.5,
+  значит без шейдера данные отрезаются ванильным `ALPHA_CUTOUT 0.1`.
+- **Шейдер** `minecraft/shaders/core/entity.vsh` + `include/armor3d.glsl` (только конвейеры брони, только наши
+  текстуры: 128×≥147 с `A3 3D 7E`/16 в (0,128) или 64×32 с ним же в (0,0)). Каждый ванильный квад брони становится
+  одной гранью модели (6 на кость на слой). Поворот конечности берётся из 4 вершин квада через
+  `GL_KHR_shader_subgroup_quad`: одной вершины мало (нормаль даёт 2 степени свободы из 3, «крен» вокруг нормали
+  неизвестен — у грани руки это как раз мах при ходьбе), поэтому без subgroup 3D не бывает. Код под
+  `#ifdef GL_KHR_shader_subgroup_quad`, `#version 330` как у ванили: на macOS (GL 4.1, расширения нет) и старых
+  драйверах он выключается сам — видна 2D-броня. Если драйвер раскладывает вершины по-другому, проверка квада (4
+  разных угла одной грани по UV) не проходит и грань тоже остаётся 2D/невидимой, растянутых треугольников нет.
+- **Отделка (trim)** для этих предметов запрещена (`PrepareSmithingEvent`, `core-python/scripts/custom_armor`).
+- **Инструменты** (`nexo-items/tools/`, запуск `python3 -I`): `armor3d_build.py` (сборка из
+  `source/reforged/*.bbmodel`), `armor3d_preview.py` (рендер той же математикой, что шейдер, → `preview/reforged/`),
+  `armor3d_check.py` (маркеры, альфа, туда-обратно, случайные позы, бюджет), `armor3d_glsl_check.py` (glslangValidator,
+  все конвейеры core/entity × с subgroup/без). Общий код и Python-копия шейдера — `armor3d_codec.py`.
+- **Новый комплект**: положить `.bbmodel` (кости `helmet torso right_arm left_arm hips right_leg left_leg right_boot
+  left_boot`, одна текстура ≤ 128×128) в `nexo-items/source/reforged/`, вписать в `SETS` в `armor3d_build.py`,
+  прогнать build → preview → check → glsl_check, посмотреть картинки, закоммитить; залить по команде (раздел 5).
+- **Не проверено в клиенте**: настоящие видеокарты (NVIDIA/AMD/Intel — порядок вершин в subgroup), macOS (ожидается
+  2D), Sodium (своя отрисовка моделей сущностей — может не выдавать часть граней), Iris с шейдерпаком (ожидается 2D),
+  ModelEngine (`Create-Shader: false` в его config.yml — в снимке прода конфига ModelEngine нет, проверить на сервере).

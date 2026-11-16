@@ -1,0 +1,83 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "azerus:reforged_iron_00"
+      },
+      {
+        "texture": "azerus:reforged_iron_01"
+      },
+      {
+        "texture": "azerus:reforged_iron_02"
+      },
+      {
+        "texture": "azerus:reforged_iron_03"
+      },
+      {
+        "texture": "azerus:reforged_iron_04"
+      },
+      {
+        "texture": "azerus:reforged_iron_05"
+      },
+      {
+        "texture": "azerus:reforged_iron_06"
+      },
+      {
+        "texture": "azerus:reforged_iron_07"
+      },
+      {
+        "texture": "azerus:reforged_iron_08"
+      },
+      {
+        "texture": "azerus:reforged_iron_09"
+      },
+      {
+        "texture": "azerus:reforged_iron_10"
+      },
+      {
+        "texture": "azerus:reforged_iron_11"
+      },
+      {
+        "texture": "azerus:reforged_iron_12"
+      },
+      {
+        "texture": "azerus:reforged_iron_13"
+      },
+      {
+        "texture": "azerus:reforged_iron_14"
+      },
+      {
+        "texture": "azerus:reforged_iron_15"
+      },
+      {
+        "texture": "azerus:reforged_iron_16"
+      },
+      {
+        "texture": "azerus:reforged_iron_17"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "azerus:reforged_iron_00"
+      },
+      {
+        "texture": "azerus:reforged_iron_01"
+      },
+      {
+        "texture": "azerus:reforged_iron_02"
+      },
+      {
+        "texture": "azerus:reforged_iron_03"
+      },
+      {
+        "texture": "azerus:reforged_iron_04"
+      },
+      {
+        "texture": "azerus:reforged_iron_05"
+      },
+      {
+        "texture": "azerus:reforged_iron_06"
+      }
+    ]
+  }
+}

@@ -52,7 +52,7 @@ class CustomArmorScriptTest {
         final PyScript s = this.manager.load("custom_armor");
         final Set<String> events = platform.listeners.stream().map(r -> r.type().getSimpleName()).collect(Collectors.toSet());
         assertTrue(events.containsAll(Set.of("PlayerArmorChangeEvent", "PlayerJoinEvent", "PlayerPostRespawnEvent", "PlayerQuitEvent",
-            "EntityDamageByEntityEvent")), events.toString());
+            "EntityDamageByEntityEvent", "PrepareSmithingEvent")), events.toString());
         assertEquals(2, platform.listeners.stream().filter(r -> r.type().getSimpleName().equals("EntityDamageByEntityEvent")).count());
         final Command c = platform.command("carmor");
         assertNotNull(c);

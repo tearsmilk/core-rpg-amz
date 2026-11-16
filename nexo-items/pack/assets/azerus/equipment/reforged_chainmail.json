@@ -1,0 +1,29 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "azerus:reforged_chainmail_00"
+      },
+      {
+        "texture": "azerus:reforged_chainmail_01"
+      },
+      {
+        "texture": "azerus:reforged_chainmail_02"
+      },
+      {
+        "texture": "azerus:reforged_chainmail_03"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "azerus:reforged_chainmail_00"
+      },
+      {
+        "texture": "azerus:reforged_chainmail_01"
+      },
+      {
+        "texture": "azerus:reforged_chainmail_02"
+      }
+    ]
+  }
+}
