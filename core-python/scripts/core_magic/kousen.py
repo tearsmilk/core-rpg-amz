@@ -40,7 +40,7 @@ def 傷の種類(鍵):
         RegistryKey = java.type("io.papermc.paper.registry.RegistryKey")
         reg = RegistryAccess.registryAccess().getRegistry(RegistryKey.DAMAGE_TYPE)
         t = reg.get(kyoutsuu.鍵(鍵))
-    except Exception as e:
+    except BaseException as e:
         amazake.log.debug("реестр урона: " + str(e))
         t = None
     if t is None:
@@ -114,7 +114,7 @@ def 撃つ(player, cfg, 陣=None):
                     bb = e.getBoundingBox()
                     実体[uid] = e
                     候補.append((uid, (bb.getMinX(), bb.getMinY(), bb.getMinZ(), bb.getMaxX(), bb.getMaxY(), bb.getMaxZ())))
-                except Exception as ex:
+                except BaseException as ex:
                     amazake.log.debug("цель луча: " + str(ex))
     当たり = keisan.当たり(E, 向き, D, 候補, 自分, 光.半径)
 
@@ -125,7 +125,7 @@ def 撃つ(player, cfg, 陣=None):
         try:
             src = (DamageSource.builder(傷の種類(光.傷種)).withCausingEntity(player).withDirectEntity(player)
                    .withDamageLocation(eye).build())
-        except Exception as ex:
+        except BaseException as ex:
             amazake.log.debug("DamageSource: " + str(ex))
         for _, uid in 当たり:
             e = 実体.get(uid)
@@ -139,13 +139,13 @@ def 撃つ(player, cfg, 陣=None):
                 else:
                     e.damage(float(光.傷), player)
                 n += 1
-            except Exception as ex:
+            except BaseException as ex:
                 amazake.log.warn("урон лучом " + uid + ": " + str(ex))
 
     # --- 5. вид: дисплей луча, частицы, звук ---------------------------------------------------------------------------
     try:
         _光を見せる(eye, cfg, D, 自分)
-    except Exception as ex:
+    except BaseException as ex:
         amazake.log.warn("дисплей луча: " + str(ex))
     try:
         前 = cfg.円.前
@@ -153,7 +153,7 @@ def 撃つ(player, cfg, 陣=None):
             kyoutsuu.散らす(world, cfg.跡粒, x, y, z)
         終 = keisan.点(E, 向き, D)
         kyoutsuu.散らす(world, cfg.終粒, 終[0], 終[1], 終[2])
-    except Exception as ex:
+    except BaseException as ex:
         amazake.log.debug("частицы луча: " + str(ex))
     kyoutsuu.鳴らす(world, eye, cfg.音表["fire"])
     return D, n

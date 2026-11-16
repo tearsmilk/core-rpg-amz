@@ -46,6 +46,10 @@ _設定を読む()
 冷却 = {}
 #: Игроки, у которых через тик проверяется начало заклинания (чтобы не запускать дважды).
 確認待ち = set()
+#: Последний отказ «посох восстанавливается» (мс): зажатый ПКМ повторяет попытку каждые 4 тика — сообщение и звук
+#: не чаще 拒否間隔 мс.
+拒否 = {}
+拒否間隔 = 500
 
 
 def _文(cfg, 鍵, 生=None, **素):
@@ -79,11 +83,18 @@ def _残り秒(uid):
     return r
 
 
-def _冷やす(uid, 秒):
+def _冷やす(uid, 秒, player=None):
+    """Перезарядка: своя (в памяти, проверяется на ПКМ) и ванильная по группе use_cooldown посоха — тогда клиент
+    сам не начинает удержание, а на слоте видна «шторка». Поток игрока."""
     if 秒 > 0.0:
         冷却[uid] = kyoutsuu.今ms() + int(秒 * 1000.0)
     else:
         冷却.pop(uid, None)
+    if player is not None:
+        try:
+            player.setCooldown(kyoutsuu.鍵(dougu.冷却組), max(0, int(round(秒 * 20.0))))
+        except BaseException as e:
+            amazake.log.debug("ванильная перезарядка: " + str(e))
 
 
 # --- 詠唱（заклинание одного игрока） ------------------------------------------------------------------------------
@@ -161,7 +172,7 @@ class 詠唱中:
             self.終える("散", c.冷却.失敗秒)
             try:
                 p.clearActiveItem()
-            except Exception:
+            except BaseException:
                 pass
             _帯(p, c, "too-long")
             return False
@@ -179,10 +190,10 @@ class 詠唱中:
         if t is not None:
             try:
                 t.cancel()
-            except Exception:
+            except BaseException:
                 pass
         if 冷却秒 is not None:
-            _冷やす(self.uid, 冷却秒)
+            _冷やす(self.uid, 冷却秒, self.player)
         if 方法 == "撃":
             self.陣.放つ()
         elif 方法 == "散":
@@ -226,8 +237,11 @@ def 右クリック(event):
     残り = _残り秒(uid)
     if 残り > 0.0:
         event.setUseItemInHand(EventResult.DENY)     # без анимации натягивания
-        _帯(p, cfg, "cooldown", s=keisan.秒の文字(残り))
-        kyoutsuu.鳴らす(p.getWorld(), p.getEyeLocation(), cfg.音表["denied"])
+        今 = kyoutsuu.今ms()
+        if 今 - 拒否.get(uid, -拒否間隔) >= 拒否間隔:
+            拒否[uid] = 今
+            _帯(p, cfg, "cooldown", s=keisan.秒の文字(残り))
+            kyoutsuu.鳴らす(p.getWorld(), p.getEyeLocation(), cfg.音表["denied"])
         return
     if uid in 確認待ち:
         return
@@ -246,7 +260,7 @@ def _確認(p):
         return
     try:
         ticks = max(1, int(p.getActiveItemUsedTime()))
-    except Exception:
+    except BaseException:
         ticks = 1
     詠唱中(p, settei.今(), ticks).始める()
 
@@ -262,13 +276,13 @@ def 手を離す(event):
     c = s.cfg
     try:
         held = int(event.getTicksHeldFor())
-    except Exception:
+    except BaseException:
         held = s.ticks
     if held >= c.詠唱.充填:
         s.終える("撃", c.冷却.秒)
         try:
             kousen.撃つ(p, c, s.陣)
-        except Exception as e:
+        except BaseException as e:
             amazake.log.warn("выстрел посоха: " + str(e))
     else:
         s.終える("散", c.冷却.失敗秒)
@@ -280,11 +294,15 @@ def 手を離す(event):
 @amazake.on("PlayerItemHeldEvent", priority="monitor")
 def 持ち替え(event):
     p = event.getPlayer()
-    if not event.isCancelled():
-        _止める(p, "散")
+    if not event.isCancelled() and str(p.getUniqueId()) in 詠唱:
+        # смена слота прерывает только заклинание из основной руки (из второй руки ваниль его не прерывает)
+        if not p.isHandRaised() or p.getActiveItemHand() == kyoutsuu.EquipmentSlot.HAND:
+            _止める(p, "散")
     if settei.今().杖.修理:
+        # задачу ставим только когда в новом слоте посох с неверными компонентами (а не на каждую прокрутку)
         新 = event.getNewSlot()
-        amazake.run_once_for_player(p, lambda: dougu.枠を直す(p, 新), delay=1)
+        if dougu.直すべきか(p.getInventory().getItem(新)):
+            amazake.run_once_for_player(p, lambda: dougu.枠を直す(p, 新), delay=1)
 
 
 @amazake.on("PlayerSwapHandItemsEvent", priority="monitor", ignore_cancelled=True)
@@ -309,6 +327,7 @@ def 退出(event):
     _止める(p, "即")
     uid = str(p.getUniqueId())
     確認待ち.discard(uid)
+    拒否.pop(uid, None)
     _残り秒(uid)          # истёкшую перезарядку — забыть
 
 
@@ -357,7 +376,7 @@ def _掃除(p):
     n = 0
     try:
         近く = p.getNearbyEntities(48.0, 48.0, 48.0)
-    except Exception:
+    except BaseException:
         近く = p.getNearbyEntities(16.0, 16.0, 16.0)
     for e in 近く:
         try:
@@ -365,7 +384,7 @@ def _掃除(p):
                     and amazake.data(e).has(kyoutsuu.効果鍵)):
                 e.remove()
                 n += 1
-        except Exception:
+        except BaseException:
             pass
     if n:
         amazake.log.info("убрано старых эффектов посоха:", n)
@@ -379,13 +398,14 @@ def 終了():
         s.終わった = True
         d = s.陣.表示()
         if d is not None:
-            kyoutsuu.消す(d, s.陣.場所, Javaで=True)
+            kyoutsuu.消す(d)
     for d, 場所 in list(mahoujin.残像.values()):
-        kyoutsuu.消す(d, 場所, Javaで=True)
+        kyoutsuu.消す(d)
     詠唱.clear()
     mahoujin.残像.clear()
     冷却.clear()
     確認待ち.clear()
+    拒否.clear()
 
 
 # --- コマンド（/cmagic, /魔法） --------------------------------------------------------------------------------------

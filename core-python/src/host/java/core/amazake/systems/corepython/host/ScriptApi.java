@@ -485,6 +485,12 @@ public final class ScriptApi {
 
     /** Runnable без Python: target.method(*args). Метод и аргументы фиксируются сразу (см. {@link JavaCall}). */
     public Runnable javaTask(final Value target, final String method, final Value args, final Value type) throws ClassNotFoundException {
+        return this.javaTask(target, method, args, null, type);
+    }
+
+    /** floats[i] — args[i] это float Python (amazake.java_task передаёт сам: 2.0 по значению не отличить от 2). */
+    public Runnable javaTask(final Value target, final String method, final Value args, final Value floats, final Value type)
+        throws ClassNotFoundException {
         if (target == null || target.isNull() || !target.isHostObject()) {
             throw new IllegalArgumentException("java_task: нужен объект Java, получено " + target);
         }
@@ -492,17 +498,37 @@ public final class ScriptApi {
         for (int i = 0; i < a.length; i++) {
             a[i] = args.getArrayElement(i);
         }
+        final boolean[] f = new boolean[a.length];
+        if (floats != null && floats.hasArrayElements()) {
+            for (int i = 0; i < f.length && i < floats.getArraySize(); i++) {
+                f[i] = floats.getArrayElement(i).asBoolean();
+            }
+        }
         final Class<?> t = type == null || type.isNull() ? null : this.resolveClass(type);
-        return JavaCall.of(target.asHostObject(), method, a, t);
+        return JavaCall.of(target.asHostObject(), method, a, f, t);
     }
 
-    /** Java-Runnable из значения Python; функция Python не подходит — после выгрузки её уже не вызвать. */
+    /**
+     * Java-Runnable из значения Python; функция Python не подходит — после выгрузки её уже не вызвать. Прокси, которые
+     * GraalVM делает из функции Python (Value.as(Runnable) и т.п.), тоже отвергаются. Java-объект, который сам внутри
+     * держит функцию Python (например, {@code Thread(lambda: ...)}), отличить нельзя — такое не передавать.
+     */
     private Runnable javaRunnable(final Value task, final String where) {
-        if (task != null && task.isHostObject() && task.asHostObject() instanceof Runnable r) {
+        if (task != null && task.isHostObject() && task.asHostObject() instanceof Runnable r && !pythonBacked(r)) {
             return this.guarded(r, where);
         }
         throw new IllegalArgumentException(where + ": нужен Java Runnable (amazake.java_task(...)), а не функция Python: "
             + "задача может выполниться после выгрузки системы, когда Python уже закрыт");
+    }
+
+    /** Объект — прокси/адаптер GraalVM поверх значения гостевого языка. */
+    static boolean pythonBacked(final Object o) {
+        Class<?> c = o.getClass();
+        if (java.lang.reflect.Proxy.isProxyClass(c)) {
+            c = java.lang.reflect.Proxy.getInvocationHandler(o).getClass();
+        }
+        final String n = c.getName();
+        return n.startsWith("com.oracle.truffle.") || n.startsWith("org.graalvm.") || n.contains("$$Graal");
     }
 
     /** Ошибка задачи — в лог системы (только Java: Python к этому моменту может быть закрыт). */
@@ -531,14 +557,15 @@ public final class ScriptApi {
         try {
             return this.script.platform.runOnceForPlayer(player, r);
         } catch (final RuntimeException e) {
-            this.script.platform.logger().log(Level.FINE, "[py:" + this.script.name + "] run_java_for_player", e);
+            this.script.platform.logger().log(Level.WARNING, "[py:" + this.script.name + "] run_java_for_player: " + e, e);
             return false;
         }
     }
 
     /**
-     * Java-Runnable в потоке сущности через delayTicks. delayTicks ≤ 0 и поток уже владеет сущностью — сразу;
-     * сервер останавливается (планировщики больше не работают) — сразу. Не отменяется выгрузкой системы.
+     * Java-Runnable в потоке сущности через delayTicks. delayTicks ≤ 0 и поток уже владеет сущностью — сразу.
+     * Сервер останавливается: поток владеет сущностью — сразу (delay не ждём); иначе — в планировщик сущности, а если
+     * он задачу не принимает — сразу, здесь (иначе её уже никто не выполнит). Не отменяется выгрузкой системы.
      */
     public boolean runJavaOnEntity(final Entity entity, final Value task, final long delayTicks) {
         return this.onEntity(entity, this.javaRunnable(task, "run_java_on_entity"), delayTicks);
@@ -549,26 +576,39 @@ public final class ScriptApi {
             return false;
         }
         final Platform p = this.script.platform;
-        if (delayTicks <= 0 && p.owns(entity) || p.isStopping()) {
+        final boolean stopping = p.isStopping();
+        if ((delayTicks <= 0 || stopping) && p.owns(entity)) {
             r.run();
             return true;
         }
         try {
-            return p.executeForEntity(entity, r, delayTicks);
+            if (p.executeForEntity(entity, r, delayTicks)) {
+                return true;
+            }
+            if (!stopping) {
+                return false;                       // сущность удалена
+            }
         } catch (final RuntimeException e) {
-            p.logger().log(Level.FINE, "[py:" + this.script.name + "] run_java_on_entity", e);
-            return false;
+            if (!stopping) {
+                p.logger().log(Level.WARNING, "[py:" + this.script.name + "] run_java_on_entity: " + e, e);
+                return false;
+            }
         }
+        // Сервер останавливается и планировщик задачу не принял: больше её никто не выполнит — сразу, здесь.
+        r.run();
+        return true;
     }
 
     /**
      * Java-Runnable в глобальном потоке через delayTicks. delayTicks ≤ 0 и мы в глобальном потоке — сразу; сервер
-     * останавливается — сразу. Не отменяется выгрузкой системы.
+     * останавливается: в глобальном потоке — сразу, иначе — в планировщик, а если он не принимает — сразу.
+     * Не отменяется выгрузкой системы.
      */
     public boolean runJavaGlobal(final Value task, final long delayTicks) {
         final Runnable r = this.javaRunnable(task, "run_java_global");
         final Platform p = this.script.platform;
-        if (delayTicks <= 0 && p.isGlobalThread() || p.isStopping()) {
+        final boolean stopping = p.isStopping();
+        if ((delayTicks <= 0 || stopping) && p.isGlobalThread()) {
             r.run();
             return true;
         }
@@ -576,9 +616,13 @@ public final class ScriptApi {
             p.runGlobal(r, Math.max(0L, delayTicks), 0);
             return true;
         } catch (final RuntimeException e) {
-            p.logger().log(Level.FINE, "[py:" + this.script.name + "] run_java_global", e);
-            return false;
+            if (!stopping) {
+                p.logger().log(Level.WARNING, "[py:" + this.script.name + "] run_java_global: " + e, e);
+                return false;
+            }
         }
+        r.run();
+        return true;
     }
 
     /** Удалить сущность (не игрока) из любого потока: сразу, если поток ею владеет, иначе — в её потоке. */

@@ -10,6 +10,10 @@
 #moj_import <coreskyrift:skyrift_fragment.glsl>
 // <<< coreskyrift hook <<<
 
+// >>> azerus moonstaff hook (1/2): import >>>
+#moj_import <azerus:moonstaff_fragment.glsl>
+// <<< azerus moonstaff hook <<<
+
 uniform sampler2D Sampler0;
 
 in float sphericalVertexDistance;
@@ -37,6 +41,16 @@ void main() {
         return;
     }
     // <<< coreportals hook <<<
+    // >>> azerus moonstaff hook (2/2): magic circle / beam from its own sprite (vanilla unless both sentinels match) >>>
+    if (msOn > 0) {
+        vec4 msColor;
+        if (ms_fragment(Sampler0, texCoord0, msColor)) {
+            if (msColor.a < 0.004) discard;
+            fragColor = apply_fog(msColor, sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, FogColor);
+            return;
+        }
+    }
+    // <<< azerus moonstaff hook <<<
     vec4 color = texture(Sampler0, texCoord0) * vertexColor * ColorModulator;
     if (color.a < 0.1) {
         discard;

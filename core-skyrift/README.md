@@ -265,6 +265,12 @@
 - `.vsh` = файл rezusmenu + два блока core-portals + два блока coreskyrift (импорт после импорта coreportals, вызов
   `sr_vertex` последней строкой `main()`, после `cp_vertex`);
 - `.fsh` = файл core-portals (ванильный + хук coreportals) + два блока coreskyrift.
+- поверх — два блока `azerus moonstaff` в каждом файле (магический круг и луч посоха, система core_magic): `.vsh` —
+  импорт `azerus:moonstaff_vertex.glsl` после импорта coreskyrift и вызов `ms_vertex` последней строкой `main()`
+  (только свои выходы, вершина и цвет не меняются); `.fsh` — импорт `azerus:moonstaff_fragment.glsl` после импорта
+  coreskyrift и блок сразу после блока coreportals (срабатывает только при маркере (R≤250, 233, 253) + UV2 (240, 240) и
+  подписи спрайта). Вставляет/убирает `nexo-items/tools/moonstaff_hook.py`, проверяет `nexo-items/tools/moonstaff_check.py`
+  (без блоков moonstaff файлы байт-в-байт прежние). Include `assets/azerus/shaders/include/` заливать раньше общих файлов.
 
 `assets/coreportals/…`, `assets/rezusmenu/…`, `assets/coreskyrift/…` копируются без изменений. Слитые файлы
 проверены компиляцией (glslang, include развёрнуты, ванильные include 1.21.11) и отрисовкой на Mesa: туман,

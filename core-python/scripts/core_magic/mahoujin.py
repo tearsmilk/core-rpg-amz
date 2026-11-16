@@ -50,14 +50,14 @@ def 生む(場所, item, 変形, 視距離, 種類, 主):
 def 残す(d, 場所):
     try:
         残像[str(d.getUniqueId())] = (d, 場所)
-    except Exception:
+    except BaseException:
         pass
 
 
 def 忘れる(d):
     try:
         残像.pop(str(d.getUniqueId()), None)
-    except Exception:
+    except BaseException:
         pass
 
 
@@ -67,10 +67,19 @@ def 後で消す(d, 場所, 遅れ):
 
     def 消去():
         忘れる(d)
-        if d.isValid():
+        if not d.isValid():
+            return
+        if amazake.owns(d):
             d.remove()
+        else:
+            kyoutsuu.消す(d)     # сущность всё же в другом потоке — пусть уберёт её собственный планировщик
 
-    amazake.run_in_region(場所, 消去, delay=max(1, int(遅れ)))
+    try:
+        amazake.run_in_region(場所, 消去, delay=max(1, int(遅れ)))
+    except BaseException as e:
+        amazake.log.debug("задача региона: " + str(e))
+        忘れる(d)
+        kyoutsuu.消す(d)
 
 
 class 魔法陣:
@@ -140,7 +149,7 @@ class 魔法陣:
         d = self.d
         if d is None or not d.isValid() or not amazake.owns(d):
             if d is not None:
-                kyoutsuu.消す(d, self.場所)
+                kyoutsuu.消す(d)
                 self.d = None
             return self.出す(eye, charge, 残り)
         at = self.場所
@@ -153,7 +162,7 @@ class 魔法陣:
         if 動いた:
             to = 位置(eye)
             if not amazake.owns(to):
-                kyoutsuu.消す(d, self.場所)
+                kyoutsuu.消す(d)
                 self.d = None
                 return False
             d.teleportAsync(to)
@@ -181,7 +190,7 @@ class 魔法陣:
         if d is None or not d.isValid():
             return
         if not amazake.owns(d):
-            kyoutsuu.消す(d, self.場所)
+            kyoutsuu.消す(d)
             return
         c = self.cfg.円
         d.setInterpolationDelay(0)
@@ -195,7 +204,7 @@ class 魔法陣:
         if d is None or not d.isValid():
             return
         if not amazake.owns(d):
-            kyoutsuu.消す(d, self.場所)
+            kyoutsuu.消す(d)
             return
         c = self.cfg.円
         d.setItemStack(kyoutsuu.効果品(c.モデル, keisan.R上限))
@@ -206,7 +215,7 @@ class 魔法陣:
         変形 = self._変形(0.01)
 
         def 消えゆく():
-            if d.isValid():
+            if d.isValid() and amazake.owns(d):
                 d.setInterpolationDelay(0)
                 d.setInterpolationDuration(c.消える)
                 d.setTransformation(変形)
@@ -218,7 +227,7 @@ class 魔法陣:
         """Сразу (выход, смерть, другой мир, телепорт, выгрузка): свой регион — удалить, иначе — задачей региона."""
         d = self._手放す()
         if d is not None:
-            kyoutsuu.消す(d, self.場所)
+            kyoutsuu.消す(d)
 
     def 表示(self):
         return self.d

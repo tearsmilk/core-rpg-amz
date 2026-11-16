@@ -284,7 +284,7 @@ def _face(tex):
 
 def circle_model():
     # Порядок отрисовки = порядок элементов: от дальнего (для самого мага) к ближнему.
-    layers = [('1', 8.06), ('2', 8.02), ('3', 7.98), ('4', 7.94)]   # ring, runes, hexagram, core
+    layers = [('1', 8.15), ('2', 8.05), ('3', 7.95), ('4', 7.85)]   # ring, runes, hexagram, core; шаг 0.1 px — без z-fighting вдали
     els = []
     for tex, z in layers:
         els.append({'from': [0, 0, z], 'to': [16, 16, z], 'shade': False, 'light_emission': 15,

@@ -32,6 +32,9 @@ final class FakePlatform implements Platform {
     /** Владеет ли текущий поток всем (по умолчанию — да: задачи выполняются сразу). */
     volatile boolean ownsAll = true;
     volatile boolean stopping;
+    volatile boolean globalThread = true;
+    /** Планировщики не принимают задачи (как у выключенного плагина). */
+    volatile boolean refuseTasks;
     final Plugin plugin = (Plugin) java.lang.reflect.Proxy.newProxyInstance(Plugin.class.getClassLoader(), new Class<?>[]{Plugin.class},
         (p, m, a) -> switch (m.getName()) {
             case "getName" -> "core-python";
@@ -146,6 +149,9 @@ final class FakePlatform implements Platform {
 
     @Override
     public Task runGlobal(final Runnable body, final long delayTicks, final long periodTicks) {
+        if (this.refuseTasks) {
+            throw new IllegalStateException("plugin disabled");
+        }
         if (periodTicks > 0) {
             return this.repeating(body);
         }
@@ -165,7 +171,7 @@ final class FakePlatform implements Platform {
 
     @Override
     public boolean isGlobalThread() {
-        return true;
+        return this.globalThread;
     }
 
     @Override
@@ -195,6 +201,9 @@ final class FakePlatform implements Platform {
 
     @Override
     public boolean executeForEntity(final Entity entity, final Runnable body, final long delayTicks) {
+        if (this.refuseTasks) {
+            throw new IllegalStateException("plugin disabled");
+        }
         this.entityTasks.add(body);
         return true;
     }

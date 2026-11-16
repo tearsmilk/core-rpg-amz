@@ -4,10 +4,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.graalvm.polyglot.Value;
@@ -35,42 +37,85 @@ final class JavaCall implements Runnable {
      * @param target объект Java
      * @param name   имя публичного метода
      * @param args   аргументы: объекты Java, строки, числа, bool, None
+     * @param floats floats[i] — args[i] это float Python (null — нет таких); 2.0 не отличить от 2 по значению
      * @param type   публичный класс/интерфейс, в котором искать метод (null — по иерархии класса объекта)
      */
-    static JavaCall of(final Object target, final String name, final Value[] args, final Class<?> type) {
+    static JavaCall of(final Object target, final String name, final Value[] args, final boolean[] floats, final Class<?> type) {
         if (target == null) {
             throw new IllegalArgumentException("java_task: объект = None");
         }
         if (type != null && !type.isInstance(target)) {
             throw new IllegalArgumentException("java_task: " + target.getClass().getName() + " — не " + type.getName());
         }
-        Method best = null;
-        Object[] bestArgs = null;
+        final List<Method> best = new ArrayList<>();
+        final List<Object[]> bestArgs = new ArrayList<>();
         int bestScore = NO;
         for (final Method m : candidates(type != null ? type : target.getClass(), name, args.length)) {
             final Class<?>[] params = m.getParameterTypes();
             final Object[] converted = new Object[args.length];
             int score = 0;
             for (int i = 0; i < args.length && score != NO; i++) {
-                final int s = score(args[i], params[i]);
+                final boolean fl = floats != null && i < floats.length && floats[i];
+                final int s = score(args[i], fl, params[i]);
                 if (s == NO) {
                     score = NO;
                 } else {
                     score += s;
-                    converted[i] = convert(args[i], params[i]);
+                    converted[i] = convert(args[i], fl, params[i]);
                 }
             }
+            if (score == NO || score > bestScore) {
+                continue;
+            }
             if (score < bestScore) {
-                best = m;
-                bestArgs = converted;
+                best.clear();
+                bestArgs.clear();
                 bestScore = score;
             }
+            best.add(m);
+            bestArgs.add(converted);
         }
-        if (best == null) {
+        if (best.isEmpty()) {
             throw new IllegalArgumentException("java_task: у " + (type != null ? type : target.getClass()).getName()
                 + " нет публичного метода " + name + " для " + args.length + " аргумент(ов) таких типов");
         }
-        return new JavaCall(target, best, bestArgs);
+        // Равные по счёту перегрузки — как в Java: самая специфичная (её параметры подходят ко всем остальным).
+        int pick = -1;
+        for (int i = 0; i < best.size() && pick < 0; i++) {
+            boolean most = true;
+            for (int j = 0; j < best.size() && most; j++) {
+                most = i == j || moreSpecific(best.get(i), best.get(j));
+            }
+            if (most) {
+                pick = i;
+            }
+        }
+        if (pick < 0) {
+            final StringBuilder list = new StringBuilder();
+            for (final Method m : best) {
+                list.append(' ').append(m.getName()).append(Arrays.toString(m.getParameterTypes()));
+            }
+            throw new IllegalArgumentException("java_task: неоднозначно, подходят:" + list
+                + " — задайте type=... или аргументы точнее (например, Java-объект нужного типа)");
+        }
+        return new JavaCall(target, best.get(pick), bestArgs.get(pick));
+    }
+
+    /** Параметры a подходят к параметрам b (a не менее специфичен, чем b). */
+    private static boolean moreSpecific(final Method a, final Method b) {
+        final Class<?>[] pa = a.getParameterTypes();
+        final Class<?>[] pb = b.getParameterTypes();
+        for (int i = 0; i < pa.length; i++) {
+            if (!boxed(pb[i]).isAssignableFrom(boxed(pa[i]))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Публичный тип, пакет которого модуль открывает всем (иначе invoke упадёт IllegalAccessException уже в задаче). */
+    private static boolean accessible(final Class<?> c) {
+        return Modifier.isPublic(c.getModifiers()) && c.getModule().isExported(c.getPackageName());
     }
 
     /** Публичные методы публичных типов иерархии (вызов через непубличный класс реализации не пройдёт проверку доступа). */
@@ -84,9 +129,9 @@ final class JavaCall implements Runnable {
             if (!seen.add(c)) {
                 continue;
             }
-            if (Modifier.isPublic(c.getModifiers())) {
+            if (accessible(c)) {
                 for (final Method m : c.getMethods()) {
-                    if (m.getName().equals(name) && m.getParameterCount() == arity && Modifier.isPublic(m.getDeclaringClass().getModifiers())) {
+                    if (m.getName().equals(name) && m.getParameterCount() == arity && accessible(m.getDeclaringClass())) {
                         found.putIfAbsent(Arrays.toString(m.getParameterTypes()), m);
                     }
                 }
@@ -117,7 +162,7 @@ final class JavaCall implements Runnable {
     }
 
     /** Насколько аргумент подходит к параметру: 0 — точно, больше — хуже, NO — не подходит. */
-    private static int score(final Value v, final Class<?> p) {
+    private static int score(final Value v, final boolean isFloat, final Class<?> p) {
         final Class<?> b = boxed(p);
         if (v == null || v.isNull()) {
             return p.isPrimitive() ? NO : 2;
@@ -142,12 +187,13 @@ final class JavaCall implements Runnable {
             return b.isAssignableFrom(String.class) ? (b == Object.class ? 4 : 1) : NO;
         }
         if (v.isNumber()) {
-            final boolean integral = v.fitsInLong();
+            // float Python с целым значением (2.0) тоже fitsInInt — поэтому смотрим на тип, а не на значение.
+            final boolean integral = !isFloat && v.fitsInLong();
             if (b == Integer.class) {
-                return v.fitsInInt() ? 0 : NO;
+                return integral && v.fitsInInt() ? 0 : NO;
             }
             if (b == Long.class) {
-                return integral ? 1 : NO;
+                return integral && v.fitsInLong() ? 1 : NO;
             }
             if (b == Double.class) {
                 return integral ? 2 : 0;
@@ -156,10 +202,10 @@ final class JavaCall implements Runnable {
                 return integral ? 3 : 1;
             }
             if (b == Short.class) {
-                return v.fitsInShort() ? 3 : NO;
+                return integral && v.fitsInShort() ? 3 : NO;
             }
             if (b == Byte.class) {
-                return v.fitsInByte() ? 3 : NO;
+                return integral && v.fitsInByte() ? 3 : NO;
             }
             if (b == Number.class || b == Object.class) {
                 return 4;
@@ -170,7 +216,7 @@ final class JavaCall implements Runnable {
         return NO;
     }
 
-    private static Object convert(final Value v, final Class<?> p) {
+    private static Object convert(final Value v, final boolean isFloat, final Class<?> p) {
         final Class<?> b = boxed(p);
         if (v == null || v.isNull()) {
             return null;
@@ -202,6 +248,9 @@ final class JavaCall implements Runnable {
         }
         if (b == Byte.class) {
             return v.asByte();
+        }
+        if (isFloat || !v.fitsInLong()) {
+            return v.asDouble();
         }
         return v.fitsInInt() ? (Object) v.asInt() : v.fitsInLong() ? (Object) v.asLong() : (Object) v.asDouble();
     }

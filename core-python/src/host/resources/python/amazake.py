@@ -191,7 +191,9 @@ def java_task(target, method, *args, type=None):
     """Java-Runnable без Python: при run() вызывает target.method(*args). Метод (публичный) выбирается и аргументы
     переводятся в Java сразу, поэтому задача работает и после выгрузки системы.
     args — объекты Java, str, int, float, bool, None (списки/dict Python — нельзя: они умрут вместе с контекстом).
-    type — класс/интерфейс (имя, java.type или Class), где искать метод, если перегрузки неоднозначны.
+    int → int/long/…, float (и 2.0) → только double/float (в Object — Double). Равные перегрузки — самая
+    специфичная, как в javac; если её нет — ValueError: задайте type или передайте Java-объект нужного типа.
+    type — класс/интерфейс (имя, java.type или Class), где искать метод.
 
         @amazake.on_unload
         def 片付け():
@@ -201,7 +203,8 @@ def java_task(target, method, *args, type=None):
             for e in 影:
                 amazake.remove_entity(e)
     """
-    return _checked(_host.javaTask, target, method, list(args), type)
+    # float отдельно: 2.0 по значению на стороне Java не отличить от 2 (иначе выбралась бы перегрузка int).
+    return _checked(_host.javaTask, target, method, list(args), [isinstance(a, float) for a in args], type)
 
 
 def run_java_for_player(player, task):
@@ -212,12 +215,14 @@ def run_java_for_player(player, task):
 
 def run_java_on_entity(entity, task, delay=0):
     """Java-Runnable в потоке сущности через delay тиков; delay=0 и поток уже владеет ею — сразу.
-    False — сущность удалена / core-python выключен."""
+    При остановке сервера: владелец — сразу (delay не ждём), иначе планировщик, а если он не принял — сразу.
+    False — сущность удалена / планировщик отказал."""
     return bool(_checked(_host.runJavaOnEntity, entity, _java_runnable(task, "run_java_on_entity"), int(delay)))
 
 
 def run_java_global(task, delay=0):
-    """Java-Runnable в глобальном потоке через delay тиков; delay=0 и мы в глобальном потоке — сразу."""
+    """Java-Runnable в глобальном потоке через delay тиков; delay=0 и мы в глобальном потоке — сразу.
+    При остановке сервера: в глобальном потоке — сразу, иначе планировщик, а если он не принял — сразу."""
     return bool(_checked(_host.runJavaGlobal, _java_runnable(task, "run_java_global"), int(delay)))
 
 

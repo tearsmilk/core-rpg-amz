@@ -179,10 +179,59 @@ def 補完(sender, args):
 | текст | `amazake.mm("<gold>Hi <n>", n="Rezus")` → Component, `item_text(...)` (без курсива), `send(target, text, **ph)`, `actionbar(p, text, **ph)` | |
 | лог | `amazake.log.info/warn/error/debug(...)`; `print()` тоже уходит в лог | |
 | Java | `import java; java.type("org.bukkit.Material")`; `amazake.java_class(name)` (ищет и в плагинах); `amazake.plugin_class("Nexo", "com.nexomc.nexo.api.NexoItems")` (или `None`); `java.instanceof(obj, Type)`; `amazake.Bukkit` | |
+| класс как `Class` | `amazake.find_class("org.bukkit.entity.BlockDisplay")` → `java.lang.Class` (сервер, затем плагины) — для `world.spawn(…, cls)`, `getMethod`, `isInstance` | |
+| плагин | `amazake.plugin()` → `Plugin`, от имени которого работает core-python (для `player.showEntity(plugin, e)` и других API Bukkit, которым нужен `Plugin`) | любой |
+| Java-задача без Python | `amazake.java_task(obj, "method", *args, type=None)` → Java-`Runnable` (см. ниже) | любой |
+| задачи после выгрузки | `run_java_for_player(p, task)`, `run_java_on_entity(e, task, delay=0)`, `run_java_global(task, delay=0)`, `remove_entity(e)` → `True/False` — **не отменяются выгрузкой** (см. ниже) | любой |
 | сведения | `amazake.name`, `amazake.version`, `amazake.script_folder`, `amazake.data_folder()` | |
 
 Модули своей системы импортируются как обычно (`import items` — файл `items.py` рядом с `main.py`).
 Стандартная библиотека Python есть (json, re, random, math, dataclasses, …); C-расширений (numpy и т.п.) — нет.
+
+### Java-задачи после выгрузки
+
+`run_*` отменяются при выгрузке, а контекст Python закрывается сразу после `@on_unload` — функцию Python после этого
+уже не вызвать. То, что надо доделать в чужом потоке (записать PDC игрока, снять кадр с предмета, удалить сущность в
+другом регионе, снять расширение PlaceholderAPI в глобальном потоке), ставится **чистой Java-задачей**:
+
+```python
+@amazake.on_unload
+def 片付け():                                      # любой поток
+    for p in 印のある人:
+        pdc = p.getPersistentDataContainer()
+        amazake.run_java_for_player(p, amazake.java_task(pdc, "remove", amazake.key("mark")))
+    for e in 影:
+        amazake.remove_entity(e)                   # сразу, если поток владеет сущностью, иначе — в её потоке
+```
+
+- `java_task(obj, "method", *args, type=None)` — `Runnable`, который вызывает публичный метод `obj.method(*args)`.
+  Метод (перегрузка — по типам аргументов) и сами аргументы фиксируются **при создании**, поэтому задача не зависит
+  от Python. Аргументы — объекты Java, `str`, `int`, `float`, `bool`, `None` (списки/dict Python нельзя — они умрут
+  вместе с контекстом). `int` идёт в `int`/`long`/…, `float` — только в `double`/`float` (и `2.0` тоже: в параметр
+  `Object`/`Number` уйдёт `Double`, не `Integer`). Из равных по типам перегрузок берётся самая специфичная, как в
+  javac; если такой нет (например, `None` в `StringBuilder.append`) — `ValueError` сразу, при создании задачи: задайте
+  `type=` или передайте Java-объект нужного типа. Методы ищутся только в публичных типах экспортируемых пакетов
+  (класс реализации вроде `sun.nio.ch.FileChannelImpl` пропускается — метод берётся из `FileChannel`), так что
+  ошибка доступа тоже видна при создании, а не в логе после выгрузки.
+- Задачей может быть и любой другой Java-объект `Runnable` (`MethodHandleProxies`, `java.beans.EventHandler`, …).
+  Функция Python и прокси GraalVM поверх неё (`TypeError`) — нет. Java-объект, который **внутри** держит функцию
+  Python (`Thread(lambda: ...)`, `FutureTask(...)`), хост отличить не может — так не делайте: после выгрузки он
+  упадёт на закрытом контексте (ошибка уйдёт в лог).
+- `run_java_for_player(p, task)` — `SystemContext.runOnceForPlayer`, как у Java-систем: через тик в потоке игрока;
+  пока core-python выключается и поток владеет игроком (или сервер останавливается) — сразу. `False` — игрок ушёл.
+- `run_java_on_entity(e, task, delay=0)` / `run_java_global(task, delay=0)` — в потоке сущности / в глобальном
+  потоке через `delay` тиков; `delay=0` и поток уже владелец — сразу.
+- Сервер останавливается (`Bukkit.isStopping()`): если текущий поток — владелец (сущности / глобальный), задача
+  выполняется сразу, `delay` не ждём. Иначе она сначала отдаётся планировщику (чужую сущность из своего потока не
+  трогаем — на Folia это `IllegalStateException`), и только если он её не принимает (плагин уже выключается) —
+  выполняется сразу, в текущем потоке: больше её никто не выполнит.
+- Планировщик отказал не во время остановки — `False` и `WARNING` в логе системы.
+- Задачи **не отменяются** выгрузкой системы, ошибка задачи пишется в лог системы и дальше не идёт. Звать можно из
+  любого потока. Если API нет (старый `core-python.azs`), `hasattr(amazake, "run_java_global")` — `False`.
+
+**Исключения Java в Python.** Ошибка Java-метода приходит в Python как `polyglot.ForeignException` — это
+`BaseException`, но **не** `Exception`: `except Exception:` её не ловит (нужен `except BaseException:` или
+`except polyglot.ForeignException:`). Функции из этого раздела сами переводят ошибки проверки в `ValueError`/`TypeError`.
 
 ### Правила, которые важно не нарушать
 
@@ -199,10 +248,13 @@ def 補完(sender, args):
 
 ## Тесты
 
-`./gradlew test` — 9 тестов на настоящем GraalPy (интерпретатор) с поддельной платформой (`FakePlatform`):
+`./gradlew test` — 11 тестов на настоящем GraalPy (интерпретатор) с поддельной платформой (`FakePlatform`):
 загрузка, события, команды с параметрами из manifest и автодополнением, конфиг/хранилище/задачи, 8 потоков в одном
 контексте, выгрузка (всё снято, старый обработчик больше не зовёт Python), ошибки (лог с трассой, плохой модуль ничего
-не регистрирует), 8 перезагрузок (куча не растёт), доступ к Java; `CustomArmorScriptTest` грузит
+не регистрирует), 8 перезагрузок (куча не растёт), доступ к Java; `JavaTasksTest` — `plugin()`, `find_class()`,
+`java_task` (выбор перегрузки по типам, `float` 2.0 ≠ `int`, неоднозначность → ошибка, неэкспортируемые пакеты
+пропускаются), `run_java_*`/`remove_entity`: задачи из `@on_unload` выполняются после закрытия контекста, при
+остановке сервера — в планировщик, а при отказе — сразу, функция Python и её прокси отвергаются, ошибка задачи — в лог; `CustomArmorScriptTest` грузит
 `scripts/custom_armor` из репозитория и проверяет его события, команду `/carmor` (+ `/防具`), логику бонусов.
 
 Живые проверки на mc-test (JDK 25+37 — та же сборка, что на проде) — `/home/user/mc-bot/py1_armor.js`,

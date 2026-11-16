@@ -52,7 +52,7 @@ def クラス(名前):
     t = java.type(名前)
     try:
         return getattr(t, "class")
-    except Exception:
+    except BaseException:
         return t
 
 
@@ -96,19 +96,26 @@ def 鳴らす(world, 場所, 音列, 足す=0.0):
         try:
             world.playSound(場所, s.鍵, SoundCategory.PLAYERS, s.音量,
                             s.高さ if not 足す else f32(keisan.挟む(s.高さ + 足す, 0.5, 2.0)))
-        except Exception as e:
+        except BaseException as e:
             amazake.log.debug("звук " + s.鍵 + ": " + str(e))
 
 
 _粒型 = {}
+_Void = java.type("java.lang.Void")
 
 
 def 粒型(名前):
+    """Particle по имени (кэш). Неизвестное имя или частица, которой нужны данные (DUST, BLOCK, …), — END_ROD:
+    опечатка в config.yml не должна ломать выстрел."""
     t = _粒型.get(名前)
     if t is None:
         try:
             t = Particle.valueOf(名前)
-        except Exception:
+            dt = t.getDataType()
+            if dt is not None and not dt.equals(getattr(_Void, "class")):
+                amazake.log.warn("частице " + 名前 + " нужны данные — заменена на END_ROD")
+                t = Particle.END_ROD
+        except BaseException:   # исключения Java (ForeignException) — не Exception
             amazake.log.warn("частица " + 名前 + " не найдена — заменена на END_ROD")
             t = Particle.END_ROD
         _粒型[名前] = t
@@ -118,21 +125,30 @@ def 粒型(名前):
 def 散らす(world, 粒, x, y, z):
     if 粒.数 <= 0:
         return
-    world.spawnParticle(粒型(粒.種類), float(x), float(y), float(z), int(粒.数),
-                        float(粒.広がり), float(粒.広がり), float(粒.広がり), float(粒.速さ))
+    try:
+        world.spawnParticle(粒型(粒.種類), float(x), float(y), float(z), int(粒.数),
+                            float(粒.広がり), float(粒.広がり), float(粒.広がり), float(粒.速さ))
+    except BaseException as e:
+        amazake.log.debug("частицы " + 粒.種類 + ": " + str(e))
 
 
-# --------------------------------------------------------------------------------------------- контекст core-python
-# API amazake не отдаёт объект плагина (нужен для планировщика региона в @on_unload, когда Python-задачи уже
-# отменены). Берём через отражение, как core_effects: ScriptApi.script → PyScript.platform → BukkitPlatform.context.
-# Неудача — только предупреждение: дисплеи всё равно не сохраняются в мир (setPersistent(false)) и подчищаются
-# при следующей загрузке системы.
+# --------------------------------------------------------------------------------------------- удаление дисплеев
+# Новый core-python даёт amazake.remove_entity(e): сразу, если поток владеет сущностью, иначе — Java-задачей в её
+# потоке (планировщик сущности, не региона: сущность могла уйти из места, где мы её видели в последний раз), и это
+# работает даже из @on_unload, когда Python уже закрывается. Старый core-python.azs (он сейчас на проде и на
+# тестовом сервере) такого API не имеет — тогда, и только тогда, берём плагин отражением по закрытым полям хоста
+# (ScriptApi.script → PyScript.platform → BukkitPlatform.context, как core_effects) и сами ставим Java-Runnable
+# Entity.remove в планировщик сущности. Неудача — только предупреждение: дисплеи не сохраняются в мир
+# (setPersistent(false)) и подчищаются при следующей загрузке системы.
+# TODO: убрать ветку «старый core-python», когда на проде будет новый core-python.azs.
 
+_新API = hasattr(amazake, "remove_entity") and hasattr(amazake, "plugin")
 _文脈 = []
 _文脈警告 = [False]
 
 
-def 文脈():
+def _旧文脈():
+    """Только для старого core-python: SystemContext ядра через закрытые поля хоста, или None."""
     if _文脈:
         return _文脈[0]
     try:
@@ -150,98 +166,63 @@ def 文脈():
             raise RuntimeError("context = null")
         _文脈.append(c)
         return c
-    except Exception as e:
+    except BaseException as e:   # исключения Java (ForeignException) — не Exception
         if not _文脈警告[0]:
             _文脈警告[0] = True
-            amazake.log.warn("не найден контекст core-python (" + str(e) + "): дисплеи чужих регионов при выгрузке "
-                             "не убрать сразу (они не сохраняются и подчистятся при следующей загрузке)")
+            amazake.log.warn("старый core-python без amazake.remove_entity(), и его контекст не найден (" + str(e)
+                             + "): дисплеи чужих потоков при выгрузке не убрать сразу (они не сохраняются и "
+                             "подчистятся при следующей загрузке)")
         return None
 
 
 def プラグイン():
-    c = 文脈()
+    if _新API:
+        return amazake.plugin()
+    c = _旧文脈()
     if c is None:
         return None
     try:
         return c.plugin()
-    except Exception:
+    except BaseException:
         return None
 
 
-# --------------------------------------------------------------------------------------------- Java-задачи без Python
-
 _MH = java.type("java.lang.invoke.MethodHandles")
 _MHP = java.type("java.lang.invoke.MethodHandleProxies")
-_ArrayList = java.type("java.util.ArrayList")
-_Void = java.type("java.lang.Void")
 _Runnable = getattr(java.type("java.lang.Runnable"), "class")
-_ObjectArray = java.type("java.lang.Object[]")
 _ClassArray = java.type("java.lang.Class[]")
+_EntityClass = getattr(java.type("org.bukkit.entity.Entity"), "class")
 
 
-def _クラス(名):
-    return amazake._host.findClass(名)
-
-
-def ジャバ処理(型名, メソッド, 引数型名, 対象, *引数):
-    """Runnable: 対象.メソッド(*引数) — только Java (публичный метод класса/интерфейса 型名; результат
-    отбрасывается). Работает и после закрытия контекста Python."""
-    型s = _ArrayList()
-    for n in 引数型名:
-        型s.add(_クラス(n))
-    型 = _クラス(型名) if isinstance(型名, str) else 型名
-    m = 型.getMethod(メソッド, 型s.toArray(_ClassArray(0)))
-    mh = _MH.publicLookup().unreflect(m)
-    if not m.getReturnType().equals(_Void.TYPE):
-        mh = _MH.dropReturn(mh)
-    値 = _ObjectArray(1 + len(引数))
-    値[0] = 対象
-    for i, v in enumerate(引数):
-        値[i + 1] = v
-    mh = _MH.insertArguments(mh, 0, 値)
+def _Java削除(d):
+    """Java-Runnable d.remove() без Python (переживает закрытие контекста). Только для старого core-python."""
+    m = _EntityClass.getMethod("remove", _ClassArray(0))
+    mh = _MH.publicLookup().unreflect(m).bindTo(d)
     return _MHP.asInterfaceInstance(_Runnable, mh)
 
 
-def ジャバで地域へ(場所, 処理):
-    """Java-Runnable в потоке региона места (Bukkit.getRegionScheduler().execute). False — не вышло."""
-    p = プラグイン()
-    if p is None or 場所 is None:
-        return False
-    try:
-        Bukkit.getRegionScheduler().execute(p, 場所, 処理)
-        return True
-    except Exception as e:
-        amazake.log.debug("планировщик региона: " + str(e))
-        return False
-
-
-def 消す(d, 場所=None, Javaで=False):
-    """Убрать дисплей из любого потока: свой регион — сразу; иначе задачей региона его места (場所 — последнее
-    известное место; без него — d.getLocation()). Javaで — без Python (выгрузка)."""
+def 消す(d):
+    """Убрать дисплей из любого потока (в том числе из @on_unload): поток владеет им — сразу, иначе — в потоке
+    самой сущности (её планировщиком)."""
     if d is None:
+        return
+    if _新API:
+        try:
+            amazake.remove_entity(d)
+        except BaseException as e:
+            amazake.log.debug("remove_entity: " + str(e))
         return
     try:
         if amazake.owns(d):
             if d.isValid():
                 d.remove()
             return
-    except Exception:
+    except BaseException:
         pass
-    at = 場所
-    if at is None:
-        try:
-            at = d.getLocation()
-        except Exception:
-            return
-    if Javaで:
-        ジャバで地域へ(at, ジャバ処理("org.bukkit.entity.Entity", "remove", [], d))
+    p = プラグイン()
+    if p is None:
         return
-
-    def 地域で():
-        if d.isValid():
-            d.remove()
-
     try:
-        amazake.run_in_region(at, 地域で)
-    except Exception:
-        ジャバで地域へ(at, ジャバ処理("org.bukkit.entity.Entity", "remove", [], d))
+        d.getScheduler().execute(p, _Java削除(d), None, 1)
+    except BaseException as e:
+        amazake.log.debug("планировщик сущности: " + str(e))

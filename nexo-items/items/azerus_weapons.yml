@@ -99,3 +99,31 @@ azerus_crimson_scythe:
     model: azerus:item/crimson_scythe
   Components:
     item_model: azerus:crimson_scythe
+
+# Посох Лунного Странника: объёмная модель (source/Посох-лунного-странника.bbmodel, собирается tools/moon_staff.py).
+# item_model указывает на своё определение pack/assets/azerus/items/moon_staff.json: в слоте/на земле/в рамке — основа,
+# в руках при использовании (using_item) — поза «колдует» moon_staff_cast (самоцвет светится ярче).
+# consumable даёт ванильное «удержание ПКМ» с анимацией лука: 3600 с, без звука/частиц/эффектов — посох не тратится
+# (core_magic отменяет использование раньше, а PlayerItemConsumeEvent отменяет на всякий случай; он же восстанавливает
+# компонент, если его нет). Магический круг и луч — система core-python/scripts/core_magic (по id azerus_moon_staff),
+# их вид — модели moon_staff_circle / moon_staff_beam и шейдерный хук azerus:moonstaff_* (nexo-items/README.md).
+azerus_moon_staff:
+  itemname: "<gradient:#ffd36a:#ff4a5a:#7fd8ff>Посох Лунного Странника</gradient>"
+  material: DIAMOND_SWORD
+  lore:
+    - "<gray>Посох странника, что ходит"
+    - "<gray>лунными дорогами между мирами."
+    - ""
+    - "<#7fd8ff>✦ <gray>Зажмите <white>ПКМ</white> на <white>3 с</white> — откроется магический круг."
+    - "<#7fd8ff>✦ <gray>Отпустите — <white>луч света</white> пронзит всех на пути:"
+    - "<gray>   <#ff6a6a>10 урона</#ff6a6a>, до <white>29 блоков</white>."
+    - "<#7fd8ff>✦ <gray>Перезарядка: <white>3 с</white>."
+  Pack:
+    model: azerus:item/moon_staff
+  Components:
+    item_model: azerus:moon_staff
+    consumable:
+      consume_seconds: 3600
+      animation: BOW
+      sound: minecraft:intentionally_empty
+      consume_particles: false

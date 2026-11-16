@@ -12,7 +12,14 @@ from settei import f32
 Consumable = java.type("io.papermc.paper.datacomponent.item.Consumable")
 ItemUseAnimation = java.type("io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation")
 ItemLore = java.type("io.papermc.paper.datacomponent.item.ItemLore")
+UseCooldown = java.type("io.papermc.paper.datacomponent.item.UseCooldown")
 CONSUMABLE = DataComponentTypes.CONSUMABLE
+USE_COOLDOWN = DataComponentTypes.USE_COOLDOWN
+
+#: Своя группа перезарядки предмета (компонент use_cooldown). По ней player.setCooldown(группа, тики) рисует
+#: «шторку» перезарядки только на посохе, и клиент сам не начинает удержание ПКМ, пока она идёт. Без своей группы
+#: перезарядка легла бы на весь DIAMOND_SWORD — то есть на все азерус-оружия на этом материале.
+冷却組 = "azerus:moon_staff"
 
 # Вид запасного посоха (без Nexo) — как в nexo-items/items/azerus_weapons.yml.
 名前 = "<gradient:#ffd36a:#ff4a5a:#7fd8ff>Посох Лунного Странника</gradient>"
@@ -36,7 +43,7 @@ def 杖か(item):
         if item.isEmpty():
             return False
         return amazake.data(item).get_string(kyoutsuu.NEXO_ID) == settei.今().杖.nexo_id
-    except Exception:
+    except BaseException:
         return False
 
 
@@ -46,16 +53,59 @@ def 消費部品(秒=None):
             .sound(Key.key("minecraft", "intentionally_empty")).hasConsumeParticles(False).build())
 
 
+def 冷却部品():
+    return UseCooldown.useCooldown(f32(max(0.05, settei.今().冷却.秒))).cooldownGroup(kyoutsuu.鍵(冷却組)).build()
+
+
+def _消費が正しいか(item):
+    """consumable есть И с нашими значениями. Nexo, принявший секцию consumable, но не понявший какой-то ключ,
+    дал бы компонент со значениями по умолчанию (1.6 с, анимация EAT): удержание кончалось бы на 32-м тике, и посох
+    не стрелял бы никогда. Поэтому проверяем значения, а не только наличие."""
+    if not item.hasData(CONSUMABLE):
+        return False
+    c = item.getData(CONSUMABLE)
+    if c is None:
+        return False
+    return (float(c.consumeSeconds()) >= settei.今().杖.秒 - 0.01
+            and c.animation().name() == "BOW"
+            and c.consumeEffects().isEmpty())
+
+
+def _冷却が正しいか(item):
+    if not item.hasData(USE_COOLDOWN):
+        return False
+    u = item.getData(USE_COOLDOWN)
+    g = None if u is None else u.cooldownGroup()
+    return g is not None and g.asString() == 冷却組
+
+
+def 壊れているか(item):
+    """Посох с неверным/отсутствующим consumable или без своей группы перезарядки."""
+    try:
+        return not (_消費が正しいか(item) and _冷却が正しいか(item))
+    except BaseException as e:
+        amazake.log.debug("проверка компонентов посоха: " + str(e))
+        return True
+
+
 def 直すべきか(item):
-    return settei.今().杖.修理 and 杖か(item) and not item.hasData(CONSUMABLE)
+    return settei.今().杖.修理 and 杖か(item) and 壊れているか(item)
 
 
 def 直す(item):
-    """Посоху без consumable — вернуть компонент (в этот же ItemStack). True — менял."""
+    """Посоху с неверными компонентами — поставить наши consumable и use_cooldown (в этот же ItemStack).
+    True — менял."""
     if not 直すべきか(item):
         return False
-    item.setData(CONSUMABLE, 消費部品())
+    _部品を付ける(item)
     return True
+
+
+def _部品を付ける(item):
+    if not _消費が正しいか(item):
+        item.setData(CONSUMABLE, 消費部品())
+    if not _冷却が正しいか(item):
+        item.setData(USE_COOLDOWN, 冷却部品())
 
 
 def 枠を直す(player, 枠):
@@ -78,7 +128,7 @@ def 全部直す(player):
         try:
             if 枠を直す(player, i):
                 n += 1
-        except Exception:
+        except BaseException:
             pass
     return n
 
@@ -107,10 +157,13 @@ def 作る():
                 item = b.build()
             else:
                 amazake.log.warn("в Nexo нет предмета", nid, "— выдаю запасной (azerus_weapons.yml залит?)")
-        except Exception as e:
+        except BaseException as e:
             amazake.log.warn("Nexo не выдал", nid, ":", str(e), "— выдаю запасной")
     if item is None:
         item = _予備()
-    if not item.hasData(CONSUMABLE):
-        item.setData(CONSUMABLE, 消費部品())
+    try:
+        if 壊れているか(item):
+            _部品を付ける(item)
+    except BaseException as e:
+        amazake.log.warn("компоненты посоха: " + str(e))
     return item

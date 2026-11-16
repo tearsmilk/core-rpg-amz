@@ -53,6 +53,26 @@ public class JavaTasksTest {
         });
     }
 
+    /** Прокси GraalVM поверх функции Python (как Value.as(Runnable.class)) — должен отвергаться. */
+    public static volatile Object lastProxy;
+
+    public static Object proxyOf(final org.graalvm.polyglot.Value fn) {
+        lastProxy = fn.as(Runnable.class);
+        return lastProxy;
+    }
+
+    /** Класс реализации из неэкспортируемого пакета (sun.nio.ch.FileChannelImpl) — метод берётся из FileChannel. */
+    @Test
+    void nonExportedPackagesAreSkipped() throws Exception {
+        final Path f = Files.writeString(this.root.resolve("x.bin"), "abc");
+        try (var ch = java.nio.channels.FileChannel.open(f)) {
+            assertTrue(!ch.getClass().getModule().isExported(ch.getClass().getPackageName()), ch.getClass().getName());
+            final JavaCall c = JavaCall.of(ch, "size", new org.graalvm.polyglot.Value[0], null, null);
+            assertTrue(c.toString().startsWith("FileChannel.size"), c.toString());
+            c.run();
+        }
+    }
+
     @BeforeEach
     void setUp() {
         CALLS.clear();
@@ -79,11 +99,32 @@ public class JavaTasksTest {
             型 = amazake.find_class("org.bukkit.Material")
             assert str(型.getName()) == "org.bukkit.Material" and 型.isEnum()
 
-            # перегрузки и числа: int → append(int), float → append(double), str → append(String)
+            # перегрузки и числа: int → append(int), float → append(double) (и 2.0 тоже), str → append(String)
             sb = java.type("java.lang.StringBuilder")()
-            for v in (3, 2.5, "x", True, None):
+            for v in (3, 2.5, 2.0, "x", True):
                 amazake.java_task(sb, "append", v).run()
-            assert str(sb.toString()) == "32.5xtruenull", str(sb.toString())
+            assert str(sb.toString()) == "32.52.0xtrue", str(sb.toString())
+            # float 2.0 в параметр Object → Double, не Integer; int → Integer
+            спис = java.type("java.util.ArrayList")()
+            for v in (2.0, 2, None):
+                amazake.java_task(спис, "add", v).run()
+            assert str(спис.toString()) == "[2.0, 2, null]", str(спис.toString())
+            # float в int-параметр не подходит
+            try:
+                amazake.java_task(спис, "get", 1.0)
+                assert False, "get(1.0) принят"
+            except ValueError:
+                pass
+            # None в append(String/Object/CharSequence/char[]...) — неоднозначно, как в javac
+            try:
+                amazake.java_task(sb, "append", None)
+                assert False, "append(None) принят"
+            except ValueError as e:
+                assert "неоднозначно" in str(e), str(e)
+            # равные по счёту, но одна специфичнее: append(CharSequence) vs append(Object) для StringBuilder → CharSequence
+            sb2 = java.type("java.lang.StringBuilder")()
+            amazake.java_task(sb2, "append", java.type("java.lang.StringBuilder")("ok")).run()
+            assert str(sb2.toString()) == "ok"
 
             保存 = {}
 
@@ -96,12 +137,19 @@ public class JavaTasksTest {
                     event.mark(str(amazake.run_java_global(amazake.java_task(event, "mark", "全体"))))
                 elif p == "stop":
                     event.mark(str(amazake.run_java_on_entity(試験.entity, amazake.java_task(event, "mark", "止"))))
+                elif p == "stopG":
+                    event.mark(str(amazake.run_java_global(amazake.java_task(event, "mark", "全"), delay=40)))
                 elif p == "reject":
                     try:
                         amazake.run_java_global(lambda: None)
                         event.mark("accepted")
                     except TypeError:
                         event.mark("rejected")
+                    try:
+                        amazake.run_java_global(試験.proxyOf(lambda: None))
+                        event.mark("proxy-accepted")
+                    except TypeError:
+                        event.mark("proxy-rejected")
                     try:
                         amazake.java_task(event, "nope")
                     except ValueError:
@@ -132,7 +180,10 @@ public class JavaTasksTest {
 
         final TestEvent reject = new TestEvent("reject");
         this.platform.fire(reject);
-        assertEquals(List.of("rejected", "no-method", "no-list", "no-player"), reject.marks, this.platform.log.toString());
+        assertEquals(List.of("rejected", "proxy-rejected", "no-method", "no-list", "no-player"), reject.marks, this.platform.log.toString());
+
+        assertTrue(lastProxy != null && ScriptApi.pythonBacked(lastProxy), String.valueOf(lastProxy));
+        assertTrue(!ScriptApi.pythonBacked(new Thread()));
 
         final TestEvent boom = new TestEvent("boom");
         this.platform.fire(boom);
@@ -140,14 +191,40 @@ public class JavaTasksTest {
         assertTrue(this.platform.log.stream().anyMatch(l -> l.startsWith("WARNING") && l.contains("run_java_global")
             && l.contains("IndexOutOfBounds")), this.platform.log.toString());
 
-        // Поток не владеет сущностью, сервер останавливается — планировщики не работают: сразу.
+        // Сервер останавливается, поток не владеет сущностью: сначала планировщик сущности (не трогаем чужую сущность
+        // из своего потока), и только если он задачу не принимает — сразу, здесь.
         this.platform.ownsAll = false;
         this.platform.stopping = true;
         final TestEvent stop = new TestEvent("stop");
         this.platform.fire(stop);
-        assertEquals(List.of("止", "True"), stop.marks);
-        assertTrue(this.platform.entityTasks.isEmpty());
+        assertEquals(List.of("True"), stop.marks, "остановка, чужой поток — в планировщик сущности");
+        assertEquals(1, this.platform.entityTasks.size());
+        this.platform.runEntityTasks();
+        assertEquals(List.of("True", "止"), stop.marks);
+        this.platform.entityTasks.clear();
+        this.platform.refuseTasks = true;
+        final TestEvent stop2 = new TestEvent("stop");
+        this.platform.fire(stop2);
+        assertEquals(List.of("止", "True"), stop2.marks, "планировщик не принял — сразу");
+        // Глобальная: в глобальном потоке при остановке delay не ждём; в чужом потоке — планировщик, отказ → сразу.
+        this.platform.refuseTasks = false;
+        final TestEvent g1 = new TestEvent("stopG");
+        this.platform.fire(g1);
+        assertEquals(List.of("全", "True"), g1.marks);
+        this.platform.globalThread = false;
+        this.platform.refuseTasks = true;
+        final TestEvent g2 = new TestEvent("stopG");
+        this.platform.fire(g2);
+        assertEquals(List.of("全", "True"), g2.marks);
+        // Не останавливается, планировщик отказал — False и предупреждение в логе.
         this.platform.stopping = false;
+        final TestEvent g3 = new TestEvent("stopG");
+        this.platform.fire(g3);
+        assertEquals(List.of("False"), g3.marks);
+        assertTrue(this.platform.log.stream().anyMatch(l -> l.startsWith("WARNING") && l.contains("run_java_global: ")),
+            this.platform.log.toString());
+        this.platform.refuseTasks = false;
+        this.platform.globalThread = true;
 
         final TestEvent held = new TestEvent("hold");
         this.platform.fire(held);
