@@ -12,12 +12,56 @@ ItemStack = amazake.java_class("org.bukkit.inventory.ItemStack")
 System = amazake.java_class("java.lang.System")
 
 設定 = {}
+全体 = {}
 
 
 def 読み込み():
-    global 設定
-    設定 = amazake.config("potions.yml").get("potions", {}) or {}
+    global 設定, 全体
+    全体 = amazake.config("potions.yml") or {}
+    設定 = 全体.get("potions", {}) or {}
     amazake.log.info("зелий в potions.yml:", len(設定))
+
+
+def MMOCoreのデータ(player):
+    """PlayerData MMOCore или None (если MMOCore нет)."""
+    try:
+        return amazake.plugin_class("MMOCore", "net.Indyuce.mmocore.api.player.PlayerData").get(player)
+    except Exception:
+        return None
+
+
+def 職業ID(データ):
+    try:
+        return str(データ.getProfess().getId()).upper()
+    except Exception:
+        return None
+
+
+def 回復(player, 種類, 量):
+    """Восстановить сразу. Возвращает (можно_ли_пить, сообщение_об_отказе)."""
+    文 = 全体.get("messages", {}) or {}
+    if 種類 == "health":
+        最大 = player.getAttribute(amazake.attribute("max_health")).getValue()
+        if player.getHealth() >= 最大:
+            return False, 文.get("full")
+        player.setHealth(min(最大, player.getHealth() + 量))
+        return True, None
+    データ = MMOCoreのデータ(player)
+    if データ is None:
+        return False, None
+    職業 = 職業ID(データ)
+    魔法職 = [str(x).upper() for x in 全体.get("mana-classes", [])]
+    無職 = [str(x).upper() for x in 全体.get("no-class", ["HUMAN"])]
+    if 種類 == "mana" and 職業 not in 魔法職:
+        return False, 文.get("only-mages")
+    if 種類 == "energy" and (職業 is None or 職業 in 魔法職 or 職業 in 無職):
+        return False, 文.get("only-energy")
+    最大 = データ.getStats().getStat("MAX_MANA")
+    if データ.getMana() >= 最大:
+        return False, 文.get("full")
+    理由 = amazake.java_class("net.Indyuce.mmocore.api.event.PlayerResourceUpdateEvent$UpdateReason").OTHER
+    データ.giveMana(float(量), 理由)
+    return True, None
 
 
 @amazake.on_load
@@ -39,6 +83,15 @@ def 飲んだ(event):
     if ポーション is None:
         return
     player = event.getPlayer()
+    種類 = ポーション.get("restore")
+    if 種類:
+        量 = float(ポーション.get("amount", 0))
+        できる, 拒否 = 回復(player, 種類, 量)
+        if not できる:
+            event.setCancelled(True)   # не выпито — зелье остаётся в руке
+            if 拒否:
+                amazake.actionbar(player, 拒否)
+            return
     if not ポーション.get("keep-bottle", False):
         event.setReplacement(ItemStack.empty())   # бутылка не возвращается — зелье просто пропадает
     for 効果 in ポーション.get("effects", []) or []:
@@ -56,7 +109,7 @@ def 飲んだ(event):
         体力増加(player, 体力, 期限)
     文 = ポーション.get("message")
     if 文:
-        amazake.actionbar(player, 文)
+        amazake.actionbar(player, 文, amount=str(int(float(ポーション.get("amount", 0)))))
 
 
 def 体力増加(player, 体力, 期限):

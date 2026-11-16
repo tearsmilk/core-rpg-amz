@@ -1,12 +1,27 @@
 # Зелья по id предмета Nexo (plugins/Nexo/items/skulpt/basic_potions.yml).
-#   effects       — эффекты: type (regeneration, speed, …), seconds, level (1 = I)
-#   health-boost  — прибавка к максимальному здоровью: hearts (можно дробно), seconds
+#   restore       — что восстанавливает сразу: health (здоровье), mana (мана магов), energy (энергия остальных)
+#   amount        — сколько (здоровье: 2 = одно сердце; мана/энергия — единицы MMOCore)
+#   effects       — эффекты (необязательно): type, seconds, level (1 = I)
+#   health-boost  — временная прибавка к макс. здоровью (необязательно): hearts, seconds
 #   keep-bottle   — оставлять пустую бутылку (false — зелье просто пропадает)
-#   message       — сообщение над хотбаром (MiniMessage, пусто — без сообщения)
+#   message       — сообщение над хотбаром (<amount> — сколько восстановлено)
+# Кто может пить: health — все; mana — только классы из mana-classes; energy — классы с энергией (не из списка
+# mana-classes и с выбранным классом). Ресурс в MMOCore у всех один (mana), у магов он называется «Мана», у
+# остальных «Энергия» — поэтому деление по классам.
+mana-classes: [MAGE, WARLOCK, WIZARD]
+no-class: [HUMAN]
+messages:
+  only-mages: "<#7aa2ff>Это зелье могут пить только маги."
+  only-energy: "<#7dd97d>Это зелье для классов с энергией."
+  full: "<gray>Сейчас оно ничего не даст — шкала полная."
+
 potions:
-  small_health_potion:
-    effects:
-      - {type: regeneration, seconds: 60, level: 1}
-    health-boost: {hearts: 3, seconds: 120}
-    keep-bottle: false
-    message: "<#ff5a5a>❤ Малое зелье здоровья: регенерация 1 мин, +3 ❤ на 2 мин"
+  small_health_potion:  {restore: health, amount: 10, keep-bottle: false, message: "<#ff5a5a>❤ +<amount> здоровья"}
+  medium_health_potion: {restore: health, amount: 25, keep-bottle: false, message: "<#ff5a5a>❤ +<amount> здоровья"}
+  large_health_potion:  {restore: health, amount: 50, keep-bottle: false, message: "<#ff5a5a>❤ +<amount> здоровья"}
+  small_mana_potion:    {restore: mana, amount: 10, keep-bottle: false, message: "<#7aa2ff>■ +<amount> маны"}
+  medium_mana_potion:   {restore: mana, amount: 25, keep-bottle: false, message: "<#7aa2ff>■ +<amount> маны"}
+  large_mana_potion:    {restore: mana, amount: 50, keep-bottle: false, message: "<#7aa2ff>■ +<amount> маны"}
+  small_stamina_potion:  {restore: energy, amount: 10, keep-bottle: false, message: "<#7dd97d>⚡ +<amount> энергии"}
+  medium_stamina_potion: {restore: energy, amount: 25, keep-bottle: false, message: "<#7dd97d>⚡ +<amount> энергии"}
+  large_stamina_potion:  {restore: energy, amount: 50, keep-bottle: false, message: "<#7dd97d>⚡ +<amount> энергии"}
