@@ -161,6 +161,32 @@ Bukkit = _java.type("org.bukkit.Bukkit")
 # пока сервер останавливается (планировщики уже не работают), они выполняются сразу. Ошибка задачи — в лог системы.
 
 
+# Исключения Java приходят в Python как polyglot.ForeignException — это BaseException, но НЕ Exception:
+# `except Exception` их не ловит. Функции ниже переводят ошибки проверки хоста в обычные ValueError/TypeError.
+_ForeignException = getattr(_polyglot, "ForeignException", None)
+_ForeignObject = getattr(_polyglot, "ForeignObject", None)
+
+
+def _checked(fn, *args):
+    if _ForeignException is None:
+        return fn(*args)
+    try:
+        return fn(*args)
+    except _ForeignException as e:
+        try:
+            text = str(e.getMessage())
+        except BaseException:
+            text = str(e)
+        raise ValueError(text) from None
+
+
+def _java_runnable(task, where):
+    if task is None or (_ForeignObject is not None and not isinstance(task, _ForeignObject)):
+        raise TypeError(where + ": нужен Java Runnable (amazake.java_task(...)), а не " + type(task).__name__
+                        + " — задача может выполниться после выгрузки системы, когда Python уже закрыт")
+    return task
+
+
 def java_task(target, method, *args, type=None):
     """Java-Runnable без Python: при run() вызывает target.method(*args). Метод (публичный) выбирается и аргументы
     переводятся в Java сразу, поэтому задача работает и после выгрузки системы.
@@ -175,29 +201,29 @@ def java_task(target, method, *args, type=None):
             for e in 影:
                 amazake.remove_entity(e)
     """
-    return _host.javaTask(target, method, list(args), type)
+    return _checked(_host.javaTask, target, method, list(args), type)
 
 
 def run_java_for_player(player, task):
     """Java-Runnable один раз в потоке игрока (как SystemContext.runOnceForPlayer у Java-систем): через тик; пока
     core-python выключается и поток владеет игроком (или сервер останавливается) — сразу. False — игрок ушёл."""
-    return bool(_host.runJavaForPlayer(player, task))
+    return bool(_checked(_host.runJavaForPlayer, player, _java_runnable(task, "run_java_for_player")))
 
 
 def run_java_on_entity(entity, task, delay=0):
     """Java-Runnable в потоке сущности через delay тиков; delay=0 и поток уже владеет ею — сразу.
     False — сущность удалена / core-python выключен."""
-    return bool(_host.runJavaOnEntity(entity, task, int(delay)))
+    return bool(_checked(_host.runJavaOnEntity, entity, _java_runnable(task, "run_java_on_entity"), int(delay)))
 
 
 def run_java_global(task, delay=0):
     """Java-Runnable в глобальном потоке через delay тиков; delay=0 и мы в глобальном потоке — сразу."""
-    return bool(_host.runJavaGlobal(task, int(delay)))
+    return bool(_checked(_host.runJavaGlobal, _java_runnable(task, "run_java_global"), int(delay)))
 
 
 def remove_entity(entity):
     """Удалить сущность (не игрока) из любого потока: сразу, если поток ею владеет, иначе — в её потоке."""
-    return bool(_host.removeEntity(entity))
+    return bool(_checked(_host.removeEntity, entity))
 
 
 # ---------------------------------------------------------------------------------------------

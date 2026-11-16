@@ -100,19 +100,19 @@ public class JavaTasksTest {
                     try:
                         amazake.run_java_global(lambda: None)
                         event.mark("accepted")
-                    except BaseException as e:
-                        event.mark(repr(type(e).__mro__) + "|" + str(isinstance(e, Exception)))
+                    except TypeError:
+                        event.mark("rejected")
                     try:
                         amazake.java_task(event, "nope")
-                    except Exception:
+                    except ValueError:
                         event.mark("no-method")
                     try:
                         amazake.java_task(event, "mark", [1, 2])
-                    except Exception:
+                    except ValueError:
                         event.mark("no-list")
                     try:
                         amazake.remove_entity(試験.player)
-                    except Exception:
+                    except ValueError:
                         event.mark("no-player")
                 elif p == "boom":
                     event.mark(str(amazake.run_java_global(amazake.java_task(java.type("java.util.ArrayList")(), "get", 5))))

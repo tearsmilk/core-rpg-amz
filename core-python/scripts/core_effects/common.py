@@ -96,20 +96,22 @@ def 解析済み(文, 解析=None, **素):
     return amazake.mm(文, **素)
 
 
-# --- контекст системы core-python (как context у Java-системы) ------------------------------------------------------
-# API amazake не отдаёт ни объект плагина (нужен для player.showEntity(plugin, e) и планировщиков), ни SystemContext
-# (его runOnceForPlayer при остановке сервера выполняет задачу сразу — как у Java-системы при выключении).
-# Берём через отражение: ScriptApi.script → PyScript.platform → BukkitPlatform.context. Это закрытые имена ядра
-# core-python: при их переименовании фантомы выключатся, а уборка при выгрузке пойдёт только из потоков игроков.
-# Нужен публичный amazake.plugin()/context в API core-python. Неудача не запоминается навсегда: пробуем снова (лог —
-# один раз за загрузку).
+# --- плагин и Java-задачи core-python ---------------------------------------------------------------------------------
+# Нужны объект плагина (player.showEntity(plugin, e)) и Java-задачи, которые выполнятся и после закрытия контекста
+# Python (уборка при выгрузке; при остановке сервера — сразу, как runOnceForPlayer у Java-системы).
+# Новый core-python даёт для этого публичный API: amazake.plugin(), amazake.find_class(), amazake.run_java_*.
+# Старый core-python.azs (до его передеплоя) такого API не имеет — тогда, и только тогда, SystemContext ядра берётся
+# отражением по закрытым полям хоста (ScriptApi.script → PyScript.platform → BukkitPlatform.context).
+# TODO: убрать _旧文脈 и ветки «not _新API», когда на проде будет новый core-python.
 
+_新API = all(hasattr(amazake, n) for n in ("plugin", "find_class", "run_java_for_player", "run_java_on_entity",
+                                          "run_java_global"))
 _文脈 = []
 _文脈警告 = [False]
 
 
-def 文脈():
-    """SystemContext ядра core-python или None."""
+def _旧文脈():
+    """Только для старого core-python: SystemContext ядра через закрытые поля хоста, или None."""
     if _文脈:
         return _文脈[0]
     try:
@@ -127,21 +129,24 @@ def 文脈():
             raise RuntimeError("context = null")
         _文脈.append(c)
         return c
-    except Exception as e:
+    except BaseException as e:   # исключения Java (ForeignException) — не Exception
         if not _文脈警告[0]:
             _文脈警告[0] = True
-            amazake.log.warn("не найден контекст core-python (" + str(e) + "): фантомы паники выключены, "
-                             "уборка при выгрузке — только из потоков игроков")
+            amazake.log.warn("старый core-python без amazake.plugin(), и его контекст не найден (" + str(e) + "): "
+                             "фантомы паники выключены, уборка при выгрузке — только из потоков игроков")
         return None
 
 
 def プラグイン():
-    c = 文脈()
+    """Plugin core-python (для API Bukkit, которым нужен Plugin) или None."""
+    if _新API:
+        return amazake.plugin()
+    c = _旧文脈()
     if c is None:
         return None
     try:
         return c.plugin()
-    except Exception:
+    except BaseException:
         return None
 
 
@@ -187,7 +192,9 @@ _ClassArray = java.type("java.lang.Class[]")
 
 
 def _クラス(名):
-    return amazake._host.findClass(名)
+    if _新API:
+        return amazake.find_class(名)
+    return amazake._host.findClass(名)   # старый core-python: тот же публичный метод хоста, без обёртки
 
 
 def ジャバ処理(型名, メソッド, 引数型名, 対象, *引数):
@@ -211,41 +218,48 @@ def ジャバ処理(型名, メソッド, 引数型名, 対象, *引数):
 
 
 def ジャバで実体へ(実体, 処理):
-    """Выполнить Java-Runnable в потоке сущности (её планировщик). False — не вышло."""
-    p = プラグイン()
-    if p is None:
-        return False
+    """Выполнить Java-Runnable в потоке сущности (сразу, если поток ею владеет или сервер останавливается).
+    False — не вышло."""
     try:
+        if _新API:
+            return amazake.run_java_on_entity(実体, 処理)
+        p = プラグイン()
+        if p is None:
+            return False
         return bool(実体.getScheduler().execute(p, 処理, None, 1))
-    except Exception as e:
+    except BaseException as e:   # и исключения Java
         amazake.log.debug("планировщик сущности: " + str(e))
         return False
 
 
 def ジャバで全体へ(処理):
     """Java-Runnable в глобальном потоке (сразу, если мы в нём). False — не вышло."""
-    if Bukkit.isGlobalTickThread():
-        処理.run()
-        return True
-    p = プラグイン()
-    if p is None:
-        return False
     try:
+        if _新API:
+            return amazake.run_java_global(処理)
+        if Bukkit.isGlobalTickThread():
+            処理.run()
+            return True
+        p = プラグイン()
+        if p is None:
+            return False
         Bukkit.getGlobalRegionScheduler().execute(p, 処理)
         return True
-    except Exception as e:
+    except BaseException as e:
         amazake.log.debug("глобальный планировщик: " + str(e))
         return False
 
 
 def ジャバで人へ(player, 処理):
-    """Java-Runnable в потоке игрока через SystemContext.runOnceForPlayer — как у Java-системы: при остановке
-    сервера (выключение систем) он выполняется сразу, иначе — в потоке игрока. False — не вышло."""
-    c = 文脈()
-    if c is None:
-        return False
+    """Java-Runnable в потоке игрока — как SystemContext.runOnceForPlayer у Java-системы: при остановке сервера
+    (выключение систем) он выполняется сразу, иначе — в потоке игрока. False — не вышло."""
     try:
+        if _新API:
+            return amazake.run_java_for_player(player, 処理)
+        c = _旧文脈()
+        if c is None:
+            return False
         return bool(c.runOnceForPlayer(player, 処理))
-    except Exception as e:
+    except BaseException as e:
         amazake.log.debug("runOnceForPlayer: " + str(e))
         return False
