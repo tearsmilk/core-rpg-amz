@@ -1,3 +1,4 @@
+import math
 # 共通 — общее для модулей core_magic: типы Java, f32, ключи PDC, предмет-эффект для дисплеев (метка шейдера),
 # звуки и частицы, объект плагина и Java-задачи без Python (уборка в @on_unload). Приём ジャバ処理 перенесён из
 # core_effects/common.py (копия, не импорт: системы живут в разных контекстах).
@@ -82,9 +83,11 @@ def 効果品(モデル, R):
     return item
 
 
-def 変形(前, 下, sx, sy, sz):
-    """Transformation: перенос (0, −下, 前) в осях дисплея (+Z — взгляд), без поворотов, масштаб (sx, sy, sz)."""
-    return Transformation(Vector3f(f32(0.0), f32(-下), f32(前)), Quaternionf(),
+def 変形(前, 下, sx, sy, sz, 反転=False):
+    """Transformation: перенос (0, −下, 前) в осях дисплея (+Z — взгляд), масштаб (sx, sy, sz).
+    反転 — модель повёрнута на 180° вокруг оси Y дисплея (луч: модель вытянута в −Z, без поворота бил бы назад)."""
+    回 = Quaternionf().rotationY(f32(math.pi)) if 反転 else Quaternionf()
+    return Transformation(Vector3f(f32(0.0), f32(-下), f32(前)), 回,
                           Vector3f(f32(sx), f32(sy), f32(sz)), Quaternionf())
 
 

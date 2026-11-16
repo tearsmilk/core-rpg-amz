@@ -130,12 +130,17 @@ tasks.jar {
     }
     from(tasks.named("processHostResources")) {
         into("host")
+        exclude("**/__pycache__/**")
     }
     from(pythonLibs.map { File(it.outputs.files.singleFile, "libs.txt") })
     // Python-системы по умолчанию: распаковываются в systems/core-python/scripts/ при первом включении.
     from("scripts") {
         into("default-scripts")
         exclude("**/__pycache__/**")
+        // -PexcludeScripts=core_magic,… — собрать .azs без этих систем по умолчанию (например, пока они не одобрены для прода).
+        (findProperty("excludeScripts") as String?)?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() }?.forEach {
+            exclude("$it/**")
+        }
     }
 }
 

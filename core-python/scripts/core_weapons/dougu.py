@@ -103,17 +103,17 @@ def 粉(色1, 色2, 大きさ):
 # При выгрузке контекст Python закрывается сразу после @on_unload, поэтому то, что надо сделать в чужом потоке
 # (снять кадр с предмета игрока, удалить копию блока в другом регионе), отдаётся планировщику как чистый Java-объект:
 # java.beans.Statement (готовый вызов метода) + java.beans.EventHandler (Runnable, который его выполняет).
-# Plugin для планировщика — тот же, что у core-python (SystemContext.plugin()). В API amazake его нет, поэтому он
-# достаётся отражением через закрытые поля хоста (ScriptApi.script → PyScript.platform → BukkitPlatform.context):
-# хрупко, при переименовании полей хоста — предупреждение в лог и любой включённый плагин.
+# Новый core-python ставит такие задачи сам: amazake.run_java_on_entity (при остановке сервера — сразу) и даёт
+# amazake.plugin(). Старый core-python.azs (до его передеплоя) этого API не имеет — тогда, и только тогда, Plugin
+# достаётся отражением через закрытые поля хоста (ScriptApi.script → PyScript.platform → BukkitPlatform.context),
+# а при неудаче берётся первый включённый плагин. TODO: убрать ветки «not _新API», когда на проде новый core-python.
 
+_新API = hasattr(amazake, "plugin") and hasattr(amazake, "run_java_on_entity")
 _プラグイン = [None]
 
 
-def プラグイン():
-    if _プラグイン[0] is not None:
-        return _プラグイン[0]
-    p = None
+def _旧プラグイン():
+    """Только для старого core-python: Plugin core-python через закрытые поля хоста, или None."""
     try:
         h = amazake._host
         f = h.getClass().getDeclaredField("script")
@@ -124,11 +124,19 @@ def プラグイン():
         pl = f.get(s)
         f = pl.getClass().getDeclaredField("context")
         f.setAccessible(True)
-        p = f.get(pl).plugin()
-    except Exception as e:
-        amazake.log.warn("core_weapons: Plugin core-python через поля хоста не получен (" + str(e) + ") — задачи "
-                         "уборки при выгрузке пойдут от первого включённого плагина")
-        p = None
+        return f.get(pl).plugin()
+    except BaseException as e:   # исключения Java (ForeignException) — не Exception
+        amazake.log.warn("core_weapons: старый core-python без amazake.plugin(), и Plugin через поля хоста не получен ("
+                         + str(e) + ") — задачи уборки при выгрузке пойдут от первого включённого плагина")
+        return None
+
+
+def プラグイン():
+    if _新API:
+        return amazake.plugin()
+    if _プラグイン[0] is not None:
+        return _プラグイン[0]
+    p = _旧プラグイン()
     if p is None:
         for x in Bukkit.getPluginManager().getPlugins():
             if x.isEnabled():
@@ -153,7 +161,10 @@ def Java実行体(対象, メソッド, 引数=()):
 
 
 def 後で実体に(entity, 対象, メソッド, 引数=()):
-    """Выполнить 対象.メソッド(*引数) в потоке сущности entity (её планировщик), без Python. True — поставлено."""
+    """Выполнить 対象.メソッド(*引数) в потоке сущности entity, без Python (сразу, если поток ею владеет или сервер
+    останавливается). True — поставлено / выполнено."""
+    if _新API:
+        return amazake.run_java_on_entity(entity, Java実行体(対象, メソッド, 引数))
     pl = プラグイン()
     if pl is None:
         return False

@@ -9,11 +9,13 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.EventExecutor;
+import org.bukkit.plugin.Plugin;
 
 /** Платформа для тестов: записывает регистрации, задачи выполняет сразу (повторяющиеся — по runPending). */
 final class FakePlatform implements Platform {
@@ -25,6 +27,23 @@ final class FakePlatform implements Platform {
     final List<Command> commands = new CopyOnWriteArrayList<>();
     final List<Runnable> repeating = new CopyOnWriteArrayList<>();
     final List<String> log = new CopyOnWriteArrayList<>();
+    /** Задачи планировщиков сущностей (выполняются по runEntityTasks). */
+    final List<Runnable> entityTasks = new CopyOnWriteArrayList<>();
+    /** Владеет ли текущий поток всем (по умолчанию — да: задачи выполняются сразу). */
+    volatile boolean ownsAll = true;
+    volatile boolean stopping;
+    volatile boolean globalThread = true;
+    /** Планировщики не принимают задачи (как у выключенного плагина). */
+    volatile boolean refuseTasks;
+    final Plugin plugin = (Plugin) java.lang.reflect.Proxy.newProxyInstance(Plugin.class.getClassLoader(), new Class<?>[]{Plugin.class},
+        (p, m, a) -> switch (m.getName()) {
+            case "getName" -> "core-python";
+            case "isEnabled" -> true;
+            case "hashCode" -> 7;
+            case "equals" -> p == a[0];
+            case "toString" -> "FakePlugin";
+            default -> null;
+        });
     private final Logger logger = Logger.getLogger("fake-" + UUID.randomUUID());
 
     FakePlatform() {
@@ -130,6 +149,9 @@ final class FakePlatform implements Platform {
 
     @Override
     public Task runGlobal(final Runnable body, final long delayTicks, final long periodTicks) {
+        if (this.refuseTasks) {
+            throw new IllegalStateException("plugin disabled");
+        }
         if (periodTicks > 0) {
             return this.repeating(body);
         }
@@ -144,12 +166,12 @@ final class FakePlatform implements Platform {
 
     @Override
     public boolean owns(final Object thing) {
-        return true;
+        return this.ownsAll;
     }
 
     @Override
     public boolean isGlobalThread() {
-        return true;
+        return this.globalThread;
     }
 
     @Override
@@ -165,5 +187,31 @@ final class FakePlatform implements Platform {
     @Override
     public ClassLoader pluginLoader(final String plugin) {
         return null;
+    }
+
+    @Override
+    public Plugin plugin() {
+        return this.plugin;
+    }
+
+    @Override
+    public boolean isStopping() {
+        return this.stopping;
+    }
+
+    @Override
+    public boolean executeForEntity(final Entity entity, final Runnable body, final long delayTicks) {
+        if (this.refuseTasks) {
+            throw new IllegalStateException("plugin disabled");
+        }
+        this.entityTasks.add(body);
+        return true;
+    }
+
+    void runEntityTasks() {
+        for (final Runnable r : new ArrayList<>(this.entityTasks)) {
+            this.entityTasks.remove(r);
+            r.run();
+        }
     }
 }

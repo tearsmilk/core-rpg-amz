@@ -30,6 +30,7 @@ import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataHolder;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.graalvm.polyglot.Value;
@@ -471,5 +472,177 @@ public final class ScriptApi {
         } catch (final ClassNotFoundException | LinkageError e) {
             return null;
         }
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // Плагин и Java-задачи, которые переживают выгрузку системы
+    // ------------------------------------------------------------------------------------------
+
+    /** Плагин, от имени которого работает core-python (для API Bukkit, которым нужен Plugin), или null в тестах. */
+    public Plugin plugin() {
+        return this.script.platform.plugin();
+    }
+
+    /** Runnable без Python: target.method(*args). Метод и аргументы фиксируются сразу (см. {@link JavaCall}). */
+    public Runnable javaTask(final Value target, final String method, final Value args, final Value type) throws ClassNotFoundException {
+        return this.javaTask(target, method, args, null, type);
+    }
+
+    /** floats[i] — args[i] это float Python (amazake.java_task передаёт сам: 2.0 по значению не отличить от 2). */
+    public Runnable javaTask(final Value target, final String method, final Value args, final Value floats, final Value type)
+        throws ClassNotFoundException {
+        if (target == null || target.isNull() || !target.isHostObject()) {
+            throw new IllegalArgumentException("java_task: нужен объект Java, получено " + target);
+        }
+        final Value[] a = new Value[args == null || !args.hasArrayElements() ? 0 : (int) args.getArraySize()];
+        for (int i = 0; i < a.length; i++) {
+            a[i] = args.getArrayElement(i);
+        }
+        final boolean[] f = new boolean[a.length];
+        if (floats != null && floats.hasArrayElements()) {
+            for (int i = 0; i < f.length && i < floats.getArraySize(); i++) {
+                f[i] = floats.getArrayElement(i).asBoolean();
+            }
+        }
+        final Class<?> t = type == null || type.isNull() ? null : this.resolveClass(type);
+        return JavaCall.of(target.asHostObject(), method, a, f, t);
+    }
+
+    /**
+     * Java-Runnable из значения Python; функция Python не подходит — после выгрузки её уже не вызвать. Прокси, которые
+     * GraalVM делает из функции Python (Value.as(Runnable) и т.п.), тоже отвергаются. Java-объект, который сам внутри
+     * держит функцию Python (например, {@code Thread(lambda: ...)}), отличить нельзя — такое не передавать.
+     */
+    private Runnable javaRunnable(final Value task, final String where) {
+        if (task != null && task.isHostObject() && task.asHostObject() instanceof Runnable r && !pythonBacked(r)) {
+            return this.guarded(r, where);
+        }
+        throw new IllegalArgumentException(where + ": нужен Java Runnable (amazake.java_task(...)), а не функция Python: "
+            + "задача может выполниться после выгрузки системы, когда Python уже закрыт");
+    }
+
+    /** Объект — прокси/адаптер GraalVM поверх значения гостевого языка. */
+    static boolean pythonBacked(final Object o) {
+        Class<?> c = o.getClass();
+        if (java.lang.reflect.Proxy.isProxyClass(c)) {
+            c = java.lang.reflect.Proxy.getInvocationHandler(o).getClass();
+        }
+        final String n = c.getName();
+        return n.startsWith("com.oracle.truffle.") || n.startsWith("org.graalvm.") || n.contains("$$Graal");
+    }
+
+    /** Ошибка задачи — в лог системы (только Java: Python к этому моменту может быть закрыт). */
+    private Runnable guarded(final Runnable r, final String where) {
+        final java.util.logging.Logger log = this.script.platform.logger();
+        final String prefix = "[py:" + this.script.name + "] " + where + ": ";
+        return () -> {
+            try {
+                r.run();
+            } catch (final RuntimeException | LinkageError e) {
+                log.log(Level.WARNING, prefix + r + " — " + e, e);
+            }
+        };
+    }
+
+    /**
+     * Java-Runnable один раз в потоке игрока — SystemContext.runOnceForPlayer: через тик; пока core-python
+     * выключается (в том числе при остановке сервера) и поток владеет игроком или сервер останавливается — сразу.
+     * Не отменяется выгрузкой системы. false — игрок ушёл / core-python выключен.
+     */
+    public boolean runJavaForPlayer(final Player player, final Value task) {
+        final Runnable r = this.javaRunnable(task, "run_java_for_player");
+        if (player == null) {
+            return false;
+        }
+        try {
+            return this.script.platform.runOnceForPlayer(player, r);
+        } catch (final RuntimeException e) {
+            this.script.platform.logger().log(Level.WARNING, "[py:" + this.script.name + "] run_java_for_player: " + e, e);
+            return false;
+        }
+    }
+
+    /**
+     * Java-Runnable в потоке сущности через delayTicks. delayTicks ≤ 0 и поток уже владеет сущностью — сразу.
+     * Сервер останавливается: поток владеет сущностью — сразу (delay не ждём); иначе — в планировщик сущности, а если
+     * он задачу не принимает — сразу, здесь (иначе её уже никто не выполнит). Не отменяется выгрузкой системы.
+     */
+    public boolean runJavaOnEntity(final Entity entity, final Value task, final long delayTicks) {
+        return this.onEntity(entity, this.javaRunnable(task, "run_java_on_entity"), delayTicks);
+    }
+
+    private boolean onEntity(final Entity entity, final Runnable r, final long delayTicks) {
+        if (entity == null) {
+            return false;
+        }
+        final Platform p = this.script.platform;
+        final boolean stopping = p.isStopping();
+        if ((delayTicks <= 0 || stopping) && p.owns(entity)) {
+            r.run();
+            return true;
+        }
+        try {
+            if (p.executeForEntity(entity, r, delayTicks)) {
+                return true;
+            }
+            if (!stopping) {
+                return false;                       // сущность удалена
+            }
+        } catch (final RuntimeException e) {
+            if (!stopping) {
+                p.logger().log(Level.WARNING, "[py:" + this.script.name + "] run_java_on_entity: " + e, e);
+                return false;
+            }
+        }
+        // Сервер останавливается и планировщик задачу не принял: больше её никто не выполнит — сразу, здесь.
+        r.run();
+        return true;
+    }
+
+    /**
+     * Java-Runnable в глобальном потоке через delayTicks. delayTicks ≤ 0 и мы в глобальном потоке — сразу; сервер
+     * останавливается: в глобальном потоке — сразу, иначе — в планировщик, а если он не принимает — сразу.
+     * Не отменяется выгрузкой системы.
+     */
+    public boolean runJavaGlobal(final Value task, final long delayTicks) {
+        final Runnable r = this.javaRunnable(task, "run_java_global");
+        final Platform p = this.script.platform;
+        final boolean stopping = p.isStopping();
+        if ((delayTicks <= 0 || stopping) && p.isGlobalThread()) {
+            r.run();
+            return true;
+        }
+        try {
+            p.runGlobal(r, Math.max(0L, delayTicks), 0);
+            return true;
+        } catch (final RuntimeException e) {
+            if (!stopping) {
+                p.logger().log(Level.WARNING, "[py:" + this.script.name + "] run_java_global: " + e, e);
+                return false;
+            }
+        }
+        r.run();
+        return true;
+    }
+
+    /** Удалить сущность (не игрока) из любого потока: сразу, если поток ею владеет, иначе — в её потоке. */
+    public boolean removeEntity(final Entity entity) {
+        if (entity == null) {
+            return false;
+        }
+        if (entity instanceof Player) {
+            throw new IllegalArgumentException("remove_entity: игрока удалить нельзя");
+        }
+        return this.onEntity(entity, this.guarded(new Runnable() {
+            @Override
+            public void run() {
+                entity.remove();
+            }
+
+            @Override
+            public String toString() {
+                return "remove " + entity.getType();
+            }
+        }, "remove_entity"), 0);
     }
 }

@@ -7,7 +7,7 @@ modules:
   # Баланс, /money, /mpay, /moneytop, /ceco и провайдер Vault.
   economy: true
   # Свои уровни и опыт (/level), опыт за мобов.
-  levels: true
+  levels: false
   # Физические монеты: падают с мобов, при подъёме сразу идут на баланс. Нужен модуль economy.
   coins: true
 
@@ -165,14 +165,14 @@ coins:
     core-mobs: {}
     #  forest_zombie: {chance: 80, amount: 2-4}
     types:
-      ZOMBIE: { chance: 50, amount: 1-2 }
-      HUSK: { chance: 50, amount: 1-2 }
-      SKELETON: { chance: 50, amount: 1-2 }
-      SPIDER: { chance: 40, amount: 1 }
-      CREEPER: { chance: 60, amount: 1-3 }
-      ENDERMAN: { chance: 70, amount: 2-4 }
-      WITCH: { chance: 70, amount: 2-4 }
-    hostile: { chance: 30, amount: 1 }
+      ZOMBIE: { chance: 50, amount: 3-6 }
+      HUSK: { chance: 50, amount: 3-6 }
+      SKELETON: { chance: 50, amount: 3-6 }
+      SPIDER: { chance: 40, amount: 3 }
+      CREEPER: { chance: 60, amount: 3-9 }
+      ENDERMAN: { chance: 70, amount: 6-12 }
+      WITCH: { chance: 70, amount: 6-12 }
+    hostile: { chance: 30, amount: 3 }
     default: { chance: 0, amount: 0 }
 
 storage:
