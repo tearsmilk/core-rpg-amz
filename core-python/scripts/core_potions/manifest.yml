@@ -1,0 +1,12 @@
+# Python-система «Зелья» (ポーション). Вид зелий — Nexo (пак skulpt/basic_potions), механика — здесь.
+name: core_potions
+version: 1.0.0
+main: main.py
+enabled: true
+description: "Механика зелий Nexo: эффекты, прибавка к здоровью, бутылка не остаётся"
+commands:
+  cpotions:
+    permission: corepotions.admin
+    aliases: [ポーション]
+    description: "Зелья: список и перечитать potions.yml"
+    usage: "/cpotions list | reload"
