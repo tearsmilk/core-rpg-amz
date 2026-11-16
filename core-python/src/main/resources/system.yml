@@ -1,0 +1,7 @@
+# Описание системы. name и version подставляет сборка: name — rootProject.name из settings.gradle.kts, version — из build.gradle.kts.
+name: ${name}
+version: ${version}
+main: core.amazake.systems.corepython.CorePythonSystem
+description: "Системы на Python (GraalPy): папки scripts/<имя>/ с manifest.yml, модуль amazake (события, команды, задачи по правилам потоков, конфиги, PDC, файлы)"
+authors: [tearsmilk]
+api-version: 2

@@ -78,3 +78,21 @@ textures/item/crimson_scythe.png, crimson_scythe_fx.png + .mcmeta, items/crimson
 | azerus_moon_shard | Лунный осколок |
 | azerus_tide_seal | Печать прилива |
 | azerus_sun_bastion | Солнечный бастион |
+
+## azerus_armor.yml — кастомная броня (3 комплекта × 4 части)
+
+Предметы Python-системы `custom_armor` (`core-python/scripts/custom_armor/`, там README и `sets.yml` с
+характеристиками и бонусами). id — `azerus_<комплект>_<часть>`: комплекты `guren` (Багровый, незерит),
+`tsukikori` (Лунный лёд, алмаз), `morikashi` (Дубрава, железо); части `helmet`, `chestplate`, `leggings`, `boots`.
+Выдавать лучше `/carmor give <комплект> all [ник]` (сразу с характеристиками); `/nexo give` тоже работает —
+характеристики система повесит при надевании.
+
+- Формат — Nexo `CustomArmor`, как `nexo_defaults/nexo_armor.yml`: у нагрудника `layer1`/`layer2`, у всех частей
+  `CustomArmor.id` и `Components.equippable` с `asset_id: azerus:<комплект>`; equipment-модель Nexo собирает сам.
+- Текстуры (`pack/assets/azerus/textures/item/armor/`): `<комплект>_armor_layer_1.png` / `_layer_2.png` (64x32,
+  раскладка ванильной брони) и иконки `<комплект>_<часть>.png` (16x16). Рисуются кодом:
+  `python3 tools/armor_textures.py`; превью на модели игрока — `python3 tools/armor_preview.py` →
+  `preview/armor/` (`all_sets.png`, `<комплект>_views.png`: спереди, сзади, 3/4, ночью со свечением;
+  `<комплект>_glow.gif` — анимация свечения, посчитанная той же формулой, что в шейдере; `icons.png`).
+- Свечение — пиксели с альфой ровно 251 + `pack/assets/minecraft/shaders/core/entity.fsh` (только конвейеры брони).
+  Проверка, что маркер не задевает чужое: `python3 tools/armor_shader_check.py <client-1.21.11.jar> <паки…>`.

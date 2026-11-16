@@ -50,6 +50,7 @@
 | core-weapons | `core-weapons/` | эффекты кастомного оружия Nexo (замах кадрами, дрожь при крите и т.п.) |
 | core-world | `core-world/` | правила мира: без голода, без летучих мышей, без дождя, взрывы не ломают блоки |
 | rezusmenu | `rezusmenu/` | меню `/menuses`: RPG-инвентарь на дисплеях и меню профилей (персонажей) |
+| core-python *(ещё не на проде)* | `core-python/` | системы на Python (GraalPy); первая — кастомная броня `scripts/custom_armor` |
 | seal-magic, zatochka | исходников нет (только `.azs`) | печати и заточка |
 
 `core-rpg/` — большая RPG-система (прогрессия, аспекты, заточка, печати, бой), призвана заменить RQ/Zatochka/MagicSeals,
@@ -253,6 +254,10 @@ NPC хранятся в `systems/core-npc/npcs.yml`, диалоги — `systems
 таблицей урона `after2/REPORT.md`, `DAMAGE_TEST_FINAL.md`). Скрипты наших навыков — `MythicLib/script/royalquest_skills.yml`
 (`rq_*`). После правки: `mythiclib reload`, затем `mmocore reload`.
 
+**core-python** (`/python list|load|unload|reload|info`, `corepython.admin`): Python-системы в
+`systems/core-python/scripts/<имя>/`. Первая — **custom_armor** (`/carmor give|list|reload`, `/防具`,
+`customarmor.admin`): 3 комплекта брони Nexo с бонусами за 2/4 части. Подробно — раздел 11.
+
 ---
 
 ## 8. Предметы и модели
@@ -292,3 +297,39 @@ NPC хранятся в `systems/core-npc/npcs.yml`, диалоги — `systems
 - **Сущности остались после выключения системы** — не убраны на disable; они помечены PDC, следующий enable должен
   их подчистить.
 - **Скин NPC по нику**: при ошибке Mojang в логе «Skin URL is null» — ставить скин через `/npc skin <id> value …`.
+
+---
+
+## 11. Системы на Python (core-python)
+
+Некоторые системы пишем на Python — так проще и быстрее для игровой логики «событие → действие». Хост —
+`core-python` (GraalPy 25.0.5 = Python 3.12 внутри JVM), подробное руководство и справочник API —
+`core-python/README.md`, пример — `core-python/scripts/custom_armor/` (японские имена и комментарии в коде).
+
+- **Python-система** = папка `systems/core-python/scripts/<имя>/`: `manifest.yml` (name, version, main, enabled,
+  commands) + `.py`. В репозитории — `core-python/scripts/<имя>/`. Залить файлы → `/python reload <имя>`, без рестарта
+  и без пересборки `.azs`.
+- **API**: `import amazake` — `@amazake.on(Event)`, `@amazake.command(...)` (+ `@cmd.tab`), `run_for_player`,
+  `run_once_for_player`, `run_in_region`, `run_global`, `run_async`, `config("x.yml")`, `storage("x.json")`,
+  `data(holder)` (PDC), `add_modifier`/`add_effect` (снимаются сами при выгрузке), `mm`/`send`/`actionbar`,
+  `java.type("…")`, `plugin_class("Nexo", "…")`.
+- **Правила потоков те же**, что для Java-систем (раздел 3): обработчик зовётся в потоке события, игрок — в его
+  потоке, мир — в потоке региона. У каждой Python-системы свой контекст и **свой GIL**: её обработчики из разных
+  регионов выполняются по очереди; нельзя в Python ждать другой поток этой же системы.
+- **Скорость**: на проде (обычный Oracle JDK 25) GraalPy работает интерпретатором — в 5–15 раз медленнее CPython на
+  циклах; для событий/команд/задач раз в секунду этого хватает. Частые события (движение) и тяжёлые циклы по миру —
+  только на Java. JIT включается сменой образа сервера на «Java 25 GraalVM» в панели (без флагов) — решение владельца.
+- **Память**: классы GraalPy ~72 МБ metaspace (один раз за жизнь JVM — загрузчик общий), движок + custom_armor
+  ~20 МБ кучи; `.azs` ~100 КБ, библиотеки `systems/core-python/lib/` ~150 МБ (докачиваются из Maven Central сами).
+- **Тесты**: `./gradlew test` в `core-python/` поднимает настоящий GraalPy с поддельной платформой — свою
+  Python-систему можно проверить так же (см. `CustomArmorScriptTest`).
+
+### Броня Nexo и шейдер брони
+
+Кастомная броня — обычные предметы Nexo с `CustomArmor` (`nexo-items/items/azerus_armor.yml`, формат как
+`nexo_defaults/nexo_armor.yml`): слои 64x32 и иконки — `nexo-items/pack/assets/azerus/textures/item/armor/`,
+рисует их `nexo-items/tools/armor_textures.py`. Свечение — новый `minecraft/shaders/core/entity.fsh`
+(`nexo-items/pack/`), это **не** общий шейдер предметов из раздела 6: он трогает только конвейеры брони
+(`ALPHA_CUTOUT` + `NO_OVERLAY` + `PER_FACE_LIGHTING`) и только пиксели с альфой ровно 251. Вершинный `entity.vsh` —
+из rezusmenu (его не менять без сверки: `entity.fsh` берёт его выходы). Новые светящиеся детали брони рисовать
+альфой 251; любые другие текстуры брони — только с альфой 0/255. Проверка: `nexo-items/tools/armor_shader_check.py`.

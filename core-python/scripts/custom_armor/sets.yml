@@ -1,0 +1,80 @@
+# Комплекты кастомной брони (Python-система custom_armor, core-python).
+#
+# id комплекта (guren, tsukikori, morikashi) — латиницей, его пишут в команде: /carmor give guren all
+# Предметы и их вид — в Nexo: nexo-items/items/azerus_armor.yml, id предмета = azerus_<комплект>_<часть>.
+# Отсюда берутся только характеристики и бонусы: система вешает их на предмет при выдаче и сама чинит предметы,
+# у которых характеристики устарели (например, после правки этого файла или /nexo give) — при надевании.
+#
+# Характеристики части (все необязательны):
+#   armor       — броня                    toughness — твёрдость брони
+#   knockback   — сопротивление отбрасыванию (0.1 = 10 %)
+#   health      — доп. здоровье (2 = одно сердце)
+#   speed       — скорость передвижения (0.03 = +3 %)
+# Бонус комплекта — за 2 и за 4 надетые части (бонус за 4 действует вместе с бонусом за 2):
+#   damage      — +урон по врагам (0.08 = +8 %)
+#   effects     — постоянные эффекты: [{type: fire_resistance, level: 1}]
+#   attributes  — атрибуты игрока: [{attribute: knockback_resistance, amount: 0.2, operation: add}]
+#                 operation: add | multiply_base | multiply
+#   особые (только у своих комплектов, см. bonuses.py):
+#     ignite_chance / ignite_seconds — шанс поджечь цель при ударе и на сколько секунд
+#     lifesteal                      — доля нанесённого урона, которая лечит владельца (0.12 = 12 %)
+#     slow_attackers: {seconds, level, freeze} — замедлить того, кто ударил владельца (freeze — иней на экране)
+#     grass_regen: {level, blocks}   — регенерация, пока владелец стоит на траве/мху
+
+sets:
+  guren:                       # 紅蓮 — багровый лотос: под стиль «Багровой косы»
+    jp: 紅蓮
+    name: "<#d4334a>Багровый доспех"
+    material: NETHERITE        # основа предметов: NETHERITE_HELMET и т.д. (прочность, починка, не горит в лаве)
+    lore:
+      - "<gray>Выкован в том же пламени,"
+      - "<gray>что и Багровая коса."
+    pieces:
+      helmet:     {name: "<#d4334a>Багровый шлем",     armor: 3, toughness: 3, knockback: 0.1}
+      chestplate: {name: "<#d4334a>Багровый нагрудник", armor: 8, toughness: 3, knockback: 0.1, health: 2}
+      leggings:   {name: "<#d4334a>Багровые поножи",    armor: 6, toughness: 3, knockback: 0.1}
+      boots:      {name: "<#d4334a>Багровые сапоги",    armor: 3, toughness: 3, knockback: 0.1}
+    bonus:
+      2:
+        damage: 0.08
+        effects: [{type: fire_resistance, level: 1}]
+      4:
+        ignite_chance: 0.25
+        ignite_seconds: 4
+        lifesteal: 0.12
+
+  tsukikori:                   # 月氷 — лунный лёд
+    jp: 月氷
+    name: "<#9fd8ff>Доспех лунного льда"
+    material: DIAMOND
+    lore:
+      - "<gray>Холодный свет луны,"
+      - "<gray>застывший в броне."
+    pieces:
+      helmet:     {name: "<#9fd8ff>Лунный шлем",     armor: 3, toughness: 2, speed: 0.02}
+      chestplate: {name: "<#9fd8ff>Лунный нагрудник", armor: 8, toughness: 2, speed: 0.02}
+      leggings:   {name: "<#9fd8ff>Лунные поножи",    armor: 6, toughness: 2, speed: 0.02}
+      boots:      {name: "<#9fd8ff>Лунные сапоги",    armor: 3, toughness: 2, speed: 0.04}
+    bonus:
+      2:
+        effects: [{type: night_vision, level: 1}]
+      4:
+        slow_attackers: {seconds: 3, level: 2, freeze: true}
+
+  morikashi:                   # 森樫 — лесной дуб
+    jp: 森樫
+    name: "<#7fae4a>Доспех дубравы"
+    material: IRON
+    lore:
+      - "<gray>Кора столетнего дуба,"
+      - "<gray>окованная бронзой."
+    pieces:
+      helmet:     {name: "<#7fae4a>Шлем дубравы",     armor: 2, toughness: 1, health: 2}
+      chestplate: {name: "<#7fae4a>Нагрудник дубравы", armor: 7, toughness: 1, health: 2}
+      leggings:   {name: "<#7fae4a>Поножи дубравы",    armor: 5, toughness: 1, health: 2}
+      boots:      {name: "<#7fae4a>Сапоги дубравы",    armor: 2, toughness: 1, health: 2}
+    bonus:
+      2:
+        attributes: [{attribute: knockback_resistance, amount: 0.2, operation: add}]
+      4:
+        grass_regen: {level: 1, blocks: [GRASS_BLOCK, MOSS_BLOCK, PODZOL, MYCELIUM, ROOTED_DIRT]}
