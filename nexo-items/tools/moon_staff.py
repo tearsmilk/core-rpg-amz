@@ -10,8 +10,8 @@
   pack/assets/azerus/textures/item/moon_staff.png        — текстура 64×64;
   pack/assets/azerus/models/item/moon_staff_cast.json    — поза «колдует» (анимация BOW) и самоцвет ярче (свет 15);
   pack/assets/azerus/items/moon_staff.json               — определение предмета: в руках при использовании — cast;
-  pack/assets/azerus/textures/item/moon_staff_fx/*.png   — 9 спрайтов эффектов 128×128 (tools/moonstaff_fx.py);
-  pack/assets/azerus/models/item/moon_staff_{circle,beam}.json, items/moon_staff_{circle,beam}.json;
+  pack/assets/azerus/textures/item/moon_staff_fx/*.png   — 10 спрайтов эффектов 128×128 (tools/moonstaff_fx.py);
+  pack/assets/azerus/models/item/moon_staff_{circle,beam,barrier}.json, items/moon_staff_{circle,beam,barrier}.json;
   preview/moon_staff/*.png                               — превью (render_model.py + копия шейдера).
 Шейдерный хук ставит отдельно tools/moonstaff_hook.py apply, проверка — tools/moonstaff_check.py.
 
@@ -582,6 +582,36 @@ def circle_backdrop(sprites, c, t, w=640, h=360, forward=2.4, diameter=3.0):
     return (np.clip(bg, 0, 1) * 255).astype(np.float32)
 
 
+def _label(img, text):
+    from PIL import ImageDraw
+    ImageDraw.Draw(img).text((8, 6), text, fill=(200, 230, 255))
+    return img
+
+
+def barrier_previews(sprites):
+    """Барьер (K10 hex_cell) спереди, как видит маг: собран (два момента мерцания + ячейка ×4), сборка по тикам
+    удержания, уровни L одной ячейки."""
+    ppm = 128.0
+    im = Image.new('RGB', (512 * 3, 640))
+    im.paste(_label(FX.render_barrier(sprites, t=0.0, ppm=ppm), 'formed L=8, t=0.0 s'), (0, 0))
+    im.paste(_label(FX.render_barrier(sprites, t=1.3, ppm=ppm), 'formed L=8, t=1.3 s'), (512, 0))
+    one = FX.render_cells(sprites, [(0.0, 0.0, FX.display_scale(0.5, 0.04), FX.barrier_R(12, 8))], 0.6,
+                          512, 640, ppm=ppm * 4)
+    im.paste(_label(one, 'one cell x4, t=0.6 s'), (1024, 0))
+    im.save(os.path.join(PREVIEW, 'moon_staff_barrier.png'))
+    im = Image.new('RGB', (512 * 4, 640))
+    for i, held in enumerate((4, 10, 16, 20)):
+        fr = FX.render_barrier_assembly(sprites, held, t=held / 20.0, ppm=ppm)
+        im.paste(_label(fr, f'held {held} ticks' + (' - formed (L=9 flash)' if held >= 20 else '')), (512 * i, 0))
+    im.save(os.path.join(PREVIEW, 'moon_staff_barrier_assembly.png'))
+    im = Image.new('RGB', (256 * 5, 288))
+    Q = FX.display_scale(0.5, 0.04)
+    for i, L in enumerate((2, 4, 6, 8, 9)):
+        fr = FX.render_cells(sprites, [(0.0, 0.0, Q, FX.barrier_R(6, L))], 0.6, 256, 288, ppm=240.0)
+        im.paste(_label(fr, f'L={L}'), (256 * i, 0))
+    im.save(os.path.join(PREVIEW, 'moon_staff_barrier_states.png'))
+
+
 def previews(sprites):
     os.makedirs(PREVIEW, exist_ok=True)
     m, texs, qs = _model(f'{NS}:item/{MID}')
@@ -623,7 +653,8 @@ def previews(sprites):
     fl.paste(FX.render_flare(sprites, 0.0), (0, 0))
     fl.paste(FX.render_flare(sprites, 0.1), (256, 0))
     fl.save(os.path.join(PREVIEW, 'moon_staff_flare.png'))
-    sheet = Image.new('RGBA', (130 * 9, 130), (20, 22, 30, 255))
+    barrier_previews(sprites)
+    sheet = Image.new('RGBA', (130 * len(FX.KINDS), 130), (20, 22, 30, 255))
     for i, n in enumerate(FX.KINDS):
         sheet.alpha_composite(Image.fromarray(sprites[n], 'RGBA'), (130 * i + 1, 1))
     sheet.save(os.path.join(PREVIEW, 'moon_staff_fx_sprites.png'))

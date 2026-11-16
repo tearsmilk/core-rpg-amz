@@ -49,6 +49,7 @@ mobs:
   cave_skeleton:
     type: SKELETON
     name: "<gray>Пещерный стрелок</gray>"
+    model: skeleton_archer
     health: 30
     damage: 3
     projectile-damage: 6

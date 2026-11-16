@@ -5,6 +5,7 @@ import core.amazake.systems.coremobs.util.Text;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -46,10 +47,16 @@ public final class MobService {
     private final Supplier<MobCatalog> catalog;
     private final Supplier<String> nameFormat;
     private final Map<UUID, Tracked> tracked = new ConcurrentHashMap<>();
+    private volatile BiConsumer<Mob, MobDef> afterSpawn = (mob, def) -> { };
 
     public MobService(final Supplier<MobCatalog> catalog, final Supplier<String> nameFormat) {
         this.catalog = catalog;
         this.nameFormat = nameFormat;
+    }
+
+    /** Что сделать с мобом сразу после спавна (модель ModelEngine). Поток региона моба. */
+    public void afterSpawn(final BiConsumer<Mob, MobDef> action) {
+        this.afterSpawn = action;
     }
 
     public Map<UUID, Tracked> tracked() {
@@ -85,6 +92,9 @@ public final class MobService {
         final Mob mob = world.spawn(at, type, CreatureSpawnEvent.SpawnReason.CUSTOM, e -> this.configure(e, def, region));
         if (region != null && mob.isValid()) {
             this.track(new Tracked(mob.getUniqueId(), def.id(), region, world.getUID(), at.getBlockX(), at.getBlockZ()));
+        }
+        if (mob.isValid()) {
+            this.afterSpawn.accept(mob, def);
         }
         return mob;
     }

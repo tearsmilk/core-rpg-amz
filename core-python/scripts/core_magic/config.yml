@@ -1,4 +1,5 @@
 # core_magic — Посох Лунного Странника (azerus_moon_staff): зажать ПКМ на 3 с — магический круг, отпустить — луч.
+# Shift + ЛКМ — сменить заклинание: «Луч» ↔ «Барьер» (зажать ПКМ на 1 с — стена из шестигранников на 10 с, гасит лучи).
 # Все числа механики — здесь. Метка шейдера (цвет G=233, B=253) и номера спрайтов — в коде (их знает шейдер).
 # Перечитать: /cmagic reload (или /魔法 reload).
 
@@ -16,6 +17,12 @@ cast:
   watch-period-ticks: 2            # как часто проверять игрока во время заряда
   show-charge-bar: true            # полоска заряда в строке над хотбаром
   bar-length: 20
+
+mode:                              # заклинание посоха; Shift + ЛКМ с посохом переключает Луч ↔ Барьер
+  default: beam                    # beam | barrier — у кого ещё не выбрано
+  toggle-debounce-ms: 300          # одно нажатие — одно переключение (клиент повторяет ПКМ каждые 4 тика)
+  remember-on-item: true           # записать выбор на посох (PDC py_core_magic:mode)
+  show-on-select: true             # показать режим в строке над хотбаром при выборе посоха
 
 cooldown:
   seconds: 3.0                     # после выстрела
@@ -53,6 +60,27 @@ beam:                              # луч (ItemDisplay, стоит на мес
   ignore-invulnerability: true     # снять кадры неуязвимости перед уроном
   piece-length: 4.0                # длина куска пути при проверке владения регионом
 
+barrier:                           # барьер: стена из шестигранников (ItemDisplay на каждую ячейку), гасит лучи магии
+  item-model: "azerus:moon_staff_barrier"
+  charge-ticks: 20                 # сколько держать ПКМ до готовности (20 тиков = 1 с); потом можно отпустить
+  duration-seconds: 10.0           # сколько стоит барьер
+  cooldown-seconds: 15.0           # перезарядка барьера (от поднятия; своя, не как у луча)
+  after-fizzle-seconds: 0.5        # после отпускания раньше времени
+  forward: 2.0                     # центр барьера: по горизонтали перед глазами (блоков)
+  up: 0.25                         # центр выше глаз (блоков)
+  cell-radius: 0.5                 # радиус шестигранника (до вершины), блоков
+  columns: 3                       # соты: столбцов
+  rows: 5                          # рядов (columns*rows не больше 25)
+  cell-gap: 0.04                   # зазор между ячейками (доля, только вид — лучи гасит без щелей)
+  fly-ticks: 6                     # полёт ячейки от посоха на место (меньше charge-ticks)
+  fly-start-scale: 0.15            # размер ячейки в начале полёта
+  fly-spread: 0.15                 # разлёт стартовых точек ячеек
+  form-flash-ticks: 3              # вспышка всех ячеек, когда барьер поднят
+  fade-ticks: 12                   # угасание в конце
+  fizzle-ticks: 6                  # рассыпание при срыве
+  hit-flash-ticks: 4               # вспышка ячейки, в которую попал луч
+  view-range: 1.5                  # множитель дальности видимости
+
 sounds:                            # список {sound, volume, pitch}; категория PLAYERS, звучит у глаз
   start:  [{sound: block.beacon.activate, volume: 0.7, pitch: 1.6}]
   hum:    [{sound: block.beacon.ambient, volume: 0.8, pitch: 1.2}]     # каждые hum-period-ticks, высота +0.4*заряд
@@ -61,10 +89,21 @@ sounds:                            # список {sound, volume, pitch}; кат
   fire:   [{sound: entity.warden.sonic_boom, volume: 0.55, pitch: 1.7}, {sound: block.beacon.deactivate, volume: 0.8, pitch: 2.0}, {sound: entity.firework_rocket.blast, volume: 0.6, pitch: 1.4}]
   fizzle: [{sound: block.beacon.deactivate, volume: 0.6, pitch: 1.3}]
   denied: [{sound: block.note_block.bass, volume: 0.5, pitch: 0.6}]
+  barrier-start:  [{sound: block.amethyst_block.chime, volume: 1.0, pitch: 0.8}, {sound: block.beacon.activate, volume: 0.5, pitch: 1.9}]
+  barrier-cell:   [{sound: block.amethyst_cluster.place, volume: 0.6, pitch: 1.0}]     # каждая ячейка; высота +0.05 за ячейку
+  barrier-formed: [{sound: block.beacon.power_select, volume: 0.8, pitch: 1.6}, {sound: block.amethyst_block.resonate, volume: 1.0, pitch: 1.2}]
+  barrier-hit:    [{sound: block.amethyst_block.hit, volume: 1.0, pitch: 0.7}, {sound: block.amethyst_cluster.break, volume: 0.8, pitch: 1.4}, {sound: block.beacon.deactivate, volume: 0.4, pitch: 2.0}]
+  barrier-end:    [{sound: block.amethyst_cluster.break, volume: 0.7, pitch: 1.0}, {sound: block.glass.break, volume: 0.35, pitch: 1.6}]
+  barrier-fizzle: [{sound: block.amethyst_block.break, volume: 0.6, pitch: 1.3}]
+  mode-beam:      [{sound: block.amethyst_block.chime, volume: 0.8, pitch: 1.6}]          # только себе
+  mode-barrier:   [{sound: block.amethyst_cluster.place, volume: 0.8, pitch: 1.2}, {sound: block.note_block.chime, volume: 0.5, pitch: 1.0}]
 
 particles:
   end:   {type: END_ROD, count: 14, spread: 0.25, speed: 0.06}            # вспышка в конце луча
   trail: {type: ELECTRIC_SPARK, every: 1.5, count: 1, spread: 0.05, speed: 0.0}   # след вдоль луча
+  barrier-form: {type: ELECTRIC_SPARK, count: 3, spread: 0.15, speed: 0.02}         # у каждой ячейки, когда барьер поднят
+  barrier-hit:  {type: END_ROD, count: 16, spread: 0.12, speed: 0.07}               # луч ударил в барьер
+  barrier-end:  {type: ELECTRIC_SPARK, count: 2, spread: 0.2, speed: 0.03}          # у каждой ячейки при угасании
 
 messages:                          # MiniMessage; <...> — подстановки
   cooldown: "<#7fd8ff>Посох восстанавливается: <white><s> с"
@@ -75,7 +114,14 @@ messages:                          # MiniMessage; <...> — подстановк
   given: "<green>Выдан <white>Посох Лунного Странника</white> ×<amount> игроку <player>."
   no-player: "<red>Игрок <player> не в сети."
   reloaded: "<green>core_magic: конфиг перечитан."
-  info: "<#7fd8ff>core_magic</#7fd8ff> <gray>— заклинаний сейчас: <white><casts></white>, эффектов в мире: <white><fx></white>; ваша перезарядка: <white><cd></white> с.<newline><gray>Заряд <white><charge> с</white>, луч до <white><range></white> бл., урон <white><damage></white>, перезарядка <white><cooldown> с</white>."
+  info: "<#7fd8ff>core_magic</#7fd8ff> <gray>— заклинаний сейчас: <white><casts></white>, эффектов в мире: <white><fx></white>, барьеров: <white><barriers></white>; ваша перезарядка: <white><cd></white> с.<newline><gray>Заряд <white><charge> с</white>, луч до <white><range></white> бл., урон <white><damage></white>, перезарядка <white><cooldown> с</white>."
   usage: "<gray>/cmagic give [ник] [кол-во] | reload | info"
   console-needs-player: "<red>Из консоли укажите игрока: /cmagic give <ник> [кол-во]"
   bad-amount: "<red>Количество — число от 1 до 64."
+  mode-beam: "<#7fd8ff>Заклинание: <white>Луч</white> <dark_gray>(Shift+ЛКМ — сменить)"
+  mode-barrier: "<#7fd8ff>Заклинание: <white>Барьер</white> <dark_gray>(Shift+ЛКМ — сменить)"
+  barrier-charge: "<#7fd8ff>Барьер <bar>"
+  barrier-ready: "<#7fd8ff>✦ Барьер поднят на <white><s> с</white> — можно отпустить ПКМ"
+  barrier-cooldown: "<#7fd8ff>Барьер восстанавливается: <white><s> с"
+  barrier-too-early: "<gray>Барьер рассыпался — держите ПКМ <white><need> с</white>."
+  barrier-no-room: "<gray>Здесь барьер не встанет."

@@ -3,13 +3,15 @@
 # Python-система core-python «Посох Лунного Странника». Посох (azerus_moon_staff) — предмет Nexo с компонентом
 # consumable (анимация лука, consume_seconds 3600): игрок ЗАЖИМАЕТ ПКМ — перед ним появляется голубой магический
 # круг и за 3 с растёт и разгорается; ОТПУСТИЛ после 3 с — из круга бьёт белый луч (урон всем на пути); раньше —
-# круг гаснет без выстрела.
+# круг гаснет без выстрела. Shift + ПКМ — сменить заклинание: «Луч» ↔ «Барьер» (kekkai.py: зажать ПКМ на 1 с —
+# стена из шестигранников на 10 с, гасит лучи посоха).
 #   /cmagic give [ник] [кол-во]   выдать посох
 #   /cmagic reload                перечитать config.yml
 #   /cmagic info                  заклинания, перезарядка, главные числа
 # Японский псевдоним: /魔法. Право: coremagic.admin.
 #
-# Состояние — в памяти: 詠唱 (UUID → идущее заклинание), 冷却 (UUID → момент готовности, мс). Всё про игрока
+# Состояние — в памяти: 詠唱 (UUID → идущее заклинание: 詠唱中 — луч, kekkai.結界詠唱 — барьер), 冷却 (UUID →
+# момент готовности луча, мс), 様式 (UUID → режим посоха), kekkai.結界冷却 (перезарядка барьера). Всё про игрока
 # трогается только в его потоке: обработчики его событий и его задача-«надзор» (run_for_player, только пока идёт
 # заклинание). Ни PlayerMoveEvent, ни глобальных циклов по игрокам.
 
@@ -22,6 +24,7 @@ import kyoutsuu
 import dougu
 import mahoujin
 import kousen
+import kekkai
 from kyoutsuu import Bukkit, EventResult
 
 Player = kyoutsuu.Player
@@ -50,6 +53,11 @@ _設定を読む()
 #: не чаще 拒否間隔 мс.
 拒否 = {}
 拒否間隔 = 500
+#: Режим посоха игрока: str(UUID) → "beam" | "barrier" (копия — на самом посохе, PDC py_core_magic:mode).
+様式 = {}
+#: Последнее событие Shift+ПКМ (мс): одно нажатие — одно переключение (клиент повторяет ПКМ каждые 4 тика и шлёт
+#: событие для обеих рук; каждое событие обновляет время).
+切替時刻 = {}
 
 
 def _文(cfg, 鍵, 生=None, **素):
@@ -100,8 +108,11 @@ def _冷やす(uid, 秒, player=None):
 # --- 詠唱（заклинание одного игрока） ------------------------------------------------------------------------------
 
 class 詠唱中:
+    """Заклинание «Луч». Интерфейс общий с kekkai.結界詠唱: uid, cfg, 終わった, 見張り(), 放す(held),
+    終える(方法, 冷却秒=None), 表示一覧(), 失敗秒."""
+
     __slots__ = ("player", "uid", "cfg", "陣", "ticks", "準備", "task", "世界", "終わった", "棒", "色tick", "唸りtick",
-                 "準備tick")
+                 "準備tick", "失敗秒")
 
     def __init__(self, player, cfg, ticks):
         self.player = player
@@ -117,6 +128,25 @@ class 詠唱中:
         self.色tick = ticks
         self.唸りtick = ticks
         self.準備tick = 0
+        self.失敗秒 = cfg.冷却.失敗秒
+
+    def 表示一覧(self):
+        d = self.陣.表示()
+        return [] if d is None else [d]
+
+    def 放す(self, held):
+        """ПКМ отпущен: заряжен — выстрел, иначе — срыв."""
+        p = self.player
+        c = self.cfg
+        if held >= c.詠唱.充填:
+            self.終える("撃", c.冷却.秒)
+            try:
+                kousen.撃つ(p, c, self.陣)
+            except BaseException as e:
+                amazake.log.warn("выстрел посоха: " + str(e))
+        else:
+            self.終える("散", c.冷却.失敗秒)
+            _帯(p, c, "too-early", need=keisan.秒の文字(c.詠唱.充填 / 20.0))
 
     def 始める(self):
         """Поток игрока: круг, звук, надзор."""
@@ -206,7 +236,7 @@ class 詠唱中:
 def _止める(player, 方法):
     s = 詠唱.get(str(player.getUniqueId()))
     if s is not None:
-        s.終える(方法, s.cfg.冷却.失敗秒 if 方法 == "散" else None)
+        s.終える(方法, s.失敗秒 if 方法 == "散" else None)
 
 
 # --- 開始（ПКМ с посохом） ------------------------------------------------------------------------------------
@@ -214,7 +244,8 @@ def _止める(player, 方法):
 @amazake.on("PlayerInteractEvent", ignore_cancelled=False)
 def 右クリック(event):
     """ПКМ в воздух/по блоку с посохом (поток игрока). Клик в воздух приходит «отменённым» — поэтому
-    ignore_cancelled=False. Начало заклинания проверяется через тик: держит ли игрок посох поднятым."""
+    ignore_cancelled=False. Shift + ПКМ — только смена режима (удержание не начинается). Начало заклинания
+    проверяется через тик: держит ли игрок посох поднятым."""
     a = event.getAction().name()
     if a != "RIGHT_CLICK_AIR" and a != "RIGHT_CLICK_BLOCK":
         return
@@ -228,29 +259,88 @@ def 右クリック(event):
         copy = item.clone()
         dougu.直す(copy)
         p.getInventory().setItem(event.getHand(), copy)
+        item = copy
+    uid = str(p.getUniqueId())
     if p.getWorld().getName() in cfg.禁止世界 or (cfg.杖.権限 and not p.hasPermission(cfg.杖.権限)):
         event.setUseItemInHand(EventResult.DENY)
+        if p.isSneaking():
+            event.setUseInteractedBlock(EventResult.DENY)
         return
-    uid = str(p.getUniqueId())
+    if p.isSneaking():
+        # смена режима: никакого удержания и заряда (DENY: Paper сам отменяет предсказанное клиентом
+        # использование — ServerPlayer.resyncUsingItem в handleUseItem)
+        event.setUseItemInHand(EventResult.DENY)
+        event.setUseInteractedBlock(EventResult.DENY)
+        _切り替える(p, event, item, cfg, uid)
+        return
     if uid in 詠唱:
         return
-    残り = _残り秒(uid)
+    型 = 様式を得る(p, item, cfg)
+    # перезарядка своего режима (у барьера — своя, без ванильной «шторки»: она закрыла бы и луч, и Shift+ПКМ)
+    残り = kekkai.冷却残り(uid) if 型 == "barrier" else _残り秒(uid)
     if 残り > 0.0:
         event.setUseItemInHand(EventResult.DENY)     # без анимации натягивания
-        今 = kyoutsuu.今ms()
-        前 = 拒否.get(uid)
-        if 前 is None or 今 - 前 >= 拒否間隔:      # nanoTime может быть отрицательным — без «нулевого» значения
-            拒否[uid] = 今
-            _帯(p, cfg, "cooldown", s=keisan.秒の文字(残り))
-            kyoutsuu.鳴らす(p.getWorld(), p.getEyeLocation(), cfg.音表["denied"])
+        _拒む(p, cfg, uid, "barrier-cooldown" if 型 == "barrier" else "cooldown", 残り)
         return
     if uid in 確認待ち:
         return
     確認待ち.add(uid)
-    amazake.run_once_for_player(p, lambda: _確認(p), delay=1)
+    amazake.run_once_for_player(p, lambda: _確認(p, 型), delay=1)
 
 
-def _確認(p):
+def _拒む(p, cfg, uid, 鍵, 残り):
+    """Отказ «восстанавливается»: строка и звук не чаще 拒否間隔 мс."""
+    今 = kyoutsuu.今ms()
+    前 = 拒否.get(uid)
+    if 前 is None or 今 - 前 >= 拒否間隔:      # nanoTime может быть отрицательным — без «нулевого» значения
+        拒否[uid] = 今
+        _帯(p, cfg, 鍵, s=keisan.秒の文字(残り))
+        kyoutsuu.鳴らす(p.getWorld(), p.getEyeLocation(), cfg.音表["denied"])
+
+
+def 様式を得る(p, item, cfg):
+    """Режим посоха: память → PDC посоха py_core_magic:mode → mode.default (результат запоминается)."""
+    uid = str(p.getUniqueId())
+    m = 様式.get(uid)
+    if m is None:
+        try:
+            m = amazake.data(item).get_string("mode") if item is not None else None
+        except BaseException:
+            m = None
+        if m not in settei.様式名:
+            m = cfg.様式.既定
+        様式[uid] = m
+    return m
+
+
+def _様式を見せる(p, cfg, m, 音=False):
+    _帯(p, cfg, "mode-" + m)
+    if 音:
+        kyoutsuu.自分に鳴らす(p, cfg.音表["mode-" + m])
+
+
+def _切り替える(p, event, item, cfg, uid):
+    """Shift + ПКМ: Луч ↔ Барьер (поток игрока)."""
+    今 = kyoutsuu.今ms()
+    前 = 切替時刻.get(uid)
+    切替時刻[uid] = 今
+    if 前 is not None and 今 - 前 < cfg.様式.間隔:
+        return
+    if uid in 詠唱:
+        return
+    新 = "barrier" if 様式を得る(p, item, cfg) == "beam" else "beam"
+    様式[uid] = 新
+    if cfg.様式.品に記す and event.getHand() is not None:
+        try:
+            copy = item.clone()
+            amazake.data(copy).set_string("mode", 新)
+            p.getInventory().setItem(event.getHand(), copy)
+        except BaseException as e:
+            amazake.log.debug("режим на посохе: " + str(e))
+    _様式を見せる(p, cfg, 新, True)
+
+
+def _確認(p, 型="beam"):
     uid = str(p.getUniqueId())
     確認待ち.discard(uid)
     if kyoutsuu.終了済み[0] or uid in 詠唱:
@@ -263,7 +353,10 @@ def _確認(p):
         ticks = max(1, int(p.getActiveItemUsedTime()))
     except BaseException:
         ticks = 1
-    詠唱中(p, settei.今(), ticks).始める()
+    if 型 == "barrier":
+        kekkai.結界詠唱(p, settei.今(), ticks, 詠唱).始める()
+    else:
+        詠唱中(p, settei.今(), ticks).始める()
 
 
 # --- 解放（отпустил ПКМ） -------------------------------------------------------------------------------------
@@ -274,20 +367,11 @@ def 手を離す(event):
     s = 詠唱.get(str(p.getUniqueId()))
     if s is None or not dougu.杖か(event.getItem()):
         return
-    c = s.cfg
     try:
         held = int(event.getTicksHeldFor())
     except BaseException:
         held = s.ticks
-    if held >= c.詠唱.充填:
-        s.終える("撃", c.冷却.秒)
-        try:
-            kousen.撃つ(p, c, s.陣)
-        except BaseException as e:
-            amazake.log.warn("выстрел посоха: " + str(e))
-    else:
-        s.終える("散", c.冷却.失敗秒)
-        _帯(p, c, "too-early", need=keisan.秒の文字(c.詠唱.充填 / 20.0))
+    s.放す(held)
 
 
 # --- 中断（прервать заклинание） -----------------------------------------------------------------------------------
@@ -299,7 +383,15 @@ def 持ち替え(event):
         # смена слота прерывает только заклинание из основной руки (из второй руки ваниль его не прерывает)
         if not p.isHandRaised() or p.getActiveItemHand() == kyoutsuu.EquipmentSlot.HAND:
             _止める(p, "散")
-    if settei.今().杖.修理:
+    cfg = settei.今()
+    if cfg.様式.選択時 and not event.isCancelled():
+        try:
+            新品 = p.getInventory().getItem(event.getNewSlot())
+            if dougu.杖か(新品):
+                _様式を見せる(p, cfg, 様式を得る(p, 新品, cfg))
+        except BaseException as e:
+            amazake.log.debug("режим при выборе: " + str(e))
+    if cfg.杖.修理:
         # задачу ставим только когда в новом слоте посох с неверными компонентами (а не на каждую прокрутку)
         新 = event.getNewSlot()
         if dougu.直すべきか(p.getInventory().getItem(新)):
@@ -329,7 +421,10 @@ def 退出(event):
     uid = str(p.getUniqueId())
     確認待ち.discard(uid)
     拒否.pop(uid, None)
+    様式.pop(uid, None)      # выбор остаётся на посохе (PDC)
+    切替時刻.pop(uid, None)
     _残り秒(uid)          # истёкшую перезарядку — забыть
+    kekkai.冷却残り(uid)
 
 
 @amazake.on("PlayerChangedWorldEvent", priority="monitor")
@@ -346,6 +441,13 @@ def 瞬間移動(event):
     t = event.getTo()
     if t is None or not f.getWorld().equals(t.getWorld()) or f.distanceSquared(t) > 16.0:
         _止める(p, "即")
+
+
+@amazake.on("org.bukkit.event.world.EntitiesUnloadEvent", priority="monitor")
+def 降ろす(event):
+    """Чанк с ячейками барьера выгружен: барьер больше не гасит лучи (kekkai.降ろされた). Пустой 結界体 — сразу выход."""
+    if kekkai.結界体:
+        kekkai.降ろされた(event.getEntities())
 
 
 @amazake.on("PlayerItemConsumeEvent", priority="lowest")
@@ -397,16 +499,22 @@ def 終了():
     kyoutsuu.終了済み[0] = True
     for s in list(詠唱.values()):
         s.終わった = True
-        d = s.陣.表示()
-        if d is not None:
+        for d in s.表示一覧():
+            kyoutsuu.消す(d)
+    for b in list(kekkai.結界体.values()):
+        b.消え中 = True
+        for d in b.表示一覧():
             kyoutsuu.消す(d)
     for d, 場所 in list(mahoujin.残像.values()):
         kyoutsuu.消す(d)
     詠唱.clear()
     mahoujin.残像.clear()
+    kekkai.片付け()
     冷却.clear()
     確認待ち.clear()
     拒否.clear()
+    様式.clear()
+    切替時刻.clear()
 
 
 # --- コマンド（/cmagic, /魔法） --------------------------------------------------------------------------------------
@@ -481,10 +589,11 @@ def _再読込(sender):
 
 
 def _情報(sender, cfg):
-    fx = len(mahoujin.残像) + sum(1 for s in list(詠唱.values()) if s.陣.表示() is not None)
+    fx = (len(mahoujin.残像) + sum(len(s.表示一覧()) for s in list(詠唱.values()))
+          + sum(len(b.表示一覧()) for b in list(kekkai.結界体.values())))
     cd = 0.0
     if java.instanceof(sender, Player):
         cd = _残り秒(str(sender.getUniqueId()))
-    _言う(sender, cfg, "info", casts=str(len(詠唱)), fx=str(fx), cd=keisan.秒の文字(cd),
+    _言う(sender, cfg, "info", casts=str(len(詠唱)), fx=str(fx), barriers=str(kekkai.数()), cd=keisan.秒の文字(cd),
          charge=keisan.秒の文字(cfg.詠唱.充填 / 20.0), range=keisan.秒の文字(cfg.光.射程),
          damage=keisan.秒の文字(cfg.光.傷), cooldown=keisan.秒の文字(cfg.冷却.秒))

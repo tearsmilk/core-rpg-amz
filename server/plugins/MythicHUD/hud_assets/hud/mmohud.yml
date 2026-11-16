@@ -12,7 +12,7 @@ health:
         x: 44
         y: -4
       conditions:
-      - placeholder{ph=%player_absorption%;v=0;o=>} false hide
+        - placeholder{ph=%player_absorption%;v=0;o=>} false hide
     text_absorption:
       text: "<#ffea00>%math_0_{player_health_rounded}+{player_absorption}%"
       font: "mmohud-font"
@@ -22,7 +22,7 @@ health:
         x: 44
         y: -4
       conditions:
-      - placeholder{ph=%player_absorption%;v=0;o=>} true hide
+        - placeholder{ph=%player_absorption%;v=0;o=>} true hide
     text_divider:
       text: "/"
       font: "mmohud-font"
@@ -42,52 +42,52 @@ health:
     icon_overlay_absorption:
       texture:
         path: assets/mmohud/icon_heart_absorption.png
-      offset:                           
+      offset:
         x: -10
         y: -2
       conditions:
-      - placeholder{ph=%player_absorption%;v=0;o=>} true hide
+        - placeholder{ph=%player_absorption%;v=0;o=>} true hide
     icon_overlay_burning:
       texture:
         path: assets/mmohud/icon_heart_burning.png
-      offset:                           
+      offset:
         x: -9
         y: -3
       conditions:
-      - placeholder{ph=%player-j17_is_burning%;v=yes} true hide
+        - placeholder{ph=%player-j17_is_burning%;v=yes} true hide
     icon_overlay_poison:
       texture:
         path: assets/mmohud/icon_heart_poison.png
-      offset:                           
+      offset:
         x: -9
         y: -3
       conditions:
-      - effect{e=poison} true hide
+        - effect{e=poison} true hide
     icon_overlay_freezing:
       texture:
         path: assets/mmohud/icon_heart_freezing.png
-      offset:                           
+      offset:
         x: -10
         y: -2
       conditions:
-      - placeholder{ph=%player-j17_is_freezing%;v=yes} true hide
+        - placeholder{ph=%player-j17_is_freezing%;v=yes} true hide
     icon:
       texture:
         path: assets/mmohud/icon_heart.png
       color: "#cb3040"
-      offset:                           
+      offset:
         x: -10
         y: -2
       conditions:
-      - effect{e=wither} false hide
+        - effect{e=wither} false hide
     icon_wither:
       texture:
         path: assets/mmohud/icon_heart_wither.png
-      offset:                           
+      offset:
         x: -10
         y: -2
       conditions:
-      - effect{e=wither} true hide
+        - effect{e=wither} true hide
     bar_overlay_absorption:
       texture:
         path: assets/mmohud/bar_fill_absorption.png
@@ -95,7 +95,7 @@ health:
         x: 0
         y: -2
       function:
-        listener: absorption                        
+        listener: absorption
         increment: 43
         orientation: horizontal
       conditions:
@@ -106,9 +106,9 @@ health:
         x: 1
         y: -3
       conditions:
-      - placeholder{ph=%player-j17_is_burning%;v=yes} true hide
-      function:                                     
-        listener: health                        
+        - placeholder{ph=%player-j17_is_burning%;v=yes} true hide
+      function:
+        listener: health
         increment: 43
         orientation: horizontal
     bar_overlay_poison:
@@ -118,9 +118,9 @@ health:
         x: 1
         y: -3
       conditions:
-      - effect{e=poison} true hide
-      function:                                     
-        listener: health                        
+        - effect{e=poison} true hide
+      function:
+        listener: health
         increment: 43
         orientation: horizontal
     bar_overlay_freezing:
@@ -130,22 +130,22 @@ health:
         x: 1
         y: -3
       conditions:
-      - placeholder{ph=%player-j17_is_freezing%;v=yes} true hide
-      function:                                     
-        listener: health                        
+        - placeholder{ph=%player-j17_is_freezing%;v=yes} true hide
+      function:
+        listener: health
         increment: 43
         orientation: horizontal
     bar_fill_wither:
       texture:
         path: assets/mmohud/bar_fill_wither.png
-      color: "#6c6c6c"  
+      color: "#6c6c6c"
       offset:
         x: 1
         y: -3
       conditions:
-      - effect{e=wither} true hide
-      function:                                     
-        listener: health                        
+        - effect{e=wither} true hide
+      function:
+        listener: health
         increment: 28
         orientation: horizontal
     bar_fill:
@@ -156,10 +156,10 @@ health:
         x: 1
         y: -3
       conditions:
-      - effect{e=wither} false hide
-      - 'effect{e=poison} false color #c34c37'
-      function:                                     
-        listener: health                            
+        - effect{e=wither} false hide
+        - 'effect{e=poison} false color #c34c37'
+      function:
+        listener: health
         increment: 43
         orientation: horizontal
     bar_overlay_regeneration:
@@ -170,7 +170,7 @@ health:
         x: 1
         y: -4
       conditions:
-      - effect{e=regeneration} true hide
+        - effect{e=regeneration} true hide
     bar_outline:
       texture:
         path: assets/mmohud/bar_outline.png
@@ -185,11 +185,11 @@ air:
     icon:
       texture:
         path: assets/mmohud/icon_air.png
-      offset:                           
+      offset:
         x: -2
         y: 0
       conditions:
-      - placeholder{ph=%player_remaining_air%;v=%player_max_air%;o=<} true hide
+        - placeholder{ph=%player_remaining_air%;v=%player_max_air%;o=<} true hide
     fill:
       texture:
         path: assets/mmohud/bar_fill_air.png
@@ -202,7 +202,7 @@ air:
         increment: 40
         orientation: horizontal
       conditions:
-      - placeholder{ph=%player_remaining_air%;v=%player_max_air%;o=<} true hide
+        - placeholder{ph=%player_remaining_air%;v=%player_max_air%;o=<} true hide
     outline:
       texture:
         path: assets/mmohud/bar_outline_air.png
@@ -210,7 +210,7 @@ air:
         x: -1
         y: -2
       conditions:
-      - placeholder{ph=%player_remaining_air%;v=%player_max_air%;o=<} true hide
+        - placeholder{ph=%player_remaining_air%;v=%player_max_air%;o=<} true hide
 ####
 ####
 food:
@@ -248,8 +248,9 @@ food:
         x: 89
         y: -2
       conditions:
-      - effect{e=hunger} true texture assets/mmohud/icon_food_hunger.png
-      - placeholder{ph=%deluxemenus_meta_foodicon_BOOLEAN%;v=true;o==} true hide
+        - effect{e=hunger} true texture assets/mmohud/icon_food_hunger.png
+        - placeholder{ph=%deluxemenus_meta_foodicon_BOOLEAN%;v=true;o==} true
+          hide
     icon_food2:
       texture:
         path: assets/mmohud/icon_food2.png
@@ -257,8 +258,9 @@ food:
         x: 89
         y: -2
       conditions:
-      - effect{e=hunger} true texture assets/mmohud/icon_food2_hunger.png
-      - placeholder{ph=%deluxemenus_meta_foodicon_BOOLEAN%;v=true;o==} false hide
+        - effect{e=hunger} true texture assets/mmohud/icon_food2_hunger.png
+        - placeholder{ph=%deluxemenus_meta_foodicon_BOOLEAN%;v=true;o==} false
+          hide
     fillhunger:
       texture:
         path: assets/mmohud/bar_fill_hunger.png
@@ -267,9 +269,9 @@ food:
         x: 1
         y: -3
       conditions:
-      - effect{e=hunger} true hide
-      function:                                     
-        listener: food                        
+        - effect{e=hunger} true hide
+      function:
+        listener: food
         increment: 43
         orientation: horizontal
     fill:
@@ -284,7 +286,7 @@ food:
         increment: 43
         orientation: horizontal
       conditions:
-      - effect{e=hunger} false hide
+        - effect{e=hunger} false hide
     outline:
       texture:
         path: assets/mmohud/bar_outline.png
@@ -404,26 +406,10 @@ armor:
     text_currentarmor:
       text: "%fill-value%"
       font: "mmohud-font"
-      align: left
-      scale: 0.70
-      offset:
-        x: 41
-        y: -3
-    text_divider:
-      text: "/"
-      font: "mmohud-font"
       align: center
       scale: 0.70
       offset:
-        x: 43
-        y: -3
-    text_maxarmor:
-      text: "%fill-max%"
-      font: "mmohud-font"
-      align: right
-      scale: 0.70
-      offset:
-        x: 47
+        x: 44
         y: -3
     icon:
       texture:
@@ -439,12 +425,12 @@ armor:
         x: 1
         y: -2
       function:
-        listener: armor
+        listener: armor40
         increment: 43
         orientation: horizontal
     outline:
       texture:
-        path: assets/mmohud/bar_outline.png        
+        path: assets/mmohud/bar_outline.png
       offset:
         y: -1
 experience:
@@ -505,7 +491,8 @@ money:
         x: -11
         y: -2
       conditions:
-      - placeholder{ph=%deluxemenus_meta_currency_BOOLEAN%;v=true;o==} true hide
+        - placeholder{ph=%deluxemenus_meta_currency_BOOLEAN%;v=true;o==} true
+          hide
     textformatted:
       align: left
       text: "<#e5bc63>%vault_eco_balance_formatted%"
@@ -515,34 +502,40 @@ money:
         x: -11
         y: -2
       conditions:
-      - placeholder{ph=%deluxemenus_meta_currency_BOOLEAN%;v=true;o==} false hide
+        - placeholder{ph=%deluxemenus_meta_currency_BOOLEAN%;v=true;o==} false
+          hide
     backgroundformatted:
       align: left
       texture:
         path: assets/mmohud/background_coin_1.png
       conditions:
-      - placeholder{ph=%deluxemenus_meta_currency_BOOLEAN%;v=true;o==} false hide
+        - placeholder{ph=%deluxemenus_meta_currency_BOOLEAN%;v=true;o==} false
+          hide
     background1:
       align: left
       texture:
         path: assets/mmohud/background_coin_1.png
       conditions:
-      - placeholder{ph=%vault_eco_balance_fixed%;v=1000;o=>=} false hide
-      - placeholder{ph=%deluxemenus_meta_currency_BOOLEAN%;v=true;o==} true hide
+        - placeholder{ph=%vault_eco_balance_fixed%;v=1000;o=>=} false hide
+        - placeholder{ph=%deluxemenus_meta_currency_BOOLEAN%;v=true;o==} true
+          hide
     background2:
       align: left
       texture:
         path: assets/mmohud/background_coin_2.png
       conditions:
-      - placeholder{ph=%vault_eco_balance_fixed%;v=1000;o=>=} true hide
-      - placeholder{ph=%vault_eco_balance_fixed%;v=10000;o=>=} false hide
-      - placeholder{ph=%deluxemenus_meta_currency_BOOLEAN%;v=true;o==} true hide
+        - placeholder{ph=%vault_eco_balance_fixed%;v=1000;o=>=} true hide
+        - placeholder{ph=%vault_eco_balance_fixed%;v=10000;o=>=} false hide
+        - placeholder{ph=%deluxemenus_meta_currency_BOOLEAN%;v=true;o==} true
+          hide
     background3:
       align: left
       texture:
         path: assets/mmohud/background_coin_3.png
       conditions:
-      - placeholder{ph=%vault_eco_balance_fixed%;v=10000;o=<=} false hide
-      - placeholder{ph=%deluxemenus_meta_currency_BOOLEAN%;v=true;o==} true hide
+        - placeholder{ph=%vault_eco_balance_fixed%;v=10000;o=<=} false hide
+        - placeholder{ph=%deluxemenus_meta_currency_BOOLEAN%;v=true;o==} true
+          hide
+
 ####
 ####

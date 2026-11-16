@@ -12,6 +12,7 @@ import org.bukkit.potion.PotionEffectType;
  * Моб из mobs.yml. Числа {@code null} — оставить как у ванильного моба.
  *
  * @param exp опыт за убийство; null — ванильный (его, как и любой ванильный опыт, core-rpg переводит в свой)
+ * @param model модель ModelEngine; null — без модели
  */
 public record MobDef(
     String id,
@@ -38,8 +39,21 @@ public record MobDef(
     List<Effect> effects,
     List<Effect> onHitEffects,
     int size,
-    boolean noFire
+    boolean noFire,
+    Model model
 ) {
+
+    /**
+     * Модель ModelEngine поверх моба.
+     *
+     * @param id id модели (blueprint) ModelEngine
+     * @param scale масштаб модели (1 — как в blueprint)
+     * @param hideBase прятать ванильного моба под моделью
+     * @param attack анимация атаки (выстрел и удар); null — не проигрывать
+     * @param hit анимация получения урона; null — не проигрывать
+     */
+    public record Model(String id, double scale, boolean hideBase, String attack, String hit) {
+    }
 
     /**
      * Эффект зелья. Для постоянных эффектов длительность бесконечная, шанс не используется.

@@ -38,7 +38,7 @@ EventResult = java.type("org.bukkit.event.Event$Result")
 System = java.type("java.lang.System")
 
 NEXO_ID = "nexo:id"
-効果鍵 = "fx"               # py_core_magic:fx = circle | beam
+効果鍵 = "fx"               # py_core_magic:fx = circle | beam | barrier
 主鍵 = "owner"              # py_core_magic:owner = UUID заклинателя
 杖鍵 = "staff"              # py_core_magic:staff = 1 (запасной посох без Nexo)
 NPC鍵 = amazake.key("corenpc:npc")
@@ -91,6 +91,13 @@ def 変形(前, 下, sx, sy, sz, 反転=False):
                           Vector3f(f32(sx), f32(sy), f32(sz)), Quaternionf())
 
 
+def 変形3(x, y, z, sx, sy, sz, 反転=True):
+    """Transformation: перенос (x, y, z) в осях дисплея, масштаб (sx, sy, sz). 反転 — модель повёрнута на 180°
+    вокруг Y (ItemDisplay сам рисует модель повёрнутой на 180°: с 反転 оси модели = оси дисплея)."""
+    回 = Quaternionf().rotationY(f32(math.pi)) if 反転 else Quaternionf()
+    return Transformation(Vector3f(f32(x), f32(y), f32(z)), 回, Vector3f(f32(sx), f32(sy), f32(sz)), Quaternionf())
+
+
 # --------------------------------------------------------------------------------------------- звук и частицы
 
 def 鳴らす(world, 場所, 音列, 足す=0.0):
@@ -99,6 +106,19 @@ def 鳴らす(world, 場所, 音列, 足す=0.0):
         try:
             world.playSound(場所, s.鍵, SoundCategory.PLAYERS, s.音量,
                             s.高さ if not 足す else f32(keisan.挟む(s.高さ + 足す, 0.5, 2.0)))
+        except BaseException as e:
+            amazake.log.debug("звук " + s.鍵 + ": " + str(e))
+
+
+def 自分に鳴らす(p, 音列):
+    """Звуки только этому игроку (у его глаз, категория PLAYERS). Поток игрока."""
+    try:
+        at = p.getEyeLocation()
+    except BaseException:
+        return
+    for s in 音列:
+        try:
+            p.playSound(at, s.鍵, SoundCategory.PLAYERS, s.音量, s.高さ)
         except BaseException as e:
             amazake.log.debug("звук " + s.鍵 + ": " + str(e))
 

@@ -23,6 +23,8 @@ import org.bukkit.potion.PotionEffectType;
 public final class MobCatalog {
 
     public static final Pattern ID = Pattern.compile("[a-z0-9_\\-]{1,48}");
+    /** id модели ModelEngine (имя blueprint). */
+    static final Pattern MODEL_ID = Pattern.compile("[A-Za-z0-9_\\-.]{1,64}");
     public static final MobCatalog EMPTY = new MobCatalog(Map.of());
 
     private static final Map<String, EquipmentSlot> SLOTS = Map.of(
@@ -136,7 +138,42 @@ public final class MobCatalog {
             effects(m, "effects", false, warn),
             effects(m, "on-hit-effects", true, warn),
             Math.max(0, Math.min(16, m.getInt("size", 0))),
-            m.getBoolean("no-fire", true));
+            m.getBoolean("no-fire", true),
+            model(m, warn));
+    }
+
+    /** Модель ModelEngine из model / model-scale / model-hide-base / model-attack / model-hit; null — без модели. */
+    static MobDef.Model model(final ConfigurationSection m, final Consumer<String> warn) {
+        final String id = m.getString("model", "").trim();
+        if (id.isEmpty()) {
+            for (final String key : new String[] {"model-scale", "model-hide-base", "model-attack", "model-hit"}) {
+                if (m.contains(key)) {
+                    warn.accept(key + " без model — не используется");
+                }
+            }
+            return null;
+        }
+        if (!MODEL_ID.matcher(id).matches()) {
+            warn.accept("model «" + id + "» — id модели ModelEngine: латиница, цифры, _ - . (моб будет без модели)");
+            return null;
+        }
+        double scale = 1.0;
+        if (m.contains("model-scale")) {
+            final double v = m.getDouble("model-scale", -1);
+            if (v > 0 && v <= 100) {
+                scale = v;
+            } else {
+                warn.accept("model-scale должно быть числом больше 0 (до 100), ставлю 1");
+            }
+        }
+        return new MobDef.Model(id, scale, m.getBoolean("model-hide-base", true),
+            animation(m, "model-attack", "attack"), animation(m, "model-hit", "hit"));
+    }
+
+    /** Имя анимации; пусто, «-» или none — не проигрывать (null). */
+    private static String animation(final ConfigurationSection m, final String key, final String fallback) {
+        final String v = m.getString(key, fallback).trim();
+        return v.isEmpty() || v.equals("-") || v.equalsIgnoreCase("none") ? null : v;
     }
 
     private static Double positive(final ConfigurationSection m, final String key, final Consumer<String> warn) {

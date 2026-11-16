@@ -25,6 +25,11 @@
 #   on-hit-effects       — эффекты цели при ударе: [{effect: poison, level: 1, seconds: 4, chance: 35}]
 #   size                 — размер слизня, магмового куба, фантома (1..16; не указано — случайный ванильный)
 #   no-fire              — огненные шары моба (блейз, гаст) не поджигают и не ломают блоки (true)
+#   model                — модель ModelEngine (id blueprint, например skeleton_archer). Нет ModelEngine — моб без модели
+#   model-scale          — масштаб модели (1)
+#   model-hide-base      — прятать ванильного моба под моделью (true). Снаряжение остаётся (лук стреляет), но не видно
+#   model-attack         — анимация при выстреле и ударе (attack); none — не проигрывать
+#   model-hit            — анимация при уроне (hit); none — не проигрывать. idle, walk и death ModelEngine играет сам
 
 mobs:
   forest_zombie:
@@ -49,6 +54,7 @@ mobs:
   cave_skeleton:
     type: SKELETON
     name: "<gray>Пещерный стрелок</gray>"
+    model: skeleton_archer
     health: 30
     damage: 3
     projectile-damage: 6

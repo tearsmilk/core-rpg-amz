@@ -3,7 +3,7 @@
 
     python3 -I tools/moonstaff_check.py [--pack pack.zip] [--quick]
 
-(a) Маркеры не пересекаются ни с чем: сигнатура S0 = (177,126,90,3) есть только в (0,0) наших 9 спрайтов, (K,90,126,3)
+(a) Маркеры не пересекаются ни с чем: сигнатура S0 = (177,126,90,3) есть только в (0,0) наших 10 спрайтов, (K,90,126,3)
     — только в (1,0); ни ±2 по каналу от S0, ни (G,B,A) = (90,126,3) больше нигде. Скан: все PNG паков репозитория,
     server/plugins (снимок прода, в т. ч. zip внешних паков), models/, картинки внутри .bbmodel и ВСЕ zip/jar
     репозитория (включая ванильный client-1.21.11.jar). Оттенок (R≤250, 233, 253) не встречается ни в одном
@@ -17,6 +17,8 @@
     в случайных местах атласа 2048²: каждая грань узнаёт свой K, «вдоль луча» = +Z модели; кожаная броня с оттенком
     (100,233,253) при UV2 (240,240) и ванильной текстурой — ванильный путь; ключ A не срабатывает на чужих маркерах.
 (e) Размеры: спрайты 128×128, текстура посоха 64×64; модели — повороты по одной оси на ±22.5/±45, координаты −16..32.
+(f) Барьер (K10 hex_cell): классы альфы ячейки, вне шестигранника и при L=0 — альфа 0, L=9 ярче L=8, L=4 тусклее,
+    шов GameTime (t и t+1200 равны), раскладка сот FX == core_magic/keisan.py (蜂巣, 組順, 輝き番号), если он есть.
 --pack: наши пиксели и модели в собранном Nexo pack.zip == репозиторий, include azerus на месте, общий шейдер == наш.
 Затем запускается armor3d_check.py (в nexo-items/pack не должно быть копии общего шейдера).
 Код выхода ≠ 0 при любой ошибке.
@@ -125,10 +127,13 @@ def check_markers(quick):
                     for n in z.namelist():
                         if n.lower().endswith('.png'):
                             scan(os.path.relpath(os.path.join(r, f), REPO) + '!' + n, z.read(n), False)
-    if len(sentinel_at) != len(FX.KINDS):
-        bad(f'наших спрайтов найдено {len(sentinel_at)}, ожидалось {len(FX.KINDS)}')
+    # Считаем только nexo-items/pack; копии в server/plugins (снимок прода) проверены выше на ту же уникальность.
+    ours = [n for n in sentinel_at if n.replace('\\', '/').startswith('nexo-items/pack/')]
+    if len(ours) != len(FX.KINDS):
+        bad(f'наших спрайтов в nexo-items/pack найдено {len(ours)}, ожидалось {len(FX.KINDS)}')
     ok(f'PNG: {st["png"]} (zip/jar: {nz}{" — пропущены, --quick" if quick else ""}), текселей с альфой 3 '
-       f'всего {st["alpha3"]} (из них наших сигнатур {2 * len(sentinel_at)}); сигнатура только у наших 9 спрайтов')
+       f'всего {st["alpha3"]} (из них наших сигнатур {2 * len(sentinel_at)}); сигнатура только у наших '
+       f'{len(FX.KINDS)} спрайтов (+ {len(sentinel_at) - len(ours)} копий в снимке прода)')
     # оттенок
     vals = {(r << 16) | (FX.MARK_G << 8) | FX.MARK_B for r in range(0, 251)}
     pi = re.compile(r'(?<![0-9.])(-?\d{4,10})(?![0-9.])')
@@ -354,7 +359,7 @@ def cpu_kind(atlas, uv, local):
         return None
     k = atlas[p0[1], p0[0] + 1].astype(float)
     kind = int(math.floor(k[0] + 0.5))
-    if kind < 1 or kind > 9 or np.any(np.abs(k - np.array([kind, 90, 126, 3])) >= 0.5):
+    if kind < 1 or kind > max(FX.KINDS.values()) or np.any(np.abs(k - np.array([kind, 90, 126, 3])) >= 0.5):
         return None
     return kind
 
@@ -371,7 +376,9 @@ def check_logic():
              ((0, 233, 253), (240, 224), False, 'наш цвет при UV2 (240,224)'),
              ((0, 233, 253), (240, 240), True, 'наш, заряд 0'),
              ((125, 233, 253), (240, 240), True, 'наш, заряд 0.5'),
-             ((250, 233, 253), (240, 240), True, 'наш, заряд 1')]
+             ((250, 233, 253), (240, 240), True, 'наш, заряд 1'),
+             ((249, 233, 253), (240, 240), True, 'барьер g 24, L 9'),
+             ((249, 233, 253), (240, 224), False, 'барьер при UV2 (240,224)')]
     for rgb, uv2, want, label in cases:
         got, _ = vertex_key(rgb, uv2)
         if got != want:
@@ -405,13 +412,15 @@ def check_logic():
     atlas[ly:ly + 16, lx:lx + 16] = leather
     rects['leather'] = (lx, ly, 16, 16)
     tex_kind = {}
-    for mname, model in (('moon_staff_circle', FX.circle_model()), ('moon_staff_beam', FX.beam_model())):
+    for mname, model in (('moon_staff_circle', FX.circle_model()), ('moon_staff_beam', FX.beam_model()),
+                         ('moon_staff_barrier', FX.barrier_model())):
         disk = json.load(open(os.path.join(AZ, 'models', 'item', mname + '.json'), encoding='utf-8'))
         if disk != model:
             bad(f'models/item/{mname}.json отличается от генератора — перезапустите moon_staff.py')
         for var, ref in model['textures'].items():
             tex_kind[(mname, var)] = ref.split('/')[-1]
         n = 0
+        луч = False
         for var, pts, face in bake(model):
             name = tex_kind[(mname, var)]
             K = FX.KINDS[name]
@@ -427,11 +436,12 @@ def check_logic():
                     break
             n += 1
             if 5 <= K <= 8:
+                луч = True
                 d_l = {5: pts[1] - pts[0], 6: pts[0] - pts[1], 7: pts[3] - pts[0], 8: pts[0] - pts[3]}[K]
                 d_l = d_l / np.linalg.norm(d_l)
                 if d_l @ np.array([0, 0, 1.0]) < 0.999:
                     bad(f'{mname} {face} ({name}): «вдоль луча» = {d_l.round(3)}, а не +Z')
-        ok(f'{mname}: {n} граней, у каждой свой K; у граней луча s растёт вдоль +Z')
+        ok(f'{mname}: {n} граней, у каждой свой K' + ('; у граней луча s растёт вдоль +Z' if луч else ''))
     # чужой квад с нашим оттенком
     on, _ = vertex_key((100, 233, 253), (240, 240))
     x, y, w, h = rects['leather']
@@ -476,7 +486,7 @@ def check_files():
     sa = np.asarray(st.convert('RGBA'))[..., 3]
     if ((sa > 0) & (sa < 255)).any():
         bad('moon_staff.png: полупрозрачные тексели (нужны только 0/255)')
-    for m in ('moon_staff', 'moon_staff_cast', 'moon_staff_circle', 'moon_staff_beam'):
+    for m in ('moon_staff', 'moon_staff_cast', 'moon_staff_circle', 'moon_staff_beam', 'moon_staff_barrier'):
         j = json.load(open(os.path.join(AZ, 'models', 'item', m + '.json'), encoding='utf-8'))
         for e in j.get('elements', []):
             for v in e['from'] + e['to']:
@@ -485,7 +495,7 @@ def check_files():
             r = e.get('rotation')
             if r and (r['angle'] not in (-45, -22.5, 0, 22.5, 45) or r['axis'] not in 'xyz'):
                 bad(f'{m}: поворот {r}')
-    for i in ('moon_staff', 'moon_staff_circle', 'moon_staff_beam'):
+    for i in ('moon_staff', 'moon_staff_circle', 'moon_staff_beam', 'moon_staff_barrier'):
         if not os.path.exists(os.path.join(AZ, 'items', i + '.json')):
             bad(f'нет items/{i}.json')
     ymls = open(os.path.join(ROOT, 'items', 'azerus_weapons.yml'), encoding='utf-8').read()
@@ -496,7 +506,81 @@ def check_files():
             if word in open(p, encoding='utf-8').read().lower():
                 bad(f'{os.path.basename(p)}: упоминание «{word}»')
     if not PROBLEMS:
-        ok('9 спрайтов 128×128 (K, рамка, радиус), посох 64×64 (альфа 0/255), модели по правилам Java, items/*.json, yml')
+        ok(f'{len(FX.KINDS)} спрайтов 128×128 (K, рамка, радиус), посох 64×64 (альфа 0/255), модели по правилам Java, items/*.json, yml')
+
+
+# ------------------------------------------------------------------------------------------- (f) барьер
+def check_barrier():
+    print('(f) барьер (K10 hex_cell)')
+    n0 = len(PROBLEMS)
+    spr = np.asarray(Image.open(os.path.join(FX.FX_DIR, 'hex_cell.png')).convert('RGBA'))
+    if not np.array_equal(spr, FX.sprite_hex_cell()):
+        bad('hex_cell.png отличается от генератора — перезапустите moon_staff.py')
+    cls = FX.hex_classes(spr)
+    a = spr[..., 3].astype(int).copy()
+    a[0, 0] = a[0, 1] = 0
+    known = cls['rim'] | cls['glint'] | cls['bevel'] | cls['fill'] | cls['zero']
+    if not known.all():
+        bad(f'hex_cell: альфа вне классов 0/96..239/254/255: {sorted(set(a[~known].tolist()))}')
+    if ((a > 0) & (FX.RHO > FX.HEX_R_PX)).any():
+        bad('hex_cell: рисунок вне шестигранника ρ ≤ 60')
+    if not (cls['rim'] == ((FX.RHO > 52) & (FX.RHO <= FX.HEX_R_PX))).all():
+        bad('hex_cell: обвод (альфа 255) ≠ 52 < ρ ≤ 60')
+    ng = int(cls['glint'].sum())
+    if not 4 <= ng <= 40:
+        bad(f'hex_cell: блёсток (альфа 254) {ng} текс.')
+    # шейдер на сетке msLocal (центры текселей ×2)
+    v = (np.arange(256) + 0.5) / 256
+    lx, ly = np.meshgrid(v, v)
+    ix, iy = np.floor(lx * 128).astype(int), np.floor(ly * 128).astype(int)
+    outside = FX.RHO[iy, ix] > FX.HEX_R_PX
+    rng = random.Random(10)
+    for g in (0, 7, 24):
+        for t in (0.0, 0.37, 1.3, 2.9, 777.7):
+            for L in range(10):
+                c = FX.shade(10, spr, lx, ly, FX.barrier_R(g, L) / 250.0, t)
+                if (c[outside, 3] > 0).any():
+                    bad(f'shade K10 g{g} L{L} t{t}: альфа вне шестигранника')
+                if L == 0 and (c[..., 3] > 0).any():
+                    bad(f'shade K10 g{g} t{t}: L=0, но альфа > 0')
+            e = {L: FX.shade(10, spr, lx, ly, FX.barrier_R(g, L) / 250.0, t) for L in (4, 8, 9)}
+            en = {L: float((np.clip(c[..., :3], 0, 1).mean(-1) * np.clip(c[..., 3], 0, 1)).sum()) for L, c in e.items()}
+            if not en[9] > en[8] > en[4]:
+                bad(f'shade K10 g{g} t{t}: яркость L4/L8/L9 = {en[4]:.0f}/{en[8]:.0f}/{en[9]:.0f}')
+            t2 = rng.uniform(0, 1200 - 1e-3)
+            a1 = FX.shade(10, spr, lx, ly, FX.barrier_R(g, 8) / 250.0, t2)
+            a2 = FX.shade(10, spr, lx, ly, FX.barrier_R(g, 8) / 250.0, t2 + 1200.0)
+            if not np.allclose(a1, a2, atol=1e-6):
+                bad(f'shade K10 g{g}: t и t+1200 различаются (шов GameTime)')
+    # раскладка: FX == keisan
+    cells = FX.honeycomb(3, 5, 0.5)
+    if FX.build_order(cells) != [7, 8, 10, 4, 3, 9, 6, 11, 5, 1, 13, 14, 2, 0, 12]:
+        bad(f'FX.build_order {FX.build_order(cells)}')
+    if FX.glow_slots(cells) != [11, 17, 24, 11, 18, 24, 5, 12, 18, 6, 12, 19, 0, 6, 13]:
+        bad(f'FX.glow_slots {FX.glow_slots(cells)}')
+    kp = os.path.join(REPO, 'core-python', 'scripts', 'core_magic', 'keisan.py')
+    note = 'keisan.py нет — сверка раскладки пропущена'
+    if os.path.exists(kp):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('ms_keisan', kp)
+        K = importlib.util.module_from_spec(spec)
+        try:
+            spec.loader.exec_module(K)
+            kc = [tuple(map(float, c)) for c in K.蜂巣(3, 5, 0.5)]
+            if len(kc) != len(cells) or max(abs(a - b) for p, q in zip(kc, cells) for a, b in zip(p, q)) > 1e-9:
+                bad(f'keisan.蜂巣 ≠ FX.honeycomb: {kc}')
+            if list(K.組順(kc)) != FX.build_order(cells):
+                bad(f'keisan.組順 {list(K.組順(kc))} ≠ FX {FX.build_order(cells)}')
+            if list(K.輝き番号(kc)) != FX.glow_slots(cells):
+                bad(f'keisan.輝き番号 {list(K.輝き番号(kc))} ≠ FX {FX.glow_slots(cells)}')
+            note = 'раскладка сот, порядок сборки и фазы мерцания совпадают с core_magic/keisan.py'
+        except AttributeError as e:
+            bad(f'keisan.py без функций барьера: {e}')
+        except Exception as e:
+            bad(f'keisan.py не импортируется: {e!r}')
+    if len(PROBLEMS) == n0:
+        ok(f'hex_cell: классы альфы, ρ ≤ 60, обвод 8 px, блёсток {ng}; шейдер K10: альфа 0 вне шестигранника и '
+           f'при L=0, L9 > L8 > L4, t ≡ t+1200; {note}')
 
 
 # ------------------------------------------------------------------------------------------- --pack
@@ -518,8 +602,9 @@ def check_pack(path):
             cmp_png(f'assets/azerus/textures/item/moon_staff_fx/{n}.png', os.path.join(FX.FX_DIR, n + '.png'))
         cmp_png('assets/azerus/textures/item/moon_staff.png', os.path.join(AZ, 'textures', 'item', 'moon_staff.png'))
         for rel in ['models/item/moon_staff.json', 'models/item/moon_staff_cast.json',
-                    'models/item/moon_staff_circle.json', 'models/item/moon_staff_beam.json', 'items/moon_staff.json',
-                    'items/moon_staff_circle.json', 'items/moon_staff_beam.json']:
+                    'models/item/moon_staff_circle.json', 'models/item/moon_staff_beam.json',
+                    'models/item/moon_staff_barrier.json', 'items/moon_staff.json',
+                    'items/moon_staff_circle.json', 'items/moon_staff_beam.json', 'items/moon_staff_barrier.json']:
             zr = 'assets/azerus/' + rel
             if zr not in names:
                 bad(f'нет {zr}')
@@ -550,6 +635,7 @@ def main(argv):
     check_glsl()
     check_logic()
     check_files()
+    check_barrier()
     if pack:
         check_pack(pack)
     print('(armor3d_check.py)')

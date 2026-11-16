@@ -3,8 +3,11 @@ package core.amazake.systems.coremobs;
 import core.amazake.systems.api.AmazakeSystem;
 import core.amazake.systems.api.SystemContext;
 import core.amazake.systems.coremobs.drop.DropStore;
+import core.amazake.systems.coremobs.hook.ModelHook;
 import core.amazake.systems.coremobs.mob.MobCatalog;
+import core.amazake.systems.coremobs.mob.MobDef;
 import core.amazake.systems.coremobs.mob.MobListener;
+import core.amazake.systems.coremobs.mob.MobModels;
 import core.amazake.systems.coremobs.mob.MobService;
 import core.amazake.systems.coremobs.region.Region;
 import core.amazake.systems.coremobs.region.RegionDisplays;
@@ -19,6 +22,7 @@ import core.amazake.systems.coremobs.world.WorldListener;
 import core.amazake.systems.coremobs.world.WorldRules;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,12 +35,16 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.server.PluginEnableEvent;
 
 /**
  * core-mobs — свои мобы из mobs.yml, лут из инвентаря со всеми NBT, регионы спавна любой формы (полигон по
  * точкам топорика) с подсветкой частицами и радиусом деспавна.
  */
 public final class CoreMobsSystem implements AmazakeSystem, Listener {
+
+    /** Сколько ждать, пока ModelEngine загрузит модели, прежде чем сказать «такой модели нет». */
+    private static final Duration MODEL_WAIT = Duration.ofMinutes(2);
 
     private final AtomicReference<Settings> settings = new AtomicReference<>(Settings.DEFAULTS);
     private final AtomicReference<MobCatalog> catalog = new AtomicReference<>(MobCatalog.EMPTY);
@@ -45,12 +53,15 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
     private volatile RegionStore regions;
     private volatile DropStore drops;
     private volatile MobService mobs;
+    private volatile ModelHook modelHook;
+    private volatile MobModels models;
     private volatile Selections selections;
     private volatile RegionView view;
     private volatile RegionSpawner spawner;
     private volatile RegionDisplays displays;
     private volatile WorldRules worlds;
     private volatile ScheduledTask spawnTimer;
+    private volatile ScheduledTask modelWatch;
 
     @Override
     public void enable(final SystemContext context) {
@@ -63,6 +74,9 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
         this.drops = new DropStore(context);
         this.drops.load();
         this.mobs = new MobService(this.catalog::get, () -> this.settings.get().nameFormat());
+        this.modelHook = new ModelHook(context.logger());
+        this.models = new MobModels(context.plugin(), this.modelHook, this.mobs);
+        this.mobs.afterSpawn(this.models::ensure);
         this.selections = new Selections();
         this.view = new RegionView(this.settings::get, this.regions, this.selections);
         this.spawner = new RegionSpawner(context.plugin(), this.regions, this.mobs, this.catalog::get, this.view);
@@ -73,6 +87,7 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
         context.registerListener(this);
         context.registerListener(new WandListener(this.settings::get, this.selections));
         context.registerListener(new MobListener(context.plugin(), this.mobs, this.catalog::get, this.drops));
+        context.registerListener(this.models);
         context.registerListener(this.displays);
         context.registerListener(new WorldListener(this.worlds, this.settings::get));
         context.registerCommand(new MobsCommand(context, this.settings::get, this.catalog::get, this.mobs, this.drops,
@@ -85,6 +100,7 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
             this.adoptNear(player);
         }
         this.checkRegionMobs();
+        this.checkModels();
         context.logger().info("core-mobs включён: мобов " + this.catalog.get().all().size() + ", регионов "
             + this.regions.all().size() + ", миров без ванильных мобов: " + this.worlds.disabled().size() + ".");
     }
@@ -101,6 +117,10 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
             this.worlds.saveNow();
         }
         this.playerTasks.clear();
+        final ScheduledTask watch = this.modelWatch;
+        if (watch != null) {
+            watch.cancel();
+        }
     }
 
     @Override
@@ -125,6 +145,7 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
             this.adoptNear(player);
         }
         this.checkRegionMobs();
+        this.checkModels();
         this.context.logger().info("core-mobs: настройки перечитаны.");
     }
 
@@ -154,6 +175,65 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
             if (Bukkit.getWorld(r.world()) == null) {
                 this.context.logger().warning("Регион " + r.name() + ": мир «" + r.world() + "» не загружен.");
             }
+        }
+    }
+
+    /**
+     * ModelEngine и модели из mobs.yml: есть ли плагин, есть ли blueprint каждой модели. ModelEngine R4 регистрирует
+     * модели асинхронно уже после своего включения, поэтому ждём их до {@link #MODEL_WAIT} (проверка раз в 2 с), а
+     * не ругаемся сразу. Модели есть — проходим все загруженные чанки и вешаем модель мобам без неё (заспавнились,
+     * пока ModelEngine грузился, или загрузились раньше, чем включилась система). Глобальный поток.
+     */
+    private void checkModels() {
+        final ScheduledTask old = this.modelWatch;
+        if (old != null) {
+            old.cancel();
+            this.modelWatch = null;
+        }
+        final List<MobDef> withModel = this.catalog.get().all().values().stream().filter(d -> d.model() != null).toList();
+        if (withModel.isEmpty()) {
+            return;
+        }
+        if (!this.modelHook.available()) {
+            this.context.logger().warning("ModelEngine не найден: мобы с model из mobs.yml появляются без моделей.");
+            return;
+        }
+        this.context.logger().info("ModelEngine " + this.modelHook.version() + " найден: модели на мобах включены.");
+        final long deadline = System.nanoTime() + MODEL_WAIT.toNanos();
+        final boolean[] waited = {false};
+        this.modelWatch = this.context.runGlobalTimer(task -> {
+            final List<MobDef> missing = withModel.stream().filter(d -> !this.modelHook.hasModel(d.model().id())).toList();
+            if (missing.isEmpty()) {
+                task.cancel();
+                if (waited[0]) {
+                    this.context.logger().info("ModelEngine загрузил модели — вешаю их на мобов.");
+                }
+                this.adoptModels();       // в том числе мобам, загруженным раньше, чем включилась система
+                return;
+            }
+            waited[0] = true;
+            if (System.nanoTime() - deadline >= 0) {
+                task.cancel();
+                for (final MobDef d : missing) {
+                    this.context.logger().warning("mobs.yml: " + d.id() + ": в ModelEngine нет модели «" + d.model().id() + "».");
+                }
+            }
+        }, Duration.ofSeconds(2));
+    }
+
+    /**
+     * Повесить модели всем загруженным мобам core-mobs, у которых модели ещё нет (мобы рядом с игроками, мобы регионов,
+     * мобы в чанках, загруженных до включения системы). Глобальный поток.
+     */
+    private void adoptModels() {
+        this.models.ensureLoaded();
+    }
+
+    /** ModelEngine включился позже системы — дождаться его моделей и повесить их загруженным мобам (checkModels). */
+    @EventHandler
+    public void onPluginEnable(final PluginEnableEvent event) {
+        if (event.getPlugin().getName().equals("ModelEngine") && this.models != null) {
+            Bukkit.getGlobalRegionScheduler().execute(this.context.plugin(), this::checkModels);
         }
     }
 
@@ -191,6 +271,9 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
                 }
                 final String region = MobService.regionOf(e);
                 final String mob = MobService.mobId(e);
+                if (mob != null && (region == null || this.regions.get(region) != null)) {
+                    this.models.ensureAnywhere(e);      // модель из mobs.yml, если ModelEngine её не держит
+                }
                 if (region == null || mob == null || this.mobs.tracked().containsKey(e.getUniqueId())) {
                     continue;
                 }
