@@ -1,0 +1,101 @@
+#version 330
+
+#moj_import <minecraft:light.glsl>
+#moj_import <minecraft:fog.glsl>
+#moj_import <minecraft:dynamictransforms.glsl>
+#moj_import <minecraft:projection.glsl>
+// >>> coreportals hook (1/2): import >>>
+#moj_import <coreportals:portal_vertex.glsl>
+// <<< coreportals hook <<<
+
+// >>> coreskyrift hook (1/2): import >>>
+#moj_import <coreskyrift:skyrift_vertex.glsl>
+// <<< coreskyrift hook <<<
+
+// rezusmenu: vanilla 1.21.11 shader plus two cases for the in-world menu.
+// Shared file: identical copy in core-portals/pack and rezusmenu/pack (both systems need it in the same pack).
+//  1. Shader cursor: an item tinted with the marker colour (254, G, 254) through the item model tint
+//     "minecraft:custom_model_data". Its model is one tiny quad at the display origin (the cursor tip). The shader
+//     takes the tip's direction, reflects it through the screen centre (so a world-fixed point moves with the mouse
+//     at frame rate), clamps it to the visible screen (also when the point is beside or behind the camera) and
+//     builds the arrow in screen space: constant size G / 1000 (tangent units), never stretched by perspective.
+//     The server computes the same reflection for hover and clicks.
+//  2. Menu icons: displays with the brightness override (block 15, sky 14) -> UV2 = (240, 224) are drawn
+//     unlit (no directional light, no lightmap), so their brightness does not depend on where the camera looks.
+// Every other vertex is drawn exactly as in vanilla.
+
+in vec3 Position;
+in vec4 Color;
+in vec2 UV0;
+in vec2 UV1;
+in ivec2 UV2;
+in vec3 Normal;
+
+uniform sampler2D Sampler2;
+
+out float sphericalVertexDistance;
+out float cylindricalVertexDistance;
+out vec4 vertexColor;
+out vec2 texCoord0;
+out vec2 texCoord1;
+out vec2 texCoord2;
+
+const float CURSOR_DEPTH = 0.08;           // just behind the near plane (0.05): in front of every menu layer
+const ivec2 UI_LIGHT = ivec2(240, 224);
+
+// Strict: exactly R = B = 254 (white 255 must never match — every untinted item has Color = 1.0), G 1..253, and only on
+// menu displays (brightness override block 15 / sky 14 -> UV2 = (240, 224)). Anything else stays vanilla.
+bool isMarker(vec3 c, ivec2 light) {
+    vec3 k = c * 255.0;
+    return light == UI_LIGHT && abs(k.r - 254.0) < 0.5 && abs(k.b - 254.0) < 0.5 && k.g > 0.5 && k.g < 253.5;
+}
+
+// Corner of the item quad: baked vertices go (u0,v0), (u0,v1), (u1,v1), (u1,v0) -> x right, y down, 0..1.
+vec2 rmCorner(int id) {
+    int i = id % 4;
+    if (i == 0) return vec2(0.0, 0.0);
+    if (i == 1) return vec2(0.0, 1.0);
+    if (i == 2) return vec2(1.0, 1.0);
+    return vec2(1.0, 0.0);
+}
+
+void main() {
+    sphericalVertexDistance = fog_spherical_distance(Position);
+    cylindricalVertexDistance = fog_cylindrical_distance(Position);
+    texCoord0 = UV0;
+    texCoord1 = UV1;
+    texCoord2 = UV2;
+
+    if (isMarker(Color.rgb, UV2)) {
+        // View space: camera at the origin looking down -Z. Tangent of the tip, reflected through the centre.
+        vec3 v = (ModelViewMat * vec4(Position, 1.0)).xyz;
+        vec2 edge = vec2(1.0 / ProjMat[0][0], 1.0 / ProjMat[1][1]);   // visible half-extent in tangent units
+        vec2 t;
+        if (v.z < -0.001) {
+            t = v.xy / -v.z;
+        } else {
+            // Beside or behind the camera: push it far along its screen direction; the clamp keeps it on the edge.
+            t = length(v.xy) > 1e-6 ? normalize(v.xy) * 1000.0 : vec2(0.0);
+        }
+        vec2 tip = clamp(-t, -edge, edge);
+        float size = Color.g * 255.0 / 1000.0;
+        vec2 c = rmCorner(gl_VertexID);
+        vec2 p = tip + vec2(c.x, -c.y) * size;
+        gl_Position = ProjMat * vec4(p * CURSOR_DEPTH, -CURSOR_DEPTH, 1.0);
+        vertexColor = vec4(1.0, 1.0, 1.0, Color.a);
+    } else if (UV2 == UI_LIGHT) {
+        gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
+        vertexColor = Color;
+    } else {
+        gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
+        vertexColor = minecraft_mix_light(Light0_Direction, Light1_Direction, Normal, Color) * texelFetch(Sampler2, UV2 / 16, 0);
+    }
+
+    // >>> coreportals hook (2/2): portal vertices are unlit, the fragment shader paints them >>>
+    if (cp_vertex(Color, gl_VertexID)) vertexColor = vec4(1.0);
+    // <<< coreportals hook <<<
+
+    // >>> coreskyrift hook (2/2): sky rift vertices are unlit, the fragment shader paints them >>>
+    if (sr_vertex(Color, gl_VertexID, Position, Normal, UV2)) vertexColor = vec4(1.0);
+    // <<< coreskyrift hook <<<
+}

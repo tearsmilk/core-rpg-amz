@@ -27,3 +27,55 @@ npcs:
     gravity: false
     collidable: false
     scale: 1.0
+  ruka:
+    type: mannequin
+    location:
+      world: world
+      x: -14.834
+      y: 100.0
+      z: -1.825
+      yaw: 41.32
+      pitch: 11.709
+    name: <white>ruka
+    hologram: name
+    model:
+      id: hippogryph_crystal
+      scale: 1.0
+      idle: ''
+      interact: ''
+    dialog: ''
+    commands: []
+    permission: ''
+    cooldown: -1.0
+    left-click: false
+    look-at: false
+    look-radius: -1.0
+    gravity: false
+    collidable: false
+    scale: 1.0
+  rukq:
+    type: mannequin
+    location:
+      world: world
+      x: -14.581
+      y: 100.0
+      z: 6.817
+      yaw: 159.505
+      pitch: 10.953
+    name: <white>rukq
+    hologram: name
+    model:
+      id: jellyfish_abyss
+      scale: 1.0
+      idle: ''
+      interact: ''
+    dialog: ''
+    commands: []
+    permission: ''
+    cooldown: -1.0
+    left-click: false
+    look-at: false
+    look-radius: -1.0
+    gravity: false
+    collidable: false
+    scale: 1.0

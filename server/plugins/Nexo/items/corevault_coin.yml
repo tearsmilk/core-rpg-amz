@@ -1,0 +1,7 @@
+corevault_coin:
+  itemname: <gold>Монета
+  material: SUNFLOWER
+  Pack:
+    model: corevault:item/coin
+  Components:
+    item_model: corevault:coin

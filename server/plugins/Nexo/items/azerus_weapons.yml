@@ -3,82 +3,82 @@
 # Файл: plugins/Nexo/items/azerus_weapons.yml, модели и текстуры: plugins/Nexo/pack/assets/azerus/.
 
 azerus_iron_vow:
-  itemname: "<white>Стандартный меч"
+  itemname: <white>Стандартный меч
   material: IRON_SWORD
   lore:
-    - "<gray>Простой надёжный клинок."
+  - <gray>Простой надёжный клинок.
   Pack:
     model: azerus:item/iron_vow
 
 azerus_moonwarden:
-  itemname: "<#b9c8ff>Лунный страж"
+  itemname: <#b9c8ff>Лунный страж
   material: DIAMOND_SWORD
   lore:
-    - "<gray>Холодный свет луны в стали."
+  - <gray>Холодный свет луны в стали.
   Pack:
     model: azerus:item/moonwarden
 
 azerus_tidekeeper:
-  itemname: "<#5fd3d6>Страж прилива"
+  itemname: <#5fd3d6>Страж прилива
   material: DIAMOND_SWORD
   lore:
-    - "<gray>Выкован там, где море встречает камень."
+  - <gray>Выкован там, где море встречает камень.
   Pack:
     model: azerus:item/tidekeeper
 
 azerus_ashen_oath:
-  itemname: "<#4fd17a>Изумрудная клятва"
+  itemname: <#4fd17a>Изумрудная клятва
   material: DIAMOND_SWORD
   lore:
-    - "<gray>Клинок данной однажды клятвы."
+  - <gray>Клинок данной однажды клятвы.
   Pack:
     model: azerus:item/ashen_oath
 
 azerus_ember_dawn:
-  itemname: "<#ff9a3c>Угольный рассвет"
+  itemname: <#ff9a3c>Угольный рассвет
   material: DIAMOND_SWORD
   lore:
-    - "<gray>Тлеет, как угли на рассвете."
+  - <gray>Тлеет, как угли на рассвете.
   Pack:
     model: azerus:item/ember_dawn
 
 azerus_blood_raven:
-  itemname: "<#d4334a>Кровавый ворон"
+  itemname: <#d4334a>Кровавый ворон
   material: DIAMOND_SWORD
   lore:
-    - "<gray>Чёрные перья на рукояти."
+  - <gray>Чёрные перья на рукояти.
   Pack:
     model: azerus:item/blood_raven
 
 azerus_sunleaf:
-  itemname: "<#ffe066>Солнечный лист"
+  itemname: <#ffe066>Солнечный лист
   material: DIAMOND_SWORD
   lore:
-    - "<gray>Лёгкий, как лист на ветру."
+  - <gray>Лёгкий, как лист на ветру.
   Pack:
     model: azerus:item/sunleaf
 
 azerus_night_watch:
-  itemname: "<#8a7cff>Ночной дозор"
+  itemname: <#8a7cff>Ночной дозор
   material: IRON_SWORD
   lore:
-    - "<gray>Кинжал тех, кто не спит."
+  - <gray>Кинжал тех, кто не спит.
   Pack:
     model: azerus:item/night_watch
 
 azerus_frost_needle:
-  itemname: "<#a8e6ff>Ледяной шип"
+  itemname: <#a8e6ff>Ледяной шип
   material: IRON_SWORD
   lore:
-    - "<gray>Тонкий, как игла, и холодный, как лёд."
+  - <gray>Тонкий, как игла, и холодный, как лёд.
   Pack:
     model: azerus:item/frost_needle
 
 azerus_thundermaul:
-  itemname: "<#ffd84a>Громобой"
+  itemname: <#ffd84a>Громобой
   material: DIAMOND_SWORD
   lore:
-    - "<gray>Молот, что гремит при каждом ударе."
+  - <gray>Молот, что гремит при каждом ударе.
   Pack:
     model: azerus:item/thundermaul
 
@@ -87,14 +87,14 @@ azerus_thundermaul:
 # замаха по custom_model_data (строки cw_swing_1..3 ставит система core-weapons), в слоте/на земле — всегда основа.
 # Частицы вокруг, замах, огненный след и дрожь земли при крите — система core-weapons (по id azerus_crimson_scythe).
 azerus_crimson_scythe:
-  itemname: "<gradient:#ff3b2f:#b3121f:#ff8a3d>Багровая коса</gradient>"
+  itemname: <gradient:#ff3b2f:#b3121f:#ff8a3d>Багровая коса</gradient>
   material: NETHERITE_SWORD
   lore:
-    - "<gray>Выкована из закатного пламени,"
-    - "<gray>древко — корень мёртвого дерева."
-    - ""
-    - "<#ff6a3d>✦ <gray>Вокруг лезвия кружат угли."
-    - "<#ff6a3d>✦ <gray>Крит: <#ff8a3d>земля дрожит</#ff8a3d> вокруг цели."
+  - <gray>Выкована из закатного пламени,
+  - <gray>древко — корень мёртвого дерева.
+  - ''
+  - <#ff6a3d>✦ <gray>Вокруг лезвия кружат угли.
+  - '<#ff6a3d>✦ <gray>Крит: <#ff8a3d>земля дрожит</#ff8a3d> вокруг цели.'
   Pack:
     model: azerus:item/crimson_scythe
   Components:
@@ -199,3 +199,32 @@ royal_knight_stinging_bow:
   material: BOW
   Pack:
     model: royal_knight:item/stinging_bow
+
+# Посох Лунного Странника: объёмная модель (source/Посох-лунного-странника.bbmodel, собирается tools/moon_staff.py).
+# item_model указывает на своё определение pack/assets/azerus/items/moon_staff.json: в слоте/на земле/в рамке — основа,
+# в руках при использовании (using_item) — поза «колдует» moon_staff_cast (самоцвет светится ярче).
+# consumable даёт ванильное «удержание ПКМ» с анимацией лука: 3600 с, без звука/частиц/эффектов — посох не тратится
+# (core_magic отменяет использование раньше, а PlayerItemConsumeEvent отменяет на всякий случай; он же восстанавливает
+# компонент, если его нет). Магический круг и луч — система core-python/scripts/core_magic (по id azerus_moon_staff),
+# их вид — модели moon_staff_circle / moon_staff_beam и шейдерный хук azerus:moonstaff_* (nexo-items/README.md).
+azerus_moon_staff:
+  itemname: <gradient:#ffd36a:#ff4a5a:#7fd8ff>Посох Лунного Странника</gradient>
+  material: DIAMOND_SWORD
+  lore:
+  - <gray>Посох странника, что ходит
+  - <gray>лунными дорогами между мирами.
+  - ''
+  - <#7fd8ff>✦ <gray>Зажмите <white>ПКМ</white> на <white>3 с</white> — откроется
+    магический круг.
+  - '<#7fd8ff>✦ <gray>Отпустите — <white>луч света</white> пронзит всех на пути:'
+  - <gray>   <#ff6a6a>10 урона</#ff6a6a>, до <white>29 блоков</white>.
+  - '<#7fd8ff>✦ <gray>Перезарядка: <white>3 с</white>.'
+  Pack:
+    model: azerus:item/moon_staff
+  Components:
+    item_model: azerus:moon_staff
+    consumable:
+      animation: BOW
+      sound: minecraft:intentionally_empty
+      consume_particles: false
+      consume_duration: 3600.0s
