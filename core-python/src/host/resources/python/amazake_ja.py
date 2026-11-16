@@ -244,8 +244,7 @@ def _scan(source, lines, edits):
         if tt == _tokenize.ERRORTOKEN and tok.string.strip():
             bad = _bad_char(tok.string) or (0, "invalid character %r" % tok.string[0])
             return tok.start[0], tok.start[1] + bad[0], bad[1]
-        if tt != OP or tok.string != "async":
-            def_in_class = False
+        def_in_class = False
         prev_dot = tt == OP and tok.string == "."
     return None
 
@@ -379,13 +378,18 @@ def install_builtins():
     for ja, en in BUILTIN_NAMES.items():
         if hasattr(_builtins, en):
             setattr(_builtins, ja, getattr(_builtins, en))
-    try:
-        import polyglot
-        fe = getattr(polyglot, "ForeignException", None)
-        if fe is not None:
-            _builtins.ジャバ例外 = fe
-    except ImportError:
-        pass
+    # ジャバ例外: исключение Java (polyglot.ForeignException) и amazake.JavaError — `捕まえる ジャバ例外` ловит оба.
+    amazake = _sys.modules.get("amazake")
+    if amazake is not None and hasattr(amazake, "ジャバ例外"):
+        _builtins.ジャバ例外 = amazake.ジャバ例外
+    else:
+        try:
+            import polyglot
+            fe = getattr(polyglot, "ForeignException", None)
+            if fe is not None:
+                _builtins.ジャバ例外 = fe
+        except ImportError:
+            pass
 
 
 def install(folder):

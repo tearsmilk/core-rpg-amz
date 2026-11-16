@@ -238,13 +238,15 @@ public final class ScriptManager {
                 s.loadMillis = (System.nanoTime() - t0) / 1_000_000;
                 return s;
             } catch (final Throwable e) {
+                // Текст ошибки — до закрытия контекста: трасса и поля SyntaxError читаются из объектов Python.
+                final String text = e instanceof PolyglotException pe && !pe.isCancelled() ? ErrorLog.format(pe, dir) : null;
                 this.scripts.remove(name, s);
                 s.shutdown();
                 if (e instanceof PolyglotException pe) {
                     if (pe.isCancelled()) {
                         throw new IllegalStateException("загрузка " + name + " прервана");
                     }
-                    throw new IllegalStateException(ErrorLog.format(pe, dir), pe);
+                    throw new IllegalStateException(text, pe);
                 }
                 throw e;
             } finally {

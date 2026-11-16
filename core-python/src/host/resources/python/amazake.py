@@ -37,7 +37,7 @@ _host = _polyglot.import_value("amazake_host")
 
 def _u(x):
     """Обёртка 包む(…) → Java-объект; остальное как есть. Все функции модуля разворачивают свои аргументы."""
-    return x._生 if x.__class__ is 包み else x
+    return x._生 if isinstance(x, 包み) else x
 
 
 # ---------------------------------------------------------------------------------------------
@@ -623,7 +623,7 @@ def _効果名(n):
 def _値表(ph):
     """Значения плейсхолдеров: обёртки → Java-объекты (Component и т.п.)."""
     for k, v in ph.items():
-        if v.__class__ is 包み:
+        if isinstance(v, 包み):
             ph[k] = v._生
     return ph
 
@@ -669,43 +669,31 @@ def _M(fn):
 
 class 包み:
     """Java-объект Bukkit/Paper с японскими атрибутами (таблицы §5). Чего нет в таблицах — атрибут самого Java-объекта:
-    методы зовутся с развёрнутыми аргументами и возвращают сырой результат. 甘酒.解く(x) — сам Java-объект."""
+    методы зовутся с развёрнутыми аргументами и возвращают сырой результат. 甘酒.解く(x) — сам Java-объект.
 
-    __slots__ = ("_生", "_表")
+    Скорость: при первом обращении обёртка меняет свой класс на подкласс для этого Java-класса (один раз на класс),
+    где японские имена — обычные property/методы Python; дальше — без отражения и без поиска по таблицам."""
 
-    def __init__(self, 生, 表=None):
+    # Без __slots__: GraalPy меняет __class__ только у объектов с __dict__.
+    #: японское имя → запись таблицы (у подклассов); у базового класса — ещё не определено.
+    _属性 = None
+
+    def __init__(self, 生):
         object.__setattr__(self, "_生", 生)
-        object.__setattr__(self, "_表", 表)
 
     def __getattr__(self, 名):
-        t = self._表
-        if t is None:
-            t = _表を得る(self._生)
-            object.__setattr__(self, "_表", t)
-        e = t.get(名)
-        生 = self._生
-        if e is not None:
-            if e[0] == _PROP:
-                try:
-                    return e[1](生)
-                except _FE as ex:
-                    raise _ジャバエラー(ex) from None
-            f = e[1]
-
-            def 方法(*a, **k):
-                try:
-                    return f(生, *a, **k)
-                except _FE as ex:
-                    raise _ジャバエラー(ex) from None
-
-            return 方法
+        # Сюда попадаем, только если имени нет у класса: базовый класс → определить вид и повторить.
+        if type(self)._属性 is None and 名[:2] != "__":
+            object.__setattr__(self, "__class__", _専用クラス(self._生))
+            if 名 in type(self)._属性:
+                return getattr(self, 名)
         if 名[:2] == "__":
             raise AttributeError(名)
-        v = getattr(生, 名)
+        v = getattr(self._生, 名)
         if v.__class__ is _ForeignExecutable:
             def 生の方法(*a):
                 try:
-                    return v(*[x._生 if x.__class__ is 包み else x for x in a])
+                    return v(*[_u(x) for x in a])
                 except _FE as ex:
                     raise _ジャバエラー(ex) from None
 
@@ -713,20 +701,20 @@ class 包み:
         return v
 
     def __setattr__(self, 名, 値):
-        t = self._表
+        t = type(self)._属性
         if t is None:
-            t = _表を得る(self._生)
-            object.__setattr__(self, "_表", t)
+            object.__setattr__(self, "__class__", _専用クラス(self._生))
+            t = type(self)._属性
         e = t.get(名)
-        if e is not None:
-            if e[0] == _PROP and e[2] is not None:
-                try:
-                    e[2](self._生, 値)
-                except _FE as ex:
-                    raise _ジャバエラー(ex) from None
-                return
+        if e is None:
+            setattr(self._生, 名, _u(値))
+        elif e[0] == _PROP and e[2] is not None:
+            try:
+                e[2](self._生, 値)
+            except _FE as ex:
+                raise _ジャバエラー(ex) from None
+        else:
             raise AttributeError("'%s' is read-only on %s" % (名, _単純名(self._生)))
-        setattr(self._生, 名, _u(値))
 
     def __eq__(self, other):
         o = _u(other)
@@ -748,16 +736,69 @@ class 包み:
         return True
 
 
+def _特性(g, st):
+    def 読む(self):
+        try:
+            return g(self._生)
+        except _FE as ex:
+            raise _ジャバエラー(ex) from None
+
+    if st is None:
+        return property(読む)
+
+    def 書く(self, v):
+        try:
+            st(self._生, v)
+        except _FE as ex:
+            raise _ジャバエラー(ex) from None
+
+    return property(読む, 書く)
+
+
+def _方法(f):
+    def 方法(self, *a, **k):
+        try:
+            return f(self._生, *a, **k)
+        except _FE as ex:
+            raise _ジャバエラー(ex) from None
+
+    return 方法
+
+
+def _クラス化(表, 名="包み"):
+    """Таблица японских атрибутов → подкласс 包み с property/методами (ничего не ищется при обращении)."""
+    ns = {"_属性": 表}
+    for k, e in 表.items():
+        ns[k] = _特性(e[1], e[2]) if e[0] == _PROP else _方法(e[1])
+    return type(名, (包み,), ns)
+
+
+_専用キャッシュ = {}
+
+
+def _専用クラス(生):
+    """Подкласс 包み для Java-класса объекта (создаётся один раз на класс)."""
+    try:
+        key = 生.getClass().getName()
+    except BaseException:
+        key = None
+    c = _専用キャッシュ.get(key)
+    if c is None:
+        c = _クラス化(_表を得る(生) if key is not None else {})
+        _専用キャッシュ[key] = c
+    return c
+
+
 def 包む(物):
     """Java-объект → 包み (японские атрибуты). None, объекты Python и уже обёрнутые — как есть."""
-    if 物 is None or 物.__class__ is 包み or _ForeignObject is None or not isinstance(物, _ForeignObject):
+    if 物 is None or isinstance(物, 包み) or _ForeignObject is None or not isinstance(物, _ForeignObject):
         return 物
     return 包み(物)
 
 
 def 解く(物):
     """包み → Java-объект (для остального — как есть)."""
-    return 物._生 if 物.__class__ is 包み else 物
+    return 物._生 if isinstance(物, 包み) else 物
 
 
 def _包む一覧(c):
@@ -1128,6 +1169,14 @@ _タスク表 = {
     "取り消す": _M(lambda o: o.cancel()),
     "取消済み": _P(lambda o: bool(o.isCancelled())),
 }
+_タスク = None   # подкласс 包み для задач (создаётся при первой задаче)
+
+
+def _タスク包み(生):
+    global _タスク
+    if _タスク is None:
+        _タスク = _クラス化(_タスク表, "タスク")
+    return _タスク(生)
 
 #: Виды по приоритету: (класс Java, таблица). Событие — отдельно (по методам класса).
 _種類一覧 = (
@@ -1258,7 +1307,7 @@ def イベント時(イベント, 優先度="通常", 取消済み無視=False):
         _host.listen(ev, pr, bool(取消済み無視), 受け)
         return 処理
 
-    return deco
+    return _守る(deco)
 
 
 起動時 = on_load
@@ -1294,7 +1343,7 @@ def コマンド(名前, 権限=None, 別名=None, 説明=None, 使い方=None):
         処理.command = c
         return 処理
 
-    return deco
+    return _守る(deco)
 
 
 # ---------------------------------------------------------------------------------------------
@@ -1303,27 +1352,27 @@ def コマンド(名前, 権限=None, 別名=None, 説明=None, 使い方=None):
 
 def プレイヤーで繰り返す(プレイヤー, 処理, 周期=20):
     """run_for_player: 処理() в потоке игрока каждые 周期 тиков; `返す いいえ` — остановить."""
-    return 包み(run_for_player(プレイヤー, 処理, 周期), _タスク表)
+    return _タスク包み(run_for_player(プレイヤー, 処理, 周期))
 
 
 def プレイヤーで一度(プレイヤー, 処理, 遅延=1):
     """run_once_for_player: один раз 処理() в потоке игрока через 遅延 тиков."""
-    return 包み(run_once_for_player(プレイヤー, 処理, 遅延), _タスク表)
+    return _タスク包み(run_once_for_player(プレイヤー, 処理, 遅延))
 
 
 def 領域で実行(場所, 処理, 遅延=0, 周期=0):
     """run_in_region."""
-    return 包み(run_in_region(場所, 処理, 遅延, 周期), _タスク表)
+    return _タスク包み(run_in_region(場所, 処理, 遅延, 周期))
 
 
 def 大域で実行(処理, 遅延=0, 周期=0):
     """run_global."""
-    return 包み(run_global(処理, 遅延, 周期), _タスク表)
+    return _タスク包み(run_global(処理, 遅延, 周期))
 
 
 def 非同期で実行(処理, 遅延ミリ秒=0, 周期ミリ秒=0):
     """run_async."""
-    return 包み(run_async(処理, 遅延ミリ秒, 周期ミリ秒), _タスク表)
+    return _タスク包み(run_async(処理, 遅延ミリ秒, 周期ミリ秒))
 
 
 担当か = owns
@@ -1347,7 +1396,7 @@ def _保管庫書く(self, 値):
 
 
 def _保管庫非同期で書く(self, 値):
-    return 包み(self.save_async(値), _タスク表)
+    return _タスク包み(self.save_async(値))
 
 
 Storage.読む = _保管庫読む
@@ -1538,6 +1587,17 @@ def オンラインプレイヤー():
     """Список игроков онлайн (обёрнутых)."""
     return _包む一覧(Bukkit.getOnlinePlayers())
 
+
+# Японские функции и методы: ошибка Java → JavaError с точной строкой вызывающего (японского) кода.
+for _名, _値 in list(globals().items()):
+    if (callable(_値) and not isinstance(_値, type) and _名[:1] > "\u3000" and _名 not in ("包む", "解く")
+            and getattr(_値, "__module__", None) == __name__):
+        globals()[_名] = _守る(_値)
+for _型名 in (Data, Storage):
+    for _名 in ("読む", "文字列で読む", "書く", "文字列で書く", "ある", "消す", "非同期で書く"):
+        if _名 in _型名.__dict__:
+            setattr(_型名, _名, _守る(_型名.__dict__[_名]))
+del _名, _値, _型名
 
 # Модуль 甘酒 — тот же объект, что amazake: `取り込む 甘酒`, `から 甘酒 取り込む 送る`.
 _sys.modules["甘酒"] = _sys.modules[__name__]

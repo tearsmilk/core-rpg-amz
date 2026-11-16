@@ -291,7 +291,7 @@ class JapaneseModeTest {
                 もし イベント.getPayload() == "deep":
                     sukeru.壊れる(無し)
                 もし イベント.getPayload() == "java":
-                    甘酒.ジャバ型("java.lang.Integer").parseInt("abc")
+                    甘酒.呼ぶ(甘酒.ジャバ型("java.lang.Integer"), "parseInt", "abc")
                 イベント.mark("ok")
             """.formatted(TEST_EVENT));
         Files.writeString(dir.resolve("sukeru.py"), """
@@ -416,13 +416,26 @@ class JapaneseModeTest {
                 イベント.置き換えアイテム = 生アイテム
                 表明 生イベント.getReplacement() である 生アイテム
 
-                タスク = 甘酒.大域で実行(ラムダ: 無し)
+                タスク = 甘酒.大域で実行(ラムダ: 無し, 周期=5)
                 表明 タスク.取消済み である いいえ
+                タスク.取り消す()
+                表明 タスク.取消済み である はい
                 表明 甘酒.現在ミリ秒() > 0
                 表明 文字列(甘酒.素材("diamond")) == "DIAMOND" かつ 甘酒.素材("no_such_thing") である 無し
                 表明 文字列(甘酒.エンティティ種類("minecraft:zombie")) == "ZOMBIE"
                 表明 甘酒.記録 である 甘酒.log かつ 甘酒.名前 == "tsutsumi"
                 甘酒.記録.情報("情報ログ", 1)
+                試す:
+                    試す:
+                        甘酒.呼ぶ(甘酒.ジャバ型("java.lang.Integer"), "parseInt", "x")
+                    捕まえる 例外:
+                        表明 いいえ, "例外 must not catch Java errors (as in English mode)"
+                捕まえる ジャバ例外 として 誤り:
+                    表明 "NumberFormatException" 於 文字列(誤り), 文字列(誤り)
+                試す:
+                    甘酒.ジャバ型("java.lang.Integer").parseInt("y")      # 生の Java 呼び出し
+                捕まえる ジャバ例外:
+                    何もしない
                 返す "ok"
 
             関数 ハッシュ一致(甲, 乙):
@@ -438,7 +451,12 @@ class JapaneseModeTest {
         final FakeItem item = new FakeItem("small_mana_potion", false);
         final PlayerItemConsumeEvent ev = new PlayerItemConsumeEvent(p, item, EquipmentSlot.HAND);
         final org.bukkit.World world = fake(org.bukkit.World.class, "World", Map.of("getName", a -> "world"));
-        final Value r = s.context.getBindings("python").getMember("検査").execute(p, new Location(world, 1, 2, 3), ev, item);
+        final Value r;
+        try {
+            r = s.context.getBindings("python").getMember("検査").execute(p, new Location(world, 1, 2, 3), ev, item);
+        } catch (final org.graalvm.polyglot.PolyglotException e) {
+            throw new AssertionError(ErrorLog.format(e, this.root.resolve("scripts/tsutsumi")), e);
+        }
         assertEquals("ok", r.asString());
         assertEquals(7.0, hp[0]);
         assertEquals(List.of("chat:やあ 甲!", "chat:5 10", "bar:棒", "chat:生の呼び出し"), out);
@@ -459,6 +477,34 @@ class JapaneseModeTest {
             _b
             """);
         System.out.println("[ja] property read: " + bench.execute(p, 20000).asString());
+    }
+
+    /** Обычная (английская) система: японские псевдонимы amazake доступны, японских встроенных и перевода нет. */
+    @Test
+    void englishSystemCanUseJapaneseAliases() throws Exception {
+        final Path dir = this.root.resolve("scripts").resolve("eigo");
+        Files.createDirectories(dir);
+        Files.writeString(dir.resolve("manifest.yml"), "name: eigo\n");
+        Files.writeString(dir.resolve("main.py"), """
+            import amazake, builtins
+            from 甘酒 import 送る
+            assert not hasattr(builtins, "長さ")
+            もし = 1            # not a keyword in English mode
+
+            @amazake.イベント時("%s")
+            def handler(event):
+                assert isinstance(event, amazake.包み)
+                event.mark("wrapped:" + event.getPayload())
+
+            @amazake.on("%s")
+            def raw(event):
+                assert not isinstance(event, amazake.包み)
+                event.mark("raw")
+            """.formatted(TEST_EVENT, TEST_EVENT));
+        this.manager.load("eigo");
+        final TestEvent e = new TestEvent("p");
+        this.platform.fire(e);
+        assertEquals(List.of("wrapped:p", "raw"), e.marks);
     }
 
     // ------------------------------------------------------------------------------------------
