@@ -171,10 +171,10 @@ def _光を見せる(eye, cfg, D, 主):
     R = keisan.光線R(Lv)
     W = 光.幅
     始 = W * 光.始幅倍
-    d = mahoujin.生む(at, kyoutsuu.効果品(光.モデル, R), kyoutsuu.変形(c.前, c.下, 始, 始, 0.02), 光.視距離,
+    d = mahoujin.生む(at, kyoutsuu.効果品(光.モデル, R), kyoutsuu.変形(c.前, c.下, 始, 始, 0.02, True), 光.視距離,
                      "beam", 主)
-    伸び = kyoutsuu.変形(c.前, c.下, W, W, 2.0 * Lv)
-    消え = kyoutsuu.変形(c.前, c.下, 0.0, 0.0, 2.0 * Lv)
+    伸び = kyoutsuu.変形(c.前, c.下, W, W, 2.0 * Lv, True)
+    消え = kyoutsuu.変形(c.前, c.下, 0.0, 0.0, 2.0 * Lv, True)
 
     def 伸ばす():
         if d.isValid():
