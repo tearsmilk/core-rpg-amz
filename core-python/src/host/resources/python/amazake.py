@@ -686,14 +686,30 @@ class 包み:
         生 = self._生
         if e is not None:
             if e[0] == _PROP:
-                return e[1](生)
+                try:
+                    return e[1](生)
+                except _FE as ex:
+                    raise _ジャバエラー(ex) from None
             f = e[1]
-            return lambda *a, **k: f(生, *a, **k)
+
+            def 方法(*a, **k):
+                try:
+                    return f(生, *a, **k)
+                except _FE as ex:
+                    raise _ジャバエラー(ex) from None
+
+            return 方法
         if 名[:2] == "__":
             raise AttributeError(名)
         v = getattr(生, 名)
         if v.__class__ is _ForeignExecutable:
-            return lambda *a: v(*[x._生 if x.__class__ is 包み else x for x in a])
+            def 生の方法(*a):
+                try:
+                    return v(*[x._生 if x.__class__ is 包み else x for x in a])
+                except _FE as ex:
+                    raise _ジャバエラー(ex) from None
+
+            return 生の方法
         return v
 
     def __setattr__(self, 名, 値):
@@ -704,7 +720,10 @@ class 包み:
         e = t.get(名)
         if e is not None:
             if e[0] == _PROP and e[2] is not None:
-                e[2](self._生, 値)
+                try:
+                    e[2](self._生, 値)
+                except _FE as ex:
+                    raise _ジャバエラー(ex) from None
                 return
             raise AttributeError("'%s' is read-only on %s" % (名, _単純名(self._生)))
         setattr(self._生, 名, _u(値))
@@ -752,12 +771,19 @@ def _単純名(生):
         return type(生).__name__
 
 
-class JavaError(Exception):
-    """Ошибка Java внутри японского обработчика/задачи: текст — исключение Java, трасса — строки Python исходного
-    (японского) файла. Без этого ошибка Java дошла бы до лога только с началом функции, а не со строкой."""
+class JavaError(BaseException):
+    """Ошибка Java, брошенная из японских функций amazake, обёрток 包み и 呼ぶ. GraalPy не строит трассу Python для
+    исключений Java (в логе была бы только первая строка функции), а это исключение Python — его трасса указывает на
+    точную строку исходного (японского) файла. Как и polyglot.ForeignException — BaseException, но НЕ Exception:
+    `捕まえる 例外` его не ловит; ловить — `捕まえる ジャバ例外` (= (ForeignException, JavaError)). .java — само
+    исключение Java."""
+
+    java = None
 
 
 _FE = _ForeignException or ()
+#: Встроенное японского режима ジャバ例外: и сырое исключение Java, и JavaError.
+ジャバ例外 = tuple(c for c in (_ForeignException, JavaError) if c is not None)
 
 
 def _java_text(e):
@@ -767,12 +793,25 @@ def _java_text(e):
         return str(e)
 
 
-def _実行(処理, *引数):
-    """Вызвать обработчик японского декоратора/задачи; ошибка Java → JavaError с трассой Python."""
-    try:
-        return 処理(*引数)
-    except _FE as e:
-        raise JavaError(_java_text(e)).with_traceback(e.__traceback__) from None
+def _ジャバエラー(e):
+    err = JavaError(_java_text(e))
+    err.java = e
+    return err
+
+
+def _守る(f):
+    """Декоратор японских функций: ошибка Java → JavaError (трасса Python с точной строкой вызывающего кода)."""
+    def g(*a, **k):
+        try:
+            return f(*a, **k)
+        except _FE as e:
+            raise _ジャバエラー(e) from None
+
+    g.__name__ = f.__name__
+    g.__qualname__ = f.__qualname__
+    g.__doc__ = f.__doc__
+    g.__wrapped__ = f
+    return g
 
 
 # --- ленивые классы Java ---------------------------------------------------------------------
@@ -1214,7 +1253,7 @@ def イベント時(イベント, 優先度="通常", 取消済み無視=False):
 
     def deco(処理):
         def 受け(e):
-            return _実行(処理, 包み(e))
+            return 処理(包み(e))
 
         _host.listen(ev, pr, bool(取消済み無視), 受け)
         return 処理
@@ -1237,14 +1276,14 @@ def コマンド(名前, 権限=None, 別名=None, 説明=None, 使い方=None):
 
     def deco(処理):
         def run(sender, label, args):
-            _実行(処理, 包み(sender), list(args))
+            処理(包み(sender), list(args))
 
         handle = _host.command(名前, 権限, list(別名 or []), 説明 or "", 使い方 or ("/" + 名前), run)
         c = Command(handle)
 
         def 補完(f):
             def wrapper(sender, args):
-                r = _実行(f, 包み(sender), list(args))
+                r = f(包み(sender), list(args))
                 return list(r) if r else []
 
             handle.setCompleter(wrapper)
@@ -1264,27 +1303,27 @@ def コマンド(名前, 権限=None, 別名=None, 説明=None, 使い方=None):
 
 def プレイヤーで繰り返す(プレイヤー, 処理, 周期=20):
     """run_for_player: 処理() в потоке игрока каждые 周期 тиков; `返す いいえ` — остановить."""
-    return 包み(run_for_player(プレイヤー, lambda: _実行(処理), 周期), _タスク表)
+    return 包み(run_for_player(プレイヤー, 処理, 周期), _タスク表)
 
 
 def プレイヤーで一度(プレイヤー, 処理, 遅延=1):
     """run_once_for_player: один раз 処理() в потоке игрока через 遅延 тиков."""
-    return 包み(run_once_for_player(プレイヤー, lambda: _実行(処理), 遅延), _タスク表)
+    return 包み(run_once_for_player(プレイヤー, 処理, 遅延), _タスク表)
 
 
 def 領域で実行(場所, 処理, 遅延=0, 周期=0):
     """run_in_region."""
-    return 包み(run_in_region(場所, lambda: _実行(処理), 遅延, 周期), _タスク表)
+    return 包み(run_in_region(場所, 処理, 遅延, 周期), _タスク表)
 
 
 def 大域で実行(処理, 遅延=0, 周期=0):
     """run_global."""
-    return 包み(run_global(lambda: _実行(処理), 遅延, 周期), _タスク表)
+    return 包み(run_global(処理, 遅延, 周期), _タスク表)
 
 
 def 非同期で実行(処理, 遅延ミリ秒=0, 周期ミリ秒=0):
     """run_async."""
-    return 包み(run_async(lambda: _実行(処理), 遅延ミリ秒, 周期ミリ秒), _タスク表)
+    return 包み(run_async(処理, 遅延ミリ秒, 周期ミリ秒), _タスク表)
 
 
 担当か = owns
