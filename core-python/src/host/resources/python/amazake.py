@@ -132,7 +132,73 @@ def _static(cls):
         return cls
 
 
+def find_class(name):
+    """Объект java.lang.Class по полному имени — сервер, затем плагины (для getMethod, world.spawn(…, cls), isInstance).
+    В отличие от java_class — сам Class, а не его статическая сторона.
+
+        BlockDisplay = amazake.find_class("org.bukkit.entity.BlockDisplay")
+        world.spawn(место, BlockDisplay, лямбда)
+    """
+    return _host.findClass(name)
+
+
+def plugin():
+    """Плагин (org.bukkit.plugin.Plugin), от имени которого работает core-python: для API Bukkit, которым нужен
+    Plugin, — player.showEntity(amazake.plugin(), e), entity.getScheduler().execute(amazake.plugin(), …) и т.п.
+    Задачи через amazake.run_* предпочтительнее: их хост отменит сам при выгрузке."""
+    return _host.plugin()
+
+
 Bukkit = _java.type("org.bukkit.Bukkit")
+
+# ---------------------------------------------------------------------------------------------
+# Java-задачи, которые переживают выгрузку (чистая Java, без Python)
+# ---------------------------------------------------------------------------------------------
+# run_* выше отменяются при выгрузке, а контекст Python закрывается сразу после @on_unload. То, что надо доделать в
+# чужом потоке уже после этого (снять кадр с предмета игрока, удалить сущность в другом регионе, записать PDC), —
+# через эти функции: задача — Java-Runnable (amazake.java_task(...) или любой Java-объект Runnable), функция Python
+# не принимается. Звать можно из любого потока, в том числе из @on_unload. Задачи НЕ отменяются выгрузкой системы;
+# пока сервер останавливается (планировщики уже не работают), они выполняются сразу. Ошибка задачи — в лог системы.
+
+
+def java_task(target, method, *args, type=None):
+    """Java-Runnable без Python: при run() вызывает target.method(*args). Метод (публичный) выбирается и аргументы
+    переводятся в Java сразу, поэтому задача работает и после выгрузки системы.
+    args — объекты Java, str, int, float, bool, None (списки/dict Python — нельзя: они умрут вместе с контекстом).
+    type — класс/интерфейс (имя, java.type или Class), где искать метод, если перегрузки неоднозначны.
+
+        @amazake.on_unload
+        def 片付け():
+            for p, 鍵 in 印.items():   # игроки в разных регионах — каждому в его потоке
+                pdc = p.getPersistentDataContainer()
+                amazake.run_java_for_player(p, amazake.java_task(pdc, "remove", 鍵))
+            for e in 影:
+                amazake.remove_entity(e)
+    """
+    return _host.javaTask(target, method, list(args), type)
+
+
+def run_java_for_player(player, task):
+    """Java-Runnable один раз в потоке игрока (как SystemContext.runOnceForPlayer у Java-систем): через тик; пока
+    core-python выключается и поток владеет игроком (или сервер останавливается) — сразу. False — игрок ушёл."""
+    return bool(_host.runJavaForPlayer(player, task))
+
+
+def run_java_on_entity(entity, task, delay=0):
+    """Java-Runnable в потоке сущности через delay тиков; delay=0 и поток уже владеет ею — сразу.
+    False — сущность удалена / core-python выключен."""
+    return bool(_host.runJavaOnEntity(entity, task, int(delay)))
+
+
+def run_java_global(task, delay=0):
+    """Java-Runnable в глобальном потоке через delay тиков; delay=0 и мы в глобальном потоке — сразу."""
+    return bool(_host.runJavaGlobal(task, int(delay)))
+
+
+def remove_entity(entity):
+    """Удалить сущность (не игрока) из любого потока: сразу, если поток ею владеет, иначе — в её потоке."""
+    return bool(_host.removeEntity(entity))
+
 
 # ---------------------------------------------------------------------------------------------
 # События

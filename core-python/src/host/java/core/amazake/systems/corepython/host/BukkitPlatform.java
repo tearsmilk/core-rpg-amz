@@ -33,8 +33,19 @@ final class BukkitPlatform implements Platform {
         this.context = context;
     }
 
-    private Plugin plugin() {
+    @Override
+    public Plugin plugin() {
         return this.context.plugin();
+    }
+
+    @Override
+    public boolean isStopping() {
+        return Bukkit.isStopping();
+    }
+
+    @Override
+    public boolean executeForEntity(final Entity entity, final Runnable body, final long delayTicks) {
+        return entity.getScheduler().execute(this.plugin(), body, null, Math.max(1L, delayTicks));
     }
 
     @Override
