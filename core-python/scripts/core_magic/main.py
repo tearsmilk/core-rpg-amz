@@ -238,7 +238,8 @@ def 右クリック(event):
     if 残り > 0.0:
         event.setUseItemInHand(EventResult.DENY)     # без анимации натягивания
         今 = kyoutsuu.今ms()
-        if 今 - 拒否.get(uid, -拒否間隔) >= 拒否間隔:
+        前 = 拒否.get(uid)
+        if 前 is None or 今 - 前 >= 拒否間隔:      # nanoTime может быть отрицательным — без «нулевого» значения
             拒否[uid] = 今
             _帯(p, cfg, "cooldown", s=keisan.秒の文字(残り))
             kyoutsuu.鳴らす(p.getWorld(), p.getEyeLocation(), cfg.音表["denied"])
