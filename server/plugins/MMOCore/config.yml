@@ -223,7 +223,7 @@ party:
   max-exp-split-range: 48
 
   # When enabled, being in a party splits class exp
-  main-exp-split: true
+  main-exp-split: false
 
   # When enabled, being in a party splits profession exp
   profession-exp-split: false
@@ -289,7 +289,7 @@ passive-skill-need-bound: true
 
 # Set this to true to allow players in
 # creative mode to enter casting mode
-can-creative-cast: false
+can-creative-cast: true
 
 # Prevents mobs spawned from spawners from giving  MMO XP points.
 prevent-spawner-xp: true

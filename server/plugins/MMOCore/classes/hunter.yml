@@ -2,94 +2,94 @@
 # Profession of archer: base 5 skills + 5 own at 20/25/35/42/50
 # Only mana stats are set here; everything else = MMOCore stats.yml defaults (no HP/damage, nothing stacks with RQ).
 display:
-    name: 'Охотник'
-    item: LEATHER_CHESTPLATE
+  name: 'Охотник'
+  item: LEATHER_CHESTPLATE
 options:
-    default: false
-    display: false
-    needs-permission: true
-    off-combat-health-regen: false
-    off-combat-mana-regen: false
+  default: false
+  display: false
+  needs-permission: true
+  off-combat-health-regen: false
+  off-combat-mana-regen: false
 # Resource: ENERGY (non-caster). Uses MMOCore mana internally (skill mana costs spend it).
 # Small pool, moderate regen (cut ~50%). HUD shows the gold energy bar when mana name is 'Энергия'.
 mana:
-    char: '■'
-    icon: '&6■'
-    color:
-        full: GOLD
-        half: YELLOW
-        empty: WHITE
-    name: 'Энергия'
+  char: '■'
+  icon: '&6■'
+  color:
+    full: GOLD
+    half: YELLOW
+    empty: WHITE
+  name: 'Энергия'
 attributes:
-    max-mana:
-        base: 20
-        per-level: 0.2
-    # Regen cut ~50% (was base 1.0, per-level 0.02 -> 1.0/s at lvl1, 2.0/s at lvl50)
-    mana-regeneration:
-        base: 0.5
-        per-level: 0.01
+  max-mana:
+    base: 20
+    per-level: 0.2
+  # Regen cut ~50% (was base 1.0, per-level 0.02 -> 1.0/s at lvl1, 2.0/s at lvl50)
+  mana-regeneration:
+    base: 0.5
+    per-level: 0.01
 max-level: 65
-exp-curve: '{level} * 200'
+exp-curve: '100 + {level} * 50'
 main-exp-sources: []
 skills:
-    ITEM_THROW:
-        level: 1
-        max-level: 10
-    SLOW:
-        level: 6
-        max-level: 10
-    SWIFTNESS:
-        level: 10
-        max-level: 10
-    LEAP:
-        level: 15
-        max-level: 10
-    SHULKER_MISSILE:
-        level: 19
-        max-level: 10
-    SNOWMAN_TURRET:
-        level: 20
-        max-level: 10
-    ITEM_BOMB:
-        level: 25
-        max-level: 10
-    FREEZE:
-        level: 35
-        max-level: 10
-    POWER_MARK:
-        level: 42
-        max-level: 10
-    SKY_SMASH:
-        level: 50
-        max-level: 10
+  ITEM_THROW:
+    level: 1
+    max-level: 10
+  SLOW:
+    level: 6
+    max-level: 10
+  SWIFTNESS:
+    level: 10
+    max-level: 10
+  LEAP:
+    level: 15
+    max-level: 10
+  SHULKER_MISSILE:
+    level: 19
+    max-level: 10
+  SNOWMAN_TURRET:
+    level: 20
+    max-level: 10
+  ITEM_BOMB:
+    level: 25
+    max-level: 10
+  FREEZE:
+    level: 35
+    max-level: 10
+  POWER_MARK:
+    level: 42
+    max-level: 10
+  SKY_SMASH:
+    level: 50
+    max-level: 10
 skill-slots:
-    1:
-        name: "&aSlot I"
-        unlocked-by-default: true
-        can-manually-bind: true
-        lore: []
-    2:
-        name: "&aSlot II"
-        unlocked-by-default: true
-        can-manually-bind: true
-        lore: []
-    3:
-        name: "&aSlot III"
-        unlocked-by-default: true
-        can-manually-bind: true
-        lore: []
-    4:
-        name: "&aSlot IV"
-        unlocked-by-default: true
-        can-manually-bind: true
-        lore: []
-    5:
-        name: "&aSlot V"
-        unlocked-by-default: true
-        can-manually-bind: true
-        lore: []
-    6:
-        name: "&aSlot VI"
-        unlocked-by-default: true
-        can-manually-bind: true
-        lore: []
+  1:
+    name: "&aSlot I"
+    unlocked-by-default: true
+    can-manually-bind: true
+    lore: []
+  2:
+    name: "&aSlot II"
+    unlocked-by-default: true
+    can-manually-bind: true
+    lore: []
+  3:
+    name: "&aSlot III"
+    unlocked-by-default: true
+    can-manually-bind: true
+    lore: []
+  4:
+    name: "&aSlot IV"
+    unlocked-by-default: true
+    can-manually-bind: true
+    lore: []
+  5:
+    name: "&aSlot V"
+    unlocked-by-default: true
+    can-manually-bind: true
+    lore: []
+  6:
+    name: "&aSlot VI"
+    unlocked-by-default: true
+    can-manually-bind: true
+    lore: []

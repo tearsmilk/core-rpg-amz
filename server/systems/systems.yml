@@ -4,15 +4,13 @@
 enabled:
   - AmazakeCore
   - AmazakeTab
-  - core-effects
   - core-mobs
   - core-npc
   - core-portals
-  - core-potions
+  - core-progression
   - core-python
   - core-skyrift
   - core-vault
-  - core-weapons
   - core-world
   - rezusmenu
   - seal-magic

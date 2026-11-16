@@ -1,0 +1,13 @@
+# Python-система «Эффекты» (効果) — порт Java-системы core-effects. Код — main.py, fx.py, items.py, papi.py,
+# settings.py, logic.py, common.py; настройки — config.yml (тот же формат, что у core-effects).
+name: core_effects
+version: 2.0.0
+main: main.py
+enabled: true
+description: "Кастомные эффекты: кровотечение (обморок, бинт), паника (фантомы, дезориентация), тепло (смерть без молока), проклятье (пропажа обычных вещей); иконки и накладки на экран из пакета ресурсов"
+commands:
+  effects:
+    permission: coreeffects.admin
+    aliases: [coreeffects, эффекты]
+    description: "Кастомные эффекты core-effects"
+    usage: "/effects give <игрок> <эффект> [время] | remove <игрок> <эффект> | clear <игрок|all> | list [игрок] | bandage [игрок] [кол-во] | reload"

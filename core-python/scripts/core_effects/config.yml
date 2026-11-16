@@ -1,0 +1,184 @@
+# core-effects — кастомные эффекты. Тексты — MiniMessage. Время — секунды (длительности эффектов: 90, 2m, 1m30s, inf).
+# Ошибка в значении — предупреждение в консоли и значение по умолчанию. После правки: /effects reload.
+
+prefix: "<dark_gray>[<#d02030>Эффекты</#d02030>]</dark_gray> "
+# Снимать все эффекты при смерти игрока.
+clear-on-death: true
+
+hud:
+  # Иконки и время в actionbar (шрифт coreeffects:icons из пакета). Если иконки показывает MythicHUD
+  # (см. README, «MythicHUD»), поставьте false.
+  actionbar: true
+  actionbar-interval-ticks: 20
+  separator: "  "
+  # <time> — сколько осталось (m:ss, ∞), у тепла ещё <thirst> — % пути к смерти без питья.
+  format:
+    bleeding: "<font:coreeffects:icons></font> <#ff4050><time></#ff4050>"
+    panic: "<font:coreeffects:icons></font> <#a890ff><time></#a890ff>"
+    warmth: "<font:coreeffects:icons></font> <#ffb050><time></#ffb050>
+      <gray><thirst></gray>"
+    curse: "<font:coreeffects:icons></font> <#c070ff><time></#c070ff>"
+  unconscious: "<dark_red>Без сознания <white><time></white></dark_red>"
+  # Плейсхолдеры PlaceholderAPI %coreeffects_...% (для MythicHUD): bleeding|panic|warmth|curse → yes/no,
+  # <эффект>_seconds, <эффект>_time, <эффект>_name, count, unconscious, warmth_thirst.
+  placeholderapi: true
+  placeholderapi-identifier: coreeffects
+
+screen:
+  # Накладки на экран (затемнение, кровь по краям, жар, проклятье) — глифы шрифта coreeffects:overlay в заголовке
+  # (title). Заголовок обновляется раз в refresh-seconds; чужой заголовок в это время может быть перекрыт.
+  overlay: true
+  refresh-seconds: 3
+  # Ванильная «Тьма» во время паники (сильное пульсирующее затемнение).
+  darkness: true
+  # «Слепота» в обмороке.
+  blindness-when-fainted: true
+  # «Тошнота» (искажение экрана): приступы паники и сильный жар.
+  nausea: true
+
+bleeding:
+  name: "<#d02030>Кровотечение</#d02030>"
+  default-seconds: 120
+  # Урон раз в damage-interval-seconds (прямо в здоровье: броня не спасает, тотем не срабатывает).
+  damage: 1.0
+  damage-interval-seconds: 4
+  # Ниже этого здоровья кровотечение не опускает (0 — может убить).
+  min-health: 2.0
+  # Без перевязки столько секунд — обморок (0 — без обмороков); дальше — каждые refaint-after-seconds.
+  faint-after-seconds: 60
+  refaint-after-seconds: 30
+  # Обморок: экран чёрный, нельзя ходить, прыгать, бить, ломать, ставить, пользоваться предметами.
+  faint-seconds: 8
+  # Капли крови под игроком (видят все рядом).
+  particles: true
+  particle-interval-ticks: 5
+  # Чем лечится: bandage (бинт /effects bandage), milk, healing-potion, honey, golden-apple
+  # или имя материала съеденного/выпитого предмета (cooked-beef, potion, ...).
+  cured-by: [ bandage ]
+
+panic:
+  name: "<#8a6cff>Паника</#8a6cff>"
+  default-seconds: 30
+  # +урон (атрибут attack_damage) и −здоровье (max_health, 4 = 2 сердца); снимаются, когда паника проходит.
+  bonus-damage: 2.5
+  max-health-penalty: 4.0
+  # Замедление (доля скорости), чтобы своя ходьба почти не работала, а работала «скрученная».
+  slowness: 0.35
+  darkness: true
+  # Приступ тошноты раз в nausea-every-seconds (0 — нет), длится nausea-seconds.
+  nausea-every-seconds: 12
+  nausea-seconds: 4
+  # WASD ведёт не туда: направление поворачивается на twist-degrees, угол меняется раз в twist-change-seconds.
+  disorient: true
+  disorient-strength: 0.75
+  disorient-speed: 0.2
+  twist-change-seconds: "2-4"
+  twist-degrees: "60-300"
+  phantoms:
+    # Мобы и «игроки» (манекен со скином самого игрока), которых видит только он. Без ИИ, бессмертные,
+    # не сохраняются в мир; подходят и растворяются в дыму.
+    enabled: true
+    # Раз в interval-seconds появляется burst фантомов (не больше max-alive сразу). Подходят вплотную к лицу
+    # и исчезают на vanish-distance блоков от игрока.
+    interval-seconds: "1-2"
+    burst: "2-3"
+    max-alive: 10
+    lifetime-seconds: "2-4"
+    distance: "2-5"
+    approach-speed: 0.3
+    vanish-distance: 0.7
+    types: [ ZOMBIE, SKELETON, HUSK, ENDERMAN, WITHER_SKELETON, PLAYER ]
+    sounds: true
+  cured-by: [ milk ]
+
+warmth:
+  name: "<#ffb050>Тепло</#ffb050>"
+  default-seconds: 300
+  # Скрытая регенерация: heal единиц здоровья раз в heal-interval-seconds.
+  heal: 0
+  heal-interval-seconds: 4
+  # Без молока или зелья лечения deadline-seconds — смерть (0 — не убивает). Счёт идёт, пока эффект есть.
+  deadline-seconds: 120
+  # Предупреждения (сообщения warmth-warn-1..3) на этих % пути к смерти.
+  warn-at-percent: [ 50, 75, 90 ]
+  # С какого % включается тошнота (0 — никогда).
+  nausea-at-percent: 90
+  # Что сбрасывает счёт (эффект при этом остаётся).
+  quenched-by: [ milk, healing-potion ]
+  cured-by: []
+  # Сообщение о смерти (пусто — messages.death-warmth).
+  death-message: ""
+
+curse:
+  name: "<#a040ff>Проклятье</#a040ff>"
+  default-seconds: 180
+  # Раз в interval-seconds выпадает amount штук случайного ОБЫЧНОГО предмета из инвентаря.
+  interval-seconds: "8-15"
+  amount: "1-3"
+  # Шанс забрать всю стопку.
+  whole-stack-chance: 0.0
+  hotbar: true
+  offhand: false
+  # true — предмет выпадает на землю рядом с игроком (false — исчезает).
+  drop-instead: true
+  # Через сколько тиков выпавшее можно поднять (20 = 1 с).
+  pickup-delay-ticks: 60
+  # Никогда не берутся: всё с прочностью, оружие, броня, инструменты, щит, элитры, удочка, тотем (death_protection),
+  # всё надеваемое (equippable), с модификаторами атрибутов, шалкеры и мешки, бинты. Дополнительно:
+  protect-materials:
+    [
+      NETHER_STAR,
+      DRAGON_EGG,
+      BEACON,
+      ELYTRA,
+      ENCHANTED_GOLDEN_APPLE,
+      HEART_OF_THE_SEA
+    ]
+  # Подстроки в NBT предмета: предметы плагинов (MMOItems, Nexo, системы) не трогать.
+  protect-nbt:
+    [
+      "MMOITEMS_ITEM_ID",
+      "nexo:id",
+      "coreskyrift:",
+      "coreportals:",
+      "rezusmenu:",
+      "corerpg:",
+      "zatochka",
+      "magicseals"
+    ]
+  # Не брать предметы со своим именем / своей моделью.
+  protect-named: false
+  protect-custom-model: true
+  cured-by: []
+
+bandage:
+  material: PAPER
+  # item_model иконки (модель в пакете: pack/assets/coreeffects). Без пакета поставьте "" — будет обычная бумага.
+  model: "coreeffects:bandage"
+  name: "<white>Бинт</white>"
+  lore:
+    - "<gray>ПКМ — перевязать рану.</gray>"
+    - "<gray>ПКМ по игроку — перевязать его.</gray>"
+    - "<dark_gray>Останавливает кровотечение.</dark_gray>"
+  cooldown-ticks: 20
+  # Можно перевязывать других игроков.
+  others: true
+
+# Сообщения (пусто — не отправлять). Все ключи и значения по умолчанию — в README.
+messages:
+  got-bleeding: "<#d02030>Вы истекаете кровью!</#d02030> <gray>Перевяжитесь бинтом.</gray>"
+  got-panic: "<dark_gray>Вас охватывает <#8a6cff>паника</#8a6cff>...</dark_gray>"
+  got-warmth: "<#ffb050>По телу разливается тепло.</#ffb050> <gray>Не забывайте
+    пить молоко или зелье лечения!</gray>"
+  got-curse: "<#a040ff>На вас лежит проклятье.</#a040ff> <gray>Вещи начнут
+    пропадать...</gray>"
+  faint: "<dark_red>Вы теряете сознание от потери крови...</dark_red>"
+  wake: "<gray>Вы приходите в себя.</gray>"
+  warmth-warn-1: "<#ffb050>Вам жарко. Выпейте молока или зелье лечения.</#ffb050>"
+  warmth-warn-2: "<#ff7a30>Жар нарастает! Срочно выпейте молока или зелье лечения!</#ff7a30>"
+  warmth-warn-3: "<red><bold>Вы сгораете изнутри!</bold> Ещё немного — и конец.</red>"
+  curse-dropped: "<#a040ff>Проклятье вырвало из рук: <white><item></white>
+    ×<amount></#a040ff>"
+  curse-took: "<#a040ff>Проклятье забрало: <white><item></white> ×<amount></#a040ff>"
+  death-bleeding: "<player> истёк кровью"
+  death-warmth: "<player> сгорел изнутри от жара"
