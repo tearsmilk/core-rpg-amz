@@ -3,6 +3,8 @@ package core.amazake.systems.coremobs.mob;
 import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
 import core.amazake.systems.coremobs.hook.ModelHook;
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
+import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
@@ -22,7 +24,10 @@ import org.bukkit.plugin.Plugin;
  *       проверяем: модель уже висит — ничего, нет — вешаем. Два раза модель не вешается (сначала смотрим
  *       ModeledEntity моба). Модели помечены «не сохранять», восстанавливает их только core-mobs.</li>
  *   <li>ModelEngine ещё грузит модели (первые секунды после старта) — моб пока без модели; когда модели
- *       загрузятся, моб получит модель сам (повтор раз в 2 с, до 2 минут), а CoreMobsSystem ещё раз пройдёт мобов рядом с игроками и мобов регионов.</li>
+ *       загрузятся, моб получит модель сам (повтор раз в 2 с, до 2 минут).</li>
+ *   <li>Моб загрузился раньше, чем включилась система (forceload, чанки при старте сервера), — его модель проверяет
+ *       {@link #ensureLoaded()}: при включении core-mobs, {@code /mobs reload} и включении ModelEngine, когда модели
+ *       загружены, система проходит все загруженные чанки.</li>
  *   <li>idle, walk, death проигрывает сам ModelEngine; attack — при выстреле из лука и ударе моба в ближнем бою,
  *       hit — когда моба ударила сущность и он выжил (огонь, яд, падение — без hit).</li>
  *   <li>Модель принадлежит ModelEngine: при выключении core-mobs не снимается, при смерти или удалении моба её
@@ -65,17 +70,33 @@ public final class MobModels implements Listener {
         entity.getScheduler().run(this.plugin, task -> this.ensureOwned(entity), null);
     }
 
-    /** Мобы на учёте у регионов: проверить модель каждого (ModelEngine догрузил модели). Любой поток. */
-    public void ensureTracked() {
-        for (final MobService.Tracked t : this.mobs.tracked().values()) {
-            final Entity e;
+    /**
+     * Все загруженные мобы core-mobs с моделью: проверить модель каждого. Нужно для мобов, которые попали в мир раньше,
+     * чем включилась система (чанки, загруженные при старте сервера: forceload, чанки, которые держат другие плагины), —
+     * их EntityAddToWorldEvent система не видела. Список чанков — из глобального потока, сами сущности — в потоке
+     * региона чанка. Повесить модель второй раз нельзя: {@link #ensure} сначала смотрит ModeledEntity моба.
+     */
+    public void ensureLoaded() {
+        for (final World world : Bukkit.getWorlds()) {
+            final Chunk[] chunks;
             try {
-                e = Bukkit.getEntity(t.id());
-            } catch (final RuntimeException ex) {
+                chunks = world.getLoadedChunks();
+            } catch (final RuntimeException e) {
                 continue;
             }
-            if (e != null) {
-                this.ensureAnywhere(e);
+            for (final Chunk chunk : chunks) {
+                final int cx = chunk.getX();
+                final int cz = chunk.getZ();
+                Bukkit.getRegionScheduler().execute(this.plugin, world, cx, cz, () -> {
+                    if (!world.isChunkLoaded(cx, cz)) {
+                        return;
+                    }
+                    for (final Entity e : world.getChunkAt(cx, cz).getEntities()) {
+                        if (MobService.mobId(e) != null) {
+                            this.ensureOwned(e);
+                        }
+                    }
+                });
             }
         }
     }

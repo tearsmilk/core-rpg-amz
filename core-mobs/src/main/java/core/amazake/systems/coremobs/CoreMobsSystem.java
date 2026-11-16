@@ -181,8 +181,8 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
     /**
      * ModelEngine и модели из mobs.yml: есть ли плагин, есть ли blueprint каждой модели. ModelEngine R4 регистрирует
      * модели асинхронно уже после своего включения, поэтому ждём их до {@link #MODEL_WAIT} (проверка раз в 2 с), а
-     * не ругаемся сразу. Модели появились позже первой проверки — вешаем их мобам рядом с игроками и мобам регионов
-     * (те, что заспавнились, пока ModelEngine грузился, остались без модели). Глобальный поток.
+     * не ругаемся сразу. Модели есть — проходим все загруженные чанки и вешаем модель мобам без неё (заспавнились,
+     * пока ModelEngine грузился, или загрузились раньше, чем включилась система). Глобальный поток.
      */
     private void checkModels() {
         final ScheduledTask old = this.modelWatch;
@@ -207,8 +207,8 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
                 task.cancel();
                 if (waited[0]) {
                     this.context.logger().info("ModelEngine загрузил модели — вешаю их на мобов.");
-                    this.adoptModels();
                 }
+                this.adoptModels();       // в том числе мобам, загруженным раньше, чем включилась система
                 return;
             }
             waited[0] = true;
@@ -221,19 +221,18 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
         }, Duration.ofSeconds(2));
     }
 
-    /** Повесить модели мобам рядом с игроками и всем мобам регионов (если ModelEngine их не держит). */
+    /**
+     * Повесить модели всем загруженным мобам core-mobs, у которых модели ещё нет (мобы рядом с игроками, мобы регионов,
+     * мобы в чанках, загруженных до включения системы). Глобальный поток.
+     */
     private void adoptModels() {
-        for (final Player player : Bukkit.getOnlinePlayers()) {
-            this.adoptNear(player);
-        }
-        this.models.ensureTracked();
+        this.models.ensureLoaded();
     }
 
-    /** ModelEngine включился позже системы — повесить модели мобам рядом с игроками (когда модели загрузятся). */
+    /** ModelEngine включился позже системы — дождаться его моделей и повесить их загруженным мобам (checkModels). */
     @EventHandler
     public void onPluginEnable(final PluginEnableEvent event) {
         if (event.getPlugin().getName().equals("ModelEngine") && this.models != null) {
-            this.adoptModels();
             Bukkit.getGlobalRegionScheduler().execute(this.context.plugin(), this::checkModels);
         }
     }

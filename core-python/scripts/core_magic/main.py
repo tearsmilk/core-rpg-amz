@@ -443,6 +443,13 @@ def 瞬間移動(event):
         _止める(p, "即")
 
 
+@amazake.on("org.bukkit.event.world.EntitiesUnloadEvent", priority="monitor")
+def 降ろす(event):
+    """Чанк с ячейками барьера выгружен: барьер больше не гасит лучи (kekkai.降ろされた). Пустой 結界体 — сразу выход."""
+    if kekkai.結界体:
+        kekkai.降ろされた(event.getEntities())
+
+
 @amazake.on("PlayerItemConsumeEvent", priority="lowest")
 def 食べる(event):
     """Страховка: посох никогда не «съедается» (consume_seconds 3600 и стоп на max-hold-seconds до этого)."""

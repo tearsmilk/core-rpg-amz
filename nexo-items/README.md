@@ -174,10 +174,13 @@ textures/item/crimson_scythe.png, crimson_scythe_fx.png + .mcmeta, items/crimson
    = `core-portals/pack` = `rezusmenu/pack`) → `plugins/Nexo/pack/assets/minecraft/shaders/core/`.
 3. `items/azerus_weapons.yml` → `plugins/Nexo/items/`, `nexo reload all`.
 4. `python3 -I tools/moonstaff_check.py --pack pack.zip` и `python3 -I tools/armor3d_check.py --pack pack.zip`.
-5. Python-система: `core-python/scripts/core_magic/` → `systems/core-python/scripts/core_magic/`, `/python load core_magic`.
+5. Python-система: `core-python/scripts/core_magic/` (все `*.py`, `config.yml`, `manifest.yml`, `README.md`; новый
+   `kekkai.py`; без `__pycache__`) → `systems/core-python/scripts/core_magic/`, `/python reload core_magic` (на проде
+   она уже загружена; если нет — `/python load core_magic`). `config.yml` на проде заменить (новые ключи) или дописать.
 
 Не проверено в клиенте (барьер): нет ли мигания позы лука на Shift+ПКМ; вид мерцания и уровней L; зазор между
-ячейками и толщина обвода издалека; macOS GL 4.1. Проверено glslang и Python-копией (превью).
+ячейками и толщина обвода издалека; macOS GL 4.1; не «рябит» ли рисунок ячейки на 8+ блоках (K10 берёт тексель
+с мип-уровня 0 ради точных классов альфы — если рябит, взять цвет заливки через `textureGrad`/мип). Проверено glslang и Python-копией (превью).
 
 Не проверено в клиенте: вид модели и поз в игре, шейдер на настоящих видеокартах (проверено glslang и Python-копией),
 мипмапы атласа предметов (ореол круга берётся с мип-уровня 2; если у атласа предметов мипов нет — ореол просто равен
