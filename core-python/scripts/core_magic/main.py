@@ -261,14 +261,17 @@ def 右クリック(event):
         p.getInventory().setItem(event.getHand(), copy)
         item = copy
     uid = str(p.getUniqueId())
+    if p.getWorld().getName() in cfg.禁止世界 or (cfg.杖.権限 and not p.hasPermission(cfg.杖.権限)):
+        event.setUseItemInHand(EventResult.DENY)
+        if p.isSneaking():
+            event.setUseInteractedBlock(EventResult.DENY)
+        return
     if p.isSneaking():
-        # смена режима: никакого удержания и заряда (DENY — ни натяжения, ни позы лука)
+        # смена режима: никакого удержания и заряда (DENY: Paper сам отменяет предсказанное клиентом
+        # использование — ServerPlayer.resyncUsingItem в handleUseItem)
         event.setUseItemInHand(EventResult.DENY)
         event.setUseInteractedBlock(EventResult.DENY)
         _切り替える(p, event, item, cfg, uid)
-        return
-    if p.getWorld().getName() in cfg.禁止世界 or (cfg.杖.権限 and not p.hasPermission(cfg.杖.権限)):
-        event.setUseItemInHand(EventResult.DENY)
         return
     if uid in 詠唱:
         return

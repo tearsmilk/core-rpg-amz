@@ -16,6 +16,7 @@
 import math
 import threading
 
+import java
 import amazake
 
 import keisan
@@ -205,8 +206,9 @@ class 結界:
             return
         self.消え中 = True
         解除(self.id)
-        if 主の結界.get(self.主) == self.id:
-            主の結界.pop(self.主, None)
+        with _鍵:                       # сравнить-и-убрать атомарно против 形成 в потоке игрока
+            if 主の結界.get(self.主) == self.id:
+                主の結界.pop(self.主, None)
         結界体.pop(self.id, None)
         if kyoutsuu.終了済み[0]:
             return
@@ -259,6 +261,47 @@ def _消させる(b):
         結界体.pop(b.id, None)
         for d in b.表示一覧():
             kyoutsuu.消す(d)
+
+
+def _古いのを掃く(今):
+    """Страховка от утечки: барьер, чья задача 消える потерялась (регион выгружен), — давно истёк, но остался в
+    結界体. Забыть его (дисплеи — через kyoutsuu.消す, он сам уходит в поток сущности)."""
+    for id, b in list(結界体.items()):
+        if b.消え中 or b.rec.終ms + 5000 > 今:
+            continue
+        b.消え中 = True
+        結界体.pop(id, None)
+        解除(id)
+        with _鍵:
+            if 主の結界.get(b.主) == id:
+                主の結界.pop(b.主, None)
+        for d in b.表示一覧():
+            kyoutsuu.消す(d)
+
+
+def 降ろされた(entities):
+    """EntitiesUnloadEvent (поток региона чанка): ячейки барьера выгружаются вместе с чанком (дисплеи
+    непостоянные, их не станет) — такой барьер больше не гасит лучи: из реестра и из 結界体 сразу."""
+    if not 結界体:
+        return
+    ids = set()
+    for e in entities:
+        try:
+            if java.instanceof(e, kyoutsuu.ItemDisplayType):
+                dd = amazake.data(e)
+                if dd.has("barrier"):
+                    ids.add(int(dd.get_string("barrier")))
+        except BaseException:
+            pass
+    for id in ids:
+        b = 結界体.pop(id, None)
+        解除(id)
+        if b is None:
+            continue
+        b.消え中 = True
+        with _鍵:
+            if 主の結界.get(b.主) == id:
+                主の結界.pop(b.主, None)
 
 
 # ------------------------------------------------------------------------------------------------ заклинание
@@ -489,16 +532,17 @@ class 結界詠唱:
         _帯(p, cfg, "barrier-ready", s=keisan.秒の文字(c.秒))
 
         # у игрока не больше одного барьера: прежний гаснет сейчас
-        前id = 主の結界.get(self.uid)
-        前 = 結界体.get(前id) if 前id is not None else None
-        if 前 is not None:
-            _消させる(前)
-
+        _古いのを掃く(今)
         rec = keisan.結界を作る(self.id, world.getName(), self.eye, self.yaw, c, 今, self.uid)
         b = 結界(self.id, rec, self.場所, cfg, self.表示, self.g)
         self.表示 = [None] * len(self.細胞)       # дисплеи теперь у барьера
         結界体[self.id] = b
-        主の結界[self.uid] = self.id
+        with _鍵:
+            前id = 主の結界.get(self.uid)
+            主の結界[self.uid] = self.id
+        前 = 結界体.get(前id) if 前id is not None else None
+        if 前 is not None:
+            _消させる(前)
         登録(rec)
         try:
             if c.閃光 > 0:
