@@ -1,0 +1,15 @@
+# core-python — системы на Python (GraalPy) внутри сервера. Подробно: README.md системы.
+#
+# Python-системы лежат в systems/core-python/scripts/<имя>/ (manifest.yml + .py), данные — в data/<имя>/.
+# Команды: /python list | load <имя> | unload <имя> | reload <имя|all> | info   (право corepython.admin)
+
+libraries:
+  # jar-ы GraalPy (~150 МБ) лежат в systems/core-python/lib/. Если каких-то нет — скачать из Maven Central
+  # (проверяются по sha256 из .azs). false — только сообщить, что их нет (положить вручную, см. README).
+  auto-download: true
+  repository: "https://repo1.maven.org/maven2/"
+
+graalpy:
+  # На обычном JDK (без JVMCI) GraalPy работает интерпретатором — Truffle пишет об этом большое предупреждение
+  # при каждом создании движка. Мы это знаем и принимаем (см. README «Скорость»), поэтому по умолчанию false.
+  warn-interpreter-only: false

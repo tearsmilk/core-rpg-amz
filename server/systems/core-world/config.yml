@@ -10,17 +10,18 @@ hunger:
   worlds: []
   # true — держать насыщение полным (20): быстрая регенерация, как сразу после еды.
   # false — насыщение не трогается (регенерация медленнее, но шкала еды всё равно не падает).
-  keep-saturation: true
+  keep-saturation: false
+  clear-saturation: true
 
 # Появление мобов.
 spawn:
   # Какие мобы не появляются (имена EntityType). Пустой список — модуль ничего не делает.
-  blocked: [BAT]
+  blocked: [ BAT ]
   # Миры, где запрещено. Пустой список — во всех мирах.
   worlds: []
   # Причины появления, которые всё равно пропускаются: COMMAND — /summon, CUSTOM — плагины.
   # Добавьте SPAWNER_EGG, чтобы работали яйца призыва.
-  allow-reasons: [COMMAND, CUSTOM]
+  allow-reasons: [ COMMAND, CUSTOM ]
   # true — уже живущие такие мобы (без своего имени) убираются при загрузке их чанка.
   remove-existing: true
 
@@ -40,10 +41,13 @@ explosions:
   # Кто не ломает блоки (имена EntityType): TNT — ТНТ, TNT_MINECART — вагонетка с ТНТ, CREEPER — крипер,
   # ENDER_DRAGON — дракон (взрывом и пролетая сквозь блоки). Можно добавить WITHER, WITHER_SKULL, FIREBALL (гаст),
   # SMALL_FIREBALL (ифрит), END_CRYSTAL, WIND_CHARGE.
-  sources: [TNT, TNT_MINECART, CREEPER, ENDER_DRAGON]
+  sources: [ TNT, TNT_MINECART, CREEPER, ENDER_DRAGON ]
   # true — и взрывы блоков (кровать в аду/энде, якорь возрождения в обычном мире) не ломают блоки.
   block-explosions: false
   # true — картины и рамки тоже не срываются этими взрывами.
   protect-hanging: true
   # Миры, где действует. Пустой список — во всех мирах.
   worlds: []
+regeneration:
+  disable-natural: true
+  disable-mmocore: true

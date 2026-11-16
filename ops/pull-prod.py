@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 B = "https://mgr.hosting-minecraft.pro/api/client/servers/88635a9b"
 ROOTS = ["/plugins/Nexo", "/plugins/MMOCore", "/plugins/MythicLib", "/plugins/MythicHUD", "/systems"]
 SKIP_NAMES = {".assetCache", ".deobfCachedPacks", "packsquash", "pack.zip", "logs", "cache", "userdata",
-              "built-pack", "players", "players.yml", "amazakecore.mv.db", ".installed"}
+              "built-pack", "lib", "players", "players.yml", "profiles", "amazakecore.mv.db", ".installed"}
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "server")
 
 def curl(url, out=None):

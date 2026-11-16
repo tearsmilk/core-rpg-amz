@@ -1,0 +1,187 @@
+# Кастомная броня AZERUS — Python-система custom_armor (core-python). Выдать: /carmor give <комплект> [часть|all] [игрок]
+# (или /nexo give <ник> <id>: характеристики система повесит сама при надевании).
+# Вид — Nexo CustomArmor (как nexo_defaults/nexo_armor.yml): слои 64x32 у нагрудника комплекта, Nexo сам собирает
+# equipment-модель azerus:<комплект>; у каждой части equippable с этим asset_id. Иконки — Pack.texture.
+# Характеристики (броня, здоровье, бонусы комплекта) — НЕ здесь, а в systems/core-python/scripts/custom_armor/sets.yml.
+# Текстуры рисует nexo-items/tools/armor_textures.py; пиксели с альфой 251 светятся (шейдер брони entity.fsh).
+
+
+# ---- guren (紅蓮) ----
+azerus_guren_helmet:
+  itemname: "<#d4334a>Багровый шлем"
+  material: NETHERITE_HELMET
+  lore:
+    - "<gray>Выкован в том же пламени,"
+    - "<gray>что и Багровая коса."
+  Pack:
+    texture: azerus:item/armor/guren_helmet
+  CustomArmor:
+    id: guren
+  Components:
+    equippable:
+      slot: HEAD
+      asset_id: azerus:guren
+azerus_guren_chestplate:
+  itemname: "<#d4334a>Багровый нагрудник"
+  material: NETHERITE_CHESTPLATE
+  lore:
+    - "<gray>Выкован в том же пламени,"
+    - "<gray>что и Багровая коса."
+  Pack:
+    texture: azerus:item/armor/guren_chestplate
+  CustomArmor:
+    id: guren
+    layer1: azerus:item/armor/guren_armor_layer_1
+    layer2: azerus:item/armor/guren_armor_layer_2
+  Components:
+    equippable:
+      slot: CHEST
+      asset_id: azerus:guren
+azerus_guren_leggings:
+  itemname: "<#d4334a>Багровые поножи"
+  material: NETHERITE_LEGGINGS
+  lore:
+    - "<gray>Выкован в том же пламени,"
+    - "<gray>что и Багровая коса."
+  Pack:
+    texture: azerus:item/armor/guren_leggings
+  CustomArmor:
+    id: guren
+  Components:
+    equippable:
+      slot: LEGS
+      asset_id: azerus:guren
+azerus_guren_boots:
+  itemname: "<#d4334a>Багровые сапоги"
+  material: NETHERITE_BOOTS
+  lore:
+    - "<gray>Выкован в том же пламени,"
+    - "<gray>что и Багровая коса."
+  Pack:
+    texture: azerus:item/armor/guren_boots
+  CustomArmor:
+    id: guren
+  Components:
+    equippable:
+      slot: FEET
+      asset_id: azerus:guren
+
+# ---- tsukikori (月氷) ----
+azerus_tsukikori_helmet:
+  itemname: "<#9fd8ff>Лунный шлем"
+  material: DIAMOND_HELMET
+  lore:
+    - "<gray>Холодный свет луны,"
+    - "<gray>застывший в броне."
+  Pack:
+    texture: azerus:item/armor/tsukikori_helmet
+  CustomArmor:
+    id: tsukikori
+  Components:
+    equippable:
+      slot: HEAD
+      asset_id: azerus:tsukikori
+azerus_tsukikori_chestplate:
+  itemname: "<#9fd8ff>Лунный нагрудник"
+  material: DIAMOND_CHESTPLATE
+  lore:
+    - "<gray>Холодный свет луны,"
+    - "<gray>застывший в броне."
+  Pack:
+    texture: azerus:item/armor/tsukikori_chestplate
+  CustomArmor:
+    id: tsukikori
+    layer1: azerus:item/armor/tsukikori_armor_layer_1
+    layer2: azerus:item/armor/tsukikori_armor_layer_2
+  Components:
+    equippable:
+      slot: CHEST
+      asset_id: azerus:tsukikori
+azerus_tsukikori_leggings:
+  itemname: "<#9fd8ff>Лунные поножи"
+  material: DIAMOND_LEGGINGS
+  lore:
+    - "<gray>Холодный свет луны,"
+    - "<gray>застывший в броне."
+  Pack:
+    texture: azerus:item/armor/tsukikori_leggings
+  CustomArmor:
+    id: tsukikori
+  Components:
+    equippable:
+      slot: LEGS
+      asset_id: azerus:tsukikori
+azerus_tsukikori_boots:
+  itemname: "<#9fd8ff>Лунные сапоги"
+  material: DIAMOND_BOOTS
+  lore:
+    - "<gray>Холодный свет луны,"
+    - "<gray>застывший в броне."
+  Pack:
+    texture: azerus:item/armor/tsukikori_boots
+  CustomArmor:
+    id: tsukikori
+  Components:
+    equippable:
+      slot: FEET
+      asset_id: azerus:tsukikori
+
+# ---- morikashi (森樫) ----
+azerus_morikashi_helmet:
+  itemname: "<#7fae4a>Шлем дубравы"
+  material: IRON_HELMET
+  lore:
+    - "<gray>Кора столетнего дуба,"
+    - "<gray>окованная бронзой."
+  Pack:
+    texture: azerus:item/armor/morikashi_helmet
+  CustomArmor:
+    id: morikashi
+  Components:
+    equippable:
+      slot: HEAD
+      asset_id: azerus:morikashi
+azerus_morikashi_chestplate:
+  itemname: "<#7fae4a>Нагрудник дубравы"
+  material: IRON_CHESTPLATE
+  lore:
+    - "<gray>Кора столетнего дуба,"
+    - "<gray>окованная бронзой."
+  Pack:
+    texture: azerus:item/armor/morikashi_chestplate
+  CustomArmor:
+    id: morikashi
+    layer1: azerus:item/armor/morikashi_armor_layer_1
+    layer2: azerus:item/armor/morikashi_armor_layer_2
+  Components:
+    equippable:
+      slot: CHEST
+      asset_id: azerus:morikashi
+azerus_morikashi_leggings:
+  itemname: "<#7fae4a>Поножи дубравы"
+  material: IRON_LEGGINGS
+  lore:
+    - "<gray>Кора столетнего дуба,"
+    - "<gray>окованная бронзой."
+  Pack:
+    texture: azerus:item/armor/morikashi_leggings
+  CustomArmor:
+    id: morikashi
+  Components:
+    equippable:
+      slot: LEGS
+      asset_id: azerus:morikashi
+azerus_morikashi_boots:
+  itemname: "<#7fae4a>Сапоги дубравы"
+  material: IRON_BOOTS
+  lore:
+    - "<gray>Кора столетнего дуба,"
+    - "<gray>окованная бронзой."
+  Pack:
+    texture: azerus:item/armor/morikashi_boots
+  CustomArmor:
+    id: morikashi
+  Components:
+    equippable:
+      slot: FEET
+      asset_id: azerus:morikashi

@@ -15,6 +15,10 @@ NexoInventory:
       slot: 3
       icon: forest_axe
       itemname: <green>Nexo Tools</green>
+    azerus_weapons:
+      slot: 4
+      icon: azerus_thundermaul
+      itemname: <gold>Royal Knight</gold>
   menu_rows: 6
   menu_size: 45
   menu_title: <shift:-37><glyph:menu_items_search>

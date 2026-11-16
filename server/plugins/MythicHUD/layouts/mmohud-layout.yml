@@ -14,7 +14,7 @@ mmohud-layout:
         x: 50.0
         y: 0
       offset:
-        x: -99
+        x: -44
         y: 39
     energy:
       asset: 'energy'
@@ -22,18 +22,8 @@ mmohud-layout:
         x: 50.0
         y: 0
       offset:
-        x: -99
+        x: -44
         y: 39
-# DO NOT TOUCH
-# %%__USER__%%
-    food:
-      asset: 'food'
-      position:
-        x: 50
-        y: 0.0
-      offset:
-        x: 1
-        y: 40
     armor:
       asset: 'armor'
       position:
@@ -51,8 +41,8 @@ mmohud-layout:
       offset:
         x: 0
         y: -10
-# DO NOT TOUCH
-# %%__NONCE__%%
+    # DO NOT TOUCH
+    # %%__NONCE__%%
     experience:
       asset: 'experience'
       align: center

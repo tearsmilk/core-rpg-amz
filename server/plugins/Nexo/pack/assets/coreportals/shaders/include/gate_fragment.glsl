@@ -1,0 +1,124 @@
+// Dimensional gates. G=84/85/86/87 only; existing shader kinds keep their original code paths.
+// Local quad coordinates. Aperture growth is client-interpolated geometry around a fixed centre.
+// No screen-space effect, ray marching, extra textures, or resolution-dependent sampling.
+
+float cg_fbm(vec2 p) {
+    float value = 0.0;
+    float weight = 0.53;
+    for (int i = 0; i < 4; i++) {
+        value += weight * cp_noise(p);
+        p = mat2(1.62, 1.18, -1.18, 1.62) * p + vec2(3.7, 1.2);
+        weight *= 0.49;
+    }
+    return value;
+}
+
+vec2 cg_rot(vec2 p, float angle) {
+    float s = sin(angle), c = cos(angle);
+    return mat2(c, s, -s, c) * p;
+}
+
+vec3 cg_palette(float n) {
+    vec3 purple = mix(vec3(0.028, 0.010, 0.085), vec3(0.22, 0.035, 0.34), smoothstep(0.1, 0.75, n));
+    return mix(purple, vec3(0.91, 0.24, 0.38), smoothstep(0.62, 1.05, n));
+}
+
+// Item displays write depth, even for alpha-blended fragments. Coverage transparency
+// either discards a sample or writes it fully opaque, so clouds cannot erase geometry
+// drawn later. Static one-pixel interleaved noise avoids distance-dependent sorting holes.
+vec4 cg_coverage(vec3 color, float alpha, float layer) {
+    float coverage = clamp(alpha, 0.0, 1.0);
+    float threshold = fract(52.9829189 * fract(dot(floor(gl_FragCoord.xy) + vec2(layer, layer * .37),
+        vec2(.06711056, .00583715))));
+    if (coverage <= threshold) discard;
+    return vec4(clamp(color, 0.0, 1.0), 1.0);
+}
+
+vec4 cg_surface(vec2 uv, float time, float growth) {
+    if (growth < 0.002) return vec4(0.0);
+    vec2 p = (uv - .5) * vec2(5.3, -9.4);
+    // The ellipse is centred on its quad; its centre remains fixed while the display expands.
+    float h = 8.77 * growth;
+    float halfWidth = 2.28 * pow(growth, 0.68);
+    vec2 q = vec2(p.x / max(halfWidth, 0.008), p.y / max(0.5 * h, 0.008));
+    float r = length(q);
+    if (r > 1.28) return vec4(0.0);
+    float aa = max(fwidth(r), 0.002);
+    float angle = atan(q.y, q.x);
+    float ripple = cg_fbm(vec2(cos(angle), sin(angle)) * 4.3 + vec2(time * 0.4, -time * 0.3)) - 0.5;
+    float edge = r - 1.0 + ripple * 0.025;
+    float interior = 1.0 - smoothstep(-aa, aa, edge);
+
+    // Deep parallax-like flows: slow sky, faster near filaments; all loops have a fixed small budget.
+    vec2 flow = cg_rot(q * vec2(1.1, 1.8), time * 0.045 + 0.65 / (length(q) + 0.65));
+    vec2 warp = vec2(cg_fbm(flow * 1.65 + vec2(0.0, -time * 0.14)),
+                     cg_fbm(flow * 1.45 + vec2(8.4, time * 0.09)));
+    float cloud = cg_fbm(flow * 2.7 + warp * 2.4 - vec2(0.0, time * 0.12));
+    vec3 color = cg_palette(cloud);
+    float warm = exp(-dot(q - vec2(-0.16, 0.40), q - vec2(-0.16, 0.40)) * 3.2);
+    color += vec3(1.0, 0.38, 0.16) * warm * cloud * 0.26;
+    float streams = pow(0.5 + 0.5 * sin((length(flow + warp * 0.18) * 11.0 - time * 0.46 + warp.x) * 5.0), 15.0);
+    color += vec3(0.20, 0.27, 0.8) * streams * 0.10;
+
+    vec2 starGrid = q * vec2(28.0, 43.0) + vec2(time * 0.035, -time * 0.065);
+    vec2 cell = floor(starGrid), f = fract(starGrid) - 0.5;
+    float star = (1.0 - smoothstep(0.015, 0.09, length(f))) * step(0.987, cp_hash(cell));
+    color += vec3(0.65, 0.73, 1.0) * star * (0.5 + 0.5 * sin(time * 2.0 + cp_hash(cell + 4.2) * 30.0));
+
+    // Two counter-moving electrical strands and a soft halo fake bloom without a post-process pass.
+    float broken = sin(angle * 19.0 - time * 3.2) * sin(angle * 31.0 + time * 2.5);
+    float strand = exp(-abs(edge + broken * 0.010) * 170.0);
+    float outer = exp(-abs(edge - 0.030 - sin(angle * 12.0 + time * 2.1) * 0.014) * 90.0);
+    float halo = exp(-abs(edge) * 20.0);
+    float colorPhase = 0.5 + 0.5 * sin(angle * 2.0 - time * 0.7);
+    vec3 plasma = mix(vec3(0.22, 0.38, 1.0), vec3(1.0, 0.20, 0.73), colorPhase);
+    vec3 hot = mix(vec3(0.65, 0.77, 1.0), vec3(1.0, 0.79, 0.53), 0.5 + 0.5 * sin(angle * 3.0 + time));
+    color = color * interior + plasma * (halo * 0.65 + outer * 0.58) + hot * strand * 1.3;
+    float alpha = max(interior, clamp(halo * 0.7 + outer * 0.65 + strand, 0.0, 1.0));
+    alpha *= smoothstep(0.0, 0.045, growth);
+    return cg_coverage(color, alpha, 3.1);
+}
+
+vec4 cg_smoke(vec2 uv, float time, float reveal, float layer) {
+    if (reveal < 0.003) return vec4(0.0);
+    vec2 p = vec2((uv.x - 0.5) * 8.4, (1.0 - uv.y) * 12.5 - 1.10);
+    float t = time * 0.16;
+    vec2 flow = p * vec2(.72, .57) + vec2(sin(p.y * .6 + t) * .45, -t);
+    vec2 warp = vec2(cg_fbm(flow * .65), cg_fbm(flow * .65 + 7.3));
+    float cloud = cg_fbm(flow + warp * 2.5);
+    float detail = cg_fbm(flow * 2.2 + vec2(-t * .4, t * .3));
+    // Broad volumes wrap both pillars and merge into a billowing crown.
+    float side = exp(-pow((abs(p.x) - 2.5 + (cloud - .5) * 1.15) / .85, 2.0));
+    float crown = exp(-pow((p.y - 8.7 + (cloud - .5) * 1.8) / 1.15, 2.0) - p.x * p.x * .065);
+    float base = exp(-pow((p.y - .35) / .62, 2.0) - p.x * p.x * .055);
+    float volume = max(side * .85, max(crown, base * .7));
+    float bounds = smoothstep(0.0, .12, uv.x) * (1.0 - smoothstep(.88, 1.0, uv.x));
+    bounds *= smoothstep(-1.1, -.25, p.y) * (1.0 - smoothstep(10.0, 11.4, p.y));
+    vec3 color = mix(vec3(.13, .08, .25), vec3(.54, .39, .72), smoothstep(.23, .78, cloud));
+    color += vec3(.14, .32, .58) * detail * .55;
+    color += vec3(.85, .25, .17) * crown * cloud * .45;
+    float alpha = volume * smoothstep(.13, .72, cloud) * (.52 + detail * .32) * bounds * reveal;
+    return cg_coverage(color, min(alpha, .72), 13.1 + layer * 31.7);
+}
+
+vec4 cg_floor(vec2 uv, float time, float power) {
+    if (power < .003) return vec4(0.0);
+    vec2 p = (uv - .5) * 8.0;
+    float r = length(p), a = atan(p.y, p.x);
+    if (r > 3.95) return vec4(0.0);
+    float aa = max(fwidth(r), .009);
+    float outer = 1.0 - smoothstep(.018, .018 + aa, abs(r - 3.1));
+    float inner = 1.0 - smoothstep(.014, .014 + aa, abs(r - 2.64));
+    float ringGlow = exp(-abs(r - 3.1) * 16.0) + exp(-abs(r - 2.64) * 20.0) * .65;
+    float band = smoothstep(2.70, 2.75, r) * (1.0 - smoothstep(2.98, 3.03, r));
+    float runePhase = sin(a * 24.0 - time * .65);
+    float runes = smoothstep(.32 - fwidth(runePhase), .48 + fwidth(runePhase), runePhase) * band;
+    float spokes = pow(max(0.0, cos(a * 8.0 + time * .34)), 32.0)
+        * smoothstep(2.42, 2.51, r) * (1.0 - smoothstep(3.2, 3.45, r));
+    float orbit = pow(max(0.0, cos(a * 3.0 - time * .9)), 50.0) * exp(-abs(r - 3.1) * 12.0);
+    float pulse = .86 + .14 * sin(time * 1.45);
+    float mist = cg_fbm(p * 1.3 - vec2(time * .08)) * exp(-r * r * .22) * .23;
+    float light = outer + inner * .9 + runes * .85 + spokes * .8 + orbit + ringGlow * .38;
+    vec3 color = vec3(.57, .42, 1.0) * (light + mist) + vec3(1.0, .76, .43) * (outer + runes + orbit) * .5;
+    return cg_coverage(color, (light * pulse + mist) * power, 73.9);
+}

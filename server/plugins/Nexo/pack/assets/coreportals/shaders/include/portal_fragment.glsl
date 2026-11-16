@@ -4,6 +4,7 @@
 
 #moj_import <minecraft:globals.glsl>
 #moj_import <coreportals:portal_noise.glsl>
+#moj_import <coreportals:gate_fragment.glsl>
 
 flat in int cpKind;
 flat in float cpParam;
@@ -541,5 +542,9 @@ vec4 cp_fragment(int kind, vec2 local) {
     }
     if (kind == 19) return cp_screen_glow(uv, t, cpParam);
     if (kind == 20) return cp_screen_cracks(uv, t, cpParam);
+    if (kind == 21) return cg_surface(uv, t, cpParam);
+    if (kind == 22) return cg_smoke(uv, t, cpParam, 0.0);
+    if (kind == 23) return cg_floor(uv, t, cpParam);
+    if (kind == 24) return cg_smoke(vec2(1.0 - uv.x, uv.y), t + 19.7, cpParam, 1.0);
     return vec4(1.0, 0.0, 1.0, 1.0);                          // reserved marker without a painter: magenta
 }

@@ -340,4 +340,7 @@ regions:
       amount: '1'
       player-radius: 48
       min-player-distance: 6
-      mobs: {}
+      mobs:
+        venom_spider: 1
+        acid_slime: 1
+        ash_warrior: 1

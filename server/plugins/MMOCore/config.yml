@@ -37,10 +37,10 @@ default-playerdata:
   skill-realloc-points: 0
   attribute-points: 0
   attribute-realloc-points: 0
-  health: 1000   # High enough so that the player
-  mana: 1000     # starts with full hp/mana/...
+  health: 1000 # High enough so that the player
+  mana: 1000 # starts with full hp/mana/...
   stellium: 1000 # These values will be clamped to
-  stamina: 1000  # max resource value!
+  stamina: 1000 # max resource value!
 
 custom-mining:
 
@@ -144,7 +144,6 @@ skill-casting:
       action-bar: true
       priority: 31
       sound: BLOCK_FIRE_EXTINGUISH,1,2
-
   # Action bar format
   # Disabled by Mia: skill names are shown by MythicHUD above the skill bar (the action-bar text overlapped the slots).
   # To restore, uncomment:
@@ -192,7 +191,7 @@ party:
 
     # '3' -> increases health regen by a flat +3pts/s
     # '3%' -> increases current health regen by 3%
-    health-regeneration: 3%
+    health-regeneration: 0
 
     # '5' -> increases exp by 5% (this is how "additional-experience is defined")
     # '5%' -> increases your current "% additional experience" stat by 5% (not the same behaviour !!!)

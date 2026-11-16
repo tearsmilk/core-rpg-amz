@@ -1,0 +1,12 @@
+# Python-система «Кастомная броня» (カスタム防具). Код — main.py, items.py, bonuses.py; комплекты — sets.yml.
+name: custom_armor
+version: 1.0.0
+main: main.py
+enabled: true
+description: "Кастомные комплекты брони Nexo: характеристики, бонусы за 2 и 4 предмета"
+commands:
+  carmor:
+    permission: customarmor.admin
+    aliases: [防具, customarmor]
+    description: "Кастомная броня: выдать, список, перечитать"
+    usage: "/carmor give <комплект> [часть|all] [игрок] | list | reload"
