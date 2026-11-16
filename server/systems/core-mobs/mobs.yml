@@ -68,6 +68,9 @@ mobs:
   venom_spider:
     type: SPIDER
     name: "<dark_purple>Ядовитый паук</dark_purple>"
+    model: spider_poison_am
+    model-attack: atk
+    model-hit: none
     health: 28
     damage: 4
     speed: 0.34
@@ -142,6 +145,10 @@ mobs:
   plague_zombie:
     type: ZOMBIE
     name: "<#8bbf5a>Чумной мертвец</#8bbf5a>"
+    model: em_darkpuker
+    model-scale: 0.9
+    model-attack: attack1
+    model-hit: hurt1
     health: 45
     damage: 6
     speed: 0.24
@@ -186,6 +193,10 @@ mobs:
   dead_knight:
     type: ZOMBIE
     name: "<#b0b8c4>Мёртвый рыцарь</#b0b8c4>"
+    model: fallen_mauler
+    model-scale: 0.9
+    model-attack: attack1
+    model-hit: hurt1
     health: 80
     damage: 8
     speed: 0.22
@@ -198,6 +209,8 @@ mobs:
   bone_archer:
     type: SKELETON
     name: "<#e8e2cf>Костяной лучник</#e8e2cf>"
+    model: skeleton_archer
+    model-scale: 0.85
     health: 28
     damage: 3
     projectile-damage: 6
@@ -232,6 +245,8 @@ mobs:
   skeleton_guard:
     type: SKELETON
     name: "<#d9d4c1>Скелет-стражник</#d9d4c1>"
+    model: skeleton_warrior
+    model-scale: 0.85
     health: 50
     damage: 6
     armor: 8
@@ -243,6 +258,10 @@ mobs:
   cave_crawler:
     type: CAVE_SPIDER
     name: "<#4a7fb5>Пещерный ползун</#4a7fb5>"
+    model: spider_trapper_am
+    model-scale: 0.45
+    model-attack: atk
+    model-hit: none
     health: 18
     damage: 3
     speed: 0.32
@@ -253,6 +272,10 @@ mobs:
   brood_mother:
     type: SPIDER
     name: "<#8c2f39>Паучиха-матка</#8c2f39>"
+    model: spider_elite_am
+    model-scale: 1.1
+    model-attack: atk
+    model-hit: none
     health: 70
     damage: 7
     speed: 0.3
@@ -266,6 +289,9 @@ mobs:
   ash_warrior:
     type: WITHER_SKELETON
     name: "<#7d7d7d>Пепельный воин</#7d7d7d>"
+    model: fallenravager
+    model-scale: 1.1
+    model-hit: hurt1
     health: 60
     damage: 8
     armor: 4
@@ -277,6 +303,9 @@ mobs:
   bone_lord:
     type: WITHER_SKELETON
     name: "<#3b3b45>Костяной лорд</#3b3b45>"
+    model: fallendefender
+    model-scale: 1.4
+    model-hit: hurt1
     health: 120
     damage: 11
     armor: 10

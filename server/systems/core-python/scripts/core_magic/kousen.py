@@ -28,6 +28,7 @@ import keisan
 import kyoutsuu
 import mahoujin
 import kekkai
+import damage_bridge
 from kyoutsuu import Location, Vector, BoundingBox, FluidCollisionMode, LivingEntity, ArmorStand, Player, GameMode
 
 DamageSource = java.type("org.bukkit.damage.DamageSource")
@@ -163,10 +164,7 @@ def 撃つ(player, cfg, 陣=None):
             try:
                 if 光.無敵無視:
                     e.setNoDamageTicks(0)
-                if src is not None:
-                    e.damage(float(光.傷), src)
-                else:
-                    e.damage(float(光.傷), player)
+                damage_bridge.hit(player, e, float(光.傷), src)
                 n += 1
             except BaseException as ex:
                 amazake.log.warn("урон лучом " + uid + ": " + str(ex))
