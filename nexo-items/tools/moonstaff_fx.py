@@ -510,12 +510,12 @@ def shade(kind, spr, lx, ly, param, t):
         fi = (a255 >= 7.5) & ~rim & ~gl
         band3 = band[..., None]
         rgb_rim = tex[..., :3] * (1.05 + 0.2 * breath) + 0.35 * band3
-        tw = (0.5 + 0.5 * np.sin(TAU * t / 1.5 + ph * 11.0 + lx * 7.0)) ** 8.0
+        tw = np.maximum(0.5 + 0.5 * np.sin(TAU * t / 1.5 + ph * 11.0 + lx * 7.0), 0.0) ** 8.0
         rgb_gl = np.array([0.85, 0.97, 1.1]) * (1.0 - tw)[..., None] + 1.6 * tw[..., None]
         al_gl = 0.8 + 0.2 * tw
-        rgb_fi = (tex[..., :3] * np.array([0.82, 0.95, 1.12]) * (0.95 + 0.12 * breath) + np.array([0.02, 0.08, 0.22])
-                  + np.array([0.6, 0.9, 1.0]) * 0.35 * band3)
-        al_fi = np.minimum(tex[..., 3] * (1.3 + 0.2 * band), 1.0)
+        base_fi = tex[..., :3] * np.array([0.82, 0.95, 1.12]) * (0.95 + 0.12 * breath) + np.array([0.02, 0.08, 0.22])
+        rgb_fi = base_fi * 0.6 + np.array([0.72, 0.93, 1.0]) * 0.4 + np.array([0.6, 0.9, 1.0]) * 0.35 * band3
+        al_fi = np.minimum(tex[..., 3] * (1.45 + 0.2 * band), 1.0)
         rgb = np.where(rim[..., None], rgb_rim, np.where(gl[..., None], rgb_gl, np.where(fi[..., None], rgb_fi, 0.0)))
         al = np.where(rim, 1.0, np.where(gl, al_gl, np.where(fi, al_fi, 0.0)))
         if lv <= 7:
@@ -673,7 +673,7 @@ def barrier_cells(t_held=None, levels=None, cfg=BARRIER):
     """Ячейки для рисования: [(u, v, сторона, R)] в порядке отрисовки. t_held — тики удержания (None — собран,
     все L из levels, по умолчанию 8). Во время сборки: ячейка m появляется в spawn_tick и летит fly тиков из точки
     у навершия посоха (P0 в координатах мага: u = 0.3, v = −up − 0.2) с масштабом start_scale (линейно, как
-    интерполяция дисплея), L = 9 в полёте и 6 после посадки; на тике charge — сформирован, все L = 9."""
+    интерполяция дисплея), L = 9 в полёте и 7 после посадки; на тике charge — сформирован, все L = 9."""
     cells = honeycomb(cfg['cols'], cfg['rows'], cfg['r'])
     order = build_order(cells)
     g = glow_slots(cells)
@@ -693,7 +693,7 @@ def barrier_cells(t_held=None, levels=None, cfg=BARRIER):
         su = 0.3 + u * cfg['spread']
         sv = -cfg['up'] - 0.2 + v * cfg['spread']
         side = Q * (cfg['start_scale'] + (1 - cfg['start_scale']) * p)
-        L = 9 if p < 1 else 6
+        L = 9 if p < 1 else 7
         if t_held >= cfg['charge']:
             L = 9
         out.append((su + (u - su) * p, sv + (v - sv) * p, side, barrier_R(g[k], L)))

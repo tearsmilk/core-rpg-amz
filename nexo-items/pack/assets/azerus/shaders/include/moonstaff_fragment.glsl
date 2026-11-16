@@ -73,13 +73,13 @@ bool ms_fragment(sampler2D atlas, vec2 uv, out vec4 color) {
             rgb = tex.rgb * (1.05 + 0.2 * breath) + 0.35 * band;
             alpha = 1.0;
         } else if (a255 > 253.5) {
-            float tw = pow(0.5 + 0.5 * sin(MS_TAU * t / 1.5 + ph * 11.0 + msLocal.x * 7.0), 8.0);
+            float tw = pow(max(0.5 + 0.5 * sin(MS_TAU * t / 1.5 + ph * 11.0 + msLocal.x * 7.0), 0.0), 8.0);
             rgb = mix(vec3(0.85, 0.97, 1.1), vec3(1.6), tw);
             alpha = 0.8 + 0.2 * tw;
         } else if (a255 >= 7.5) {
-            rgb = tex.rgb * vec3(0.82, 0.95, 1.12) * (0.95 + 0.12 * breath) + vec3(0.02, 0.08, 0.22)
-                + vec3(0.6, 0.9, 1.0) * 0.35 * band;
-            alpha = min(tex.a * (1.3 + 0.2 * band), 1.0);
+            rgb = mix(tex.rgb * vec3(0.82, 0.95, 1.12) * (0.95 + 0.12 * breath) + vec3(0.02, 0.08, 0.22),
+                      vec3(0.72, 0.93, 1.0), 0.4) + vec3(0.6, 0.9, 1.0) * 0.35 * band;
+            alpha = min(tex.a * (1.45 + 0.2 * band), 1.0);
         }
         if (lv <= 7) {
             alpha *= float(lv) / 8.0;

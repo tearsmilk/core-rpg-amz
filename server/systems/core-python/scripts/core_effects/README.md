@@ -72,11 +72,12 @@
   через `amazake.add_modifier` / `add_effect` — при выгрузке их снимает ядро core-python.
 - `@on_unload`: снимается расширение PlaceholderAPI; каждому игроку — сохранение `coreeffects:state`, `clearTitle`,
   удаление фантомов. Python-задачи в этот момент уже не планируются, поэтому для чужих потоков это чистые
-  Java-`Runnable` (`MethodHandleProxies`): сохранение и заголовок — через `SystemContext.runOnceForPlayer` ядра
-  core-python (как у Java-системы: при остановке сервера выполняется сразу, иначе в потоке игрока; запасной путь —
-  планировщик сущности, при остановке сервера — запись напрямую), фантомы — в планировщике сущности. Страховка —
-  сохранение раз в 100 тиков.
-- `SystemContext` и объект плагина (для `showEntity`, планировщиков) API amazake не отдаёт — берутся отражением
-  по закрытым именам ядра (`ScriptApi.script` → `PyScript.platform` → `BukkitPlatform.context`); при неудаче —
-  предупреждение (один раз), фантомов нет, уборка при выгрузке — только из потоков игроков; следующая попытка — при
-  следующем вызове. Нужен публичный `amazake.plugin()` / контекст в API core-python.
+  Java-`Runnable` (`MethodHandleProxies`): сохранение и заголовок — через `amazake.run_java_for_player`
+  (= `SystemContext.runOnceForPlayer` ядра: при остановке сервера выполняется сразу, иначе в потоке игрока; запасной
+  путь — `amazake.run_java_on_entity`, при остановке сервера — запись напрямую), фантомы — `run_java_on_entity`,
+  расширение PlaceholderAPI — `run_java_global`. Страховка — сохранение раз в 100 тиков.
+- Объект плагина (для `showEntity`) — `amazake.plugin()`, классы — `amazake.find_class()`. На старом
+  `core-python.azs` (без этого API, до его передеплоя) `SystemContext` и плагин берутся как раньше — отражением по
+  закрытым именам ядра (`ScriptApi.script` → `PyScript.platform` → `BukkitPlatform.context`); при неудаче —
+  предупреждение (один раз), фантомов нет, уборка при выгрузке — только из потоков игроков. Эту ветку (`_新API` в
+  `common.py`) убрать после передеплоя core-python.

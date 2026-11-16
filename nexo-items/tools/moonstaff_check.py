@@ -420,6 +420,7 @@ def check_logic():
         for var, ref in model['textures'].items():
             tex_kind[(mname, var)] = ref.split('/')[-1]
         n = 0
+        луч = False
         for var, pts, face in bake(model):
             name = tex_kind[(mname, var)]
             K = FX.KINDS[name]
@@ -435,11 +436,12 @@ def check_logic():
                     break
             n += 1
             if 5 <= K <= 8:
+                луч = True
                 d_l = {5: pts[1] - pts[0], 6: pts[0] - pts[1], 7: pts[3] - pts[0], 8: pts[0] - pts[3]}[K]
                 d_l = d_l / np.linalg.norm(d_l)
                 if d_l @ np.array([0, 0, 1.0]) < 0.999:
                     bad(f'{mname} {face} ({name}): «вдоль луча» = {d_l.round(3)}, а не +Z')
-        ok(f'{mname}: {n} граней, у каждой свой K; у граней луча s растёт вдоль +Z')
+        ok(f'{mname}: {n} граней, у каждой свой K' + ('; у граней луча s растёт вдоль +Z' if луч else ''))
     # чужой квад с нашим оттенком
     on, _ = vertex_key((100, 233, 253), (240, 240))
     x, y, w, h = rects['leather']

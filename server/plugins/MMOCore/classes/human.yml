@@ -27,7 +27,7 @@ options:
 # The formula should return the total experience required to reach the next level
 # given the current player's level.
 # Example: '{level} * 200'
-exp-curve: '100 + {level} * 50'
+exp-curve: 'ten_million_1_65'
 
 skill-slots:
   1:

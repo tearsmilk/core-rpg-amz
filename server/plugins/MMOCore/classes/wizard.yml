@@ -28,7 +28,7 @@ attributes:
     base: 0.1
     per-level: 0.015
 max-level: 65
-exp-curve: '100 + {level} * 50'
+exp-curve: 'ten_million_1_65'
 main-exp-sources: []
 skills:
   FIREBOLT:

@@ -39,7 +39,7 @@ npcs:
     name: <white>ruka
     hologram: name
     model:
-      id: hippogryph_crystal
+      id: skeleton_archer
       scale: 1.0
       idle: ''
       interact: ''
