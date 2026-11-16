@@ -1,0 +1,345 @@
+{
+ "credit": "AZERUS armor3d_build.py \u0438\u0437 source/reforged/reforged_chainmail_armor.bbmodel",
+ "texture_size": [
+  128,
+  128
+ ],
+ "textures": {
+  "0": "azerus:item/reforged/chainmail_armor",
+  "particle": "azerus:item/reforged/chainmail_armor"
+ },
+ "elements": [
+  {
+   "from": [
+    3.25,
+    3.25,
+    3.25
+   ],
+   "to": [
+    12.75,
+    12.75,
+    12.75
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      1.0,
+      1.0,
+      2.0,
+      2.0
+     ],
+     "texture": "#0"
+    },
+    "east": {
+     "uv": [
+      0.0,
+      1.0,
+      1.0,
+      2.0
+     ],
+     "texture": "#0"
+    },
+    "south": {
+     "uv": [
+      3.0,
+      1.0,
+      4.0,
+      2.0
+     ],
+     "texture": "#0"
+    },
+    "west": {
+     "uv": [
+      2.0,
+      1.0,
+      3.0,
+      2.0
+     ],
+     "texture": "#0"
+    },
+    "up": {
+     "uv": [
+      2.0,
+      1.0,
+      1.0,
+      0.0
+     ],
+     "texture": "#0"
+    },
+    "down": {
+     "uv": [
+      3.0,
+      0.0,
+      2.0,
+      1.0
+     ],
+     "texture": "#0"
+    }
+   }
+  },
+  {
+   "from": [
+    3.495,
+    3.495,
+    3.495
+   ],
+   "to": [
+    12.505,
+    12.505,
+    12.505
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      1.0,
+      3.0,
+      2.0,
+      4.0
+     ],
+     "texture": "#0"
+    },
+    "east": {
+     "uv": [
+      0.0,
+      3.0,
+      1.0,
+      4.0
+     ],
+     "texture": "#0"
+    },
+    "south": {
+     "uv": [
+      3.0,
+      3.0,
+      4.0,
+      4.0
+     ],
+     "texture": "#0"
+    },
+    "west": {
+     "uv": [
+      2.0,
+      3.0,
+      3.0,
+      4.0
+     ],
+     "texture": "#0"
+    },
+    "up": {
+     "uv": [
+      2.0,
+      3.0,
+      1.0,
+      2.0
+     ],
+     "texture": "#0"
+    },
+    "down": {
+     "uv": [
+      3.0,
+      2.0,
+      2.0,
+      3.0
+     ],
+     "texture": "#0"
+    }
+   }
+  },
+  {
+   "from": [
+    3.495,
+    3.495,
+    12.495
+   ],
+   "to": [
+    12.505,
+    12.505,
+    21.505
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      1.0,
+      5.0,
+      2.0,
+      6.0
+     ],
+     "texture": "#0"
+    },
+    "east": {
+     "uv": [
+      0.0,
+      5.0,
+      1.0,
+      6.0
+     ],
+     "texture": "#0"
+    },
+    "south": {
+     "uv": [
+      3.0,
+      5.0,
+      4.0,
+      6.0
+     ],
+     "texture": "#0"
+    },
+    "west": {
+     "uv": [
+      2.0,
+      5.0,
+      3.0,
+      6.0
+     ],
+     "texture": "#0"
+    },
+    "up": {
+     "uv": [
+      2.0,
+      5.0,
+      1.0,
+      4.0
+     ],
+     "texture": "#0"
+    },
+    "down": {
+     "uv": [
+      3.0,
+      4.0,
+      2.0,
+      5.0
+     ],
+     "texture": "#0"
+    }
+   }
+  }
+ ],
+ "display": {
+  "head": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    1.6,
+    1.6,
+    1.6
+   ]
+  },
+  "gui": {
+   "rotation": [
+    25,
+    145,
+    0
+   ],
+   "translation": [
+    -0.0,
+    -0.0,
+    0
+   ],
+   "scale": [
+    0.63,
+    0.63,
+    0.63
+   ]
+  },
+  "ground": {
+   "translation": [
+    0,
+    2,
+    0
+   ],
+   "scale": [
+    0.4,
+    0.4,
+    0.4
+   ]
+  },
+  "fixed": {
+   "rotation": [
+    0,
+    180,
+    0
+   ],
+   "scale": [
+    0.693,
+    0.693,
+    0.693
+   ]
+  },
+  "thirdperson_righthand": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    2,
+    -1
+   ],
+   "scale": [
+    0.4,
+    0.4,
+    0.4
+   ]
+  },
+  "thirdperson_lefthand": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    2,
+    -1
+   ],
+   "scale": [
+    0.4,
+    0.4,
+    0.4
+   ]
+  },
+  "firstperson_righthand": {
+   "rotation": [
+    0,
+    135,
+    0
+   ],
+   "translation": [
+    0,
+    2,
+    0
+   ],
+   "scale": [
+    0.4,
+    0.4,
+    0.4
+   ]
+  },
+  "firstperson_lefthand": {
+   "rotation": [
+    0,
+    135,
+    0
+   ],
+   "translation": [
+    0,
+    2,
+    0
+   ],
+   "scale": [
+    0.4,
+    0.4,
+    0.4
+   ]
+  }
+ }
+}

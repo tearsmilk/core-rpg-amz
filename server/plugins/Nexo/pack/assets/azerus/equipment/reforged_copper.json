@@ -1,0 +1,47 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "azerus:reforged_copper_00"
+      },
+      {
+        "texture": "azerus:reforged_copper_01"
+      },
+      {
+        "texture": "azerus:reforged_copper_02"
+      },
+      {
+        "texture": "azerus:reforged_copper_03"
+      },
+      {
+        "texture": "azerus:reforged_copper_04"
+      },
+      {
+        "texture": "azerus:reforged_copper_05"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "azerus:reforged_copper_00"
+      },
+      {
+        "texture": "azerus:reforged_copper_01"
+      },
+      {
+        "texture": "azerus:reforged_copper_02"
+      },
+      {
+        "texture": "azerus:reforged_copper_03"
+      },
+      {
+        "texture": "azerus:reforged_copper_04"
+      },
+      {
+        "texture": "azerus:reforged_copper_05"
+      },
+      {
+        "texture": "azerus:reforged_copper_06"
+      }
+    ]
+  }
+}

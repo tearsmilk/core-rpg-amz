@@ -1,0 +1,26 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "azerus:reforged_leather_00"
+      },
+      {
+        "texture": "azerus:reforged_leather_01"
+      },
+      {
+        "texture": "azerus:reforged_leather_02"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "azerus:reforged_leather_00"
+      },
+      {
+        "texture": "azerus:reforged_leather_01"
+      },
+      {
+        "texture": "azerus:reforged_leather_02"
+      }
+    ]
+  }
+}

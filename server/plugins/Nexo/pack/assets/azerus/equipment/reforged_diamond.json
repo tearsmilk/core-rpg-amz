@@ -1,0 +1,74 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "azerus:reforged_diamond_00"
+      },
+      {
+        "texture": "azerus:reforged_diamond_01"
+      },
+      {
+        "texture": "azerus:reforged_diamond_02"
+      },
+      {
+        "texture": "azerus:reforged_diamond_03"
+      },
+      {
+        "texture": "azerus:reforged_diamond_04"
+      },
+      {
+        "texture": "azerus:reforged_diamond_05"
+      },
+      {
+        "texture": "azerus:reforged_diamond_06"
+      },
+      {
+        "texture": "azerus:reforged_diamond_07"
+      },
+      {
+        "texture": "azerus:reforged_diamond_08"
+      },
+      {
+        "texture": "azerus:reforged_diamond_09"
+      },
+      {
+        "texture": "azerus:reforged_diamond_10"
+      },
+      {
+        "texture": "azerus:reforged_diamond_11"
+      },
+      {
+        "texture": "azerus:reforged_diamond_12"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "azerus:reforged_diamond_00"
+      },
+      {
+        "texture": "azerus:reforged_diamond_01"
+      },
+      {
+        "texture": "azerus:reforged_diamond_02"
+      },
+      {
+        "texture": "azerus:reforged_diamond_03"
+      },
+      {
+        "texture": "azerus:reforged_diamond_04"
+      },
+      {
+        "texture": "azerus:reforged_diamond_05"
+      },
+      {
+        "texture": "azerus:reforged_diamond_06"
+      },
+      {
+        "texture": "azerus:reforged_diamond_07"
+      },
+      {
+        "texture": "azerus:reforged_diamond_08"
+      }
+    ]
+  }
+}
