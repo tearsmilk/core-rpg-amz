@@ -100,8 +100,8 @@ public class JavaTasksTest {
                     try:
                         amazake.run_java_global(lambda: None)
                         event.mark("accepted")
-                    except Exception:
-                        event.mark("rejected")
+                    except BaseException as e:
+                        event.mark(repr(type(e).__mro__) + "|" + str(isinstance(e, Exception)))
                     try:
                         amazake.java_task(event, "nope")
                     except Exception:
@@ -132,7 +132,7 @@ public class JavaTasksTest {
 
         final TestEvent reject = new TestEvent("reject");
         this.platform.fire(reject);
-        assertEquals(List.of("rejected", "no-method", "no-list", "no-player"), reject.marks);
+        assertEquals(List.of("rejected", "no-method", "no-list", "no-player"), reject.marks, this.platform.log.toString());
 
         final TestEvent boom = new TestEvent("boom");
         this.platform.fire(boom);
