@@ -102,4 +102,28 @@ class ModelHookTest {
         assertTrue(ModelHook.hasActive(old, "skeleton_archer"));
         assertFalse(ModelHook.hasActive(old, "other"));
     }
+
+    /** ModeledEntity с изменяемой картой моделей и removeModel(String) → Optional. */
+    public static final class Mutable {
+        public final Map<String, Object> models = new java.util.LinkedHashMap<>();
+
+        public Map<String, Object> getModels() {
+            return this.models;
+        }
+
+        public Optional<Object> removeModel(final String id) {
+            return Optional.ofNullable(this.models.remove(id));
+        }
+    }
+
+    @Test
+    void removesOtherModelsOnly() throws Exception {
+        final Mutable m = new Mutable();
+        m.models.put("old_skeleton", new Object());
+        m.models.put("skeleton_archer", new Object());
+        m.models.put("another", new Object());
+        ModelHook.removeOthers(m, "skeleton_archer");
+        assertEquals(java.util.Set.of("skeleton_archer"), m.models.keySet());
+        ModelHook.removeOthers(new Mutable(), "skeleton_archer");     // пустая карта — без ошибок
+    }
 }

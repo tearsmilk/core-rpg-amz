@@ -30,7 +30,10 @@ public final class ModelHook {
     private static final String API = "com.ticxo.modelengine.api.ModelEngineAPI";
 
     private final Logger logger;
+    private static final long WARN_EVERY_MS = 10 * 60 * 1000L;
+
     private final Map<String, Boolean> warned = new ConcurrentHashMap<>();
+    private final Map<String, Long> lastWarn = new ConcurrentHashMap<>();
     private volatile Plugin owner;
     private volatile Class<?> api;
 
@@ -187,40 +190,66 @@ public final class ModelHook {
 
     /** Есть ли blueprint модели (ModelEngine нет или неизвестно — true, чтобы не мешать). */
     public boolean hasModel(final String id) {
+        return this.blueprint(id) != Boolean.FALSE;
+    }
+
+    /**
+     * Blueprint модели: TRUE — есть, FALSE — нет (ещё не загружен или такой модели нет), null — ModelEngine нет или
+     * проверить нельзя. ModelEngine R4 регистрирует модели асинхронно уже после включения плагина, поэтому FALSE
+     * сразу после старта — обычное дело.
+     */
+    Boolean blueprint(final String id) {
         final Class<?> c = this.api();
         if (c == null) {
-            return true;
+            return null;
         }
         try {
             final Method m = find(c, "getBlueprint", id);
-            return m == null || m.invoke(null, id) != null;
+            return m == null ? null : Boolean.valueOf(m.invoke(null, id) != null);
         } catch (final ReflectiveOperationException | RuntimeException | LinkageError e) {
-            return true;
+            return null;
+        }
+    }
+
+    /** Предупреждение не чаще раза в 10 минут на ключ (ошибки вызова не глушатся навсегда). */
+    private void warnEvery(final String key, final String text) {
+        final long now = System.currentTimeMillis();
+        final Long last = this.lastWarn.get(key);
+        if (last == null || now - last >= WARN_EVERY_MS) {
+            this.lastWarn.put(key, now);
+            this.logger.warning(text);
         }
     }
 
     /**
      * Повесить модель на сущность, если её там ещё нет (поток региона сущности). Уже есть ModeledEntity с этой
-     * моделью (повесили раньше или ModelEngine восстановил при загрузке) — ничего не делает. false — ModelEngine нет
-     * или вызов не удался (в лог — один раз).
+     * моделью (повесили раньше или ModelEngine восстановил при загрузке) — ничего не делает. Другие модели на
+     * сущности (в mobs.yml сменили {@code model}) снимаются. Blueprint ещё не загружен — тихо false (повесим, когда
+     * ModelEngine догрузит модели). false — ModelEngine нет или вызов не удался (в лог — не чаще раза в 10 минут).
      */
     public boolean ensure(final Entity entity, final String modelId, final double scale, final boolean hideBase) {
         final Class<?> c = this.api();
         if (c == null || entity == null || !entity.isValid()) {
             return false;
         }
+        Object created = null;
         try {
             Object modeled = invokeGet(c, entity);
             if (modeled != null && hasActive(modeled, modelId)) {
                 return true;
             }
+            if (this.blueprint(modelId) == Boolean.FALSE) {
+                return false;                       // ModelEngine ещё грузит модели (или её нет — скажет checkModels)
+            }
             final Object active = callStatic(c, "createActiveModel", modelId);
             if (active == null) {
-                this.warnOnce("model:" + modelId, "ModelEngine: нет модели «" + modelId + "»");
                 return false;
             }
             if (modeled == null) {
                 modeled = callStatic(c, "createModeledEntity", entity);
+                created = modeled;
+            } else {
+                removeOthers(modeled, modelId);
             }
             if (scale > 0 && scale != 1.0) {
                 try {
@@ -230,6 +259,14 @@ public final class ModelHook {
                 }
             }
             call(modeled, "addModel", active, Boolean.TRUE);
+            created = null;
+            // восстанавливает модель после загрузки чанка только core-mobs (MobModels#onAdd), не ModelEngine:
+            // иначе при позднем восстановлении ModelEngine модель могла бы повиснуть дважды
+            try {
+                call(modeled, "setSaved", Boolean.FALSE);
+            } catch (final NoSuchMethodException e) {
+                this.warnOnce("saved", "ModelEngine: нет ModeledEntity#setSaved — модели восстанавливает и ModelEngine");
+            }
             if (hideBase) {
                 try {
                     call(modeled, "setBaseEntityVisible", Boolean.FALSE);
@@ -239,9 +276,44 @@ public final class ModelHook {
             }
             return true;
         } catch (final ReflectiveOperationException | RuntimeException | LinkageError e) {
-            this.warnOnce("attach:" + modelId, "ModelEngine: не удалось повесить «" + modelId + "» на " + entity.getType()
+            this.warnEvery("attach:" + modelId, "ModelEngine: не удалось повесить «" + modelId + "» на " + entity.getType()
                 + ": " + (e.getCause() != null ? e.getCause() : e));
+            if (created != null) {
+                this.discard(c, entity, created);
+            }
             return false;
+        }
+    }
+
+    /** Снять с ModeledEntity модели с другим id (mobs.yml поменяли). */
+    static void removeOthers(final Object modeled, final String modelId) throws ReflectiveOperationException {
+        final Object models = call(modeled, "getModels");
+        if (!(models instanceof Map<?, ?> m) || m.isEmpty()) {
+            return;
+        }
+        for (final Object key : List.copyOf(m.keySet())) {
+            if (key instanceof String id && !id.equals(modelId)) {
+                call(modeled, "removeModel", id);
+            }
+        }
+    }
+
+    /** Убрать пустой ModeledEntity, который только что создали, а модель повесить не вышло. */
+    private void discard(final Class<?> api, final Entity entity, final Object modeled) {
+        try {
+            final Method m = find(api, "removeModeledEntity", entity.getUniqueId());
+            if (m != null) {
+                m.invoke(null, entity.getUniqueId());
+                return;
+            }
+            final Method byEntity = find(api, "removeModeledEntity", entity);
+            if (byEntity != null) {
+                byEntity.invoke(null, entity);
+                return;
+            }
+            call(modeled, "destroy");
+        } catch (final ReflectiveOperationException | RuntimeException | LinkageError e) {
+            this.warnOnce("discard", "ModelEngine: пустой ModeledEntity не убран: " + (e.getCause() != null ? e.getCause() : e));
         }
     }
 
@@ -286,7 +358,7 @@ public final class ModelHook {
                 }
             }
         } catch (final ReflectiveOperationException | RuntimeException | LinkageError e) {
-            this.warnOnce("anim:" + anim, "ModelEngine: анимация «" + anim + "» не проигралась: "
+            this.warnEvery("anim:" + anim, "ModelEngine: анимация «" + anim + "» не проигралась: "
                 + (e.getCause() != null ? e.getCause() : e));
         }
     }

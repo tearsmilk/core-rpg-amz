@@ -22,6 +22,7 @@ import core.amazake.systems.coremobs.world.WorldListener;
 import core.amazake.systems.coremobs.world.WorldRules;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,6 +43,9 @@ import org.bukkit.event.server.PluginEnableEvent;
  */
 public final class CoreMobsSystem implements AmazakeSystem, Listener {
 
+    /** Сколько ждать, пока ModelEngine загрузит модели, прежде чем сказать «такой модели нет». */
+    private static final Duration MODEL_WAIT = Duration.ofMinutes(2);
+
     private final AtomicReference<Settings> settings = new AtomicReference<>(Settings.DEFAULTS);
     private final AtomicReference<MobCatalog> catalog = new AtomicReference<>(MobCatalog.EMPTY);
     private final Map<UUID, ScheduledTask> playerTasks = new ConcurrentHashMap<>();
@@ -57,6 +61,7 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
     private volatile RegionDisplays displays;
     private volatile WorldRules worlds;
     private volatile ScheduledTask spawnTimer;
+    private volatile ScheduledTask modelWatch;
 
     @Override
     public void enable(final SystemContext context) {
@@ -112,6 +117,10 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
             this.worlds.saveNow();
         }
         this.playerTasks.clear();
+        final ScheduledTask watch = this.modelWatch;
+        if (watch != null) {
+            watch.cancel();
+        }
     }
 
     @Override
@@ -169,10 +178,20 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
         }
     }
 
-    /** ModelEngine и модели из mobs.yml: есть ли плагин, есть ли blueprint каждой модели. */
+    /**
+     * ModelEngine и модели из mobs.yml: есть ли плагин, есть ли blueprint каждой модели. ModelEngine R4 регистрирует
+     * модели асинхронно уже после своего включения, поэтому ждём их до {@link #MODEL_WAIT} (проверка раз в 2 с), а
+     * не ругаемся сразу. Модели появились позже первой проверки — вешаем их мобам рядом с игроками и мобам регионов
+     * (те, что заспавнились, пока ModelEngine грузился, остались без модели). Глобальный поток.
+     */
     private void checkModels() {
-        final boolean any = this.catalog.get().all().values().stream().anyMatch(d -> d.model() != null);
-        if (!any) {
+        final ScheduledTask old = this.modelWatch;
+        if (old != null) {
+            old.cancel();
+            this.modelWatch = null;
+        }
+        final List<MobDef> withModel = this.catalog.get().all().values().stream().filter(d -> d.model() != null).toList();
+        if (withModel.isEmpty()) {
             return;
         }
         if (!this.modelHook.available()) {
@@ -180,21 +199,42 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
             return;
         }
         this.context.logger().info("ModelEngine " + this.modelHook.version() + " найден: модели на мобах включены.");
-        for (final MobDef d : this.catalog.get().all().values()) {
-            if (d.model() != null && !this.modelHook.hasModel(d.model().id())) {
-                this.context.logger().warning("mobs.yml: " + d.id() + ": в ModelEngine нет модели «" + d.model().id() + "».");
+        final long deadline = System.nanoTime() + MODEL_WAIT.toNanos();
+        final boolean[] waited = {false};
+        this.modelWatch = this.context.runGlobalTimer(task -> {
+            final List<MobDef> missing = withModel.stream().filter(d -> !this.modelHook.hasModel(d.model().id())).toList();
+            if (missing.isEmpty()) {
+                task.cancel();
+                if (waited[0]) {
+                    this.context.logger().info("ModelEngine загрузил модели — вешаю их на мобов.");
+                    this.adoptModels();
+                }
+                return;
             }
-        }
+            waited[0] = true;
+            if (System.nanoTime() - deadline >= 0) {
+                task.cancel();
+                for (final MobDef d : missing) {
+                    this.context.logger().warning("mobs.yml: " + d.id() + ": в ModelEngine нет модели «" + d.model().id() + "».");
+                }
+            }
+        }, Duration.ofSeconds(2));
     }
 
-    /** ModelEngine включился позже системы — повесить модели мобам рядом с игроками. */
+    /** Повесить модели мобам рядом с игроками и всем мобам регионов (если ModelEngine их не держит). */
+    private void adoptModels() {
+        for (final Player player : Bukkit.getOnlinePlayers()) {
+            this.adoptNear(player);
+        }
+        this.models.ensureTracked();
+    }
+
+    /** ModelEngine включился позже системы — повесить модели мобам рядом с игроками (когда модели загрузятся). */
     @EventHandler
     public void onPluginEnable(final PluginEnableEvent event) {
         if (event.getPlugin().getName().equals("ModelEngine") && this.models != null) {
-            this.checkModels();
-            for (final Player player : Bukkit.getOnlinePlayers()) {
-                this.adoptNear(player);
-            }
+            this.adoptModels();
+            Bukkit.getGlobalRegionScheduler().execute(this.context.plugin(), this::checkModels);
         }
     }
 
