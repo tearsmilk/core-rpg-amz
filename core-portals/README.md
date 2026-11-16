@@ -336,6 +336,13 @@ rezusmenu кладёт свой `rendertype_item_entity_translucent_cull.vsh` (�
 
 `assets/coreportals/…` и `assets/rezusmenu/…` копируются без изменений.
 
+Позже добавлены (после блоков coreportals, в том же порядке во всех копиях): два блока **coreskyrift** (см.
+`core-skyrift/README.md`, «Слияние») и два блока **azerus moonstaff** (посох core_magic: импорт после импорта
+coreskyrift; в `.vsh` вызов `ms_vertex` последней строкой `main()`, в `.fsh` блок сразу после блока coreportals,
+до ванильного `texture(...)`). Маркер moonstaff — (R≤250, 233, 253) при UV2 (240, 240) плюс подпись спрайта
+(177,126,90,3)/(K,90,126,3); с маркерами порталов (R = 255, G 64..95) не пересекается. Вставка/снятие —
+`nexo-items/tools/moonstaff_hook.py`, проверка — `nexo-items/tools/moonstaff_check.py`.
+
 ### Ограничения
 
 - Шейдерпаки Iris/OptiFine заменяют core-шейдеры — там портал будет виден по запасным текстурам (без анимации).

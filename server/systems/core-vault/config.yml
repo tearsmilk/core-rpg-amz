@@ -85,7 +85,8 @@ levels:
   display:
     # Сообщение над хотбаром при получении опыта: <exp> <level> <current> <needed> <percent>.
     actionbar: true
-    actionbar-format: "<green>+<exp> опыта</green> <gray>· ур. <level> (<current>/<needed>)</gray>"
+    actionbar-format: "<green>+<exp> опыта</green> <gray>· ур. <level>
+      (<current>/<needed>)</gray>"
     bossbar:
       enabled: false
       seconds: 4
@@ -128,7 +129,7 @@ coins:
   item:
     material: SUNFLOWER
     # Своя модель предмета (компонент item_model), например "corevault:coin". Пусто — обычный подсолнух.
-    item-model: ""
+    item-model: "corevault:coin"
     name: "<gold>Монета</gold>"
     lore:
       - "<gray>Поднимите — и она сразу в кошельке.</gray>"
@@ -148,7 +149,8 @@ coins:
     volume: 0.6
     pitch: 1.4
     # <amount> — сколько, <name> — название, <balance> — баланс после.
-    actionbar: "<gold>+<amount></gold> <yellow><name></yellow> <gray>(баланс: <balance>)</gray>"
+    actionbar: "<gold>+<amount></gold> <yellow><name></yellow> <gray>(баланс:
+      <balance>)</gray>"
   # Монеты, оказавшиеся в инвентаре (выдали командой, достали из сундука), — сразу на баланс.
   convert:
     on-join: true
@@ -163,15 +165,15 @@ coins:
     core-mobs: {}
     #  forest_zombie: {chance: 80, amount: 2-4}
     types:
-      ZOMBIE: {chance: 50, amount: 1-2}
-      HUSK: {chance: 50, amount: 1-2}
-      SKELETON: {chance: 50, amount: 1-2}
-      SPIDER: {chance: 40, amount: 1}
-      CREEPER: {chance: 60, amount: 1-3}
-      ENDERMAN: {chance: 70, amount: 2-4}
-      WITCH: {chance: 70, amount: 2-4}
-    hostile: {chance: 30, amount: 1}
-    default: {chance: 0, amount: 0}
+      ZOMBIE: { chance: 50, amount: 1-2 }
+      HUSK: { chance: 50, amount: 1-2 }
+      SKELETON: { chance: 50, amount: 1-2 }
+      SPIDER: { chance: 40, amount: 1 }
+      CREEPER: { chance: 60, amount: 1-3 }
+      ENDERMAN: { chance: 70, amount: 2-4 }
+      WITCH: { chance: 70, amount: 2-4 }
+    hostile: { chance: 30, amount: 1 }
+    default: { chance: 0, amount: 0 }
 
 storage:
   # Изменения пишутся в players.yml не чаще этого (вне потоков тика), и всегда при выключении.
@@ -181,7 +183,8 @@ messages:
   module-off: "<red>Модуль <white><module></white> выключен.</red>"
   no-permission: "<red>Недостаточно прав.</red>"
   player-only: "<red>Только для игрока.</red>"
-  unknown-player: "<red>Игрок <white><player></white> не найден (он ни разу не заходил?).</red>"
+  unknown-player: "<red>Игрок <white><player></white> не найден (он ни разу не
+    заходил?).</red>"
   bad-amount: "<red>Сумма «<white><value></white>»: <reason>.</red>"
   bad-number: "<red>Не число: <white><value></white>.</red>"
   loading: "<gray>Данные ещё загружаются, повторите через секунду.</gray>"
@@ -190,31 +193,50 @@ messages:
   pay-usage: "<gray>/mpay <игрок> <сумма></gray>"
   pay-self: "<red>Нельзя перевести самому себе.</red>"
   pay-min: "<red>Наименьший перевод — <white><min></white>.</red>"
-  pay-offline: "<red>Игрок <white><player></white> не в сети: переводить можно только тем, кто в сети.</red>"
+  pay-offline: "<red>Игрок <white><player></white> не в сети: переводить можно
+    только тем, кто в сети.</red>"
   pay-no-money: "<red>Недостаточно средств: на счету <white><balance></white>.</red>"
   pay-target-full: "<red>У <white><player></white> не поместится столько: потолок счёта.</red>"
-  pay-confirm: "<yellow>Перевести <white><amount></white> игроку <white><player></white>? <click:run_command:'/mpay confirm'><green>[Подтвердить]</green></click> или /mpay confirm (<seconds> с).</yellow>"
+  pay-confirm: "<yellow>Перевести <white><amount></white> игроку
+    <white><player></white>? <click:run_command:'/mpay
+    confirm'><green>[Подтвердить]</green></click> или /mpay confirm (<seconds>
+    с).</yellow>"
   pay-no-pending: "<gray>Нет перевода для подтверждения.</gray>"
-  pay-sent: "<green>Переведено <white><amount></white> игроку <white><player></white>. Баланс: <white><balance></white>.</green>"
-  pay-received: "<green>Вы получили <white><amount></white> от <white><player></white>.</green>"
+  pay-sent: "<green>Переведено <white><amount></white> игроку
+    <white><player></white>. Баланс: <white><balance></white>.</green>"
+  pay-received: "<green>Вы получили <white><amount></white> от
+    <white><player></white>.</green>"
   top-header: "<gold>Самые богатые</gold> <gray>(стр. <page>/<pages>)</gray>"
-  top-line: "<gray><rank>.</gray> <white><player></white> <dark_gray>—</dark_gray> <gold><balance></gold>"
+  top-line: "<gray><rank>.</gray> <white><player></white> <dark_gray>—</dark_gray>
+    <gold><balance></gold>"
   top-empty: "<gray>Пока пусто.</gray>"
   top-stale: "<dark_gray>Обновлено <seconds> с назад.</dark_gray>"
-  eco-usage: "<gray>/ceco give|take|set|reset <игрок> <сумма> · drop <кол-во> [x y z [мир]] · coin <игрок> <кол-во> · import vault [replace] · info · reload</gray>"
-  eco-done: "<green><action>: <white><player></white> — <white><amount></white>. Баланс: <white><balance></white>.</green>"
+  eco-usage: "<gray>/ceco give|take|set|reset <игрок> <сумма> · drop <кол-во> [x y
+    z [мир]] · coin <игрок> <кол-во> · import vault [replace] · info ·
+    reload</gray>"
+  eco-done: "<green><action>: <white><player></white> — <white><amount></white>.
+    Баланс: <white><balance></white>.</green>"
   eco-failed: "<red>Не вышло: <reason>.</red>"
   eco-notify-give: "<green>Вам начислено <white><amount></white>.</green>"
   eco-notify-take: "<yellow>С вашего счёта списано <white><amount></white>.</yellow>"
-  coins-dropped: "<green>Выброшено монет: <white><count></white> (<amount>) в <white><where></white>.</green>"
-  coins-given: "<green>Игроку <white><player></white> выдано монет: <white><count></white>.</green>"
+  coins-dropped: "<green>Выброшено монет: <white><count></white> (<amount>) в
+    <white><where></white>.</green>"
+  coins-given: "<green>Игроку <white><player></white> выдано монет:
+    <white><count></white>.</green>"
   import-started: "<gray>Импорт из <white><file></white>…</gray>"
-  import-done: "<green>Импортировано счетов: <white><count></white> (пропущено: <skipped>).</green>"
+  import-done: "<green>Импортировано счетов: <white><count></white> (пропущено:
+    <skipped>).</green>"
   import-failed: "<red>Импорт не удался: <reason></red>"
   reloaded: "<green>core-vault перечитан. Модули: <modules>.</green>"
-  info: "<gray>Модули: <white><modules></white>. Балансы: <white><backend></white>. Провайдер Vault: <white><provider></white>. Счетов: <white><accounts></white>.</gray>"
-  level-self: "<gray>Уровень <gold><level></gold>, опыт <white><current>/<needed></white> (<percent>%).</gray>"
-  level-other: "<gray><white><player></white>: уровень <gold><level></gold>, опыт <white><current>/<needed></white> (<percent>%).</gray>"
+  info: "<gray>Модули: <white><modules></white>. Балансы:
+    <white><backend></white>. Провайдер Vault: <white><provider></white>.
+    Счетов: <white><accounts></white>.</gray>"
+  level-self: "<gray>Уровень <gold><level></gold>, опыт
+    <white><current>/<needed></white> (<percent>%).</gray>"
+  level-other: "<gray><white><player></white>: уровень <gold><level></gold>, опыт
+    <white><current>/<needed></white> (<percent>%).</gray>"
   level-max: "<gray>Уровень <gold><level></gold> — максимальный.</gray>"
-  level-usage: "<gray>/level [игрок] · /level give|take|set <игрок> exp|levels <количество></gray>"
-  level-done: "<green><white><player></white>: уровень <gold><level></gold>, опыт <white><current>/<needed></white>.</green>"
+  level-usage: "<gray>/level [игрок] · /level give|take|set <игрок> exp|levels
+    <количество></gray>"
+  level-done: "<green><white><player></white>: уровень <gold><level></gold>, опыт
+    <white><current>/<needed></white>.</green>"

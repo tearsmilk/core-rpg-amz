@@ -1,0 +1,14 @@
+# Python-система «Магия» (魔法): Посох Лунного Странника — зажать ПКМ на 3 с (магический круг), отпустить — луч.
+# Код — main.py, mahoujin.py (круг), kousen.py (луч), dougu.py (посох), kyoutsuu.py (Java), settei.py, keisan.py;
+# настройки — config.yml. Вид — Nexo (nexo-items: azerus_moon_staff, модели azerus:moon_staff_circle/beam, шейдер).
+name: core_magic
+version: 1.0.0
+main: main.py
+enabled: true
+description: "Посох Лунного Странника: магический круг и луч"
+commands:
+  cmagic:
+    permission: coremagic.admin
+    aliases: [魔法, coremagic]
+    description: "Магия: выдать посох, перечитать конфиг, сведения"
+    usage: "/cmagic give [ник] [кол-во] | reload | info"

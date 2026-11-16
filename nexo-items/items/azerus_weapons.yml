@@ -99,3 +99,131 @@ azerus_crimson_scythe:
     model: azerus:item/crimson_scythe
   Components:
     item_model: azerus:crimson_scythe
+royal_knight_forest_hunter:
+  itemname: <white>Лесной охотник
+  material: BOW
+  Pack:
+    model: royal_knight:item/forest_hunter
+royal_knight_elven_song:
+  itemname: <white>Песнь эльфов
+  material: BOW
+  Pack:
+    model: royal_knight:item/elven_song
+royal_knight_forge_flame:
+  itemname: <white>Пламя кузни
+  material: BOW
+  Pack:
+    model: royal_knight:item/forge_flame
+royal_knight_ice_oracle:
+  itemname: <white>Ледяной оракул
+  material: BLAZE_ROD
+  Pack:
+    model: royal_knight:item/ice_oracle
+royal_knight_forest_keeper:
+  itemname: <white>Лесной хранитель
+  material: BLAZE_ROD
+  Pack:
+    model: royal_knight:item/forest_keeper
+royal_knight_volcano_heart:
+  itemname: <white>Сердце вулкана
+  material: BLAZE_ROD
+  Pack:
+    model: royal_knight:item/volcano_heart
+royal_knight_star_atlas:
+  itemname: <white>Атлас звёзд
+  material: BOOK
+  Pack:
+    model: royal_knight:item/star_atlas
+royal_knight_ash_grimoire:
+  itemname: <white>Гримуар пепла
+  material: BOOK
+  Pack:
+    model: royal_knight:item/ash_grimoire
+royal_knight_herbalist:
+  itemname: <white>Травник
+  material: BOOK
+  Pack:
+    model: royal_knight:item/herbalist
+royal_knight_crimson_moon:
+  itemname: <white>Багровая луна
+  material: NETHERITE_SWORD
+  Pack:
+    model: royal_knight:item/crimson_moon
+royal_knight_twilight_reaper:
+  itemname: <white>Жница сумерек
+  material: NETHERITE_SWORD
+  Pack:
+    model: royal_knight:item/twilight_reaper
+royal_knight_icy_harvest:
+  itemname: <white>Ледяная жатва
+  material: NETHERITE_SWORD
+  Pack:
+    model: royal_knight:item/icy_harvest
+royal_knight_raven_beak:
+  itemname: <white>Вороний клюв
+  material: IRON_SWORD
+  Pack:
+    model: royal_knight:item/raven_beak
+royal_knight_legionnaire_fang:
+  itemname: <white>Клык легионера
+  material: IRON_SWORD
+  Pack:
+    model: royal_knight:item/legionnaire_fang
+royal_knight_ashen_hunter:
+  itemname: <white>Пепельный охотник
+  material: IRON_SWORD
+  Pack:
+    model: royal_knight:item/ashen_hunter
+royal_knight_sapphire_tanto:
+  itemname: <white>Сапфировое танто
+  material: IRON_SWORD
+  Pack:
+    model: royal_knight:item/sapphire_tanto
+royal_knight_silver_stiletto:
+  itemname: <white>Серебряный стилет
+  material: IRON_SWORD
+  Pack:
+    model: royal_knight:item/silver_stiletto
+royal_knight_beginner_bow:
+  itemname: <white>Beginner Bow
+  material: BOW
+  Pack:
+    model: royal_knight:item/beginner_bow
+royal_knight_ram_horn_bow:
+  itemname: <white>Ram Horn Bow
+  material: BOW
+  Pack:
+    model: royal_knight:item/ram_horn_bow
+royal_knight_stinging_bow:
+  itemname: <white>Stinging Bow
+  material: BOW
+  Pack:
+    model: royal_knight:item/stinging_bow
+
+# Посох Лунного Странника: объёмная модель (source/Посох-лунного-странника.bbmodel, собирается tools/moon_staff.py).
+# item_model указывает на своё определение pack/assets/azerus/items/moon_staff.json: в слоте/на земле/в рамке — основа,
+# в руках при использовании (using_item) — поза «колдует» moon_staff_cast (самоцвет светится ярче).
+# consumable даёт ванильное «удержание ПКМ» с анимацией лука: 3600 с, без звука/частиц/эффектов — посох не тратится
+# (core_magic отменяет использование раньше, а PlayerItemConsumeEvent отменяет на всякий случай; он же восстанавливает
+# компонент, если его нет). Магический круг и луч — система core-python/scripts/core_magic (по id azerus_moon_staff),
+# их вид — модели moon_staff_circle / moon_staff_beam и шейдерный хук azerus:moonstaff_* (nexo-items/README.md).
+azerus_moon_staff:
+  itemname: "<gradient:#ffd36a:#ff4a5a:#7fd8ff>Посох Лунного Странника</gradient>"
+  material: DIAMOND_SWORD
+  lore:
+    - "<gray>Посох странника, что ходит"
+    - "<gray>лунными дорогами между мирами."
+    - ""
+    - "<#7fd8ff>✦ <gray>Зажмите <white>ПКМ</white> на <white>3 с</white> — откроется магический круг."
+    - "<#7fd8ff>✦ <gray>Отпустите — <white>луч света</white> пронзит всех на пути:"
+    - "<gray>   <#ff6a6a>10 урона</#ff6a6a>, до <white>29 блоков</white>."
+    - "<#7fd8ff>✦ <gray>Перезарядка: <white>3 с</white>."
+  Pack:
+    model: azerus:item/moon_staff
+  Components:
+    item_model: azerus:moon_staff
+    consumable:
+      consume_seconds: 3600
+      animation: BOW
+      sound: minecraft:intentionally_empty
+      consume_particles: false

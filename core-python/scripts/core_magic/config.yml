@@ -1,0 +1,81 @@
+# core_magic — Посох Лунного Странника (azerus_moon_staff): зажать ПКМ на 3 с — магический круг, отпустить — луч.
+# Все числа механики — здесь. Метка шейдера (цвет G=233, B=253) и номера спрайтов — в коде (их знает шейдер).
+# Перечитать: /cmagic reload (или /魔法 reload).
+
+staff:
+  nexo-id: azerus_moon_staff       # предмет Nexo (nexo-items/items/azerus_weapons.yml)
+  repair-consumable: true          # вернуть посоху компонент consumable, если его нет (выдача, вход, смена слота)
+  consume-seconds: 3600            # «время поедания»: удержание ПКМ без конца (посох никогда не тратится)
+  use-permission: ""               # пусто — колдовать могут все; иначе — право
+
+disabled-worlds: []                # миры, где посох не колдует
+
+cast:
+  charge-ticks: 60                 # сколько держать ПКМ до готовности (60 тиков = 3 с)
+  max-hold-seconds: 30             # дольше — круг гаснет сам
+  watch-period-ticks: 2            # как часто проверять игрока во время заряда
+  show-charge-bar: true            # полоска заряда в строке над хотбаром
+  bar-length: 20
+
+cooldown:
+  seconds: 3.0                     # после выстрела
+  after-fizzle-seconds: 0.5        # после отпускания раньше времени
+
+circle:                            # магический круг перед игроком (ItemDisplay)
+  item-model: "azerus:moon_staff_circle"
+  diameter: 3.0                    # блоков, когда заряжен
+  start-scale: 0.3                 # доля диаметра в начале заряда
+  forward: 2.4                     # на сколько блоков перед глазами
+  down: 0.0                        # ниже глаз (блоков)
+  update-ticks: 4                  # как часто обновлять заряд в цвете (шейдер)
+  follow-min-move: 0.03            # глаза сдвинулись больше — круг догоняет
+  follow-min-angle: 0.75           # взгляд повернулся больше (градусов) — тоже
+  teleport-duration: 2             # плавность догоняния (тиков)
+  fizzle-ticks: 6                  # угасание при срыве
+  fire-flash-ticks: 3              # вспышка при выстреле
+  fire-flash-scale: 1.2
+  fire-fade-ticks: 8               # угасание после выстрела
+  view-range: 1.0                  # множитель дальности видимости (1.0 = 64 блока)
+
+beam:                              # луч (ItemDisplay, стоит на месте и растёт масштабом)
+  item-model: "azerus:moon_staff_beam"
+  range: 29.0                      # блоков от глаз (до первого твёрдого блока); не больше 31
+  width: 0.9                       # ширина луча (блоков)
+  start-width-factor: 1.4          # ширина в первый тик
+  grow-ticks: 2
+  hold-ticks: 3
+  fade-ticks: 10
+  view-range: 1.5
+  damage: 10.0                     # урон каждой цели (один раз, луч пронзает)
+  damage-type: "minecraft:magic"
+  hit-radius: 0.6                  # запас к хитбоксу цели
+  hit-players: true                # задевать игроков (PvP и защита регионов всё равно решают)
+  ignore-invulnerability: true     # снять кадры неуязвимости перед уроном
+  piece-length: 4.0                # длина куска пути при проверке владения регионом
+
+sounds:                            # список {sound, volume, pitch}; категория PLAYERS, звучит у глаз
+  start:  [{sound: block.beacon.activate, volume: 0.7, pitch: 1.6}]
+  hum:    [{sound: block.beacon.ambient, volume: 0.8, pitch: 1.2}]     # каждые hum-period-ticks, высота +0.4*заряд
+  hum-period-ticks: 20
+  ready:  [{sound: block.amethyst_block.resonate, volume: 1.0, pitch: 1.6}, {sound: block.note_block.chime, volume: 0.6, pitch: 1.8}]
+  fire:   [{sound: entity.warden.sonic_boom, volume: 0.55, pitch: 1.7}, {sound: block.beacon.deactivate, volume: 0.8, pitch: 2.0}, {sound: entity.firework_rocket.blast, volume: 0.6, pitch: 1.4}]
+  fizzle: [{sound: block.beacon.deactivate, volume: 0.6, pitch: 1.3}]
+  denied: [{sound: block.note_block.bass, volume: 0.5, pitch: 0.6}]
+
+particles:
+  end:   {type: END_ROD, count: 14, spread: 0.25, speed: 0.06}            # вспышка в конце луча
+  trail: {type: ELECTRIC_SPARK, every: 1.5, count: 1, spread: 0.05, speed: 0.0}   # след вдоль луча
+
+messages:                          # MiniMessage; <...> — подстановки
+  cooldown: "<#7fd8ff>Посох восстанавливается: <white><s> с"
+  charge: "<#7fd8ff>Заряд <bar>"
+  ready: "<#7fd8ff>✦ Круг готов — отпустите ПКМ!"
+  too-early: "<gray>Заклинание рассеялось — держите ПКМ <white><need> с</white>."
+  too-long: "<gray>Круг не удержан и погас."
+  given: "<green>Выдан <white>Посох Лунного Странника</white> ×<amount> игроку <player>."
+  no-player: "<red>Игрок <player> не в сети."
+  reloaded: "<green>core_magic: конфиг перечитан."
+  info: "<#7fd8ff>core_magic</#7fd8ff> <gray>— заклинаний сейчас: <white><casts></white>, эффектов в мире: <white><fx></white>; ваша перезарядка: <white><cd></white> с.<newline><gray>Заряд <white><charge> с</white>, луч до <white><range></white> бл., урон <white><damage></white>, перезарядка <white><cooldown> с</white>."
+  usage: "<gray>/cmagic give [ник] [кол-во] | reload | info"
+  console-needs-player: "<red>Из консоли укажите игрока: /cmagic give <ник> [кол-во]"
+  bad-amount: "<red>Количество — число от 1 до 64."

@@ -12,6 +12,10 @@
 #moj_import <coreskyrift:skyrift_vertex.glsl>
 // <<< coreskyrift hook <<<
 
+// >>> azerus moonstaff hook (1/2): import >>>
+#moj_import <azerus:moonstaff_vertex.glsl>
+// <<< azerus moonstaff hook <<<
+
 // rezusmenu: vanilla 1.21.11 shader plus two cases for the in-world menu.
 // Shared file: identical copy in core-portals/pack and rezusmenu/pack (both systems need it in the same pack).
 //  1. Shader cursor: an item tinted with the marker colour (254, G, 254) through the item model tint
@@ -98,4 +102,8 @@ void main() {
     // >>> coreskyrift hook (2/2): sky rift vertices are unlit, the fragment shader paints them >>>
     if (sr_vertex(Color, gl_VertexID, Position, Normal, UV2)) vertexColor = vec4(1.0);
     // <<< coreskyrift hook <<<
+
+    // >>> azerus moonstaff hook (2/2): magic circle / beam markers (outputs only, the vertex itself is unchanged) >>>
+    ms_vertex(Color, gl_VertexID, UV2);
+    // <<< azerus moonstaff hook <<<
 }
