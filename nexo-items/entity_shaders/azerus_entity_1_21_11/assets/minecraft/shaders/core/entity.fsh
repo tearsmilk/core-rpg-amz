@@ -16,8 +16,9 @@
 // nexo-items/tools/armor_textures.py. Such a pixel is drawn emissive (no lightmap, no face shading) with a slow wave of
 // brightness running down the texture. Vanilla armor, leather dye, trims and other packs' armor use alpha 0 or 255
 // (checked by nexo-items/tools/armor_shader_check.py), so for them this file behaves exactly like vanilla.
-// Everything else is vanilla. The vertex shader is core/entity.vsh (rezusmenu hook + armor3d; byte-identical copies in
-// rezusmenu/pack and nexo-items/pack): it adds the outputs az3dState/az3dFlags in the armor pipelines.
+// Everything else is vanilla. The vertex shader is core/entity.vsh next to this file (rezusmenu hook + armor3d): it
+// adds the outputs az3dState/az3dFlags in the armor pipelines. Both live only in the format-75 overlay of
+// nexo-items/entity_shaders (1.21.11 clients).
 
 uniform sampler2D Sampler0;
 

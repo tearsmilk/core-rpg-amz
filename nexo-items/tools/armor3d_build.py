@@ -14,7 +14,7 @@ left_arm, hips, right_leg, left_leg, right_boot, left_boot).
   pack/assets/azerus/textures/entity/equipment/humanoid_leggings/reforged_<set>_NN.png  01.. — слои данных 3D
   items/reforged_armor.yml                                        предметы Nexo (все комплекты)
   preview/reforged/budget.json                                    бюджет (слои, грани, вершины)
-Формат слоёв — armor3d_codec.py; шейдер — pack/assets/minecraft/shaders/{core/entity.vsh,include/armor3d.glsl}.
+Формат слоёв — armor3d_codec.py; шейдер — entity_shaders/azerus_entity_1_21_11/assets/minecraft/shaders/{core/entity.vsh,include/armor3d.glsl}.
 """
 import base64
 import io
@@ -67,10 +67,12 @@ def load_set(set_id):
 
 
 def bone_faces(bb, bone):
-    """Грани кости в пространстве её ванильной части: [(corners[4], uvs[4], flags, outward)]."""
+    """Грани кости в пространстве её ванильной части: [(corners[4], uvs[4], flags, outward)].
+    Начало координат — ВАНИЛЬНЫЙ шарнир части (C.PIVOT, ноги ±1.9), а не origin кости в .bbmodel (у шаблона ноги
+    ±2.0): так в игре в покое каждая грань стоит ровно там же, где в Blockbench."""
     if bone not in bb.bones:
         return []
-    origin = C.bb_to_model(bb.bones[bone]["origin"])
+    origin = np.array(C.PIVOT[C.BONE_PART[bone][2]], float)
     out = []
     for e, chain in bb.bones[bone]["cubes"]:
         size = [abs(e["to"][i] - e["from"][i]) + 2 * float(e.get("inflate", 0) or 0) for i in range(3)]
@@ -345,7 +347,6 @@ def build_set(set_id):
     Image.fromarray(t2, "RGBA").save(os.path.join(tdir, f"{set_id}_armor.png"), optimize=True)
     # иконки (атлас с альфой 255 для рендера)
     piv = {b: np.array(C.PIVOT[C.BONE_PART[b][2]]) for b in C.BONE_PART}
-    piv_bb = {b: C.bb_to_model(bb.bones[b]["origin"]) if b in bb.bones else piv[b] for b in C.BONE_PART}
     icon_atlas = atlas.copy()
     icon_atlas[..., 3] = np.where(atlas[..., 3] > 0, 255, 0)
     # иконка: спереди; ноги разведены (поножи ±1.5 px, ботинки ±2.5 px и вид чуть сбоку), как у ванильных иконок
@@ -355,7 +356,7 @@ def build_set(set_id):
         fl = []
         for b in C.SLOT_BONES[piece]:
             side = -1.0 if b.startswith("right") else (1.0 if b.startswith("left") else 0.0)
-            fl.append((piv_bb[b] + np.array([side * dx, 0, 0]), faces[b]))
+            fl.append((piv[b] + np.array([side * dx, 0, 0]), faces[b]))
         ic = render_icon(fl, icon_atlas, yaw=yaw, pitch=pitch)
         Image.fromarray(ic, "RGBA").save(os.path.join(tdir, f"{set_id}_{piece}.png"), optimize=True)
     return budget

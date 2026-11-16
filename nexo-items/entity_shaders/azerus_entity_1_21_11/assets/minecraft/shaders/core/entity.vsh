@@ -1,8 +1,15 @@
 #version 330
-#ifdef GL_KHR_shader_subgroup_quad
+// armor3d lane gather (include/armor3d.glsl): KHR shuffle, else ARB ballot, else nothing (2D armor). Both are
+// optional extensions checked by their macros, so a driver without them compiles the plain vanilla path.
 #ifndef AZ3D_TEST_NO_SUBGROUP
-#extension GL_KHR_shader_subgroup_quad : enable
-#define AZ3D_SUBGROUP
+#if defined(GL_KHR_shader_subgroup_shuffle) && defined(GL_KHR_shader_subgroup_basic) && !defined(AZ3D_TEST_ARB)
+#extension GL_KHR_shader_subgroup_basic : enable
+#extension GL_KHR_shader_subgroup_shuffle : enable
+#define AZ3D_SUBGROUP 1
+#elif defined(GL_ARB_shader_ballot) && defined(GL_ARB_gpu_shader_int64)
+#extension GL_ARB_gpu_shader_int64 : enable
+#extension GL_ARB_shader_ballot : enable
+#define AZ3D_SUBGROUP 2
 #endif
 #endif
 
@@ -11,14 +18,16 @@
 #moj_import <minecraft:dynamictransforms.glsl>
 #moj_import <minecraft:projection.glsl>
 
-// Shared by rezusmenu/pack and nexo-items/pack — both copies MUST stay byte-identical.
+// ONE copy for the whole server: nexo-items/entity_shaders (external pack, overlay for pack format 75 = 1.21.11
+// only; newer clients joining through ViaVersion keep their own vanilla entity shaders).
 // Vanilla 1.21.11 entity vertex shader + two hooks:
 // 1. rezusmenu: vertices with the menu's brightness override (block 15, sky 14 -> UV2 = (240, 224)) skip directional
 //    light and the lightmap, so block items shown as menu icons (entity_cutout) keep one brightness wherever the
 //    camera looks.
 // 2. AZERUS armor3d (nexo-items): only in the armor pipelines (ALPHA_CUTOUT + NO_OVERLAY + PER_FACE_LIGHTING) and only
-//    for our marked equipment textures — see include/armor3d.glsl. Needs GL_KHR_shader_subgroup_quad; without it the
-//    hook compiles to nothing and the armor stays 2D.
+//    for our marked equipment textures — see include/armor3d.glsl. Needs GL_KHR_shader_subgroup_shuffle or
+//    GL_ARB_shader_ballot usable at #version 330 in the vertex stage; without them the hook compiles to nothing and
+//    the armor stays 2D. Do NOT raise #version (macOS GL 4.1 would fail to compile and lose every entity).
 // Everything else is vanilla.
 
 in vec3 Position;

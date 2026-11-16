@@ -1,0 +1,25 @@
+{
+  "pack": {
+    "pack_format": 75,
+    "min_format": 75,
+    "max_format": 99,
+    "supported_formats": [
+      75,
+      99
+    ],
+    "description": "AZERUS entity shaders (armor glow, 3D armor, menu light) - 1.21.11 only"
+  },
+  "overlays": {
+    "entries": [
+      {
+        "formats": [
+          75,
+          75
+        ],
+        "min_format": 75,
+        "max_format": 75,
+        "directory": "azerus_entity_1_21_11"
+      }
+    ]
+  }
+}

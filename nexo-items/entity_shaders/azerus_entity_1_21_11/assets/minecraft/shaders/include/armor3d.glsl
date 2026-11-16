@@ -1,15 +1,16 @@
 // AZERUS armor3d — 3D armor from equipment layer textures (vertex part). Included by core/entity.vsh ONLY in the
 // armor pipelines (ALPHA_CUTOUT + NO_OVERLAY + PER_FACE_LIGHTING: armor_cutout_no_cull, armor_decal_cutout_no_cull,
 // armor_translucent). Technique: like objmc (Godlander/objmc, MIT) — each vanilla armor quad becomes one baked
-// Blockbench face; the limb frame comes from the 4 vertices of the vanilla quad via GL_KHR_shader_subgroup_quad.
+// Blockbench face; the limb frame comes from the 4 vertices of the vanilla quad, gathered across subgroup lanes
+// (az3d_gather: KHR shuffle or ARB ballot).
 // Own code; texture format and Python twin: nexo-items/tools/armor3d_codec.py (shade_quad = this file, line by line).
 //
 // Textures it reacts to (anything else: no change at all):
 //  * data layer: width exactly 128, height >= 147, texel (0,128) == A3 3D 7E alpha 16 (header row 128, records from
 //    row 129, one per row: 12 px corner xyz (24-bit), 4 px corner uv (12+12 bit), 1 px flags);
 //  * 2D layer "00": exactly 64x32, texel (0,0) == A3 3D 7E alpha 16 — hidden once a quad proves 3D works.
-// Without the subgroup extension (macOS GL 4.1, old drivers) the code below is compiled out: data layers stay at
-// alpha <= 24 (cut by ALPHA_CUTOUT 0.1) and the 2D layer is shown, i.e. plain 2D armor.
+// Without a usable extension at #version 330 (macOS GL 4.1, old drivers) the code below is compiled out: data layers
+// stay at alpha <= 24 (cut by ALPHA_CUTOUT 0.1) and the 2D layer is shown, i.e. plain 2D armor.
 // Quad check: the 4 lanes of the subgroup quad must carry exactly the 4 UV corners of ONE vanilla face; otherwise the
 // vertex keeps the vanilla path (data layer → invisible, 2D layer → visible). The fragment shader discards triangles
 // mixing states (az3dState not exactly 0, 1 or 2), so a broken quad never draws a stretched triangle.
@@ -86,6 +87,39 @@ vec2 az3d_uv(ivec4 t) {
     return vec2(float(t.r * 16 + t.g / 16), float((t.g - (t.g / 16) * 16) * 256 + t.b)) / 16.0;
 }
 
+// Position/UV0 of the 4 lanes of this vertex's quad (lanes 4k..4k+3 = one vanilla armor quad, as with a subgroup
+// quad). Mode 1: GL_KHR_shader_subgroup_shuffle — no quad-only stage restriction (subgroupQuadBroadcast may be
+// fragment/compute only when SUBGROUP_QUAD_ALL_STAGES_KHR is FALSE). Mode 2: GL_ARB_shader_ballot (Mesa exposes it
+// at #version 330, KHR only from 430): readInvocationARB needs a dynamically uniform lane index, so every lane walks
+// all lanes and keeps the 4 of its own quad.
+#ifdef AZ3D_SUBGROUP
+#if AZ3D_SUBGROUP == 1
+void az3d_gather(vec3 p, vec2 t, out vec3 qp[4], out vec2 qt[4]) {
+    uint base = gl_SubgroupInvocationID & ~3u;
+    for (uint k = 0u; k < 4u; k++) {
+        qp[k] = subgroupShuffle(p, base + k);
+        qt[k] = subgroupShuffle(t, base + k);
+    }
+}
+#elif AZ3D_SUBGROUP == 2
+void az3d_gather(vec3 p, vec2 t, out vec3 qp[4], out vec2 qt[4]) {
+    uint quad = gl_SubGroupInvocationARB >> 2;
+    for (uint k = 0u; k < 4u; k++) {
+        qp[k] = p;
+        qt[k] = t;
+    }
+    for (uint j = 0u; j < gl_SubGroupSizeARB; j++) {
+        vec3 vp = readInvocationARB(p, j);
+        vec2 vt = readInvocationARB(t, j);
+        if ((j >> 2) == quad) {
+            qp[j & 3u] = vp;
+            qt[j & 3u] = vt;
+        }
+    }
+}
+#endif
+#endif
+
 vec3 az3d_corner_pos(int row, int t) {
     return vec3(az3d_coord(az3d_texel(ivec2(t * 3, row))), az3d_coord(az3d_texel(ivec2(t * 3 + 1, row))),
                 az3d_coord(az3d_texel(ivec2(t * 3 + 2, row))));
@@ -96,15 +130,10 @@ void az3d_apply(inout vec3 pos, inout vec3 nrm, inout vec2 uv, inout vec4 col, o
     state = 0.0;
     flags = 0;
 #ifdef AZ3D_SUBGROUP
-    // Broadcasts first, by every lane (uniform control flow). Cheap: armor pipelines only.
-    vec3 qp0 = subgroupQuadBroadcast(Position, 0u);
-    vec3 qp1 = subgroupQuadBroadcast(Position, 1u);
-    vec3 qp2 = subgroupQuadBroadcast(Position, 2u);
-    vec3 qp3 = subgroupQuadBroadcast(Position, 3u);
-    vec2 qt0 = subgroupQuadBroadcast(UV0, 0u);
-    vec2 qt1 = subgroupQuadBroadcast(UV0, 1u);
-    vec2 qt2 = subgroupQuadBroadcast(UV0, 2u);
-    vec2 qt3 = subgroupQuadBroadcast(UV0, 3u);
+    // Gather first, by every lane (uniform control flow). Cheap enough: armor pipelines only.
+    vec3 qp[4];
+    vec2 qt[4];
+    az3d_gather(Position, UV0, qp, qt);
 
     ivec2 tsize = textureSize(Sampler0, 0);
     int kind = 0;
@@ -115,9 +144,8 @@ void az3d_apply(inout vec3 pos, inout vec3 nrm, inout vec2 uv, inout vec4 col, o
     }
     if (kind == 0) return;
 
-    vec3 qp[4] = vec3[4](qp0, qp1, qp2, qp3);
-    ivec2 qu[4] = ivec2[4](ivec2(round(qt0 * vec2(64.0, 32.0))), ivec2(round(qt1 * vec2(64.0, 32.0))),
-                           ivec2(round(qt2 * vec2(64.0, 32.0))), ivec2(round(qt3 * vec2(64.0, 32.0))));
+    ivec2 qu[4] = ivec2[4](ivec2(round(qt[0] * vec2(64.0, 32.0))), ivec2(round(qt[1] * vec2(64.0, 32.0))),
+                           ivec2(round(qt[2] * vec2(64.0, 32.0))), ivec2(round(qt[3] * vec2(64.0, 32.0))));
     ivec2 umin = min(min(qu[0], qu[1]), min(qu[2], qu[3]));
     ivec2 umax = max(max(qu[0], qu[1]), max(qu[2], qu[3]));
     int part = -1;

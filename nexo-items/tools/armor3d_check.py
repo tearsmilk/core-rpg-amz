@@ -14,8 +14,14 @@
    × все квады всех слоёв → вершины точно там, где грань .bbmodel в позе части (ошибка < 1e-3 px); перестановка
    вершин внутри квада ничего не меняет; квад из вершин разных граней не включает 3D (слой данных невидим, 2D видна).
 5. Бюджет: слоёв на список, вершин на нагрудник/поножи/ботинки.
-6. Файлы: equipment-json ↔ текстуры, предметы ↔ модели/иконки, копии entity.vsh и armor3d.glsl в rezusmenu/pack
-   и nexo-items/pack совпадают байт-в-байт.
+6. Файлы: equipment-json ↔ текстуры, предметы ↔ модели/иконки, шейдеры сущностей только в оверлее
+   nexo-items/entity_shaders (не в base assets ни одного пака репозитория).
+7. С --pack <pack.zip> (собранный Nexo пак, скачанный с прода после `nexo reload all`): пункты 2–4 идут по
+   текстурам и equipment-json ИЗ ZIP, плюс: RGBA каждого reforged_*.png и иконки == репозиторий (пиксели, не байты —
+   Nexo сжимает png), модели шлемов (elements/rotation/faces/display) == репозиторий, оверлей шейдеров на месте
+   (entity_shaders_pack.verify).
+
+    python3 -I nexo-items/tools/armor3d_check.py --pack /путь/pack.zip
 """
 import io
 import json
@@ -30,12 +36,14 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import armor3d_build as B  # noqa: E402
 import armor3d_codec as C  # noqa: E402
+import entity_shaders_pack as ES  # noqa: E402
 
 ROOT = B.ROOT
 REPO = os.path.dirname(ROOT)
 JAR = os.path.join(REPO, "core-npc", "tools", ".cache", "client-1.21.11.jar")
 OURS = "/textures/entity/equipment/"
 PROBLEMS = []
+PACK_ZIP = None   # --pack: читать текстуры/equipment из собранного pack.zip
 
 
 def bad(msg):
@@ -64,6 +72,8 @@ def scan_zip(path, label):
     with zipfile.ZipFile(path) as z:
         for name in z.namelist():
             if name.endswith(".png") and "/textures/" in name:
+                if name.startswith("assets/azerus" + OURS) and "/reforged_" in name:
+                    continue   # наши слои в собранном паке (--pack)
                 n += 1
                 k = looks_like_ours(z.read(name))
                 if k:
@@ -110,18 +120,30 @@ def check_markers(jar, extra):
             print(f"   {d}/pack: {n} png (без наших reforged_*), похожих: {h}")
 
 
+def read_asset(rel):
+    """assets/<rel> из репозитория (nexo-items/pack) или из --pack zip; None, если нет."""
+    if PACK_ZIP:
+        try:
+            return PACK_ZIP.read("assets/" + rel)
+        except KeyError:
+            return None
+    f = os.path.join(ROOT, "pack", "assets", rel)
+    return open(f, "rb").read() if os.path.exists(f) else None
+
+
 def equipment_layers(set_id):
-    eq = json.load(open(os.path.join(B.ASSETS, "equipment", f"reforged_{set_id}.json"), encoding="utf-8"))
+    eq = json.loads(read_asset(f"azerus/equipment/reforged_{set_id}.json"))
     out = {}
     for lname, layers in eq["layers"].items():
         imgs = []
         for layer in layers:
             ns, path = layer["texture"].split(":")
-            f = os.path.join(ROOT, "pack", "assets", ns, "textures", "entity", "equipment", lname, path + ".png")
-            if not os.path.exists(f):
-                bad(f"{set_id}: нет текстуры {f}")
+            rel = f"{ns}/textures/entity/equipment/{lname}/{path}.png"
+            data = read_asset(rel)
+            if data is None:
+                bad(f"{set_id}: нет текстуры {rel}")
                 continue
-            imgs.append((os.path.relpath(f, REPO), np.asarray(Image.open(f).convert("RGBA"))))
+            imgs.append((("pack.zip:" if PACK_ZIP else "") + rel, np.asarray(Image.open(io.BytesIO(data)).convert("RGBA"))))
         out[lname] = imgs
     return out
 
@@ -190,6 +212,18 @@ def check_roundtrip(set_id, layers):
         for b in bones:
             if seen[b] != len(faces[b]):
                 bad(f"{set_id}: у кости {b} в слоях {seen[b]} граней из {len(faces[b])}")
+    # кадр записей: запись + ВАНИЛЬНЫЙ шарнир (C.PIVOT, ноги ±1.9) = точка .bbmodel в пространстве модели (в покое);
+    # origin кости в .bbmodel (у шаблона ноги ±2.0) роли не играет
+    for b, fl in faces.items():
+        if b not in bb.bones or not fl:
+            continue
+        piv = np.array(C.PIVOT[C.BONE_PART[b][2]], float)
+        absolute = np.array([p for e, chain in bb.bones[b]["cubes"] for _, pts, _, _ in bb.cube_faces(e, chain)
+                             for p in pts])
+        worst = max(float(np.min(np.abs(absolute - (np.array(p) + piv)).max(axis=1))) for pts, _, _, _ in fl
+                    for p in pts)
+        if worst > 1e-4:
+            bad(f"{set_id}: кость {b} сдвинута относительно .bbmodel на {worst:.3f} px (кадр записи ≠ ванильный шарнир)")
     return n_ok, faces
 
 
@@ -268,16 +302,19 @@ def check_math(set_id, layers, faces, poses=24, seed=7):
 
 def check_files():
     print("6. файлы")
-    a = os.path.join(REPO, "nexo-items", "pack", "assets", "minecraft", "shaders")
-    b = os.path.join(REPO, "rezusmenu", "pack", "assets", "minecraft", "shaders")
-    for rel in ("core/entity.vsh", "include/armor3d.glsl"):
-        fa, fb = os.path.join(a, rel), os.path.join(b, rel)
-        same = os.path.exists(fa) and os.path.exists(fb) and open(fa, "rb").read() == open(fb, "rb").read()
-        print(f"   {rel}: nexo-items == rezusmenu: {'да' if same else 'НЕТ'}")
-        if not same:
-            bad(f"{rel}: копии в nexo-items/pack и rezusmenu/pack различаются")
-    if os.path.exists(os.path.join(a, "core", "rendertype_item_entity_translucent_cull.vsh")):
-        bad("в nexo-items/pack лишняя копия общего rendertype_item_entity_translucent_cull")
+    for rel in ES.FILES:
+        if not os.path.exists(os.path.join(ES.SRC, ES.OVERLAY, rel)):
+            bad(f"нет {ES.OVERLAY}/{rel} в nexo-items/entity_shaders")
+    # шейдеры сущностей — только в оверлее формата 75: копия в base assets любого пака досталась бы клиентам 26.x
+    for d in sorted(os.listdir(REPO)):
+        sh = os.path.join(REPO, d, "pack", "assets", "minecraft", "shaders")
+        for rel in ES.FILES:
+            f = os.path.join(REPO, d, "pack", rel)
+            if os.path.exists(f):
+                bad(f"{d}/pack/{rel}: шейдер сущностей в base assets (должен быть только в оверлее entity_shaders)")
+        if d == "nexo-items" and os.path.exists(os.path.join(sh, "core", "rendertype_item_entity_translucent_cull.vsh")):
+            bad("в nexo-items/pack лишняя копия общего rendertype_item_entity_translucent_cull")
+    print(f"   шейдеры сущностей: только nexo-items/entity_shaders/{ES.OVERLAY} (формат {ES.FORMAT})")
     yml = open(os.path.join(ROOT, "items", "reforged_armor.yml"), encoding="utf-8").read()
     n_items = yml.count("\nazerus_reforged_")
     print(f"   items/reforged_armor.yml: предметов {n_items}")
@@ -291,9 +328,67 @@ def check_files():
             bad(f"в yml нет asset_id azerus:reforged_{set_id}")
 
 
+def _rgba(data):
+    return np.asarray(Image.open(io.BytesIO(data)).convert("RGBA"))
+
+
+def _close(a, b, path=""):
+    """Сравнение JSON с допуском для чисел (minimize_json может переписать 1.0 → 1, 0.30000001 → 0.3)."""
+    if isinstance(a, (int, float)) and isinstance(b, (int, float)) and not isinstance(a, bool):
+        return [] if abs(a - b) <= 1e-6 * max(1.0, abs(a)) else [f"{path}: {a} ≠ {b}"]
+    if isinstance(a, dict) and isinstance(b, dict):
+        out = [f"{path}/{k}: нет в паке" for k in a if k not in b]
+        out += [f"{path}/{k}: лишний ключ" for k in b if k not in a]
+        for k in a:
+            if k in b:
+                out += _close(a[k], b[k], f"{path}/{k}")
+        return out
+    if isinstance(a, list) and isinstance(b, list):
+        if len(a) != len(b):
+            return [f"{path}: длина {len(a)} ≠ {len(b)}"]
+        return [m for i, (x, y) in enumerate(zip(a, b)) for m in _close(x, y, f"{path}[{i}]")]
+    return [] if a == b else [f"{path}: {a!r} ≠ {b!r}"]
+
+
+def check_built_pack(path):
+    print(f"7. собранный пак {path}")
+    names = set(PACK_ZIP.namelist())
+    n_png = n_model = 0
+    for root, _, files in os.walk(os.path.join(ROOT, "pack", "assets", "azerus")):
+        for fn in files:
+            f = os.path.join(root, fn)
+            rel = os.path.relpath(f, os.path.join(ROOT, "pack")).replace("\\", "/")
+            if "reforged" not in rel:
+                continue
+            if rel not in names:
+                bad(f"pack.zip: нет {rel}")
+                continue
+            if fn.endswith(".png"):
+                n_png += 1
+                a, b = _rgba(open(f, "rb").read()), _rgba(PACK_ZIP.read(rel))
+                if a.shape != b.shape or not np.array_equal(a, b):
+                    diff = "размер" if a.shape != b.shape else f"{int((a != b).any(axis=2).sum())} px"
+                    bad(f"pack.zip: {rel} пиксели отличаются от репозитория ({diff})")
+            elif fn.endswith(".json"):
+                n_model += 1
+                for m in _close(json.load(open(f, encoding="utf-8")), json.loads(PACK_ZIP.read(rel)))[:5]:
+                    bad(f"pack.zip: {rel}{m}")
+    print(f"   reforged png (RGBA): {n_png}, json (модели шлемов, equipment): {n_model}")
+    for m in ES.verify(path):
+        bad("pack.zip: " + m)
+
+
 def main(argv):
+    global PACK_ZIP
+    if "--pack" in argv:
+        i = argv.index("--pack")
+        pack = argv[i + 1]
+        argv = argv[:i] + argv[i + 2:]
+        PACK_ZIP = zipfile.ZipFile(pack)
     jar = argv[0] if argv and argv[0].endswith(".jar") else JAR
     extra = [a for a in argv if not a.endswith(".jar")]
+    if PACK_ZIP and not extra:
+        extra = [pack]
     check_markers(jar, extra)
     print("2–4. альфа, кодирование, математика шейдера; 5. бюджет")
     print(f"   {'комплект':10s} {'слоёв h/l':>9s} {'граней':>7s} {'записей ok':>10s} {'3D-квадов':>9s} {'макс. ошибка':>12s}"
@@ -308,6 +403,8 @@ def main(argv):
         print(f"   {set_id:10s} {hl - 1:>4d}/{ll - 1:<4d} {nf:>7d} {n_ok:>10d} {n3d:>9d} {err:>12.1e}"
               f"  {72 * hl}/{72 * ll}/{48 * hl}")
     check_files()
+    if PACK_ZIP:
+        check_built_pack(pack)
     print("ИТОГ:", "ok" if not PROBLEMS else f"ПРОБЛЕМ: {len(PROBLEMS)}")
     return 0 if not PROBLEMS else 1
 
