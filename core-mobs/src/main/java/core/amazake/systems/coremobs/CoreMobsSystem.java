@@ -3,8 +3,11 @@ package core.amazake.systems.coremobs;
 import core.amazake.systems.api.AmazakeSystem;
 import core.amazake.systems.api.SystemContext;
 import core.amazake.systems.coremobs.drop.DropStore;
+import core.amazake.systems.coremobs.hook.ModelHook;
 import core.amazake.systems.coremobs.mob.MobCatalog;
+import core.amazake.systems.coremobs.mob.MobDef;
 import core.amazake.systems.coremobs.mob.MobListener;
+import core.amazake.systems.coremobs.mob.MobModels;
 import core.amazake.systems.coremobs.mob.MobService;
 import core.amazake.systems.coremobs.region.Region;
 import core.amazake.systems.coremobs.region.RegionDisplays;
@@ -31,6 +34,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.server.PluginEnableEvent;
 
 /**
  * core-mobs — свои мобы из mobs.yml, лут из инвентаря со всеми NBT, регионы спавна любой формы (полигон по
@@ -45,6 +49,8 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
     private volatile RegionStore regions;
     private volatile DropStore drops;
     private volatile MobService mobs;
+    private volatile ModelHook modelHook;
+    private volatile MobModels models;
     private volatile Selections selections;
     private volatile RegionView view;
     private volatile RegionSpawner spawner;
@@ -63,6 +69,9 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
         this.drops = new DropStore(context);
         this.drops.load();
         this.mobs = new MobService(this.catalog::get, () -> this.settings.get().nameFormat());
+        this.modelHook = new ModelHook(context.logger());
+        this.models = new MobModels(context.plugin(), this.modelHook, this.mobs);
+        this.mobs.afterSpawn(this.models::ensure);
         this.selections = new Selections();
         this.view = new RegionView(this.settings::get, this.regions, this.selections);
         this.spawner = new RegionSpawner(context.plugin(), this.regions, this.mobs, this.catalog::get, this.view);
@@ -73,6 +82,7 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
         context.registerListener(this);
         context.registerListener(new WandListener(this.settings::get, this.selections));
         context.registerListener(new MobListener(context.plugin(), this.mobs, this.catalog::get, this.drops));
+        context.registerListener(this.models);
         context.registerListener(this.displays);
         context.registerListener(new WorldListener(this.worlds, this.settings::get));
         context.registerCommand(new MobsCommand(context, this.settings::get, this.catalog::get, this.mobs, this.drops,
@@ -85,6 +95,7 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
             this.adoptNear(player);
         }
         this.checkRegionMobs();
+        this.checkModels();
         context.logger().info("core-mobs включён: мобов " + this.catalog.get().all().size() + ", регионов "
             + this.regions.all().size() + ", миров без ванильных мобов: " + this.worlds.disabled().size() + ".");
     }
@@ -125,6 +136,7 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
             this.adoptNear(player);
         }
         this.checkRegionMobs();
+        this.checkModels();
         this.context.logger().info("core-mobs: настройки перечитаны.");
     }
 
@@ -153,6 +165,35 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
             }
             if (Bukkit.getWorld(r.world()) == null) {
                 this.context.logger().warning("Регион " + r.name() + ": мир «" + r.world() + "» не загружен.");
+            }
+        }
+    }
+
+    /** ModelEngine и модели из mobs.yml: есть ли плагин, есть ли blueprint каждой модели. */
+    private void checkModels() {
+        final boolean any = this.catalog.get().all().values().stream().anyMatch(d -> d.model() != null);
+        if (!any) {
+            return;
+        }
+        if (!this.modelHook.available()) {
+            this.context.logger().warning("ModelEngine не найден: мобы с model из mobs.yml появляются без моделей.");
+            return;
+        }
+        this.context.logger().info("ModelEngine " + this.modelHook.version() + " найден: модели на мобах включены.");
+        for (final MobDef d : this.catalog.get().all().values()) {
+            if (d.model() != null && !this.modelHook.hasModel(d.model().id())) {
+                this.context.logger().warning("mobs.yml: " + d.id() + ": в ModelEngine нет модели «" + d.model().id() + "».");
+            }
+        }
+    }
+
+    /** ModelEngine включился позже системы — повесить модели мобам рядом с игроками. */
+    @EventHandler
+    public void onPluginEnable(final PluginEnableEvent event) {
+        if (event.getPlugin().getName().equals("ModelEngine") && this.models != null) {
+            this.checkModels();
+            for (final Player player : Bukkit.getOnlinePlayers()) {
+                this.adoptNear(player);
             }
         }
     }
@@ -191,6 +232,9 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
                 }
                 final String region = MobService.regionOf(e);
                 final String mob = MobService.mobId(e);
+                if (mob != null && (region == null || this.regions.get(region) != null)) {
+                    this.models.ensureAnywhere(e);      // модель из mobs.yml, если ModelEngine её не держит
+                }
                 if (region == null || mob == null || this.mobs.tracked().containsKey(e.getUniqueId())) {
                     continue;
                 }

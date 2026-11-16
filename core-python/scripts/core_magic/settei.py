@@ -26,11 +26,18 @@ def f32(x):
     "no-player": "<red>Игрок <player> не в сети.",
     "reloaded": "<green>core_magic: конфиг перечитан.",
     "info": "<#7fd8ff>core_magic</#7fd8ff> <gray>— заклинаний сейчас: <white><casts></white>, эффектов в мире: "
-            "<white><fx></white>; ваша перезарядка: <white><cd></white> с.<newline><gray>Заряд <white><charge> с</white>, "
+            "<white><fx></white>, барьеров: <white><barriers></white>; ваша перезарядка: <white><cd></white> с.<newline><gray>Заряд <white><charge> с</white>, "
             "луч до <white><range></white> бл., урон <white><damage></white>, перезарядка <white><cooldown> с</white>.",
     "usage": "<gray>/cmagic give [ник] [кол-во] | reload | info",
     "console-needs-player": "<red>Из консоли укажите игрока: /cmagic give <ник> [кол-во]",
     "bad-amount": "<red>Количество — число от 1 до 64.",
+    "mode-beam": "<#7fd8ff>Заклинание: <white>Луч</white> <dark_gray>(Shift+ПКМ — сменить)",
+    "mode-barrier": "<#7fd8ff>Заклинание: <white>Барьер</white> <dark_gray>(Shift+ПКМ — сменить)",
+    "barrier-charge": "<#7fd8ff>Барьер <bar>",
+    "barrier-ready": "<#7fd8ff>✦ Барьер поднят на <white><s> с</white> — можно отпустить ПКМ",
+    "barrier-cooldown": "<#7fd8ff>Барьер восстанавливается: <white><s> с",
+    "barrier-too-early": "<gray>Барьер рассыпался — держите ПКМ <white><need> с</white>.",
+    "barrier-no-room": "<gray>Здесь барьер не встанет.",
 }
 
 既定音 = {
@@ -43,6 +50,20 @@ def f32(x):
              {"sound": "entity.firework_rocket.blast", "volume": 0.6, "pitch": 1.4}],
     "fizzle": [{"sound": "block.beacon.deactivate", "volume": 0.6, "pitch": 1.3}],
     "denied": [{"sound": "block.note_block.bass", "volume": 0.5, "pitch": 0.6}],
+    "barrier-start": [{"sound": "block.amethyst_block.chime", "volume": 1.0, "pitch": 0.8},
+                      {"sound": "block.beacon.activate", "volume": 0.5, "pitch": 1.9}],
+    "barrier-cell": [{"sound": "block.amethyst_cluster.place", "volume": 0.6, "pitch": 1.0}],
+    "barrier-formed": [{"sound": "block.beacon.power_select", "volume": 0.8, "pitch": 1.6},
+                       {"sound": "block.amethyst_block.resonate", "volume": 1.0, "pitch": 1.2}],
+    "barrier-hit": [{"sound": "block.amethyst_block.hit", "volume": 1.0, "pitch": 0.7},
+                    {"sound": "block.amethyst_cluster.break", "volume": 0.8, "pitch": 1.4},
+                    {"sound": "block.beacon.deactivate", "volume": 0.4, "pitch": 2.0}],
+    "barrier-end": [{"sound": "block.amethyst_cluster.break", "volume": 0.7, "pitch": 1.0},
+                    {"sound": "block.glass.break", "volume": 0.35, "pitch": 1.6}],
+    "barrier-fizzle": [{"sound": "block.amethyst_block.break", "volume": 0.6, "pitch": 1.3}],
+    "mode-beam": [{"sound": "block.amethyst_block.chime", "volume": 0.8, "pitch": 1.6}],
+    "mode-barrier": [{"sound": "block.amethyst_cluster.place", "volume": 0.8, "pitch": 1.2},
+                     {"sound": "block.note_block.chime", "volume": 0.5, "pitch": 1.0}],
 }
 音の名前 = tuple(既定音.keys())
 
@@ -55,9 +76,15 @@ def f32(x):
 光 = namedtuple("光", "モデル 射程 幅 始幅倍 伸び 保持 消え 視距離 傷 傷種 半径 対人 無敵無視 片長")
 音 = namedtuple("音", "鍵 音量 高さ")
 粒 = namedtuple("粒", "種類 数 広がり 速さ 毎")
+#: Режим посоха: mode.default, toggle-debounce-ms, remember-on-item, show-on-select.
+様式 = namedtuple("様式", "既定 間隔 品に記す 選択時")
+#: Барьер (секция barrier, порядок ключей — как в config.yml).
+結界 = namedtuple("結界", "モデル 充填 秒 冷却秒 失敗秒 前 上 半径 列 行 隙間 飛 始倍 広がり 閃光 消える 消散 打閃光 視距離")
+#: Режимы посоха: луч и барьер.
+様式名 = ("beam", "barrier")
 
 
-class 設定(namedtuple("設定", "杖 禁止世界 詠唱 冷却 円 光 音表 唸り周期 終粒 跡粒 文言")):
+class 設定(namedtuple("設定", "杖 禁止世界 詠唱 冷却 円 光 音表 唸り周期 終粒 跡粒 文言 様式 結界 形成粒 打粒 終結粒")):
     __slots__ = ()
 
     def 文(self, k):
@@ -255,6 +282,46 @@ def 解析(c, 警告=lambda m: None):
     p = _区画(c, "particles")
     終粒 = _粒(_区画(p, "end"), "particles.end", "END_ROD", 14, 0.25, 0.06, None, 警告)
     跡粒 = _粒(_区画(p, "trail"), "particles.trail", "ELECTRIC_SPARK", 1, 0.05, 0.0, 1.5, 警告)
+    形成粒 = _粒(_区画(p, "barrier-form"), "particles.barrier-form", "ELECTRIC_SPARK", 3, 0.15, 0.02, None, 警告)
+    打粒 = _粒(_区画(p, "barrier-hit"), "particles.barrier-hit", "END_ROD", 16, 0.12, 0.07, None, 警告)
+    終結粒 = _粒(_区画(p, "barrier-end"), "particles.barrier-end", "ELECTRIC_SPARK", 2, 0.2, 0.03, None, 警告)
+
+    r = _読み手(_区画(c, "mode"), "mode", 警告)
+    既定様式 = r.文字("default", "beam").strip().lower()
+    if 既定様式 not in 様式名:
+        r._言う("default", "«" + 既定様式 + "» — не beam/barrier, взято beam")
+        既定様式 = "beam"
+    様式設定 = 様式(既定様式, r.整数("toggle-debounce-ms", 300, 50, 2000), r.真偽("remember-on-item", True),
+                  r.真偽("show-on-select", True))
+
+    r = _読み手(_区画(c, "barrier"), "barrier", 警告)
+    結充填 = r.整数("charge-ticks", 20, 5, 200)
+    結界設定 = 結界(_模型(r, "item-model", "azerus:moon_staff_barrier"),
+                 結充填,
+                 r.実数("duration-seconds", 10.0, 1.0, 120.0),
+                 r.実数("cooldown-seconds", 15.0, 0.0, 3600.0),
+                 r.実数("after-fizzle-seconds", 0.5, 0.0, 3600.0),
+                 r.実数("forward", 2.0, 0.5, 8.0),
+                 r.実数("up", 0.25, -4.0, 4.0),
+                 r.実数("cell-radius", 0.5, 0.2, 1.5),
+                 r.整数("columns", 3, 1, 7),
+                 r.整数("rows", 5, 1, 9),
+                 r.実数("cell-gap", 0.04, 0.0, 0.5),
+                 r.整数("fly-ticks", 6, 1, 40),
+                 r.実数("fly-start-scale", 0.15, 0.0, 1.0),
+                 r.実数("fly-spread", 0.15, 0.0, 1.0),
+                 r.整数("form-flash-ticks", 3, 0, 20),
+                 r.整数("fade-ticks", 12, 1, 60),
+                 r.整数("fizzle-ticks", 6, 1, 60),
+                 r.整数("hit-flash-ticks", 4, 1, 20),
+                 r.実数("view-range", 1.5, 0.05, 16.0))
+    if 結界設定.列 * 結界設定.行 > 25:
+        行 = max(1, 25 // 結界設定.列)
+        r._言う("rows", "columns×rows = " + str(結界設定.列 * 結界設定.行) + " > 25 ячеек, рядов взято " + str(行))
+        結界設定 = 結界設定._replace(行=行)
+    if 結界設定.飛 >= 結界設定.充填:
+        r._言う("fly-ticks", str(結界設定.飛) + " не меньше charge-ticks, взято " + str(結界設定.充填 - 1))
+        結界設定 = 結界設定._replace(飛=結界設定.充填 - 1)
 
     文言 = dict(既定文言)
     m = c.get("messages")
@@ -264,7 +331,8 @@ def 解析(c, 警告=lambda m: None):
                 文言[str(k)] = str(v)
             elif isinstance(v, list):
                 文言[str(k)] = "<newline>".join(str(x) for x in v)
-    return 設定(杖設定, 禁止, 詠唱設定, 冷却設定, 円設定, 光設定, 音表, 唸り, 終粒, 跡粒, 文言)
+    return 設定(杖設定, 禁止, 詠唱設定, 冷却設定, 円設定, 光設定, 音表, 唸り, 終粒, 跡粒, 文言, 様式設定, 結界設定, 形成粒,
+              打粒, 終結粒)
 
 
 #: Снимок по умолчанию (до чтения файла) и текущий (подменяет main при загрузке и /cmagic reload).

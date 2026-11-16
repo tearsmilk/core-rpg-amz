@@ -5,9 +5,11 @@
 Модуль общий для tools/moon_staff.py (сборка) и tools/moonstaff_check.py (проверка). Запуск сам по себе не нужен.
 
 Спрайт = 128×128 RGBA в pack/assets/azerus/textures/item/moon_staff_fx/<имя>.png. Сигнатура для шейдера:
-  тексель (0,0) = S0 = (177,126,90,3), тексель (1,0) = (K,90,126,3), K — вид спрайта 1..9 (таблица KINDS).
+  тексель (0,0) = S0 = (177,126,90,3), тексель (1,0) = (K,90,126,3), K — вид спрайта 1..10 (таблица KINDS).
 Альфа 3 нигде больше не встречается; остаток строк 0..1, столбцов 0..1 и рамка 2 px по краю — прозрачные.
 Рисунок кругов — только внутри радиуса 61 px от центра (63.5, 63.5), лучей — во внутреннем квадрате 124×124.
+K10 hex_cell — ячейка барьера (шестигранник «вершиной вверх», внешний радиус ровно HEX_R_PX = 60 px), классы альфы:
+  255 — обвод, 254 — блёстка, 209..239 — фаска, 96..208 — заливка, 0 — вне шестигранника (шейдер различает по альфе).
 Без шейдера (Iris, старый пак) сигнатура отрезается ванильным порогом альфы 0.1, видна обычная картинка с оттенком.
 """
 import json
@@ -26,7 +28,8 @@ FX_DIR = os.path.join(ASSETS, NS, 'textures', 'item', 'moon_staff_fx')
 SPRITE = 128                      # шейдер: MS_SPRITE_PX
 S0 = (177, 126, 90, 3)            # шейдер: сигнатура в (0,0)
 KINDS = {'ring': 1, 'runes': 2, 'hexagram': 3, 'core': 4,
-         'beam_up': 5, 'beam_down': 6, 'beam_west': 7, 'beam_east': 8, 'flare': 9}
+         'beam_up': 5, 'beam_down': 6, 'beam_west': 7, 'beam_east': 8, 'flare': 9,
+         'hex_cell': 10}                                      # K11..K15 — резерв, не используются
 CIRCLE_ART_R = 61.0               # рисунок кругов не дальше этого радиуса (px)
 MARK_G, MARK_B = 233, 253         # маркер вершины: Color = (R, 233, 253), R ≤ 250 — параметр
 
@@ -230,6 +233,102 @@ def sprite_flare():
     return L.image(KINDS['flare'], True)
 
 
+# ------------------------------------------------------------------------------------------- ячейка барьера (K10)
+HEX_R_PX = 60                     # внешний радиус шестигранника (до вершины), px; общий с core_magic (keisan)
+SQ3 = math.sqrt(3.0)
+# «Шестигранная» метрика (вершиной вверх): ρ = R на контуре шестигранника с внешним радиусом R.
+RHO = np.maximum(np.abs(DX) * 2 / SQ3, np.abs(DY) + np.abs(DX) / SQ3)
+# Сектор 0..5 = грань: 0 — верх-право, 1 — право, 2 — низ-право, 3 — низ-лево, 4 — лево, 5 — верх-лево
+SECT = np.floor(ANG / (math.pi / 3)).astype(int) % 6
+HEX_RIM = {5: (232, 251, 255), 4: (232, 251, 255), 0: (190, 240, 255), 1: (190, 240, 255), 3: (190, 240, 255),
+           2: (127, 216, 255)}
+HEX_FILL = [(227, 249, 255, 176), (180, 236, 250, 150), (131, 214, 239, 128), (88, 185, 222, 112),
+            (58, 148, 192, 100)]
+HEX_TEAL = (111, 224, 216, 120)
+
+
+def hex_vertex(r, k):
+    """Вершина k (0 — верх, по часовой) шестигранника радиуса r → (dx, dy вниз)."""
+    return polar_xy(r, math.pi / 3 * k)
+
+
+def sprite_hex_cell():
+    """Ячейка барьера: толстый бело-голубой обвод, фаска, «матовая» кристаллическая заливка из 6 граней-треугольников
+    и площадки, блёстки. Свет сверху слева. Чёткие полосы по ρ, без шума."""
+    L = Layer()
+    inside = RHO <= HEX_R_PX
+    # заливка: грани по секторам (нормаль грани смотрит на свою сторону шестигранника)
+    facet = {5: HEX_FILL[1], 4: HEX_FILL[2], 0: HEX_FILL[2], 3: HEX_TEAL, 1: HEX_FILL[3], 2: HEX_FILL[4]}
+    fill = RHO <= 50
+    for k, (r, g, b, a) in facet.items():
+        L.put(fill & (SECT == k), (r, g, b), a)
+    # рёбра граней (от вершины площадки к вершине шестигранника): светлые со стороны света, тёмные — с теневой
+    ridge = np.full(RR.shape, 99.0)
+    ridge_dark = np.full(RR.shape, 99.0)
+    for k in range(6):
+        x0, y0 = hex_vertex(22, k)
+        x1, y1 = hex_vertex(49, k)
+        d = seg_dist(x0, y0, x1, y1)
+        if k in (4, 5, 0):
+            ridge = np.minimum(ridge, d)
+        else:
+            ridge_dark = np.minimum(ridge_dark, d)
+    L.rgb[fill & (ridge_dark < 0.6)] = HEX_FILL[3][:3]
+    L.a[fill & (ridge_dark < 0.6)] = HEX_FILL[3][3]
+    m = fill & (ridge < 0.6)
+    L.rgb[m] = HEX_FILL[0][:3]
+    L.a[m] = HEX_FILL[0][3]
+    # площадка (плоский верх кристалла): чуть светлее окружения, обвод площадки — светлый сверху слева
+    table = RHO <= 22
+    L.rgb[table] = (150, 224, 245)
+    L.a[table] = 138
+    tedge = table & (RHO > 20.6)
+    lit = tedge & np.isin(SECT, (4, 5, 0))
+    L.rgb[lit] = HEX_FILL[0][:3]
+    L.a[lit] = HEX_FILL[0][3]
+    shd = tedge & np.isin(SECT, (1, 2, 3))
+    L.rgb[shd] = HEX_FILL[3][:3]
+    L.a[shd] = HEX_FILL[3][3]
+    # блик на площадке: короткий косой штрих сверху слева (параллельно верх-левой грани)
+    hl = seg_dist(-14.0, -3.0, -5.0, -8.2) < 1.0
+    L.rgb[hl] = HEX_FILL[0][:3]
+    L.a[hl] = HEX_FILL[0][3]
+    # фаска 50 < ρ ≤ 52: светлая линия, со стороны света плотнее
+    bevel = (RHO > 50) & (RHO <= 52)
+    L.rgb[bevel] = (200, 243, 255)
+    L.a[bevel] = np.where(np.isin(SECT, (4, 5, 0)), 236, 214)[bevel]
+    # обвод 52 < ρ ≤ 60 (8 px): тон по стороне, самая внешняя кромка сверху слева — белая
+    rim = (RHO > 52) & inside
+    for k, col in HEX_RIM.items():
+        mm = rim & (SECT == k)
+        L.rgb[mm] = col
+        L.a[mm] = 255
+    outer = rim & (RHO > 58)
+    L.rgb[outer & np.isin(SECT, (5, 4))] = WHITE
+    L.rgb[(RHO > 59) & inside & (SECT == 0)] = (232, 251, 255)
+    inner = rim & (RHO <= 53) & np.isin(SECT, (1, 2, 3))   # тёмная внутренняя кромка снизу справа
+    L.rgb[inner] = (110, 200, 245)
+    # блёстки (альфа 254 — шейдер мерцает): кресты 3×3 и одиночные у вершин, внутри обвода
+    glints = [(hex_vertex(46, 5), True), (hex_vertex(46, 0), False), (hex_vertex(46, 2), True),
+              (hex_vertex(44, 4), False), ((-9.0, -12.0), False)]
+    for (gx, gy), big in glints:
+        ix, iy = int(round(C + gx)), int(round(C + gy))
+        pts = [(ix, iy)] + ([(ix - 1, iy), (ix + 1, iy), (ix, iy - 1), (ix, iy + 1)] if big else [])
+        for x, y in pts:
+            L.rgb[y, x] = WHITE
+            L.a[y, x] = 254
+    L.a[~inside] = 0
+    return L.image(KINDS['hex_cell'], True)
+
+
+def hex_classes(spr):
+    """Классы альфы ячейки: rim / glint / bevel / fill / 0. → dict имя → маска (без сигнатуры)."""
+    a = spr[..., 3].astype(int).copy()
+    a[0, 0] = a[0, 1] = 0
+    return {'rim': a == 255, 'glint': a == 254, 'bevel': (a >= 209) & (a <= 239), 'fill': (a >= 96) & (a <= 208),
+            'zero': a == 0}
+
+
 # ------------------------------------------------------------------------------------------- спрайты луча
 def beam_art():
     """Луч «вверх» (K5): поперёк — u (x), вдоль — v (y). Профиль: белое ядро, мягкий голубой край, штрихи вдоль."""
@@ -267,7 +366,7 @@ def beam_sprite(kind_name):
 
 
 SPRITE_FUNCS = {'ring': sprite_ring, 'runes': sprite_runes, 'hexagram': sprite_hexagram, 'core': sprite_core,
-                'flare': sprite_flare}
+                'flare': sprite_flare, 'hex_cell': sprite_hex_cell}
 
 
 def all_sprites():
@@ -317,6 +416,13 @@ def beam_model():
             'elements': els}
 
 
+def barrier_model():
+    """Одна плоскость 16×16 px по центру (z = 8), грани north и south — спрайт виден незеркальным с обеих сторон."""
+    return {'textures': {'1': f'{NS}:item/moon_staff_fx/hex_cell', 'particle': f'{NS}:item/moon_staff_fx/hex_cell'},
+            'elements': [{'from': [0, 0, 8], 'to': [16, 16, 8], 'shade': False, 'light_emission': 15,
+                          'faces': {'north': _face('1'), 'south': _face('1')}}]}
+
+
 def item_def(name):
     return {'model': {'type': 'minecraft:model', 'model': f'{NS}:item/{name}',
                       'tints': [{'type': 'minecraft:custom_model_data', 'index': 0, 'default': -1}]}}
@@ -331,7 +437,8 @@ def write_all():
     idir = os.path.join(ASSETS, NS, 'items')
     os.makedirs(mdir, exist_ok=True)
     os.makedirs(idir, exist_ok=True)
-    for name, model in (('moon_staff_circle', circle_model()), ('moon_staff_beam', beam_model())):
+    for name, model in (('moon_staff_circle', circle_model()), ('moon_staff_beam', beam_model()),
+                        ('moon_staff_barrier', barrier_model())):
         with open(os.path.join(mdir, name + '.json'), 'w', encoding='utf-8') as fh:
             json.dump(model, fh, indent=1)
         with open(os.path.join(idir, name + '.json'), 'w', encoding='utf-8') as fh:
@@ -379,10 +486,45 @@ def _sample_halo(spr, qx, qy):
 
 
 def shade(kind, spr, lx, ly, param, t):
-    """kind 1..9, lx/ly — msLocal (0..1, массивы), param — msParam, t — секунды. → RGBA (…, 4) 0..1+."""
+    """kind 1..10, lx/ly — msLocal (0..1, массивы), param — msParam, t — секунды. → RGBA (…, 4) 0..1+."""
     lx = np.asarray(lx, np.float64)
     ly = np.asarray(ly, np.float64)
     out = np.zeros(lx.shape + (4,))
+    if kind == 10:
+        # Ячейка барьера: msParam = (g + 25·L)/250, g — фаза мерцания, L — уровень (0..7 — альфа L/8, 8, 9 — вспышка).
+        px = np.clip(lx * SPRITE, 0.5, SPRITE - 0.5)
+        py = np.clip(ly * SPRITE, 0.5, SPRITE - 0.5)
+        tex = spr[np.floor(py).astype(int), np.floor(px).astype(int)].astype(np.float64) / 255.0
+        code = int(math.floor(param * 250.0 + 0.5))
+        lv = code // 25
+        g = code - 25 * lv
+        ph = g / 24.0
+        pos = ph * 0.8 + 0.2 * (lx - 0.5 * ly)
+        band = 1.0 - smoothstep(0.0, 0.12, np.abs(pos - (((t / 4.0) % 1.0) * 1.6 - 0.3)))
+        breath = 0.5 + 0.5 * math.sin(TAU * 0.5 * t + ph * 6.0)
+        a255 = tex[..., 3] * 255.0
+        rgb = np.zeros(lx.shape + (3,))
+        al = np.zeros(lx.shape)
+        rim = a255 > 254.5
+        gl = (a255 > 253.5) & ~rim
+        fi = (a255 >= 7.5) & ~rim & ~gl
+        band3 = band[..., None]
+        rgb_rim = tex[..., :3] * (1.05 + 0.2 * breath) + 0.35 * band3
+        tw = (0.5 + 0.5 * np.sin(TAU * t / 1.5 + ph * 11.0 + lx * 7.0)) ** 8.0
+        rgb_gl = np.array([0.85, 0.97, 1.1]) * (1.0 - tw)[..., None] + 1.6 * tw[..., None]
+        al_gl = 0.8 + 0.2 * tw
+        rgb_fi = (tex[..., :3] * np.array([0.82, 0.95, 1.12]) * (0.95 + 0.12 * breath) + np.array([0.02, 0.08, 0.22])
+                  + np.array([0.6, 0.9, 1.0]) * 0.35 * band3)
+        al_fi = np.minimum(tex[..., 3] * (1.3 + 0.2 * band), 1.0)
+        rgb = np.where(rim[..., None], rgb_rim, np.where(gl[..., None], rgb_gl, np.where(fi[..., None], rgb_fi, 0.0)))
+        al = np.where(rim, 1.0, np.where(gl, al_gl, np.where(fi, al_fi, 0.0)))
+        if lv <= 7:
+            al = al * (lv / 8.0)
+        elif lv == 9:
+            rgb = rgb * 0.5 + 0.5
+            al = np.clip(al * 1.3 + 0.1 * (al >= 0.004), 0.0, 1.0)
+        out[..., :3], out[..., 3] = rgb, al
+        return out
     if kind <= 4:
         c = param
         a = {1: TAU * 0.25 * t, 2: -TAU * t / 6.0, 3: TAU * t / 12.0, 4: 0.0}[kind]
@@ -478,3 +620,124 @@ def render_flare(sprites, t, size=256, bg=(0.06, 0.07, 0.1)):
 
 def load_sprites():
     return {n: np.asarray(Image.open(os.path.join(FX_DIR, n + '.png')).convert('RGBA')) for n in KINDS}
+
+
+# ------------------------------------------------------------------------------------------- барьер: раскладка
+# Копия формул core_magic/keisan.py (蜂巣, 組順, 輝き番号, 出現tick, 結界R, 表示倍率); moonstaff_check (f) сверяет.
+def honeycomb(cols, rows, r):
+    """Соты «вершиной вверх»: [(u, v)] по строкам снизу вверх, u — вправо (для мага), v — вверх, метры."""
+    w = SQ3 * r
+    h = 1.5 * r
+    out = []
+    for j in range(rows):
+        s = -w / 4 if j % 2 == 0 else w / 4
+        for i in range(cols):
+            out.append(((i - (cols - 1) / 2.0) * w + s, (j - (rows - 1) / 2.0) * h))
+    return out
+
+
+def build_order(cells):
+    """Порядок сборки от центра наружу: (round(u²+v², 6), round(atan2(u, v) mod 2π, 6))."""
+    return sorted(range(len(cells)), key=lambda k: (round(cells[k][0] ** 2 + cells[k][1] ** 2, 6),
+                                                    round(math.atan2(cells[k][0], cells[k][1]) % TAU, 6)))
+
+
+def glow_slots(cells):
+    """Фаза мерцания g 0..24: по диагонали d = u − 0.5·v (верх-лево → 0, низ-право → 24)."""
+    d = [u - 0.5 * v for u, v in cells]
+    lo, hi = min(d), max(d)
+    if hi == lo:
+        return [0 for _ in cells]
+    return [int(round(24 * (x - lo) / (hi - lo))) for x in d]
+
+
+def spawn_tick(m, n, charge, fly):
+    return 0 if n == 1 else (m * (charge - fly)) // (n - 1)
+
+
+def barrier_R(g, L):
+    """R цвета custom_model_data: g + 25·L (g 0..24, L 0..9), максимум 249."""
+    return min(max(int(g), 0), 24) + 25 * min(max(int(L), 0), 9)
+
+
+def display_scale(r, gap):
+    """Q: сторона квадрата модели (блоки) при scale 1 — 1 блок; шестигранник в нём — HEX_R_PX/128 стороны."""
+    return r * (1 - gap) * SPRITE / HEX_R_PX
+
+
+BARRIER = dict(cols=3, rows=5, r=0.5, gap=0.04, charge=20, fly=6, forward=2.0, up=0.25, start_scale=0.15,
+               spread=0.15)
+
+
+def barrier_cells(t_held=None, levels=None, cfg=BARRIER):
+    """Ячейки для рисования: [(u, v, сторона, R)] в порядке отрисовки. t_held — тики удержания (None — собран,
+    все L из levels, по умолчанию 8). Во время сборки: ячейка m появляется в spawn_tick и летит fly тиков из точки
+    у навершия посоха (P0 в координатах мага: u = 0.3, v = −up − 0.2) с масштабом start_scale (линейно, как
+    интерполяция дисплея), L = 9 в полёте и 6 после посадки; на тике charge — сформирован, все L = 9."""
+    cells = honeycomb(cfg['cols'], cfg['rows'], cfg['r'])
+    order = build_order(cells)
+    g = glow_slots(cells)
+    Q = display_scale(cfg['r'], cfg['gap'])
+    n = len(cells)
+    out = []
+    for m, k in enumerate(order):
+        u, v = cells[k]
+        if t_held is None:
+            L = 8 if levels is None else levels[k]
+            out.append((u, v, Q, barrier_R(g[k], L)))
+            continue
+        s0 = spawn_tick(m, n, cfg['charge'], cfg['fly'])
+        if t_held < s0:
+            continue
+        p = min(max((t_held - s0) / cfg['fly'], 0.0), 1.0)
+        su = 0.3 + u * cfg['spread']
+        sv = -cfg['up'] - 0.2 + v * cfg['spread']
+        side = Q * (cfg['start_scale'] + (1 - cfg['start_scale']) * p)
+        L = 9 if p < 1 else 6
+        if t_held >= cfg['charge']:
+            L = 9
+        out.append((su + (u - su) * p, sv + (v - sv) * p, side, barrier_R(g[k], L)))
+    return out
+
+
+def night_sky(w, h, seed=3):
+    ys = np.linspace(0, 1, h)[:, None, None]
+    top, bot = np.array([0.02, 0.03, 0.08]), np.array([0.07, 0.10, 0.20])
+    img = top * (1 - ys) + bot * ys + np.zeros((h, w, 3))
+    rng = np.random.default_rng(seed)
+    for _ in range(w * h // 1800):
+        x, y = rng.integers(0, w), rng.integers(0, h)
+        img[y, x] = rng.uniform(0.5, 1.0)
+    return img
+
+
+def render_cells(sprites, cells, t, w=512, h=640, ppm=128.0, centre=(0.0, 0.0), bg=None):
+    """Ортогональный вид спереди, как видит маг (u вправо, v вверх). cells — [(u, v, сторона, R)]."""
+    img = night_sky(w, h) if bg is None else bg.copy()
+    spr = sprites['hex_cell']
+    for u, v, side, R in cells:
+        x0 = int(math.floor(w / 2 + (u - centre[0] - side / 2) * ppm))
+        x1 = int(math.ceil(w / 2 + (u - centre[0] + side / 2) * ppm))
+        y0 = int(math.floor(h / 2 - (v - centre[1] + side / 2) * ppm))
+        y1 = int(math.ceil(h / 2 - (v - centre[1] - side / 2) * ppm))
+        x0c, x1c, y0c, y1c = max(x0, 0), min(x1, w), max(y0, 0), min(y1, h)
+        if x0c >= x1c or y0c >= y1c:
+            continue
+        ys, xs = np.mgrid[y0c:y1c, x0c:x1c] + 0.5
+        lx = ((xs - w / 2) / ppm + centre[0] - (u - side / 2)) / side
+        ly = ((v + side / 2) - (centre[1] - (ys - h / 2) / ppm)) / side
+        ins = (lx >= 0) & (lx <= 1) & (ly >= 0) & (ly <= 1)
+        col = shade(10, spr, np.clip(lx, 0, 1), np.clip(ly, 0, 1), R / 250.0, t)
+        col[..., 3] *= ins
+        img[y0c:y1c, x0c:x1c] = over(img[y0c:y1c, x0c:x1c], col)
+    return Image.fromarray((np.clip(img, 0, 1) * 255).astype(np.uint8))
+
+
+def render_barrier(sprites, levels=None, t=0.0, w=512, h=640, ppm=128.0):
+    """Собранный барьер (по умолчанию все L = 8)."""
+    return render_cells(sprites, barrier_cells(None, levels), t, w, h, ppm)
+
+
+def render_barrier_assembly(sprites, held, t=0.0, w=512, h=640, ppm=128.0):
+    """Кадр сборки на тике удержания held (ячейки на пути полёта с интерполяцией масштаба)."""
+    return render_cells(sprites, barrier_cells(held), t, w, h, ppm, centre=(0.0, -0.15))

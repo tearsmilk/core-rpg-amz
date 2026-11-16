@@ -20,6 +20,7 @@ Python — [GraalPy](https://www.graalvm.org/python/) 25.0.5 (Python 3.12) вн�
 
 1. Сборка: `./gradlew test azs` → `build/libs/core-python.azs` (~100 КБ) и `build/python-lib/` (18 jar-ов GraalPy,
    ~150 МБ, + `libs.txt`).
+   Собрать без части систем по умолчанию: `./gradlew test azs -PexcludeScripts=core_magic` (имена через запятую).
 2. `.azs` — в `/systems/` (как любая система: сначала `.azs.new`, сверить sha256, потом переименовать), затем
    `amazake system enable core-python`.
 3. **Библиотеки GraalPy** лежат в `/systems/core-python/lib/`. Если их нет, система сама скачивает их из Maven Central
@@ -404,11 +405,11 @@ Java-объекта (аргументы разворачиваются, резу
 пропускаются), `run_java_*`/`remove_entity`: задачи из `@on_unload` выполняются после закрытия контекста, при
 остановке сервера — в планировщик, а при отказе — сразу, функция Python и её прокси отвергаются, ошибка задачи — в лог; `CustomArmorScriptTest` грузит
 `scripts/custom_armor` из репозитория и проверяет его события, команду `/carmor` (+ `/防具`), логику бонусов.
-`JapaneseModeTest` — японский режим: проверки переводчика (`src/test/resources/ja/translator_checks.py` — 18 проверок:
+`JapaneseModeTest` — японский режим: проверки переводчика (`src/test/resources/ja/translator_checks.py` — 21 проверка:
 все слова, инвариант байтов, строки/комментарии/числа не тронуты, f-строки с вложенными `{}`, вложенные скобки и
 переносы, декораторы/классы/dunder, `場合分け`, трасса по исходной строке, `SyntaxError` с исходной строкой и подсказкой,
 полноширинные знаки, импорт модулей) в GraalPy (их же можно запустить обычным CPython:
-`python3 src/test/resources/ja/translator_checks.py src/host/resources/python`); японская система целиком (модули,
+`python3 -B src/test/resources/ja/translator_checks.py src/host/resources/python`); японская система целиком (модули,
 события, `型定義`); ошибка в японском файле и в его модуле — в логе исходные файл и строка (Python и Java через `呼ぶ`);
 `SyntaxError` при загрузке; ключ `言語`/`language`; японские псевдонимы в обычной системе (без перевода и японских встроенных); обёртки и псевдонимы на поддельном игроке/событии/предмете/месте;
 `core_potions` — японская версия и прежняя английская (`src/test/resources/ja/core_potions_english_main.py`)

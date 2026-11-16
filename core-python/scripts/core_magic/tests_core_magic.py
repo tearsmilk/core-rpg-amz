@@ -1,4 +1,4 @@
-# 試験 — тесты чистой логики core_magic (settei, keisan). Запуск обычным python3 из любой папки:
+# 試験 — тесты чистой логики core_magic (settei, keisan; барьер — 結界の試験). Запуск обычным python3 из любой папки:
 #   python3 -I core-python/scripts/core_magic/tests_core_magic.py
 # amazake не нужен; разбор config.yml из папки — через PyYAML (без него этот тест пропускается).
 
@@ -247,6 +247,249 @@ class 計算の試験(unittest.TestCase):
         self.assertEqual("<#7fd8ff>" + "|" * 10 + "</#7fd8ff><dark_gray>" + "|" * 10 + "</dark_gray>", b)
         self.assertEqual("<dark_gray>" + "|" * 20 + "</dark_gray>", keisan.充填棒(0.0, 20))
         self.assertEqual("<#7fd8ff>" + "|" * 20 + "</#7fd8ff>", keisan.充填棒(1.0, 20))
+
+
+# ------------------------------------------------------------------------------------------------- барьер
+
+_表 = [(-1.082532, -1.5), (-0.216506, -1.5), (0.649519, -1.5),
+      (-0.649519, -0.75), (0.216506, -0.75), (1.082532, -0.75),
+      (-1.082532, 0.0), (-0.216506, 0.0), (0.649519, 0.0),
+      (-0.649519, 0.75), (0.216506, 0.75), (1.082532, 0.75),
+      (-1.082532, 1.5), (-0.216506, 1.5), (0.649519, 1.5)]
+_W = math.sqrt(3.0) * 0.5
+
+
+def _記録(yaw=0.0, eye=(0.5, 65.62, 0.5), 世界="world", id=1, 今=0, 主="a", 設定=None):
+    return keisan.結界を作る(id, 世界, eye, yaw, 設定 or settei.既定.結界, 今, 主)
+
+
+class 結界の試験(unittest.TestCase):
+
+    def test_layout_matches_contract(self):
+        c = keisan.蜂巣(3, 5, 0.5)
+        self.assertEqual(15, len(c))
+        for (u, v), (eu, ev) in zip(c, _表):
+            self.assertAlmostEqual(eu, u, delta=1e-6)
+            self.assertAlmostEqual(ev, v, delta=1e-6)
+        rec = _記録()
+        self.assertAlmostEqual(1.5155445, rec.半幅, delta=1e-6)
+        self.assertAlmostEqual(2.0, rec.半高, delta=1e-9)
+        for i in range(15):
+            n = 0
+            for j in range(15):
+                if i == j:
+                    continue
+                d = math.hypot(c[i][0] - c[j][0], c[i][1] - c[j][1])
+                self.assertGreaterEqual(d, _W - 1e-9)
+                if abs(d - _W) < 1e-9:
+                    n += 1
+            self.assertTrue(2 <= n <= 6, (i, n))
+
+    def test_rows_cols_cap(self):
+        warns = []
+        s = settei.解析({"barrier": {"columns": 7, "rows": 9}}, warns.append)
+        self.assertEqual(7, s.結界.列)
+        self.assertEqual(3, s.結界.行)
+        self.assertLessEqual(s.結界.列 * s.結界.行, 25)
+        self.assertTrue(any(w.startswith("barrier.rows") for w in warns), warns)
+        self.assertEqual(21, len(keisan.蜂巣(s.結界.列, s.結界.行, 0.5)))
+
+    def test_build_order_and_spawn_ticks(self):
+        c = keisan.蜂巣(3, 5, 0.5)
+        順 = keisan.組順(c)
+        self.assertEqual([7, 8, 10, 4, 3, 9, 6, 11, 5, 1, 13, 14, 2, 0, 12], 順)
+        ts = [keisan.出現tick(m, 15, 20, 6) for m in range(15)]
+        self.assertEqual(list(range(15)), ts)
+        self.assertEqual(sorted(ts), ts)
+        self.assertEqual(20 - 6, ts[-1])
+        self.assertEqual(0, keisan.出現tick(0, 1, 20, 6))
+        ts = [keisan.出現tick(m, 7, 40, 10) for m in range(7)]
+        self.assertEqual(sorted(ts), ts)
+        self.assertEqual(30, ts[-1])
+
+    def test_shimmer_and_param_encoding(self):
+        c = keisan.蜂巣(3, 5, 0.5)
+        self.assertEqual([11, 17, 24, 11, 18, 24, 5, 12, 18, 6, 12, 19, 0, 6, 13], keisan.輝き番号(c))
+        self.assertEqual([0], keisan.輝き番号([(0.0, 0.0)]))
+        self.assertEqual(249, keisan.結界R(24, 9))
+        self.assertLessEqual(keisan.結界R(24, 9), keisan.R上限)
+        self.assertEqual(0, keisan.結界R(-3, -1))
+        self.assertEqual(249, keisan.結界R(99, 99))
+        for g in range(25):
+            for L in range(10):
+                R = keisan.結界R(g, L)
+                self.assertTrue(0 <= R <= 249)
+                # как шейдер: code = floor(msParam*250 + 0.5), msParam = R/250
+                code = int(math.floor(R / 250.0 * 250.0 + 0.5))
+                self.assertEqual((L, g), (code // 25, code - 25 * (code // 25)))
+                self.assertEqual((L, g), keisan.結界R解く(R))
+        self.assertAlmostEqual(1.024, keisan.表示倍率(0.5, 0.04), places=9)
+
+    def test_hex_inside(self):
+        r = 0.5
+        self.assertTrue(keisan.六角内(0.0, 0.0, r))
+        self.assertTrue(keisan.六角内(0.0, r, r))
+        self.assertFalse(keisan.六角内(0.0, r + 0.01, r))
+        self.assertTrue(keisan.六角内(math.sqrt(3.0) / 2.0 * r, 0.0, r))
+        self.assertFalse(keisan.六角内(math.sqrt(3.0) / 2.0 * r + 0.01, 0.0, r))
+        self.assertFalse(keisan.六角内(0.0, -r - 0.01, r))
+
+    def test_honeycomb_no_overlap_no_holes(self):
+        import random
+        c = keisan.蜂巣(3, 5, 0.5)
+        rnd = random.Random(7)
+        内 = 0.5 * (1.0 - 1e-6)
+        for _ in range(10000):
+            u = rnd.uniform(-1.08, 1.08)
+            v = rnd.uniform(-1.5, 1.5)
+            n = sum(1 for cu, cv in c if keisan.六角内(u - cu, v - cv, 内))
+            self.assertLessEqual(n, 1, (u, v))
+            self.assertTrue(any(keisan.六角内(u - cu, v - cv, 0.5) for cu, cv in c), (u, v))
+        # точно между рядами (линии стыка) — тоже покрыто
+        for u in (-1.0, -0.433013, 0.0, 0.2165, 0.9):
+            for v in (-1.125, -0.375, 0.375, 1.125):
+                self.assertTrue(any(keisan.六角内(u - cu, v - cv, 0.5) for cu, cv in c), (u, v))
+
+    def test_axes_and_anchor(self):
+        右, n = keisan.結界の軸(0.0)
+        self.assertTrue(近い((-1.0, 0.0, 0.0), 右))
+        self.assertTrue(近い((0.0, 0.0, 1.0), n))
+        右, n = keisan.結界の軸(90.0)
+        self.assertTrue(近い((0.0, 0.0, -1.0), 右))
+        self.assertTrue(近い((-1.0, 0.0, 0.0), n))
+        # 右 — правая рука: взгляд × вверх
+        for yaw in (0.0, 37.0, 90.0, 200.0, -45.0):
+            右, n = keisan.結界の軸(yaw)
+            up = (0.0, 1.0, 0.0)
+            cross = (n[1] * up[2] - n[2] * up[1], n[2] * up[0] - n[0] * up[2], n[0] * up[1] - n[1] * up[0])
+            self.assertTrue(近い(cross, 右), yaw)
+            self.assertTrue(近い(keisan.視線(yaw, 0.0), n), yaw)
+        self.assertTrue(近い((0.5, 65.87, 2.5), keisan.結界の中心((0.5, 65.62, 0.5), 0.0, 2.0, 0.25)))
+        self.assertTrue(近い((-1.5, 65.87, 0.5), keisan.結界の中心((0.5, 65.62, 0.5), 90.0, 2.0, 0.25)))
+
+    def test_segment_vs_barrier(self):
+        rec = _記録()                                    # центр (0.5, 65.87, 2.5), плоскость z = 2.5
+        c = rec.中心
+        # перпендикулярно через центр, с 10 блоков спереди (стрелок смотрит на заклинателя)
+        E = (c[0], c[1], c[2] + 10.0)
+        h = keisan.線分と結界(E, (0.0, 0.0, -1.0), 29.0, rec)
+        self.assertIsNotNone(h)
+        self.assertAlmostEqual(10.0, h[0], places=9)
+        self.assertEqual(7, h[1])
+        # сзади тоже
+        h = keisan.線分と結界((c[0], c[1], c[2] - 10.0), (0.0, 0.0, 1.0), 29.0, rec)
+        self.assertAlmostEqual(10.0, h[0], places=9)
+        self.assertEqual(7, h[1])
+        # параллельно плоскости
+        self.assertIsNone(keisan.線分と結界((c[0] - 10.0, c[1], c[2]), (1.0, 0.0, 0.0), 29.0, rec))
+        # барьер дальше D
+        self.assertIsNone(keisan.線分と結界(E, (0.0, 0.0, -1.0), 9.0, rec))
+        # мимо прямоугольника
+        self.assertIsNone(keisan.線分と結界((c[0], c[1] + 2.1, c[2] + 5.0), (0.0, 0.0, -1.0), 29.0, rec))
+        # зазубрина края: u = −1.45, v = 1.9 (локально) — внутри прямоугольника, но ни в одной ячейке
+        右 = rec.右
+        P = (c[0] + 右[0] * -1.45, c[1] + 1.9, c[2] + 右[2] * -1.45)
+        self.assertLessEqual(1.45, rec.半幅)
+        self.assertIsNone(keisan.線分と結界((P[0], P[1], P[2] + 5.0), (0.0, 0.0, -1.0), 29.0, rec))
+        # та же точка по u, но v = 1.5 — ячейка 12 (левая верхняя)
+        P = (c[0] + 右[0] * -1.0825, c[1] + 1.5, c[2])
+        self.assertEqual(12, keisan.線分と結界((P[0], P[1], P[2] + 5.0), (0.0, 0.0, -1.0), 29.0, rec)[1])
+        # наклонно, 45° в горизонтали: попадаем в центр
+        s = math.sqrt(0.5)
+        E2 = (c[0] - 6.0, c[1], c[2] + 6.0)
+        h = keisan.線分と結界(E2, (s, 0.0, -s), 29.0, rec)
+        self.assertAlmostEqual(6.0 * math.sqrt(2.0), h[0], places=9)
+        self.assertEqual(7, h[1])
+        # и сверху вниз под углом (pitch)
+        d = keisan.視線(180.0, 30.0)                      # на −Z и вниз
+        E3 = (c[0], c[1] + 5.0 * math.tan(math.radians(30.0)), c[2] + 5.0)
+        h = keisan.線分と結界(E3, d, 29.0, rec)
+        self.assertAlmostEqual(5.0 / math.cos(math.radians(30.0)), h[0], places=9)
+        self.assertEqual(7, h[1])
+
+    def test_block_world_expiry_nearest(self):
+        rec = _記録(今=1000)                              # живёт до 11000
+        c = rec.中心
+        E = (c[0], c[1], c[2] + 10.0)
+        d = (0.0, 0.0, -1.0)
+        self.assertEqual((10.0, 1, 7), tuple(round(x, 9) for x in keisan.遮断(E, d, 29.0, [rec], "world", 5000)))
+        self.assertIsNone(keisan.遮断(E, d, 29.0, [rec], "world_nether", 5000))
+        self.assertIsNone(keisan.遮断(E, d, 29.0, [rec], "world", 11000))
+        self.assertIsNone(keisan.遮断(E, d, 29.0, [], "world", 5000))
+        # два барьера: ближний побеждает (порядок в реестре не важен)
+        近 = _記録(id=2, eye=(0.5, 65.62, 4.5), 今=1000)    # плоскость z = 6.5
+        for recs in ([rec, 近], [近, rec]):
+            h = keisan.遮断(E, d, 29.0, recs, "world", 5000)
+            self.assertEqual(2, h[1])
+            self.assertAlmostEqual(6.0, h[0], places=9)
+
+    def test_truncation_and_side(self):
+        rec = _記録()                                    # плоскость z = 2.5, заклинатель на z = 0.5
+        c = rec.中心
+        E = (c[0], 65.62, 12.5)                           # стрелок в 10 блоках перед барьером, бьёт на −Z
+        d = (0.0, 0.0, -1.0)
+        def 箱(x, z, w=0.6, h=1.8, y=64.0):
+            return (x - w / 2, y, z - w / 2, x + w / 2, y + h, z + w / 2)
+        候補 = [("перед", 箱(c[0], 6.0)), ("заклинатель", 箱(c[0], 0.5)), ("стрелок", 箱(c[0], 12.5)),
+              ("вплотную", 箱(c[0], 2.3))]
+        h = keisan.遮断(E, d, 29.0, [rec], "world", 0)
+        D = h[0]
+        self.assertAlmostEqual(10.0, D, places=9)
+        r = keisan.当たり(E, d, D, 候補, "стрелок", 0.6)
+        ids = [i for _, i in r]
+        self.assertIn("перед", ids)
+        self.assertNotIn("заклинатель", ids)              # за барьером — без урона
+        # центр 0.2 за плоскостью: расширенный хитбокс дотягивается до D, но 手前か его отсекает
+        self.assertIn("вплотную", ids)
+        中 = lambda b: ((b[0] + b[3]) / 2, (b[1] + b[4]) / 2, (b[2] + b[5]) / 2)
+        表 = dict(候補)
+        ids2 = [i for _, i in r if keisan.手前か(rec, 中(表[i]), E)]
+        self.assertEqual(["перед"], ids2)
+        # свой барьер гасит и свой луч: заклинатель стреляет вперёд
+        E0 = (0.5, 65.62, 0.5)
+        h = keisan.遮断(E0, keisan.視線(0.0, 0.0), 29.0, [rec], "world", 0)
+        self.assertIsNotNone(h)
+        self.assertAlmostEqual(2.0, h[0], places=9)
+        self.assertTrue(keisan.手前か(rec, E0, E0))
+        self.assertFalse(keisan.手前か(rec, (0.5, 65.0, 3.0), E0))
+
+    def test_settings_barrier_and_mode(self):
+        s = settei.既定
+        b = s.結界
+        self.assertEqual("azerus:moon_staff_barrier", b.モデル)
+        self.assertEqual((20, 10.0, 15.0, 0.5, 2.0, 0.25, 0.5, 3, 5, 0.04, 6, 0.15, 0.15, 3, 12, 6, 4, 1.5),
+                         tuple(b[1:]))
+        self.assertEqual(settei.様式("beam", 300, True, True), s.様式)
+        for k in ("barrier-start", "barrier-cell", "barrier-formed", "barrier-hit", "barrier-end", "barrier-fizzle",
+                  "mode-beam", "mode-barrier"):
+            self.assertTrue(s.音表[k], k)
+        self.assertEqual(settei.音("block.beacon.power_select", settei.f32(0.8), settei.f32(1.6)),
+                         s.音表["barrier-formed"][0])
+        self.assertEqual(settei.粒("ELECTRIC_SPARK", 3, 0.15, 0.02, 0.0), s.形成粒)
+        self.assertEqual(settei.粒("END_ROD", 16, 0.12, 0.07, 0.0), s.打粒)
+        self.assertEqual(settei.粒("ELECTRIC_SPARK", 2, 0.2, 0.03, 0.0), s.終結粒)
+        for k in ("mode-beam", "mode-barrier", "barrier-charge", "barrier-ready", "barrier-cooldown",
+                  "barrier-too-early", "barrier-no-room"):
+            self.assertTrue(s.文(k), k)
+        self.assertIn("<bar>", s.文("barrier-charge"))
+        self.assertIn("<s>", s.文("barrier-ready"))
+        self.assertIn("<need>", s.文("barrier-too-early"))
+        self.assertIn("<barriers>", s.文("info"))
+
+    def test_settings_barrier_clamps(self):
+        warns = []
+        s = settei.解析({"barrier": {"charge-ticks": 10, "fly-ticks": 30, "cell-radius": 9, "item-model": "x y"},
+                        "mode": {"default": "x", "toggle-debounce-ms": 5}}, warns.append)
+        self.assertEqual(10, s.結界.充填)
+        self.assertEqual(9, s.結界.飛)
+        self.assertEqual(1.5, s.結界.半径)
+        self.assertEqual("azerus:moon_staff_barrier", s.結界.モデル)
+        self.assertEqual("beam", s.様式.既定)
+        self.assertEqual(50, s.様式.間隔)
+        for 道 in ("barrier.fly-ticks", "barrier.cell-radius", "barrier.item-model", "mode.default",
+                  "mode.toggle-debounce-ms"):
+            self.assertTrue(any(w.startswith(道) for w in warns), 道 + " не в " + repr(warns))
+        self.assertEqual("barrier", settei.解析({"mode": {"default": "Barrier"}}).様式.既定)
 
 
 if __name__ == "__main__":
