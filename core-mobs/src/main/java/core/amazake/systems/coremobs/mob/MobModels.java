@@ -22,7 +22,7 @@ import org.bukkit.plugin.Plugin;
  *       проверяем: модель уже висит — ничего, нет — вешаем. Два раза модель не вешается (сначала смотрим
  *       ModeledEntity моба). Модели помечены «не сохранять», восстанавливает их только core-mobs.</li>
  *   <li>ModelEngine ещё грузит модели (первые секунды после старта) — моб пока без модели; когда модели
- *       загрузятся, CoreMobsSystem повесит их мобам рядом с игроками и мобам регионов.</li>
+ *       загрузятся, моб получит модель сам (повтор раз в 2 с, до 2 минут), а CoreMobsSystem ещё раз пройдёт мобов рядом с игроками и мобов регионов.</li>
  *   <li>idle, walk, death проигрывает сам ModelEngine; attack — при выстреле из лука и ударе моба в ближнем бою,
  *       hit — когда моба ударила сущность и он выжил (огонь, яд, падение — без hit).</li>
  *   <li>Модель принадлежит ModelEngine: при выключении core-mobs не снимается, при смерти или удалении моба её
@@ -81,9 +81,28 @@ public final class MobModels implements Listener {
     }
 
     private void ensureOwned(final Entity entity) {
-        if (MobService.ownedAndValid(entity)) {
-            this.ensure(entity, this.mobs.defOf(entity));
+        this.ensureOwned(entity, 0);
+    }
+
+    /** Сколько раз (по 2 с) ждать, пока ModelEngine загрузит blueprint, — 2 минуты, как CoreMobsSystem#checkModels. */
+    static final int PENDING_RETRIES = 60;
+
+    private void ensureOwned(final Entity entity, final int attempt) {
+        if (!MobService.ownedAndValid(entity)) {
+            return;
         }
+        final MobDef def = this.mobs.defOf(entity);
+        if (def == null || def.model() == null) {
+            return;
+        }
+        if (this.hook.pending(def.model().id())) {
+            // ModelEngine ещё грузит модели: повторить позже (планировщик сущности; моб выгрузился — задача снимется)
+            if (attempt < PENDING_RETRIES) {
+                entity.getScheduler().runDelayed(this.plugin, task -> this.ensureOwned(entity, attempt + 1), null, 40L);
+            }
+            return;
+        }
+        this.ensure(entity, def);
     }
 
     /**

@@ -193,6 +193,11 @@ public final class ModelHook {
         return this.blueprint(id) != Boolean.FALSE;
     }
 
+    /** Blueprint модели ещё не загружен (ModelEngine есть, модели нет — возможно, ещё грузится). */
+    public boolean pending(final String id) {
+        return this.blueprint(id) == Boolean.FALSE;
+    }
+
     /**
      * Blueprint модели: TRUE — есть, FALSE — нет (ещё не загружен или такой модели нет), null — ModelEngine нет или
      * проверить нельзя. ModelEngine R4 регистрирует модели асинхронно уже после включения плагина, поэтому FALSE
