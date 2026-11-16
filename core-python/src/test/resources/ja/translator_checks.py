@@ -1,6 +1,7 @@
 # Проверки переводчика японского режима (amazake_ja) — без Java: запускаются и CPython 3.12+, и GraalPy (тест хоста).
 #   python3 src/test/resources/ja/translator_checks.py src/host/resources/python
 import ast
+import io
 import re
 import os
 import sys
@@ -26,7 +27,8 @@ def check(name):
 
 
 def same_shape(src, out):
-    a, b = src.splitlines(keepends=True), out.splitlines(keepends=True)
+    # Строки — как их режет tokenize/compile: только по \n (не str.splitlines, который режет и по \x0c, \x85, U+2028).
+    a, b = io.StringIO(src).readlines(), io.StringIO(out).readlines()
     assert len(a) == len(b), (len(a), len(b))
     for i, (x, y) in enumerate(zip(a, b), 1):
         assert len(x.encode()) == len(y.encode()), (i, x, y)
@@ -158,28 +160,103 @@ def _():
            "名 = 袋.__名前__\n")
     out = ja.translate(src)
     same_shape(src, out)
-    assert re.search(r"def +append\(", out) and re.search(r"def +追加\(甲", out), out
+    assert re.search(r"def +append\(自分", out) and re.search(r"def +append\(甲", out), out
     ja.install_builtins()
     g = {}
     exec(ja.compile_ja(src, "<t>"), g)
     assert len(g["袋一"]) == 1 and g["袋一"].中 == [5]
     assert g["袋"].append.印付き is True
-    assert g["追加"](1) == 2
+    assert g["append"](1) == 2     # слова методов переводятся везде (одно имя во всех местах)
     assert g["名"] == "袋"
 
 
-@check("method words are not translated as plain names")
+@check("method words are translated everywhere, so definition and access agree")
 def _():
-    src = "取得 = 1\n更新 = 取得 + 1\n"
+    src = ("取得 = 1\n更新 = 取得 + 1\n"
+           "型定義 甲:\n"
+           "    取得 = 5\n"
+           "    もし はい:\n"
+           "        関数 追加(自分, 乙):\n"
+           "            返す 乙 + 1\n"
+           "    試す:\n"
+           "        関数 除去(自分):\n"
+           "            返す 7\n"
+           "    最後に:\n"
+           "        何もしない\n"
+           "関数 呼(取り出す=3):\n"
+           "    返す 取り出す\n"
+           "結果 = (甲.取得, 甲().取得, 甲().追加(1), 甲().除去(), 更新, 呼(取り出す=4), 属性取得(甲, \"get\"))\n")
     out = ja.translate(src)
-    assert out == src
+    same_shape(src, out)
+    ja.install_builtins()
+    g = {}
+    exec(ja.compile_ja(src, "<t>"), g)
+    assert g["結果"] == (5, 5, 2, 7, 2, 4, 5), g["結果"]
 
 
-@check("one-line class does not leak class-body state")
+@check("method words: module-level function in another file is reachable as module.word")
 def _():
-    src = "型定義 甲: 何もしない\n関数 追加(乙):\n    返す 乙\n"
-    out = ja.translate(src)
-    assert re.search(r"def +追加\(", out), out
+    d = tempfile.mkdtemp()
+    with open(os.path.join(d, "jadougu.py"), "w", encoding="utf-8") as f:
+        f.write("関数 更新(甲):\n    返す 甲 * 3\n")
+    sys.path.insert(0, d)
+    try:
+        ja.install(d)
+        g = {}
+        exec(ja.compile_ja("取り込む jadougu\n値 = jadougu.更新(2)\nから jadougu 取り込む 更新\n値2 = 更新(3)\n", "<t>"), g)
+        assert g["値"] == 6 and g["値2"] == 9, g
+    finally:
+        sys.path.remove(d)
+
+
+@check("line breaks other than \\n (\\x0c, \\x0b, \\x1c, \\x85, U+2028, U+2029) inside strings and comments")
+def _():
+    ja.install_builtins()
+    for ch in ("\x0c", "\x0b", "\x1c", "\x1d", "\x1e", "\x85", "\u2028", "\u2029"):
+        srcs = ["# a" + ch + " b\nもし はい:\n    甲 = 無し\n",
+                "文 = \"a" + ch + "b\"\nもし はい:\n    甲 = 無し\n",
+                "文 = \"\"\"x\n" + ch + " y\"\"\" + 文字列(無し)\nもし はい:\n    甲 = 無し\n"]
+        if ch == "\x0c":
+            srcs.append("\x0cもし はい:\n    甲 = 無し\n")      # form feed — пробельный знак Python
+        for src in srcs:
+            out = ja.translate(src)
+            same_shape(src, out)
+            g = {}
+            exec(ja.compile_ja(src, "<t>"), g)
+            assert "甲" in g and g["甲"] is None, (repr(src), repr(out))
+    # SyntaxError после такого знака — та же строка и тот же текст
+    src = "# a\u2028 b\nもし はい:\n    甲 = (1 +)\n"
+    try:
+        ja.compile_ja(src, "<t>")
+        raise AssertionError("no error")
+    except SyntaxError as e:
+        assert e.lineno == 3 and e.text.startswith("    甲 = (1 +)"), (e.lineno, e.text)
+
+
+@check("NFKC: half-width katakana forms of keywords are keywords; BOM is accepted")
+def _():
+    ja.install_builtins()
+    g = {}
+    exec(ja.compile_ja("甲 = ﾗﾑﾀﾞ: 7\n乙 = ﾘｽﾄ((1,))\n", "<t>"), g)
+    assert g["甲"]() == 7 and g["乙"] == [1]
+    out = ja.translate("\ufeffもし はい:\n    甲 = 1\n")
+    assert out.startswith("if"), repr(out)
+
+
+@check("syntax hint only near the error or at statement start; NameError hint")
+def _():
+    try:
+        ja.compile_ja("各プレイヤー = 非表示 + (1 +)\n", "<t>")
+        raise AssertionError("no error")
+    except SyntaxError as e:
+        assert "hint" not in e.msg, e.msg
+    try:
+        ja.compile_ja("甲 = 1\nもし甲 > 0:\n    返す\n", "<t>")
+        raise AssertionError("no error")
+    except SyntaxError as e:
+        assert "put a space after the keyword 'もし'" in e.msg, e.msg
+    assert "'返す' (return)" in ja.name_hint("返す値")
+    assert ja.name_hint("プレイヤー") is None and ja.name_hint("返す") is None
 
 
 @check("match / case soft keywords")

@@ -14,6 +14,7 @@ import org.graalvm.polyglot.Value;
 /** Ошибки Python в лог: с трассой Python, одинаковые — не чаще раза в 30 секунд (с числом пропущенных). */
 final class ErrorLog {
 
+    private static final java.util.regex.Pattern NAME_ERROR = java.util.regex.Pattern.compile("name '([^']+)' is not defined");
     private static final long INTERVAL = TimeUnit.SECONDS.toNanos(30);
 
     private final Logger logger;
@@ -37,17 +38,20 @@ final class ErrorLog {
         final String key = where + '|' + message;
         final long now = System.nanoTime();
         final long[] slot = this.last.computeIfAbsent(key, k -> new long[]{now - INTERVAL - 1, 0});
+        final long skipped;
+        // Под замком — только решение «печатать или нет». Текст — снаружи: format читает объекты Python (нужен GIL);
+        // держать монитор, ожидая GIL, — взаимная блокировка с потоком, который держит GIL и ждёт этот монитор.
         synchronized (slot) {
             if (now - slot[0] < INTERVAL) {
                 slot[1]++;
                 return;
             }
-            final long skipped = slot[1];
+            skipped = slot[1];
             slot[0] = now;
             slot[1] = 0;
-            this.logger.severe(this.prefix + "ошибка в " + where + ": " + format(e, this.base)
-                + (skipped > 0 ? "\n  (ещё " + skipped + " таких же за 30 с не показаны)" : ""));
         }
+        this.logger.severe(this.prefix + "ошибка в " + where + ": " + format(e, this.base)
+            + (skipped > 0 ? "\n  (ещё " + skipped + " таких же за 30 с не показаны)" : ""));
         if (this.last.size() > 512) {
             this.last.clear();
         }
@@ -65,6 +69,7 @@ final class ErrorLog {
     static String format(final Throwable e, final Path base) {
         final StringBuilder b = new StringBuilder(String.valueOf(e.getMessage()));
         if (e instanceof PolyglotException pe) {
+            nameHint(pe, b);
             syntaxLocation(pe, b, base);
             if (!pythonFrames(pe, b, base)) {
                 int n = 0;
@@ -93,6 +98,8 @@ final class ErrorLog {
             if (pe.isHostException()) {
                 final Throwable host = pe.asHostException();
                 b.append("\n    причина в Java: ").append(host);
+            } else {
+                javaCause(pe, b);
             }
         } else {
             b.insert(0, e.getClass().getSimpleName() + ": ");
@@ -158,6 +165,78 @@ final class ErrorLog {
             return true;
         } catch (final RuntimeException ex) {
             return false;
+        }
+    }
+
+    /** Исключение Python с полем java (amazake.JavaError): первые кадры и причина исходного исключения Java. */
+    private static void javaCause(final PolyglotException pe, final StringBuilder b) {
+        if (!pe.isGuestException()) {
+            return;
+        }
+        try {
+            final Value g = pe.getGuestObject();
+            if (g == null || g.isNull() || !g.hasMember("java")) {
+                return;
+            }
+            final Value j = g.getMember("java");
+            if (j == null || j.isNull()) {
+                return;
+            }
+            Throwable t = null;
+            if (j.isHostObject() && j.asHostObject() instanceof Throwable h) {
+                t = h;
+            } else if (j.isException()) {
+                try {
+                    j.throwException();
+                } catch (final PolyglotException x) {
+                    t = x.isHostException() ? x.asHostException() : null;
+                }
+            }
+            if (t == null) {
+                return;
+            }
+            final StackTraceElement[] st = t.getStackTrace();
+            for (int i = 0; i < Math.min(5, st.length); i++) {
+                b.append("\n    (java) ").append(st[i]);
+            }
+            b.append("\n    причина в Java: ").append(t);
+            if (t.getCause() != null && t.getCause() != t) {
+                b.append("\n    caused by: ").append(t.getCause());
+            }
+        } catch (final RuntimeException ignored) {
+            // контекст закрыт или объект необычный
+        }
+    }
+
+    /**
+     * NameError в японской системе (модуль amazake_ja загружен): имя начинается с ключевого слова (`返す値`) —
+     * подсказка про пробел, сразу после сообщения.
+     */
+    private static void nameHint(final PolyglotException pe, final StringBuilder b) {
+        if (!pe.isGuestException() || pe.isHostException()) {
+            return;
+        }
+        try {
+            final Value g = pe.getGuestObject();
+            if (g == null || g.isNull() || g.getMetaObject() == null
+                || !"NameError".equals(g.getMetaObject().getMetaSimpleName())) {
+                return;
+            }
+            // NameError.name в GraalPy не виден как член объекта — имя из сообщения «name 'X' is not defined».
+            final java.util.regex.Matcher m = NAME_ERROR.matcher(String.valueOf(pe.getMessage()));
+            if (!m.find()) {
+                return;
+            }
+            final Value ja = g.getContext().eval("python", "__import__('sys').modules.get('amazake_ja')");
+            if (ja == null || ja.isNull() || !ja.hasMember("name_hint")) {
+                return;
+            }
+            final Value hint = ja.getMember("name_hint").execute(m.group(1));
+            if (hint != null && hint.isString()) {
+                b.append(" (").append(hint.asString()).append(')');
+            }
+        } catch (final RuntimeException ignored) {
+            // контекст закрыт или объект необычный — без подсказки
         }
     }
 

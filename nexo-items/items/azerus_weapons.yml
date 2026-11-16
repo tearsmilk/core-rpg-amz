@@ -214,10 +214,13 @@ azerus_moon_staff:
     - "<gray>Посох странника, что ходит"
     - "<gray>лунными дорогами между мирами."
     - ""
-    - "<#7fd8ff>✦ <gray>Зажмите <white>ПКМ</white> на <white>3 с</white> — откроется магический круг."
-    - "<#7fd8ff>✦ <gray>Отпустите — <white>луч света</white> пронзит всех на пути:"
-    - "<gray>   <#ff6a6a>10 урона</#ff6a6a>, до <white>29 блоков</white>."
-    - "<#7fd8ff>✦ <gray>Перезарядка: <white>3 с</white>."
+    - "<#7fd8ff>✦ <white>Луч</white><gray>: зажмите <white>ПКМ</white> на <white>3 с</white> — магический круг;"
+    - "<gray>   отпустите — <white>луч света</white> пронзит всех на пути:"
+    - "<gray>   <#ff6a6a>10 урона</#ff6a6a>, до <white>29 блоков</white>, перезарядка <white>3 с</white>."
+    - "<#7fd8ff>✦ <white>Барьер</white><gray>: зажмите <white>ПКМ</white> на <white>1 с</white> — стена"
+    - "<gray>   из шестигранников на <white>10 с</white>, гасит лучи магии;"
+    - "<gray>   перезарядка <white>15 с</white>."
+    - "<#7fd8ff>✦ <white>Shift + ПКМ</white><gray> — сменить заклинание."
   Pack:
     model: azerus:item/moon_staff
   Components:

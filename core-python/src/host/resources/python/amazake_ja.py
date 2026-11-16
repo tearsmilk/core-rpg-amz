@@ -14,10 +14,12 @@ CPython 3.12+ (tokenize).
 import builtins as _builtins
 import importlib.machinery as _machinery
 import importlib.util as _util
+import _imp
 import io as _io
 import os as _os
 import sys as _sys
 import tokenize as _tokenize
+import unicodedata as _unicodedata
 
 # ---------------------------------------------------------------------------------------------
 # Словарь (docs/japanese-mode-vocabulary.md §2, §2.3, §3.3)
@@ -79,7 +81,10 @@ DUNDERS = {
     "__名前__": "__name__",
 }
 
-#: §3.3 Методы встроенных типов: переводятся после «.» и в имени `関数` прямо в теле `型定義`.
+#: §3.3 Методы встроенных типов. Переводятся ВЕЗДЕ, как dunder-имена (после «.», в def/class, в присваиваниях, в
+#: импорте, в именах аргументов): одно и то же слово во всех файлах системы — одно и то же английское имя, поэтому
+#: `型定義 甲: 取得 = 5` и `甲.取得`, `関数 更新()` в модуле и `模.更新()` согласованы. Эти слова — английские имена
+#: атрибутов; в строках (属性取得(x, "get"), ключи словарей) нужно английское слово.
 METHODS = {
     "取得": "get",
     "キー一覧": "keys",
@@ -158,6 +163,21 @@ _FULLWIDTH_EXTRA = {"\u3000": " ", "、": ",", "。": ".", "「": '"', "」": '"
 # Перевод
 # ---------------------------------------------------------------------------------------------
 
+def _lines(source):
+    """Строки так, как их режет tokenize/compile — только по \\n (str.splitlines режет ещё по \\x0c, \\x85, U+2028…)."""
+    return _io.StringIO(source).readlines()
+
+
+def _lookup(s):
+    """Английское слово для токена NAME (или None). Python нормализует имена по NFKC: ﾑｼ — то же, что 無し."""
+    en = KEYWORDS.get(s) or DUNDERS.get(s) or METHODS.get(s)
+    if en is None and not s.isascii():
+        n = _unicodedata.normalize("NFKC", s)
+        if n != s:
+            en = KEYWORDS.get(n) or DUNDERS.get(n) or METHODS.get(n)
+    return en
+
+
 def _pad(ja, en):
     return en + " " * (len(ja.encode("utf-8")) - len(en))
 
@@ -192,60 +212,26 @@ def _apply(lines, edits):
 
 def _scan(source, lines, edits):
     """Проход по токенам: заполняет edits. Возвращает None или (строка, столбец, совет) — недопустимый знак."""
-    prev_dot = False        # предыдущий значимый токен — «.»
-    stack = []              # для каждого INDENT: это тело `class`?
-    class_pending = False   # видели `class` — тело будет классом, если после NEWLINE придёт INDENT
-    expect_class_body = False
-    def_in_class = False    # видели `def` прямо в теле класса: следующее имя — метод
-    NAME, OP = _tokenize.NAME, _tokenize.OP
+    NAME = _tokenize.NAME
     for tok in _tokenize.generate_tokens(_io.StringIO(source).readline):
         tt = tok.type
-        if tt == _tokenize.NEWLINE:
-            expect_class_body = class_pending
-            class_pending = False
-            def_in_class = False
-            continue
-        if tt == _tokenize.INDENT:
-            stack.append(expect_class_body)
-            expect_class_body = False
-            continue
-        if tt == _tokenize.DEDENT:
-            if stack:
-                stack.pop()
-            continue
-        if tt == _tokenize.NL or tt == _tokenize.COMMENT:
-            continue
-        expect_class_body = False
         if tt == NAME:
             s = tok.string
-            en = KEYWORDS.get(s)
-            if en is None:
-                en = DUNDERS.get(s)
-                if en is None and (prev_dot or def_in_class):
-                    en = METHODS.get(s)
-                if en is None and not s.isidentifier():
-                    bad = _bad_char(s)
-                    if bad is not None:
-                        return tok.start[0], tok.start[1] + bad[0], bad[1]
-            def_in_class = False
+            en = _lookup(s)
             if en is not None:
-                if en == "class":
-                    class_pending = True
-                elif en == "def" and stack and stack[-1]:
-                    def_in_class = True
+                if len(s.encode("utf-8")) < len(en):
+                    # Совместимая форма короче английского слова (например, ㍿-подобные знаки): не уложить на место.
+                    return tok.start[0], tok.start[1], "write the keyword %r in its standard form" % s
                 row, col = tok.start
                 edits.setdefault(row, []).append((col, tok.end[1], _pad(s, en)))
-            elif s == "class":
-                class_pending = True
-            elif s == "def" and stack and stack[-1]:
-                def_in_class = True
-            prev_dot = False
+            elif not s.isidentifier():
+                bad = _bad_char(s)
+                if bad is not None:
+                    return tok.start[0], tok.start[1] + bad[0], bad[1]
             continue
         if tt == _tokenize.ERRORTOKEN and tok.string.strip():
             bad = _bad_char(tok.string) or (0, "invalid character %r" % tok.string[0])
             return tok.start[0], tok.start[1] + bad[0], bad[1]
-        def_in_class = False
-        prev_dot = tt == OP and tok.string == "."
     return None
 
 
@@ -257,7 +243,9 @@ def translate(source, filename="<string>"):
     """
     if not source:
         return source
-    lines = source.splitlines(keepends=True)
+    if source[0] == "\ufeff":
+        source = source[1:]     # BOM (decode_source убирает его сам; здесь — для прямых вызовов translate(str))
+    lines = _lines(source)
     edits = {}
     try:
         bad = _scan(source, lines, edits)
@@ -277,20 +265,49 @@ def translate(source, filename="<string>"):
     return _apply(lines, edits) if edits else source
 
 
-def _hint(line):
-    """Подсказка §6.2: токен NAME начинается с ключевого слова (`もしx`) — забыт пробел."""
+def _glued(name):
+    """Ключевое слово, к которому без пробела приклеено продолжение (`もしx` → 'もし'), или None."""
+    if name in KEYWORDS or name in DUNDERS:
+        return None
+    for kw in _RESERVED_BY_LENGTH:
+        if len(name) > len(kw) and name.startswith(kw):
+            return kw
+    return None
+
+
+def name_hint(name):
+    """Подсказка к NameError японской системы: имя начинается с ключевого слова (`返す値`) — возможно, забыт пробел."""
+    kw = _glued(str(name)) if name else None
+    if kw is None:
+        return None
+    return "hint: if %r was meant as the keyword %r (%s), put a space after it" % (name, kw, KEYWORDS[kw])
+
+
+def _hint(line, offset=None):
+    """Подсказка §6.2 для SyntaxError: токен NAME начинается с ключевого слова (`もしx`) — забыт пробел.
+
+    Только если такой токен стоит в начале оператора (первое имя строки) или рядом с местом ошибки (offset, с 1):
+    обычные имена вроде 非表示 / 各プレイヤー в другой части строки подсказку не дают."""
     if not line:
         return None
     try:
         toks = list(_tokenize.generate_tokens(_io.StringIO(line if line.endswith("\n") else line + "\n").readline))
     except (_tokenize.TokenError, SyntaxError):
         return None
-    for tok in toks:
-        if tok.type != _tokenize.NAME or tok.string in KEYWORDS or tok.string in DUNDERS:
+    toks = [t for t in toks
+            if t.type not in (_tokenize.INDENT, _tokenize.DEDENT, _tokenize.NL, _tokenize.NEWLINE, _tokenize.COMMENT)]
+    for i, tok in enumerate(toks):
+        if tok.type != _tokenize.NAME:
             continue
-        for kw in _RESERVED_BY_LENGTH:
-            if len(tok.string) > len(kw) and tok.string.startswith(kw):
-                return "hint: %r is a single name; put a space after the keyword %r (%s)" % (tok.string, kw, KEYWORDS[kw])
+        kw = _glued(tok.string)
+        if kw is None:
+            continue
+        near = offset is not None and tok.start[1] - 1 <= offset - 1 <= tok.end[1] + 1
+        # Первое имя оператора — но не цель присваивания / не объект атрибута (`各プレイヤー = …`, `非表示.x`).
+        nxt = toks[i + 1].string if i + 1 < len(toks) and toks[i + 1].type == _tokenize.OP else ""
+        target = nxt == "." or (nxt.endswith("=") and nxt not in ("==", "!=", "<=", ">="))
+        if (i == 0 and not target) or near:
+            return "hint: %r is a single name; put a space after the keyword %r (%s)" % (tok.string, kw, KEYWORDS[kw])
     return None
 
 
@@ -299,8 +316,8 @@ def _fix_syntax_error(e, source, translated, filename):
     lineno = e.lineno
     if not lineno:
         return e
-    src_lines = source.splitlines()
-    tr_lines = translated.splitlines()
+    src_lines = [ln.rstrip("\r\n") for ln in _lines(source)]
+    tr_lines = [ln.rstrip("\r\n") for ln in _lines(translated)]
     if not (1 <= lineno <= len(src_lines)):
         return e
     original = src_lines[lineno - 1]
@@ -318,7 +335,7 @@ def _fix_syntax_error(e, source, translated, filename):
             idx = len(original)
         offset = idx + 1
     msg = e.msg or "invalid syntax"
-    hint = _hint(original)
+    hint = _hint(original, offset)
     if hint and hint not in msg:
         msg = msg + " (" + hint + ")"
     return type(e)(msg, (filename, lineno, offset, original + "\n"))
@@ -350,6 +367,13 @@ class _JaLoader(_machinery.SourceFileLoader):
         return compile_ja(_util.decode_source(data) if isinstance(data, bytes) else data, path)
 
 
+def _is_frozen(name):
+    try:
+        return bool(_imp.is_frozen(name))
+    except Exception:
+        return False
+
+
 class _JaFinder:
     """Модули, чей файл лежит в папке системы, — через _JaLoader; остальные (stdlib, amazake) — как обычно."""
 
@@ -361,6 +385,8 @@ class _JaFinder:
         return p == self.folder or p.startswith(self.folder + _os.sep)
 
     def find_spec(self, fullname, path=None, target=None):
+        if fullname in _sys.builtin_module_names or _is_frozen(fullname):
+            return None
         spec = _machinery.PathFinder.find_spec(fullname, path, target)
         if spec is None or not spec.origin or not spec.origin.endswith(".py") or not self._inside(spec.origin):
             return None
@@ -398,7 +424,12 @@ def install(folder):
         if isinstance(f, _JaFinder) and f.folder == _os.path.normcase(_os.path.abspath(folder)):
             break
     else:
-        _sys.meta_path.insert(0, _JaFinder(folder))
+        # После встроенных и замороженных импортёров: обычные правила затенения (.py системы не перекрывает sys и т.п.).
+        i = 0
+        for j, f in enumerate(_sys.meta_path):
+            if f in (_machinery.BuiltinImporter, _machinery.FrozenImporter):
+                i = j + 1
+        _sys.meta_path.insert(i, _JaFinder(folder))
     install_builtins()
 
 

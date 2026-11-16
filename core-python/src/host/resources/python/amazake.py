@@ -776,24 +776,44 @@ def _クラス化(表, 名="包み"):
 _専用キャッシュ = {}
 
 
-def _専用クラス(生):
-    """Подкласс 包み для Java-класса объекта (создаётся один раз на класс)."""
+_汎用 = None
+
+
+def _専用クラス(生, 空なら=False):
+    """Подкласс 包み для Java-класса объекта (создаётся один раз на класс). Нет японской таблицы: 空なら=True → None,
+    иначе подкласс без японских имён (всё — атрибуты Java)."""
+    global _汎用
     try:
         key = 生.getClass().getName()
     except BaseException:
         key = None
-    c = _専用キャッシュ.get(key)
+    c = _専用キャッシュ.get(key) if key is not None else None
     if c is None:
-        c = _クラス化(_表を得る(生) if key is not None else {})
-        _専用キャッシュ[key] = c
+        t = _表を得る(生) if key is not None else _空表
+        c = _クラス化(t) if t else False
+        if key is not None:
+            _専用キャッシュ[key] = c
+    if c is False:
+        if 空なら:
+            return None
+        if _汎用 is None:
+            _汎用 = _クラス化(_空表)
+        return _汎用
     return c
 
 
 def 包む(物):
-    """Java-объект → 包み (японские атрибуты). None, объекты Python и уже обёрнутые — как есть."""
+    """Java-объект → 包み (японские атрибуты). None, объекты Python, уже обёрнутые и объекты Java без японской таблицы
+    (коллекции, массивы, Map, прочие классы) — как есть: их длина, перебор, индексы и истинность работают как у Java.
+    Класс обёртки выбирается сразу (один вызов getClass на объект; таблица — один раз на класс Java)."""
     if 物 is None or isinstance(物, 包み) or _ForeignObject is None or not isinstance(物, _ForeignObject):
         return 物
-    return 包み(物)
+    c = _専用クラス(物, True)
+    if c is None:
+        return 物
+    w = object.__new__(c)
+    object.__setattr__(w, "_生", 物)
+    return w
 
 
 def 解く(物):
@@ -979,7 +999,7 @@ _プレイヤー表 = {
     "表示名": _P(lambda o: o.displayName(), lambda o, v: o.displayName(None if v is None else _文(v))),
     "タイトル表示": _M(lambda o, 題, 副題="": o.showTitle(_型("net.kyori.adventure.title.Title").title(_文(題), _文(副題)))),
     "音を鳴らす": _M(_音を鳴らす),
-    "追い出す": _M(lambda o, 理由="": o.kick(_文(理由))),
+    "追い出す": _M(lambda o, 理由=None: o.kick() if 理由 is None else o.kick(_文(理由))),
 }
 
 
@@ -1014,7 +1034,9 @@ def _ネクソ識別子(o):
 
 
 _アイテム表 = {
-    "種類": _P(lambda o: o.getType(), lambda o, v: o.setType(_素材値(v))),
+    # Только чтение: ItemStack.setType в Paper 1.21.11 устарел (может терять компоненты). Другой материал —
+    # 甘酒.アイテム作成(素材, 数) или 甘酒.解く(x).withType(...).
+    "種類": _P(lambda o: o.getType()),
     "数": _P(lambda o: o.getAmount(), lambda o, v: o.setAmount(int(v))),
     "最大スタック": _P(lambda o: o.getMaxStackSize()),
     "空か": _P(lambda o: bool(o.isEmpty())),
@@ -1302,7 +1324,7 @@ def イベント時(イベント, 優先度="通常", 取消済み無視=False):
 
     def deco(処理):
         def 受け(e):
-            return 処理(包み(e))
+            return 処理(包み(e))     # всегда обёртка (и у события без японских имён)
 
         _host.listen(ev, pr, bool(取消済み無視), 受け)
         return 処理
@@ -1512,12 +1534,12 @@ def アクションバー(プレイヤー, 文, 置換=None, **他):
 
 def 空のアイテム():
     """ItemStack.empty() (обёрнут)."""
-    return 包み(_型("org.bukkit.inventory.ItemStack").empty())
+    return 包む(_型("org.bukkit.inventory.ItemStack").empty())
 
 
 def アイテム作成(素材, 数=1):
     """new ItemStack(素材, 数) (обёрнут); 素材 — строка ("DIAMOND", "minecraft:diamond") или Material."""
-    return 包み(_型("org.bukkit.inventory.ItemStack")(_素材値(素材), int(数)))
+    return 包む(_型("org.bukkit.inventory.ItemStack")(_素材値(素材), int(数)))
 
 
 def 素材(名前):

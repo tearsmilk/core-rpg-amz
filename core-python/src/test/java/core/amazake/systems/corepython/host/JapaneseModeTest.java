@@ -292,6 +292,8 @@ class JapaneseModeTest {
                     sukeru.壊れる(無し)
                 もし イベント.getPayload() == "java":
                     甘酒.呼ぶ(甘酒.ジャバ型("java.lang.Integer"), "parseInt", "abc")
+                もし イベント.getPayload() == "glued":
+                    返す値
                 イベント.mark("ok")
             """.formatted(TEST_EVENT));
         Files.writeString(dir.resolve("sukeru.py"), """
@@ -315,6 +317,12 @@ class JapaneseModeTest {
         final String log3 = String.join("\n", this.platform.log);
         assertTrue(log3.contains("JavaError: java.lang.NumberFormatException"), log3);
         assertTrue(log3.contains("main.py\", line 11, in 受信"), log3);
+        // JavaError: кадры и причина исходного исключения Java сохраняются
+        assertTrue(log3.contains("(java) java.base/java.lang.NumberFormatException") && log3.contains("причина в Java: java.lang.NumberFormatException"), log3);
+        this.platform.fire(new TestEvent("glued"));
+        final String log4 = String.join("\n", this.platform.log);
+        assertTrue(log4.contains("NameError") && log4.contains("put a space after it"), log4);
+        assertTrue(log4.contains("main.py\", line 13, in 受信"), log4);
         final TestEvent ok = new TestEvent("fine");
         this.platform.fire(ok);
         assertEquals(List.of("ok"), ok.marks);
@@ -406,6 +414,15 @@ class JapaneseModeTest {
                 アイテム = イベント.アイテム
                 表明 アイテム.ネクソ識別子 == "small_mana_potion" かつ 非 アイテム.空か
                 表明 文字列(アイテム.種類) == "POTION"
+                試す:
+                    アイテム.種類 = "DIAMOND"
+                    表明 いいえ, "item type must be read-only (ItemStack.setType is deprecated)"
+                捕まえる 属性エラー:
+                    何もしない
+                一覧 = 甘酒.包む(甘酒.ジャバ型("java.util.ArrayList")())
+                表明 非 一覧 かつ 長さ(一覧) == 0 かつ 甘酒.解く(一覧) である 一覧
+                一覧.add(1)
+                表明 [x 各 x 於 甘酒.包む(一覧)] == [1]
                 表明 甘酒.永続データ(アイテム).文字列で読む("nexo:id") == "small_mana_potion"
                 表明 イベント.取消済み である いいえ
                 イベント.取り消す()
