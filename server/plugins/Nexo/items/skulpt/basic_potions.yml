@@ -1,0 +1,62 @@
+small_health_potion:
+  itemname: Small Health Potion
+  material: POTION
+  Pack:
+    model: skulpt/basic_potions/small_health_potion
+    custom_model_data:
+
+medium_health_potion:
+  itemname: Medium Health Potion
+  material: POTION
+  Pack:
+    model: skulpt/basic_potions/medium_health_potion
+    custom_model_data:
+
+large_health_potion:
+  itemname: Large Health Potion
+  material: POTION
+  Pack:
+    model: skulpt/basic_potions/large_health_potion
+    custom_model_data:
+
+small_mana_potion:
+  itemname: Small Mana Potion
+  material: POTION
+  Pack:
+    model: skulpt/basic_potions/small_mana_potion
+    custom_model_data:
+
+medium_mana_potion:
+  itemname: Medium Mana Potion
+  material: POTION
+  Pack:
+    model: skulpt/basic_potions/medium_mana_potion
+    custom_model_data:
+
+large_mana_potion:
+  itemname: Large Mana Potion
+  material: POTION
+  Pack:
+    model: skulpt/basic_potions/large_mana_potion
+    custom_model_data:
+
+small_stamina_potion:
+  itemname: Small Stamina Potion
+  material: POTION
+  Pack:
+    model: skulpt/basic_potions/small_stamina_potion
+    custom_model_data:
+
+medium_stamina_potion:
+  itemname: Medium Stamina Potion
+  material: POTION
+  Pack:
+    model: skulpt/basic_potions/medium_stamina_potion
+    custom_model_data:
+
+large_stamina_potion:
+  itemname: Large Stamina Potion
+  material: POTION
+  Pack:
+    model: skulpt/basic_potions/large_stamina_potion
+    custom_model_data: # 65215SODOZ1DQ8BDHKQE31ZVYX

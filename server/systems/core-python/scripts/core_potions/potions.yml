@@ -1,0 +1,12 @@
+# Зелья по id предмета Nexo (plugins/Nexo/items/skulpt/basic_potions.yml).
+#   effects       — эффекты: type (regeneration, speed, …), seconds, level (1 = I)
+#   health-boost  — прибавка к максимальному здоровью: hearts (можно дробно), seconds
+#   keep-bottle   — оставлять пустую бутылку (false — зелье просто пропадает)
+#   message       — сообщение над хотбаром (MiniMessage, пусто — без сообщения)
+potions:
+  small_health_potion:
+    effects:
+      - {type: regeneration, seconds: 60, level: 1}
+    health-boost: {hearts: 3, seconds: 120}
+    keep-bottle: false
+    message: "<#ff5a5a>❤ Малое зелье здоровья: регенерация 1 мин, +3 ❤ на 2 мин"

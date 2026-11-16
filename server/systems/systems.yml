@@ -8,6 +8,7 @@ enabled:
   - core-mobs
   - core-npc
   - core-portals
+  - core-potions
   - core-python
   - core-skyrift
   - core-vault
