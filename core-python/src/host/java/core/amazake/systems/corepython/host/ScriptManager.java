@@ -112,17 +112,22 @@ public final class ScriptManager {
         return e == null ? "—" : e.getLanguages().get("python").getVersion();
     }
 
-    /** runtime/amazake.py — модуль API (из ресурсов хоста; перезаписывается при каждом запуске). */
+    /** Модули Python из ресурсов хоста, которые пишутся в runtime/: API и переводчик японского режима. */
+    static final List<String> RUNTIME_MODULES = List.of("amazake.py", "amazake_ja.py");
+
+    /** runtime/amazake.py, runtime/amazake_ja.py — из ресурсов хоста; перезаписываются при каждом запуске. */
     private void writeRuntime() throws IOException {
         Files.createDirectories(this.runtimeDir);
-        try (InputStream in = ScriptManager.class.getClassLoader().getResourceAsStream("python/amazake.py")) {
-            if (in == null) {
-                throw new IOException("в хосте нет python/amazake.py");
-            }
-            final byte[] bytes = in.readAllBytes();
-            final Path f = this.runtimeDir.resolve("amazake.py");
-            if (!Files.exists(f) || !java.util.Arrays.equals(Files.readAllBytes(f), bytes)) {
-                Files.write(f, bytes);
+        for (final String module : RUNTIME_MODULES) {
+            try (InputStream in = ScriptManager.class.getClassLoader().getResourceAsStream("python/" + module)) {
+                if (in == null) {
+                    throw new IOException("в хосте нет python/" + module);
+                }
+                final byte[] bytes = in.readAllBytes();
+                final Path f = this.runtimeDir.resolve(module);
+                if (!Files.exists(f) || !java.util.Arrays.equals(Files.readAllBytes(f), bytes)) {
+                    Files.write(f, bytes);
+                }
             }
         }
     }
@@ -214,7 +219,15 @@ public final class ScriptManager {
                 s.context = ctx;
                 ctx.getPolyglotBindings().putMember("amazake_host", new ScriptApi(s));
                 ctx.eval("python", "import amazake");
-                ctx.eval(Source.newBuilder("python", dir.resolve(manifest.main()).toFile()).build());
+                final Path mainFile = dir.resolve(manifest.main()).normalize();
+                if (manifest.japanese()) {
+                    // Японский режим: все .py системы — через переводчик (импорт-хук), главный файл — так же;
+                    // code object получает путь исходного файла, строки и столбцы совпадают с ним.
+                    ctx.eval("python", "__import__('amazake_ja')").getMember("run_main")
+                        .execute(dir.toString(), mainFile.toString());
+                } else {
+                    ctx.eval(Source.newBuilder("python", mainFile.toFile()).build());
+                }
                 if (this.closing) {
                     throw new IllegalStateException("core-python выключается");
                 }
@@ -231,7 +244,7 @@ public final class ScriptManager {
                     if (pe.isCancelled()) {
                         throw new IllegalStateException("загрузка " + name + " прервана");
                     }
-                    throw new IllegalStateException(ErrorLog.format(pe), pe);
+                    throw new IllegalStateException(ErrorLog.format(pe, dir), pe);
                 }
                 throw e;
             } finally {

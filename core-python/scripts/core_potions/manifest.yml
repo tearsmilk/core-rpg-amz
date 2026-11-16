@@ -3,6 +3,7 @@ name: core_potions
 version: 1.0.0
 main: main.py
 enabled: true
+言語: 日本語          # японский режим: main.py написан японскими знаками (docs/japanese-mode-vocabulary.md)
 description: "Механика зелий Nexo: эффекты, прибавка к здоровью, бутылка не остаётся"
 commands:
   cpotions:

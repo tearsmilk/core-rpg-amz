@@ -54,7 +54,7 @@ public final class PyScript {
         this.dataDir = dataDir;
         this.platform = platform;
         this.tracker = tracker;
-        this.errors = new ErrorLog(platform.logger(), "[py:" + this.name + "] ");
+        this.errors = new ErrorLog(platform.logger(), "[py:" + this.name + "] ", dir);
     }
 
     public String name() {

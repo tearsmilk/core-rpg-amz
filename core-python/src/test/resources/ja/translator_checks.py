@@ -288,8 +288,8 @@ def _():
         f.write("関数 二倍(甲):\n    返す 甲 * 2\n")
     os.makedirs(os.path.join(d, "japkg"))
     with open(os.path.join(d, "japkg", "__init__.py"), "w", encoding="utf-8") as f:
-        f.write("から .内側 取り込む 値\n")
-    with open(os.path.join(d, "japkg", "内側.py"), "w", encoding="utf-8") as f:
+        f.write("から .uchigawa 取り込む 値\n")
+    with open(os.path.join(d, "japkg", "uchigawa.py"), "w", encoding="utf-8") as f:
         f.write("値 = はい\n")
     sys.path.insert(0, d)
     try:

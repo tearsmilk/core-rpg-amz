@@ -18,6 +18,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
  * main: main.py             # главный файл
  * enabled: true             # загружать при включении core-python
  * description: "..."
+ * 言語: 日本語             # необязательно: японский режим (или language: ja) — см. docs/japanese-mode-vocabulary.md
  * commands:                 # необязательно: свойства команд по умолчанию для @amazake.command
  *   carmor:
  *     permission: customarmor.admin
@@ -27,10 +28,26 @@ import org.bukkit.configuration.file.YamlConfiguration;
  * </pre>
  */
 public record Manifest(String name, String version, String main, boolean enabled, String description,
-                       Map<String, CommandSpec> commands) {
+                       Map<String, CommandSpec> commands, boolean japanese) {
 
     /** Имя системы: оно же папка, префикс команд (py-имя:команда) и пространство имён PDC (py_имя). */
     public static final Pattern NAME = Pattern.compile("[a-z0-9_-]{1,32}");
+
+    /**
+     * Язык исходников: ключ «言語» или «language». 日本語 / ja / japanese (регистр не важен) — японский режим;
+     * en / english / 英語 / python или нет ключа — обычный Python; иное — ошибка (опечатка не должна тихо выключать перевод).
+     */
+    static boolean japanese(final YamlConfiguration y) {
+        final String v = y.contains("言語") ? y.getString("言語") : y.getString("language");
+        if (v == null || v.isBlank()) {
+            return false;
+        }
+        return switch (v.strip().toLowerCase(java.util.Locale.ROOT)) {
+            case "日本語", "ja", "japanese", "jp" -> true;
+            case "en", "english", "英語", "python" -> false;
+            default -> throw new IllegalArgumentException("manifest.yml: language «" + v + "» — use 日本語 / ja or omit the key");
+        };
+    }
 
     public record CommandSpec(String permission, List<String> aliases, String description, String usage) {
     }
@@ -68,6 +85,6 @@ public record Manifest(String name, String version, String main, boolean enabled
             }
         }
         return new Manifest(name, y.getString("version", "0"), main, y.getBoolean("enabled", true),
-            y.getString("description", ""), java.util.Collections.unmodifiableMap(commands));
+            y.getString("description", ""), java.util.Collections.unmodifiableMap(commands), japanese(y));
     }
 }

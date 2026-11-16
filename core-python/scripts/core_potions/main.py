@@ -1,157 +1,155 @@
-# ポーション — механика зелий Nexo. Вид и предмет — Nexo, здесь — что происходит, когда зелье выпили.
-# Конфиг — potions.yml (ключ — id предмета Nexo). Перечитать: /cpotions reload.
-import amazake
+# ポーション — Nexo の薬の仕組み。見た目とアイテムは Nexo、ここでは飲んだときに何が起きるかを決める。
+# 設定は potions.yml（キーは Nexo アイテムの id）。読み直し: /cpotions reload
+取り込む 甘酒
 
-NEXOキー = "nexo:id"
-体力キー = "corepotions:health_boost"   # ключ модификатора максимального здоровья
-期限キー = "health_boost_until"          # в данных игрока: до какого времени (мс) действует прибавка
+ネクソキー = "nexo:id"
+体力キー = "corepotions:health_boost"   # 最大体力の修飾子のキー
+期限キー = "health_boost_until"          # プレイヤーのデータ: 増加がいつ（ミリ秒）まで続くか
 量キー = "health_boost_hp"
-
-PotionEffect = amazake.java_class("org.bukkit.potion.PotionEffect")
-ItemStack = amazake.java_class("org.bukkit.inventory.ItemStack")
-System = amazake.java_class("java.lang.System")
 
 設定 = {}
 全体 = {}
 
 
-def 読み込み():
-    global 設定, 全体
-    全体 = amazake.config("potions.yml") or {}
-    設定 = 全体.get("potions", {}) or {}
-    amazake.log.info("зелий в potions.yml:", len(設定))
+関数 読み込み():
+    大域 設定, 全体
+    全体 = 甘酒.設定読込("potions.yml") または {}
+    設定 = 全体.取得("potions", {}) または {}
+    甘酒.記録.情報("зелий в potions.yml:", 長さ(設定))
 
 
-def MMOCoreのデータ(player):
-    """PlayerData MMOCore или None (если MMOCore нет)."""
-    try:
-        return amazake.plugin_class("MMOCore", "net.Indyuce.mmocore.api.player.PlayerData").get(player)
-    except Exception:
-        return None
+関数 職業データ(プレイヤー):
+    """MMOCore の PlayerData。MMOCore が無ければ 無し。"""
+    試す:
+        データ型 = 甘酒.プラグイン型("MMOCore", "net.Indyuce.mmocore.api.player.PlayerData")
+        返す 甘酒.呼ぶ(データ型, "get", プレイヤー)
+    捕まえる 例外:
+        返す 無し
 
 
-def 職業ID(データ):
-    try:
-        return str(データ.getProfess().getId()).upper()
-    except Exception:
-        return None
+関数 職業名(データ):
+    試す:
+        返す 文字列(甘酒.呼ぶ(甘酒.呼ぶ(データ, "getProfess"), "getId")).大文字()
+    捕まえる 例外:
+        返す 無し
 
 
-def 回復(player, 種類, 量):
-    """Восстановить сразу. Возвращает (можно_ли_пить, сообщение_об_отказе)."""
-    文 = 全体.get("messages", {}) or {}
-    if 種類 == "health":
-        最大 = player.getAttribute(amazake.attribute("max_health")).getValue()
-        if player.getHealth() >= 最大:
-            return False, 文.get("full")
-        player.setHealth(min(最大, player.getHealth() + 量))
-        return True, None
-    データ = MMOCoreのデータ(player)
-    if データ is None:
-        return False, None
-    職業 = 職業ID(データ)
-    魔法職 = [str(x).upper() for x in 全体.get("mana-classes", [])]
-    無職 = [str(x).upper() for x in 全体.get("no-class", ["HUMAN"])]
-    if 種類 == "mana" and 職業 not in 魔法職:
-        return False, 文.get("only-mages")
-    if 種類 == "energy" and (職業 is None or 職業 in 魔法職 or 職業 in 無職):
-        return False, 文.get("only-energy")
-    最大 = データ.getStats().getStat("MAX_MANA")
-    if データ.getMana() >= 最大:
-        return False, 文.get("full")
-    理由 = amazake.java_class("net.Indyuce.mmocore.api.event.PlayerResourceUpdateEvent$UpdateReason").OTHER
-    データ.giveMana(float(量), 理由)
-    return True, None
+関数 回復(プレイヤー, 種類, 量):
+    """すぐに回復する。（飲めるか, 断る理由）を返す。"""
+    文 = 全体.取得("messages", {}) または {}
+    もし 種類 == "health":
+        上限 = プレイヤー.最大体力
+        もし プレイヤー.体力 >= 上限:
+            返す いいえ, 文.取得("full")
+        プレイヤー.体力 = 最小値(上限, プレイヤー.体力 + 量)
+        返す はい, 無し
+    データ = 職業データ(プレイヤー)
+    もし データ である 無し:
+        返す いいえ, 無し
+    職業 = 職業名(データ)
+    魔法職 = [文字列(職).大文字() 各 職 於 全体.取得("mana-classes", [])]
+    無職 = [文字列(職).大文字() 各 職 於 全体.取得("no-class", ["HUMAN"])]
+    もし 種類 == "mana" かつ 職業 非 於 魔法職:
+        返す いいえ, 文.取得("only-mages")
+    もし 種類 == "energy" かつ (職業 である 無し または 職業 於 魔法職 または 職業 於 無職):
+        返す いいえ, 文.取得("only-energy")
+    上限 = 甘酒.呼ぶ(甘酒.呼ぶ(データ, "getStats"), "getStat", "MAX_MANA")
+    もし 甘酒.呼ぶ(データ, "getMana") >= 上限:
+        返す いいえ, 文.取得("full")
+    理由型 = 甘酒.ジャバ型("net.Indyuce.mmocore.api.event.PlayerResourceUpdateEvent$UpdateReason")
+    甘酒.呼ぶ(データ, "giveMana", 小数(量), 属性取得(理由型, "OTHER"))
+    返す はい, 無し
 
 
-@amazake.on_load
-def 起動():
+@甘酒.起動時
+関数 起動():
     読み込み()
 
 
-def nexoのID(item):
-    """id предмета Nexo из PDC (nexo:id) или None."""
-    if item is None or item.isEmpty():
-        return None
-    return amazake.data(item).get_string(NEXOキー)
+関数 ネクソの識別子(アイテム):
+    """Nexo アイテムの id（PDC の nexo:id）。無ければ 無し。"""
+    もし アイテム である 無し または アイテム.空か:
+        返す 無し
+    返す 甘酒.永続データ(アイテム).文字列で読む(ネクソキー)
 
 
-@amazake.on("PlayerItemConsumeEvent", priority="high", ignore_cancelled=True)
-def 飲んだ(event):
-    ID = nexoのID(event.getItem())
-    ポーション = 設定.get(ID) if ID else None
-    if ポーション is None:
-        return
-    player = event.getPlayer()
-    種類 = ポーション.get("restore")
-    if 種類:
-        量 = float(ポーション.get("amount", 0))
-        できる, 拒否 = 回復(player, 種類, 量)
-        if not できる:
-            event.setCancelled(True)   # не выпито — зелье остаётся в руке
-            if 拒否:
-                amazake.actionbar(player, 拒否)
-            return
-    if not ポーション.get("keep-bottle", False):
-        event.setReplacement(ItemStack.empty())   # бутылка не возвращается — зелье просто пропадает
-    for 効果 in ポーション.get("effects", []) or []:
-        秒 = float(効果.get("seconds", 30))
-        段 = int(効果.get("level", 1)) - 1
-        player.addPotionEffect(PotionEffect(amazake.effect_type(効果["type"]), int(秒 * 20), 段, False, True, True))
-    増加 = ポーション.get("health-boost")
-    if 増加:
-        体力 = float(増加.get("hearts", 0)) * 2
-        秒 = float(増加.get("seconds", 60))
-        期限 = System.currentTimeMillis() + int(秒 * 1000)
-        データ = amazake.data(player)
-        データ.set(期限キー, int(期限))
-        データ.set(量キー, float(体力))
-        体力増加(player, 体力, 期限)
-    文 = ポーション.get("message")
-    if 文:
-        amazake.actionbar(player, 文, amount=str(int(float(ポーション.get("amount", 0)))))
+@甘酒.イベント時("アイテム消費", 優先度="高", 取消済み無視=はい)
+関数 飲んだ(イベント):
+    識別子 = ネクソの識別子(イベント.アイテム)
+    ポーション = 設定.取得(識別子) もし 識別子 でなければ 無し
+    もし ポーション である 無し:
+        返す
+    プレイヤー = イベント.プレイヤー
+    種類 = ポーション.取得("restore")
+    もし 種類:
+        量 = 小数(ポーション.取得("amount", 0))
+        できる, 拒否 = 回復(プレイヤー, 種類, 量)
+        もし 非 できる:
+            イベント.取り消す()   # 飲まれない — 薬は手に残る
+            もし 拒否:
+                甘酒.アクションバー(プレイヤー, 拒否)
+            返す
+    もし 非 ポーション.取得("keep-bottle", いいえ):
+        イベント.置き換えアイテム = 甘酒.空のアイテム()   # 瓶は戻らない — 薬はただ消える
+    各 効果 於 ポーション.取得("effects", []) または []:
+        秒 = 小数(効果.取得("seconds", 30))
+        段 = 整数(効果.取得("level", 1)) - 1
+        プレイヤー.効果付与(効果["type"], 整数(秒 * 20), 段)
+    増加 = ポーション.取得("health-boost")
+    もし 増加:
+        体力 = 小数(増加.取得("hearts", 0)) * 2
+        秒 = 小数(増加.取得("seconds", 60))
+        期限 = 甘酒.現在ミリ秒() + 整数(秒 * 1000)
+        データ = 甘酒.永続データ(プレイヤー)
+        データ.書く(期限キー, 整数(期限))
+        データ.書く(量キー, 小数(体力))
+        体力増加(プレイヤー, 体力, 期限)
+    文 = ポーション.取得("message")
+    もし 文:
+        回復量 = 文字列(整数(小数(ポーション.取得("amount", 0))))
+        甘酒.アクションバー(プレイヤー, 文, 置換={"amount": 回復量})
 
 
-def 体力増加(player, 体力, 期限):
-    """Прибавка к макс. здоровью до 期限 (мс). Повторный глоток продлевает: старый таймер видит новый срок и молчит."""
-    amazake.add_modifier(player, "max_health", 体力キー, 体力)
-    残り = max(1, int((期限 - System.currentTimeMillis()) / 50))
+関数 体力増加(プレイヤー, 体力, 期限):
+    """期限（ミリ秒）まで最大体力を増やす。もう一度飲むと延長: 古いタイマーは新しい期限を見て何もしない。"""
+    甘酒.一時修飾子追加(プレイヤー, "最大体力", 体力キー, 体力)
+    残り = 最大値(1, 整数((期限 - 甘酒.現在ミリ秒()) / 50))
 
-    def 終了():
-        データ = amazake.data(player)
-        if データ.get(期限キー, 0) != 期限:
-            return   # срок продлили новым зельем — снимет новый таймер
-        amazake.remove_modifier(player, "max_health", 体力キー)
-        データ.remove(期限キー)
-        データ.remove(量キー)
-        最大 = player.getAttribute(amazake.attribute("max_health")).getValue()
-        if player.getHealth() > 最大:
-            player.setHealth(最大)
+    関数 終了():
+        データ = 甘酒.永続データ(プレイヤー)
+        もし データ.読む(期限キー, 0) != 期限:
+            返す   # 新しい薬で延長された — 新しいタイマーが外す
+        甘酒.一時修飾子削除(プレイヤー, "最大体力", 体力キー)
+        データ.消す(期限キー)
+        データ.消す(量キー)
+        上限 = プレイヤー.最大体力
+        もし プレイヤー.体力 > 上限:
+            プレイヤー.体力 = 上限
 
-    amazake.run_once_for_player(player, 終了, delay=残り)
-
-
-@amazake.on("PlayerJoinEvent", priority="monitor")
-def 参加(event):
-    """Модификатор не сохраняется в файл игрока: после перезахода возвращаем прибавку на оставшееся время."""
-    player = event.getPlayer()
-
-    def 復元():
-        データ = amazake.data(player)
-        期限 = データ.get(期限キー, 0)
-        if 期限 and 期限 > System.currentTimeMillis():
-            体力増加(player, float(データ.get(量キー, 0)), 期限)
-        elif 期限:
-            データ.remove(期限キー)
-            データ.remove(量キー)
-
-    amazake.run_once_for_player(player, 復元, delay=2)
+    甘酒.プレイヤーで一度(プレイヤー, 終了, 遅延=残り)
 
 
-@amazake.command("cpotions", permission="corepotions.admin", aliases=["ポーション"])
-def コマンド(sender, args):
-    if args and args[0] == "reload":
+@甘酒.イベント時("プレイヤー参加", 優先度="監視")
+関数 参加(イベント):
+    """修飾子はプレイヤーファイルに保存されない: 再参加したら残り時間ぶん増加を戻す。"""
+    プレイヤー = イベント.プレイヤー
+
+    関数 復元():
+        データ = 甘酒.永続データ(プレイヤー)
+        期限 = データ.読む(期限キー, 0)
+        もし 期限 かつ 期限 > 甘酒.現在ミリ秒():
+            体力増加(プレイヤー, 小数(データ.読む(量キー, 0)), 期限)
+        でなければもし 期限:
+            データ.消す(期限キー)
+            データ.消す(量キー)
+
+    甘酒.プレイヤーで一度(プレイヤー, 復元, 遅延=2)
+
+
+@甘酒.コマンド("cpotions", 権限="corepotions.admin", 別名=["ポーション"])
+関数 管理(送り主, 引数):
+    もし 引数 かつ 引数[0] == "reload":
         読み込み()
-        amazake.send(sender, "<green>potions.yml перечитан: зелий <n></green>", n=str(len(設定)))
-    else:
-        amazake.send(sender, "<gray>Зелья: <list></gray>", list=", ".join(設定.keys()) or "—")
+        甘酒.送る(送り主, "<green>potions.yml перечитан: зелий <数></green>", 数=文字列(長さ(設定)))
+    でなければ:
+        甘酒.送る(送り主, "<gray>Зелья: <一覧></gray>", 一覧=", ".連結(設定.キー一覧()) または "—")
