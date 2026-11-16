@@ -94,7 +94,8 @@ textures/item/crimson_scythe.png, crimson_scythe_fx.png + .mcmeta, items/crimson
   `python3 tools/armor_textures.py`; превью на модели игрока — `python3 tools/armor_preview.py` →
   `preview/armor/` (`all_sets.png`, `<комплект>_views.png`: спереди, сзади, 3/4, ночью со свечением;
   `<комплект>_glow.gif` — анимация свечения, посчитанная той же формулой, что в шейдере; `icons.png`).
-- Свечение — пиксели с альфой ровно 251 + `pack/assets/minecraft/shaders/core/entity.fsh` (только конвейеры брони).
+- Свечение — пиксели с альфой ровно 251 + `entity_shaders/azerus_entity_1_21_11/assets/minecraft/shaders/core/entity.fsh`
+  (только конвейеры брони; оверлей только для 1.21.11 — см. «Шейдеры сущностей» ниже).
   Проверка, что маркер не задевает чужое: `python3 tools/armor_shader_check.py <client-1.21.11.jar> <паки…>`.
 
 ## reforged_armor.yml — «перекованная» 3D-броня на шейдере (7 комплектов × 4 части)
@@ -119,9 +120,11 @@ textures/item/crimson_scythe.png, crimson_scythe_fx.png + .mcmeta, items/crimson
   - слои `01..NN` — **данные**: ряды 0..127 — цветовой атлас (текстура модели, непрозрачное = альфа 20), ряд 128 —
     заголовок, ниже — по записи на ряд: 4 угла грани (xyz, 24 бита), 4 UV, флаги. Вся альфа ≤ 24, поэтому без
     нашего шейдера (ALPHA_CUTOUT 0.1) такие слои не видны совсем.
-- **Шейдер** `pack/assets/minecraft/shaders/core/entity.vsh` + `include/armor3d.glsl` (только конвейеры брони):
-  каждый ванильный квад брони (6 граней × кость) превращается в одну грань модели. Позу конечности шейдер берёт из
-  четырёх вершин самого квада (расширение `GL_KHR_shader_subgroup_quad`, как в objmc PR #105): по UV угадывает,
+- **Шейдер** `entity_shaders/azerus_entity_1_21_11/assets/minecraft/shaders/core/entity.vsh` + `include/armor3d.glsl`
+  (только конвейеры брони): каждый ванильный квад брони (6 граней × кость) превращается в одну грань модели. Позу
+  конечности шейдер берёт из четырёх вершин самого квада, собранных с соседних линий subgroup (`az3d_gather`:
+  `GL_KHR_shader_subgroup_shuffle`, иначе `GL_ARB_shader_ballot` — Mesa даёт KHR-макросы только с `#version 430`, а
+  ARB уже при 330; `#version` поднимать нельзя — macOS GL 4.1 потеряла бы все сущности). По UV угадывает,
   какая это грань ванильной коробки и какой угол, по двум рёбрам и нормали восстанавливает поворот × масштаб части
   (точно, включая масштаб игрока/атрибута scale/детей), левые руку/ногу узнаёт по зеркальности. Если квад не сошёлся
   (другой порядок вершин у драйвера, нет расширения) — эта грань остаётся ванильной: слой данных невидим, 2D-слой
@@ -133,7 +136,9 @@ textures/item/crimson_scythe.png, crimson_scythe_fx.png + .mcmeta, items/crimson
 **Новый комплект из .bbmodel** (Blockbench, формат Generic/free, одна текстура до 128×128, кости-группы верхнего
 уровня: `helmet`, `torso`, `right_arm`, `left_arm`, `hips`, `right_leg`, `left_leg`, `right_boot`, `left_boot`;
 шарниры как у шаблона: тело/бёдра (0,24,0), руки (±5,22,0), ноги/ботинки (±2,12,0); вложенные группы с любыми
-поворотами едут на своей верхней кости; `inflate`, повороты кубов и групп запекаются):
+поворотами едут на своей верхней кости; `inflate`, повороты кубов и групп запекаются). Записи считаются от
+ВАНИЛЬНОГО шарнира части (ноги ±1.9, а не ±2 шаблона), поэтому в покое каждая грань стоит в игре ровно там, где в
+Blockbench (`armor3d_check` это проверяет):
 1. `source/reforged/reforged_<комплект>_armor.bbmodel`; добавить строку в `SETS` в `tools/armor3d_build.py`.
 2. `python3 -I tools/armor3d_build.py [<комплект>]` — модели, текстуры слоёв, equipment, иконки, `items/reforged_armor.yml`,
    `preview/reforged/budget.json`.
@@ -142,13 +147,48 @@ textures/item/crimson_scythe.png, crimson_scythe_fx.png + .mcmeta, items/crimson
    шейдер** (Python-копия `armor3d_codec.shade_quad`).
 4. `python3 -I tools/armor3d_check.py` — маркеры не совпадают ни с чем в ванили/паках прода/репозитория, правила альфы,
    запись↔модель туда-обратно, случайные позы (ошибка вершин < 1e-3 px), копии шейдера одинаковы.
-   `python3 -I tools/armor3d_glsl_check.py` — компиляция и линковка entity.vsh/fsh glslangValidator во всех
-   конвейерах core/entity с subgroup и без.
+   `python3 -I tools/armor3d_glsl_check.py [--mesa]` — компиляция и линковка entity.vsh/fsh glslangValidator во
+   всех 15 конвейерах core/entity × режимы сбора khr / arb / без расширений (`--mesa` — ещё и настоящим драйвером
+   через moderngl + EGL, печатает, какой сбор драйвер выбрал сам).
 Бюджет: на кость 6 граней на слой; слоёв в списке = max по костям списка ⌈граней/6⌉ (netherite: 18 humanoid, 6
 leggings; нагрудник 1368 вершин). Пустые места слоя шейдер сворачивает в точку вне экрана.
 
-Деплой (только по «заливай»): `pack/assets/azerus/{equipment,models/item/reforged,textures/item/reforged,
-textures/entity/equipment}` → `/plugins/Nexo/pack/assets/azerus/…`; `pack/assets/minecraft/shaders/core/entity.vsh`,
-`entity.fsh`, `include/armor3d.glsl` → `/plugins/Nexo/pack/assets/minecraft/shaders/…`; `items/reforged_armor.yml` →
-`/plugins/Nexo/items/`; `nexo reload all`; запрет кузнечного стола — `core-python/scripts/custom_armor/main.py`
-(`/python reload custom_armor`, когда core-python будет на проде).
+Где 3D включается: только там, где драйвер даёт KHR shuffle или ARB ballot в вершинном шейдере при `#version 330`
+(NVIDIA; Mesa radeonsi/iris/Steam Deck — через ARB; проверено на Mesa 25.2 llvmpipe/zink). macOS, Iris с
+шейдерпаком, драйверы без расширений — 2D-слой `00`. Известные ограничения (приняты):
+- слой `00` прячет грань сам, а слой данных решает за себя (отдельная отрисовка): если GPU в разных отрисовках
+  группирует линии по-разному, может остаться дырка — проверять в настоящем клиенте;
+- зомби-жители: их модель брони строит ноги с деформацией +0.1 (у игрока −0.1) → поножи/ботинки на ногах на 5–7%
+  крупнее и сдвинуты; стойки для брони считаются верно;
+- контур свечения (эффект Glowing) рисует ванильный `rendertype_outline` по альфе ≠ 0: обводится 2D-коробка брони
+  (куски слоёв данных), а не 3D-модель; общий шейдер контура не трогаем.
+
+### Шейдеры сущностей — отдельный внешний пак, только 1.21.11
+
+`entity_shaders/` — мини-пак: `pack.mcmeta` с одним оверлеем `azerus_entity_1_21_11` (формат ровно 75) и в нём
+`core/entity.vsh` (хук меню rezusmenu + armor3d), `core/entity.fsh` (armor3d + свечение 251), `include/armor3d.glsl`.
+Единственная копия на весь сервер (в `pack/assets/minecraft/shaders` ни одного пака репозитория их быть не должно —
+это проверяет `armor3d_check.py`). Зачем: через ViaVersion заходят клиенты 26.x, у них `core/entity` другой (26.1/26.2 —
+`sample_lightmap`, `DISSOLVE`; 26.3 — `#include`, `layout(location)`), наш вариант 1.21.11 в базовом `assets/` сломал
+бы им все сущности. Так же сделаны оверлеи MythicHUD в `hl-resourcepack.zip`, которые Nexo сохраняет.
+`python3 -I tools/entity_shaders_pack.py build` → `build/azerus-entity-shaders.zip` (детерминированный, печатает sha256).
+
+Деплой (только по «заливай»):
+1. Бэкап с прода: `/plugins/Nexo/pack/assets/minecraft/shaders/core/entity.vsh`, `entity.fsh` (старые версии в базе).
+2. `pack/assets/azerus/{equipment,models/item/reforged,textures/item/reforged,textures/entity/equipment}` →
+   `/plugins/Nexo/pack/assets/azerus/…`; `items/reforged_armor.yml` → `/plugins/Nexo/items/`.
+3. `tools/entity_shaders_pack.py build` → залить `build/azerus-entity-shaders.zip` в
+   `/plugins/Nexo/pack/external_packs/` (сверить sha256); **удалить** с прода базовые
+   `/plugins/Nexo/pack/assets/minecraft/shaders/core/entity.vsh` и `entity.fsh` (и `include/armor3d.glsl`, если есть).
+   `rendertype_item_entity_translucent_cull.*` не трогать.
+4. `nexo reload all`; в логе «Finished generating resourcepack», без ошибок.
+5. Скачать собранный `/plugins/Nexo/pack/pack.zip` (> 5 МБ — через `files/compress` или ссылку `files/download`) и
+   `python3 -I tools/armor3d_check.py --pack pack.zip`: пиксели всех `reforged_*.png` и иконок == репозиторий,
+   модели шлемов (elements/rotation) == репозиторий, слои из zip проходят туда-обратно и математику шейдера,
+   оверлей `azerus_entity_1_21_11` в `pack.mcmeta` (формат 75) и файлы на месте, в базе `core/entity.*` нет,
+   оверлеи MythicHUD живы. Если Nexo выкинул оверлей — вернуть файлы из бэкапа шага 1 (свечение/меню как раньше,
+   без 3D), zip убрать, `nexo reload pack`, разобраться.
+6. Зайти клиентом 1.21.11: свечение custom_armor, иконки меню rezusmenu, 3D-броня (NVIDIA/AMD/Intel); клиентом 26.x —
+   сущности ванильные и целые.
+7. Запрет кузнечного стола — `core-python/scripts/custom_armor/main.py` (`/python reload custom_armor`, когда
+   core-python будет на проде).

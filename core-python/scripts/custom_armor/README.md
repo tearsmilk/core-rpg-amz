@@ -62,7 +62,7 @@ sets:
 | код и `sets.yml` | `core-python/scripts/custom_armor/` | `/systems/core-python/scripts/custom_armor/` |
 | предметы Nexo | `nexo-items/items/azerus_armor.yml` | `/plugins/Nexo/items/azerus_armor.yml` |
 | слои брони 64x32 и иконки 16x16 | `nexo-items/pack/assets/azerus/textures/item/armor/` | `/plugins/Nexo/pack/assets/azerus/textures/item/armor/` |
-| шейдер свечения | `nexo-items/pack/assets/minecraft/shaders/core/entity.fsh` | `/plugins/Nexo/pack/assets/minecraft/shaders/core/entity.fsh` |
+| шейдер свечения | `nexo-items/entity_shaders/azerus_entity_1_21_11/assets/minecraft/shaders/core/entity.fsh` (оверлей только для 1.21.11) | внутри `/plugins/Nexo/pack/external_packs/azerus-entity-shaders.zip` (`nexo-items/tools/entity_shaders_pack.py build`) |
 | генератор текстур, превью, проверка шейдера | `nexo-items/tools/armor_textures.py`, `armor_preview.py`, `armor_shader_check.py` | — |
 | превью | `nexo-items/preview/armor/` (`all_sets.png`, `<комплект>_views.png`, `<комплект>_glow.gif`, `icons.png`) | — |
 
@@ -72,7 +72,8 @@ sets:
 один блок) на конвейерах брони (только у них одновременно `ALPHA_CUTOUT`, `NO_OVERLAY` и `PER_FACE_LIGHTING`) рисует
 такие пиксели без освещения и с волной яркости по строкам текстуры (период ~2 с, `GameTime`). Общий шейдер
 `rendertype_item_entity_translucent_cull` (rezusmenu/core-portals/core-skyrift) **не тронут**; вершинный `entity.vsh`
-общий для rezusmenu и nexo-items (там же 3D-броня armor3d, см. `nexo-items/README.md`). Проверка `python3 nexo-items/tools/armor_shader_check.py <client.jar> <паки…>`: маркер
+общий для rezusmenu и nexo-items (там же 3D-броня armor3d, см. `nexo-items/README.md`). Оба файла — только в оверлее
+формата 75 (`nexo-items/entity_shaders`): клиенты 26.x через ViaVersion свечения не видят (их core/entity другой). Проверка `python3 nexo-items/tools/armor_shader_check.py <client.jar> <паки…>`: маркер
 срабатывает только на 251; в ванильной броне, отделке (trims), паке Nexo с прода и внешних паках нет ни одной текстуры
 брони с альфой 251 (альфу 251 имеют только баннеры/щиты — другой конвейер, без `ALPHA_CUTOUT`, — и HUD MythicHUD).
 GLSL проверен glslang для всех наборов define. В клиенте не проверялось (боты картинку не видят) — после заливки
