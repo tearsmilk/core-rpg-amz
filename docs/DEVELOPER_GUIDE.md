@@ -328,12 +328,16 @@ NPC хранятся в `systems/core-npc/npcs.yml`, диалоги — `systems
 
 Кастомная броня — обычные предметы Nexo с `CustomArmor` (`nexo-items/items/azerus_armor.yml`, формат как
 `nexo_defaults/nexo_armor.yml`): слои 64x32 и иконки — `nexo-items/pack/assets/azerus/textures/item/armor/`,
-рисует их `nexo-items/tools/armor_textures.py`. Свечение — новый `minecraft/shaders/core/entity.fsh`
-(`nexo-items/pack/`), это **не** общий шейдер предметов из раздела 6: он трогает только конвейеры брони
-(`ALPHA_CUTOUT` + `NO_OVERLAY` + `PER_FACE_LIGHTING`) и только пиксели с альфой ровно 251. Вершинный `entity.vsh` —
-**общий** для rezusmenu и nexo-items (хук меню UI_LIGHT + 3D-броня, ниже): две копии `rezusmenu/pack/...` и
-`nexo-items/pack/...` должны быть байт-в-байт одинаковы, вместе с `include/armor3d.glsl` (иначе импорт не найдётся);
-`entity.fsh` берёт его выходы. Новые светящиеся детали брони рисовать
+рисует их `nexo-items/tools/armor_textures.py`. Свечение — новый `minecraft/shaders/core/entity.fsh`, это **не**
+общий шейдер предметов из раздела 6: он трогает только конвейеры брони (`ALPHA_CUTOUT` + `NO_OVERLAY` +
+`PER_FACE_LIGHTING`) и только пиксели с альфой ровно 251. Вершинный `entity.vsh` — **общий** для rezusmenu и
+nexo-items (хук меню UI_LIGHT + 3D-броня, ниже), `entity.fsh` берёт его выходы.
+**Шейдеры сущностей (`core/entity.vsh`, `core/entity.fsh`, `include/armor3d.glsl`) — одна копия на сервер, только в
+оверлее формата 75 (1.21.11)**: `nexo-items/entity_shaders/` → внешний пак `azerus-entity-shaders.zip`
+(`nexo-items/tools/entity_shaders_pack.py build`) в `/plugins/Nexo/pack/external_packs/`. В `pack/assets/minecraft/
+shaders` любого пака их класть нельзя: через ViaVersion заходят клиенты 26.x, у которых `core/entity` другой (26.3 —
+вообще `#include`/`layout(location)`), и вариант 1.21.11 в базе сломал бы им все сущности. После `nexo reload` —
+`nexo-items/tools/armor3d_check.py --pack pack.zip` (оверлей уцелел, оверлеи MythicHUD живы, текстуры не испорчены). Новые светящиеся детали брони рисовать
 альфой 251; любые другие текстуры брони — только с альфой 0/255. Проверка: `nexo-items/tools/armor_shader_check.py`.
 
 ### 3D-броня на шейдере (armor3d, «перекованные» комплекты)
@@ -348,20 +352,33 @@ NPC хранятся в `systems/core-npc/npcs.yml`, диалоги — `systems
   значит без шейдера данные отрезаются ванильным `ALPHA_CUTOUT 0.1`.
 - **Шейдер** `minecraft/shaders/core/entity.vsh` + `include/armor3d.glsl` (только конвейеры брони, только наши
   текстуры: 128×≥147 с `A3 3D 7E`/16 в (0,128) или 64×32 с ним же в (0,0)). Каждый ванильный квад брони становится
-  одной гранью модели (6 на кость на слой). Поворот конечности берётся из 4 вершин квада через
-  `GL_KHR_shader_subgroup_quad`: одной вершины мало (нормаль даёт 2 степени свободы из 3, «крен» вокруг нормали
-  неизвестен — у грани руки это как раз мах при ходьбе), поэтому без subgroup 3D не бывает. Код под
-  `#ifdef GL_KHR_shader_subgroup_quad`, `#version 330` как у ванили: на macOS (GL 4.1, расширения нет) и старых
-  драйверах он выключается сам — видна 2D-броня. Если драйвер раскладывает вершины по-другому, проверка квада (4
-  разных угла одной грани по UV) не проходит и грань тоже остаётся 2D/невидимой, растянутых треугольников нет.
+  одной гранью модели (6 на кость на слой). Поворот конечности берётся из 4 вершин квада, собранных с соседних линий
+  subgroup (`az3d_gather`): одной вершины мало (нормаль даёт 2 степени свободы из 3, «крен» вокруг нормали
+  неизвестен — у грани руки это как раз мах при ходьбе), поэтому без subgroup 3D не бывает. Сбор:
+  `GL_KHR_shader_subgroup_shuffle` (без ограничения quad-операций по стадиям), иначе `GL_ARB_shader_ballot`
+  (`readInvocationARB` в цикле по всем линиям — индекс должен быть одинаковым у всех линий). `#version 330` как у
+  ванили и **поднимать его нельзя** (macOS GL 4.1 не скомпилирует — пропадут все сущности). Mesa (Linux AMD/Intel,
+  Steam Deck) даёт KHR-макросы только с `#version 430`, а ARB — уже при 330, поэтому там работает ARB-путь (проверено
+  на Mesa 25.2 llvmpipe/zink: все 15 конвейеров компилируются, вершины совпадают с Python-копией). Где нет ни того,
+  ни другого (macOS, старые драйверы), код выключается сам — видна 2D-броня. Если драйвер раскладывает вершины
+  по-другому, проверка квада (4 разных угла одной грани по UV) не проходит и грань тоже остаётся 2D/невидимой,
+  растянутых треугольников нет.
+- **Принятые ограничения**: слой `00` и слой данных решают за себя (разные отрисовки) — при разной группировке линий
+  возможна дырка (проверять в клиенте); у зомби-жителей ноги брони +0.1 вместо −0.1 → поножи/ботинки на 5–7% не
+  на месте; контур эффекта Glowing обводит 2D-коробку брони, а не 3D-модель (общий `rendertype_outline` не трогаем).
 - **Отделка (trim)** для этих предметов запрещена (`PrepareSmithingEvent`, `core-python/scripts/custom_armor`).
 - **Инструменты** (`nexo-items/tools/`, запуск `python3 -I`): `armor3d_build.py` (сборка из
   `source/reforged/*.bbmodel`), `armor3d_preview.py` (рендер той же математикой, что шейдер, → `preview/reforged/`),
-  `armor3d_check.py` (маркеры, альфа, туда-обратно, случайные позы, бюджет), `armor3d_glsl_check.py` (glslangValidator,
-  все конвейеры core/entity × с subgroup/без). Общий код и Python-копия шейдера — `armor3d_codec.py`.
+  `armor3d_check.py` (маркеры, альфа, туда-обратно, кадр = ванильный шарнир, случайные позы, бюджет; `--pack
+  pack.zip` — то же по собранному паку Nexo + пиксели/модели == репозиторий + оверлей шейдеров),
+  `armor3d_glsl_check.py [--mesa]` (glslangValidator и, если есть, настоящий драйвер: все 15 конвейеров core/entity ×
+  сбор khr/arb/без расширений), `entity_shaders_pack.py` (build/verify внешнего пака шейдеров). Общий код и
+  Python-копия шейдера — `armor3d_codec.py`.
 - **Новый комплект**: положить `.bbmodel` (кости `helmet torso right_arm left_arm hips right_leg left_leg right_boot
   left_boot`, одна текстура ≤ 128×128) в `nexo-items/source/reforged/`, вписать в `SETS` в `armor3d_build.py`,
-  прогнать build → preview → check → glsl_check, посмотреть картинки, закоммитить; залить по команде (раздел 5).
-- **Не проверено в клиенте**: настоящие видеокарты (NVIDIA/AMD/Intel — порядок вершин в subgroup), macOS (ожидается
-  2D), Sodium (своя отрисовка моделей сущностей — может не выдавать часть граней), Iris с шейдерпаком (ожидается 2D),
+  прогнать build → preview → check → glsl_check, посмотреть картинки, закоммитить; залить по команде (раздел 5,
+  порядок — `nexo-items/README.md`, «Шейдеры сущностей»: zip в external_packs, убрать старые `entity.*` из базы,
+  `nexo reload all`, `armor3d_check.py --pack`).
+- **Не проверено в клиенте**: настоящие видеокарты (NVIDIA/AMD/Intel — порядок вершин в subgroup), что Nexo
+  сохраняет наш оверлей (проверка — `armor3d_check.py --pack`), macOS (ожидается 2D), Sodium (своя отрисовка моделей сущностей — может не выдавать часть граней), Iris с шейдерпаком (ожидается 2D),
   ModelEngine (`Create-Shader: false` в его config.yml — в снимке прода конфига ModelEngine нет, проверить на сервере).
