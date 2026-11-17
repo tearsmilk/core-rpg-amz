@@ -28,8 +28,8 @@
     {
       "type": "bitmap",
       "file": "corenpc:font/dialog/box0.png",
-      "height": 150,
-      "ascent": 135,
+      "height": 115,
+      "ascent": 115,
       "chars": [
         ""
       ]
@@ -37,10 +37,55 @@
     {
       "type": "bitmap",
       "file": "corenpc:font/dialog/box1.png",
-      "height": 150,
-      "ascent": 135,
+      "height": 115,
+      "ascent": 115,
       "chars": [
         ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "corenpc:font/dialog/panel.png",
+      "height": 155,
+      "ascent": 155,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "corenpc:font/dialog/next.png",
+      "height": 51,
+      "ascent": 51,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "corenpc:font/dialog/pointer0.png",
+      "height": 149,
+      "ascent": 149,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "corenpc:font/dialog/pointer1.png",
+      "height": 139,
+      "ascent": 139,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "corenpc:font/dialog/pointer2.png",
+      "height": 129,
+      "ascent": 129,
+      "chars": [
+        ""
       ]
     }
   ]

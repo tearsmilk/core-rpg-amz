@@ -1,0 +1,6 @@
+{
+ "parent": "minecraft:item/generated",
+ "textures": {
+  "layer0": "azerus:item/azerus_cards/card_earth"
+ }
+}
