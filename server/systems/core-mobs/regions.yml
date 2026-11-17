@@ -275,7 +275,17 @@ regions:
       amount: '64'
       player-radius: 48
       min-player-distance: 6
-      mobs: {}
+      mobs:
+        cave_skeleton: 1
+        venom_spider: 1
+        plague_zombie: 1
+        dead_knight: 1
+        bone_archer: 1
+        skeleton_guard: 1
+        cave_crawler: 1
+        brood_mother: 1
+        ash_warrior: 1
+        bone_lord: 1
   dungeon2:
     world: dungeon
     points:

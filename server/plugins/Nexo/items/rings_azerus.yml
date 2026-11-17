@@ -1,0 +1,819 @@
+# Кольца AZERUS (102 шт.) — раздел rings_azerus в /nexo inventory. Плоские иконки 32x32 (пак колец, item_model 1.21.4+).
+# Текстуры: pack/assets/azerus/textures/item/rings_azerus/, модели item/generated: models/item/rings_azerus/,
+# определения предметов: items/rings_azerus/. Статов и слота для надевания нет — только предмет.
+
+azerus_ring_001:
+  material: PAPER
+  itemname: "<white>Кольцо 001"
+  Pack:
+    model: azerus:item/rings_azerus/ring_001
+  Components:
+    item_model: azerus:rings_azerus/ring_001
+
+azerus_ring_002:
+  material: PAPER
+  itemname: "<white>Кольцо 002"
+  Pack:
+    model: azerus:item/rings_azerus/ring_002
+  Components:
+    item_model: azerus:rings_azerus/ring_002
+
+azerus_ring_003:
+  material: PAPER
+  itemname: "<white>Кольцо 003"
+  Pack:
+    model: azerus:item/rings_azerus/ring_003
+  Components:
+    item_model: azerus:rings_azerus/ring_003
+
+azerus_ring_004:
+  material: PAPER
+  itemname: "<white>Кольцо 004"
+  Pack:
+    model: azerus:item/rings_azerus/ring_004
+  Components:
+    item_model: azerus:rings_azerus/ring_004
+
+azerus_ring_005:
+  material: PAPER
+  itemname: "<white>Кольцо 005"
+  Pack:
+    model: azerus:item/rings_azerus/ring_005
+  Components:
+    item_model: azerus:rings_azerus/ring_005
+
+azerus_ring_006:
+  material: PAPER
+  itemname: "<white>Кольцо 006"
+  Pack:
+    model: azerus:item/rings_azerus/ring_006
+  Components:
+    item_model: azerus:rings_azerus/ring_006
+
+azerus_ring_007:
+  material: PAPER
+  itemname: "<white>Кольцо 007"
+  Pack:
+    model: azerus:item/rings_azerus/ring_007
+  Components:
+    item_model: azerus:rings_azerus/ring_007
+
+azerus_ring_008:
+  material: PAPER
+  itemname: "<white>Кольцо 008"
+  Pack:
+    model: azerus:item/rings_azerus/ring_008
+  Components:
+    item_model: azerus:rings_azerus/ring_008
+
+azerus_ring_009:
+  material: PAPER
+  itemname: "<white>Кольцо 009"
+  Pack:
+    model: azerus:item/rings_azerus/ring_009
+  Components:
+    item_model: azerus:rings_azerus/ring_009
+
+azerus_ring_010:
+  material: PAPER
+  itemname: "<white>Кольцо 010"
+  Pack:
+    model: azerus:item/rings_azerus/ring_010
+  Components:
+    item_model: azerus:rings_azerus/ring_010
+
+azerus_ring_011:
+  material: PAPER
+  itemname: "<white>Кольцо 011"
+  Pack:
+    model: azerus:item/rings_azerus/ring_011
+  Components:
+    item_model: azerus:rings_azerus/ring_011
+
+azerus_ring_012:
+  material: PAPER
+  itemname: "<white>Кольцо 012"
+  Pack:
+    model: azerus:item/rings_azerus/ring_012
+  Components:
+    item_model: azerus:rings_azerus/ring_012
+
+azerus_ring_013:
+  material: PAPER
+  itemname: "<white>Кольцо 013"
+  Pack:
+    model: azerus:item/rings_azerus/ring_013
+  Components:
+    item_model: azerus:rings_azerus/ring_013
+
+azerus_ring_014:
+  material: PAPER
+  itemname: "<white>Кольцо 014"
+  Pack:
+    model: azerus:item/rings_azerus/ring_014
+  Components:
+    item_model: azerus:rings_azerus/ring_014
+
+azerus_ring_015:
+  material: PAPER
+  itemname: "<white>Кольцо 015"
+  Pack:
+    model: azerus:item/rings_azerus/ring_015
+  Components:
+    item_model: azerus:rings_azerus/ring_015
+
+azerus_ring_016:
+  material: PAPER
+  itemname: "<white>Кольцо 016"
+  Pack:
+    model: azerus:item/rings_azerus/ring_016
+  Components:
+    item_model: azerus:rings_azerus/ring_016
+
+azerus_ring_017:
+  material: PAPER
+  itemname: "<white>Кольцо 017"
+  Pack:
+    model: azerus:item/rings_azerus/ring_017
+  Components:
+    item_model: azerus:rings_azerus/ring_017
+
+azerus_ring_018:
+  material: PAPER
+  itemname: "<white>Кольцо 018"
+  Pack:
+    model: azerus:item/rings_azerus/ring_018
+  Components:
+    item_model: azerus:rings_azerus/ring_018
+
+azerus_ring_019:
+  material: PAPER
+  itemname: "<white>Кольцо 019"
+  Pack:
+    model: azerus:item/rings_azerus/ring_019
+  Components:
+    item_model: azerus:rings_azerus/ring_019
+
+azerus_ring_020:
+  material: PAPER
+  itemname: "<white>Кольцо 020"
+  Pack:
+    model: azerus:item/rings_azerus/ring_020
+  Components:
+    item_model: azerus:rings_azerus/ring_020
+
+azerus_ring_021:
+  material: PAPER
+  itemname: "<white>Кольцо 021"
+  Pack:
+    model: azerus:item/rings_azerus/ring_021
+  Components:
+    item_model: azerus:rings_azerus/ring_021
+
+azerus_ring_022:
+  material: PAPER
+  itemname: "<white>Кольцо 022"
+  Pack:
+    model: azerus:item/rings_azerus/ring_022
+  Components:
+    item_model: azerus:rings_azerus/ring_022
+
+azerus_ring_023:
+  material: PAPER
+  itemname: "<white>Кольцо 023"
+  Pack:
+    model: azerus:item/rings_azerus/ring_023
+  Components:
+    item_model: azerus:rings_azerus/ring_023
+
+azerus_ring_024:
+  material: PAPER
+  itemname: "<white>Кольцо 024"
+  Pack:
+    model: azerus:item/rings_azerus/ring_024
+  Components:
+    item_model: azerus:rings_azerus/ring_024
+
+azerus_ring_025:
+  material: PAPER
+  itemname: "<white>Кольцо 025"
+  Pack:
+    model: azerus:item/rings_azerus/ring_025
+  Components:
+    item_model: azerus:rings_azerus/ring_025
+
+azerus_ring_026:
+  material: PAPER
+  itemname: "<white>Кольцо 026"
+  Pack:
+    model: azerus:item/rings_azerus/ring_026
+  Components:
+    item_model: azerus:rings_azerus/ring_026
+
+azerus_ring_027:
+  material: PAPER
+  itemname: "<white>Кольцо 027"
+  Pack:
+    model: azerus:item/rings_azerus/ring_027
+  Components:
+    item_model: azerus:rings_azerus/ring_027
+
+azerus_ring_028:
+  material: PAPER
+  itemname: "<white>Кольцо 028"
+  Pack:
+    model: azerus:item/rings_azerus/ring_028
+  Components:
+    item_model: azerus:rings_azerus/ring_028
+
+azerus_ring_029:
+  material: PAPER
+  itemname: "<white>Кольцо 029"
+  Pack:
+    model: azerus:item/rings_azerus/ring_029
+  Components:
+    item_model: azerus:rings_azerus/ring_029
+
+azerus_ring_030:
+  material: PAPER
+  itemname: "<white>Кольцо 030"
+  Pack:
+    model: azerus:item/rings_azerus/ring_030
+  Components:
+    item_model: azerus:rings_azerus/ring_030
+
+azerus_ring_031:
+  material: PAPER
+  itemname: "<white>Кольцо 031"
+  Pack:
+    model: azerus:item/rings_azerus/ring_031
+  Components:
+    item_model: azerus:rings_azerus/ring_031
+
+azerus_ring_032:
+  material: PAPER
+  itemname: "<white>Кольцо 032"
+  Pack:
+    model: azerus:item/rings_azerus/ring_032
+  Components:
+    item_model: azerus:rings_azerus/ring_032
+
+azerus_ring_033:
+  material: PAPER
+  itemname: "<white>Кольцо 033"
+  Pack:
+    model: azerus:item/rings_azerus/ring_033
+  Components:
+    item_model: azerus:rings_azerus/ring_033
+
+azerus_ring_034:
+  material: PAPER
+  itemname: "<white>Кольцо 034"
+  Pack:
+    model: azerus:item/rings_azerus/ring_034
+  Components:
+    item_model: azerus:rings_azerus/ring_034
+
+azerus_ring_035:
+  material: PAPER
+  itemname: "<white>Кольцо 035"
+  Pack:
+    model: azerus:item/rings_azerus/ring_035
+  Components:
+    item_model: azerus:rings_azerus/ring_035
+
+azerus_ring_036:
+  material: PAPER
+  itemname: "<white>Кольцо 036"
+  Pack:
+    model: azerus:item/rings_azerus/ring_036
+  Components:
+    item_model: azerus:rings_azerus/ring_036
+
+azerus_ring_037:
+  material: PAPER
+  itemname: "<white>Кольцо 037"
+  Pack:
+    model: azerus:item/rings_azerus/ring_037
+  Components:
+    item_model: azerus:rings_azerus/ring_037
+
+azerus_ring_038:
+  material: PAPER
+  itemname: "<white>Кольцо 038"
+  Pack:
+    model: azerus:item/rings_azerus/ring_038
+  Components:
+    item_model: azerus:rings_azerus/ring_038
+
+azerus_ring_039:
+  material: PAPER
+  itemname: "<white>Кольцо 039"
+  Pack:
+    model: azerus:item/rings_azerus/ring_039
+  Components:
+    item_model: azerus:rings_azerus/ring_039
+
+azerus_ring_040:
+  material: PAPER
+  itemname: "<white>Кольцо 040"
+  Pack:
+    model: azerus:item/rings_azerus/ring_040
+  Components:
+    item_model: azerus:rings_azerus/ring_040
+
+azerus_ring_041:
+  material: PAPER
+  itemname: "<white>Кольцо 041"
+  Pack:
+    model: azerus:item/rings_azerus/ring_041
+  Components:
+    item_model: azerus:rings_azerus/ring_041
+
+azerus_ring_042:
+  material: PAPER
+  itemname: "<white>Кольцо 042"
+  Pack:
+    model: azerus:item/rings_azerus/ring_042
+  Components:
+    item_model: azerus:rings_azerus/ring_042
+
+azerus_ring_043:
+  material: PAPER
+  itemname: "<white>Кольцо 043"
+  Pack:
+    model: azerus:item/rings_azerus/ring_043
+  Components:
+    item_model: azerus:rings_azerus/ring_043
+
+azerus_ring_044:
+  material: PAPER
+  itemname: "<white>Кольцо 044"
+  Pack:
+    model: azerus:item/rings_azerus/ring_044
+  Components:
+    item_model: azerus:rings_azerus/ring_044
+
+azerus_ring_045:
+  material: PAPER
+  itemname: "<white>Кольцо 045"
+  Pack:
+    model: azerus:item/rings_azerus/ring_045
+  Components:
+    item_model: azerus:rings_azerus/ring_045
+
+azerus_ring_046:
+  material: PAPER
+  itemname: "<white>Кольцо 046"
+  Pack:
+    model: azerus:item/rings_azerus/ring_046
+  Components:
+    item_model: azerus:rings_azerus/ring_046
+
+azerus_ring_047:
+  material: PAPER
+  itemname: "<white>Кольцо 047"
+  Pack:
+    model: azerus:item/rings_azerus/ring_047
+  Components:
+    item_model: azerus:rings_azerus/ring_047
+
+azerus_ring_048:
+  material: PAPER
+  itemname: "<white>Кольцо 048"
+  Pack:
+    model: azerus:item/rings_azerus/ring_048
+  Components:
+    item_model: azerus:rings_azerus/ring_048
+
+azerus_ring_049:
+  material: PAPER
+  itemname: "<white>Кольцо 049"
+  Pack:
+    model: azerus:item/rings_azerus/ring_049
+  Components:
+    item_model: azerus:rings_azerus/ring_049
+
+azerus_ring_050:
+  material: PAPER
+  itemname: "<white>Кольцо 050"
+  Pack:
+    model: azerus:item/rings_azerus/ring_050
+  Components:
+    item_model: azerus:rings_azerus/ring_050
+
+azerus_ring_051:
+  material: PAPER
+  itemname: "<white>Кольцо 051"
+  Pack:
+    model: azerus:item/rings_azerus/ring_051
+  Components:
+    item_model: azerus:rings_azerus/ring_051
+
+azerus_ring_052:
+  material: PAPER
+  itemname: "<white>Кольцо 052"
+  Pack:
+    model: azerus:item/rings_azerus/ring_052
+  Components:
+    item_model: azerus:rings_azerus/ring_052
+
+azerus_ring_053:
+  material: PAPER
+  itemname: "<white>Кольцо 053"
+  Pack:
+    model: azerus:item/rings_azerus/ring_053
+  Components:
+    item_model: azerus:rings_azerus/ring_053
+
+azerus_ring_054:
+  material: PAPER
+  itemname: "<white>Кольцо 054"
+  Pack:
+    model: azerus:item/rings_azerus/ring_054
+  Components:
+    item_model: azerus:rings_azerus/ring_054
+
+azerus_ring_055:
+  material: PAPER
+  itemname: "<white>Кольцо 055"
+  Pack:
+    model: azerus:item/rings_azerus/ring_055
+  Components:
+    item_model: azerus:rings_azerus/ring_055
+
+azerus_ring_056:
+  material: PAPER
+  itemname: "<white>Кольцо 056"
+  Pack:
+    model: azerus:item/rings_azerus/ring_056
+  Components:
+    item_model: azerus:rings_azerus/ring_056
+
+azerus_ring_057:
+  material: PAPER
+  itemname: "<white>Кольцо 057"
+  Pack:
+    model: azerus:item/rings_azerus/ring_057
+  Components:
+    item_model: azerus:rings_azerus/ring_057
+
+azerus_ring_058:
+  material: PAPER
+  itemname: "<white>Кольцо 058"
+  Pack:
+    model: azerus:item/rings_azerus/ring_058
+  Components:
+    item_model: azerus:rings_azerus/ring_058
+
+azerus_ring_059:
+  material: PAPER
+  itemname: "<white>Кольцо 059"
+  Pack:
+    model: azerus:item/rings_azerus/ring_059
+  Components:
+    item_model: azerus:rings_azerus/ring_059
+
+azerus_ring_060:
+  material: PAPER
+  itemname: "<white>Кольцо 060"
+  Pack:
+    model: azerus:item/rings_azerus/ring_060
+  Components:
+    item_model: azerus:rings_azerus/ring_060
+
+azerus_ring_061:
+  material: PAPER
+  itemname: "<white>Кольцо 061"
+  Pack:
+    model: azerus:item/rings_azerus/ring_061
+  Components:
+    item_model: azerus:rings_azerus/ring_061
+
+azerus_ring_062:
+  material: PAPER
+  itemname: "<white>Кольцо 062"
+  Pack:
+    model: azerus:item/rings_azerus/ring_062
+  Components:
+    item_model: azerus:rings_azerus/ring_062
+
+azerus_ring_063:
+  material: PAPER
+  itemname: "<white>Кольцо 063"
+  Pack:
+    model: azerus:item/rings_azerus/ring_063
+  Components:
+    item_model: azerus:rings_azerus/ring_063
+
+azerus_ring_064:
+  material: PAPER
+  itemname: "<white>Кольцо 064"
+  Pack:
+    model: azerus:item/rings_azerus/ring_064
+  Components:
+    item_model: azerus:rings_azerus/ring_064
+
+azerus_ring_065:
+  material: PAPER
+  itemname: "<white>Кольцо 065"
+  Pack:
+    model: azerus:item/rings_azerus/ring_065
+  Components:
+    item_model: azerus:rings_azerus/ring_065
+
+azerus_ring_066:
+  material: PAPER
+  itemname: "<white>Кольцо 066"
+  Pack:
+    model: azerus:item/rings_azerus/ring_066
+  Components:
+    item_model: azerus:rings_azerus/ring_066
+
+azerus_ring_067:
+  material: PAPER
+  itemname: "<white>Кольцо 067"
+  Pack:
+    model: azerus:item/rings_azerus/ring_067
+  Components:
+    item_model: azerus:rings_azerus/ring_067
+
+azerus_ring_068:
+  material: PAPER
+  itemname: "<white>Кольцо 068"
+  Pack:
+    model: azerus:item/rings_azerus/ring_068
+  Components:
+    item_model: azerus:rings_azerus/ring_068
+
+azerus_ring_069:
+  material: PAPER
+  itemname: "<white>Кольцо 069"
+  Pack:
+    model: azerus:item/rings_azerus/ring_069
+  Components:
+    item_model: azerus:rings_azerus/ring_069
+
+azerus_ring_070:
+  material: PAPER
+  itemname: "<white>Кольцо 070"
+  Pack:
+    model: azerus:item/rings_azerus/ring_070
+  Components:
+    item_model: azerus:rings_azerus/ring_070
+
+azerus_ring_071:
+  material: PAPER
+  itemname: "<white>Кольцо 071"
+  Pack:
+    model: azerus:item/rings_azerus/ring_071
+  Components:
+    item_model: azerus:rings_azerus/ring_071
+
+azerus_ring_072:
+  material: PAPER
+  itemname: "<white>Кольцо 072"
+  Pack:
+    model: azerus:item/rings_azerus/ring_072
+  Components:
+    item_model: azerus:rings_azerus/ring_072
+
+azerus_ring_073:
+  material: PAPER
+  itemname: "<white>Кольцо 073"
+  Pack:
+    model: azerus:item/rings_azerus/ring_073
+  Components:
+    item_model: azerus:rings_azerus/ring_073
+
+azerus_ring_074:
+  material: PAPER
+  itemname: "<white>Кольцо 074"
+  Pack:
+    model: azerus:item/rings_azerus/ring_074
+  Components:
+    item_model: azerus:rings_azerus/ring_074
+
+azerus_ring_075:
+  material: PAPER
+  itemname: "<white>Кольцо 075"
+  Pack:
+    model: azerus:item/rings_azerus/ring_075
+  Components:
+    item_model: azerus:rings_azerus/ring_075
+
+azerus_ring_076:
+  material: PAPER
+  itemname: "<white>Кольцо 076"
+  Pack:
+    model: azerus:item/rings_azerus/ring_076
+  Components:
+    item_model: azerus:rings_azerus/ring_076
+
+azerus_ring_077:
+  material: PAPER
+  itemname: "<white>Кольцо 077"
+  Pack:
+    model: azerus:item/rings_azerus/ring_077
+  Components:
+    item_model: azerus:rings_azerus/ring_077
+
+azerus_ring_078:
+  material: PAPER
+  itemname: "<white>Кольцо 078"
+  Pack:
+    model: azerus:item/rings_azerus/ring_078
+  Components:
+    item_model: azerus:rings_azerus/ring_078
+
+azerus_ring_079:
+  material: PAPER
+  itemname: "<white>Кольцо 079"
+  Pack:
+    model: azerus:item/rings_azerus/ring_079
+  Components:
+    item_model: azerus:rings_azerus/ring_079
+
+azerus_ring_080:
+  material: PAPER
+  itemname: "<white>Кольцо 080"
+  Pack:
+    model: azerus:item/rings_azerus/ring_080
+  Components:
+    item_model: azerus:rings_azerus/ring_080
+
+azerus_ring_081:
+  material: PAPER
+  itemname: "<white>Кольцо 081"
+  Pack:
+    model: azerus:item/rings_azerus/ring_081
+  Components:
+    item_model: azerus:rings_azerus/ring_081
+
+azerus_ring_082:
+  material: PAPER
+  itemname: "<white>Кольцо 082"
+  Pack:
+    model: azerus:item/rings_azerus/ring_082
+  Components:
+    item_model: azerus:rings_azerus/ring_082
+
+azerus_ring_083:
+  material: PAPER
+  itemname: "<white>Кольцо 083"
+  Pack:
+    model: azerus:item/rings_azerus/ring_083
+  Components:
+    item_model: azerus:rings_azerus/ring_083
+
+azerus_ring_084:
+  material: PAPER
+  itemname: "<white>Кольцо 084"
+  Pack:
+    model: azerus:item/rings_azerus/ring_084
+  Components:
+    item_model: azerus:rings_azerus/ring_084
+
+azerus_ring_085:
+  material: PAPER
+  itemname: "<white>Кольцо 085"
+  Pack:
+    model: azerus:item/rings_azerus/ring_085
+  Components:
+    item_model: azerus:rings_azerus/ring_085
+
+azerus_ring_086:
+  material: PAPER
+  itemname: "<white>Кольцо 086"
+  Pack:
+    model: azerus:item/rings_azerus/ring_086
+  Components:
+    item_model: azerus:rings_azerus/ring_086
+
+azerus_ring_087:
+  material: PAPER
+  itemname: "<white>Кольцо 087"
+  Pack:
+    model: azerus:item/rings_azerus/ring_087
+  Components:
+    item_model: azerus:rings_azerus/ring_087
+
+azerus_ring_088:
+  material: PAPER
+  itemname: "<white>Кольцо 088"
+  Pack:
+    model: azerus:item/rings_azerus/ring_088
+  Components:
+    item_model: azerus:rings_azerus/ring_088
+
+azerus_ring_089:
+  material: PAPER
+  itemname: "<white>Кольцо 089"
+  Pack:
+    model: azerus:item/rings_azerus/ring_089
+  Components:
+    item_model: azerus:rings_azerus/ring_089
+
+azerus_ring_090:
+  material: PAPER
+  itemname: "<white>Кольцо 090"
+  Pack:
+    model: azerus:item/rings_azerus/ring_090
+  Components:
+    item_model: azerus:rings_azerus/ring_090
+
+azerus_ring_091:
+  material: PAPER
+  itemname: "<white>Кольцо 091"
+  Pack:
+    model: azerus:item/rings_azerus/ring_091
+  Components:
+    item_model: azerus:rings_azerus/ring_091
+
+azerus_ring_092:
+  material: PAPER
+  itemname: "<white>Кольцо 092"
+  Pack:
+    model: azerus:item/rings_azerus/ring_092
+  Components:
+    item_model: azerus:rings_azerus/ring_092
+
+azerus_ring_093:
+  material: PAPER
+  itemname: "<white>Кольцо 093"
+  Pack:
+    model: azerus:item/rings_azerus/ring_093
+  Components:
+    item_model: azerus:rings_azerus/ring_093
+
+azerus_ring_094:
+  material: PAPER
+  itemname: "<white>Кольцо 094"
+  Pack:
+    model: azerus:item/rings_azerus/ring_094
+  Components:
+    item_model: azerus:rings_azerus/ring_094
+
+azerus_ring_095:
+  material: PAPER
+  itemname: "<white>Кольцо 095"
+  Pack:
+    model: azerus:item/rings_azerus/ring_095
+  Components:
+    item_model: azerus:rings_azerus/ring_095
+
+azerus_ring_096:
+  material: PAPER
+  itemname: "<white>Кольцо 096"
+  Pack:
+    model: azerus:item/rings_azerus/ring_096
+  Components:
+    item_model: azerus:rings_azerus/ring_096
+
+azerus_ring_097:
+  material: PAPER
+  itemname: "<white>Кольцо 097"
+  Pack:
+    model: azerus:item/rings_azerus/ring_097
+  Components:
+    item_model: azerus:rings_azerus/ring_097
+
+azerus_ring_098:
+  material: PAPER
+  itemname: "<white>Кольцо 098"
+  Pack:
+    model: azerus:item/rings_azerus/ring_098
+  Components:
+    item_model: azerus:rings_azerus/ring_098
+
+azerus_ring_099:
+  material: PAPER
+  itemname: "<white>Кольцо 099"
+  Pack:
+    model: azerus:item/rings_azerus/ring_099
+  Components:
+    item_model: azerus:rings_azerus/ring_099
+
+azerus_ring_100:
+  material: PAPER
+  itemname: "<white>Кольцо 100"
+  Pack:
+    model: azerus:item/rings_azerus/ring_100
+  Components:
+    item_model: azerus:rings_azerus/ring_100
+
+azerus_ring_101:
+  material: PAPER
+  itemname: "<white>Кольцо 101"
+  Pack:
+    model: azerus:item/rings_azerus/ring_101
+  Components:
+    item_model: azerus:rings_azerus/ring_101
+
+azerus_ring_102:
+  material: PAPER
+  itemname: "<white>Кольцо 102"
+  Pack:
+    model: azerus:item/rings_azerus/ring_102
+  Components:
+    item_model: azerus:rings_azerus/ring_102
