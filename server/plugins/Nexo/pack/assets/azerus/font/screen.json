@@ -1,0 +1,13 @@
+{
+ "providers": [
+  {
+   "type": "bitmap",
+   "file": "azerus:font/screen/black.png",
+   "height": 144,
+   "ascent": 69,
+   "chars": [
+    ""
+   ]
+  }
+ ]
+}
