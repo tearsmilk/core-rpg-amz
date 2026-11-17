@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:multi_action",
+  "title": {"text": "AZERUS", "color": "gold", "bold": true},
+  "external_title": {"text": "Меню AZERUS"},
+  "body": {"type": "minecraft:plain_message", "contents": {"text": "Выберите, что открыть.", "color": "gray"}},
+  "columns": 1,
+  "actions": [
+    {
+      "label": {"text": "Инвентарь", "color": "gold"},
+      "tooltip": {"text": "RPG-инвентарь: персонаж, снаряжение и инвентарь", "color": "gray"},
+      "width": 200,
+      "action": {"type": "minecraft:run_command", "command": "/menuses open rpg"}
+    },
+    {
+      "label": {"text": "Выбор профиля", "color": "aqua"},
+      "tooltip": {"text": "Персонажи: выбрать, создать новый", "color": "gray"},
+      "width": 200,
+      "action": {"type": "minecraft:run_command", "command": "/profiles"}
+    }
+  ],
+  "exit_action": {"label": {"translate": "gui.back"}, "width": 200}
+}

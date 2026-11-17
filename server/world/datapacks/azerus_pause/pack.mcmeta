@@ -1,0 +1,7 @@
+{
+  "pack": {
+    "description": "AZERUS: кнопка «Меню AZERUS» в меню паузы (ESC) — Инвентарь и Выбор профиля",
+    "min_format": 94,
+    "max_format": 94
+  }
+}
