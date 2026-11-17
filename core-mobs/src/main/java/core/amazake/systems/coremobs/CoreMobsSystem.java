@@ -4,6 +4,7 @@ import core.amazake.systems.api.AmazakeSystem;
 import core.amazake.systems.api.SystemContext;
 import core.amazake.systems.coremobs.drop.DropStore;
 import core.amazake.systems.coremobs.hook.ModelHook;
+import core.amazake.systems.coremobs.mob.InfightingListener;
 import core.amazake.systems.coremobs.mob.MobCatalog;
 import core.amazake.systems.coremobs.mob.MobDef;
 import core.amazake.systems.coremobs.mob.MobListener;
@@ -90,6 +91,7 @@ public final class CoreMobsSystem implements AmazakeSystem, Listener {
         context.registerListener(this.models);
         context.registerListener(this.displays);
         context.registerListener(new WorldListener(this.worlds, this.settings::get));
+        context.registerListener(new InfightingListener(this.settings::get));
         context.registerCommand(new MobsCommand(context, this.settings::get, this.catalog::get, this.mobs, this.drops,
             this.regions, this.selections, this.spawner, this.displays, this.worlds, this::reloadAll));
         this.startSpawnTimer();

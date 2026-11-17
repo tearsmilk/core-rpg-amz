@@ -36,7 +36,8 @@ public record Settings(
     double displaySegment,
     boolean displayPosts,
     java.util.Set<org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason> worldAllowedReasons,
-    boolean worldRemoveExisting
+    boolean worldRemoveExisting,
+    core.amazake.systems.coremobs.mob.Infighting infighting
 ) {
 
     public static final Settings DEFAULTS = new Settings(
@@ -54,7 +55,8 @@ public record Settings(
         Material.LIME_CONCRETE, 0.06f, false, Color.fromRGB(0x00C853), 2.0f, 8.0, true,
         java.util.Set.of(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM,
             org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.COMMAND),
-        true);
+        true,
+        core.amazake.systems.coremobs.mob.Infighting.DEFAULTS);
 
     public static Settings from(final ConfigurationSection c, final Consumer<String> warn) {
         final Settings d = DEFAULTS;
@@ -91,7 +93,8 @@ public record Settings(
             clampD(c.getDouble("display.segment-length", d.displaySegment()), 1.0, 32.0, "display.segment-length", warn),
             c.getBoolean("display.posts", d.displayPosts()),
             reasons(c, d.worldAllowedReasons(), warn),
-            c.getBoolean("worlds.remove-existing", d.worldRemoveExisting()));
+            c.getBoolean("worlds.remove-existing", d.worldRemoveExisting()),
+            core.amazake.systems.coremobs.mob.Infighting.from(c.getConfigurationSection("infighting"), warn));
     }
 
     private static Material block(final String raw, final Material fallback, final Consumer<String> warn) {
