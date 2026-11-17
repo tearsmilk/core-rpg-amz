@@ -477,7 +477,7 @@ def check_files():
         al[0, 0] = al[0, 1] = 0
         if al[:2].any() or al[-2:].any() or al[:, :2].any() or al[:, -2:].any():
             bad(f'{name}.png: рамка 2 px не прозрачная')
-        if name not in ('beam_up', 'beam_down', 'beam_west', 'beam_east'):
+        if name not in ('beam_up', 'beam_down', 'beam_west', 'beam_east') + FX.TAILS:  # хвосты комет — во весь спрайт
             if (al[FX.RR > FX.CIRCLE_ART_R] > 0).any():
                 bad(f'{name}.png: рисунок за радиусом {FX.CIRCLE_ART_R}')
     st = Image.open(os.path.join(AZ, 'textures', 'item', 'moon_staff.png'))

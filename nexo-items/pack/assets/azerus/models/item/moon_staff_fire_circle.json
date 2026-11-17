@@ -1,0 +1,155 @@
+{
+ "textures": {
+  "1": "azerus:item/moon_staff_fx/fire_ring",
+  "2": "azerus:item/moon_staff_fx/fire_runes",
+  "3": "azerus:item/moon_staff_fx/fire_sigil",
+  "4": "azerus:item/moon_staff_fx/fire_flames",
+  "particle": "azerus:item/moon_staff_fx/fire_ring"
+ },
+ "elements": [
+  {
+   "from": [
+    -2,
+    -2,
+    8.25
+   ],
+   "to": [
+    18,
+    18,
+    8.25
+   ],
+   "shade": false,
+   "light_emission": 15,
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#4",
+     "tintindex": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#4",
+     "tintindex": 0
+    }
+   }
+  },
+  {
+   "from": [
+    0,
+    0,
+    8.15
+   ],
+   "to": [
+    16,
+    16,
+    8.15
+   ],
+   "shade": false,
+   "light_emission": 15,
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#1",
+     "tintindex": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#1",
+     "tintindex": 0
+    }
+   }
+  },
+  {
+   "from": [
+    0,
+    0,
+    8.05
+   ],
+   "to": [
+    16,
+    16,
+    8.05
+   ],
+   "shade": false,
+   "light_emission": 15,
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#2",
+     "tintindex": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#2",
+     "tintindex": 0
+    }
+   }
+  },
+  {
+   "from": [
+    0,
+    0,
+    7.95
+   ],
+   "to": [
+    16,
+    16,
+    7.95
+   ],
+   "shade": false,
+   "light_emission": 15,
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#3",
+     "tintindex": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#3",
+     "tintindex": 0
+    }
+   }
+  }
+ ]
+}

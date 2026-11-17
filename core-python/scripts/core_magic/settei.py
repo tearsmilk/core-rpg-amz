@@ -38,6 +38,13 @@ def f32(x):
     "barrier-cooldown": "<#7fd8ff>Барьер восстанавливается: <white><s> с",
     "barrier-too-early": "<gray>Барьер рассыпался — держите ПКМ <white><need> с</white>.",
     "barrier-no-room": "<gray>Здесь барьер не встанет.",
+    "mode-meteor": "<#ffa040>Заклинание: <white>Огненный шар</white> <dark_gray>(Shift+ЛКМ — сменить)",
+    "meteor-charge": "<#ffa040>Огненный шар <bar>",
+    "meteor-ready": "<#ffa040>✦ Огненный круг готов — отпустите ПКМ!",
+    "meteor-cooldown": "<#ffa040>Огненный шар восстанавливается: <white><s> с",
+    "meteor-too-early": "<gray>Пламя угасло — держите ПКМ <white><need> с</white>.",
+    "meteor-too-long": "<gray>Огненный круг не удержан и погас.",
+    "meteor-no-room": "<gray>Здесь огненный круг не раскроется.",
 }
 
 既定音 = {
@@ -64,6 +71,18 @@ def f32(x):
     "mode-beam": [{"sound": "block.amethyst_block.chime", "volume": 0.8, "pitch": 1.6}],
     "mode-barrier": [{"sound": "block.amethyst_cluster.place", "volume": 0.8, "pitch": 1.2},
                      {"sound": "block.note_block.chime", "volume": 0.5, "pitch": 1.0}],
+    "meteor-start": [{"sound": "item.firecharge.use", "volume": 0.8, "pitch": 0.9},
+                     {"sound": "block.beacon.activate", "volume": 0.5, "pitch": 0.8}],
+    "meteor-hum": [{"sound": "block.fire.ambient", "volume": 1.0, "pitch": 1.0},
+                   {"sound": "entity.blaze.burn", "volume": 0.5, "pitch": 0.8}],
+    "meteor-ready": [{"sound": "block.respawn_anchor.charge", "volume": 1.0, "pitch": 1.0},
+                     {"sound": "block.beacon.power_select", "volume": 0.6, "pitch": 0.8}],
+    "meteor-release": [{"sound": "entity.blaze.shoot", "volume": 1.0, "pitch": 0.7}],
+    "meteor-launch": [{"sound": "entity.ghast.shoot", "volume": 0.7, "pitch": 0.9}],
+    "meteor-impact": [{"sound": "entity.generic.explode", "volume": 1.2, "pitch": 1.1},
+                      {"sound": "item.firecharge.use", "volume": 1.0, "pitch": 0.8}],
+    "meteor-fizzle": [{"sound": "block.fire.extinguish", "volume": 0.6, "pitch": 1.2}],
+    "mode-meteor": [{"sound": "item.firecharge.use", "volume": 0.6, "pitch": 1.4}],
 }
 音の名前 = tuple(既定音.keys())
 
@@ -80,11 +99,24 @@ def f32(x):
 様式 = namedtuple("様式", "既定 間隔 品に記す 選択時")
 #: Барьер (секция barrier, порядок ключей — как в config.yml).
 結界 = namedtuple("結界", "モデル 充填 秒 冷却秒 失敗秒 前 上 半径 列 行 隙間 飛 始倍 広がり 閃光 消える 消散 打閃光 視距離")
-#: Режимы посоха: луч и барьер.
-様式名 = ("beam", "barrier")
+#: «Огненный шар» (секция meteor, порядок ключей — как в config.yml).
+流星 = namedtuple("流星", "円模型 星模型 充填 冷却秒 失敗秒 射程 狙半径 地探 高さ 最低 天井隙 直径 始倍 追従距離 移動時間 更新 "
+                        "消散 閃光倍 消える 視距離 数 間隔 落下 散半径 中心から 出広がり 星倍 地上 破 破倍 衝 星視距離 "
+                        "傷 傷種 半径 対人 無敵無視 最多 火秒 押し 押し上")
+#: Режимы посоха по кругу Shift+ЛКМ: луч → барьер → огненный шар → луч.
+様式名 = ("beam", "barrier", "meteor")
 
 
-class 設定(namedtuple("設定", "杖 禁止世界 詠唱 冷却 円 光 音表 唸り周期 終粒 跡粒 文言 様式 結界 形成粒 打粒 終結粒")):
+def 次の様式(m):
+    """Следующий режим по кругу (неизвестный — первый)."""
+    try:
+        return 様式名[(様式名.index(m) + 1) % len(様式名)]
+    except ValueError:
+        return 様式名[0]
+
+
+class 設定(namedtuple("設定", "杖 禁止世界 詠唱 冷却 円 光 音表 唸り周期 終粒 跡粒 文言 様式 結界 形成粒 打粒 終結粒 "
+                            "流星 炎粒 星跡粒 着弾粒")):
     __slots__ = ()
 
     def 文(self, k):
@@ -205,6 +237,37 @@ def _粒(c, 道, 種類, 数, 広がり, 速さ, 毎, 警告):
              r.実数("every", 毎, 0.25, 30.0) if 毎 is not None else 0.0)
 
 
+def _粒列(c, 道, 既定, 警告):
+    """Список частиц: секция {type, count, spread, speed} или список таких секций. 既定 — список dict."""
+    if c is None:
+        c = 既定
+    if isinstance(c, dict):
+        c = [c]
+    if not isinstance(c, list):
+        警告(道 + ": ожидалась секция {type, count, spread, speed} или их список")
+        c = 既定
+    out = []
+    for i, x in enumerate(c):
+        if not isinstance(x, dict):
+            警告(道 + "[" + str(i) + "]: не секция {type, count, spread, speed}")
+            continue
+        d = 既定[min(i, len(既定) - 1)] if 既定 else {"type": "FLAME", "count": 1, "spread": 0.0, "speed": 0.0}
+        out.append(_粒(x, 道 + "[" + str(i) + "]", d["type"], d["count"], d["spread"], d["speed"], None, 警告))
+    return tuple(out)
+
+
+既定流星粒 = {
+    "meteor-ember": [{"type": "FLAME", "count": 2, "spread": 0.2, "speed": 0.01}],
+    "meteor-trail": [{"type": "FLAME", "count": 3, "spread": 0.15, "speed": 0.02},
+                     {"type": "LAVA", "count": 1, "spread": 0.1, "speed": 0.0},
+                     {"type": "END_ROD", "count": 1, "spread": 0.1, "speed": 0.01}],
+    "meteor-impact": [{"type": "EXPLOSION", "count": 2, "spread": 0.3, "speed": 0.0},
+                      {"type": "FLAME", "count": 40, "spread": 0.8, "speed": 0.12},
+                      {"type": "LAVA", "count": 8, "spread": 0.6, "speed": 0.0},
+                      {"type": "END_ROD", "count": 12, "spread": 0.5, "speed": 0.1}],
+}
+
+
 def 解析(c, 警告=lambda m: None):
     """dict из amazake.config → 設定. 警告(текст) — замечания (в лог)."""
     c = c if isinstance(c, dict) else {}
@@ -285,11 +348,14 @@ def 解析(c, 警告=lambda m: None):
     形成粒 = _粒(_区画(p, "barrier-form"), "particles.barrier-form", "ELECTRIC_SPARK", 3, 0.15, 0.02, None, 警告)
     打粒 = _粒(_区画(p, "barrier-hit"), "particles.barrier-hit", "END_ROD", 16, 0.12, 0.07, None, 警告)
     終結粒 = _粒(_区画(p, "barrier-end"), "particles.barrier-end", "ELECTRIC_SPARK", 2, 0.2, 0.03, None, 警告)
+    炎粒 = _粒列(p.get("meteor-ember"), "particles.meteor-ember", 既定流星粒["meteor-ember"], 警告)
+    星跡粒 = _粒列(p.get("meteor-trail"), "particles.meteor-trail", 既定流星粒["meteor-trail"], 警告)
+    着弾粒 = _粒列(p.get("meteor-impact"), "particles.meteor-impact", 既定流星粒["meteor-impact"], 警告)
 
     r = _読み手(_区画(c, "mode"), "mode", 警告)
     既定様式 = r.文字("default", "beam").strip().lower()
     if 既定様式 not in 様式名:
-        r._言う("default", "«" + 既定様式 + "» — не beam/barrier, взято beam")
+        r._言う("default", "«" + 既定様式 + "» — не beam/barrier/meteor, взято beam")
         既定様式 = "beam"
     様式設定 = 様式(既定様式, r.整数("toggle-debounce-ms", 300, 50, 2000), r.真偽("remember-on-item", True),
                   r.真偽("show-on-select", True))
@@ -323,6 +389,54 @@ def 解析(c, 警告=lambda m: None):
         r._言う("fly-ticks", str(結界設定.飛) + " не меньше charge-ticks, взято " + str(結界設定.充填 - 1))
         結界設定 = 結界設定._replace(飛=結界設定.充填 - 1)
 
+    r = _読み手(_区画(c, "meteor"), "meteor", 警告)
+    流星設定 = 流星(_模型(r, "circle-model", "azerus:moon_staff_fire_circle"),
+                 _模型(r, "comet-model", "azerus:moon_staff_comet"),
+                 r.整数("charge-ticks", 60, 5, 1200),
+                 r.実数("cooldown-seconds", 12.0, 0.0, 3600.0),
+                 r.実数("after-fizzle-seconds", 0.5, 0.0, 3600.0),
+                 r.実数("range", 30.0, 4.0, 40.0),
+                 r.実数("target-hit-radius", 0.5, 0.0, 2.0),
+                 r.実数("ground-scan", 48.0, 4.0, 128.0),
+                 r.実数("height", 13.0, 3.0, 24.0),
+                 r.実数("min-height", 2.0, 1.0, 10.0),
+                 r.実数("ceiling-gap", 0.6, 0.0, 3.0),
+                 r.実数("diameter", 6.0, 1.0, 12.0),
+                 r.実数("start-scale", 0.25, 0.01, 1.0),
+                 r.実数("follow-min-move", 0.75, 0.0, 8.0),
+                 r.整数("teleport-duration", 3, 0, 59),
+                 r.整数("update-ticks", 4, 1, 40),
+                 r.整数("fizzle-ticks", 8, 1, 60),
+                 r.実数("fire-flash-scale", 1.1, 0.1, 4.0),
+                 r.整数("fade-ticks", 12, 1, 60),
+                 r.実数("view-range", 2.0, 0.05, 16.0),
+                 r.整数("comets", 6, 1, 16),
+                 r.整数("launch-spread-ticks", 20, 0, 100),
+                 r.整数("fall-ticks", 10, 2, 40),
+                 r.実数("scatter-radius", 4.0, 0.0, 10.0),
+                 r.真偽("first-at-center", True),
+                 r.実数("spawn-spread", 0.6, 0.0, 1.0),
+                 r.実数("comet-scale", 1.6, 0.2, 6.0),
+                 r.実数("ground-offset", 0.4, 0.0, 2.0),
+                 r.整数("burst-ticks", 2, 1, 10),
+                 r.実数("burst-scale", 1.8, 1.0, 4.0),
+                 r.整数("impact-ticks", 5, 1, 20),
+                 r.実数("comet-view-range", 2.0, 0.05, 16.0),
+                 r.実数("damage", 6.0, 0.0, 10000.0),
+                 _模型(r, "damage-type", "minecraft:magic"),
+                 r.実数("hit-radius", 3.0, 0.0, 8.0),
+                 r.真偽("hit-players", True),
+                 r.真偽("ignore-invulnerability", True),
+                 r.整数("max-hits-per-entity", 3, 1, 16),
+                 r.実数("fire-seconds", 3.0, 0.0, 30.0),
+                 r.実数("knockback", 0.35, 0.0, 3.0),
+                 r.実数("knockback-up", 0.25, 0.0, 2.0))
+    if 流星設定.充填 >= 詠唱設定.最長 * 20.0:
+        y = max(5, int(詠唱設定.最長 * 20.0) - 20)
+        r._言う("charge-ticks", str(流星設定.充填) + " не меньше cast.max-hold-seconds (" + str(詠唱設定.最長)
+               + " с) — круг гас бы раньше готовности, взято " + str(y))
+        流星設定 = 流星設定._replace(充填=y)
+
     文言 = dict(既定文言)
     m = c.get("messages")
     if isinstance(m, dict):
@@ -332,7 +446,7 @@ def 解析(c, 警告=lambda m: None):
             elif isinstance(v, list):
                 文言[str(k)] = "<newline>".join(str(x) for x in v)
     return 設定(杖設定, 禁止, 詠唱設定, 冷却設定, 円設定, 光設定, 音表, 唸り, 終粒, 跡粒, 文言, 様式設定, 結界設定, 形成粒,
-              打粒, 終結粒)
+              打粒, 終結粒, 流星設定, 炎粒, 星跡粒, 着弾粒)
 
 
 #: Снимок по умолчанию (до чтения файла) и текущий (подменяет main при загрузке и /cmagic reload).

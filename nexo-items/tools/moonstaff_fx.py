@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
-"""«Посох Лунного Странника»: спрайты эффектов (магический круг и луч), модели эффектов, определения предметов
+"""«Посох Лунного Странника»: спрайты эффектов (магический круг, луч, барьер, огненный круг и кометы «Огненного шара»),
+модели эффектов, определения предметов
 эффектов и Python-копия шейдерного хука (azerus:moonstaff_fragment.glsl) — для превью и для проверки.
 
 Модуль общий для tools/moon_staff.py (сборка) и tools/moonstaff_check.py (проверка). Запуск сам по себе не нужен.
 
 Спрайт = 128×128 RGBA в pack/assets/azerus/textures/item/moon_staff_fx/<имя>.png. Сигнатура для шейдера:
-  тексель (0,0) = S0 = (177,126,90,3), тексель (1,0) = (K,90,126,3), K — вид спрайта 1..10 (таблица KINDS).
+  тексель (0,0) = S0 = (177,126,90,3), тексель (1,0) = (K,90,126,3), K — вид спрайта 1..19 (таблица KINDS),
+  K20..K31 — резерв.
 Альфа 3 нигде больше не встречается; остаток строк 0..1, столбцов 0..1 и рамка 2 px по краю — прозрачные.
-Рисунок кругов — только внутри радиуса 61 px от центра (63.5, 63.5), лучей — во внутреннем квадрате 124×124.
+Рисунок кругов (и всех радиальных спрайтов) — только внутри радиуса 61 px от центра (63.5, 63.5), лучей и хвостов
+комет — во внутреннем квадрате 124×124.
 K10 hex_cell — ячейка барьера (шестигранник «вершиной вверх», внешний радиус ровно HEX_R_PX = 60 px), классы альфы:
   255 — обвод, 254 — блёстка, 209..239 — фаска, 96..208 — заливка, 0 — вне шестигранника (шейдер различает по альфе).
+K11..K14 — огненный круг (кольца, руны, печать, языки пламени; цвета огня «запечены» в спрайты), у K14 альфа 254 —
+искры (мерцают). K15..K18 — хвост кометы (4 ориентации, как K5..K8), K19 — голова кометы (радиальная).
 Без шейдера (Iris, старый пак) сигнатура отрезается ванильным порогом альфы 0.1, видна обычная картинка с оттенком.
 """
 import json
@@ -29,13 +34,22 @@ SPRITE = 128                      # шейдер: MS_SPRITE_PX
 S0 = (177, 126, 90, 3)            # шейдер: сигнатура в (0,0)
 KINDS = {'ring': 1, 'runes': 2, 'hexagram': 3, 'core': 4,
          'beam_up': 5, 'beam_down': 6, 'beam_west': 7, 'beam_east': 8, 'flare': 9,
-         'hex_cell': 10}                                      # K11..K15 — резерв, не используются
+         'hex_cell': 10,
+         'fire_ring': 11, 'fire_runes': 12, 'fire_sigil': 13, 'fire_flames': 14,
+         'comet_tail_up': 15, 'comet_tail_down': 16, 'comet_tail_west': 17, 'comet_tail_east': 18,
+         'comet_core': 19}                                    # K20..K31 — резерв, не используются
+BEAMS = ('beam_up', 'beam_down', 'beam_west', 'beam_east')
+TAILS = ('comet_tail_up', 'comet_tail_down', 'comet_tail_west', 'comet_tail_east')
+FIRE_CIRCLE = ('fire_ring', 'fire_runes', 'fire_sigil', 'fire_flames')
+FLAMES_WIDE = 1.25                # плоскость языков пламени в 1.25 раза шире кольца (модель moon_staff_fire_circle)
 CIRCLE_ART_R = 61.0               # рисунок кругов не дальше этого радиуса (px)
 MARK_G, MARK_B = 233, 253         # маркер вершины: Color = (R, 233, 253), R ≤ 250 — параметр
 
 hexc = lambda h: tuple(int(h[i:i + 2], 16) for i in (1, 3, 5))
 CYAN = [hexc(h) for h in ('#0b2a4a', '#1560a8', '#2fa8e8', '#7fd8ff', '#e8fbff')]
 WHITE = (255, 255, 255)
+# Огонь: тёмно-красный → белый накал. Самый тёмный тон — только тонкой кромкой.
+FIRE = [hexc(h) for h in ('#7a1404', '#d2400a', '#ff7a12', '#ffb43a', '#ffe08a', '#fff8e0')]
 
 # ------------------------------------------------------------------------------------------- поле пикселей
 C = (SPRITE - 1) / 2.0            # центр (63.5, 63.5) в индексах текселей
@@ -65,6 +79,14 @@ class Layer:
             self.put(dist < width + 2.8, CYAN[2], 96)
         self.put(dist < width + 1.0, CYAN[3], 255)
         self.put(dist < width, core, 255)
+
+    def fire_line(self, dist, width=0.75, glow=True, core=None, edge=None):
+        """Линия огня: ядро — белый накал, кайма — золото, ореол — оранжевый ступенями альфы."""
+        if glow:
+            self.put(dist < width + 4.0, FIRE[1], 56)
+            self.put(dist < width + 2.4, FIRE[2], 120)
+        self.put(dist < width + 1.0, FIRE[3] if edge is None else edge, 255)
+        self.put(dist < width, FIRE[5] if core is None else core, 255)
 
     def image(self, kind, circle):
         a = np.round(self.a).astype(int)
@@ -365,14 +387,252 @@ def beam_sprite(kind_name):
     return L.image(KINDS[kind_name], False)
 
 
+# ------------------------------------------------------------------------------------------- огненный круг (K11..K14)
+def _dot(L, x, y, r_glow, r_mid, r_core, glow=FIRE[2], mid=FIRE[4], core=FIRE[5], a_glow=150):
+    d = np.hypot(DX - x, DY - y)
+    L.put(d < r_glow, glow, a_glow)
+    L.put(d < r_mid, mid, 255)
+    L.put(d < r_core, core, 255)
+
+
+def sprite_fire_ring():
+    """K11: внешний золотой обод 55..60 (кромки: белый накал внутри, красно-оранжевая снаружи), кольцо 49..51,
+    48 насечек 51..55 (каждая 4-я — длинная, белая), тонкие кольца 34..35 и 22..23."""
+    L = Layer()
+    L.put((RR >= 60.0) & (RR < 61.0), FIRE[2], 150)               # ореол снаружи обода
+    L.put((RR >= 55.0) & (RR < 60.0), FIRE[3], 255)               # обод
+    L.put((RR >= 59.0) & (RR < 60.0), FIRE[1], 255)
+    L.put((RR >= 55.0) & (RR < 56.0), FIRE[5], 255)
+    for i in range(16):                                           # раскалённые заклёпки на ободе
+        x, y = polar_xy(57.5, 2 * math.pi * (i + 0.5) / 16)
+        d = np.hypot(DX - x, DY - y)
+        L.rgb[d < 1.6] = FIRE[4]
+        L.rgb[d < 0.9] = FIRE[5]
+    for i in range(48):                                           # насечки
+        a = 2 * math.pi * i / 48
+        major = i % 4 == 0
+        x0, y0 = polar_xy(50.5 if major else 51.5, a)
+        x1, y1 = polar_xy(55.0, a)
+        L.put(seg_dist(x0, y0, x1, y1) < (0.9 if major else 0.55), FIRE[5] if major else FIRE[4], 255)
+    L.fire_line(np.abs(RR - 50.0), 0.6)                           # кольцо 49..51
+    L.fire_line(np.abs(RR - 34.5), 0.25, core=FIRE[4])            # тонкие кольца
+    L.fire_line(np.abs(RR - 22.5), 0.25, core=FIRE[4])
+    return L.image(KINDS['fire_ring'], True)
+
+
+# Огненные руны: свой набор абстрактных знаков (не письменность) — углы, «галочки», засечки на сетке 5×5 точек.
+_FIRE_STROKES = [((2, 0), (2, 4)), ((0, 4), (2, 0)), ((2, 0), (4, 4)),
+                 ((0, 1), (2, 3)), ((2, 3), (4, 1)), ((0, 2), (4, 2)), ((1, 0), (3, 0)), ((1, 4), (3, 4)),
+                 ((0, 0), (2, 2)), ((2, 2), (4, 0)), ((0, 4), (2, 2)), ((2, 2), (4, 4)), ((0, 3), (2, 1)),
+                 ((2, 1), (4, 3)), ((4, 0), (4, 2)), ((0, 2), (0, 4)), ((1, 1), (3, 1)), ((1, 3), (3, 3))]
+
+
+def fire_glyphs(n=20):
+    """Детерминированный набор: «основа» (вертикаль или шатёр ^) и 1–3 штриха вокруг (свой seed)."""
+    out = []
+    state = 0xF1A3E
+    for i in range(n):
+        g = [_FIRE_STROKES[0]] if i % 3 else [_FIRE_STROKES[1], _FIRE_STROKES[2]]
+        k = 1 + (i * 5) % 3
+        for _ in range(k):
+            state = (state * 1103515245 + 12345) & 0x7fffffff
+            st = _FIRE_STROKES[3 + (state >> 7) % (len(_FIRE_STROKES) - 3)]
+            if st not in g:
+                g.append(st)
+        out.append(g)
+    return out
+
+
+def sprite_fire_runes():
+    """K12: 20 угловатых знаков в полосе 38..48 (заливка #ffd25a, обвод 1 px #ff7a12), тонкие границы полосы,
+    ромбики-разделители."""
+    L = Layer()
+    L.fire_line(np.abs(RR - 48.6), 0.3, glow=False, core=FIRE[4], edge=FIRE[2])
+    L.fire_line(np.abs(RR - 37.4), 0.3, glow=False, core=FIRE[4], edge=FIRE[2])
+    glyphs = fire_glyphs()
+    n = len(glyphs)
+    cell = 2 * math.pi / n
+    idx = np.floor(ANG / cell).astype(int) % n
+    a_mid = (idx + 0.5) * cell
+    tx = (ANG - a_mid) * 43.0
+    ty = 43.0 - RR
+    dist = np.full(RR.shape, 99.0)
+    G = 1.55
+    for gi, g in enumerate(glyphs):
+        m = idx == gi
+        for (ax, ay), (bx, by) in g:
+            d = seg_dist((ax - 2) * G, (ay - 2) * G, (bx - 2) * G, (by - 2) * G, tx[m], ty[m])
+            dist[m] = np.minimum(dist[m], d)
+    dist[~((RR > 38.0) & (RR < 48.0))] = 99.0
+    L.put(dist < 2.6, FIRE[2], 110)                               # мягкий жар вокруг знака
+    L.put(dist < 1.75, FIRE[2], 255)                              # обвод #ff7a12
+    L.put(dist < 0.85, (255, 210, 90), 255)                       # заливка #ffd25a
+    for i in range(n):                                            # ромбики-разделители
+        x, y = polar_xy(43.0, i * cell)
+        d = np.abs(DX - x) + np.abs(DY - y)
+        L.put(d < 2.2, FIRE[2], 255)
+        L.put(d < 1.1, FIRE[5], 255)
+    return L.image(KINDS['fire_runes'], True)
+
+
+def sprite_fire_sigil():
+    """K13: гексаграмма (два треугольника, r 33, линии 2 px #ffe08a), малая пентаграмма r 20, белое ядро r ≤ 5 с мягким
+    свечением до r 14."""
+    L = Layer()
+    for r, col, al in [(14, FIRE[2], 60), (11.5, FIRE[3], 85), (9, FIRE[3], 110), (7, FIRE[4], 140)]:
+        L.put(RR < r, col, al)
+    dist = np.full(RR.shape, 99.0)
+    for off in (0.0, math.pi):
+        pts = [polar_xy(33.0, off + 2 * math.pi * k / 3) for k in range(3)]
+        for k in range(3):
+            (ax, ay), (bx, by) = pts[k], pts[(k + 1) % 3]
+            dist = np.minimum(dist, seg_dist(ax, ay, bx, by))
+    L.fire_line(dist, 1.0, core=FIRE[4], edge=FIRE[3])
+    pd = np.full(RR.shape, 99.0)
+    pts = [polar_xy(20.0, 2 * math.pi * k / 5) for k in range(5)]
+    for k in range(5):
+        (ax, ay), (bx, by) = pts[k], pts[(k + 2) % 5]
+        pd = np.minimum(pd, seg_dist(ax, ay, bx, by))
+    L.fire_line(pd, 0.55, core=FIRE[5], edge=FIRE[3])
+    for k in range(6):                                            # раскалённые вершины гексаграммы
+        x, y = polar_xy(33.0, math.pi * k / 3)
+        _dot(L, x, y, 3.4, 2.2, 1.2)
+    L.put(RR < 5.0, FIRE[4], 255)
+    L.put(RR < 3.5, FIRE[5], 255)
+    return L.image(KINDS['fire_sigil'], True)
+
+
+def sprite_fire_flames():
+    """K14 (плоскость в 1.25 раза шире): 22 языка пламени наружу от r_s 46 до ≤ 61 (у основания #ffb43a, к кончику
+    #d2400a, слегка закручены), мягкое свечение r_s 31..46 у основания языков (#ff7a12, альфа 40..90, к центру гаснет), ~40 искр (альфа ровно 254)."""
+    L = Layer()
+    for r, al in [(46.0, 90), (44.0, 75), (41.5, 60), (38.5, 48), (35.0, 40), (31.0, 0)]:
+        m = RR < r                                                # кольцо свечения у основания языков (к центру гаснет)
+        L.rgb[m] = FIRE[2]
+        L.a[m] = al
+    n = 22
+    rng = np.random.default_rng(14)
+    lens = 11.0 + 4.0 * rng.random(n)
+    lens[::2] = np.minimum(lens[::2] + 1.5, 15.0)
+    for k in range(n):
+        a0 = 2 * math.pi * k / n
+        ln = lens[k]
+        u = (RR - 45.0) / ln                                      # 0 у основания … 1 кончик
+        ang = a0 + 0.10 * np.clip(u, 0, 1) ** 1.5                 # закрутка по часовой
+        da = (ANG - ang + math.pi) % (2 * math.pi) - math.pi
+        off = da * RR                                             # px поперёк языка
+        hw = 4.6 * np.clip(1 - u, 0, 1) ** 0.75 * np.clip(0.55 + 2.2 * u, 0, 1)
+        inside = (u >= 0) & (u <= 1) & (np.abs(off) < hw)
+        core = inside & (np.abs(off) < hw * 0.45) & (u < 0.55)
+        col = np.zeros(RR.shape + (3,))
+        uu = np.clip(u, 0, 1)[..., None]
+        base, mid, tip = np.array(FIRE[3], float), np.array(FIRE[2], float), np.array(FIRE[1], float)
+        col = np.where(uu < 0.5, base + (mid - base) * (uu / 0.5), mid + (tip - mid) * ((uu - 0.5) / 0.5))
+        col = np.round(col / 16) * 16                             # ступени цвета (чёткие полосы)
+        al = np.round((235 - 95 * np.clip(u, 0, 1)) / 15) * 15
+        m = inside & (al >= L.a)
+        L.rgb[m] = col[m]
+        L.a[m] = al[m]
+        L.rgb[core] = FIRE[4]
+        L.a[core] = np.maximum(L.a[core], 235)
+    # искры: альфа ровно 254 (класс мерцания в шейдере), r_s 18..58
+    pts = 0
+    erng = np.random.default_rng(1414)
+    while pts < 40:
+        r = 18 + 40 * math.sqrt(erng.random()) if pts % 3 else 47 + 11 * erng.random()
+        a = 2 * math.pi * erng.random()
+        x, y = polar_xy(r, a)
+        ix, iy = int(round(C + x)), int(round(C + y))
+        if not (3 <= ix <= 124 and 3 <= iy <= 124) or L.a[iy, ix] == 254:
+            continue
+        cells = [(ix, iy)] + ([(ix + 1, iy), (ix, iy + 1)] if pts % 4 == 0 else [])
+        for cx, cy in cells:
+            L.rgb[cy, cx] = FIRE[5] if pts % 2 else FIRE[4]
+            L.a[cy, cx] = 254
+        pts += 1
+    return L.image(KINDS['fire_flames'], True)
+
+
+# ------------------------------------------------------------------------------------------- комета (K15..K19)
+def heat(s):
+    """Цвет хвоста по s (0 голова … 1 кончик) — как в шейдере. s — массив."""
+    s = np.asarray(s, np.float64)[..., None]
+    c0, c1, c2, c3 = (np.array(v) for v in ((1.0, 0.97, 0.85), (1.0, 0.78, 0.3), (1.0, 0.5, 0.1), (0.85, 0.2, 0.03)))
+    a = c0 + (c1 - c0) * np.clip(s / 0.18, 0, 1)
+    b = c1 + (c2 - c1) * np.clip((s - 0.18) / 0.32, 0, 1)
+    c = c2 + (c3 - c2) * np.clip((s - 0.5) / 0.5, 0, 1)
+    return np.where(s < 0.18, a, np.where(s < 0.5, b, c))
+
+
+def comet_tail_art():
+    """Хвост «вверх» (K15): поперёк — u (x), вдоль — v (y, 0 голова … 1 кончик). Альфа — штрихи вдоль (как у луча,
+    шейдер берёт их как узор), цвет — огненный градиент (виден без шейдера)."""
+    w = (XX - 2 + 0.5) / 124.0
+    v = (YY - 2 + 0.5) / 124.0
+    d = np.abs(2 * w - 1)
+    lane = np.clip(np.floor(w * 12), 0, 11).astype(int)
+    period = 30 + (lane * 11) % 29
+    length = 10 + (lane * 7) % 15
+    phase = (lane * 37) % 64
+    dash = (((YY - 2) + phase) % period) < length
+    a = np.zeros((SPRITE, SPRITE))
+    for lim, al_off, al_on in reversed([(0.25, 210, 255), (0.5, 150, 230), (0.75, 90, 170), (0.95, 40, 110)]):
+        m = d < lim
+        a[m] = np.where(dash[m], al_on, al_off)
+    rgb = heat(np.clip(v, 0, 1)) * 255.0
+    whit = (np.clip(1 - d / 0.3, 0, 1) * np.clip(1 - v / 0.5, 0, 1))[..., None]
+    rgb = rgb * (1 - whit) + np.array(FIRE[5], float) * whit
+    rgb = np.round(rgb / 8) * 8
+    inner = (XX >= 2) & (XX < 126) & (YY >= 2) & (YY < 126)
+    a[~inner] = 0
+    return rgb, a
+
+
+def tail_sprite(kind_name):
+    rgb, a = comet_tail_art()
+    if kind_name == 'comet_tail_down':
+        rgb, a = rgb[::-1], a[::-1]
+    elif kind_name == 'comet_tail_west':
+        rgb, a = rgb.transpose(1, 0, 2), a.T
+    elif kind_name == 'comet_tail_east':
+        rgb, a = rgb.transpose(1, 0, 2)[:, ::-1], a.T[:, ::-1]
+    L = Layer()
+    L.rgb, L.a = rgb.copy(), a.copy()
+    return L.image(KINDS[kind_name], False)
+
+
+def sprite_comet_core():
+    """K19: радиальная голова кометы: белое ядро r ≤ 10, жёлтое 10..22 (альфа 255 → 200), оранжевое 22..40
+    (200 → 90), красно-оранжевое 40..58 (90 → 0)."""
+    L = Layer()
+    r = RR
+    rgb = np.zeros((SPRITE, SPRITE, 3))
+    a = np.zeros((SPRITE, SPRITE))
+    bands = [(0, 10, (255, 255, 240), 255, 255), (10, 22, (255, 226, 120), 255, 200),
+             (22, 40, (255, 140, 30), 200, 90), (40, 58, (230, 70, 10), 90, 0)]
+    for r0, r1, col, a0, a1 in bands:
+        m = (r >= r0) & (r < r1)
+        rgb[m] = col
+        a[m] = a0 + (a1 - a0) * (r[m] - r0) / (r1 - r0)
+    L.rgb, L.a = rgb, a
+    return L.image(KINDS['comet_core'], True)
+
+
 SPRITE_FUNCS = {'ring': sprite_ring, 'runes': sprite_runes, 'hexagram': sprite_hexagram, 'core': sprite_core,
-                'flare': sprite_flare, 'hex_cell': sprite_hex_cell}
+                'flare': sprite_flare, 'hex_cell': sprite_hex_cell,
+                'fire_ring': sprite_fire_ring, 'fire_runes': sprite_fire_runes, 'fire_sigil': sprite_fire_sigil,
+                'fire_flames': sprite_fire_flames, 'comet_core': sprite_comet_core}
 
 
 def all_sprites():
     out = {}
     for name in KINDS:
-        out[name] = SPRITE_FUNCS[name]() if name in SPRITE_FUNCS else beam_sprite(name)
+        if name in SPRITE_FUNCS:
+            out[name] = SPRITE_FUNCS[name]()
+        elif name in TAILS:
+            out[name] = tail_sprite(name)
+        else:
+            out[name] = beam_sprite(name)
     return out
 
 
@@ -423,6 +683,53 @@ def barrier_model():
                           'faces': {'north': _face('1'), 'south': _face('1')}}]}
 
 
+def fire_circle_model():
+    """Огненный круг: 4 плоскости XY (грани north/south). Языки пламени — первая, в 1.25 раза шире (выходят за обод);
+    затем кольца, руны, печать; шаг 0.1 px по z."""
+    layers = [('4', -2, 18, 8.25), ('1', 0, 16, 8.15), ('2', 0, 16, 8.05), ('3', 0, 16, 7.95)]
+    els = []
+    for tex, a, b, z in layers:
+        els.append({'from': [a, a, z], 'to': [b, b, z], 'shade': False, 'light_emission': 15,
+                    'faces': {'north': _face(tex), 'south': _face(tex)}})
+    fx = f'{NS}:item/moon_staff_fx/'
+    return {'textures': {'1': fx + 'fire_ring', '2': fx + 'fire_runes', '3': fx + 'fire_sigil', '4': fx + 'fire_flames',
+                         'particle': fx + 'fire_ring'},
+            'elements': els}
+
+
+def comet_model():
+    """Комета: ось хвоста — +Z модели, голова в (8,8,8) (= начало дисплея), хвост z 8..32 (12 px шириной, 24 длиной):
+    5 «горизонтальных» плоскостей (up K15 / down K16, повороты вокруг z 0, ±22.5, ±45) и 3 «вертикальных»
+    (west K17 / east K18, 0, ±22.5). Голова — 3 ортогональные плоскости 12 px (K19) и ещё две горизонтальные,
+    повёрнутые на ±45° вокруг z."""
+    els = []
+
+    def el(frm, to, faces, ang=0):
+        e = {'from': frm, 'to': to, 'shade': False, 'light_emission': 15,
+             'faces': {f: _face(t) for f, t in faces.items()}}
+        if ang:
+            e['rotation'] = {'angle': ang, 'axis': 'z', 'origin': [8, 8, 8]}
+        els.append(e)
+
+    for ang in (0, 22.5, -22.5, 45, -45):
+        el([2, 8, 8], [14, 8, 32], {'up': '1', 'down': '2'}, ang)
+    for ang in (0, 22.5, -22.5):
+        el([8, 2, 8], [8, 14, 32], {'west': '3', 'east': '4'}, ang)
+    el([2, 2, 8], [14, 14, 8], {'north': '5', 'south': '5'})
+    el([2, 8, 2], [14, 8, 14], {'up': '5', 'down': '5'})
+    el([8, 2, 2], [8, 14, 14], {'west': '5', 'east': '5'})
+    for ang in (45, -45):
+        el([2, 8, 2], [14, 8, 14], {'up': '5', 'down': '5'}, ang)
+    fx = f'{NS}:item/moon_staff_fx/'
+    return {'textures': {'1': fx + 'comet_tail_up', '2': fx + 'comet_tail_down', '3': fx + 'comet_tail_west',
+                         '4': fx + 'comet_tail_east', '5': fx + 'comet_core', 'particle': fx + 'comet_core'},
+            'elements': els}
+
+
+EFFECT_MODELS = {'moon_staff_circle': circle_model, 'moon_staff_beam': beam_model, 'moon_staff_barrier': barrier_model,
+                 'moon_staff_fire_circle': fire_circle_model, 'moon_staff_comet': comet_model}
+
+
 def item_def(name):
     return {'model': {'type': 'minecraft:model', 'model': f'{NS}:item/{name}',
                       'tints': [{'type': 'minecraft:custom_model_data', 'index': 0, 'default': -1}]}}
@@ -437,8 +744,8 @@ def write_all():
     idir = os.path.join(ASSETS, NS, 'items')
     os.makedirs(mdir, exist_ok=True)
     os.makedirs(idir, exist_ok=True)
-    for name, model in (('moon_staff_circle', circle_model()), ('moon_staff_beam', beam_model()),
-                        ('moon_staff_barrier', barrier_model())):
+    for name, fn in EFFECT_MODELS.items():
+        model = fn()
         with open(os.path.join(mdir, name + '.json'), 'w', encoding='utf-8') as fh:
             json.dump(model, fh, indent=1)
         with open(os.path.join(idir, name + '.json'), 'w', encoding='utf-8') as fh:
@@ -486,7 +793,7 @@ def _sample_halo(spr, qx, qy):
 
 
 def shade(kind, spr, lx, ly, param, t):
-    """kind 1..10, lx/ly — msLocal (0..1, массивы), param — msParam, t — секунды. → RGBA (…, 4) 0..1+."""
+    """kind 1..19, lx/ly — msLocal (0..1, массивы), param — msParam, t — секунды. → RGBA (…, 4) 0..1+."""
     lx = np.asarray(lx, np.float64)
     ly = np.asarray(ly, np.float64)
     out = np.zeros(lx.shape + (4,))
@@ -523,6 +830,80 @@ def shade(kind, spr, lx, ly, param, t):
         elif lv == 9:
             rgb = rgb * 0.5 + 0.5
             al = np.clip(al * 1.3 + 0.1 * (al >= 0.004), 0.0, 1.0)
+        out[..., :3], out[..., 3] = rgb, al
+        return out
+    if 11 <= kind <= 14:
+        # Огненный круг (копия K1..4 со своими скоростями, ореолом и мерцанием).
+        c = param
+        a = {11: TAU * t / 20.0, 12: -TAU * t / 12.0, 13: TAU * t / 30.0, 14: 0.0}[kind]
+        qx, qy = _rot(lx, ly, a)
+        flick = 1.0
+        if kind == 14:
+            dqx, dqy = qx - 0.5, qy - 0.5
+            fa = np.arctan2(dqx, -dqy)
+            k = 1.0 + 0.035 * np.sin(TAU * 2.0 * t + 24.0 * fa)
+            qx, qy = 0.5 + dqx * k, 0.5 + dqy * k
+            flick = (0.85 + 0.15 * np.sin(TAU * 5.0 * t + 7.0 * fa))[..., None]
+        tex = _sample(spr, qx, qy)
+        halo = _sample_halo(spr, qx, qy)
+        pulse = 0.5 + 0.5 * math.sin(TAU * 1.5 * t)
+        if kind == 12:
+            ang = np.arctan2(lx - 0.5, -(ly - 0.5)) % TAU
+            appear = smoothstep(ang, ang + 0.15, np.full_like(lx, c * (TAU + 0.15)))
+        elif kind == 13:
+            appear = np.full_like(lx, smoothstep(0.2, 0.65, c))
+        elif kind == 14:
+            appear = np.full_like(lx, 0.35 + 0.65 * c)
+        else:
+            appear = np.ones_like(lx)
+        bright = 0.8 + 0.35 * c + 0.1 * pulse
+        if c >= 0.999:
+            bright += 0.25 * (0.5 + 0.5 * math.sin(TAU * 4.0 * t))
+        lit = tex[..., :3] * bright * flick
+        lit = lit + np.array([0.0, 0.35, 0.25]) * np.maximum(lit[..., :1] - 1.0, 0.0)
+        glow = np.array([1.0, 0.56, 0.16]) * (0.85 + 0.3 * c)
+        ta = tex[..., 3:4]
+        rgb = glow * (1 - ta) + lit * ta
+        al = np.maximum(tex[..., 3], halo * 0.55) * appear
+        if kind == 14:
+            ember = np.abs(tex[..., 3] * 255.0 - 254.0) < 0.5        # nearest = textureLod(…, 0)
+            tw = np.maximum(0.5 + 0.5 * np.sin(TAU * t / 1.5 + qx * 37.0 + qy * 23.0), 0.0) ** 6.0
+            rgb_e = np.array([1.0, 0.62, 0.2]) * (1 - tw)[..., None] + np.array([1.6, 1.35, 0.85]) * tw[..., None]
+            rgb = np.where(ember[..., None], rgb_e, rgb)
+            al = np.where(ember, (0.55 + 0.45 * tw) * appear, al)
+        al = np.where(np.hypot(qx - 0.5, qy - 0.5) > EDGE, 0.0, al)
+        out[..., :3], out[..., 3] = rgb, al
+        return out
+    if kind >= 15:
+        code = int(math.floor(param * 250.0 + 0.5))
+        burst = code // 125
+        g = code - 125 * burst
+        if kind <= 18:
+            kb = kind - 10
+            s = {5: ly, 6: 1 - ly, 7: lx, 8: 1 - lx}[kb]
+            w = lx if kb in (5, 6) else ly
+            d = np.abs(2 * w - 1)
+            ph = (s * 3.0 - t * 4.0 + g / 125.0) % 1.0
+            st = _sample(spr, w, ph) if kind <= 16 else _sample(spr, ph, w)
+            streak = st[..., 3]
+            width = 0.95 + (0.15 - 0.95) * s
+            body = 1 - smoothstep(0.0, width, d)
+            rgb = heat(s) * (0.9 + 0.25 * streak)[..., None]
+            al = body * (0.55 + 0.45 * streak) * np.maximum(1 - s, 0.0) ** 1.3 * smoothstep(0.0, 0.05, s)
+            if burst == 1:
+                al = al * 0.35
+            out[..., :3], out[..., 3] = rgb, np.clip(al, 0, 1)
+            return out
+        rr = np.hypot(lx - 0.5, ly - 0.5)
+        tex = _sample(spr, lx, ly)
+        halo = _sample_halo(spr, lx, ly)
+        pulse = 0.9 + 0.1 * math.sin(TAU * 8.0 * t + g)
+        rgb = tex[..., :3] * pulse + np.array([1.0, 0.6, 0.15]) * (halo * 0.6)[..., None]
+        al = np.maximum(tex[..., 3], halo * 0.5)
+        if burst == 1:
+            rgb = rgb * 0.45 + 0.55
+            al = np.minimum(1.0, al * 1.4 + 0.1 * (1 - smoothstep(0.3, EDGE, rr)))
+        al = np.where(rr > EDGE, 0.0, al)
         out[..., :3], out[..., 3] = rgb, al
         return out
     if kind <= 4:
@@ -741,3 +1122,217 @@ def render_barrier(sprites, levels=None, t=0.0, w=512, h=640, ppm=128.0):
 def render_barrier_assembly(sprites, held, t=0.0, w=512, h=640, ppm=128.0):
     """Кадр сборки на тике удержания held (ячейки на пути полёта с интерполяцией масштаба)."""
     return render_cells(sprites, barrier_cells(held), t, w, h, ppm, centre=(0.0, -0.15))
+
+
+# ------------------------------------------------------------------------------------------- «Огненный шар»: 3D-превью
+# Копии формул core_magic/keisan.py (流星R, 炎陣回転, 流星回転, 落下点, 出発点, 発射tick) — только для превью; (g) в
+# moonstaff_check сверяет 流星R/流星B基 с keisan, если он есть.
+METEOR_B = 125                    # keisan.流星B基
+METEOR_G_MAX = 124                # keisan.流星g上限
+
+
+def meteor_R(g, B):
+    """R цвета кометы: g + 125·B (g 0..124 — зерно мерцания, B 0 — падает, 1 — вспышка удара), максимум 249."""
+    return min(max(int(g), 0), METEOR_G_MAX) + METEOR_B * min(max(int(B), 0), 1)
+
+
+def meteor_R_decode(R):
+    """Как шейдер: code = floor(R/250·250 + 0.5) → (g, B)."""
+    code = int(math.floor(R / 250.0 * 250.0 + 0.5))
+    B = code // METEOR_B
+    return code - METEOR_B * B, B
+
+
+FIRE_CIRCLE_Q = (0.0, math.sqrt(0.5), math.sqrt(0.5), 0.0)   # keisan.炎陣回転: rotationX(π/2).rotateY(π)
+
+
+def quat_mat(q):
+    x, y, z, w = q
+    return np.array([[1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+                     [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+                     [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]])
+
+
+def quat_mul(a, b):
+    ax, ay, az, aw = a
+    bx, by, bz, bw = b
+    return (aw * bx + ax * bw + ay * bz - az * by, aw * by - ax * bz + ay * bw + az * bx,
+            aw * bz + ax * by - ay * bx + az * bw, aw * bw - ax * bx - ay * by - az * bz)
+
+
+def comet_quat(u):
+    """keisan.流星回転: rotationTo(+Z → u) ⊗ Ry(π); u ≈ −Z → ось Y, угол π."""
+    u = np.asarray(u, float) / np.linalg.norm(u)
+    dot = float(u[2])
+    if dot < -1 + 1e-9:
+        rt = (0.0, 1.0, 0.0, 0.0)
+    else:
+        ax = np.cross([0.0, 0.0, 1.0], u)
+        rt = (float(ax[0]), float(ax[1]), float(ax[2]), 1.0 + dot)
+        n = math.sqrt(sum(v * v for v in rt))
+        rt = tuple(v / n for v in rt)
+    return quat_mul(rt, (0.0, 1.0, 0.0, 0.0))
+
+
+RY_PI = np.diag([-1.0, 1.0, -1.0])   # ItemDisplay сам поворачивает модель на 180° вокруг Y
+
+_FACEINFO = {
+    'down': [('x0', 'y0', 'z1'), ('x0', 'y0', 'z0'), ('x1', 'y0', 'z0'), ('x1', 'y0', 'z1')],
+    'up': [('x0', 'y1', 'z0'), ('x0', 'y1', 'z1'), ('x1', 'y1', 'z1'), ('x1', 'y1', 'z0')],
+    'north': [('x1', 'y1', 'z0'), ('x1', 'y0', 'z0'), ('x0', 'y0', 'z0'), ('x0', 'y1', 'z0')],
+    'south': [('x0', 'y1', 'z1'), ('x0', 'y0', 'z1'), ('x1', 'y0', 'z1'), ('x1', 'y1', 'z1')],
+    'west': [('x0', 'y1', 'z0'), ('x0', 'y0', 'z0'), ('x0', 'y0', 'z1'), ('x0', 'y1', 'z1')],
+    'east': [('x1', 'y1', 'z1'), ('x1', 'y0', 'z1'), ('x1', 'y0', 'z0'), ('x1', 'y1', 'z0')],
+}
+
+
+def bake_quads(model):
+    """Ванильный порядок вершин FaceInfo: [(texture_var, 4×3 вершины в px модели после поворота элемента)];
+    вершина 0 — msLocal (0,0), 1 — (0,1), 3 — (1,0)."""
+    out = []
+    for e in model['elements']:
+        (x0, y0, z0), (x1, y1, z1) = e['from'], e['to']
+        env = dict(x0=x0, y0=y0, z0=z0, x1=x1, y1=y1, z1=z1)
+        R = np.eye(3)
+        o = np.zeros(3)
+        if 'rotation' in e:
+            a = math.radians(e['rotation']['angle'])
+            c, s = math.cos(a), math.sin(a)
+            R = {'x': np.array([[1, 0, 0], [0, c, -s], [0, s, c]]), 'y': np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]]),
+                 'z': np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])}[e['rotation']['axis']]
+            o = np.array(e['rotation']['origin'], float)
+        for face, fd in e['faces'].items():
+            pts = np.array([[env[k] for k in v] for v in _FACEINFO[face]], float)
+            out.append((fd['texture'].lstrip('#'), (R @ (pts - o).T).T + o))
+    return out
+
+
+def display_quads(model, pos, T, q, scale, R, t=0.0):
+    """Квады дисплея в мире: world = pos + T + L(q)·Ry(π)·scale·(px/16 − 0.5). → [(K, имя, P0, Eu, Ev, R, t)]."""
+    M = quat_mat(q) @ RY_PI * scale
+    base = np.asarray(pos, float) + np.asarray(T, float)
+    out = []
+    for var, pts in bake_quads(model):
+        name = model['textures'][var].split('/')[-1]
+        w = (M @ (pts / 16.0 - 0.5).T).T + base
+        out.append((KINDS[name], name, w[0], w[3] - w[0], w[1] - w[0], R, t))
+    return out
+
+
+class Camera:
+    def __init__(self, pos, look, w, h, fov=70.0):
+        self.pos = np.asarray(pos, float)
+        f = np.asarray(look, float) - self.pos
+        f /= np.linalg.norm(f)
+        up = np.array([0.0, 1.0, 0.0]) if abs(f[1]) < 0.99 else np.array([0.0, 0.0, -1.0])
+        r = np.cross(f, up)
+        r /= np.linalg.norm(r)
+        self.f, self.r, self.u = f, r, np.cross(r, f)
+        self.w, self.h = w, h
+        self.k = math.tan(math.radians(fov) / 2)
+        ys, xs = np.mgrid[0:h, 0:w] + 0.5
+        nx = (xs / w * 2 - 1) * self.k * w / h
+        ny = (1 - ys / h * 2) * self.k
+        d = self.f + nx[..., None] * self.r + ny[..., None] * self.u
+        self.dirs = d / np.linalg.norm(d, axis=-1, keepdims=True)
+
+    def project(self, p):
+        v = np.asarray(p, float) - self.pos
+        z = v @ self.f
+        if z <= 1e-6:
+            return None
+        x = (v @ self.r) / z / (self.k * self.w / self.h)
+        y = (v @ self.u) / z / self.k
+        return (x + 1) / 2 * self.w, (1 - y) / 2 * self.h, z
+
+
+def sky_ground(cam, ground_y=None, glow=()):
+    """Ночное небо; при ground_y — земля (тёмный камень/трава) с отсветом огня glow = [(точка, радиус, сила)]."""
+    img = night_sky(cam.w, cam.h)
+    if ground_y is not None:
+        d = cam.dirs
+        lam = (ground_y - cam.pos[1]) / np.where(d[..., 1] < -1e-6, d[..., 1], -1e-6)
+        hit = (d[..., 1] < -1e-6)
+        X = cam.pos + lam[..., None] * d
+        chk = ((np.floor(X[..., 0]) + np.floor(X[..., 2])) % 2)[..., None]
+        col = np.array([0.10, 0.13, 0.09]) * (1 - chk) + np.array([0.12, 0.15, 0.10]) * chk
+        fog = np.clip(lam / 60.0, 0, 1)[..., None]
+        col = col * (1 - fog) + np.array([0.05, 0.06, 0.1]) * fog
+        for p, r, s in glow:
+            dd = np.hypot(X[..., 0] - p[0], X[..., 2] - p[2])
+            col = col + np.array([1.0, 0.45, 0.1]) * (s * np.clip(1 - dd / r, 0, 1) ** 2)[..., None]
+        img = np.where(hit[..., None], col, img)
+    return img
+
+
+def render_quads(cam, quads, img):
+    """Квады (не premultiplied) поверх img, от дальних к ближним; задняя грань не рисуется (cull, как в игре)."""
+    order = sorted(quads, key=lambda q: -np.linalg.norm(q[2] + (q[3] + q[4]) / 2 - cam.pos))
+    for K, name, P0, Eu, Ev, R, t in order:
+        n = np.cross(Ev, Eu)
+        cen = P0 + (Eu + Ev) / 2
+        if (cam.pos - cen) @ n <= 0:
+            continue
+        cs = [cam.project(P0 + a * Eu + b * Ev) for a in (0, 1) for b in (0, 1)]
+        if any(c is None for c in cs):
+            x0, x1, y0, y1 = 0, cam.w, 0, cam.h
+        else:
+            x0 = max(int(min(c[0] for c in cs)) - 1, 0)
+            x1 = min(int(max(c[0] for c in cs)) + 2, cam.w)
+            y0 = max(int(min(c[1] for c in cs)) - 1, 0)
+            y1 = min(int(max(c[1] for c in cs)) + 2, cam.h)
+        if x0 >= x1 or y0 >= y1:
+            continue
+        d = cam.dirs[y0:y1, x0:x1]
+        den = d @ n
+        ok = np.abs(den) > 1e-9
+        lam = ((P0 - cam.pos) @ n) / np.where(ok, den, 1.0)
+        X = cam.pos + lam[..., None] * d - P0
+        a = (X @ Eu) / (Eu @ Eu)
+        b = (X @ Ev) / (Ev @ Ev)
+        ins = ok & (lam > 0) & (a >= 0) & (a <= 1) & (b >= 0) & (b <= 1)
+        if not ins.any():
+            continue
+        col = shade(K, SPRITES_CACHE[name], np.clip(a, 0, 1), np.clip(b, 0, 1), R / 250.0, t)
+        col[..., 3] *= ins
+        img[y0:y1, x0:x1] = over(img[y0:y1, x0:x1], col)
+    return img
+
+
+SPRITES_CACHE = {}
+
+
+def add_glow_points(cam, img, pts, rad_px, color, strength):
+    """Частицы-«точки» (огонь, искры): мягкие пятна, аддитивно. pts — [(точка, множитель)]."""
+    for p, m in pts:
+        pr = cam.project(p)
+        if pr is None:
+            continue
+        x, y, z = pr
+        r = max(rad_px * 18.0 / z, 1.0)
+        x0, x1 = max(int(x - 2 * r), 0), min(int(x + 2 * r) + 1, cam.w)
+        y0, y1 = max(int(y - 2 * r), 0), min(int(y + 2 * r) + 1, cam.h)
+        if x0 >= x1 or y0 >= y1:
+            continue
+        ys, xs = np.mgrid[y0:y1, x0:x1] + 0.5
+        f = np.exp(-((xs - x) ** 2 + (ys - y) ** 2) / (r * r))
+        img[y0:y1, x0:x1] += np.array(color) * (strength * m * f)[..., None]
+    return img
+
+
+def scatter(n, radius, first_center, rng):
+    """keisan.落下点: равномерно по диску r = R·√u, θ = 2π·u₂; комета 0 — в центре."""
+    out = []
+    for i in range(n):
+        if i == 0 and first_center:
+            out.append((0.0, 0.0))
+            continue
+        r = radius * math.sqrt(rng.random())
+        th = 2 * math.pi * rng.random()
+        out.append((r * math.cos(th), r * math.sin(th)))
+    return out
+
+
+def launch_ticks(n, spread):
+    """keisan.発射tick."""
+    return [0] if n == 1 else [int(math.floor(i * spread / (n - 1))) for i in range(n)]
