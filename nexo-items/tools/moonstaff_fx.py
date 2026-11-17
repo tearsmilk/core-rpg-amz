@@ -37,7 +37,10 @@ KINDS = {'ring': 1, 'runes': 2, 'hexagram': 3, 'core': 4,
          'hex_cell': 10,
          'fire_ring': 11, 'fire_runes': 12, 'fire_sigil': 13, 'fire_flames': 14,
          'comet_tail_up': 15, 'comet_tail_down': 16, 'comet_tail_west': 17, 'comet_tail_east': 18,
-         'comet_core': 19}                                    # K20..K31 — резерв, не используются
+         'comet_core': 19,
+         'tp_ring': 20, 'tp_runes': 21, 'tp_hexagram': 22, 'tp_core': 23}   # K24..K31 — резерв
+# Круг телепорта (core_items, свиток): K20..23 = K1..4 той же логики шейдера, цвет фиолетовый (каналы R и G переставлены).
+TP_CIRCLE = {'tp_ring': 'ring', 'tp_runes': 'runes', 'tp_hexagram': 'hexagram', 'tp_core': 'core'}
 BEAMS = ('beam_up', 'beam_down', 'beam_west', 'beam_east')
 TAILS = ('comet_tail_up', 'comet_tail_down', 'comet_tail_west', 'comet_tail_east')
 FIRE_CIRCLE = ('fire_ring', 'fire_runes', 'fire_sigil', 'fire_flames')
@@ -624,15 +627,28 @@ SPRITE_FUNCS = {'ring': sprite_ring, 'runes': sprite_runes, 'hexagram': sprite_h
                 'fire_flames': sprite_fire_flames, 'comet_core': sprite_comet_core}
 
 
+def tp_sprite(name, base):
+    """Фиолетовая копия спрайта круга: R↔G, своя метка K в (1,0)."""
+    a = base.copy()
+    body = a[..., 3] != 3
+    a[..., 0][body], a[..., 1][body] = base[..., 1][body], base[..., 0][body]
+    a[0, 1] = (KINDS[name], 90, 126, 3)
+    return a
+
+
 def all_sprites():
     out = {}
     for name in KINDS:
+        if name in TP_CIRCLE:
+            continue
         if name in SPRITE_FUNCS:
             out[name] = SPRITE_FUNCS[name]()
         elif name in TAILS:
             out[name] = tail_sprite(name)
         else:
             out[name] = beam_sprite(name)
+    for name, base in TP_CIRCLE.items():
+        out[name] = tp_sprite(name, out[base])
     return out
 
 
@@ -652,6 +668,13 @@ def circle_model():
                          '3': f'{NS}:item/moon_staff_fx/hexagram', '4': f'{NS}:item/moon_staff_fx/core',
                          'particle': f'{NS}:item/moon_staff_fx/ring'},
             'elements': els}
+
+
+def tp_circle_model():
+    m = circle_model()
+    m['textures'] = {k: v.replace('/ring', '/tp_ring').replace('/runes', '/tp_runes').replace('/hexagram', '/tp_hexagram')
+                     .replace('/core', '/tp_core') for k, v in m['textures'].items()}
+    return m
 
 
 def beam_model():
@@ -727,7 +750,8 @@ def comet_model():
 
 
 EFFECT_MODELS = {'moon_staff_circle': circle_model, 'moon_staff_beam': beam_model, 'moon_staff_barrier': barrier_model,
-                 'moon_staff_fire_circle': fire_circle_model, 'moon_staff_comet': comet_model}
+                 'moon_staff_fire_circle': fire_circle_model, 'moon_staff_comet': comet_model,
+                 'teleport_circle': tp_circle_model}
 
 
 def item_def(name):
@@ -797,6 +821,9 @@ def shade(kind, spr, lx, ly, param, t):
     lx = np.asarray(lx, np.float64)
     ly = np.asarray(ly, np.float64)
     out = np.zeros(lx.shape + (4,))
+    violet = kind >= 20                       # K20..23 — фиолетовый круг телепорта (логика K1..4)
+    if violet:
+        kind -= 19
     if kind == 10:
         # Ячейка барьера: msParam = (g + 25·L)/250, g — фаза мерцания, L — уровень (0..7 — альфа L/8, 8, 9 — вспышка).
         px = np.clip(lx * SPRITE, 0.5, SPRITE - 0.5)
@@ -925,7 +952,7 @@ def shade(kind, spr, lx, ly, param, t):
         bright = 0.55 + 0.45 * c + 0.12 * pulse
         if c >= 0.999:
             bright += 0.25 * (0.5 + 0.5 * math.sin(TAU * 4.0 * t))
-        rgb = tex[..., :3] * bright + np.array([0.35, 0.8, 1.0]) * (halo * 0.6 * (0.5 + 0.5 * c))[..., None]
+        rgb = tex[..., :3] * bright + np.array([0.8, 0.35, 1.0] if violet else [0.35, 0.8, 1.0]) * (halo * 0.6 * (0.5 + 0.5 * c))[..., None]
         al = np.maximum(tex[..., 3], halo * 0.45) * appear
         al = np.where(np.hypot(qx - 0.5, qy - 0.5) > EDGE, 0.0, al)
         out[..., :3], out[..., 3] = rgb, al

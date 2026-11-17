@@ -54,8 +54,11 @@ bool ms_fragment(sampler2D atlas, vec2 uv, out vec4 color) {
     if (!ms_texel_is(texelFetch(atlas, p0, 0), vec4(177.0, 126.0, 90.0, 3.0))) return false;
     vec4 k4 = texelFetch(atlas, p0 + ivec2(1, 0), 0) * 255.0;
     int kind = int(floor(k4.r + 0.5));
-    if (kind < 1 || kind > 19) return false;
+    if (kind < 1 || kind > 23) return false;
     if (!ms_texel_is(k4 / 255.0, vec4(float(kind), 90.0, 126.0, 3.0))) return false;
+    // K20..23 — teleport circle (core_items scroll): the K1..4 circle logic with a violet glow.
+    bool msViolet = kind >= 20;
+    if (msViolet) kind -= 19;
 
     float t = GameTime * 1200.0;
     if (kind == 10) {
@@ -212,7 +215,8 @@ bool ms_fragment(sampler2D atlas, vec2 uv, out vec4 color) {
         }
         float bright = 0.55 + 0.45 * c + 0.12 * pulse;
         if (c >= 0.999) bright += 0.25 * (0.5 + 0.5 * sin(MS_TAU * 4.0 * t));
-        vec3 rgb = tex.rgb * bright + vec3(0.35, 0.8, 1.0) * halo * 0.6 * (0.5 + 0.5 * c);
+        vec3 glowC = msViolet ? vec3(0.8, 0.35, 1.0) : vec3(0.35, 0.8, 1.0);
+        vec3 rgb = tex.rgb * bright + glowC * halo * 0.6 * (0.5 + 0.5 * c);
         float alpha = max(tex.a, halo * 0.45) * appear;
         if (length(q - 0.5) > MS_EDGE) alpha = 0.0;
         color = vec4(rgb, alpha);

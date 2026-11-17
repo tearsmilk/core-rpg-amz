@@ -1,0 +1,12 @@
+# Python-система «Предметы» (アイテム): свитки и прочие используемые предметы Nexo. Вид — Nexo (items/azerus-items.yml).
+name: core_items
+version: 1.0.0
+main: main.py
+enabled: true
+description: "Используемые предметы Nexo: свиток телепортации (круг, отсчёт, затемнение экрана)"
+commands:
+  citems:
+    permission: coreitems.admin
+    aliases: [アイテム]
+    description: "Предметы: перечитать config.yml"
+    usage: "/citems reload"
