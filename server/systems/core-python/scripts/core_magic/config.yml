@@ -1,5 +1,7 @@
 # core_magic — Посох Лунного Странника (azerus_moon_staff): зажать ПКМ на 3 с — магический круг, отпустить — луч.
-# Shift + ЛКМ — сменить заклинание: «Луч» ↔ «Барьер» (зажать ПКМ на 1 с — стена из шестигранников на 10 с, гасит лучи).
+# Shift + ЛКМ — сменить заклинание по кругу: «Луч» → «Барьер» (зажать ПКМ на 1 с — стена из шестигранников на 10 с,
+# гасит лучи) → «Огненный шар» (зажать ПКМ на 3 с — огненный круг в небе над целью; отпустить — кометы падают вокруг
+# цели: урон и поджог, без разрушения блоков) → «Луч».
 # Все числа механики — здесь. Метка шейдера (цвет G=233, B=253) и номера спрайтов — в коде (их знает шейдер).
 # Перечитать: /cmagic reload (или /魔法 reload).
 
@@ -18,8 +20,8 @@ cast:
   show-charge-bar: true            # полоска заряда в строке над хотбаром
   bar-length: 20
 
-mode:                              # заклинание посоха; Shift + ЛКМ с посохом переключает Луч ↔ Барьер
-  default: beam                    # beam | barrier — у кого ещё не выбрано
+mode:                              # заклинание посоха; Shift + ЛКМ с посохом: Луч → Барьер → Огненный шар → Луч
+  default: beam                    # beam | barrier | meteor — у кого ещё не выбрано
   toggle-debounce-ms: 300          # одно нажатие — одно переключение (клиент повторяет ПКМ каждые 4 тика)
   remember-on-item: true           # записать выбор на посох (PDC py_core_magic:mode)
   show-on-select: true             # показать режим в строке над хотбаром при выборе посоха
@@ -81,6 +83,49 @@ barrier:                           # барьер: стена из шестиг�
   hit-flash-ticks: 4               # вспышка ячейки, в которую попал луч
   view-range: 1.5                  # множитель дальности видимости
 
+meteor:                            # «Огненный шар»: огненный круг высоко над целью, из него — кометы (барьеры их не держат)
+  circle-model: "azerus:moon_staff_fire_circle"
+  comet-model: "azerus:moon_staff_comet"
+  charge-ticks: 60                 # сколько держать ПКМ до готовности (60 тиков = 3 с); меньше cast.max-hold-seconds
+  cooldown-seconds: 12.0           # перезарядка (своя, от отпускания; не мешает лучу и барьеру)
+  after-fizzle-seconds: 0.5        # после отпускания раньше времени / «здесь круг не раскроется»
+  range: 30.0                      # прицел: луч из глаз до блока/существа (не дальше), иначе — земля под концом луча
+  target-hit-radius: 0.5           # запас к хитбоксу существа при прицеливании
+  ground-scan: 48.0                # как глубоко искать землю под точкой прицела в воздухе / у стены
+  height: 13.0                     # круг выше точки цели (блоков)
+  min-height: 2.0                  # меньше места (потолок, предел мира) — «здесь круг не раскроется»
+  ceiling-gap: 0.6                 # под потолком: круг на столько ниже твёрдого блока
+  diameter: 6.0                    # диаметр готового круга (блоков)
+  start-scale: 0.25                # доля диаметра в начале заряда
+  follow-min-move: 0.75            # цель сдвинулась больше — круг перелетает (телепорт)
+  teleport-duration: 3             # плавность перелёта (тиков)
+  update-ticks: 4                  # как часто обновлять заряд в цвете (шейдер)
+  fizzle-ticks: 8                  # угасание при срыве
+  fire-flash-scale: 1.1            # вспышка круга при отпускании (×диаметр, 3 тика)
+  fade-ticks: 12                   # угасание круга после последнего удара
+  view-range: 2.0                  # множитель дальности видимости круга (×64 блока)
+  comets: 6                        # сколько комет
+  launch-spread-ticks: 20          # кометы запускаются равномерно за столько тиков
+  fall-ticks: 10                   # падение одной кометы (тиков)
+  scatter-radius: 4.0              # кометы падают в круге такого радиуса вокруг цели
+  first-at-center: true            # первая — точно в цель
+  spawn-spread: 0.6                # старт комет в круге: доля его радиуса для самой дальней точки (кометы расходятся)
+  comet-scale: 1.6                 # размер кометы (голова ≈ 0.75·scale, хвост ≈ 1.5·scale блока)
+  ground-offset: 0.4               # голова кометы в конце падения — над землёй
+  burst-ticks: 2                   # вспышка удара
+  burst-scale: 1.8                 # размер вспышки (×comet-scale)
+  impact-ticks: 5                  # сжатие после вспышки
+  comet-view-range: 2.0            # множитель дальности видимости комет
+  damage: 6.0                      # урон каждой цели в радиусе удара
+  damage-type: "minecraft:magic"
+  hit-radius: 3.0                  # радиус взрыва (до хитбокса цели)
+  hit-players: true                # задевать игроков (PvP и защита регионов всё равно решают)
+  ignore-invulnerability: true     # снять кадры неуязвимости перед уроном
+  max-hits-per-entity: 3           # одну цель — не больше стольких комет за заклинание
+  fire-seconds: 3.0                # поджог цели (только если урон прошёл); блоки не горят никогда
+  knockback: 0.35                  # отталкивание от точки удара по горизонтали
+  knockback-up: 0.25               # и вверх
+
 sounds:                            # список {sound, volume, pitch}; категория PLAYERS, звучит у глаз
   start:  [{sound: block.beacon.activate, volume: 0.7, pitch: 1.6}]
   hum:    [{sound: block.beacon.ambient, volume: 0.8, pitch: 1.2}]     # каждые hum-period-ticks, высота +0.4*заряд
@@ -97,6 +142,14 @@ sounds:                            # список {sound, volume, pitch}; кат
   barrier-fizzle: [{sound: block.amethyst_block.break, volume: 0.6, pitch: 1.3}]
   mode-beam:      [{sound: block.amethyst_block.chime, volume: 0.8, pitch: 1.6}]          # только себе
   mode-barrier:   [{sound: block.amethyst_cluster.place, volume: 0.8, pitch: 1.2}, {sound: block.note_block.chime, volume: 0.5, pitch: 1.0}]
+  meteor-start:   [{sound: item.firecharge.use, volume: 0.8, pitch: 0.9}, {sound: block.beacon.activate, volume: 0.5, pitch: 0.8}]
+  meteor-hum:     [{sound: block.fire.ambient, volume: 1.0, pitch: 1.0}, {sound: entity.blaze.burn, volume: 0.5, pitch: 0.8}]   # каждые hum-period-ticks, высота +0.4*заряд
+  meteor-ready:   [{sound: block.respawn_anchor.charge, volume: 1.0, pitch: 1.0}, {sound: block.beacon.power_select, volume: 0.6, pitch: 0.8}]
+  meteor-release: [{sound: entity.blaze.shoot, volume: 1.0, pitch: 0.7}]          # у огненного круга
+  meteor-launch:  [{sound: entity.ghast.shoot, volume: 0.7, pitch: 0.9}]          # каждая комета, на высоте круга
+  meteor-impact:  [{sound: entity.generic.explode, volume: 1.2, pitch: 1.1}, {sound: item.firecharge.use, volume: 1.0, pitch: 0.8}]   # только звук — без взрыва
+  meteor-fizzle:  [{sound: block.fire.extinguish, volume: 0.6, pitch: 1.2}]
+  mode-meteor:    [{sound: item.firecharge.use, volume: 0.6, pitch: 1.4}]          # только себе
 
 particles:
   end:   {type: END_ROD, count: 14, spread: 0.25, speed: 0.06}            # вспышка в конце луча
@@ -104,6 +157,17 @@ particles:
   barrier-form: {type: ELECTRIC_SPARK, count: 3, spread: 0.15, speed: 0.02}         # у каждой ячейки, когда барьер поднят
   barrier-hit:  {type: END_ROD, count: 16, spread: 0.12, speed: 0.07}               # луч ударил в барьер
   barrier-end:  {type: ELECTRIC_SPARK, count: 2, spread: 0.2, speed: 0.03}          # у каждой ячейки при угасании
+  # «Огненный шар»: секция или список секций
+  meteor-ember: [{type: FLAME, count: 2, spread: 0.2, speed: 0.01}]                 # искры в огненном круге во время заряда
+  meteor-trail:                                                                      # след падающей кометы
+    - {type: FLAME, count: 3, spread: 0.15, speed: 0.02}
+    - {type: LAVA, count: 1, spread: 0.1, speed: 0.0}
+    - {type: END_ROD, count: 1, spread: 0.1, speed: 0.01}
+  meteor-impact:                                                                     # удар кометы (только частицы)
+    - {type: EXPLOSION, count: 2, spread: 0.3, speed: 0.0}
+    - {type: FLAME, count: 40, spread: 0.8, speed: 0.12}
+    - {type: LAVA, count: 8, spread: 0.6, speed: 0.0}
+    - {type: END_ROD, count: 12, spread: 0.5, speed: 0.1}
 
 messages:                          # MiniMessage; <...> — подстановки
   cooldown: "<#7fd8ff>Посох восстанавливается: <white><s> с"
@@ -125,3 +189,10 @@ messages:                          # MiniMessage; <...> — подстановк
   barrier-cooldown: "<#7fd8ff>Барьер восстанавливается: <white><s> с"
   barrier-too-early: "<gray>Барьер рассыпался — держите ПКМ <white><need> с</white>."
   barrier-no-room: "<gray>Здесь барьер не встанет."
+  mode-meteor: "<#ffa040>Заклинание: <white>Огненный шар</white> <dark_gray>(Shift+ЛКМ — сменить)"
+  meteor-charge: "<#ffa040>Огненный шар <bar>"
+  meteor-ready: "<#ffa040>✦ Огненный круг готов — отпустите ПКМ!"
+  meteor-cooldown: "<#ffa040>Огненный шар восстанавливается: <white><s> с"
+  meteor-too-early: "<gray>Пламя угасло — держите ПКМ <white><need> с</white>."
+  meteor-too-long: "<gray>Огненный круг не удержан и погас."
+  meteor-no-room: "<gray>Здесь огненный круг не раскроется."

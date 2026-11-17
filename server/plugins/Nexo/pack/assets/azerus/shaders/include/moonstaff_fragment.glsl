@@ -2,13 +2,17 @@
 // (rendertype_item_entity_translucent_cull.fsh). Python copy (previews, checks): nexo-items/tools/moonstaff_fx.py.
 //
 // Key B (sprite): every effect sprite is 128x128 in the item atlas, texel (0,0) = (177,126,90,3) and
-// texel (1,0) = (K,90,126,3), K = sprite kind 1..10. Both compared exactly. Alpha 3 is below the vanilla cutout 0.1,
+// texel (1,0) = (K,90,126,3), K = sprite kind 1..19 (20..31 reserved). Both compared exactly. Alpha 3 is below the vanilla cutout 0.1,
 // so without this hook the signature is invisible. ms_fragment returns false (use vanilla) unless both match.
 //   K1 ring, K2 runes, K3 hexagram, K4 core  -> magic circle layers, msParam = charge 0..1
 //   K5 beam_up (+v), K6 beam_down (-v), K7 beam_west (+u), K8 beam_east (-u) -> beam, length L = msParam*250/8 blocks
 //   K9 flare (beam origin)
 //   K10 hex_cell (barrier cell), msParam*250 = g + 25*L: g 0..24 shimmer phase, L 0..7 alpha L/8, 8 formed, 9 flash.
 //       Sprite alpha classes: 255 rim, 254 glint, 96..239 fill (209..239 bevel), 0 (and < 8) outside.
+//   K11 fire_ring, K12 fire_runes, K13 fire_sigil, K14 fire_flames -> fire circle («Огненный шар»), msParam = charge;
+//       fire colours are baked into the sprites; K14 alpha 254 = ember (twinkles).
+//   K15 comet_tail_up (+v), K16 _down (-v), K17 _west (+u), K18 _east (-u) -> comet tail, s = 0 at the head;
+//   K19 comet_core (radial). Comet msParam*250 = g + 125*B: g 0..124 flicker seed, B 0 falling, 1 impact burst.
 // Time: GameTime from the Globals block (re-import is deduplicated). t = seconds 0..1200; every rate below makes an
 // integer number of cycles per 1200 s, so the wrap of GameTime is seamless.
 // GLSL 330 core only. Names: ms / ms_ only (shared core shader).
@@ -50,7 +54,7 @@ bool ms_fragment(sampler2D atlas, vec2 uv, out vec4 color) {
     if (!ms_texel_is(texelFetch(atlas, p0, 0), vec4(177.0, 126.0, 90.0, 3.0))) return false;
     vec4 k4 = texelFetch(atlas, p0 + ivec2(1, 0), 0) * 255.0;
     int kind = int(floor(k4.r + 0.5));
-    if (kind < 1 || kind > 10) return false;
+    if (kind < 1 || kind > 19) return false;
     if (!ms_texel_is(k4 / 255.0, vec4(float(kind), 90.0, 126.0, 3.0))) return false;
 
     float t = GameTime * 1200.0;
@@ -87,6 +91,100 @@ bool ms_fragment(sampler2D atlas, vec2 uv, out vec4 color) {
             rgb = mix(rgb, vec3(1.0), 0.5);
             alpha = clamp(alpha * 1.3 + 0.1 * step(0.004, alpha), 0.0, 1.0);
         }
+        color = vec4(rgb, alpha);
+        return true;
+    }
+    if (kind >= 11 && kind <= 14) {
+        // Fire circle layer (copy of K1..4): rotation, charge reveal, flicker, warm glow.
+        // Rates per 1200 s: K11 60, K12 100, K13 40 turns; pulse 1800, shimmer 4800, wobble 2400, flicker 6000,
+        // ember twinkle 800 cycles.
+        float c = msParam;
+        float a = 0.0;
+        if (kind == 11) a = MS_TAU * t / 20.0;
+        else if (kind == 12) a = -MS_TAU * t / 12.0;
+        else if (kind == 13) a = MS_TAU * t / 30.0;
+        vec2 q = ms_rotate(msLocal, a);
+        float flick = 1.0;
+        if (kind == 14) {
+            vec2 dq = q - 0.5;
+            float fa = atan(dq.x, -dq.y);
+            q = 0.5 + dq * (1.0 + 0.035 * sin(MS_TAU * 2.0 * t + 24.0 * fa));
+            flick = 0.85 + 0.15 * sin(MS_TAU * 5.0 * t + 7.0 * fa);
+        }
+        vec4 tex = texture(atlas, ms_uv(uvMin, us, q));
+        float halo = textureLod(atlas, ms_uv(uvMin, us, q), 2.0).a;
+        float pulse = 0.5 + 0.5 * sin(MS_TAU * 1.5 * t);
+        float appear = 1.0;
+        if (kind == 12) {
+            vec2 d = msLocal - 0.5;
+            float ang = atan(d.x, -d.y);
+            if (ang < 0.0) ang += MS_TAU;
+            appear = smoothstep(ang, ang + 0.15, c * (MS_TAU + 0.15));
+        } else if (kind == 13) {
+            appear = smoothstep(0.2, 0.65, c);
+        } else if (kind == 14) {
+            appear = 0.35 + 0.65 * c;
+        }
+        float bright = 0.8 + 0.35 * c + 0.1 * pulse;
+        if (c >= 0.999) bright += 0.25 * (0.5 + 0.5 * sin(MS_TAU * 4.0 * t));
+        // Channel-safe: dimming goes into alpha, never into a grey/brown colour; light above 1 spills from red into
+        // green/blue (toward yellow-white). Soft and halo texels take the bright glow colour, not the dark texel.
+        vec3 lit = tex.rgb * bright * flick;
+        lit += vec3(0.0, 0.35, 0.25) * max(lit.r - 1.0, 0.0);
+        vec3 glow = vec3(1.0, 0.56, 0.16) * (0.85 + 0.3 * c);
+        vec3 rgb = mix(glow, lit, tex.a);
+        float alpha = max(tex.a, halo * 0.55) * appear;
+        if (kind == 14 && abs(textureLod(atlas, ms_uv(uvMin, us, q), 0.0).a * 255.0 - 254.0) < 0.5) {
+            float tw = pow(max(0.5 + 0.5 * sin(MS_TAU * t / 1.5 + q.x * 37.0 + q.y * 23.0), 0.0), 6.0);
+            rgb = mix(vec3(1.0, 0.62, 0.2), vec3(1.6, 1.35, 0.85), tw);
+            alpha = (0.55 + 0.45 * tw) * appear;
+        }
+        if (length(q - 0.5) > MS_EDGE) alpha = 0.0;
+        color = vec4(rgb, alpha);
+        return true;
+    }
+    if (kind >= 15) {
+        // Comet: code = g + 125*B (g flicker seed, B 1 = impact burst).
+        int code = int(floor(msParam * 250.0 + 0.5));
+        int burst = code / 125;
+        int g = code - 125 * burst;
+        if (kind <= 18) {
+            // Tail plane: s along the tail (0 at the head), w across; streaks run from the head to the tip (4 Hz).
+            int kb = kind - 10;
+            float s = msLocal.y;
+            float w = msLocal.x;
+            if (kb == 6) s = 1.0 - msLocal.y;
+            if (kb == 7) { s = msLocal.x; w = msLocal.y; }
+            if (kb == 8) { s = 1.0 - msLocal.x; w = msLocal.y; }
+            float d = abs(2.0 * w - 1.0);
+            float ph = fract(s * 3.0 - t * 4.0 + float(g) / 125.0);
+            vec2 q = (kind <= 16) ? vec2(w, ph) : vec2(ph, w);
+            float streak = textureLod(atlas, ms_uv(uvMin, us, q), 0.0).a;
+            float width = mix(0.95, 0.15, s);
+            float body = 1.0 - smoothstep(0.0, width, d);
+            vec3 heat;
+            if (s < 0.18) heat = mix(vec3(1.0, 0.97, 0.85), vec3(1.0, 0.78, 0.3), s / 0.18);
+            else if (s < 0.5) heat = mix(vec3(1.0, 0.78, 0.3), vec3(1.0, 0.5, 0.1), (s - 0.18) / 0.32);
+            else heat = mix(vec3(1.0, 0.5, 0.1), vec3(0.85, 0.2, 0.03), (s - 0.5) / 0.5);
+            vec3 rgb = heat * (0.9 + 0.25 * streak);
+            float alpha = body * (0.55 + 0.45 * streak) * pow(max(1.0 - s, 0.0), 1.3) * smoothstep(0.0, 0.05, s);
+            if (burst == 1) alpha *= 0.35;
+            color = vec4(rgb, clamp(alpha, 0.0, 1.0));
+            return true;
+        }
+        // K19 comet head: radial sprite, 8 Hz pulse, warm glow; burst = whiter and denser.
+        vec2 dc = msLocal - 0.5;
+        float rr = length(dc);
+        vec4 tex = texture(atlas, ms_uv(uvMin, us, msLocal));
+        float halo = textureLod(atlas, ms_uv(uvMin, us, msLocal), 2.0).a;
+        float pulse = 0.9 + 0.1 * sin(MS_TAU * 8.0 * t + float(g));
+        vec3 rgb = tex.rgb * pulse + vec3(1.0, 0.6, 0.15) * halo * 0.6;
+        float alpha = max(tex.a, halo * 0.5);
+        if (burst == 1) {
+            rgb = mix(rgb, vec3(1.0), 0.55);
+            alpha = min(1.0, alpha * 1.4 + 0.1 * (1.0 - smoothstep(0.3, MS_EDGE, rr)));
+        }
+        if (rr > MS_EDGE) alpha = 0.0;
         color = vec4(rgb, alpha);
         return true;
     }
