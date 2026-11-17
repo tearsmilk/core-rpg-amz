@@ -57,4 +57,5 @@ pages:
 
   bread:
     lines:
-      - "Держи, <white>{player}</white>. Ешь, пока тёплый."
+      - "Держи, <white>{player}</white>."
+      - "Ешь, пока тёплый."

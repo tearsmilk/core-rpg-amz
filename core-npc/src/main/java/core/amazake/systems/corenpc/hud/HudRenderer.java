@@ -41,33 +41,37 @@ public final class HudRenderer {
         if (offsetX != 0) {
             b.append(shift(offsetX));
         }
-        b.append(Component.text(HudLayout.BOX).font(HudLayout.DIALOG_FONT).color(NamedTextColor.WHITE)
-            .shadowColor(ShadowColor.none()));
-        int x = HudLayout.BOX_ADVANCE;   // где сейчас «перо» относительно левого края окна
-        x = this.row(b, x, HudLayout.PAD, speaker, HudLayout.ROWS[0]);
+        int x = 0;   // где сейчас «перо» относительно левого края раскладки
+        x = this.glyph(b, x, 0, HudLayout.BOX, HudLayout.BOX_ADVANCE);
+        if (!answers.isEmpty()) {
+            x = this.glyph(b, x, HudLayout.PANEL_X, HudLayout.PANEL, HudLayout.PANEL_ADVANCE);
+        }
+        x = this.row(b, x, HudLayout.NAME_X, speaker, HudLayout.ROWS[0]);
         for (int i = 0; i < Math.min(HudLayout.TEXT_ROWS, lines.size()); i++) {
-            x = this.row(b, x, HudLayout.PAD, lines.get(i), HudLayout.ROWS[1 + i]);
+            x = this.row(b, x, HudLayout.TEXT_X, lines.get(i), HudLayout.ROWS[1 + i]);
         }
         for (int i = 0; i < Math.min(HudLayout.ANSWER_ROWS, answers.size()); i++) {
             if (i == selectedRow) {
-                b.append(shift(HudLayout.HIGHLIGHT_X - x));
-                b.append(Component.text(HudLayout.HIGHLIGHT).font(HudLayout.ROWS[4 + i]).color(NamedTextColor.WHITE)
-                    .shadowColor(ShadowColor.none()));
-                x = HudLayout.HIGHLIGHT_X + HudLayout.HIGHLIGHT_ADVANCE;
+                x = this.glyph(b, x, HudLayout.POINTER_X, HudLayout.POINTER[i], HudLayout.POINTER_ADVANCE);
             }
-            x = this.row(b, x, HudLayout.PAD, answers.get(i), HudLayout.ROWS[4 + i]);
+            x = this.row(b, x, HudLayout.ANSWER_X, answers.get(i), HudLayout.ROWS[4 + i]);
         }
         if (next) {
-            b.append(shift(HudLayout.NEXT_X - x));
-            b.append(Component.text(HudLayout.NEXT).font(HudLayout.ROWS[6]).color(NamedTextColor.WHITE)
-                .shadowColor(ShadowColor.none()));
-            x = HudLayout.NEXT_X + 8;
+            x = this.glyph(b, x, HudLayout.NEXT_X, HudLayout.NEXT, HudLayout.NEXT_ADVANCE);
         }
-        b.append(shift(HudLayout.BOX_ADVANCE - x));
+        b.append(shift(HudLayout.TOTAL_W - x));
         if (offsetX != 0) {
             b.append(shift(-offsetX));
         }
         return b.build();
+    }
+
+    /** Глиф окна (шрифт corenpc:dialog) с левым краем на at; возвращает новое положение «пера». */
+    private int glyph(final TextComponent.Builder b, final int x, final int at, final String glyph, final int advance) {
+        b.append(shift(at - x));
+        b.append(Component.text(glyph).font(HudLayout.DIALOG_FONT).color(NamedTextColor.WHITE)
+            .shadowColor(ShadowColor.none()));
+        return at + advance;
     }
 
     private int row(final TextComponent.Builder b, final int x, final int at, final Component text,
@@ -81,7 +85,8 @@ public final class HudRenderer {
             return x;
         }
         b.append(shift(at - x));
-        b.append(Component.text().font(font).color(NamedTextColor.WHITE).append(safe).build());
+        b.append(Component.text().font(font).color(NamedTextColor.WHITE).shadowColor(ShadowColor.none()).append(safe)
+            .build());
         return at + w;
     }
 

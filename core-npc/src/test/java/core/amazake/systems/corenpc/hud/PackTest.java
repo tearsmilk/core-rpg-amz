@@ -72,12 +72,13 @@ class PackTest {
         final Set<Integer> dialog = check(ASSETS.resolve("font/dialog.json"));
         HudLayout.BOX.codePoints().forEach(c -> assertTrue(dialog.contains(c), Integer.toHexString(c)));
         assertTrue(dialog.contains(0xF801) && dialog.contains(0xF821 + 9));
-        for (int i = 4; i <= 6; i++) {
-            final Set<Integer> row = check(ASSETS.resolve("font/row" + i + ".json"));
-            HudLayout.HIGHLIGHT.codePoints().forEach(c -> assertTrue(row.contains(c), Integer.toHexString(c)));
+        for (final String g : new String[] {HudLayout.PANEL, HudLayout.NEXT, HudLayout.POINTER[0], HudLayout.POINTER[1],
+            HudLayout.POINTER[2]}) {
+            g.codePoints().forEach(c -> assertTrue(dialog.contains(c), Integer.toHexString(c)));
         }
-        final Set<Integer> last = check(ASSETS.resolve("font/row6.json"));
-        HudLayout.NEXT.codePoints().forEach(c -> assertTrue(last.contains(c), Integer.toHexString(c)));
+        for (int i = 1; i <= 6; i++) {
+            check(ASSETS.resolve("font/row" + i + ".json"));
+        }
         final FontWidths w = HudTest.widths();
         final Set<Integer> row0 = check(ASSETS.resolve("font/row0.json"));
         for (final int cp : new int[] {'a', 'Ж', 'Й', 'Ё', ' '}) {

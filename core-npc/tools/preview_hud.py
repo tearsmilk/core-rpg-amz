@@ -29,8 +29,12 @@ def main():
             x += p.width
         return out
 
-    box = joined([tex(p['file']) for p in font('dialog')['providers'][1:]])
-    hl = joined([tex(p['file']) for p in font('row4')['providers'] if 'highlight' in p.get('file', '')])
+    dlg = {''.join(p['chars']): p for p in font('dialog')['providers'] if p['type'] == 'bitmap'}
+
+    def put(ch, x):
+        p = dlg[ch]
+        img.alpha_composite(tex(p['file']), (x0 + x, H - 65 - p['ascent']))
+
     cells = {}
     row0 = font('row0')['providers']
     for prov, h, up in ((row0[2], 12, 3), (row0[1], 8, 0)):
@@ -41,20 +45,21 @@ def main():
     widths = {}
     for line in open(os.path.join(HERE, '..', 'src', 'main', 'resources', 'font-widths.txt'), encoding='utf-8'):
         if not line.startswith('#'):
-            a, b = line.split()
-            widths[chr(int(a, 16))] = int(b)
+            a_, b_ = line.split()
+            widths[chr(int(a_, 16))] = int(b_)
     asc = [font('row%d' % i)['providers'][1]['ascent'] for i in range(7)]
-    box_asc = font('dialog')['providers'][1]['ascent']
     img = Image.new('RGBA', (W, H), (110, 150, 200, 255))
     d = ImageDraw.Draw(img)
     d.rectangle((W // 2 - 91, H - 22, W // 2 + 91, H - 1), fill=(40, 40, 40, 255))          # хотбар
     d.rectangle((W // 2 - 91, H - 39, W // 2 - 10, H - 31), fill=(200, 30, 30, 255))      # сердца
     d.rectangle((W // 2 - 91, H - 49, W // 2 - 10, H - 41), fill=(160, 160, 170, 255))    # броня
     d.rectangle((W // 2 + 10, H - 39, W // 2 + 91, H - 31), fill=(150, 90, 40, 255))      # еда
-    x0 = W // 2 - (box.width + 1) // 2 + 110   # dialog.hud.offset-x
-    img.alpha_composite(box, (x0, H - 65 - box_asc))
+    x0 = W // 2 - 330 // 2 + 60   # dialog.hud.offset-x
+    put('\ue000', 0)
+    put('\ue001', 142)
+    put('\ue002', 172)
 
-    def text(s, row, color, x=8):
+    def text(s, row, color, x):
         px = x0 + x
         for ch in s:
             if ch == ' ':
@@ -68,13 +73,13 @@ def main():
                 img.alpha_composite(tint, (px, H - 65 - asc[row] - up))
             px += widths.get(ch, 6)
 
-    text('Староста Ведан', 0, (255, 211, 122))
-    text('Здравствуй, Steve. Давно у нас путников не было. Ёлки!', 1, (236, 230, 214))
-    text('Ты по делу или так, поглазеть?', 2, (236, 230, 214))
-    img.alpha_composite(hl.crop((0, 0, hl.width, 12)), (x0 + 6, H - 65 - asc[5] - 1))
-    text('1. Кто ты такой?', 4, (189, 182, 166))
-    text('» 2. Есть работа?', 5, (255, 211, 122))
-    text('3. Ничего, я пойду.', 6, (189, 182, 166))
+    text('Староста Ведан', 0, (243, 230, 207), 48)
+    text('Здравствуй, Steve. Давно у нас путников', 1, (74, 44, 28), 38)
+    text('Ты по делу или так, поглазеть?', 2, (74, 44, 28), 38)
+    put('\ue021', 166)
+    text('1. Кто ты такой?', 4, (122, 74, 50), 184)
+    text('2. Есть работа?', 5, (58, 29, 16), 184)
+    text('3. Ничего, я пойду.', 6, (122, 74, 50), 184)
     d.line((W // 2 - 4, H // 2, W // 2 + 4, H // 2), fill=(255, 255, 255, 255))
     d.line((W // 2, H // 2 - 4, W // 2, H // 2 + 4), fill=(255, 255, 255, 255))
     os.makedirs(os.path.join(HERE, 'preview'), exist_ok=True)
