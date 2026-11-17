@@ -1,5 +1,6 @@
 package core.amazake.systems.coremobs.mob;
 
+import core.amazake.systems.coremobs.region.ModelMobs;
 import core.amazake.systems.coremobs.util.IntRange;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,6 +66,11 @@ public final class MobCatalog {
             }
             if (!ID.matcher(id).matches()) {
                 warn.accept("mobs." + rawId + ": имя моба — латиница в нижнем регистре, цифры, _ и -");
+                continue;
+            }
+            if (id.equals(ModelMobs.ALL_MODELS)) {
+                warn.accept("mobs." + rawId + " пропущен: «" + id + "» — служебное слово команды /mobs region addmob, "
+                    + "переименуйте моба");
                 continue;
             }
             try {
