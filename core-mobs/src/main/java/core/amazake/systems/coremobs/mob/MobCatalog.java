@@ -142,11 +142,14 @@ public final class MobCatalog {
             model(m, warn));
     }
 
-    /** Модель ModelEngine из model / model-scale / model-hide-base / model-attack / model-hit; null — без модели. */
+    /**
+     * Модель ModelEngine из model / model-scale / model-hitbox-scale / model-hide-base / model-attack / model-hit;
+     * null — без модели. model-hitbox-scale не указан (или неверный) — хитбокс в масштабе модели.
+     */
     static MobDef.Model model(final ConfigurationSection m, final Consumer<String> warn) {
         final String id = m.getString("model", "").trim();
         if (id.isEmpty()) {
-            for (final String key : new String[] {"model-scale", "model-hide-base", "model-attack", "model-hit"}) {
+            for (final String key : new String[] {"model-scale", "model-hitbox-scale", "model-hide-base", "model-attack", "model-hit"}) {
                 if (m.contains(key)) {
                     warn.accept(key + " без model — не используется");
                 }
@@ -166,7 +169,16 @@ public final class MobCatalog {
                 warn.accept("model-scale должно быть числом больше 0 (до 100), ставлю 1");
             }
         }
-        return new MobDef.Model(id, scale, m.getBoolean("model-hide-base", true),
+        double hitboxScale = scale;
+        if (m.contains("model-hitbox-scale")) {
+            final double v = m.getDouble("model-hitbox-scale", -1);
+            if (v > 0 && v <= 100) {
+                hitboxScale = v;
+            } else {
+                warn.accept("model-hitbox-scale должно быть числом больше 0 (до 100), ставлю как model-scale");
+            }
+        }
+        return new MobDef.Model(id, scale, hitboxScale, m.getBoolean("model-hide-base", true),
             animation(m, "model-attack", "attack"), animation(m, "model-hit", "hit"));
     }
 

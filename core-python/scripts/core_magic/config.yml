@@ -1,5 +1,5 @@
 # core_magic — Посох Лунного Странника (azerus_moon_staff): зажать ПКМ на 3 с — магический круг, отпустить — луч.
-# Shift + ПКМ — сменить заклинание: «Луч» ↔ «Барьер» (зажать ПКМ на 1 с — стена из шестигранников на 10 с, гасит лучи).
+# Shift + ЛКМ — сменить заклинание: «Луч» ↔ «Барьер» (зажать ПКМ на 1 с — стена из шестигранников на 10 с, гасит лучи).
 # Все числа механики — здесь. Метка шейдера (цвет G=233, B=253) и номера спрайтов — в коде (их знает шейдер).
 # Перечитать: /cmagic reload (или /魔法 reload).
 
@@ -18,7 +18,7 @@ cast:
   show-charge-bar: true            # полоска заряда в строке над хотбаром
   bar-length: 20
 
-mode:                              # заклинание посоха; Shift + ПКМ с посохом переключает Луч ↔ Барьер
+mode:                              # заклинание посоха; Shift + ЛКМ с посохом переключает Луч ↔ Барьер
   default: beam                    # beam | barrier — у кого ещё не выбрано
   toggle-debounce-ms: 300          # одно нажатие — одно переключение (клиент повторяет ПКМ каждые 4 тика)
   remember-on-item: true           # записать выбор на посох (PDC py_core_magic:mode)
@@ -118,8 +118,8 @@ messages:                          # MiniMessage; <...> — подстановк
   usage: "<gray>/cmagic give [ник] [кол-во] | reload | info"
   console-needs-player: "<red>Из консоли укажите игрока: /cmagic give <ник> [кол-во]"
   bad-amount: "<red>Количество — число от 1 до 64."
-  mode-beam: "<#7fd8ff>Заклинание: <white>Луч</white> <dark_gray>(Shift+ПКМ — сменить)"
-  mode-barrier: "<#7fd8ff>Заклинание: <white>Барьер</white> <dark_gray>(Shift+ПКМ — сменить)"
+  mode-beam: "<#7fd8ff>Заклинание: <white>Луч</white> <dark_gray>(Shift+ЛКМ — сменить)"
+  mode-barrier: "<#7fd8ff>Заклинание: <white>Барьер</white> <dark_gray>(Shift+ЛКМ — сменить)"
   barrier-charge: "<#7fd8ff>Барьер <bar>"
   barrier-ready: "<#7fd8ff>✦ Барьер поднят на <white><s> с</white> — можно отпустить ПКМ"
   barrier-cooldown: "<#7fd8ff>Барьер восстанавливается: <white><s> с"

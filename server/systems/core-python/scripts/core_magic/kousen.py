@@ -13,6 +13,11 @@
 # EntityDamageByEntityEvent с атакующим-игроком: PvP, защита регионов и прочие плагины решают как обычно. Сам
 # заклинатель исключён (по UUID), даже если стоит внутри собственного луча.
 #
+# Барьеры (kekkai.py): после блоков луч проверяется по реестру барьеров (чистые данные, keisan.遮断) — первый
+# барьер на пути обрывает луч: урона за ним нет (и цели «за плоскостью» барьера отсекаются, даже если их хитбокс с
+# запасом hit-radius до неё дотягивается), луч короче, в точке удара — частицы barrier-hit, звук и вспышка ячейки
+# (задачей в регионе барьера). Барьер гасит лучи всех, и своего заклинателя тоже.
+#
 # Вид: дисплей луча стоит у глаз и НЕ двигается (никогда не пересекает границу региона): луч растёт масштабом по
 # локальной +Z (модель — от z=8 до z=16, т.е. 0.5 блока, масштаб Z = 2*Lv) с интерполяцией дисплея, потом гаснет.
 
@@ -22,6 +27,8 @@ import amazake
 import keisan
 import kyoutsuu
 import mahoujin
+import kekkai
+import damage_bridge
 from kyoutsuu import Location, Vector, BoundingBox, FluidCollisionMode, LivingEntity, ArmorStand, Player, GameMode
 
 DamageSource = java.type("org.bukkit.damage.DamageSource")
@@ -97,6 +104,23 @@ def 撃つ(player, cfg, 陣=None):
             hp = hit.getHitPosition()
             D = min(使える, ((hp.getX() - E[0]) ** 2 + (hp.getY() - E[1]) ** 2 + (hp.getZ() - E[2]) ** 2) ** 0.5)
 
+    # --- 2b. барьеры: ближайший на [0, D] обрывает луч (чистая математика по снимку реестра) ---------------------
+    遮 = None
+    遮rec = None
+    if D > 0.0:
+        try:
+            recs = kekkai.一覧()
+            遮 = keisan.遮断(E, 向き, D, recs, world.getName(), kyoutsuu.今ms())
+            if 遮 is not None:
+                D = 遮[0]
+                for r in recs:
+                    if r.id == 遮[1]:
+                        遮rec = r
+                        break
+        except BaseException as ex:
+            amazake.log.debug("барьеры на пути луча: " + str(ex))
+            遮 = None
+
     # --- 3. цели вдоль [0, D] ----------------------------------------------------------------------------------------
     候補 = []
     実体 = {}
@@ -117,6 +141,12 @@ def 撃つ(player, cfg, 陣=None):
                 except BaseException as ex:
                     amazake.log.debug("цель луча: " + str(ex))
     当たり = keisan.当たり(E, 向き, D, 候補, 自分, 光.半径)
+    if 遮rec is not None and 当たり:
+        # только цели перед барьером (центр хитбокса по ту же сторону плоскости, что и глаза стрелка)
+        箱表 = dict(候補)
+        当たり = [(t, uid) for t, uid in 当たり
+                if keisan.手前か(遮rec, ((箱表[uid][0] + 箱表[uid][3]) / 2.0, (箱表[uid][1] + 箱表[uid][4]) / 2.0,
+                                        (箱表[uid][2] + 箱表[uid][5]) / 2.0), E)]
 
     # --- 4. урон ------------------------------------------------------------------------------------------------------
     n = 0
@@ -134,28 +164,29 @@ def 撃つ(player, cfg, 陣=None):
             try:
                 if 光.無敵無視:
                     e.setNoDamageTicks(0)
-                if src is not None:
-                    e.damage(float(光.傷), src)
-                else:
-                    e.damage(float(光.傷), player)
+                damage_bridge.hit(player, e, float(光.傷), src)
                 n += 1
             except BaseException as ex:
                 amazake.log.warn("урон лучом " + uid + ": " + str(ex))
 
     # --- 5. вид: дисплей луча, частицы, звук ---------------------------------------------------------------------------
     try:
-        _光を見せる(eye, cfg, D, 自分)
+        if 遮 is None or D > cfg.円.前 + 0.05:      # барьер вплотную (ближе круга) — дисплея луча нет
+            _光を見せる(eye, cfg, D, 自分)
     except BaseException as ex:
         amazake.log.warn("дисплей луча: " + str(ex))
+    終 = keisan.点(E, 向き, D)
     try:
         前 = cfg.円.前
         for x, y, z in keisan.道の点(E, 向き, min(前, D), D, cfg.跡粒.毎):
             kyoutsuu.散らす(world, cfg.跡粒, x, y, z)
-        終 = keisan.点(E, 向き, D)
-        kyoutsuu.散らす(world, cfg.終粒, 終[0], 終[1], 終[2])
+        kyoutsuu.散らす(world, cfg.打粒 if 遮 is not None else cfg.終粒, 終[0], 終[1], 終[2])
     except BaseException as ex:
         amazake.log.debug("частицы луча: " + str(ex))
     kyoutsuu.鳴らす(world, eye, cfg.音表["fire"])
+    if 遮 is not None:
+        kyoutsuu.鳴らす(world, Location(world, 終[0], 終[1], 終[2]), cfg.音表["barrier-hit"])
+        kekkai.閃かせる(遮[1], 遮[2])
     return D, n
 
 

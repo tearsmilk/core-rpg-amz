@@ -78,6 +78,28 @@ class MobModelConfigTest {
     }
 
     @Test
+    void hitboxScale() throws Exception {
+        final List<String> w = new ArrayList<>();
+        // не указан — как model-scale
+        MobDef.Model m = model("model: cave_crawler\nmodel-scale: 0.45\n", w);
+        assertEquals(0.45, m.scale());
+        assertEquals(0.45, m.hitboxScale());
+        assertTrue(w.isEmpty());
+        // указан — свой
+        m = model("model: bone_lord\nmodel-scale: 1.4\nmodel-hitbox-scale: 1.2\n", w);
+        assertEquals(new MobDef.Model("bone_lord", 1.4, 1.2, true, "attack", "hit"), m);
+        assertTrue(w.isEmpty());
+        // неверный — как model-scale, с предупреждением
+        m = model("model: bone_lord\nmodel-scale: 1.4\nmodel-hitbox-scale: 0\n", w);
+        assertEquals(1.4, m.hitboxScale());
+        assertEquals(1, w.size());
+        // без model — предупреждение
+        w.clear();
+        assertNull(model("model-hitbox-scale: 2\n", w));
+        assertEquals(1, w.size());
+    }
+
+    @Test
     void parsedIntoMobDef() throws Exception {
         final List<String> w = new ArrayList<>();
         final MobCatalog c = MobCatalog.parse(yaml("""
@@ -96,8 +118,8 @@ class MobModelConfigTest {
     }
 
     /**
-     * Файлы mobs.yml из ресурсов и для продакшена: модель только у первого скелета (cave_skeleton), у остальных мобов
-     * параметров model* нет и предупреждений тоже. (Полный разбор не гоняем: снаряжение и эффекты требуют реестров
+     * Файлы mobs.yml из ресурсов и для продакшена: без предупреждений по model*. В ресурсах модель только у первого
+     * скелета (cave_skeleton); в продакшене моделей много — там только разбор без предупреждений. (Полный разбор не гоняем: снаряжение и эффекты требуют реестров
      * сервера.)
      */
     @Test
@@ -105,6 +127,7 @@ class MobModelConfigTest {
         for (final String path : new String[] {"src/main/resources/mobs.yml", "deploy/mobs.prod.yml"}) {
             final File f = new File(path);
             assertTrue(f.isFile(), path);
+            final boolean prod = path.startsWith("deploy/");
             final ConfigurationSection mobs = YamlConfiguration.loadConfiguration(f).getConfigurationSection("mobs");
             assertNotNull(mobs, path);
             String firstSkeleton = null;
@@ -119,12 +142,20 @@ class MobModelConfigTest {
                 assertTrue(w.isEmpty(), path + " " + id + ": " + w);
                 if (model != null) {
                     withModel++;
-                    assertEquals("cave_skeleton", id, path);
-                    assertEquals(new MobDef.Model("skeleton_archer", 1.0, true, "attack", "hit"), model, path);
+                    // хитбокс без model-hitbox-scale — в масштабе модели
+                    assertEquals(model.scale(), model.hitboxScale(), path + " " + id);
+                    if (!prod) {
+                        assertEquals("cave_skeleton", id, path);
+                        assertEquals(new MobDef.Model("skeleton_archer", 1.0, true, "attack", "hit"), model, path);
+                    }
                 }
             }
             assertEquals("cave_skeleton", firstSkeleton, path);
-            assertEquals(1, withModel, path);
+            if (!prod) {
+                assertEquals(1, withModel, path);
+            } else {
+                assertTrue(withModel >= 1, path);
+            }
         }
     }
 }

@@ -3,7 +3,7 @@
 # Python-система core-python «Посох Лунного Странника». Посох (azerus_moon_staff) — предмет Nexo с компонентом
 # consumable (анимация лука, consume_seconds 3600): игрок ЗАЖИМАЕТ ПКМ — перед ним появляется голубой магический
 # круг и за 3 с растёт и разгорается; ОТПУСТИЛ после 3 с — из круга бьёт белый луч (урон всем на пути); раньше —
-# круг гаснет без выстрела. Shift + ПКМ — сменить заклинание: «Луч» ↔ «Барьер» (kekkai.py: зажать ПКМ на 1 с —
+# круг гаснет без выстрела. Shift + ЛКМ — сменить заклинание: «Луч» ↔ «Барьер» (kekkai.py: зажать ПКМ на 1 с —
 # стена из шестигранников на 10 с, гасит лучи посоха).
 #   /cmagic give [ник] [кол-во]   выдать посох
 #   /cmagic reload                перечитать config.yml
@@ -55,7 +55,7 @@ _設定を読む()
 拒否間隔 = 500
 #: Режим посоха игрока: str(UUID) → "beam" | "barrier" (копия — на самом посохе, PDC py_core_magic:mode).
 様式 = {}
-#: Последнее событие Shift+ПКМ (мс): одно нажатие — одно переключение (клиент повторяет ПКМ каждые 4 тика и шлёт
+#: Последнее событие Shift+ЛКМ (мс): одно нажатие — одно переключение (клиент повторяет ПКМ каждые 4 тика и шлёт
 #: событие для обеих рук; каждое событие обновляет время).
 切替時刻 = {}
 
@@ -244,7 +244,7 @@ def _止める(player, 方法):
 @amazake.on("PlayerInteractEvent", ignore_cancelled=False)
 def 右クリック(event):
     """ПКМ в воздух/по блоку с посохом (поток игрока). Клик в воздух приходит «отменённым» — поэтому
-    ignore_cancelled=False. Shift + ПКМ — только смена режима (удержание не начинается). Начало заклинания
+    ignore_cancelled=False. Смена режима — Shift + ЛКМ (左クリック ниже; на Shift + ПКМ она мешала стрельбе). Начало заклинания
     проверяется через тик: держит ли игрок посох поднятым."""
     a = event.getAction().name()
     if a != "RIGHT_CLICK_AIR" and a != "RIGHT_CLICK_BLOCK":
@@ -266,17 +266,10 @@ def 右クリック(event):
         if p.isSneaking():
             event.setUseInteractedBlock(EventResult.DENY)
         return
-    if p.isSneaking():
-        # смена режима: никакого удержания и заряда (DENY: Paper сам отменяет предсказанное клиентом
-        # использование — ServerPlayer.resyncUsingItem в handleUseItem)
-        event.setUseItemInHand(EventResult.DENY)
-        event.setUseInteractedBlock(EventResult.DENY)
-        _切り替える(p, event, item, cfg, uid)
-        return
     if uid in 詠唱:
         return
     型 = 様式を得る(p, item, cfg)
-    # перезарядка своего режима (у барьера — своя, без ванильной «шторки»: она закрыла бы и луч, и Shift+ПКМ)
+    # перезарядка своего режима (у барьера — своя, без ванильной «шторки»: она закрыла бы и луч, и Shift+ЛКМ)
     残り = kekkai.冷却残り(uid) if 型 == "barrier" else _残り秒(uid)
     if 残り > 0.0:
         event.setUseItemInHand(EventResult.DENY)     # без анимации натягивания
@@ -286,6 +279,28 @@ def 右クリック(event):
         return
     確認待ち.add(uid)
     amazake.run_once_for_player(p, lambda: _確認(p, 型), delay=1)
+
+
+@amazake.on("PlayerInteractEvent", ignore_cancelled=False)
+def 左クリック(event):
+    """Shift + ЛКМ с посохом в воздух/по блоку (поток игрока): Луч ↔ Барьер. Клик по блоку отменяется — посох
+    не ломает блок. Удар по существу (ЛКМ по мобу/игроку) событием PlayerInteractEvent не приходит и остаётся
+    обычным ударом."""
+    a = event.getAction().name()
+    if a != "LEFT_CLICK_AIR" and a != "LEFT_CLICK_BLOCK":
+        return
+    p = event.getPlayer()
+    if not p.isSneaking():
+        return
+    item = event.getItem()
+    if not dougu.杖か(item):
+        return
+    cfg = settei.今()
+    if p.getWorld().getName() in cfg.禁止世界 or (cfg.杖.権限 and not p.hasPermission(cfg.杖.権限)):
+        return
+    if a == "LEFT_CLICK_BLOCK":
+        event.setCancelled(True)
+    _切り替える(p, event, item, cfg, str(p.getUniqueId()))
 
 
 def _拒む(p, cfg, uid, 鍵, 残り):
@@ -320,7 +335,7 @@ def _様式を見せる(p, cfg, m, 音=False):
 
 
 def _切り替える(p, event, item, cfg, uid):
-    """Shift + ПКМ: Луч ↔ Барьер (поток игрока)."""
+    """Shift + ЛКМ: Луч ↔ Барьер (поток игрока)."""
     今 = kyoutsuu.今ms()
     前 = 切替時刻.get(uid)
     切替時刻[uid] = 今

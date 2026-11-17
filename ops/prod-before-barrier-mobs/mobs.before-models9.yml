@@ -1,0 +1,385 @@
+# Мобы core-mobs. Ключ (forest_zombie) — id моба для команд, регионов и файла лута drops/<id>.yml.
+# Лут: положите предметы в инвентарь и /mobs drops save <id>, шансы и количество — в drops/<id>.yml.
+#
+# Параметры (всё, кроме type, можно не писать):
+#   type                 — ванильный моб: ZOMBIE, SKELETON, SPIDER, HUSK, STRAY, CAVE_SPIDER, WITHER_SKELETON...
+#   name                 — имя (MiniMessage)
+#   show-name            — показывать имя над головой (true)
+#   show-health          — добавлять к имени здоровье по mobs.name-format в config.yml (true)
+#   health               — здоровье (20 = 10 сердец)
+#   damage               — урон в ближнем бою (не указано — ванильный)
+#   projectile-damage    — урон стрелы (для скелетов)
+#   speed                — скорость (у зомби 0.23, у паука 0.3)
+#   armor                — броня (0..30)
+#   follow-range         — с какого расстояния моб замечает игрока
+#   knockback-resistance — сопротивление отбрасыванию (0..1)
+#   scale                — размер (1 — обычный)
+#   baby                 — детёныш (у кого он бывает)
+#   glowing, silent      — подсветка, без звуков
+#   prevent-sunburn      — не горит на солнце (true)
+#   vanilla-drops        — оставлять ванильный дроп (false: падает только свой лут)
+#   drop-equipment       — выпадает ли снаряжение (false)
+#   exp                  — опыт: 10 или 5-15 (не указано — ванильный). core-rpg переводит его в свой опыт
+#   equipment            — hand, off-hand, helmet, chestplate, leggings, boots: материал
+#   effects              — постоянные эффекты: [{effect: speed, level: 1}]
+#   on-hit-effects       — эффекты цели при ударе: [{effect: poison, level: 1, seconds: 4, chance: 35}]
+#   size                 — размер слизня, магмового куба, фантома (1..16; не указано — случайный ванильный)
+#   no-fire              — огненные шары моба (блейз, гаст) не поджигают и не ломают блоки (true)
+
+mobs:
+  forest_zombie:
+    type: ZOMBIE
+    name: "<dark_green>Лесной мертвец</dark_green>"
+    health: 40
+    damage: 5
+    speed: 0.25
+    armor: 4
+    follow-range: 24
+    knockback-resistance: 0.3
+    exp: 8-12
+    equipment:
+      hand: IRON_SHOVEL
+      helmet: LEATHER_HELMET
+    on-hit-effects:
+      - effect: hunger
+        level: 1
+        seconds: 6
+        chance: 30
+
+  cave_skeleton:
+    type: SKELETON
+    name: "<gray>Пещерный стрелок</gray>"
+    model: skeleton_archer
+    health: 30
+    damage: 3
+    projectile-damage: 6
+    speed: 0.27
+    follow-range: 32
+    exp: 10-14
+    equipment:
+      hand: BOW
+      helmet: CHAINMAIL_HELMET
+    on-hit-effects:
+      - effect: slowness
+        level: 2
+        seconds: 3
+        chance: 25
+
+  venom_spider:
+    type: SPIDER
+    name: "<dark_purple>Ядовитый паук</dark_purple>"
+    health: 28
+    damage: 4
+    speed: 0.34
+    follow-range: 20
+    scale: 1.3
+    exp: 6-9
+    effects:
+      - effect: jump_boost
+        level: 2
+    on-hit-effects:
+      - effect: poison
+        level: 1
+        seconds: 4
+        chance: 40
+
+  # ---------------------------------------------------------------- слизни (size — размер: 1 мелкий, 4 большой)
+  swamp_slime:
+    type: SLIME
+    name: "<#6fae3a>Болотная слизь</#6fae3a>"
+    size: 3
+    health: 30
+    damage: 4
+    exp: 5-8
+    on-hit-effects:
+      - {effect: poison, level: 1, seconds: 3, chance: 30}
+
+  acid_slime:
+    type: SLIME
+    name: "<#b6e03a>Кислотный студень</#b6e03a>"
+    size: 4
+    health: 48
+    damage: 5
+    knockback-resistance: 0.4
+    exp: 8-12
+    on-hit-effects:
+      - {effect: weakness, level: 1, seconds: 5, chance: 35}
+
+  ember_cube:
+    type: MAGMA_CUBE
+    name: "<#ff7a2e>Тлеющий магмовый куб</#ff7a2e>"
+    size: 3
+    health: 42
+    damage: 6
+    armor: 4
+    exp: 9-13
+    on-hit-effects:
+      - {effect: slowness, level: 1, seconds: 3, chance: 30}
+
+  # ---------------------------------------------------------------- фантомы (не горят на солнце)
+  night_phantom:
+    type: PHANTOM
+    name: "<#7f8fd6>Ночной фантом</#7f8fd6>"
+    size: 2
+    health: 30
+    damage: 5
+    exp: 8-11
+    on-hit-effects:
+      - {effect: blindness, level: 1, seconds: 2, chance: 25}
+
+  dread_phantom:
+    type: PHANTOM
+    name: "<#9b5de5>Призрак ужаса</#9b5de5>"
+    size: 5
+    health: 55
+    damage: 8
+    glowing: true
+    exp: 14-20
+    on-hit-effects:
+      - {effect: weakness, level: 1, seconds: 5, chance: 35}
+
+  # ---------------------------------------------------------------- зомби
+  plague_zombie:
+    type: ZOMBIE
+    name: "<#8bbf5a>Чумной мертвец</#8bbf5a>"
+    health: 45
+    damage: 6
+    speed: 0.24
+    armor: 3
+    exp: 9-13
+    equipment: {hand: IRON_SWORD, helmet: CHAINMAIL_HELMET}
+    on-hit-effects:
+      - {effect: poison, level: 1, seconds: 4, chance: 35}
+
+  miner_zombie:
+    type: ZOMBIE
+    name: "<#c2a26b>Мёртвый шахтёр</#c2a26b>"
+    health: 40
+    damage: 5
+    armor: 5
+    exp: 8-12
+    equipment: {hand: IRON_PICKAXE, helmet: IRON_HELMET, boots: LEATHER_BOOTS}
+    on-hit-effects:
+      - {effect: mining_fatigue, level: 1, seconds: 6, chance: 40}
+
+  sand_husk:
+    type: HUSK
+    name: "<#e0c27a>Песчаный мертвец</#e0c27a>"
+    health: 50
+    damage: 6
+    speed: 0.25
+    exp: 9-13
+    equipment: {hand: GOLDEN_SWORD, helmet: LEATHER_HELMET}
+    on-hit-effects:
+      - {effect: hunger, level: 2, seconds: 6, chance: 40}
+
+  drowned_sailor:
+    type: DROWNED
+    name: "<#3fa7b5>Утопший матрос</#3fa7b5>"
+    health: 40
+    damage: 6
+    exp: 8-12
+    equipment: {hand: TRIDENT, helmet: LEATHER_HELMET}
+    on-hit-effects:
+      - {effect: slowness, level: 1, seconds: 3, chance: 30}
+
+  dead_knight:
+    type: ZOMBIE
+    name: "<#b0b8c4>Мёртвый рыцарь</#b0b8c4>"
+    health: 80
+    damage: 8
+    speed: 0.22
+    armor: 12
+    knockback-resistance: 0.6
+    exp: 16-22
+    equipment: {hand: IRON_SWORD, off-hand: SHIELD, helmet: IRON_HELMET, chestplate: IRON_CHESTPLATE, leggings: IRON_LEGGINGS, boots: IRON_BOOTS}
+
+  # ---------------------------------------------------------------- скелеты
+  bone_archer:
+    type: SKELETON
+    name: "<#e8e2cf>Костяной лучник</#e8e2cf>"
+    health: 28
+    damage: 3
+    projectile-damage: 6
+    exp: 8-11
+    equipment: {hand: BOW, helmet: LEATHER_HELMET}
+    on-hit-effects:
+      - {effect: slowness, level: 1, seconds: 2, chance: 25}
+
+  frost_stray:
+    type: STRAY
+    name: "<#a8e6ff>Ледяной страж</#a8e6ff>"
+    health: 36
+    damage: 4
+    projectile-damage: 7
+    armor: 4
+    exp: 10-14
+    equipment: {hand: BOW, chestplate: CHAINMAIL_CHESTPLATE}
+    on-hit-effects:
+      - {effect: slowness, level: 2, seconds: 3, chance: 35}
+
+  bog_skeleton:
+    type: BOGGED
+    name: "<#7a9e4a>Болотный скелет</#7a9e4a>"
+    health: 32
+    damage: 3
+    projectile-damage: 6
+    exp: 9-12
+    equipment: {hand: BOW}
+    on-hit-effects:
+      - {effect: poison, level: 1, seconds: 4, chance: 35}
+
+  skeleton_guard:
+    type: SKELETON
+    name: "<#d9d4c1>Скелет-стражник</#d9d4c1>"
+    health: 50
+    damage: 6
+    armor: 8
+    knockback-resistance: 0.3
+    exp: 11-15
+    equipment: {hand: STONE_SWORD, off-hand: SHIELD, helmet: IRON_HELMET, chestplate: IRON_CHESTPLATE}
+
+  # ---------------------------------------------------------------- пауки
+  cave_crawler:
+    type: CAVE_SPIDER
+    name: "<#4a7fb5>Пещерный ползун</#4a7fb5>"
+    health: 18
+    damage: 3
+    speed: 0.32
+    exp: 5-8
+    on-hit-effects:
+      - {effect: poison, level: 1, seconds: 5, chance: 45}
+
+  brood_mother:
+    type: SPIDER
+    name: "<#8c2f39>Паучиха-матка</#8c2f39>"
+    health: 70
+    damage: 7
+    speed: 0.3
+    scale: 1.8
+    knockback-resistance: 0.5
+    exp: 16-22
+    on-hit-effects:
+      - {effect: slowness, level: 2, seconds: 3, chance: 40}
+
+  # ---------------------------------------------------------------- скелеты-иссушители
+  ash_warrior:
+    type: WITHER_SKELETON
+    name: "<#7d7d7d>Пепельный воин</#7d7d7d>"
+    health: 60
+    damage: 8
+    armor: 4
+    exp: 14-18
+    equipment: {hand: STONE_SWORD}
+    on-hit-effects:
+      - {effect: wither, level: 1, seconds: 4, chance: 40}
+
+  bone_lord:
+    type: WITHER_SKELETON
+    name: "<#3b3b45>Костяной лорд</#3b3b45>"
+    health: 120
+    damage: 11
+    armor: 10
+    scale: 1.3
+    knockback-resistance: 0.7
+    exp: 26-34
+    equipment: {hand: NETHERITE_SWORD, helmet: NETHERITE_HELMET}
+    on-hit-effects:
+      - {effect: wither, level: 2, seconds: 4, chance: 45}
+
+  # ---------------------------------------------------------------- блейзы (огненные шары не поджигают территорию: no-fire)
+  ember_blaze:
+    type: BLAZE
+    name: "<#ffb347>Угольный блейз</#ffb347>"
+    health: 40
+    damage: 5
+    exp: 11-15
+
+  inferno_warden:
+    type: BLAZE
+    name: "<#ff4f1f>Пламенный страж</#ff4f1f>"
+    health: 70
+    damage: 7
+    armor: 6
+    scale: 1.3
+    glowing: true
+    exp: 18-24
+
+  # ---------------------------------------------------------------- зоглины
+  rotten_zoglin:
+    type: ZOGLIN
+    name: "<#a8636b>Гнилой зоглин</#a8636b>"
+    health: 60
+    damage: 8
+    exp: 13-17
+
+  bone_boar:
+    type: ZOGLIN
+    name: "<#d8c7a8>Костяной вепрь</#d8c7a8>"
+    health: 95
+    damage: 10
+    scale: 1.3
+    knockback-resistance: 0.6
+    exp: 20-26
+
+  # ---------------------------------------------------------------- брутальные пиглины (не превращаются в зомби)
+  piglin_bruiser:
+    type: PIGLIN_BRUTE
+    name: "<#e8b04a>Свирепый громила</#e8b04a>"
+    health: 70
+    damage: 9
+    armor: 4
+    exp: 15-20
+    equipment: {hand: GOLDEN_AXE, helmet: GOLDEN_HELMET}
+
+  piglin_warlord:
+    type: PIGLIN_BRUTE
+    name: "<#c9862e>Пиглин-военачальник</#c9862e>"
+    health: 110
+    damage: 12
+    armor: 10
+    scale: 1.2
+    knockback-resistance: 0.6
+    exp: 26-34
+    equipment: {hand: NETHERITE_AXE, chestplate: GOLDEN_CHESTPLATE, helmet: GOLDEN_HELMET}
+
+  # ---------------------------------------------------------------- разбойники
+  bandit_scout:
+    type: PILLAGER
+    name: "<#9aa0a6>Разбойник-разведчик</#9aa0a6>"
+    health: 30
+    damage: 4
+    projectile-damage: 6
+    exp: 9-12
+    equipment: {hand: CROSSBOW}
+
+  bandit_raider:
+    type: PILLAGER
+    name: "<#7b8794>Разбойник-налётчик</#7b8794>"
+    health: 42
+    damage: 5
+    projectile-damage: 8
+    armor: 4
+    exp: 12-16
+    equipment: {hand: CROSSBOW, helmet: IRON_HELMET}
+
+  bandit_cutthroat:
+    type: VINDICATOR
+    name: "<#8e4b4b>Головорез</#8e4b4b>"
+    health: 50
+    damage: 9
+    exp: 13-17
+    equipment: {hand: IRON_AXE}
+    on-hit-effects:
+      - {effect: weakness, level: 1, seconds: 4, chance: 25}
+
+  bandit_chief:
+    type: VINDICATOR
+    name: "<#c0392b>Атаман разбойников</#c0392b>"
+    health: 100
+    damage: 12
+    armor: 8
+    scale: 1.15
+    knockback-resistance: 0.5
+    exp: 24-32
+    equipment: {hand: DIAMOND_AXE, helmet: IRON_HELMET, chestplate: IRON_CHESTPLATE}
