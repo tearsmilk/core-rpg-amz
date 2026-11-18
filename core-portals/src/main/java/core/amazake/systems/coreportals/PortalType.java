@@ -10,7 +10,9 @@ public enum PortalType {
     /** «Изумрудный портал»: вертикальное кольцо-воронка с чёрной пустотой и звёздами внутри. */
     EMERALD("emerald"),
     /** «Лазуритовый портал»: большой синий разлом, который рвётся из трещины в воздухе. */
-    LAPIS("lapis");
+    LAPIS("lapis"),
+    /** «Врата междумирья»: готическая объёмная рама 6×10, энергетическое кольцо растёт от земли. */
+    GATE("gate");
 
     private final String id;
 
@@ -37,6 +39,7 @@ public enum PortalType {
             case "смола", "red", "fire" -> Optional.of(RESIN);
             case "изумруд", "green", "ring" -> Optional.of(EMERALD);
             case "лазурит", "blue", "rift", "lapis_lazuli", "разлом" -> Optional.of(LAPIS);
+            case "врата", "gates", "dimensional", "междумирье" -> Optional.of(GATE);
             default -> Optional.empty();
         };
     }

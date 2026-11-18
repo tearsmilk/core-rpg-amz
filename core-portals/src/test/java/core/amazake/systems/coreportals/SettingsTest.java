@@ -287,4 +287,69 @@ class SettingsTest {
         assertEquals(0.25, s.lapis().pullMaxSpeed());
         assertEquals(6, warnings.size(), warnings.toString());
     }
+
+    @Test
+    void portalTypeParseGate() {
+        assertEquals(PortalType.GATE, PortalType.parse("gate").orElseThrow());
+        assertEquals(PortalType.GATE, PortalType.parse("Врата").orElseThrow());
+        assertEquals(PortalType.GATE, PortalType.parse("dimensional").orElseThrow());
+    }
+
+    @Test
+    void gateHasOwnDefaultsNotShared() throws Exception {
+        // Срок жизни и расстояние врат не берутся из общих portal.*: старый серверный config.yml без gate: даёт 45 с и 5.
+        final List<String> warnings = new ArrayList<>();
+        final Settings s = parse("portal:\n  lifetime-seconds: 20\n  distance: 2\n", warnings);
+        assertEquals(List.of(), warnings);
+        assertEquals(Settings.Gate.DEFAULTS, s.gate());
+        assertEquals(900, s.lifetimeFor(PortalType.GATE));
+        assertEquals(5, s.distanceFor(PortalType.GATE));
+        assertEquals(s.teleport(), s.teleportFor(PortalType.GATE));
+    }
+
+    @Test
+    void gateOwnSection() throws Exception {
+        final List<String> warnings = new ArrayList<>();
+        final Settings s = parse("""
+            gate:
+              item:
+                name: "Врата"
+                lore: ["a"]
+                model: "coreportals:gate_icon"
+              portal:
+                lifetime-seconds: 60
+                distance: 7
+              messages:
+                no-room: "нет места"
+              teleport:
+                commands: ["warp gates"]
+            """, warnings);
+        assertEquals(List.of(), warnings);
+        assertEquals("Врата", s.gate().itemName());
+        assertEquals(List.of("a"), s.gate().itemLore());
+        assertEquals("coreportals:gate_icon", s.gate().itemModel());
+        assertEquals(1200, s.lifetimeFor(PortalType.GATE));
+        assertEquals(7, s.distanceFor(PortalType.GATE));
+        assertEquals("нет места", s.gate().noRoom());
+        assertEquals(List.of("warp gates"), s.teleportFor(PortalType.GATE).commands());
+        // run-as и права — из общего teleport.
+        assertEquals(TeleportAction.RunAs.PLAYER, s.teleportFor(PortalType.GATE).runAs());
+    }
+
+    @Test
+    void gateBadValuesWarn() throws Exception {
+        final List<String> warnings = new ArrayList<>();
+        final Settings s = parse("""
+            gate:
+              portal:
+                lifetime-seconds: 5
+                distance: 3
+              teleport:
+                commands: []
+            """, warnings);
+        assertEquals(900, s.gate().lifetimeTicks());
+        assertEquals(5, s.gate().distance());
+        assertEquals(3, warnings.size(), warnings.toString());
+        assertTrue(warnings.stream().anyMatch(w -> w.startsWith("gate.teleport.commands пуст")), warnings.toString());
+    }
 }

@@ -12,11 +12,13 @@ import org.bukkit.configuration.file.YamlConfiguration;
  *
  * @param hungerDisabled {@code hunger.disabled}: голод выключен (модуль работает)
  * @param worlds         {@code hunger.worlds}: где выключен; пустой список — везде
- * @param keepSaturation {@code hunger.keep-saturation}: держать насыщение полным
+ * @param keepSaturation  {@code hunger.keep-saturation}: держать насыщение полным
+ * @param clearSaturation {@code hunger.clear-saturation}: держать насыщение на нуле (важнее keep-saturation)
  */
-public record HungerSettings(boolean hungerDisabled, WorldFilter worlds, boolean keepSaturation) {
+public record HungerSettings(boolean hungerDisabled, WorldFilter worlds, boolean keepSaturation,
+                             boolean clearSaturation) {
 
-    public static final HungerSettings DEFAULTS = new HungerSettings(true, WorldFilter.ALL, true);
+    public static final HungerSettings DEFAULTS = new HungerSettings(true, WorldFilter.ALL, true, false);
 
     /** Читает раздел {@code hunger} из всего config.yml; неверные значения заменяются значениями по умолчанию. */
     public static HungerSettings from(final ConfigurationSection config, final Consumer<String> warn) {
@@ -28,7 +30,8 @@ public record HungerSettings(boolean hungerDisabled, WorldFilter worlds, boolean
         return new HungerSettings(
             bool(config, "hunger.disabled", d.hungerDisabled(), warn),
             worlds(config, warn),
-            bool(config, "hunger.keep-saturation", d.keepSaturation(), warn));
+            bool(config, "hunger.keep-saturation", d.keepSaturation(), warn),
+            bool(config, "hunger.clear-saturation", d.clearSaturation(), warn));
     }
 
     /** Для тестов: разбор текста config.yml. */

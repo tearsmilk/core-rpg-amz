@@ -26,7 +26,7 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 /**
  * Модуль {@code hunger}: голода нет. Еда не убывает (понижение уровня еды отменяется, повышение — нет, так что есть
  * можно), истощение не копится, шкала еды держится на 20, насыщение — на 20 (если {@code keep-saturation}), поэтому
- * здоровье восстанавливается как у сытого игрока.
+ * здоровье восстанавливается как у сытого игрока. С {@code clear-saturation} насыщение, наоборот, держится на 0.
  *
  * <p>Потоки: игрока трогают только его события и задачи {@code runForPlayer}/{@code runOnceForPlayer}. Каждому
  * игроку — своя задача раз в секунду, которая подтягивает еду и насыщение (на случай, если их опустил кто-то другой:
@@ -100,7 +100,7 @@ public final class HungerModule implements WorldModule, Listener {
         return List.of(
             "<gray>hunger:</gray> <green>включён</green> <gray>— голода нет</gray>",
             "<gray>  миры:</gray> <white>" + s.worlds().describe() + "</white>",
-            "<gray>  насыщение держится полным:</gray> <white>" + (s.keepSaturation() ? "да" : "нет") + "</white>",
+            "<gray>  насыщение держится полным:</gray> <white>" + (s.clearSaturation() ? "нет (всегда 0)" : (s.keepSaturation() ? "да" : "нет")) + "</white>",
             "<gray>  игроков с задачей:</gray> <white>" + this.tasks.size() + "</white>");
     }
 
@@ -152,7 +152,7 @@ public final class HungerModule implements WorldModule, Listener {
 
     // --- игрок (только его поток) ---
 
-    /** Полная еда, полное насыщение, нулевое истощение — если игрок в затронутом мире. Поток игрока. */
+    /** Полная еда, полное (или нулевое при clear-saturation) насыщение, нулевое истощение — если игрок в затронутом мире. Поток игрока. */
     void apply(final Player player) {
         if (!player.isOnline() || player.isDead() || !this.affects(player)) {
             return;
@@ -160,7 +160,12 @@ public final class HungerModule implements WorldModule, Listener {
         if (player.getFoodLevel() < FULL_FOOD) {
             player.setFoodLevel(FULL_FOOD);
         }
-        if (this.settings.get().keepSaturation() && player.getSaturation() < FULL_SATURATION) {
+        // clear-saturation важнее keep-saturation: насыщение 0 — еда не падает, но и быстрой регенерации от
+        // сытости нет.
+        if (this.settings.get().clearSaturation() && player.getSaturation() != 0.0f) {
+            player.setSaturation(0.0f);
+        } else if (!this.settings.get().clearSaturation() && this.settings.get().keepSaturation()
+            && player.getSaturation() < FULL_SATURATION) {
             player.setSaturation(FULL_SATURATION);
         }
         if (player.getExhaustion() > 0.0f) {

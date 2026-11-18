@@ -121,6 +121,23 @@ lapis:
   #   commands: ["warp dungeon3"]
   #   grant-permissions: [amazakecore.essentials.warp]
 
+# Врата междумирья: готическая объёмная рама 6×10, кольцо растёт от земли, затем остаётся открытым.
+# Активация — помеченный BREEZE_ROD из /portals give <ник> 1 gate.
+# Старый серверный config.yml может не содержать раздел: в таком случае используются эти же значения.
+gate:
+  item:
+    name: "<!i><gradient:#8566ff:#ff91e6:#ffe0a0>Врата междумирья</gradient>"
+    lore:
+      - "<!i><gray>За створками дышит другое небо."
+      - "<!i><light_purple>ПКМ — открыть врата 6×10."
+    model: ""
+  portal:
+    lifetime-seconds: 45
+    distance: 5
+  # Без gate.teleport используется общее действие teleport (сейчас warp dungeon1).
+  messages:
+    no-room: "<red>Вратам нужно свободное место 6×10 блоков и пространство перед створками на твёрдой земле."
+
 effects:
   particles: true
   sounds: true
@@ -142,4 +159,4 @@ messages:
   player-not-found: "<red>Игрок <white><player></white> не в сети."
   list: "<gold>Порталы (<count>):"
   list-empty: "<gray>Открытых порталов нет."
-  usage: "<gray>/portals give [игрок] [кол-во] [resin|emerald|lapis] | reload | close | list"
+  usage: "<gray>/portals give [игрок] [кол-во] [resin|emerald|lapis|gate] | reload | close | list"
