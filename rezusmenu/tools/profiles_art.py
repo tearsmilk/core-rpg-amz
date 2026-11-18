@@ -1119,7 +1119,9 @@ def write(tex):
     path = os.path.join(PACK, 'font', 'ui.json')
     with open(path, encoding='utf-8') as f:
         providers = json.load(f)['providers']
-    keep = [p for p in providers if not str(p.get('file', '')).startswith('rezusmenu:ui/pf_')]
+    keep = [p for p in providers if not str(p.get('file', '')).startswith(('rezusmenu:ui/pf_', 'rezusmenu:ui/char_'))]
+    # glyphs of the "Мой персонаж" tab (tools/rpg_char_art.py) come after ours: keep them there
+    chars = [p for p in providers if str(p.get('file', '')).startswith('rezusmenu:ui/char_')]
     # bitmap glyphs of the RPG menu first (U+E000 + index), then ours, then the pixel / space providers
     bitmaps = [p for p in keep if p.get('type') == 'bitmap' and p['file'] != 'rezusmenu:ui/pixel.png']
     rest = [p for p in keep if p not in bitmaps]
@@ -1129,7 +1131,7 @@ def write(tex):
         bitmaps.append({'type': 'bitmap', 'file': f'rezusmenu:ui/{name}.png', 'ascent': h, 'height': h,
                         'chars': [chr(0xE000 + len(RPG_ORDER) + i)]})
     with open(path, 'w', encoding='utf-8') as f:
-        json.dump({'providers': bitmaps + rest}, f, indent=2)
+        json.dump({'providers': bitmaps + chars + rest}, f, indent=2)
         f.write('\n')
     for i, name in enumerate(PF_ORDER):
         print(f'{0xE000 + len(RPG_ORDER) + i:04X} {name} {tex[name].size[0]}x{tex[name].size[1]}')

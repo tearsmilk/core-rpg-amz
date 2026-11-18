@@ -12,7 +12,7 @@ plugins {
 // Имя системы = имя проекта (settings.gradle.kts) = name в system.yml = имя файла .azs.
 val systemName = rootProject.name
 group = "core.amazake.systems"
-version = "1.0.0"
+version = "1.1.0"
 
 val apiUrl = "https://github.com/tearsmilk/amazake/releases/latest/download/amazake-systems-api.jar"
 val apiJar: File = (findProperty("amazakeApiJar") as String?)?.let { file(it) }

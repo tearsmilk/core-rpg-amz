@@ -12,18 +12,40 @@ import org.junit.jupiter.api.Test;
 class StashTipTest {
 
     @Test
-    void rowsAndScroll() {
-        assertEquals(3, Stash.rows(3, 0));
-        assertEquals(9, Stash.rows(3, 6));
-        assertEquals(36, Stash.rows(6, 1000));
-        assertEquals(0, Stash.maxOffset(3));
-        assertEquals(6, Stash.maxOffset(9));
-        assertEquals(0, Stash.clampOffset(-2, 9));
-        assertEquals(6, Stash.clampOffset(99, 9));
-        assertEquals(0, Stash.clampOffset(5, 3));
+    void rowsFixedButNeverHideUsedSlots() {
+        assertEquals(6, Stash.rows(6, -1));
+        assertEquals(6, Stash.rows(6, 53));
+        assertEquals(7, Stash.rows(6, 54));          // слот 54 — седьмой ряд (остался от купленных раньше рядов)
+        assertEquals(9, Stash.rows(3, 80));
+        assertEquals(36, Stash.rows(6, 100000));
+        assertEquals(1, Stash.rows(0, -1));
         assertTrue(Stash.isStash(Stash.BASE));
         assertFalse(Stash.isStash(Jewelry.ARTIFACT));
         assertFalse(Stash.isStash(40));
+    }
+
+    @Test
+    void bagIsPocketThenStash() {
+        assertEquals(9, Stash.bagRows(6));
+        assertEquals(6, Stash.maxOffset(9));
+        assertEquals(0, Stash.clampOffset(-2, 9));
+        assertEquals(6, Stash.clampOffset(99, 9));
+        assertEquals(9, Stash.bagSlot(0, 0));
+        assertEquals(35, Stash.bagSlot(2, 8));
+        assertEquals(Stash.BASE, Stash.bagSlot(3, 0));
+        assertEquals(Stash.BASE + 9 + 4, Stash.bagSlot(4, 4));
+        assertTrue(RpgScreen.bagLabel(0, 9).contains("карман") && !RpgScreen.bagLabel(0, 9).contains("хранилище"));
+        assertTrue(RpgScreen.bagLabel(1, 9).contains("карман") && RpgScreen.bagLabel(1, 9).contains("хранилище"));
+        assertFalse(RpgScreen.bagLabel(3, 9).contains("карман"));
+        assertTrue(RpgScreen.bagLabel(6, 9).contains("7–9"));
+    }
+
+    @Test
+    void playtime() {
+        assertEquals("0 мин", RpgScreen.playtime(0));
+        assertEquals("7 мин", RpgScreen.playtime(7 * 60 * 20));
+        assertEquals("5 ч 12 мин", RpgScreen.playtime((5 * 60 + 12) * 60 * 20L));
+        assertEquals("3 д 4 ч", RpgScreen.playtime(((3 * 24 + 4) * 60 + 5) * 60 * 20L));
     }
 
     @Test

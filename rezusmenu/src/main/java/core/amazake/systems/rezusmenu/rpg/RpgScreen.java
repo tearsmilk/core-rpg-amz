@@ -515,6 +515,7 @@ public final class RpgScreen {
     private void buildCharacter() {
         this.quad("char_bg_0", 212, CHAR_BG_Y, L_CONTENT_BG, CONTENT);
         this.quad("char_bg_1", 356, CHAR_BG_Y, L_CONTENT_BG, CONTENT);
+        this.text(212, 54, 288, 20, 10, Text.item("<gold>Сведения о персонаже</gold>"), L_TEXT, CONTENT);
         this.text(216, 76, 138, 16, 8, Text.item("<gold>Персонаж</gold>"), L_TEXT, CONTENT);
         this.text(358, 76, 138, 16, 8, Text.item("<gold>Характеристики</gold>"), L_TEXT, CONTENT);
         this.buttons();
