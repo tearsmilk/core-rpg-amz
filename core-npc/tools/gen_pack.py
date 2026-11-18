@@ -7,21 +7,18 @@
 Без аргумента клиентский jar 1.21.11 скачивается с серверов Mojang в tools/.cache/ (нужны только ванильные
 текстуры шрифта ascii.png и nonlatin_european.png).
 
-Как устроено окно (всё — обычный rendertype_text, общий core-шейдер не трогается):
-  * actionbar рисуется на высоте экрана H−68 (верх строки — H−72, верх глифа с ascent a — H−65−a);
-  * окно (320×78, ascent 63): от H−128 до H−51, над сердцами и бронёй. Клиент собирает глифы в атлас 256×256
-    (FontTexture.SIZE) и глиф шире или выше 256 не влезает — вместо него «нет глифа». Поэтому окно — две половины
-    160×78: U+E000 и U+E001 шрифта corenpc:dialog, между ними сдвиг −1 (шаг глифа = ширина + 1);
-  * строки окна — 7 шрифтов corenpc:row0..row6 с разным ascent: у глифа ванильного шрифта снизу прозрачный запас
-    (клетка 8×h), поэтому ascent можно поднять до h (ascent не может быть больше height) — так строка встаёт выше
-    обычного actionbar. Высота клетки у каждой строки своя — max(8, ascent): чем ниже строка, тем меньше пустоты
-    в атласе (glyphs_h<h>.png; строки с одной высотой делят текстуру);
-  * row0 — имя говорящего, row1..row3 — текст, row4..row6 — ответы; подсветка выбранного ответа — две половины
-    154×16 (U+E010, U+E012, между ними сдвиг −1 — U+F801 есть и в шрифтах строк), только в row4..row6;
+Как устроено окно «свиток писаря» (всё — обычный rendertype_text, общий core-шейдер не трогается):
+  * actionbar рисуется на высоте экрана H−68; верх глифа с ascent a — H−65−a; окно — TOP пикселей над низом экрана;
+  * основное окно (портрет, плашка имени, пергамент в деревянной рамке, перо) — две половины 142 (U+E000, U+E001
+    шрифта corenpc:dialog, между ними сдвиг −1: клиент не рисует глиф шире/выше 256); листок ответов — U+E002,
+    рисуется только при ответах; перо-указатель — U+E020..E022 (по глифу на строку ответа), «▼ дальше» — U+E011;
+    каждый глиф — со своим ascent (ascent ≤ height: снизу прозрачный запас);
+  * строки — 7 шрифтов corenpc:row0..row6 с разным ascent: row0 — имя, row1..row3 — текст, row4..row6 — ответы;
   * сдвиги по горизонтали — пробелы шрифта corenpc:dialog (U+F801.. = −1,−2,−4…−512; U+F821.. = +1…+512).
 Числа ниже должны совпадать с hud/HudLayout.java.
 """
 import io
+import math
 import json
 import os
 import sys
@@ -37,18 +34,27 @@ A = os.path.join(ROOT, 'pack', 'assets', 'corenpc')
 WIDTHS = os.path.join(ROOT, 'src', 'main', 'resources', 'font-widths.txt')
 
 CELL_W = 8                      # клетка глифа: 8×8 ванильного шрифта + прозрачный запас снизу (высота — по строке)
-LIFT = 72                       # всё окно поднято на столько пикселей GUI (над рукой NPC, а не у хотбара)
-BOX_W, BOX_H, BOX_ASCENT = 256, 78, 63 + LIFT
-BOX_CELL_H = BOX_H + LIFT       # клетка глифа окна: рисунок сверху, снизу прозрачный запас (ascent ≤ height)
-BOX_PARTS = 2                   # окно режется на части не шире 256 (атлас клиента 256×256)
-HL_H = 80 - 65 + LIFT + 1       # высота клетки подсветки ≥ ascent верхнего ответа + 1 (полоса 10 пикселей сверху)
-HL_ROWS = (4, 5, 6)             # подсветка есть только в шрифтах ответов
-NEXT_ROW = 6                    # «▼ дальше» — только в последней строке
-# верх глифа строки над экраном: H−124 (имя), H−111/−101/−91 (текст), H−80/−71/−62 (ответы)
-ROW_TOPS = [t + LIFT for t in (124, 111, 101, 91, 80, 71, 62)]
-HL_W = 244
-HL_PARTS = 2
+# Окно «свиток писаря» (локальные координаты окна: x вправо, y вниз; верх окна — TOP пикселей над низом экрана).
+# Все картинки окна — глифы шрифта corenpc:dialog, у каждого свой ascent; строки — шрифты corenpc:row0..row6.
+# Числа должны совпадать с hud/HudLayout.java.
+TOP = 220                       # верх окна на H−220 (низ ≈ H−100, над хотбаром и сердцами)
+TOTAL_W = 330                   # общая ширина раскладки (центрирование клиента — по ней)
+MAIN_X, MAIN_Y, MAIN_W, MAIN_H = 0, 40, 284, 80      # портрет + имя + пергамент + перо (2 части по 142)
+MAIN_PARTS = 2
+PANEL_X, PANEL_Y, PANEL_W, PANEL_H = 172, 0, 158, 38  # листок ответов (рисуется только при ответах)
+NAME_X, NAME_Y = 48, 47
+TEXT_X, TEXT_YS = 38, (64, 74, 84)
+ANSWER_X, ANSWER_YS = 184, (5, 15, 25)
+POINTER_X = 166                 # перо-указатель выбранного ответа (16×7)
+NEXT_X, NEXT_Y = 226, 104       # «▼ дальше» внизу пергамента
+ROW_TOPS = [TOP - y for y in (NAME_Y,) + TEXT_YS + ANSWER_YS]   # верх строки над низом экрана
 MAX_GLYPH = 256
+
+
+def asc_of(y):
+    """ascent глифа, верх которого — y в координатах окна (верх глифа на экране = H − 65 − ascent)."""
+    return TOP - y - 65
+
 
 RANGES = [(0x20, 0x7E), (0xA0, 0x24F), (0x370, 0x3FF), (0x400, 0x52F), (0x2000, 0x206F), (0x20A0, 0x20CF),
           (0x2100, 0x214F), (0x2190, 0x21FF), (0x2200, 0x22FF), (0x2500, 0x25FF), (0x2600, 0x27BF)]
@@ -115,46 +121,170 @@ def write_json(obj, rel):
         f.write('\n')
 
 
-def box():
-    """Окно: тёмная полупрозрачная панель, тонкая рамка, скруглённые углы, полоса под именем."""
-    out = np.zeros((BOX_CELL_H, BOX_W, 4), dtype=np.uint8)
-    a = out[:BOX_H]
-    y, x = np.mgrid[0:BOX_H, 0:BOX_W]
-    r = 4
-    cx = np.clip(x, r, BOX_W - 1 - r)
-    cy = np.clip(y, r, BOX_H - 1 - r)
-    d = np.sqrt((x - cx) ** 2 + (y - cy) ** 2)
-    inside = d <= r
-    border = inside & (d > r - 1.2) | inside & ((x == 0) | (x == BOX_W - 1) | (y == 0) | (y == BOX_H - 1))
-    inner = inside & ~border
-    grad = 1 - y / BOX_H * 0.35
-    a[inner] = np.stack([14 * grad, 12 * grad, 18 * grad, np.full_like(grad, 205)], -1)[inner]
-    a[border] = (196, 160, 92, 235)
-    # полоса под именем и разделитель над ответами
-    for yy, col in ((14, (196, 160, 92, 150)), (46, (120, 104, 80, 110))):
-        a[yy, 6:BOX_W - 6] = col
-    return Image.fromarray(out, 'RGBA')
+# --------------------------------------------------------------------------------------------- рисунки окна
+# Палитра «свиток писаря»: дерево рамки, пергамент, плашка имени, перо. Свет — сверху слева.
+WOOD_O = (52, 24, 18)        # контур
+WOOD_D = (92, 44, 32)        # тень дерева
+WOOD_M = (124, 62, 44)       # основа
+WOOD_L = (160, 88, 60)       # свет
+WOOD_H = (190, 118, 82)      # блик
+PAR_B = (242, 230, 206)      # пергамент
+PAR_S = (228, 212, 182)      # тень пергамента
+PAR_E = (210, 186, 148)      # край / рваные кромки
+PAR_D = (234, 220, 194)      # рисунок гор (едва видно)
+PLATE = (66, 30, 22)
+PLATE_IN = (84, 40, 30)
+FEATHER = [(236, 236, 246), (206, 204, 226), (170, 166, 198), (128, 124, 160), (88, 84, 116)]
+
+
+def _rect(a, x0, y0, x1, y1, c, alpha=255):
+    a[y0:y1 + 1, x0:x1 + 1] = c + (alpha,)
+
+
+def _wood_frame(a, x0, y0, x1, y1, t=3):
+    """Деревянная рамка толщиной t: контур, свет сверху/слева, тень снизу/справа, «доски» с щелями."""
+    _rect(a, x0, y0, x1, y1, WOOD_O)
+    _rect(a, x0 + 1, y0 + 1, x1 - 1, y1 - 1, WOOD_M)
+    a[y0 + 1, x0 + 1:x1] = WOOD_H + (255,)
+    a[y0 + 1:y1, x0 + 1] = WOOD_L + (255,)
+    a[y1 - 1, x0 + 1:x1] = WOOD_D + (255,)
+    a[y0 + 1:y1, x1 - 1] = WOOD_D + (255,)
+    for gx in range(x0 + 37, x1 - 8, 53):        # щели между досками
+        a[y0 + 1:y0 + t + 1, gx] = WOOD_O + (255,)
+        a[y1 - t:y1, gx + 11] = WOOD_O + (255,)
+
+
+def _parchment(a, x0, y0, x1, y1, seed=7):
+    rng = np.random.RandomState(seed)
+    _rect(a, x0, y0, x1, y1, PAR_B)
+    a[y0, x0:x1 + 1] = PAR_S + (255,)
+    a[y0:y1 + 1, x0] = PAR_S + (255,)
+    a[y1, x0:x1 + 1] = PAR_E + (255,)
+    a[y0:y1 + 1, x1] = PAR_E + (255,)
+    # рваные кромки справа: зубцы
+    for y in range(y0, y1 + 1):
+        if rng.rand() < 0.35:
+            a[y, x1 - 1] = PAR_E + (255,)
+    # бледные горы внизу (рисунок на пергаменте)
+    base = y1 - 4
+    for cx in range(x0 + 10, x1 - 20, 34):
+        h = 6 + rng.randint(0, 5)
+        for dx in range(-h * 2, h * 2 + 1):
+            yy = base - (h - abs(dx) // 2)
+            if x0 < cx + dx < x1 and y0 < yy < y1:
+                a[yy, cx + dx] = PAR_D + (255,)
+                a[yy + 1:base + 1, cx + dx] = (PAR_D if (cx + dx) % 3 else PAR_S) + (255,)
+    # пятнышки
+    for _ in range((x1 - x0) * (y1 - y0) // 160):
+        x, y = rng.randint(x0 + 2, x1 - 2), rng.randint(y0 + 2, y1 - 6)
+        a[y, x] = PAR_S + (255,)
+
+
+def _feather(a, x0, y0, length=40, width=9, flip=False):
+    """Перо: стержень по дуге сверху справа вниз влево, бородки с двух сторон, свет сверху."""
+    pts = []
+    for i in range(length):
+        t = i / (length - 1)
+        x = x0 + int(round((1 - t) * length * 0.62 + 3 * math.sin(t * 3.0)))
+        y = y0 + int(round(t * length * 0.95))
+        pts.append((x, y))
+    for i, (x, y) in enumerate(pts):
+        t = i / (length - 1)
+        w = int(round(width * math.sin(min(1.0, t * 1.15) * math.pi) * (1 - 0.35 * t)))
+        for k in range(-w, w + 1):
+            xx = x + k
+            if 0 <= y < a.shape[0] and 0 <= xx < a.shape[1]:
+                shade = 0 if k < -w // 2 else (1 if k < 0 else (2 if k < w // 2 else 3))
+                if abs(k) == w:
+                    shade = 4
+                a[y, xx] = FEATHER[shade] + (255,)
+        if 0 <= y < a.shape[0] and 0 <= x < a.shape[1]:
+            a[y, x] = FEATHER[0] + (255,)       # стержень
+    # остриё
+    x, y = pts[-1]
+    for d in range(4):
+        if 0 <= y + d < a.shape[0]:
+            a[y + d, max(0, x - d)] = FEATHER[4] + (255,)
+
+
+def main_box():
+    """Портрет + плашка имени + пергамент в деревянной рамке + перо. MAIN_W×MAIN_H (координаты от MAIN_X/MAIN_Y)."""
+    a = np.zeros((MAIN_H, MAIN_W, 4), dtype=np.uint8)
+    oy = MAIN_Y
+    # пергамент в рамке: x 24..270, y 52..118 (окно)
+    fx0, fy0, fx1, fy1 = 24, 52 - oy, 270, 118 - oy
+    _wood_frame(a, fx0, fy0, fx1, fy1)
+    _parchment(a, fx0 + 5, fy0 + 7, fx1 - 5, fy1 - 5)
+    # уголки-накладки
+    for cx, cy in ((fx0, fy0), (fx1 - 6, fy0), (fx0, fy1 - 6), (fx1 - 6, fy1 - 6)):
+        _rect(a, cx, cy, cx + 6, cy + 6, WOOD_O)
+        _rect(a, cx + 1, cy + 1, cx + 5, cy + 5, WOOD_L)
+        _rect(a, cx + 2, cy + 2, cx + 4, cy + 4, WOOD_M)
+    # портрет: 0..36, 40..76
+    px0, py0, px1, py1 = 0, 0, 36, 36
+    _wood_frame(a, px0, py0, px1, py1)
+    _rect(a, px0 + 4, py0 + 4, px1 - 4, py1 - 4, WOOD_O)
+    _rect(a, px0 + 5, py0 + 5, px1 - 5, py1 - 5, (46, 22, 17))
+    for cx, cy in ((px0 + 2, py0 + 2), (px1 - 3, py0 + 2), (px0 + 2, py1 - 3), (px1 - 3, py1 - 3)):
+        _rect(a, cx - 1, cy - 1, cx + 1, cy + 1, WOOD_H)   # шляпки гвоздей
+    # плашка имени: x 42..150, y 44..58
+    nx0, ny0, nx1, ny1 = 42, 44 - oy, 150, 58 - oy
+    _rect(a, nx0, ny0, nx1, ny1, WOOD_O)
+    _rect(a, nx0 + 1, ny0 + 1, nx1 - 1, ny1 - 1, WOOD_L)
+    _rect(a, nx0 + 2, ny0 + 2, nx1 - 2, ny1 - 2, PLATE)
+    a[ny0 + 2, nx0 + 2:nx1 - 1] = PLATE_IN + (255,)
+    # перо в правом нижнем углу
+    _feather(a, 244, 36, length=42, width=8)
+    for x in (MAIN_W // MAIN_PARTS - 1, MAIN_W - 1):   # последний столбец каждой части не пустой (шаг = ширина + 1)
+        a[0, x, 3] = max(a[0, x, 3], 1)
+    return Image.fromarray(a, 'RGBA')
+
+
+def panel_box():
+    """Листок ответов: пергамент с рваными краями, PANEL_W×PANEL_H."""
+    a = np.zeros((PANEL_H, PANEL_W, 4), dtype=np.uint8)
+    _rect(a, 0, 0, PANEL_W - 1, PANEL_H - 1, WOOD_O)
+    _parchment(a, 1, 1, PANEL_W - 2, PANEL_H - 2, seed=11)
+    rng = np.random.RandomState(3)
+    for x in range(PANEL_W):                   # рваные верх/низ
+        if rng.rand() < 0.25:
+            a[0, x] = (0, 0, 0, 0)
+            a[1, x] = WOOD_O + (255,)
+        if rng.rand() < 0.25:
+            a[PANEL_H - 1, x] = (0, 0, 0, 0)
+            a[PANEL_H - 2, x] = WOOD_O + (255,)
+    a[:, -1, 3] = np.maximum(a[:, -1, 3], 1)    # последний столбец не пустой — шаг глифа = ширина + 1
+    return Image.fromarray(a, 'RGBA')
+
+
+def pointer():
+    """Перо-указатель выбранного ответа, 16×7: остриё вправо."""
+    a = np.zeros((7, 16, 4), dtype=np.uint8)
+    for x in range(16):
+        w = int(round(3 * math.sin(min(1.0, (15 - x) / 12) * math.pi / 1.2))) if x < 13 else 0
+        for k in range(-w, w + 1):
+            y = 3 + k
+            a[y, x] = FEATHER[0 if k < 0 else (1 if k == 0 else 3)] + (255,)
+        a[3, x] = FEATHER[0] + (255,)
+    a[3, 13:16] = FEATHER[4] + (255,)
+    return Image.fromarray(a, 'RGBA')
 
 
 def indicator():
-    """▼ «дальше» 7×5."""
+    """▼ «дальше» 7×5 — цвет дерева рамки."""
     a = np.zeros((5, 7, 4), dtype=np.uint8)
     for i in range(4):
-        a[i, i:7 - i] = (230, 196, 120, 255)
+        a[i, i:7 - i] = WOOD_M + (255,)
+    a[0, 0:7] = WOOD_O + (255,)
     return Image.fromarray(a, 'RGBA')
 
 
-def highlight():
-    """Подсветка выбранного ответа: HL_W×HL_H, полоса 10 пикселей сверху."""
-    a = np.zeros((HL_H, HL_W, 4), dtype=np.uint8)
-    xs = np.arange(HL_W)
-    fade = np.clip(np.minimum(xs, HL_W - 1 - xs) / 30, 0, 1)
-    a[0:10, :, 0] = 230
-    a[0:10, :, 1] = 190
-    a[0:10, :, 2] = 110
-    a[0:10, :, 3] = (fade * 70 + 26).astype(np.uint8)[None, :]
-    a[0:10, 0:2] = (230, 196, 120, 230)
-    return Image.fromarray(a, 'RGBA')
+def cell(img, asc):
+    """Клетка глифа: рисунок сверху, ниже прозрачно — высота ≥ ascent (правило клиента)."""
+    h = max(img.height, asc)
+    out = Image.new('RGBA', (img.width, h), (0, 0, 0, 0))
+    out.paste(img, (0, 0))
+    return out
 
 
 def split(img, parts):
@@ -210,22 +340,27 @@ def main():
     for name in os.listdir(os.path.join(A, 'textures', 'font', 'dialog')):
         if name.startswith('glyphs_h') or name.startswith('tall_h'):
             os.remove(os.path.join(A, 'textures', 'font', 'dialog', name))
-    boxes = split(box(), BOX_PARTS)
-    hls = split(highlight(), HL_PARTS)
-    for i, b in enumerate(boxes):
-        write_png(b, 'font/dialog/box%d.png' % i)
-    for i, h in enumerate(hls):
-        write_png(h, 'font/dialog/highlight%d.png' % i)
-    write_png(indicator(), 'font/dialog/next.png')
-
+    for old in os.listdir(os.path.join(A, 'textures', 'font', 'dialog')):
+        if old.startswith(('box', 'highlight', 'next', 'panel', 'pointer')):
+            os.remove(os.path.join(A, 'textures', 'font', 'dialog', old))
     shifts = {}
     for i in range(10):
         shifts[chr(0xF801 + i)] = -(1 << i)
         shifts[chr(0xF821 + i)] = 1 << i
     provs = [{'type': 'space', 'advances': shifts}]
-    for i in range(BOX_PARTS):
-        provs.append({'type': 'bitmap', 'file': 'corenpc:font/dialog/box%d.png' % i, 'height': BOX_CELL_H,
-                      'ascent': BOX_ASCENT, 'chars': [chr(0xE000 + i)]})
+
+    def glyph(img, name, y, ch):
+        asc = asc_of(y)
+        write_png(cell(img, asc), 'font/dialog/%s.png' % name)
+        provs.append({'type': 'bitmap', 'file': 'corenpc:font/dialog/%s.png' % name, 'height': max(img.height, asc),
+                      'ascent': asc, 'chars': [ch]})
+
+    for i, part in enumerate(split(main_box(), MAIN_PARTS)):
+        glyph(part, 'box%d' % i, MAIN_Y, chr(0xE000 + i))          # U+E000, U+E001
+    glyph(panel_box(), 'panel', PANEL_Y, '\ue002')
+    glyph(indicator(), 'next', NEXT_Y, '\ue011')
+    for r, y in enumerate(ANSWER_YS):
+        glyph(pointer(), 'pointer%d' % r, y + 1, chr(0xE020 + r))  # U+E020..E022
     check(provs, 'dialog')
     write_json({'providers': provs}, 'font/dialog.json')
 
@@ -252,18 +387,6 @@ def main():
             {'type': 'bitmap', 'file': 'corenpc:font/dialog/tall_h%d.png' % ht, 'height': ht, 'ascent': asc + 3,
              'chars': chars_tall},
         ]
-        if n in HL_ROWS:
-            assert asc + 1 <= HL_H
-            for i in range(HL_PARTS):
-                provs.append({'type': 'bitmap', 'file': 'corenpc:font/dialog/highlight%d.png' % i, 'height': HL_H,
-                              'ascent': asc + 1, 'chars': [chr(0xE010 + 2 * i)]})
-        if n == NEXT_ROW:
-            nh = max(5, asc - 3)          # клетка ▼: рисунок 7×5 сверху, ниже прозрачно (ascent ≤ height)
-            cell = Image.new('RGBA', (7, nh), (0, 0, 0, 0))
-            cell.paste(indicator(), (0, 0))
-            write_png(cell, 'font/dialog/next.png')
-            provs.append({'type': 'bitmap', 'file': 'corenpc:font/dialog/next.png', 'height': nh, 'ascent': asc - 3,
-                          'chars': ['\ue011']})
         check(provs, 'row%d' % n)
         write_json({'providers': provs}, 'font/row%d.json' % n)
 
@@ -272,16 +395,8 @@ def main():
     with open(WIDTHS, 'w', encoding='utf-8') as f:
         f.write('# Ширины (advance) глифов шрифтов corenpc:row*; генерирует tools/gen_pack.py. Код символа (hex) ширина\n')
         f.write('20 4\na0 4\n')
-        for i in range(HL_PARTS):
-            f.write('%x %d\n' % (0xE010 + 2 * i, hls[i].width + 1))
-        f.write('e011 8\n')
         for cp in cps:
             f.write('%x %d\n' % (cp, widths[cp]))
-    # превью для проверки на глаз
-    prev = Image.new('RGBA', (BOX_W + 20, BOX_CELL_H + 20), (90, 140, 90, 255))
-    prev.alpha_composite(box(), (10, 10))
-    os.makedirs(os.path.join(HERE, 'preview'), exist_ok=True)
-    prev.save(os.path.join(HERE, 'preview', 'box.png'))
     print('glyphs:', len(base), '+', len(tall), 'tall; textures', {k: v[0] for k, v in made.items()})
 
 

@@ -1,5 +1,6 @@
 package core.amazake.systems.coremobs.mob;
 
+import core.amazake.systems.coremobs.region.ModelMobs;
 import core.amazake.systems.coremobs.util.IntRange;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,6 +15,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Enemy;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Mob;
 import org.bukkit.inventory.EquipmentSlot;
@@ -66,6 +68,11 @@ public final class MobCatalog {
                 warn.accept("mobs." + rawId + ": имя моба — латиница в нижнем регистре, цифры, _ и -");
                 continue;
             }
+            if (id.equals(ModelMobs.ALL_MODELS)) {
+                warn.accept("mobs." + rawId + " пропущен: «" + id + "» — служебное слово команды /mobs region addmob, "
+                    + "переименуйте моба");
+                continue;
+            }
             try {
                 out.put(id, parseMob(id, m, w -> warn.accept("mobs." + rawId + ": " + w)));
             } catch (final IllegalArgumentException e) {
@@ -85,6 +92,10 @@ public final class MobCatalog {
         }
         if (type.getEntityClass() == null || !Mob.class.isAssignableFrom(type.getEntityClass()) || !type.isSpawnable()) {
             throw new IllegalArgumentException("type " + type + " — не моб, его нельзя заспавнить");
+        }
+        if (!Enemy.class.isAssignableFrom(type.getEntityClass())) {
+            // Infighting считает «своими» только Enemy: такой моб не защищён от других и сам бьёт враждебных
+            warn.accept("type " + type + " — не враждебный моб: infighting его не защищает (он дерётся с мобами)");
         }
         final double health = m.getDouble("health", 20.0);
         if (!(health > 0 && health <= 1_000_000)) {

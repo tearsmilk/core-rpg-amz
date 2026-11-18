@@ -1,0 +1,5 @@
+# Миры, где выключены ванильные мобы: остаются только мобы core-mobs (и причины спавна из
+# worlds.allowed-spawn-reasons в config.yml). Пишут команды /mobs world disable|enable <мир>.
+
+vanilla-mobs-disabled:
+- dungeon

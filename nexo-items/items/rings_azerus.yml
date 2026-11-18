@@ -1,0 +1,1533 @@
+# Кольца AZERUS (102 шт.) — раздел rings_azerus. Подсказка в стиле карточки: tools/tooltips.py
+# (рамка azerus:ring, иконка слева от названия — глиф azerus:tooltip, плашки редкости/типа). Не править руками:
+# файл пересобирает tools/tooltips.py.
+
+azerus_ring_001:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 001"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_001
+  Components:
+    item_model: azerus:rings_azerus/ring_001
+    tooltip_style: azerus:ring
+
+azerus_ring_002:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 002"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_002
+  Components:
+    item_model: azerus:rings_azerus/ring_002
+    tooltip_style: azerus:ring
+
+azerus_ring_003:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 003"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_003
+  Components:
+    item_model: azerus:rings_azerus/ring_003
+    tooltip_style: azerus:ring
+
+azerus_ring_004:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 004"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_004
+  Components:
+    item_model: azerus:rings_azerus/ring_004
+    tooltip_style: azerus:ring
+
+azerus_ring_005:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 005"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_005
+  Components:
+    item_model: azerus:rings_azerus/ring_005
+    tooltip_style: azerus:ring
+
+azerus_ring_006:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 006"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_006
+  Components:
+    item_model: azerus:rings_azerus/ring_006
+    tooltip_style: azerus:ring
+
+azerus_ring_007:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 007"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_007
+  Components:
+    item_model: azerus:rings_azerus/ring_007
+    tooltip_style: azerus:ring
+
+azerus_ring_008:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 008"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_008
+  Components:
+    item_model: azerus:rings_azerus/ring_008
+    tooltip_style: azerus:ring
+
+azerus_ring_009:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 009"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_009
+  Components:
+    item_model: azerus:rings_azerus/ring_009
+    tooltip_style: azerus:ring
+
+azerus_ring_010:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 010"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_010
+  Components:
+    item_model: azerus:rings_azerus/ring_010
+    tooltip_style: azerus:ring
+
+azerus_ring_011:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 011"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_011
+  Components:
+    item_model: azerus:rings_azerus/ring_011
+    tooltip_style: azerus:ring
+
+azerus_ring_012:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 012"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_012
+  Components:
+    item_model: azerus:rings_azerus/ring_012
+    tooltip_style: azerus:ring
+
+azerus_ring_013:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 013"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_013
+  Components:
+    item_model: azerus:rings_azerus/ring_013
+    tooltip_style: azerus:ring
+
+azerus_ring_014:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 014"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_014
+  Components:
+    item_model: azerus:rings_azerus/ring_014
+    tooltip_style: azerus:ring
+
+azerus_ring_015:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 015"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_015
+  Components:
+    item_model: azerus:rings_azerus/ring_015
+    tooltip_style: azerus:ring
+
+azerus_ring_016:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 016"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_016
+  Components:
+    item_model: azerus:rings_azerus/ring_016
+    tooltip_style: azerus:ring
+
+azerus_ring_017:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 017"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_017
+  Components:
+    item_model: azerus:rings_azerus/ring_017
+    tooltip_style: azerus:ring
+
+azerus_ring_018:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 018"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_018
+  Components:
+    item_model: azerus:rings_azerus/ring_018
+    tooltip_style: azerus:ring
+
+azerus_ring_019:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 019"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_019
+  Components:
+    item_model: azerus:rings_azerus/ring_019
+    tooltip_style: azerus:ring
+
+azerus_ring_020:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 020"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_020
+  Components:
+    item_model: azerus:rings_azerus/ring_020
+    tooltip_style: azerus:ring
+
+azerus_ring_021:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 021"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_021
+  Components:
+    item_model: azerus:rings_azerus/ring_021
+    tooltip_style: azerus:ring
+
+azerus_ring_022:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 022"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_022
+  Components:
+    item_model: azerus:rings_azerus/ring_022
+    tooltip_style: azerus:ring
+
+azerus_ring_023:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 023"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_023
+  Components:
+    item_model: azerus:rings_azerus/ring_023
+    tooltip_style: azerus:ring
+
+azerus_ring_024:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 024"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_024
+  Components:
+    item_model: azerus:rings_azerus/ring_024
+    tooltip_style: azerus:ring
+
+azerus_ring_025:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 025"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_025
+  Components:
+    item_model: azerus:rings_azerus/ring_025
+    tooltip_style: azerus:ring
+
+azerus_ring_026:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 026"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_026
+  Components:
+    item_model: azerus:rings_azerus/ring_026
+    tooltip_style: azerus:ring
+
+azerus_ring_027:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 027"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_027
+  Components:
+    item_model: azerus:rings_azerus/ring_027
+    tooltip_style: azerus:ring
+
+azerus_ring_028:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 028"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_028
+  Components:
+    item_model: azerus:rings_azerus/ring_028
+    tooltip_style: azerus:ring
+
+azerus_ring_029:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 029"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_029
+  Components:
+    item_model: azerus:rings_azerus/ring_029
+    tooltip_style: azerus:ring
+
+azerus_ring_030:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 030"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_030
+  Components:
+    item_model: azerus:rings_azerus/ring_030
+    tooltip_style: azerus:ring
+
+azerus_ring_031:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 031"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_031
+  Components:
+    item_model: azerus:rings_azerus/ring_031
+    tooltip_style: azerus:ring
+
+azerus_ring_032:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 032"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_032
+  Components:
+    item_model: azerus:rings_azerus/ring_032
+    tooltip_style: azerus:ring
+
+azerus_ring_033:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 033"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_033
+  Components:
+    item_model: azerus:rings_azerus/ring_033
+    tooltip_style: azerus:ring
+
+azerus_ring_034:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 034"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_034
+  Components:
+    item_model: azerus:rings_azerus/ring_034
+    tooltip_style: azerus:ring
+
+azerus_ring_035:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 035"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_035
+  Components:
+    item_model: azerus:rings_azerus/ring_035
+    tooltip_style: azerus:ring
+
+azerus_ring_036:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 036"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_036
+  Components:
+    item_model: azerus:rings_azerus/ring_036
+    tooltip_style: azerus:ring
+
+azerus_ring_037:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 037"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_037
+  Components:
+    item_model: azerus:rings_azerus/ring_037
+    tooltip_style: azerus:ring
+
+azerus_ring_038:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 038"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_038
+  Components:
+    item_model: azerus:rings_azerus/ring_038
+    tooltip_style: azerus:ring
+
+azerus_ring_039:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 039"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_039
+  Components:
+    item_model: azerus:rings_azerus/ring_039
+    tooltip_style: azerus:ring
+
+azerus_ring_040:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 040"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_040
+  Components:
+    item_model: azerus:rings_azerus/ring_040
+    tooltip_style: azerus:ring
+
+azerus_ring_041:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 041"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_041
+  Components:
+    item_model: azerus:rings_azerus/ring_041
+    tooltip_style: azerus:ring
+
+azerus_ring_042:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 042"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_042
+  Components:
+    item_model: azerus:rings_azerus/ring_042
+    tooltip_style: azerus:ring
+
+azerus_ring_043:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 043"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_043
+  Components:
+    item_model: azerus:rings_azerus/ring_043
+    tooltip_style: azerus:ring
+
+azerus_ring_044:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 044"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_044
+  Components:
+    item_model: azerus:rings_azerus/ring_044
+    tooltip_style: azerus:ring
+
+azerus_ring_045:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 045"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_045
+  Components:
+    item_model: azerus:rings_azerus/ring_045
+    tooltip_style: azerus:ring
+
+azerus_ring_046:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 046"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_046
+  Components:
+    item_model: azerus:rings_azerus/ring_046
+    tooltip_style: azerus:ring
+
+azerus_ring_047:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 047"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_047
+  Components:
+    item_model: azerus:rings_azerus/ring_047
+    tooltip_style: azerus:ring
+
+azerus_ring_048:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#d6dde6>Кольцо 048"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_048
+  Components:
+    item_model: azerus:rings_azerus/ring_048
+    tooltip_style: azerus:ring
+
+azerus_ring_049:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 049"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_049
+  Components:
+    item_model: azerus:rings_azerus/ring_049
+    tooltip_style: azerus:ring
+
+azerus_ring_050:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 050"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_050
+  Components:
+    item_model: azerus:rings_azerus/ring_050
+    tooltip_style: azerus:ring
+
+azerus_ring_051:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 051"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_051
+  Components:
+    item_model: azerus:rings_azerus/ring_051
+    tooltip_style: azerus:ring
+
+azerus_ring_052:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 052"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_052
+  Components:
+    item_model: azerus:rings_azerus/ring_052
+    tooltip_style: azerus:ring
+
+azerus_ring_053:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 053"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_053
+  Components:
+    item_model: azerus:rings_azerus/ring_053
+    tooltip_style: azerus:ring
+
+azerus_ring_054:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 054"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_054
+  Components:
+    item_model: azerus:rings_azerus/ring_054
+    tooltip_style: azerus:ring
+
+azerus_ring_055:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 055"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_055
+  Components:
+    item_model: azerus:rings_azerus/ring_055
+    tooltip_style: azerus:ring
+
+azerus_ring_056:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 056"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_056
+  Components:
+    item_model: azerus:rings_azerus/ring_056
+    tooltip_style: azerus:ring
+
+azerus_ring_057:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 057"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_057
+  Components:
+    item_model: azerus:rings_azerus/ring_057
+    tooltip_style: azerus:ring
+
+azerus_ring_058:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 058"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_058
+  Components:
+    item_model: azerus:rings_azerus/ring_058
+    tooltip_style: azerus:ring
+
+azerus_ring_059:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 059"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_059
+  Components:
+    item_model: azerus:rings_azerus/ring_059
+    tooltip_style: azerus:ring
+
+azerus_ring_060:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 060"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_060
+  Components:
+    item_model: azerus:rings_azerus/ring_060
+    tooltip_style: azerus:ring
+
+azerus_ring_061:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 061"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_061
+  Components:
+    item_model: azerus:rings_azerus/ring_061
+    tooltip_style: azerus:ring
+
+azerus_ring_062:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 062"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_062
+  Components:
+    item_model: azerus:rings_azerus/ring_062
+    tooltip_style: azerus:ring
+
+azerus_ring_063:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 063"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_063
+  Components:
+    item_model: azerus:rings_azerus/ring_063
+    tooltip_style: azerus:ring
+
+azerus_ring_064:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 064"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_064
+  Components:
+    item_model: azerus:rings_azerus/ring_064
+    tooltip_style: azerus:ring
+
+azerus_ring_065:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 065"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_065
+  Components:
+    item_model: azerus:rings_azerus/ring_065
+    tooltip_style: azerus:ring
+
+azerus_ring_066:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 066"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_066
+  Components:
+    item_model: azerus:rings_azerus/ring_066
+    tooltip_style: azerus:ring
+
+azerus_ring_067:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 067"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_067
+  Components:
+    item_model: azerus:rings_azerus/ring_067
+    tooltip_style: azerus:ring
+
+azerus_ring_068:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 068"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_068
+  Components:
+    item_model: azerus:rings_azerus/ring_068
+    tooltip_style: azerus:ring
+
+azerus_ring_069:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 069"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_069
+  Components:
+    item_model: azerus:rings_azerus/ring_069
+    tooltip_style: azerus:ring
+
+azerus_ring_070:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 070"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_070
+  Components:
+    item_model: azerus:rings_azerus/ring_070
+    tooltip_style: azerus:ring
+
+azerus_ring_071:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 071"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_071
+  Components:
+    item_model: azerus:rings_azerus/ring_071
+    tooltip_style: azerus:ring
+
+azerus_ring_072:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 072"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_072
+  Components:
+    item_model: azerus:rings_azerus/ring_072
+    tooltip_style: azerus:ring
+
+azerus_ring_073:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 073"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_073
+  Components:
+    item_model: azerus:rings_azerus/ring_073
+    tooltip_style: azerus:ring
+
+azerus_ring_074:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 074"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_074
+  Components:
+    item_model: azerus:rings_azerus/ring_074
+    tooltip_style: azerus:ring
+
+azerus_ring_075:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 075"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_075
+  Components:
+    item_model: azerus:rings_azerus/ring_075
+    tooltip_style: azerus:ring
+
+azerus_ring_076:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 076"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_076
+  Components:
+    item_model: azerus:rings_azerus/ring_076
+    tooltip_style: azerus:ring
+
+azerus_ring_077:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 077"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_077
+  Components:
+    item_model: azerus:rings_azerus/ring_077
+    tooltip_style: azerus:ring
+
+azerus_ring_078:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 078"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_078
+  Components:
+    item_model: azerus:rings_azerus/ring_078
+    tooltip_style: azerus:ring
+
+azerus_ring_079:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 079"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_079
+  Components:
+    item_model: azerus:rings_azerus/ring_079
+    tooltip_style: azerus:ring
+
+azerus_ring_080:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 080"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_080
+  Components:
+    item_model: azerus:rings_azerus/ring_080
+    tooltip_style: azerus:ring
+
+azerus_ring_081:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 081"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_081
+  Components:
+    item_model: azerus:rings_azerus/ring_081
+    tooltip_style: azerus:ring
+
+azerus_ring_082:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 082"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_082
+  Components:
+    item_model: azerus:rings_azerus/ring_082
+    tooltip_style: azerus:ring
+
+azerus_ring_083:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 083"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_083
+  Components:
+    item_model: azerus:rings_azerus/ring_083
+    tooltip_style: azerus:ring
+
+azerus_ring_084:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 084"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_084
+  Components:
+    item_model: azerus:rings_azerus/ring_084
+    tooltip_style: azerus:ring
+
+azerus_ring_085:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 085"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_085
+  Components:
+    item_model: azerus:rings_azerus/ring_085
+    tooltip_style: azerus:ring
+
+azerus_ring_086:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 086"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_086
+  Components:
+    item_model: azerus:rings_azerus/ring_086
+    tooltip_style: azerus:ring
+
+azerus_ring_087:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 087"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_087
+  Components:
+    item_model: azerus:rings_azerus/ring_087
+    tooltip_style: azerus:ring
+
+azerus_ring_088:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 088"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_088
+  Components:
+    item_model: azerus:rings_azerus/ring_088
+    tooltip_style: azerus:ring
+
+azerus_ring_089:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 089"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_089
+  Components:
+    item_model: azerus:rings_azerus/ring_089
+    tooltip_style: azerus:ring
+
+azerus_ring_090:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 090"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_090
+  Components:
+    item_model: azerus:rings_azerus/ring_090
+    tooltip_style: azerus:ring
+
+azerus_ring_091:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 091"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_091
+  Components:
+    item_model: azerus:rings_azerus/ring_091
+    tooltip_style: azerus:ring
+
+azerus_ring_092:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 092"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_092
+  Components:
+    item_model: azerus:rings_azerus/ring_092
+    tooltip_style: azerus:ring
+
+azerus_ring_093:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 093"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_093
+  Components:
+    item_model: azerus:rings_azerus/ring_093
+    tooltip_style: azerus:ring
+
+azerus_ring_094:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 094"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_094
+  Components:
+    item_model: azerus:rings_azerus/ring_094
+    tooltip_style: azerus:ring
+
+azerus_ring_095:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 095"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_095
+  Components:
+    item_model: azerus:rings_azerus/ring_095
+    tooltip_style: azerus:ring
+
+azerus_ring_096:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 096"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_096
+  Components:
+    item_model: azerus:rings_azerus/ring_096
+    tooltip_style: azerus:ring
+
+azerus_ring_097:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 097"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_097
+  Components:
+    item_model: azerus:rings_azerus/ring_097
+    tooltip_style: azerus:ring
+
+azerus_ring_098:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 098"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_098
+  Components:
+    item_model: azerus:rings_azerus/ring_098
+    tooltip_style: azerus:ring
+
+azerus_ring_099:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 099"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_099
+  Components:
+    item_model: azerus:rings_azerus/ring_099
+    tooltip_style: azerus:ring
+
+azerus_ring_100:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 100"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_100
+  Components:
+    item_model: azerus:rings_azerus/ring_100
+    tooltip_style: azerus:ring
+
+azerus_ring_101:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 101"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_101
+  Components:
+    item_model: azerus:rings_azerus/ring_101
+    tooltip_style: azerus:ring
+
+azerus_ring_102:
+  material: PAPER
+  itemname: "<!i><font:azerus:tooltip></font><#8cc8ff>Кольцо 102"
+  lore:
+    - "<!i><font:azerus:tooltip></font><font:azerus:tooltip></font>"
+    - "<!i>"
+    - "<!i><font:azerus:tooltip></font>"
+    - "<!i><gray>Сила этого кольца пока"
+    - "<!i><gray>скрыта от глаз."
+  Pack:
+    model: azerus:item/rings_azerus/ring_102
+  Components:
+    item_model: azerus:rings_azerus/ring_102
+    tooltip_style: azerus:ring

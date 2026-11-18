@@ -1,0 +1,79 @@
+{
+  "type": "minecraft:multi_action",
+  "title": {
+    "text": "AZERUS",
+    "color": "gold",
+    "bold": true
+  },
+  "external_title": {
+    "text": "Меню AZERUS"
+  },
+  "body": [
+    {
+      "type": "minecraft:plain_message",
+      "width": 260,
+      "contents": [
+        {
+          "text": "Добро пожаловать в ",
+          "color": "gray"
+        },
+        {
+          "text": "AZERUS",
+          "color": "gold",
+          "bold": true
+        },
+        {
+          "text": "!\n\n",
+          "color": "gray"
+        },
+        {
+          "text": "Фэнтези-RPG: выбери класс и профессию, прокачивай навыки и снаряжение, закрывай разломы, сражайся с чудовищами и исследуй Зирконию.\n\n",
+          "color": "#d8cbb5"
+        },
+        {
+          "text": "Нашли ошибку или есть идея? Пишите администрации.",
+          "color": "#a89a86"
+        }
+      ]
+    }
+  ],
+  "columns": 1,
+  "actions": [
+    {
+      "label": {
+        "text": "Инвентарь",
+        "color": "gold"
+      },
+      "tooltip": {
+        "text": "RPG-инвентарь: персонаж, снаряжение и инвентарь",
+        "color": "gray"
+      },
+      "width": 200,
+      "action": {
+        "type": "minecraft:run_command",
+        "command": "/menuses open rpg"
+      }
+    },
+    {
+      "label": {
+        "text": "Выбор профиля",
+        "color": "aqua"
+      },
+      "tooltip": {
+        "text": "Персонажи: выбрать, создать новый",
+        "color": "gray"
+      },
+      "width": 200,
+      "action": {
+        "type": "minecraft:run_command",
+        "command": "/profiles"
+      }
+    }
+  ],
+  "exit_action": {
+    "label": {
+      "translate": "gui.back"
+    },
+    "width": 200
+  }
+}

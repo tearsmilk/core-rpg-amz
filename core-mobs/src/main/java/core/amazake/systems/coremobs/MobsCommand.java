@@ -7,6 +7,7 @@ import core.amazake.systems.coremobs.geo.BlockPos;
 import core.amazake.systems.coremobs.mob.MobCatalog;
 import core.amazake.systems.coremobs.mob.MobDef;
 import core.amazake.systems.coremobs.mob.MobService;
+import core.amazake.systems.coremobs.region.ModelMobs;
 import core.amazake.systems.coremobs.region.Region;
 import core.amazake.systems.coremobs.region.RegionSpawner;
 import core.amazake.systems.coremobs.region.RegionStore;
@@ -128,6 +129,7 @@ final class MobsCommand extends Command {
         line(sender, "/mobs region create|redefine <имя>", "регион из выделения / заменить его точки");
         line(sender, "/mobs region list · info|tp|delete <имя>", "регионы");
         line(sender, "/mobs region addmob <имя> <моб> [вес] · removemob <имя> <моб>", "кто спавнится");
+        line(sender, "/mobs region addmob <имя> all-models [вес] · removemob <имя> all-models", "все мобы с моделью");
         line(sender, "/mobs region set <имя> <параметр> <значение>", String.join(", ", SET_KEYS));
         line(sender, "/mobs region expand <имя> up|down <блоков>", "поднять потолок / опустить пол");
         line(sender, "/mobs region show <имя>", "показать контур региона всем / убрать у всех");
@@ -448,7 +450,11 @@ final class MobsCommand extends Command {
             case "set" -> this.regionSet(sender, name, a);
             case "addmob" -> {
                 if (a.length < 3) {
-                    send(sender, "<red>/mobs region addmob <имя> <моб> [вес]</red>");
+                    send(sender, "<red>/mobs region addmob <имя> <моб|all-models> [вес]</red>");
+                    return;
+                }
+                if (a[2].equalsIgnoreCase(ModelMobs.ALL_MODELS)) {
+                    this.addModelMobs(sender, name, a);
                     return;
                 }
                 final MobDef def = this.mob(sender, a[2]);
@@ -456,7 +462,7 @@ final class MobsCommand extends Command {
                     return;
                 }
                 final int weight = a.length >= 4 ? this.number(sender, a[3], 1, 1_000_000) : 1;
-                if (weight < 0) {
+                if (weight < 1) { // number() при ошибке возвращает min - 1 = 0
                     return;
                 }
                 final Region r = this.regions.update(name, old -> {
@@ -470,7 +476,11 @@ final class MobsCommand extends Command {
             }
             case "removemob" -> {
                 if (a.length < 3) {
-                    send(sender, "<red>/mobs region removemob <имя> <моб></red>");
+                    send(sender, "<red>/mobs region removemob <имя> <моб|all-models></red>");
+                    return;
+                }
+                if (a[2].equalsIgnoreCase(ModelMobs.ALL_MODELS)) {
+                    this.removeModelMobs(sender, name);
                     return;
                 }
                 final String mob = a[2].toLowerCase(Locale.ROOT);
@@ -484,6 +494,64 @@ final class MobsCommand extends Command {
             }
             default -> send(sender, "<red>/mobs region " + String.join("|", REGION_SUBS) + "</red>");
         }
+    }
+
+    /** {@code addmob <регион> all-models [вес]}: все мобы с моделью; кто уже есть — получает новый вес. */
+    private void addModelMobs(final CommandSender sender, final String name, final String[] a) {
+        // порядок проверок как у addmob для одного моба: вес, регион, потом — есть ли кого добавлять
+        final int weight = a.length >= 4 ? this.number(sender, a[3], 1, 1_000_000) : 1;
+        if (weight < 1) { // number() при ошибке возвращает min - 1 = 0
+            return;
+        }
+        if (this.regions.get(name) == null) {
+            send(sender, "<red>Региона <white>" + Text.escape(name) + "</white> нет.</red>");
+            return;
+        }
+        final List<String> ids = ModelMobs.withModels(this.catalog.get().all());
+        if (ids.isEmpty()) {
+            send(sender, "<red>В mobs.yml нет мобов с model — добавлять нечего.</red>");
+            return;
+        }
+        final ModelMobs.Change[] change = new ModelMobs.Change[1];
+        final Region r = this.regions.update(name, old -> {
+            change[0] = ModelMobs.add(old.spawn().mobs(), ids, weight);
+            return old.withSpawn(old.spawn().withMobs(change[0].mobs()));
+        });
+        this.spawner.resetTimer(name);
+        if (r == null) {
+            send(sender, "<red>Региона <white>" + Text.escape(name) + "</white> нет.</red>");
+            return;
+        }
+        final ModelMobs.Change c = change[0];
+        send(sender, "<green>В регионе <white>" + name + "</white> спавнятся все мобы с моделью (вес " + weight + "): <white>"
+            + ids.size() + "</white>.</green>");
+        if (!c.added().isEmpty()) {
+            send(sender, "<gray>Добавлены (" + c.added().size() + "): <white>" + Text.escape(String.join(", ", c.added())) + "</white></gray>");
+        }
+        if (!c.updated().isEmpty()) {
+            send(sender, "<gray>Уже были, вес обновлён (" + c.updated().size() + "): <white>"
+                + Text.escape(String.join(", ", c.updated())) + "</white></gray>");
+        }
+    }
+
+    /** {@code removemob <регион> all-models}: убрать всех мобов с моделью, остальные мобы региона остаются. */
+    private void removeModelMobs(final CommandSender sender, final String name) {
+        final List<String> ids = ModelMobs.withModelsAndLiteral(this.catalog.get().all());
+        final ModelMobs.Change[] change = new ModelMobs.Change[1];
+        final Region r = this.regions.update(name, old -> {
+            change[0] = ModelMobs.remove(old.spawn().mobs(), ids);
+            return old.withSpawn(old.spawn().withMobs(change[0].mobs()));
+        });
+        if (r == null) {
+            send(sender, "<red>Региона <white>" + Text.escape(name) + "</white> нет.</red>");
+            return;
+        }
+        final List<String> removed = change[0].removed();
+        send(sender, removed.isEmpty() ? "<yellow>В регионе <white>" + name + "</white> не было мобов с моделью.</yellow>"
+            : "<green>Из спавна региона <white>" + name + "</white> убраны мобы с моделью (" + removed.size() + "): <white>"
+            + Text.escape(String.join(", ", removed)) + "</white>.</green>");
+        send(sender, "<gray>Мобы, у которых модели уже нет в mobs.yml, так не убираются — <white>/mobs region removemob "
+            + name + " <моб></white>.</gray>");
     }
 
     private void regionFromSelection(final CommandSender sender, final String name, final boolean create) {
@@ -840,13 +908,17 @@ final class MobsCommand extends Command {
             case "set" -> args.length == 4 ? filter(SET_KEYS, args[3])
                 : args.length == 5 && args[3].equalsIgnoreCase("spawn") ? filter(List.of("on", "off"), args[4]) : List.of();
             case "expand" -> args.length == 4 ? filter(List.of("up", "down"), args[3]) : List.of();
-            case "addmob" -> args.length == 4 ? filter(mobIds, args[3]) : args.length == 5 ? filter(List.of("1", "10", "50"), args[4]) : List.of();
+            case "addmob" -> args.length == 4 ? filter(withAllModels(mobIds), args[3]) : args.length == 5 ? filter(List.of("1", "10", "50"), args[4]) : List.of();
             case "removemob" -> {
                 final Region r = this.regions.get(args[2]);
-                yield args.length == 4 && r != null ? filter(List.copyOf(r.spawn().mobs().keySet()), args[3]) : List.of();
+                yield args.length == 4 && r != null ? filter(withAllModels(List.copyOf(r.spawn().mobs().keySet())), args[3]) : List.of();
             }
             default -> List.of();
         };
+    }
+
+    private static List<String> withAllModels(final List<String> ids) {
+        return Stream.concat(ids.stream(), Stream.of(ModelMobs.ALL_MODELS)).toList();
     }
 
     private List<String> numbersAndAll(final String mob) {

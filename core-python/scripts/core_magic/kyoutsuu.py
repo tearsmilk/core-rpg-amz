@@ -38,8 +38,9 @@ EventResult = java.type("org.bukkit.event.Event$Result")
 System = java.type("java.lang.System")
 
 NEXO_ID = "nexo:id"
-効果鍵 = "fx"               # py_core_magic:fx = circle | beam | barrier
+効果鍵 = "fx"               # py_core_magic:fx = circle | beam | barrier | meteor-circle | comet
 主鍵 = "owner"              # py_core_magic:owner = UUID заклинателя
+流星鍵 = "meteor"           # py_core_magic:meteor = номер залпа «Огненного шара» (огненный круг и кометы)
 杖鍵 = "staff"              # py_core_magic:staff = 1 (запасной посох без Nexo)
 NPC鍵 = amazake.key("corenpc:npc")
 効果NK = amazake.key(効果鍵)
@@ -96,6 +97,13 @@ def 変形3(x, y, z, sx, sy, sz, 反転=True):
     вокруг Y (ItemDisplay сам рисует модель повёрнутой на 180°: с 反転 оси модели = оси дисплея)."""
     回 = Quaternionf().rotationY(f32(math.pi)) if 反転 else Quaternionf()
     return Transformation(Vector3f(f32(x), f32(y), f32(z)), 回, Vector3f(f32(sx), f32(sy), f32(sz)), Quaternionf())
+
+
+def 変形Q(x, y, z, q, s):
+    """Transformation: перенос (x, y, z) в осях дисплея, левый поворот q = (x, y, z, w) (кватернион из keisan:
+    炎陣回転, 流星回転 — они уже учитывают поворот модели самим ItemDisplay на 180° вокруг Y), масштаб s по всем осям."""
+    return Transformation(Vector3f(f32(x), f32(y), f32(z)), Quaternionf(f32(q[0]), f32(q[1]), f32(q[2]), f32(q[3])),
+                          Vector3f(f32(s), f32(s), f32(s)), Quaternionf())
 
 
 # --------------------------------------------------------------------------------------------- звук и частицы

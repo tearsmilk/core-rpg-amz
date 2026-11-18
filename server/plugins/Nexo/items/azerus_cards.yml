@@ -1,0 +1,49 @@
+# Карты стихий AZERUS (6 шт.) — раздел azerus_cards в /nexo inventory. Плоские иконки 64x64 (item_model 1.21.4+).
+
+azerus_card_water:
+  material: PAPER
+  itemname: "<white>Карта воды"
+  Pack:
+    model: azerus:item/azerus_cards/card_water
+  Components:
+    item_model: azerus:azerus_cards/card_water
+
+azerus_card_air:
+  material: PAPER
+  itemname: "<white>Карта воздуха"
+  Pack:
+    model: azerus:item/azerus_cards/card_air
+  Components:
+    item_model: azerus:azerus_cards/card_air
+
+azerus_card_earth:
+  material: PAPER
+  itemname: "<white>Карта земли"
+  Pack:
+    model: azerus:item/azerus_cards/card_earth
+  Components:
+    item_model: azerus:azerus_cards/card_earth
+
+azerus_card_fire:
+  material: PAPER
+  itemname: "<white>Карта огня"
+  Pack:
+    model: azerus:item/azerus_cards/card_fire
+  Components:
+    item_model: azerus:azerus_cards/card_fire
+
+azerus_card_chaos:
+  material: PAPER
+  itemname: "<white>Карта хаоса"
+  Pack:
+    model: azerus:item/azerus_cards/card_chaos
+  Components:
+    item_model: azerus:azerus_cards/card_chaos
+
+azerus_card_poison:
+  material: PAPER
+  itemname: "<white>Карта яда"
+  Pack:
+    model: azerus:item/azerus_cards/card_poison
+  Components:
+    item_model: azerus:azerus_cards/card_poison

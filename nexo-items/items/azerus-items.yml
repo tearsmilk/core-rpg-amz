@@ -1,0 +1,13 @@
+# Используемые предметы AZERUS. Механика — Python-система core_items (core-python/scripts/core_items).
+azerus_teleport_scroll:
+  material: PAPER
+  itemname: "<#c9a2ff>Свиток телепортации"
+  lore:
+    - "<gray>Древний свиток с печатью странствий."
+    - ""
+    - "<#c9a2ff>✦ <white>ПКМ</white><gray> — перенос в <white>Зирконию</white>"
+    - "<gray>   через <white>5 с</white>; двигаться нельзя."
+  Pack:
+    model: azerus:item/azerus_items/teleport_scroll
+  Components:
+    item_model: azerus:azerus_items/teleport_scroll

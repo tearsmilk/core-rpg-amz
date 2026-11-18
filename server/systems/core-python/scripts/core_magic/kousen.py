@@ -28,7 +28,6 @@ import keisan
 import kyoutsuu
 import mahoujin
 import kekkai
-import damage_bridge
 from kyoutsuu import Location, Vector, BoundingBox, FluidCollisionMode, LivingEntity, ArmorStand, Player, GameMode
 
 DamageSource = java.type("org.bukkit.damage.DamageSource")
@@ -59,6 +58,12 @@ def 傷の種類(鍵):
 
 def _狙えるか(e, 光, 自分):
     """Живая цель, которую луч может задеть (без точной проверки пути)."""
+    return 狙える(e, 光.対人, 自分)
+
+
+def 狙える(e, 対人, 自分):
+    """Живая цель магии посоха (луч, комета «Огненного шара», прицел): не заклинатель 自分 (UUID-строка), живая,
+    видимая всем, не NPC, игрок — только если 対人 и не в творческом/наблюдателе; и поток владеет ею."""
     if not java.instanceof(e, LivingEntity) or java.instanceof(e, ArmorStand):
         return False
     if str(e.getUniqueId()) == 自分:
@@ -70,7 +75,7 @@ def _狙えるか(e, 光, 自分):
     if amazake.data(e).has("corenpc:npc"):
         return False          # NPC core-npc
     if java.instanceof(e, Player):
-        if not 光.対人:
+        if not 対人:
             return False
         gm = e.getGameMode()
         if gm == GameMode.SPECTATOR or gm == GameMode.CREATIVE:
@@ -164,7 +169,10 @@ def 撃つ(player, cfg, 陣=None):
             try:
                 if 光.無敵無視:
                     e.setNoDamageTicks(0)
-                damage_bridge.hit(player, e, float(光.傷), src)
+                if src is not None:
+                    e.damage(float(光.傷), src)
+                else:
+                    e.damage(float(光.傷), player)
                 n += 1
             except BaseException as ex:
                 amazake.log.warn("урон лучом " + uid + ": " + str(ex))

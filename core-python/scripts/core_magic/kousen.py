@@ -58,6 +58,12 @@ def 傷の種類(鍵):
 
 def _狙えるか(e, 光, 自分):
     """Живая цель, которую луч может задеть (без точной проверки пути)."""
+    return 狙える(e, 光.対人, 自分)
+
+
+def 狙える(e, 対人, 自分):
+    """Живая цель магии посоха (луч, комета «Огненного шара», прицел): не заклинатель 自分 (UUID-строка), живая,
+    видимая всем, не NPC, игрок — только если 対人 и не в творческом/наблюдателе; и поток владеет ею."""
     if not java.instanceof(e, LivingEntity) or java.instanceof(e, ArmorStand):
         return False
     if str(e.getUniqueId()) == 自分:
@@ -69,7 +75,7 @@ def _狙えるか(e, 光, 自分):
     if amazake.data(e).has("corenpc:npc"):
         return False          # NPC core-npc
     if java.instanceof(e, Player):
-        if not 光.対人:
+        if not 対人:
             return False
         gm = e.getGameMode()
         if gm == GameMode.SPECTATOR or gm == GameMode.CREATIVE:

@@ -13,7 +13,7 @@ dialog:
   # По высоте окно поднято в пакете ресурсов (tools/gen_pack.py, LIFT) — примерно на уровень руки NPC.
   # На узком экране (масштаб интерфейса 4 на 1920×1080 — 480 px) окно 256 px при сдвиге больше ~110 упрётся в край.
   hud:
-    offset-x: 110
+    offset-x: 60
   # При открытии диалога «очистить» чат: столько пустых строк (старые сообщения уезжают вверх). 0 — не трогать.
   clear-chat-lines: 100
   # Дальше этого (блоков) от NPC — диалог закрывается. 0 — не следить.
@@ -44,10 +44,10 @@ dialog:
     left-click-confirms: true # ЛКМ — то же
     sneak-closes: true        # Shift — уйти из диалога
   format:
-    speaker: "<#ffd37a><speaker>"
-    text: "<#ece6d6>"
-    answer: "<#bdb6a6><index>. <text>"
-    answer-selected: "<#ffd37a>» <index>. <text>"
+    speaker: "<#f3e6cf><speaker>"
+    text: "<#4a2c1c>"
+    answer: "<#7a4a32><index>. <text>"
+    answer-selected: "<#2e160c><index>. <text>"
     chat-answer: "<click><#ffd37a>[<index>]</#ffd37a> <white><text></white></click>"
     chat-hint: "<dark_gray>колёсико — выбрать, F или ЛКМ — ответить, Shift — уйти</dark_gray>"
   native:

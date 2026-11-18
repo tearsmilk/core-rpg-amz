@@ -2,7 +2,7 @@
 # Код — main.py, mahoujin.py (круг), kousen.py (луч), dougu.py (посох), kyoutsuu.py (Java), settei.py, keisan.py;
 # настройки — config.yml. Вид — Nexo (nexo-items: azerus_moon_staff, модели azerus:moon_staff_circle/beam, шейдер).
 name: core_magic
-version: 1.0.1
+version: 1.0.0
 main: main.py
 enabled: true
 description: "Посох Лунного Странника: магический круг и луч"

@@ -2,35 +2,46 @@ package core.amazake.systems.corenpc.hud;
 
 import net.kyori.adventure.key.Key;
 
-/** Раскладка окна диалога; числа совпадают с tools/gen_pack.py. */
+/**
+ * Раскладка окна диалога «свиток писаря»; числа совпадают с tools/gen_pack.py. Координаты — от левого края
+ * раскладки (ширина {@link #TOTAL_W}, клиент центрирует по ней): слева портрет и плашка имени, ниже пергамент
+ * с текстом и пером, сверху справа — листок ответов (только когда ответы есть) с пером-указателем.
+ */
 public final class HudLayout {
 
     public static final Key DIALOG_FONT = Key.key("corenpc", "dialog");
-    /** Шрифты строк: 0 — имя, 1..3 — текст, 4..6 — ответы. */
+    /** Шрифты строк: 0 — имя, 1..3 — текст, 4..6 — ответы (у каждого свой ascent — своя высота). */
     public static final Key[] ROWS = new Key[7];
     public static final int TEXT_ROWS = 3;
     public static final int ANSWER_ROWS = 3;
     /**
-     * Окно — две половины 128×78 (U+E000, U+E001) со сдвигом −1 между ними: клиент 1.21.11 собирает глифы в атлас
-     * 256×256, глиф шире 256 не рисуется. Шаг каждой половины 129, итого 128 + 129 = {@link #BOX_ADVANCE}.
+     * Основное окно — две половины 142 (U+E000, U+E001; клиент не рисует глиф шире 256), между ними сдвиг −1:
+     * шаг половины 143, итого {@link #BOX_ADVANCE}.
      */
-    public static final String BOX = "\uE000\uF801\uE001";
-    /** Подсветка ответа — две половины 122 (U+E010, U+E012; U+F801 = −1 есть и в шрифтах строк). Шаг 245. */
-    public static final String HIGHLIGHT = "\uE010\uF801\uE012";
-    /** «▼ дальше» — только в шрифте row6. */
-    public static final String NEXT = "\uE011";
-    /** Ширина окна 256 → шаг 257 (как у одного глифа шириной 256). */
-    public static final int BOX_WIDTH = 256;
-    public static final int BOX_ADVANCE = BOX_WIDTH + 1;
-    public static final int HIGHLIGHT_ADVANCE = 245;
-    /** Отступ текста от левого края окна. */
-    public static final int PAD = 8;
-    /** Подсветка начинается на 6 пикселей от края окна. */
-    public static final int HIGHLIGHT_X = 6;
-    /** Ширина строки текста, после которой она вылезет за окно. */
-    public static final int TEXT_WIDTH = BOX_WIDTH - 2 * PAD;
-    /** «▼ дальше» у правого нижнего угла. */
-    public static final int NEXT_X = BOX_WIDTH - 16;
+    public static final String BOX = "";
+    public static final int BOX_ADVANCE = 284 + 1;
+    /** Листок ответов (U+E002) с левым краем на {@link #PANEL_X}. */
+    public static final String PANEL = "";
+    public static final int PANEL_X = 172;
+    public static final int PANEL_ADVANCE = 158 + 1;
+    /** Перо-указатель выбранного ответа: свой глиф на каждую из трёх строк ответа (свой ascent). */
+    public static final String[] POINTER = {"", "", ""};
+    public static final int POINTER_X = 166;
+    public static final int POINTER_ADVANCE = 16 + 1;
+    /** «▼ дальше» внизу пергамента. */
+    public static final String NEXT = "";
+    public static final int NEXT_X = 226;
+    public static final int NEXT_ADVANCE = 7 + 1;
+    /** Где начинаются строки: имя на плашке, текст на пергаменте, ответы на листке. */
+    public static final int NAME_X = 48;
+    public static final int TEXT_X = 38;
+    public static final int ANSWER_X = 184;
+    /** Общая ширина раскладки. */
+    public static final int TOTAL_W = 330;
+    /** Ширина строки текста на пергаменте (перенос строк диалога). */
+    public static final int TEXT_WIDTH = 224;
+    /** Ширина строки ответа на листке (дальше вылезет за листок). */
+    public static final int ANSWER_WIDTH = 140;
 
     static {
         for (int i = 0; i < ROWS.length; i++) {

@@ -1,0 +1,203 @@
+# Амулеты AZERUS (25 шт.) — раздел azerus_amulets в /nexo inventory. Плоские иконки 32x32 (item_model 1.21.4+).
+# Текстуры: pack/assets/azerus/textures/item/azerus_amulets/, модели item/generated: models/item/azerus_amulets/,
+# определения предметов: items/azerus_amulets/. Статов и слота для надевания нет — только предмет.
+
+azerus_amulet_001:
+  material: PAPER
+  itemname: "<white>Амулет 01"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_001
+  Components:
+    item_model: azerus:azerus_amulets/amulet_001
+
+azerus_amulet_002:
+  material: PAPER
+  itemname: "<white>Амулет 02"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_002
+  Components:
+    item_model: azerus:azerus_amulets/amulet_002
+
+azerus_amulet_003:
+  material: PAPER
+  itemname: "<white>Амулет 03"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_003
+  Components:
+    item_model: azerus:azerus_amulets/amulet_003
+
+azerus_amulet_004:
+  material: PAPER
+  itemname: "<white>Амулет 04"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_004
+  Components:
+    item_model: azerus:azerus_amulets/amulet_004
+
+azerus_amulet_005:
+  material: PAPER
+  itemname: "<white>Амулет 05"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_005
+  Components:
+    item_model: azerus:azerus_amulets/amulet_005
+
+azerus_amulet_006:
+  material: PAPER
+  itemname: "<white>Амулет 06"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_006
+  Components:
+    item_model: azerus:azerus_amulets/amulet_006
+
+azerus_amulet_007:
+  material: PAPER
+  itemname: "<white>Амулет 07"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_007
+  Components:
+    item_model: azerus:azerus_amulets/amulet_007
+
+azerus_amulet_008:
+  material: PAPER
+  itemname: "<white>Амулет 08"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_008
+  Components:
+    item_model: azerus:azerus_amulets/amulet_008
+
+azerus_amulet_009:
+  material: PAPER
+  itemname: "<white>Амулет 09"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_009
+  Components:
+    item_model: azerus:azerus_amulets/amulet_009
+
+azerus_amulet_010:
+  material: PAPER
+  itemname: "<white>Амулет 10"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_010
+  Components:
+    item_model: azerus:azerus_amulets/amulet_010
+
+azerus_amulet_011:
+  material: PAPER
+  itemname: "<white>Амулет 11"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_011
+  Components:
+    item_model: azerus:azerus_amulets/amulet_011
+
+azerus_amulet_012:
+  material: PAPER
+  itemname: "<white>Амулет 12"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_012
+  Components:
+    item_model: azerus:azerus_amulets/amulet_012
+
+azerus_amulet_013:
+  material: PAPER
+  itemname: "<white>Амулет 13"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_013
+  Components:
+    item_model: azerus:azerus_amulets/amulet_013
+
+azerus_amulet_014:
+  material: PAPER
+  itemname: "<white>Амулет 14"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_014
+  Components:
+    item_model: azerus:azerus_amulets/amulet_014
+
+azerus_amulet_015:
+  material: PAPER
+  itemname: "<white>Амулет 15"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_015
+  Components:
+    item_model: azerus:azerus_amulets/amulet_015
+
+azerus_amulet_016:
+  material: PAPER
+  itemname: "<white>Амулет 16"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_016
+  Components:
+    item_model: azerus:azerus_amulets/amulet_016
+
+azerus_amulet_017:
+  material: PAPER
+  itemname: "<white>Амулет 17"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_017
+  Components:
+    item_model: azerus:azerus_amulets/amulet_017
+
+azerus_amulet_018:
+  material: PAPER
+  itemname: "<white>Амулет 18"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_018
+  Components:
+    item_model: azerus:azerus_amulets/amulet_018
+
+azerus_amulet_019:
+  material: PAPER
+  itemname: "<white>Амулет 19"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_019
+  Components:
+    item_model: azerus:azerus_amulets/amulet_019
+
+azerus_amulet_020:
+  material: PAPER
+  itemname: "<white>Амулет 20"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_020
+  Components:
+    item_model: azerus:azerus_amulets/amulet_020
+
+azerus_amulet_021:
+  material: PAPER
+  itemname: "<white>Амулет 21"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_021
+  Components:
+    item_model: azerus:azerus_amulets/amulet_021
+
+azerus_amulet_022:
+  material: PAPER
+  itemname: "<white>Амулет 22"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_022
+  Components:
+    item_model: azerus:azerus_amulets/amulet_022
+
+azerus_amulet_023:
+  material: PAPER
+  itemname: "<white>Амулет 23"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_023
+  Components:
+    item_model: azerus:azerus_amulets/amulet_023
+
+azerus_amulet_024:
+  material: PAPER
+  itemname: "<white>Амулет 24"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_024
+  Components:
+    item_model: azerus:azerus_amulets/amulet_024
+
+azerus_amulet_025:
+  material: PAPER
+  itemname: "<white>Амулет 25"
+  Pack:
+    model: azerus:item/azerus_amulets/amulet_025
+  Components:
+    item_model: azerus:azerus_amulets/amulet_025

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,12 +14,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Blaze;
 import org.bukkit.entity.Creeper;
+import org.bukkit.entity.Enemy;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Evoker;
 import org.bukkit.entity.EvokerFangs;
 import org.bukkit.entity.Ghast;
@@ -214,5 +218,31 @@ class InfightingTest {
         assertEquals(1, warns.size());
         assertNull(Infighting.parseScope("x"));
         assertEquals(Infighting.Scope.CORE_MOBS, Infighting.parseScope("CORE_MOBS"));
+    }
+
+    @Test
+    void nonHostileCoreMobWarns() throws Exception {
+        final List<String> w = new ArrayList<>();
+        final YamlConfiguration y = new YamlConfiguration();
+        y.loadFromString("type: WOLF\n");
+        MobCatalog.parseMob("guard_wolf", y, w::add);
+        assertEquals(1, w.size(), w.toString());
+        w.clear();
+        y.loadFromString("type: ZOMBIE\n");
+        MobCatalog.parseMob("z", y, w::add);
+        assertTrue(w.isEmpty(), w.toString());
+    }
+
+    /** Все типы в mobs.yml (ресурсы и продакшен) враждебные — иначе scope core-mobs их не защищает. */
+    @Test
+    void shippedMobsAreEnemies() {
+        for (final String path : new String[] {"src/main/resources/mobs.yml", "deploy/mobs.prod.yml"}) {
+            final ConfigurationSection mobs = YamlConfiguration.loadConfiguration(new File(path))
+                .getConfigurationSection("mobs");
+            for (final String id : mobs.getKeys(false)) {
+                final EntityType t = EntityType.valueOf(mobs.getString(id + ".type"));
+                assertTrue(Enemy.class.isAssignableFrom(t.getEntityClass()), path + " " + id + ": " + t);
+            }
+        }
     }
 }

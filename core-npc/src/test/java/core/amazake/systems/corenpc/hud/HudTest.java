@@ -53,31 +53,26 @@ class HudTest {
             .serialize(w.sanitize(c)));
         final HudRenderer r = new HudRenderer(w);
         final Component out = r.render(null, List.of(Component.text("\u4E2D\u4E2D")), List.of(), -1, false);
-        assertEquals(HudLayout.BOX_ADVANCE, advance(out, w));
+        assertEquals(HudLayout.TOTAL_W, advance(out, w));
     }
 
-    /** Глифы окна и подсветки — части не шире 256 (атлас клиента), их шаги складываются в BOX/HIGHLIGHT_ADVANCE. */
+    /** Основное окно — две половины не шире 256 (атлас клиента), шаг вместе = BOX_ADVANCE. */
     @Test
-    void boxAndHighlightAreSlices() throws Exception {
-        final FontWidths w = widths();
-        assertEquals(123, w.width(0xE010, false));
-        assertEquals(123, w.width(0xE012, false));
-        assertEquals(HudLayout.HIGHLIGHT_ADVANCE, 123 - 1 + 123);
-        assertEquals(HudLayout.BOX_ADVANCE, 129 - 1 + 129);
+    void boxIsSliced() {
+        assertEquals(HudLayout.BOX_ADVANCE, 143 - 1 + 143);
         assertEquals(-1, Shift.measure(HudLayout.BOX));
-        assertEquals(-1, Shift.measure(HudLayout.HIGHLIGHT));
     }
 
-    /** Перо проходит ровно ширину окна: сумма шагов глифов и сдвигов = BOX_ADVANCE. */
+    /** Перо проходит ровно ширину раскладки: сумма шагов глифов и сдвигов = TOTAL_W. */
     @Test
     void renderedBoxIsCentered() throws Exception {
         final FontWidths w = widths();
         final HudRenderer r = new HudRenderer(w);
         final Component out = r.render(Component.text("Староста"), List.of(Component.text("Привет!"), Component.text("Как дела?")),
             List.of(Component.text("1. Да"), Component.text("2. Нет")), 1, true);
-        assertEquals(HudLayout.BOX_ADVANCE, advance(out, w));
+        assertEquals(HudLayout.TOTAL_W, advance(out, w));
         final Component empty = r.render(null, List.of(), List.of(), -1, false);
-        assertEquals(HudLayout.BOX_ADVANCE, advance(empty, w));
+        assertEquals(HudLayout.TOTAL_W, advance(empty, w));
     }
 
     /** Строки примера влезают в окно даже с самым длинным ником (16 символов). */
@@ -97,7 +92,7 @@ class HudTest {
                 assertTrue(px <= HudLayout.TEXT_WIDTH, p.id() + ": " + px + " > " + HudLayout.TEXT_WIDTH + ": " + line);
             }
             for (final var a : p.answers()) {
-                assertTrue(w.width(MiniMessage.miniMessage().deserialize("» 9. " + a.text())) <= HudLayout.TEXT_WIDTH, a.text());
+                assertTrue(w.width(MiniMessage.miniMessage().deserialize("9. " + a.text())) <= HudLayout.ANSWER_WIDTH, a.text());
             }
         }
     }
@@ -108,11 +103,13 @@ class HudTest {
             for (int i = 0; i < t.content().length(); i++) {
                 final char ch = t.content().charAt(i);
                 if (ch == '\ue000' || ch == '\ue001') {
-                    sum += 129;
-                } else if (ch == '\ue010' || ch == '\ue012') {
-                    sum += 123;
+                    sum += 143;
+                } else if (ch == '\ue002') {
+                    sum += HudLayout.PANEL_ADVANCE;
+                } else if (ch >= '\ue020' && ch <= '\ue022') {
+                    sum += HudLayout.POINTER_ADVANCE;
                 } else if (ch == '\ue011') {
-                    sum += 8;
+                    sum += HudLayout.NEXT_ADVANCE;
                 } else if (ch >= 0xF801 && ch <= 0xF82A) {
                     sum += Shift.measure(String.valueOf(ch));
                 } else {

@@ -33,6 +33,10 @@ USE_COOLDOWN = DataComponentTypes.USE_COOLDOWN
     "<#7fd8ff>✦ <white>Барьер</white><gray>: зажмите <white>ПКМ</white> на <white>1 с</white> — стена",
     "<gray>   из шестигранников на <white>10 с</white>, гасит лучи магии;",
     "<gray>   перезарядка <white>15 с</white>.",
+    "<#ffa040>✦ <white>Огненный шар</white><gray>: зажмите <white>ПКМ</white> на <white>3 с</white> — в небе",
+    "<gray>   над целью раскрывается огненный круг; отпустите —",
+    "<gray>   <white>6 комет</white> обрушатся вокруг цели: <#ff6a6a>6 урона</#ff6a6a>",
+    "<gray>   и поджог в радиусе <white>3 блоков</white>, перезарядка <white>12 с</white>.",
     "<#7fd8ff>✦ <white>Shift + ЛКМ</white><gray> — сменить заклинание.",
 ]
 模型 = "azerus:moon_staff"

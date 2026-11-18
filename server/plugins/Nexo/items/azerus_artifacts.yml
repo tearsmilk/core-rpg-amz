@@ -1,0 +1,139 @@
+# Артефакты AZERUS (17 шт.) — раздел azerus_artifacts в /nexo inventory. Плоские иконки 64x64 (item_model 1.21.4+).
+# Текстуры: pack/assets/azerus/textures/item/azerus_artifacts/, модели item/generated: models/item/azerus_artifacts/,
+# определения предметов: items/azerus_artifacts/. Статов нет — только предмет.
+
+azerus_artifact_001:
+  material: PAPER
+  itemname: "<white>Цветочная маска друида"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_001
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_001
+
+azerus_artifact_002:
+  material: PAPER
+  itemname: "<white>Многоглазый идол"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_002
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_002
+
+azerus_artifact_003:
+  material: PAPER
+  itemname: "<white>Маска волка"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_003
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_003
+
+azerus_artifact_004:
+  material: PAPER
+  itemname: "<white>Маска жука"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_004
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_004
+
+azerus_artifact_005:
+  material: PAPER
+  itemname: "<white>Лесной идол"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_005
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_005
+
+azerus_artifact_006:
+  material: PAPER
+  itemname: "<white>Маска плута"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_006
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_006
+
+azerus_artifact_007:
+  material: PAPER
+  itemname: "<white>Бездонный кошель"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_007
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_007
+
+azerus_artifact_008:
+  material: PAPER
+  itemname: "<white>Нашивка гвардейца"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_008
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_008
+
+azerus_artifact_009:
+  material: PAPER
+  itemname: "<white>Эльфийская лента"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_009
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_009
+
+azerus_artifact_010:
+  material: PAPER
+  itemname: "<white>Эльфийский колчан"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_010
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_010
+
+azerus_artifact_011:
+  material: PAPER
+  itemname: "<white>Бездонный кошель (вариант 2)"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_011
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_011
+
+azerus_artifact_012:
+  material: PAPER
+  itemname: "<white>Нашивка гвардейца (вариант 2)"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_012
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_012
+
+azerus_artifact_013:
+  material: PAPER
+  itemname: "<white>Эльфийская лента (вариант 2)"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_013
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_013
+
+azerus_artifact_014:
+  material: PAPER
+  itemname: "<white>Эльфийский колчан (вариант 2)"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_014
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_014
+
+azerus_artifact_015:
+  material: PAPER
+  itemname: "<white>Кости шулера"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_015
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_015
+
+azerus_artifact_016:
+  material: PAPER
+  itemname: "<white>Куб-головоломка (С)"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_016
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_016
+
+azerus_artifact_017:
+  material: PAPER
+  itemname: "<white>Зеркальный шар (С)"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_017
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_017
