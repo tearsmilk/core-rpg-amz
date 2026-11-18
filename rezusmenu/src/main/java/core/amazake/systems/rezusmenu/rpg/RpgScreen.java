@@ -234,7 +234,7 @@ public final class RpgScreen {
         this.slotSelected = s.marker("slot_selected", L_SELECTED);
 
         // верх и низ холста
-        s.text(240, 12, 224, 32, 11, Text.item("<gold><b>Персонаж</b></gold>"), L_TEXT, STATIC);
+        s.text(240, 12, 224, 32, 11, Text.item("<gold><b>Мой персонаж</b></gold>"), L_TEXT, STATIC);
         this.help = s.text(160, 358, 384, 24, 8, Text.item(HELP), L_TEXT, STATIC);
 
         // вкладки
