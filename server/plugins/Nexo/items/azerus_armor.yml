@@ -11,8 +11,8 @@ azerus_guren_helmet:
   itemname: "<#d4334a>Багровый шлем"
   material: NETHERITE_HELMET
   lore:
-    - "<gray>Выкован в том же пламени,"
-    - "<gray>что и Багровая коса."
+  - "<gray>Выкован в том же пламени,"
+  - "<gray>что и Багровая коса."
   Pack:
     texture: azerus:item/armor/guren_helmet
   CustomArmor:
@@ -21,12 +21,13 @@ azerus_guren_helmet:
     equippable:
       slot: HEAD
       asset_id: azerus:guren
+    tooltip_style: royaltooltips:guardian
 azerus_guren_chestplate:
   itemname: "<#d4334a>Багровый нагрудник"
   material: NETHERITE_CHESTPLATE
   lore:
-    - "<gray>Выкован в том же пламени,"
-    - "<gray>что и Багровая коса."
+  - "<gray>Выкован в том же пламени,"
+  - "<gray>что и Багровая коса."
   Pack:
     texture: azerus:item/armor/guren_chestplate
   CustomArmor:
@@ -37,12 +38,13 @@ azerus_guren_chestplate:
     equippable:
       slot: CHEST
       asset_id: azerus:guren
+    tooltip_style: royaltooltips:guardian
 azerus_guren_leggings:
   itemname: "<#d4334a>Багровые поножи"
   material: NETHERITE_LEGGINGS
   lore:
-    - "<gray>Выкован в том же пламени,"
-    - "<gray>что и Багровая коса."
+  - "<gray>Выкован в том же пламени,"
+  - "<gray>что и Багровая коса."
   Pack:
     texture: azerus:item/armor/guren_leggings
   CustomArmor:
@@ -51,12 +53,13 @@ azerus_guren_leggings:
     equippable:
       slot: LEGS
       asset_id: azerus:guren
+    tooltip_style: royaltooltips:guardian
 azerus_guren_boots:
   itemname: "<#d4334a>Багровые сапоги"
   material: NETHERITE_BOOTS
   lore:
-    - "<gray>Выкован в том же пламени,"
-    - "<gray>что и Багровая коса."
+  - "<gray>Выкован в том же пламени,"
+  - "<gray>что и Багровая коса."
   Pack:
     texture: azerus:item/armor/guren_boots
   CustomArmor:
@@ -67,12 +70,13 @@ azerus_guren_boots:
       asset_id: azerus:guren
 
 # ---- tsukikori (月氷) ----
+    tooltip_style: royaltooltips:guardian
 azerus_tsukikori_helmet:
   itemname: "<#9fd8ff>Лунный шлем"
   material: DIAMOND_HELMET
   lore:
-    - "<gray>Холодный свет луны,"
-    - "<gray>застывший в броне."
+  - "<gray>Холодный свет луны,"
+  - "<gray>застывший в броне."
   Pack:
     texture: azerus:item/armor/tsukikori_helmet
   CustomArmor:
@@ -81,12 +85,13 @@ azerus_tsukikori_helmet:
     equippable:
       slot: HEAD
       asset_id: azerus:tsukikori
+    tooltip_style: royaltooltips:guardian
 azerus_tsukikori_chestplate:
   itemname: "<#9fd8ff>Лунный нагрудник"
   material: DIAMOND_CHESTPLATE
   lore:
-    - "<gray>Холодный свет луны,"
-    - "<gray>застывший в броне."
+  - "<gray>Холодный свет луны,"
+  - "<gray>застывший в броне."
   Pack:
     texture: azerus:item/armor/tsukikori_chestplate
   CustomArmor:
@@ -97,12 +102,13 @@ azerus_tsukikori_chestplate:
     equippable:
       slot: CHEST
       asset_id: azerus:tsukikori
+    tooltip_style: royaltooltips:guardian
 azerus_tsukikori_leggings:
   itemname: "<#9fd8ff>Лунные поножи"
   material: DIAMOND_LEGGINGS
   lore:
-    - "<gray>Холодный свет луны,"
-    - "<gray>застывший в броне."
+  - "<gray>Холодный свет луны,"
+  - "<gray>застывший в броне."
   Pack:
     texture: azerus:item/armor/tsukikori_leggings
   CustomArmor:
@@ -111,12 +117,13 @@ azerus_tsukikori_leggings:
     equippable:
       slot: LEGS
       asset_id: azerus:tsukikori
+    tooltip_style: royaltooltips:guardian
 azerus_tsukikori_boots:
   itemname: "<#9fd8ff>Лунные сапоги"
   material: DIAMOND_BOOTS
   lore:
-    - "<gray>Холодный свет луны,"
-    - "<gray>застывший в броне."
+  - "<gray>Холодный свет луны,"
+  - "<gray>застывший в броне."
   Pack:
     texture: azerus:item/armor/tsukikori_boots
   CustomArmor:
@@ -127,12 +134,13 @@ azerus_tsukikori_boots:
       asset_id: azerus:tsukikori
 
 # ---- morikashi (森樫) ----
+    tooltip_style: royaltooltips:guardian
 azerus_morikashi_helmet:
   itemname: "<#7fae4a>Шлем дубравы"
   material: IRON_HELMET
   lore:
-    - "<gray>Кора столетнего дуба,"
-    - "<gray>окованная бронзой."
+  - "<gray>Кора столетнего дуба,"
+  - "<gray>окованная бронзой."
   Pack:
     texture: azerus:item/armor/morikashi_helmet
   CustomArmor:
@@ -141,12 +149,13 @@ azerus_morikashi_helmet:
     equippable:
       slot: HEAD
       asset_id: azerus:morikashi
+    tooltip_style: royaltooltips:guardian
 azerus_morikashi_chestplate:
   itemname: "<#7fae4a>Нагрудник дубравы"
   material: IRON_CHESTPLATE
   lore:
-    - "<gray>Кора столетнего дуба,"
-    - "<gray>окованная бронзой."
+  - "<gray>Кора столетнего дуба,"
+  - "<gray>окованная бронзой."
   Pack:
     texture: azerus:item/armor/morikashi_chestplate
   CustomArmor:
@@ -157,12 +166,13 @@ azerus_morikashi_chestplate:
     equippable:
       slot: CHEST
       asset_id: azerus:morikashi
+    tooltip_style: royaltooltips:guardian
 azerus_morikashi_leggings:
   itemname: "<#7fae4a>Поножи дубравы"
   material: IRON_LEGGINGS
   lore:
-    - "<gray>Кора столетнего дуба,"
-    - "<gray>окованная бронзой."
+  - "<gray>Кора столетнего дуба,"
+  - "<gray>окованная бронзой."
   Pack:
     texture: azerus:item/armor/morikashi_leggings
   CustomArmor:
@@ -171,12 +181,13 @@ azerus_morikashi_leggings:
     equippable:
       slot: LEGS
       asset_id: azerus:morikashi
+    tooltip_style: royaltooltips:guardian
 azerus_morikashi_boots:
   itemname: "<#7fae4a>Сапоги дубравы"
   material: IRON_BOOTS
   lore:
-    - "<gray>Кора столетнего дуба,"
-    - "<gray>окованная бронзой."
+  - "<gray>Кора столетнего дуба,"
+  - "<gray>окованная бронзой."
   Pack:
     texture: azerus:item/armor/morikashi_boots
   CustomArmor:
@@ -185,3 +196,4 @@ azerus_morikashi_boots:
     equippable:
       slot: FEET
       asset_id: azerus:morikashi
+    tooltip_style: royaltooltips:guardian

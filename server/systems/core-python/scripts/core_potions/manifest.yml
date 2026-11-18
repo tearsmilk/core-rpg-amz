@@ -1,6 +1,6 @@
 # Python-система «Зелья» (ポーション). Вид зелий — Nexo (пак skulpt/basic_potions), механика — здесь.
 name: core_potions
-version: 1.0.0
+version: 1.1.0
 main: main.py
 enabled: true
 言語: 日本語          # японский режим: main.py написан японскими знаками (docs/japanese-mode-vocabulary.md)

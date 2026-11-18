@@ -83,6 +83,15 @@ base-stat-value:
   # Add as many as you want...
 
 proxies:
+  # Классовые кольца (18.11.2026): свои статы MMOItems -> проценты к стандартным. Тип RELATIVE (PERCENT/SCALAR не существуют).
+  CUSTOM_HP_PERCENT:
+    MAX_HEALTH:
+      multiplier: 1
+      type: RELATIVE
+  CUSTOM_MANA_REGEN_PERCENT:
+    MANA_REGENERATION:
+      multiplier: 1
+      type: RELATIVE
   MAX_HEALTH_PERCENT:
     # One unit in MAX_HEALTH_PERCENT increases
     # MAX_HEALTH by 1%, linearly

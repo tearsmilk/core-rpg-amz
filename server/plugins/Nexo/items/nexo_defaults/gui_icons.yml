@@ -1,4 +1,6 @@
 next_page_icon:
+  Components:
+    tooltip_style: royaltooltips:material
   itemname: <#D5D6D8>Next page
   material: PAPER
   excludeFromInventory: true
@@ -6,6 +8,8 @@ next_page_icon:
   Pack:
     texture: required/arrow_next_icon.png
 previous_page_icon:
+  Components:
+    tooltip_style: royaltooltips:material
   itemname: <#D5D6D8>Previous page
   material: PAPER
   excludeFromInventory: true
@@ -13,6 +17,8 @@ previous_page_icon:
   Pack:
     texture: required/arrow_previous_icon.png
 cancel_icon:
+  Components:
+    tooltip_style: royaltooltips:material
   itemname: <gradient:#FA7CBB:#F14658>Back to main menu
   material: PAPER
   excludeFromInventory: true
@@ -20,6 +26,8 @@ cancel_icon:
   Pack:
     texture: required/cancel_icon.png
 directory_icon:
+  Components:
+    tooltip_style: royaltooltips:material
   excludeFromInventory: true
   excludeFromCommands: true
   Pack:

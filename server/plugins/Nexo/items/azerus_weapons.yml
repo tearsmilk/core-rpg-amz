@@ -3,6 +3,8 @@
 # Файл: plugins/Nexo/items/azerus_weapons.yml, модели и текстуры: plugins/Nexo/pack/assets/azerus/.
 
 azerus_iron_vow:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <white>Стандартный меч
   material: IRON_SWORD
   lore:
@@ -11,6 +13,8 @@ azerus_iron_vow:
     model: azerus:item/iron_vow
 
 azerus_moonwarden:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <#b9c8ff>Лунный страж
   material: DIAMOND_SWORD
   lore:
@@ -19,6 +23,8 @@ azerus_moonwarden:
     model: azerus:item/moonwarden
 
 azerus_tidekeeper:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <#5fd3d6>Страж прилива
   material: DIAMOND_SWORD
   lore:
@@ -27,6 +33,8 @@ azerus_tidekeeper:
     model: azerus:item/tidekeeper
 
 azerus_ashen_oath:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <#4fd17a>Изумрудная клятва
   material: DIAMOND_SWORD
   lore:
@@ -35,6 +43,8 @@ azerus_ashen_oath:
     model: azerus:item/ashen_oath
 
 azerus_ember_dawn:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <#ff9a3c>Угольный рассвет
   material: DIAMOND_SWORD
   lore:
@@ -43,6 +53,8 @@ azerus_ember_dawn:
     model: azerus:item/ember_dawn
 
 azerus_blood_raven:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <#d4334a>Кровавый ворон
   material: DIAMOND_SWORD
   lore:
@@ -51,6 +63,8 @@ azerus_blood_raven:
     model: azerus:item/blood_raven
 
 azerus_sunleaf:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <#ffe066>Солнечный лист
   material: DIAMOND_SWORD
   lore:
@@ -59,6 +73,8 @@ azerus_sunleaf:
     model: azerus:item/sunleaf
 
 azerus_night_watch:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <#8a7cff>Ночной дозор
   material: IRON_SWORD
   lore:
@@ -67,6 +83,8 @@ azerus_night_watch:
     model: azerus:item/night_watch
 
 azerus_frost_needle:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <#a8e6ff>Ледяной шип
   material: IRON_SWORD
   lore:
@@ -75,6 +93,8 @@ azerus_frost_needle:
     model: azerus:item/frost_needle
 
 azerus_thundermaul:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <#ffd84a>Громобой
   material: DIAMOND_SWORD
   lore:
@@ -99,102 +119,143 @@ azerus_crimson_scythe:
     model: azerus:item/crimson_scythe
   Components:
     item_model: azerus:crimson_scythe
+    tooltip_style: royaltooltips:warrior
 royal_knight_forest_hunter:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <white>Лесной охотник
   material: BOW
   Pack:
     model: royal_knight:item/forest_hunter
 royal_knight_elven_song:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <white>Песнь эльфов
   material: BOW
   Pack:
     model: royal_knight:item/elven_song
 royal_knight_forge_flame:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <white>Пламя кузни
   material: BOW
   Pack:
     model: royal_knight:item/forge_flame
 royal_knight_ice_oracle:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <white>Ледяной оракул
   material: BLAZE_ROD
   Pack:
     model: royal_knight:item/ice_oracle
 royal_knight_forest_keeper:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <white>Лесной хранитель
   material: BLAZE_ROD
   Pack:
     model: royal_knight:item/forest_keeper
 royal_knight_volcano_heart:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <white>Сердце вулкана
   material: BLAZE_ROD
   Pack:
     model: royal_knight:item/volcano_heart
 royal_knight_star_atlas:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <white>Атлас звёзд
   material: BOOK
   Pack:
     model: royal_knight:item/star_atlas
 royal_knight_ash_grimoire:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <white>Гримуар пепла
   material: BOOK
   Pack:
     model: royal_knight:item/ash_grimoire
 royal_knight_herbalist:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <white>Травник
   material: BOOK
   Pack:
     model: royal_knight:item/herbalist
 royal_knight_crimson_moon:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <white>Багровая луна
   material: NETHERITE_SWORD
   Pack:
     model: royal_knight:item/crimson_moon
 royal_knight_twilight_reaper:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <white>Жница сумерек
   material: NETHERITE_SWORD
   Pack:
     model: royal_knight:item/twilight_reaper
 royal_knight_icy_harvest:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <white>Ледяная жатва
   material: NETHERITE_SWORD
   Pack:
     model: royal_knight:item/icy_harvest
 royal_knight_raven_beak:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <white>Вороний клюв
   material: IRON_SWORD
   Pack:
     model: royal_knight:item/raven_beak
 royal_knight_legionnaire_fang:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <white>Клык легионера
   material: IRON_SWORD
   Pack:
     model: royal_knight:item/legionnaire_fang
 royal_knight_ashen_hunter:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <white>Пепельный охотник
   material: IRON_SWORD
   Pack:
     model: royal_knight:item/ashen_hunter
 royal_knight_sapphire_tanto:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <white>Сапфировое танто
   material: IRON_SWORD
   Pack:
     model: royal_knight:item/sapphire_tanto
 royal_knight_silver_stiletto:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <white>Серебряный стилет
   material: IRON_SWORD
   Pack:
     model: royal_knight:item/silver_stiletto
 royal_knight_beginner_bow:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <white>Beginner Bow
   material: BOW
   Pack:
     model: royal_knight:item/beginner_bow
 royal_knight_ram_horn_bow:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <white>Ram Horn Bow
   material: BOW
   Pack:
     model: royal_knight:item/ram_horn_bow
 royal_knight_stinging_bow:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: <white>Stinging Bow
   material: BOW
   Pack:
@@ -211,20 +272,20 @@ azerus_moon_staff:
   itemname: <gradient:#ffd36a:#ff4a5a:#7fd8ff>Посох Лунного Странника</gradient>
   material: DIAMOND_SWORD
   lore:
-    - "<gray>Посох странника, что ходит"
-    - "<gray>лунными дорогами между мирами."
-    - ""
-    - "<#7fd8ff>✦ <white>Луч</white><gray>: зажмите <white>ПКМ</white> на <white>3 с</white> — магический круг;"
-    - "<gray>   отпустите — <white>луч света</white> пронзит всех на пути:"
-    - "<gray>   <#ff6a6a>10 урона</#ff6a6a>, до <white>29 блоков</white>, перезарядка <white>3 с</white>."
-    - "<#7fd8ff>✦ <white>Барьер</white><gray>: зажмите <white>ПКМ</white> на <white>1 с</white> — стена"
-    - "<gray>   из шестигранников на <white>10 с</white>, гасит лучи магии;"
-    - "<gray>   перезарядка <white>15 с</white>."
-    - "<#ffa040>✦ <white>Огненный шар</white><gray>: зажмите <white>ПКМ</white> на <white>3 с</white> — в небе"
-    - "<gray>   над целью раскрывается огненный круг; отпустите —"
-    - "<gray>   <white>6 комет</white> обрушатся вокруг цели: <#ff6a6a>6 урона</#ff6a6a>"
-    - "<gray>   и поджог в радиусе <white>3 блоков</white>, перезарядка <white>12 с</white>."
-    - "<#7fd8ff>✦ <white>Shift + ЛКМ</white><gray> — сменить заклинание."
+  - "<gray>Посох странника, что ходит"
+  - "<gray>лунными дорогами между мирами."
+  - ""
+  - "<#7fd8ff>✦ <white>Луч</white><gray>: зажмите <white>ПКМ</white> на <white>3 с</white> — магический круг;"
+  - "<gray>   отпустите — <white>луч света</white> пронзит всех на пути:"
+  - "<gray>   <#ff6a6a>10 урона</#ff6a6a>, до <white>29 блоков</white>, перезарядка <white>3 с</white>."
+  - "<#7fd8ff>✦ <white>Барьер</white><gray>: зажмите <white>ПКМ</white> на <white>1 с</white> — стена"
+  - "<gray>   из шестигранников на <white>10 с</white>, гасит лучи магии;"
+  - "<gray>   перезарядка <white>15 с</white>."
+  - "<#ffa040>✦ <white>Огненный шар</white><gray>: зажмите <white>ПКМ</white> на <white>3 с</white> — в небе"
+  - "<gray>   над целью раскрывается огненный круг; отпустите —"
+  - "<gray>   <white>6 комет</white> обрушатся вокруг цели: <#ff6a6a>6 урона</#ff6a6a>"
+  - "<gray>   и поджог в радиусе <white>3 блоков</white>, перезарядка <white>12 с</white>."
+  - "<#7fd8ff>✦ <white>Shift + ЛКМ</white><gray> — сменить заклинание."
   Pack:
     model: azerus:item/moon_staff
   Components:
@@ -234,3 +295,4 @@ azerus_moon_staff:
       sound: minecraft:intentionally_empty
       consume_particles: false
       consume_duration: 3600.0s
+    tooltip_style: royaltooltips:warrior

@@ -66,31 +66,49 @@ settings:
   #   wax — оранжевый цвет; account_wax — оранжевый цвет и привязка предмета к игроку
   #   heart — вместе с камнем или кристаллом: цвет не ниже синего
   # Выдать: /seals give <ник> <расходник|all|stones|wax> [1..64]
+  # item-model / tooltip-style (1.1.1) — модель (Nexo sealforge:*) и рамка подсказки; применяются к новым и уже выданным
+  #   расходникам (при входе игрока / в меню), скрытые метки не меняются. Пусто — вид материала.
   consumables:
     stone_c:
       material: AMETHYST_SHARD
       name: "<light_purple>Изумрудный камень (C)</light_purple>"
+      item-model: "sealforge:emerald"
+      tooltip-style: "royaltooltips:material"
     stone_b:
       material: AMETHYST_SHARD
       name: "<light_purple>Сапфировый камень (B)</light_purple>"
+      item-model: "sealforge:sapphire"
+      tooltip-style: "royaltooltips:material"
     stone_a:
       material: AMETHYST_SHARD
       name: "<light_purple>Морионовый камень (A)</light_purple>"
+      item-model: "sealforge:morion"
+      tooltip-style: "royaltooltips:material"
     blood_crystal:
       material: AMETHYST_SHARD
       name: "<light_purple>Кристалл крови</light_purple>"
+      item-model: "sealforge:blood_crystal"
+      tooltip-style: "royaltooltips:material"
     wax:
       material: AMETHYST_SHARD
       name: "<light_purple>Сургуч Черепа Ахи</light_purple>"
+      item-model: "sealforge:akhi_skull_wax"
+      tooltip-style: "royaltooltips:material"
     account_wax:
       material: AMETHYST_SHARD
       name: "<light_purple>Особый сургуч</light_purple>"
+      item-model: "sealforge:akhi_special_wax"
+      tooltip-style: "royaltooltips:material"
     arkonite_wax:
       material: AMETHYST_SHARD
       name: "<light_purple>Арконитовый сургуч</light_purple>"
+      item-model: "sealforge:arconite_wax"
+      tooltip-style: "royaltooltips:material"
     heart:
       material: AMETHYST_SHARD
       name: "<light_purple>Сердце Аркона</light_purple>"
+      item-model: "sealforge:arkon_heart"
+      tooltip-style: "royaltooltips:material"
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Сообщения.
@@ -1654,3 +1672,319 @@ seals:
     bonuses:
       "status_poison": [ 3, 2, 3, 4 ]
       "attack_speed": [ ~, 0.08, 0.13, 0.18 ]
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Бижутерия (seal-magic 1.2.1): предметы в слотах rezusmenu (амулет, 2 кольца, тотем, артефакт) дают статы, на них
+# можно накладывать печати типа ACCESSORY. rezusmenu хранит слоты в PDC игрока rezusmenu:jewel_*, seal-magic их только
+# читает (раз в poll-ticks сверяет отпечаток — так ловится и смена слота в меню, и смена профиля). После правки: /seals reload.
+# Нет раздела или enabled: false — бижутерия ничего не даёт, печати на неё не ставятся (поведение 1.1.1).
+# ---------------------------------------------------------------------------------------------------------------------
+jewelry:
+  enabled: true
+  poll-ticks: 20
+  nexo-id-key: "nexo:id"
+  slots-pdc: [rezusmenu:jewel_amulet, rezusmenu:jewel_ring_1, rezusmenu:jewel_ring_2, rezusmenu:jewel_totem, rezusmenu:jewel_artifact]
+
+  # 1.2.1: MMOItems-предметы в слотах отдаются самому MMOItems как слоты ACCESSORY (мост).
+  # Кольца (AZERUS_RING_NNN, тип ACCESSORY), тотемы (AZERUS_ARTIFACT_001–006, тип TOTEM на базе ACCESSORY)
+  # и артефакты (AZERUS_ARTIFACT_007–011 и 015–017, тип ARTIFACT на базе ACCESSORY): статы считает MMOItems
+  # с проверкой required-class/level и снимает, когда предмет убрали из слота или сменили профиль.
+  # seal-magic базовых статов колец/тотемов/артефактов НЕ даёт (stats.* пусты) — двойного счёта нет.
+  # У MMOItems-предмета без nexo:id его id берётся из MMOITEMS_ITEM_ID в нижнем регистре (AZERUS_RING_051 → azerus_ring_051),
+  # поэтому detect/rarity/no-seals ниже работают и для него. bridge: false — мост выключен.
+  mmoitems:
+    bridge: true
+    # Какие типы MMOItems пускать в слот каждого вида (нет вида в списке — любой тип). Предмет всё равно должен
+    # распознаться как бижутерия этого вида (detect) и не быть none.
+    types:
+      ring: [ACCESSORY, RING]
+      amulet: [AMULET, NECKLACE]
+      totem: [TOTEM]
+      artifact: [ARTIFACT, RELIC, ORNAMENT, TALISMAN]
+
+  # Тип предмета: сначала точный Nexo-id (ids; none — не бижутерия), потом префикс id, потом custom_data jewel:"тип".
+  # Предмет считается только в «своём» слоте (кольцо — в слоте кольца и т. д.).
+  detect:
+    # Тотемы Azerus (items/azerus_totems.yml) сохранили id azerus_artifact_001–006 — поэтому точные id.
+    ids:
+      azerus_artifact_001: totem
+      azerus_artifact_002: totem
+      azerus_artifact_003: totem
+      azerus_artifact_004: totem
+      azerus_artifact_005: totem
+      azerus_artifact_006: totem
+      azerus_artifact_007: artifact
+      azerus_artifact_008: artifact
+      azerus_artifact_009: artifact
+      azerus_artifact_010: artifact
+      azerus_artifact_011: artifact
+      azerus_artifact_015: artifact
+      azerus_artifact_016: artifact
+      azerus_artifact_017: artifact
+      azerus_artifact_012: none     # удалены Алексом 18.11
+      azerus_artifact_013: none     # удалены Алексом 18.11
+      azerus_artifact_014: none     # удалены Алексом 18.11
+      # Кольца: оставлены 24 (049, 050, 051, 052, 054, 057, 058, 060, 062, 065, 067, 070, 072, 074, 075, 080, 081, 082, 083, 085, 091, 095, 098, 099), остальные 78 — не бижутерия.
+      azerus_ring_001: none
+      azerus_ring_002: none
+      azerus_ring_003: none
+      azerus_ring_004: none
+      azerus_ring_005: none
+      azerus_ring_006: none
+      azerus_ring_007: none
+      azerus_ring_008: none
+      azerus_ring_009: none
+      azerus_ring_010: none
+      azerus_ring_011: none
+      azerus_ring_012: none
+      azerus_ring_013: none
+      azerus_ring_014: none
+      azerus_ring_015: none
+      azerus_ring_016: none
+      azerus_ring_017: none
+      azerus_ring_018: none
+      azerus_ring_019: none
+      azerus_ring_020: none
+      azerus_ring_021: none
+      azerus_ring_022: none
+      azerus_ring_023: none
+      azerus_ring_024: none
+      azerus_ring_025: none
+      azerus_ring_026: none
+      azerus_ring_027: none
+      azerus_ring_028: none
+      azerus_ring_029: none
+      azerus_ring_030: none
+      azerus_ring_031: none
+      azerus_ring_032: none
+      azerus_ring_033: none
+      azerus_ring_034: none
+      azerus_ring_035: none
+      azerus_ring_036: none
+      azerus_ring_037: none
+      azerus_ring_038: none
+      azerus_ring_039: none
+      azerus_ring_040: none
+      azerus_ring_041: none
+      azerus_ring_042: none
+      azerus_ring_043: none
+      azerus_ring_044: none
+      azerus_ring_045: none
+      azerus_ring_046: none
+      azerus_ring_047: none
+      azerus_ring_048: none
+      azerus_ring_053: none
+      azerus_ring_055: none
+      azerus_ring_056: none
+      azerus_ring_059: none
+      azerus_ring_061: none
+      azerus_ring_063: none
+      azerus_ring_064: none
+      azerus_ring_066: none
+      azerus_ring_068: none
+      azerus_ring_069: none
+      azerus_ring_071: none
+      azerus_ring_073: none
+      azerus_ring_076: none
+      azerus_ring_077: none
+      azerus_ring_078: none
+      azerus_ring_079: none
+      azerus_ring_084: none
+      azerus_ring_086: none
+      azerus_ring_087: none
+      azerus_ring_088: none
+      azerus_ring_089: none
+      azerus_ring_090: none
+      azerus_ring_092: none
+      azerus_ring_093: none
+      azerus_ring_094: none
+      azerus_ring_096: none
+      azerus_ring_097: none
+      azerus_ring_100: none
+      azerus_ring_101: none
+      azerus_ring_102: none
+    prefixes:
+      amulet: [azerus_amulet_]
+      ring: [azerus_ring_]
+      artifact: [relic_]
+
+  # Редкость: точный id (ids) или диапазон номеров после префикса (ranges). Остальное — default.
+  rarity:
+    default: common
+    # Кольца: явный список 24 оставленных (Nexo azerus_ring_NNN и MMOItems AZERUS_RING_NNN), все — common = грейд C
+    # (уровни 1–20). Диапазонов по номеру больше нет.
+    ids:
+      azerus_ring_049: common
+      azerus_ring_050: common
+      azerus_ring_051: common
+      azerus_ring_052: common
+      azerus_ring_054: common
+      azerus_ring_057: common
+      azerus_ring_058: common
+      azerus_ring_060: common
+      azerus_ring_062: common
+      azerus_ring_065: common
+      azerus_ring_067: common
+      azerus_ring_070: common
+      azerus_ring_072: common
+      azerus_ring_074: common
+      azerus_ring_075: common
+      azerus_ring_080: common
+      azerus_ring_081: common
+      azerus_ring_082: common
+      azerus_ring_083: common
+      azerus_ring_085: common
+      azerus_ring_091: common
+      azerus_ring_095: common
+      azerus_ring_098: common
+      azerus_ring_099: common
+    #  azerus_amulet_025: epic
+    ranges: []
+
+  # Грейд для камня наложения печати (C — изумрудный, B — сапфировый, A — морионовый).
+  grade-by-rarity: {common: C, rare: B, epic: A, legendary: A}
+
+  # Классы с магическим уроном: damage -> MAGIC_DAMAGE; у остальных -> PHYSICAL_DAMAGE,
+  # а magic_damage у не-магов превращается в skill_damage (чтобы артефакт был одинаково полезен).
+  magic-classes: [mage, wizard, warlock]
+
+  # Классы, у которых ресурс называется «Мана»: CUSTOM_MANA_BONUS → MAX_MANA (плоско).
+  # У остальных ресурс «Энергия»: CUSTOM_ENERGY_BONUS → тот же MAX_MANA. Неподходящий бонус = 0.
+  # Список не заменяет magic-classes (тот — развилка урона). По умолчанию совпадает с кастерами.
+  mana-classes: [mage, wizard, warlock]
+
+  # Базовые статы по типу и редкости (за ОДИН предмет; колец два).
+  # Ключи печатей (действуют как печати): crit_chance, crit_damage (%), armor, max_health (2 = сердце),
+  #   resistance (доля), resistance:<цель>, accuracy, evasion, max_mana / mana_regen (% к мане/энергии), lifesteal…
+  # Ключи MythicLib (FLAT, ключ модификатора seal-magic:jewel): damage (физ./маг. по классу, %), magic_damage (%),
+  #   skill_damage (% урона навыков), cooldown_reduction (%), physical_damage (%), ml:<СТАТ> — любой стат MythicLib.
+  stats:
+    ring: {}     # кольца базовых статов НЕ дают (статы колец — MMOItems, Алекс); печати на кольца работают
+    amulet:      # выживание: HP, броня, сопротивления
+      common:    {max_health: 2, armor: 1, resistance: 0.02}
+      rare:      {max_health: 4, armor: 1.5, resistance: 0.03}
+      epic:      {max_health: 6, armor: 2, resistance: 0.04, "resistance:chaos": 0.03}
+      legendary: {max_health: 8, armor: 3, resistance: 0.05, "resistance:chaos": 0.05, "resistance:fire": 0.03}
+    artifact: {} # 1.2.1: статы артефактов 007–011, 015–017 — MMOItems, Алекс
+    totem: {}    # 1.2.1: статы тотемов 001–006 — MMOItems, Алекс
+
+  # Классовый бонус тотема (за common), умножается на class-bonus-multiplier по редкости.
+  # Профессия важнее базового класса. 1.2.1: выключен, чтобы не дублировать статы MMOItems.
+  class-bonus-enabled: false
+  class-bonus:
+    swordsman:   {max_health: 1}
+    crusader:    {max_health: 1, resistance: 0.01}
+    dark_knight: {lifesteal: 0.5}
+    archer:      {accuracy: 1}
+    hunter:      {accuracy: 1}
+    sniper:      {crit_damage: 2}
+    mage:        {mana_regen: 3}
+    wizard:      {mana_regen: 3}
+    warlock:     {max_mana: 3}
+    thief:       {evasion: 1}
+    rogue:       {evasion: 1}
+    assassin:    {crit_chance: 0.5}
+  class-bonus-multiplier: {common: 1, rare: 1.5, epic: 2, legendary: 2.5}
+
+  # Потолки СУММЫ базовых статов всей бижутерии (печати на бижутерии сюда не входят — у них свои потолки combat).
+  caps:
+    physical_damage: 10
+    magic_damage: 12        # 2 кольца + артефакт у мага
+    skill_damage: 12
+    cooldown_reduction: 5
+    crit_chance: 5
+    crit_damage: 16
+    resistance: 0.06
+
+  # Какие печати НЕ выпадают на бижутерию данного типа (по ключам бонусов; «damage_vs:*» — все такие).
+  # Чтобы бижутерия не стала ещё 4 источниками атаки: урон через печати — только на кольцах.
+  deny-seal-bonuses:
+    ring:     []
+    amulet:   [attack_damage, attack_speed, crit_chance, crit_damage, "damage_vs:*"]
+    totem:    [attack_damage, attack_speed, crit_chance, crit_damage, "damage_vs:*"]
+    artifact: [attack_damage, attack_speed]
+
+  # Полный запрет печатей по id. Пусто: по решению Haiato печати на тотемы и артефакты ставятся и работают.
+  no-seals: []
+
+  # Привязка предмета к классу (id как у RoyalQuestClasses / MMOCore).
+  # 1.2.2: действует на ВСЕ 5 слотов — без подходящего класса/уровня с предмета не идёт ничего
+  # (мост MMOItems, печати, мана/энергия, stats.*). Сначала этот список, иначе NBT MMOITEMS_REQUIRED_CLASS.
+  # Вещи «для всех» (001, 004, 005, 007, 011) сюда не входят. Кольца — из живого accessory.yml 18.11.
+  item-classes:
+    azerus_ring_051: [swordsman, crusader, dark_knight]
+    azerus_ring_074: [swordsman, crusader, dark_knight]
+    azerus_ring_052: [crusader]
+    azerus_ring_067: [crusader]
+    azerus_ring_058: [dark_knight]
+    azerus_ring_085: [dark_knight]
+    azerus_ring_054: [archer, hunter, sniper]
+    azerus_ring_070: [archer, hunter, sniper]
+    azerus_ring_075: [hunter]
+    azerus_ring_081: [hunter]
+    azerus_ring_065: [sniper]
+    azerus_ring_083: [sniper]
+    azerus_ring_049: [mage, wizard, warlock]
+    azerus_ring_062: [mage, wizard, warlock]
+    azerus_ring_057: [wizard]
+    azerus_ring_080: [wizard]
+    azerus_ring_072: [warlock]
+    azerus_ring_082: [warlock]
+    azerus_ring_060: [thief, rogue, assassin]
+    azerus_ring_095: [thief, rogue, assassin]
+    azerus_ring_050: [rogue]
+    azerus_ring_091: [rogue]
+    azerus_ring_098: [assassin]
+    azerus_ring_099: [assassin]
+    azerus_artifact_002: [mage, wizard, warlock]
+    azerus_artifact_003: [swordsman, crusader, dark_knight, archer, hunter, sniper, thief, rogue, assassin]
+    azerus_artifact_006: [thief, rogue, assassin]
+    azerus_artifact_008: [swordsman, crusader, dark_knight, thief, rogue, assassin]
+    azerus_artifact_009: [mage, wizard, warlock]
+    azerus_artifact_010: [archer, hunter, sniper]
+    azerus_artifact_015: [thief, rogue, assassin]
+    azerus_artifact_016: [mage, wizard, warlock]
+    azerus_artifact_017: [mage, wizard, warlock]
+
+  # Минимальный уровень предмета. Нужен, потому что в живых yml Алекса стоит ключ required-level,
+  # а MMOItems читает только level → NBT MMOITEMS_LEVEL (required-level игнорируется).
+  # Если ключа нет — читается MMOITEMS_LEVEL, иначе MMOITEMS_REQUIRED_LEVEL.
+  item-levels:
+    azerus_ring_051: 1
+    azerus_ring_074: 1
+    azerus_ring_052: 20
+    azerus_ring_067: 20
+    azerus_ring_058: 20
+    azerus_ring_085: 20
+    azerus_ring_054: 1
+    azerus_ring_070: 1
+    azerus_ring_075: 20
+    azerus_ring_081: 20
+    azerus_ring_065: 20
+    azerus_ring_083: 20
+    azerus_ring_049: 1
+    azerus_ring_062: 1
+    azerus_ring_057: 20
+    azerus_ring_080: 20
+    azerus_ring_072: 20
+    azerus_ring_082: 20
+    azerus_ring_060: 1
+    azerus_ring_095: 1
+    azerus_ring_050: 20
+    azerus_ring_091: 20
+    azerus_ring_098: 20
+    azerus_ring_099: 20
+    azerus_artifact_001: 1
+    azerus_artifact_002: 15
+    azerus_artifact_003: 5
+    azerus_artifact_004: 5
+    azerus_artifact_005: 10
+    azerus_artifact_006: 10
+    azerus_artifact_007: 1
+    azerus_artifact_008: 5
+    azerus_artifact_009: 5
+    azerus_artifact_010: 10
+    azerus_artifact_011: 20
+    azerus_artifact_015: 10
+    azerus_artifact_016: 15
+    azerus_artifact_017: 15

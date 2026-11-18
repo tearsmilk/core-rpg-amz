@@ -10,8 +10,8 @@ azerus_reforged_leather_helmet:
   itemname: "<#c58a52>Перекованный кожаный шлем"
   material: LEATHER_HELMET
   lore:
-    - "<gray>Дублёная кожа на клёпках."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Дублёная кожа на клёпках."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     model: azerus:item/reforged/leather_helmet
   Components:
@@ -19,12 +19,13 @@ azerus_reforged_leather_helmet:
     equippable:
       slot: HEAD
       equip_sound: item.armor.equip_leather
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_leather_chestplate:
   itemname: "<#c58a52>Перекованный кожаный нагрудник"
   material: LEATHER_CHESTPLATE
   lore:
-    - "<gray>Дублёная кожа на клёпках."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Дублёная кожа на клёпках."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     texture: azerus:item/reforged/leather_chestplate
   Components:
@@ -33,12 +34,13 @@ azerus_reforged_leather_chestplate:
       slot: CHEST
       asset_id: azerus:reforged_leather
       equip_sound: item.armor.equip_leather
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_leather_leggings:
   itemname: "<#c58a52>Перекованные кожаные поножи"
   material: LEATHER_LEGGINGS
   lore:
-    - "<gray>Дублёная кожа на клёпках."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Дублёная кожа на клёпках."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     texture: azerus:item/reforged/leather_leggings
   Components:
@@ -47,12 +49,13 @@ azerus_reforged_leather_leggings:
       slot: LEGS
       asset_id: azerus:reforged_leather
       equip_sound: item.armor.equip_leather
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_leather_boots:
   itemname: "<#c58a52>Перекованные кожаные ботинки"
   material: LEATHER_BOOTS
   lore:
-    - "<gray>Дублёная кожа на клёпках."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Дублёная кожа на клёпках."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     texture: azerus:item/reforged/leather_boots
   Components:
@@ -63,12 +66,13 @@ azerus_reforged_leather_boots:
       equip_sound: item.armor.equip_leather
 
 # ---- chainmail ----
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_chainmail_helmet:
   itemname: "<#b8c0c8>Перекованный кольчужный шлем"
   material: CHAINMAIL_HELMET
   lore:
-    - "<gray>Кольца, сплетённые вчетверо."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Кольца, сплетённые вчетверо."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     model: azerus:item/reforged/chainmail_helmet
   Components:
@@ -76,12 +80,13 @@ azerus_reforged_chainmail_helmet:
     equippable:
       slot: HEAD
       equip_sound: item.armor.equip_chain
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_chainmail_chestplate:
   itemname: "<#b8c0c8>Перекованный кольчужный нагрудник"
   material: CHAINMAIL_CHESTPLATE
   lore:
-    - "<gray>Кольца, сплетённые вчетверо."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Кольца, сплетённые вчетверо."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     texture: azerus:item/reforged/chainmail_chestplate
   Components:
@@ -90,12 +95,13 @@ azerus_reforged_chainmail_chestplate:
       slot: CHEST
       asset_id: azerus:reforged_chainmail
       equip_sound: item.armor.equip_chain
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_chainmail_leggings:
   itemname: "<#b8c0c8>Перекованные кольчужные поножи"
   material: CHAINMAIL_LEGGINGS
   lore:
-    - "<gray>Кольца, сплетённые вчетверо."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Кольца, сплетённые вчетверо."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     texture: azerus:item/reforged/chainmail_leggings
   Components:
@@ -104,12 +110,13 @@ azerus_reforged_chainmail_leggings:
       slot: LEGS
       asset_id: azerus:reforged_chainmail
       equip_sound: item.armor.equip_chain
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_chainmail_boots:
   itemname: "<#b8c0c8>Перекованные кольчужные ботинки"
   material: CHAINMAIL_BOOTS
   lore:
-    - "<gray>Кольца, сплетённые вчетверо."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Кольца, сплетённые вчетверо."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     texture: azerus:item/reforged/chainmail_boots
   Components:
@@ -120,12 +127,13 @@ azerus_reforged_chainmail_boots:
       equip_sound: item.armor.equip_chain
 
 # ---- copper ----
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_copper_helmet:
   itemname: "<#e0875a>Перекованный медный шлем"
   material: COPPER_HELMET
   lore:
-    - "<gray>Медь, что не боится патины."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Медь, что не боится патины."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     model: azerus:item/reforged/copper_helmet
   Components:
@@ -133,12 +141,13 @@ azerus_reforged_copper_helmet:
     equippable:
       slot: HEAD
       equip_sound: item.armor.equip_copper
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_copper_chestplate:
   itemname: "<#e0875a>Перекованный медный нагрудник"
   material: COPPER_CHESTPLATE
   lore:
-    - "<gray>Медь, что не боится патины."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Медь, что не боится патины."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     texture: azerus:item/reforged/copper_chestplate
   Components:
@@ -147,12 +156,13 @@ azerus_reforged_copper_chestplate:
       slot: CHEST
       asset_id: azerus:reforged_copper
       equip_sound: item.armor.equip_copper
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_copper_leggings:
   itemname: "<#e0875a>Перекованные медные поножи"
   material: COPPER_LEGGINGS
   lore:
-    - "<gray>Медь, что не боится патины."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Медь, что не боится патины."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     texture: azerus:item/reforged/copper_leggings
   Components:
@@ -161,12 +171,13 @@ azerus_reforged_copper_leggings:
       slot: LEGS
       asset_id: azerus:reforged_copper
       equip_sound: item.armor.equip_copper
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_copper_boots:
   itemname: "<#e0875a>Перекованные медные ботинки"
   material: COPPER_BOOTS
   lore:
-    - "<gray>Медь, что не боится патины."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Медь, что не боится патины."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     texture: azerus:item/reforged/copper_boots
   Components:
@@ -177,12 +188,13 @@ azerus_reforged_copper_boots:
       equip_sound: item.armor.equip_copper
 
 # ---- iron ----
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_iron_helmet:
   itemname: "<#d8d8d8>Перекованный железный шлем"
   material: IRON_HELMET
   lore:
-    - "<gray>Перекован в латы с наплечниками."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Перекован в латы с наплечниками."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     model: azerus:item/reforged/iron_helmet
   Components:
@@ -190,12 +202,13 @@ azerus_reforged_iron_helmet:
     equippable:
       slot: HEAD
       equip_sound: item.armor.equip_iron
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_iron_chestplate:
   itemname: "<#d8d8d8>Перекованный железный нагрудник"
   material: IRON_CHESTPLATE
   lore:
-    - "<gray>Перекован в латы с наплечниками."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Перекован в латы с наплечниками."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     texture: azerus:item/reforged/iron_chestplate
   Components:
@@ -204,12 +217,13 @@ azerus_reforged_iron_chestplate:
       slot: CHEST
       asset_id: azerus:reforged_iron
       equip_sound: item.armor.equip_iron
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_iron_leggings:
   itemname: "<#d8d8d8>Перекованные железные поножи"
   material: IRON_LEGGINGS
   lore:
-    - "<gray>Перекован в латы с наплечниками."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Перекован в латы с наплечниками."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     texture: azerus:item/reforged/iron_leggings
   Components:
@@ -218,12 +232,13 @@ azerus_reforged_iron_leggings:
       slot: LEGS
       asset_id: azerus:reforged_iron
       equip_sound: item.armor.equip_iron
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_iron_boots:
   itemname: "<#d8d8d8>Перекованные железные ботинки"
   material: IRON_BOOTS
   lore:
-    - "<gray>Перекован в латы с наплечниками."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Перекован в латы с наплечниками."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     texture: azerus:item/reforged/iron_boots
   Components:
@@ -234,12 +249,13 @@ azerus_reforged_iron_boots:
       equip_sound: item.armor.equip_iron
 
 # ---- golden ----
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_golden_helmet:
   itemname: "<#f3d34a>Перекованный золотой шлем"
   material: GOLDEN_HELMET
   lore:
-    - "<gray>Парадный доспех с гравировкой."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Парадный доспех с гравировкой."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     model: azerus:item/reforged/golden_helmet
   Components:
@@ -247,12 +263,13 @@ azerus_reforged_golden_helmet:
     equippable:
       slot: HEAD
       equip_sound: item.armor.equip_gold
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_golden_chestplate:
   itemname: "<#f3d34a>Перекованный золотой нагрудник"
   material: GOLDEN_CHESTPLATE
   lore:
-    - "<gray>Парадный доспех с гравировкой."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Парадный доспех с гравировкой."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     texture: azerus:item/reforged/golden_chestplate
   Components:
@@ -261,12 +278,13 @@ azerus_reforged_golden_chestplate:
       slot: CHEST
       asset_id: azerus:reforged_golden
       equip_sound: item.armor.equip_gold
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_golden_leggings:
   itemname: "<#f3d34a>Перекованные золотые поножи"
   material: GOLDEN_LEGGINGS
   lore:
-    - "<gray>Парадный доспех с гравировкой."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Парадный доспех с гравировкой."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     texture: azerus:item/reforged/golden_leggings
   Components:
@@ -275,12 +293,13 @@ azerus_reforged_golden_leggings:
       slot: LEGS
       asset_id: azerus:reforged_golden
       equip_sound: item.armor.equip_gold
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_golden_boots:
   itemname: "<#f3d34a>Перекованные золотые ботинки"
   material: GOLDEN_BOOTS
   lore:
-    - "<gray>Парадный доспех с гравировкой."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Парадный доспех с гравировкой."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     texture: azerus:item/reforged/golden_boots
   Components:
@@ -291,12 +310,13 @@ azerus_reforged_golden_boots:
       equip_sound: item.armor.equip_gold
 
 # ---- diamond ----
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_diamond_helmet:
   itemname: "<#5fe0e0>Перекованный алмазный шлем"
   material: DIAMOND_HELMET
   lore:
-    - "<gray>Грани алмаза в оправе из стали."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Грани алмаза в оправе из стали."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     model: azerus:item/reforged/diamond_helmet
   Components:
@@ -304,12 +324,13 @@ azerus_reforged_diamond_helmet:
     equippable:
       slot: HEAD
       equip_sound: item.armor.equip_diamond
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_diamond_chestplate:
   itemname: "<#5fe0e0>Перекованный алмазный нагрудник"
   material: DIAMOND_CHESTPLATE
   lore:
-    - "<gray>Грани алмаза в оправе из стали."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Грани алмаза в оправе из стали."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     texture: azerus:item/reforged/diamond_chestplate
   Components:
@@ -318,12 +339,13 @@ azerus_reforged_diamond_chestplate:
       slot: CHEST
       asset_id: azerus:reforged_diamond
       equip_sound: item.armor.equip_diamond
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_diamond_leggings:
   itemname: "<#5fe0e0>Перекованные алмазные поножи"
   material: DIAMOND_LEGGINGS
   lore:
-    - "<gray>Грани алмаза в оправе из стали."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Грани алмаза в оправе из стали."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     texture: azerus:item/reforged/diamond_leggings
   Components:
@@ -332,12 +354,13 @@ azerus_reforged_diamond_leggings:
       slot: LEGS
       asset_id: azerus:reforged_diamond
       equip_sound: item.armor.equip_diamond
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_diamond_boots:
   itemname: "<#5fe0e0>Перекованные алмазные ботинки"
   material: DIAMOND_BOOTS
   lore:
-    - "<gray>Грани алмаза в оправе из стали."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Грани алмаза в оправе из стали."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     texture: azerus:item/reforged/diamond_boots
   Components:
@@ -348,12 +371,13 @@ azerus_reforged_diamond_boots:
       equip_sound: item.armor.equip_diamond
 
 # ---- netherite ----
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_netherite_helmet:
   itemname: "<#9b6b6b>Перекованный незеритовый шлем"
   material: NETHERITE_HELMET
   lore:
-    - "<gray>Тяжёлые латы из глубин Незера."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Тяжёлые латы из глубин Незера."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     model: azerus:item/reforged/netherite_helmet
   Components:
@@ -361,12 +385,13 @@ azerus_reforged_netherite_helmet:
     equippable:
       slot: HEAD
       equip_sound: item.armor.equip_netherite
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_netherite_chestplate:
   itemname: "<#9b6b6b>Перекованный незеритовый нагрудник"
   material: NETHERITE_CHESTPLATE
   lore:
-    - "<gray>Тяжёлые латы из глубин Незера."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Тяжёлые латы из глубин Незера."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     texture: azerus:item/reforged/netherite_chestplate
   Components:
@@ -375,12 +400,13 @@ azerus_reforged_netherite_chestplate:
       slot: CHEST
       asset_id: azerus:reforged_netherite
       equip_sound: item.armor.equip_netherite
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_netherite_leggings:
   itemname: "<#9b6b6b>Перекованные незеритовые поножи"
   material: NETHERITE_LEGGINGS
   lore:
-    - "<gray>Тяжёлые латы из глубин Незера."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Тяжёлые латы из глубин Незера."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     texture: azerus:item/reforged/netherite_leggings
   Components:
@@ -389,12 +415,13 @@ azerus_reforged_netherite_leggings:
       slot: LEGS
       asset_id: azerus:reforged_netherite
       equip_sound: item.armor.equip_netherite
+    tooltip_style: royaltooltips:guardian
 azerus_reforged_netherite_boots:
   itemname: "<#9b6b6b>Перекованные незеритовые ботинки"
   material: NETHERITE_BOOTS
   lore:
-    - "<gray>Тяжёлые латы из глубин Незера."
-    - "<dark_gray>Перекованный комплект"
+  - "<gray>Тяжёлые латы из глубин Незера."
+  - "<dark_gray>Перекованный комплект"
   Pack:
     texture: azerus:item/reforged/netherite_boots
   Components:
@@ -403,3 +430,4 @@ azerus_reforged_netherite_boots:
       slot: FEET
       asset_id: azerus:reforged_netherite
       equip_sound: item.armor.equip_netherite
+    tooltip_style: royaltooltips:guardian

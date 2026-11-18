@@ -3,6 +3,8 @@
 # #### Check out the Workshop Six MCModels store: https://mcmodels.net/vendors/18/workshop-six
 
 arm_chair:
+  Components:
+    tooltip_style: royaltooltips:material
   itemname: Arm Chair
   material: PAPER
   Pack:
@@ -24,6 +26,8 @@ arm_chair:
       seats:
       - 0,0,0
 coffee_table:
+  Components:
+    tooltip_style: royaltooltips:material
   itemname: Coffee Table
   material: PAPER
   Pack:
@@ -45,6 +49,8 @@ coffee_table:
         - 0,0,0
         - 1,0,0
 end_table:
+  Components:
+    tooltip_style: royaltooltips:material
   itemname: End Table
   material: PAPER
   Pack:
@@ -64,6 +70,8 @@ end_table:
         barriers:
         - 0,0,0
 sofa:
+  Components:
+    tooltip_style: royaltooltips:material
   itemname: Sofa
   material: PAPER
   Pack:
@@ -89,6 +97,8 @@ sofa:
         - 1,0,0
         - -1,0,0
 storage_chest:
+  Components:
+    tooltip_style: royaltooltips:material
   itemname: Storage Chest
   material: PAPER
   Pack:
@@ -120,6 +130,8 @@ storage_chest:
         open_sound: entity.chest.open
         close_sound: entity.chest.close
 table_lamp:
+  Components:
+    tooltip_style: royaltooltips:material
   itemname: Table Lamp
   material: PAPER
   Pack:
@@ -144,6 +156,8 @@ table_lamp:
         lights:
         - 0,1,0 15
 double_bed:
+  Components:
+    tooltip_style: royaltooltips:material
   itemname: Double Bed
   material: PAPER
   Pack:
@@ -167,6 +181,8 @@ double_bed:
       - 0,0,1 true true
       - 1,0,1 true true
 large_wooden_door:
+  Components:
+    tooltip_style: royaltooltips:material
   itemname: Large Wooden Door
   Pack:
     model: nexo:item/nexo_furniture/large_wooden_door
@@ -190,6 +206,8 @@ large_wooden_door:
         open_properties:
           translation: -0.85,1,0
 large_wooden_sliding_door:
+  Components:
+    tooltip_style: royaltooltips:material
   itemname: Large Wooden Sliding Door
   Pack:
     model: nexo:item/nexo_furniture/large_wooden_door
