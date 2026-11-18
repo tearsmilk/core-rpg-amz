@@ -115,6 +115,21 @@ public final class ProfileService implements Listener {
         return a;
     }
 
+    /**
+     * «№2 из 3» — активный профиль и сколько их (для вкладки «Мой персонаж»). Только из памяти: файл не читается и
+     * профиль №1 не создаётся; null — профили выключены или аккаунт ещё не загружен.
+     */
+    public String activeLabel(final Player p) {
+        if (!this.cfg.get().enabled()) {
+            return null;
+        }
+        final Account a = this.store.cached(p.getUniqueId());
+        if (a == null || a.isEmpty()) {
+            return null;
+        }
+        return "№" + a.active() + " из " + a.profiles().size();
+    }
+
     /** Карточки: профили по порядку; у активного — живые значения. */
     public List<Card> cards(final Player p) {
         final Account a = this.ensure(p);
@@ -285,6 +300,7 @@ public final class ProfileService implements Listener {
         this.context.logger().info("profiles: " + p.getName() + " — профиль №" + from + " → №" + target
             + (data == null ? " (новый)" : ""));
         p.sendMessage(Text.mm(Text.prefix() + "<green>Профиль загружен.</green>"));
+        core.amazake.systems.rezusmenu.rpg.JewelGuard.scheduleEnforce(p, 2L);
     }
 
     /** Надеть обратно профиль {@code from} (его снимок только что сохранён). */
@@ -303,6 +319,7 @@ public final class ProfileService implements Listener {
         this.marker(p, from, a.generation());
         p.saveData();
         this.store.save(a, null);
+        core.amazake.systems.rezusmenu.rpg.JewelGuard.scheduleEnforce(p, 2L);
     }
 
     private void extras(final Player p, final ConfigurationSection data) {

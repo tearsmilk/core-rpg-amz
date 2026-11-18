@@ -31,8 +31,6 @@ public final class PlayerStore {
     private final Map<UUID, Screen.Saved> pending = new ConcurrentHashMap<>();
     /** Кому спрятали HUD другого плагина и ещё не вернули (выход посреди меню, падение сервера). */
     private final java.util.Set<UUID> hudHidden = ConcurrentHashMap.newKeySet();
-    /** Купленные ряды хранилища (донат): работают и для игрока не в сети. */
-    private final Map<UUID, Integer> stashRows = new ConcurrentHashMap<>();
     private final AtomicBoolean dirty = new AtomicBoolean();
     private final Object ioLock = new Object();
 
@@ -55,15 +53,6 @@ public final class PlayerStore {
                         final double h = cal.getDouble(id + ".half-h", -1);
                         if (w > 0.2 && h > 0.2) {
                             this.calibrations.put(UUID.fromString(id), new Screen.Calibration(w, h));
-                        }
-                    }
-                }
-                final ConfigurationSection rows = y.getConfigurationSection("stash-rows");
-                if (rows != null) {
-                    for (final String id : rows.getKeys(false)) {
-                        final int n = rows.getInt(id, 0);
-                        if (n > 0) {
-                            this.stashRows.put(UUID.fromString(id), n);
                         }
                     }
                 }
@@ -133,23 +122,6 @@ public final class PlayerStore {
         }
     }
 
-    /** Сколько рядов хранилища куплено. */
-    public int stashExtraRows(final UUID player) {
-        return this.stashRows.getOrDefault(player, 0);
-    }
-
-    /** Задать купленные ряды (0..max). Возвращает новое значение. */
-    public int setStashExtraRows(final UUID player, final int rows, final int max) {
-        final int v = Math.max(0, Math.min(max, rows));
-        if (v == 0) {
-            this.stashRows.remove(player);
-        } else {
-            this.stashRows.put(player, v);
-        }
-        this.changed();
-        return v;
-    }
-
     public boolean isHudHidden(final UUID player) {
         return this.hudHidden.contains(player);
     }
@@ -167,7 +139,6 @@ public final class PlayerStore {
             final YamlConfiguration y = new YamlConfiguration();
             y.options().setHeader(java.util.List.of("rezusmenu: калибровка экрана игроков и незакрытые меню. Пишет система."));
             y.set("hud-hidden", this.hudHidden.stream().map(UUID::toString).sorted().toList());
-            this.stashRows.forEach((id, n) -> y.set("stash-rows." + id, n));
             this.calibrations.forEach((id, c) -> {
                 y.set("calibration." + id + ".half-w", c.halfW());
                 y.set("calibration." + id + ".half-h", c.halfH());

@@ -23,7 +23,8 @@ public record Settings(
     Placeholders ph,
     Resources resources,
     List<Stat> stats,
-    List<Stat> equipmentLines,
+    List<InfoLine> characterStats,
+    String balancePlaceholder,
     Map<String, ClassInfo> classes,
     Map<String, String> professions,
     Material noClassIcon,
@@ -35,9 +36,11 @@ public record Settings(
     double glyphOffsetY,
     boolean swapHandsOpens,
     boolean swapHandsSneak,
-    int stashBaseRows,
-    int stashMaxExtraRows
+    int stashRows
 ) {
+
+    /** Предел нумерации хранилища (Stash): больше рядов не бывает. */
+    public static final int STASH_MAX_ROWS = 36;
 
     /** Кнопка в диалоге /menuses. */
     public record MenuEntry(String id, String label, String tooltip) {
@@ -48,6 +51,14 @@ public record Settings(
      * плейсхолдер названия не подставился.
      */
     public record Stat(String name, String value, String fallbackName) {
+    }
+
+    /**
+     * Строка вкладки «Мой персонаж» (правая колонка): название, значение — плейсхолдер, готовый текст или встроенное
+     * значение ({@code $armor}, {@code $attack_damage}, {@code $attack_speed}, {@code $move_speed},
+     * {@code $max_health}, {@code $luck}); {@code suffix} — после числа (например «%»). Не подставилось — строка скрыта.
+     */
+    public record InfoLine(String name, String value, String fallbackName, String suffix) {
     }
 
     /** Откуда брать класс, уровень, опыт и очки (PlaceholderAPI; по умолчанию — RoyalQuestClasses и MMOCore). */
@@ -100,10 +111,19 @@ public record Settings(
         new Stat("Выносливость", "%hl_stats_stamina%", "Выносливость"),
         new Stat("Удача", "%hl_stats_luck%", "Удача"));
 
-    public static final List<Stat> DEFAULT_EQUIPMENT = List.of(
-        new Stat("Уровень", "%hl_level%", "Уровень"),
-        new Stat("Свободные очки параметров", "%hl_stats_available%", ""),
-        new Stat("Очки навыков", "%mmocore_skill_points%", ""));
+    public static final List<InfoLine> DEFAULT_CHARACTER = List.of(
+        new InfoLine("%hl_stats_primary_name%", "%hl_stats_primary%", "Сила", ""),
+        new InfoLine("Ловкость", "%hl_stats_agility%", "Ловкость", ""),
+        new InfoLine("Выносливость", "%hl_stats_stamina%", "Выносливость", ""),
+        new InfoLine("Удача", "%hl_stats_luck%", "Удача", ""),
+        new InfoLine("Урон", "$attack_damage", "Урон", ""),
+        new InfoLine("Скорость атаки", "$attack_speed", "Скорость атаки", ""),
+        new InfoLine("Броня", "$armor", "Броня", ""),
+        new InfoLine("Защита", "%mmocore_stat_defense%", "Защита", ""),
+        new InfoLine("Крит. шанс", "%mmocore_stat_critical_strike_chance%", "Крит. шанс", "%"),
+        new InfoLine("Крит. урон", "%mmocore_stat_critical_strike_power%", "Крит. урон", "%"),
+        new InfoLine("Реген. маны", "%mmocore_stat_mana_regeneration%", "Реген. маны", "/с"),
+        new InfoLine("Скорость", "$move_speed", "Скорость", "%"));
 
     public static final Placeholders DEFAULT_PH = new Placeholders("%hl_level%", "%hl_exp%", "%hl_exp_needed%",
         "%hl_class%", "%hl_class_key%", "%hl_profession%", "%hl_profession_key%", "%hl_needs_profession%",
@@ -137,8 +157,9 @@ public record Settings(
         "<gray>Выберите, что открыть.</gray>",
         List.of(new MenuEntry("rpg", "<gold>RPG-инвентарь</gold>", "<gray>Персонаж, снаряжение и инвентарь</gray>")),
         0.045, true, 10, false,
-        DEFAULT_PH, DEFAULT_RESOURCES, DEFAULT_STATS, DEFAULT_EQUIPMENT, DEFAULT_CLASSES, DEFAULT_PROFESSIONS,
-        Material.BOOK, DEFAULT_JEWELRY, List.of(), List.of(), true, 0.0, 0.0, true, false, 3, 6);
+        DEFAULT_PH, DEFAULT_RESOURCES, DEFAULT_STATS, DEFAULT_CHARACTER,
+        "%vault_eco_balance_formatted%", DEFAULT_CLASSES, DEFAULT_PROFESSIONS,
+        Material.BOOK, DEFAULT_JEWELRY, List.of(), List.of(), true, 0.0, 0.0, true, false, 6);
 
     private static Map<String, ClassInfo> ordered(final ClassInfo... infos) {
         final Map<String, ClassInfo> m = new LinkedHashMap<>();
@@ -214,7 +235,8 @@ public record Settings(
             ph,
             resources(c.getConfigurationSection("rpg.resource"), d.resources()),
             stats(c, "rpg.stats", d.stats()),
-            stats(c, "rpg.equipment-lines", d.equipmentLines()),
+            infoLines(c, "rpg.character.stats", d.characterStats()),
+            c.getString("rpg.character.balance", d.balancePlaceholder()),
             classes(c.getConfigurationSection("rpg.classes"), d.classes(), warn),
             strings(c.getConfigurationSection("rpg.professions"), d.professions()),
             noClass,
@@ -226,8 +248,44 @@ public record Settings(
             offY,
             c.getBoolean("open-key.swap-hands", d.swapHandsOpens()),
             c.getBoolean("open-key.sneak", d.swapHandsSneak()),
-            Math.max(1, Math.min(6, c.getInt("stash.base-rows", d.stashBaseRows()))),
-            Math.max(0, Math.min(30, c.getInt("stash.max-extra-rows", d.stashMaxExtraRows()))));
+            stashRows(c, d.stashRows(), warn));
+    }
+
+    /**
+     * {@code stash.rows} — рядов хранилища у всех (1..36). Покупки рядов больше нет: старые ключи base-rows /
+     * max-extra-rows не читаются (ряды, где что-то лежит, хранилище показывает всегда — см. Stash).
+     */
+    private static int stashRows(final ConfigurationSection c, final int fallback, final Consumer<String> warn) {
+        if (c.contains("stash.max-extra-rows") || (c.contains("stash.base-rows") && !c.contains("stash.rows"))) {
+            warn.accept("stash.base-rows / stash.max-extra-rows больше не используются (покупки рядов нет): "
+                + "размер хранилища — stash.rows (по умолчанию " + fallback + ")");
+        }
+        final int rows = c.getInt("stash.rows", fallback);
+        if (rows < 1 || rows > STASH_MAX_ROWS) {
+            warn.accept("stash.rows: " + rows + " вне 1.." + STASH_MAX_ROWS + ", беру " + fallback);
+            return fallback;
+        }
+        return rows;
+    }
+
+    private static List<InfoLine> infoLines(final ConfigurationSection c, final String path,
+                                            final List<InfoLine> fallback) {
+        if (!c.isList(path)) {
+            return fallback;
+        }
+        final List<InfoLine> out = new ArrayList<>();
+        for (final Map<?, ?> row : c.getMapList(path)) {
+            final Object name = row.get("name");
+            final Object value = row.get("value");
+            final Object def = row.get("default");
+            final Object suffix = row.get("suffix");
+            if (name != null && value != null) {
+                final String n = name.toString();
+                out.add(new InfoLine(n, value.toString(), def != null ? def.toString() : n.contains("%") ? "" : n,
+                    suffix == null ? "" : suffix.toString()));
+            }
+        }
+        return List.copyOf(out);
     }
 
     private static Resources resources(final ConfigurationSection r, final Resources fallback) {

@@ -1,6 +1,7 @@
 package core.amazake.systems.rezusmenu.rpg;
 
 import core.amazake.systems.rezusmenu.Settings;
+import core.amazake.systems.rezusmenu.profiles.FontWidth;
 import core.amazake.systems.rezusmenu.screen.PanelMath;
 import core.amazake.systems.rezusmenu.screen.Screen;
 import core.amazake.systems.rezusmenu.screen.SkinFront;
@@ -15,6 +16,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -35,10 +37,19 @@ import org.bukkit.profile.PlayerTextures;
 
 /**
  * RPG-меню игрока по контракту арта v2: холст 704 × 400 (фон {@code back_r_c}, слева крыло «Класс», справа —
- * «Очки», сверху лента, снизу подсказка), в нём панель 512 × 288 в (96, 56). На панели вкладки Инвентарь /
- * Снаряжение / Навыки / Задания, слева персонаж (скин во весь рост), броня, бижутерия, полоски и параметры, справа —
- * содержимое вкладки. Инвентарь управляется: клик — выбрать предмет, клик по другой клетке — переложить (сложить,
- * поменять местами, надеть, положить в бижутерию). Предметы никогда не покидают инвентарь и слоты бижутерии.
+ * «Очки», сверху лента, снизу подсказка), в нём панель 512 × 288 в (96, 56). На панели вкладки «Мой персонаж» /
+ * «Снаряжение» / «Навыки» / «Задания»; слева персонаж (скин во весь рост), полоски и параметры.
+ *
+ * <ul>
+ *   <li>«Мой персонаж» — только сведения о персонаже: слева скин в арке (слоты снаряжения закрыты накладкой
+ *   {@code char_left}), справа две колонки ({@code char_bg_0/1}): персонаж (класс, уровень, опыт, здоровье, ресурс,
+ *   очки, профиль, баланс, время в игре) и характеристики (rpg.character.stats).</li>
+ *   <li>«Снаряжение» — инвентарь: слева броня, бижутерия и вторая рука, справа сумка (3 ряда кармана, под ними ряды
+ *   хранилища, прокрутка ▲/▼) и панель быстрого доступа. В хранилище стакается до 99 (только то, что стакается;
+ *   см. {@link StackMath}).</li>
+ * </ul>
+ * Клик — выбрать предмет, клик по другой клетке — переложить (сложить, поменять местами, надеть, положить в
+ * бижутерию). Предметы никогда не покидают инвентарь, хранилище и слоты бижутерии.
  *
  * <p>Координаты в коде — пиксели панели (как в арте), на холст их переводит {@link #X}/{@link #Y}. Всё — в потоке
  * игрока.</p>
@@ -48,6 +59,8 @@ public final class RpgScreen {
     private static final String STATIC = "static";
     private static final String CONTENT = "content";
     private static final String PORTRAIT = "portrait";
+    /** Броня, бижутерия, вторая рука: на всех вкладках, кроме «Мой персонаж». */
+    private static final String EQUIP = "equip";
 
     // Слои (больше — ближе к глазам).
     private static final int L_BACK = 0;
@@ -89,6 +102,22 @@ public final class RpgScreen {
     private static final int RIGHT_X = 216;
     private static final int RIGHT_W = 280;
 
+    // «Мой персонаж»: накладки и две колонки строк (пиксели панели).
+    private static final int CHAR_LEFT_X = 14;
+    private static final int CHAR_LEFT_Y = 66;
+    private static final int CHAR_BG_Y = 52;
+    private static final int[] CHAR_NAME_X = {222, 364};
+    private static final int[] CHAR_VALUE_R = {348, 490};
+    private static final int CHAR_ROW_Y = 94;
+    private static final int CHAR_ROW_DY = 12;
+    private static final int CHAR_ROWS = 12;
+    private static final int CHAR_COL_W = 126;
+
+    // Сумка «Снаряжения»: строка прокрутки на планке под панелью быстрого доступа.
+    private static final int SCROLL_Y = 204;
+    private static final int SCROLL_UP_X = 222;
+    private static final int SCROLL_DOWN_X = 476;
+
     // Навыки: карточки 64 × 76.
     private static final int SKILL_X = 220;
     private static final int SKILL_Y = 74;
@@ -109,7 +138,7 @@ public final class RpgScreen {
         37, EquipmentSlot.LEGS, 36, EquipmentSlot.FEET);
     private static final int OFFHAND = 40;
 
-    enum Tab { INVENTORY, EQUIPMENT, SKILLS, QUESTS }
+    enum Tab { CHARACTER, EQUIPMENT, SKILLS, QUESTS }
 
     /** Клетка на экране (инвентарь или бижутерия): левый верхний угол колодца (x, y) в пикселях панели. */
     private record Slot(int index, int x, int y, Screen.Button button, ItemDisplay icon, TextDisplay count) {
@@ -124,10 +153,15 @@ public final class RpgScreen {
     private final Runnable calibrateAction;
     private final Jewelry jewelry;
     private final Stash stash;
-    /** Верхний показанный ряд хранилища. */
-    private int stashOffset;
-    private TextDisplay stashRowsText;
-    private Screen.Button statsButton;
+    /** «Профиль №N из M» (null — профилей нет). */
+    private final Supplier<String> profileLabel;
+    /** Верхний показанный ряд сумки (карман + хранилище). */
+    private int bagOffset;
+    private TextDisplay bagText;
+    /** Показаны ли сейчас слоты брони и бижутерии (нет — на «Мой персонаж»). */
+    private Boolean equipShown;
+    /** Строки «Мой персонаж»: группа строки → что в ней показано (пересоздаётся только при изменении). */
+    private final Map<String, String> charRows = new HashMap<>();
     /** Плавающая подсказка предмета (полный тултип) — своя группа, пересоздаётся при смене наведения. */
     private static final String TIP = "tip";
     private static final int L_TIP = 10;
@@ -135,7 +169,7 @@ public final class RpgScreen {
     private final Map<Screen.Button, Integer> slotOf = new HashMap<>();
     private final Map<Screen.Button, Mmocore.Skill> skillOf = new HashMap<>();
     private final Map<Integer, ItemStack> shown = new HashMap<>();
-    private Tab tab = Tab.INVENTORY;
+    private Tab tab = Tab.CHARACTER;
     private Integer picked;
     private Screen.Button lastHover;
     private String skillSignature = "";
@@ -165,11 +199,11 @@ public final class RpgScreen {
     private final List<TextDisplay> statTexts = new ArrayList<>();
     private TextDisplay tooltip;
     private TextDisplay tooltip2;
-    private TextDisplay equipmentText;
     private TextDisplay skillPointsLine;
 
-    public RpgScreen(final Screen screen, final Settings settings, final SkinService skins, final int stashExtraRows,
-                     final Consumer<Runnable> playerThread, final Runnable closeAction, final Runnable calibrateAction) {
+    public RpgScreen(final Screen screen, final Settings settings, final SkinService skins,
+                     final Supplier<String> profileLabel, final Consumer<Runnable> playerThread,
+                     final Runnable closeAction, final Runnable calibrateAction) {
         this.screen = screen;
         screen.hoverLayer("skill_hover", L_HOVER_SKILL);
         this.player = screen.player();
@@ -178,8 +212,12 @@ public final class RpgScreen {
         this.playerThread = playerThread;
         this.closeAction = closeAction;
         this.calibrateAction = calibrateAction;
+        this.profileLabel = profileLabel;
+        // 1.0.1: сначала снять бижутерию, что не подходит по классу/уровню, и только потом читать слоты — иначе
+        // меню показало бы уже снятый (и возвращённый в инвентарь) предмет.
+        Jewelry.enforce(this.player);
         this.jewelry = new Jewelry(this.player);
-        this.stash = new Stash(this.player, settings.stashBaseRows(), Math.min(stashExtraRows, settings.stashMaxExtraRows()));
+        this.stash = new Stash(this.player, settings.stashRows());
     }
 
     /** Слоты, которые видны на всех вкладках (броня, вторая рука, бижутерия): их не убирает смена вкладки. */
@@ -234,34 +272,25 @@ public final class RpgScreen {
         this.slotSelected = s.marker("slot_selected", L_SELECTED);
 
         // верх и низ холста
-        s.text(240, 12, 224, 32, 11, Text.item("<gold><b>Мой персонаж</b></gold>"), L_TEXT, STATIC);
+        s.text(240, 12, 224, 32, 11, Text.item("<gold><b>Персонаж</b></gold>"), L_TEXT, STATIC);
         this.help = s.text(160, 358, 384, 24, 8, Text.item(HELP), L_TEXT, STATIC);
 
         // вкладки
-        final String[] names = {"Инвентарь", "Снаряжение", "Навыки", "Задания"};
-        final Material[] icons = {Material.BUNDLE, Material.IRON_SWORD, Material.ENCHANTED_BOOK, Material.FILLED_MAP};
+        final String[] names = {"Мой персонаж", "Снаряжение", "Навыки", "Задания"};
+        final ItemStack[] icons = {this.head(), new ItemStack(Material.IRON_SWORD),
+            new ItemStack(Material.ENCHANTED_BOOK), new ItemStack(Material.FILLED_MAP)};
         for (int i = 0; i < 4; i++) {
             final Tab t = Tab.values()[i];
             final int x = TAB_X[i];
             this.button(x, TAB_Y, TAB_W, TAB_H, "tab_hover", STATIC, "вкладка " + names[i], b -> this.switchTab(t));
-            this.item(x + 16, TAB_Y + TAB_H / 2.0, 16, new ItemStack(icons[i]), L_ICON, STATIC);
+            this.item(x + 16, TAB_Y + TAB_H / 2.0, 16, icons[i], L_ICON, STATIC);
             this.text(x + 26, TAB_Y, TAB_W - 30, TAB_H, 10, Text.item("<white>" + names[i] + "</white>"), L_TEXT, STATIC);
         }
 
         this.buildWings();
 
-        // левая секция: персонаж
+        // левая секция: персонаж (слоты снаряжения — по вкладке, см. showEquip)
         this.nick = this.text(16, 52, 186, 16, 9, Component.empty(), L_TEXT, STATIC);
-        final int[] armorSlots = {39, 38, 37, 36};
-        for (int i = 0; i < 4; i++) {
-            this.slot(armorSlots[i], ARMOR_X, ARMOR_Y[i]);
-        }
-        this.slot(Jewelry.AMULET, JEWEL_X, 74);
-        this.slot(Jewelry.RING_1, JEWEL_X, 106);
-        this.slot(Jewelry.RING_2, JEWEL_X, 138);
-        this.slot(OFFHAND, JEWEL_X, 170);
-        this.slot(Jewelry.TOTEM, 52, 168);
-        this.slot(Jewelry.ARTIFACT, 132, 168);
         this.portrait();
 
         // полоски: заливка в натуральную величину, ширина режется масштабом
@@ -279,7 +308,32 @@ public final class RpgScreen {
         }
 
         s.arrowCursor(this.settings.shaderCursor());
-        this.switchTab(Tab.INVENTORY);
+        this.switchTab(Tab.CHARACTER);
+    }
+
+    /** Броня, бижутерия и вторая рука слева — или накладка «Мой персонаж» на их месте. */
+    private void showEquip(final boolean show) {
+        if (Boolean.valueOf(show).equals(this.equipShown)) {
+            return;
+        }
+        this.equipShown = show;
+        this.screen.clear(EQUIP);
+        this.slots.values().removeIf(s -> persistent(s.index()));
+        this.slotOf.values().removeIf(RpgScreen::persistent);
+        if (!show) {
+            this.quad("char_left", CHAR_LEFT_X, CHAR_LEFT_Y, L_CONTENT_BG, EQUIP);
+            return;
+        }
+        final int[] armorSlots = {39, 38, 37, 36};
+        for (int i = 0; i < 4; i++) {
+            this.slot(armorSlots[i], ARMOR_X, ARMOR_Y[i]);
+        }
+        this.slot(Jewelry.AMULET, JEWEL_X, 74);
+        this.slot(Jewelry.RING_1, JEWEL_X, 106);
+        this.slot(Jewelry.RING_2, JEWEL_X, 138);
+        this.slot(OFFHAND, JEWEL_X, 170);
+        this.slot(Jewelry.TOTEM, 52, 168);
+        this.slot(Jewelry.ARTIFACT, 132, 168);
     }
 
     /** Крылья холста: слева класс, профессия, уровень; справа очки и список классов/профессий. */
@@ -348,7 +402,7 @@ public final class RpgScreen {
 
     /** Клетка (броня, вторая рука, бижутерия — в левой секции, всегда). (x, y) — левый верхний угол колодца. */
     private void slot(final int index, final int x, final int y) {
-        final String group = index >= 36 ? STATIC : CONTENT;
+        final String group = persistent(index) ? EQUIP : CONTENT;
         final Screen.Button b = this.button(x, y, WELL, WELL, "slot_hover", group, "слот " + index,
             z -> this.clickSlot(index));
         final ItemDisplay icon = this.item(x + WELL / 2.0, y + WELL / 2.0, 22, null, L_ICON, group);
@@ -364,37 +418,27 @@ public final class RpgScreen {
         this.tab = next;
         this.screen.clear(CONTENT);
         this.screen.clear(TIP);
+        this.clearCharacter();
         this.tipSignature = "";
         this.slots.values().removeIf(s -> !persistent(s.index()));
         this.slotOf.values().removeIf(i -> !persistent(i));
-        this.stashRowsText = null;
-        this.statsButton = null;
+        this.bagText = null;
         this.skillOf.clear();
-        this.equipmentText = null;
         this.tooltip = null;
         this.tooltip2 = null;
         this.skillPointsLine = null;
         this.skillSignature = "";
+        this.showEquip(next != Tab.CHARACTER);
         this.tabActive.place(X(TAB_X[next.ordinal()]), Y(TAB_Y));
-        // Выбранный предмет остаётся выбранным при смене вкладки: так его можно перенести из инвентаря в
-        // хранилище и обратно (выбрать на одной вкладке, положить на другой).
+        // Выбранный предмет остаётся выбранным при смене вкладки (например, выбрать на «Снаряжении», посмотреть
+        // «Навыки» и вернуться).
         switch (next) {
-            case INVENTORY -> {
-                this.heading("Инвентарь");
-                for (int row = 0; row < 3; row++) {
-                    for (int col = 0; col < 9; col++) {
-                        this.slot(9 + row * 9 + col, GRID_X + col * GRID_STEP, GRID_Y[row]);
-                    }
-                }
-                for (int col = 0; col < 9; col++) {
-                    this.slot(col, GRID_X + col * GRID_STEP, HOTBAR_Y);
-                }
-                this.rightCommon();
-            }
+            case CHARACTER -> this.buildCharacter();
             case EQUIPMENT -> {
-                this.heading("Хранилище");
-                this.buildStash();
-                this.rightCommon();
+                this.heading("Инвентарь и хранилище");
+                this.buildBag();
+                this.tooltip = this.text(RIGHT_X, 224, RIGHT_W, 14, 8, Component.empty(), L_TEXT, CONTENT);
+                this.buttons();
             }
             case SKILLS -> this.buildSkills(Mmocore.read(this.player, SKILL_MAX));
             case QUESTS -> {
@@ -409,56 +453,290 @@ public final class RpgScreen {
     }
 
     /**
-     * Хранилище: три видимых ряда в колодцах сетки, под ними — прокрутка (▲ ▼), счётчик рядов и кнопка «≡»
-     * (характеристики снаряжения во всплывающей подсказке).
+     * Сумка: три видимых ряда — окно в «карман (3 ряда ванильного инвентаря) + ряды хранилища», под ними —
+     * панель быстрого доступа (всегда), на планке ниже — прокрутка ▲ ▼ и какие ряды видны.
      */
-    private void buildStash() {
-        final int rows = this.stash.rows();
-        this.stashOffset = Stash.clampOffset(this.stashOffset, rows);
-        for (int row = 0; row < Stash.VISIBLE_ROWS && this.stashOffset + row < rows; row++) {
+    private void buildBag() {
+        final int bagRows = Stash.bagRows(this.stash.rows());
+        this.bagOffset = Stash.clampOffset(this.bagOffset, bagRows);
+        for (int row = 0; row < Stash.VISIBLE_ROWS && this.bagOffset + row < bagRows; row++) {
             for (int col = 0; col < Stash.COLS; col++) {
-                this.slot(Stash.BASE + (this.stashOffset + row) * Stash.COLS + col, GRID_X + col * GRID_STEP, GRID_Y[row]);
+                this.slot(Stash.bagSlot(this.bagOffset + row, col), GRID_X + col * GRID_STEP, GRID_Y[row]);
             }
         }
-        final boolean scroll = rows > Stash.VISIBLE_ROWS;
-        this.button(GRID_X, HOTBAR_Y, WELL, WELL, "slot_hover", CONTENT, "хранилище вверх", b -> this.scrollStash(-1));
-        this.text(GRID_X, HOTBAR_Y, WELL, WELL, 12, Text.item(scroll ? "<gold>▲</gold>" : "<dark_gray>▲</dark_gray>"), L_TEXT, CONTENT);
-        this.button(GRID_X + GRID_STEP, HOTBAR_Y, WELL, WELL, "slot_hover", CONTENT, "хранилище вниз", b -> this.scrollStash(1));
-        this.text(GRID_X + GRID_STEP, HOTBAR_Y, WELL, WELL, 12, Text.item(scroll ? "<gold>▼</gold>" : "<dark_gray>▼</dark_gray>"), L_TEXT, CONTENT);
-        this.stashRowsText = this.text(GRID_X + 2 * GRID_STEP, HOTBAR_Y, 6 * GRID_STEP - 3, WELL, 8, Component.empty(), L_TEXT, CONTENT);
-        this.statsButton = this.button(GRID_X + 8 * GRID_STEP, HOTBAR_Y, WELL, WELL, "slot_hover", CONTENT, "характеристики", b -> { });
-        this.text(GRID_X + 8 * GRID_STEP, HOTBAR_Y, WELL, WELL, 12, Text.item("<yellow>≡</yellow>"), L_TEXT, CONTENT);
-        this.updateStashRows();
+        for (int col = 0; col < 9; col++) {
+            this.slot(col, GRID_X + col * GRID_STEP, HOTBAR_Y);
+        }
+        this.quad("pf_arrow_up", SCROLL_UP_X, SCROLL_Y, L_ICON, CONTENT);
+        this.button(SCROLL_UP_X, SCROLL_Y, 16, 16, "pf_arrow_hover", CONTENT, "сумка вверх", b -> this.scrollBag(-1));
+        this.quad("pf_arrow_down", SCROLL_DOWN_X, SCROLL_Y, L_ICON, CONTENT);
+        this.button(SCROLL_DOWN_X, SCROLL_Y, 16, 16, "pf_arrow_hover", CONTENT, "сумка вниз", b -> this.scrollBag(1));
+        this.bagText = this.text(SCROLL_UP_X + 18, SCROLL_Y, SCROLL_DOWN_X - SCROLL_UP_X - 20, 16, 8,
+            Text.item(bagLabel(this.bagOffset, bagRows)), L_TEXT, CONTENT);
     }
 
-    private void updateStashRows() {
-        final int rows = this.stash.rows();
-        final int last = Math.min(rows, this.stashOffset + Stash.VISIBLE_ROWS);
-        final int extra = rows - this.settings.stashBaseRows();
-        final int canBuy = this.settings.stashMaxExtraRows() - Math.max(0, extra);
-        Screen.setText(this.stashRowsText, Text.item("<gray>Ряды <white>" + (this.stashOffset + 1) + "–" + last
-            + "</white> из <white>" + rows + "</white>" + (canBuy > 0 ? " · <gold>+" + canBuy + " за донат</gold>" : "") + "</gray>"));
+    /** «Ряды 3–5 из 9 · карман + хранилище». */
+    static String bagLabel(final int offset, final int bagRows) {
+        final int first = offset + 1;
+        final int last = Math.min(bagRows, offset + Stash.VISIBLE_ROWS);
+        final boolean pocket = offset < Stash.POCKET_ROWS;
+        final boolean stash = last > Stash.POCKET_ROWS;
+        final String what = pocket && stash ? "<white>карман</white> + <gold>хранилище</gold>"
+            : pocket ? "<white>карман</white>" : "<gold>хранилище</gold>";
+        return "<gray>Ряды <white>" + first + "–" + last + "</white> из <white>" + bagRows + "</white> · " + what
+            + "</gray>";
     }
 
-    private void scrollStash(final int delta) {
-        final int next = Stash.clampOffset(this.stashOffset + delta, this.stash.rows());
-        if (next == this.stashOffset) {
+    private void scrollBag(final int delta) {
+        final int next = Stash.clampOffset(this.bagOffset + delta, Stash.bagRows(this.stash.rows()));
+        if (next == this.bagOffset) {
             this.sound(Sound.BLOCK_NOTE_BLOCK_BASS);
             return;
         }
-        this.stashOffset = next;
+        this.bagOffset = next;
         this.sound(Sound.UI_BUTTON_CLICK);
         this.switchTab(Tab.EQUIPMENT);
+    }
+
+    /** Кнопки «Калибровка» и «Закрыть» внизу правой секции. */
+    private void buttons() {
+        this.button(218, 244, 134, 28, "button_hover", CONTENT, "Калибровка", b -> this.calibrateAction.run());
+        this.text(218, 244, 134, 28, 10, Text.item("<yellow>Калибровка</yellow>"), L_TEXT, CONTENT);
+        this.button(360, 244, 134, 28, "button_hover", CONTENT, "Закрыть", b -> this.closeAction.run());
+        this.text(360, 244, 134, 28, 10, Text.item("<white>Закрыть</white>"), L_TEXT, CONTENT);
+    }
+
+    // --- «Мой персонаж» ---
+
+    /** Строка колонки: название и значение (MiniMessage); значение null — строки нет. */
+    record InfoRow(String name, String value) {
+    }
+
+    private void buildCharacter() {
+        this.quad("char_bg_0", 212, CHAR_BG_Y, L_CONTENT_BG, CONTENT);
+        this.quad("char_bg_1", 356, CHAR_BG_Y, L_CONTENT_BG, CONTENT);
+        this.text(212, 54, 288, 20, 10, Text.item("<gold>Сведения о персонаже</gold>"), L_TEXT, CONTENT);
+        this.text(216, 76, 138, 16, 8, Text.item("<gold>Персонаж</gold>"), L_TEXT, CONTENT);
+        this.text(358, 76, 138, 16, 8, Text.item("<gold>Характеристики</gold>"), L_TEXT, CONTENT);
+        this.buttons();
+        this.updateCharacter();
+    }
+
+    private void clearCharacter() {
+        for (final String g : this.charRows.keySet()) {
+            this.screen.clear(g);
+        }
+        this.charRows.clear();
+    }
+
+    /** Перерисовать строки, которые изменились (каждая строка — своя группа: название слева, значение справа). */
+    private void updateCharacter() {
+        final List<List<InfoRow>> cols = List.of(this.characterRows(), this.statRows());
+        for (int c = 0; c < 2; c++) {
+            final List<InfoRow> rows = cols.get(c);
+            for (int i = 0; i < CHAR_ROWS; i++) {
+                final InfoRow r = i < rows.size() ? rows.get(i) : null;
+                final String group = "char_" + c + "_" + i;
+                final String sig = r == null ? "" : r.name() + "\u0000" + r.value();
+                if (sig.equals(this.charRows.getOrDefault(group, ""))) {
+                    continue;
+                }
+                this.screen.clear(group);
+                this.charRows.put(group, sig);
+                if (r == null) {
+                    continue;
+                }
+                final double y = CHAR_ROW_Y + i * CHAR_ROW_DY;
+                final String valuePlain = Text.plain(Text.item(r.value()));
+                final int valuePx = (int) Math.ceil(FontWidth.of(valuePlain) * 0.8);
+                final String name = fit(r.name(), (int) ((CHAR_COL_W - valuePx - 6) / 0.8));
+                this.screen.label(X(CHAR_NAME_X[c]), Y(y), CHAR_ROW_DY, 8,
+                    Text.item("<gray><n></gray>", Placeholder.unparsed("n", name)), FontWidth.of(name), false,
+                    L_TEXT, group);
+                this.screen.label(X(CHAR_VALUE_R[c]), Y(y), CHAR_ROW_DY, 8, Text.item(r.value()),
+                    FontWidth.of(valuePlain), true, L_TEXT, group);
+            }
+        }
+    }
+
+    /** Обрезать строку до {@code maxFontPx} пикселей шрифта (с «…»). */
+    private static String fit(final String s, final int maxFontPx) {
+        if (FontWidth.of(s) <= maxFontPx) {
+            return s;
+        }
+        String t = s;
+        while (!t.isEmpty() && FontWidth.of(t + "…") > maxFontPx) {
+            t = t.substring(0, t.length() - 1);
+        }
+        return t + "…";
+    }
+
+    /** Левая колонка: кто это и как он прокачан. */
+    private List<InfoRow> characterRows() {
+        final Settings st = this.settings;
+        final Settings.Placeholders p = st.ph();
+        final List<InfoRow> out = new ArrayList<>();
+        final String level = or(this.ph(p.level()), Integer.toString(this.player.getLevel()));
+        final String cls = known(this.ph(p.className()));
+        final String prof = known(this.ph(p.profession()));
+        out.add(new InfoRow("Ник", "<yellow>" + Text.escape(this.player.getName()) + "</yellow>"));
+        out.add(new InfoRow("Класс", cls == null ? "<dark_gray>нет</dark_gray>" : "<gold>" + Text.escape(plainName(cls)) + "</gold>"));
+        out.add(new InfoRow("Профессия", prof == null ? "<dark_gray>нет</dark_gray>" : "<white>" + Text.escape(plainName(prof)) + "</white>"));
+        out.add(new InfoRow("Уровень", "<green>" + Text.escape(level) + "</green>"));
+        final double exp = number(this.ph(p.exp()), -1);
+        final double need = number(this.ph(p.expNeeded()), -1);
+        out.add(new InfoRow("Опыт", exp >= 0 && need > 0
+            ? "<white>" + Text.num(Math.floor(exp)) + "/" + Text.num(need) + "</white> <gray>"
+                + Math.round(clamp01(exp / need) * 100) + "%</gray>"
+            : "<white>" + Math.round(this.player.getExp() * 100) + "%</white>"));
+        final AttributeInstance maxHp = this.player.getAttribute(Attribute.MAX_HEALTH);
+        out.add(new InfoRow("Здоровье", "<red>" + Text.num(Math.ceil(this.player.getHealth())) + "</red><gray>/"
+            + Text.num(maxHp == null ? 20 : maxHp.getValue()) + "</gray>"));
+        final Settings.ResourceType res = this.resource(key(this.ph(p.classKey())));
+        final double cur = res == null ? -1 : number(this.ph(res.current()), -1);
+        final double cap = res == null ? -1 : number(this.ph(res.max()), -1);
+        if (cur >= 0 && cap > 0) {
+            out.add(new InfoRow(res.label(), "<aqua>" + Text.num(Math.floor(cur)) + "</aqua><gray>/"
+                + Text.num(Math.floor(cap)) + "</gray>"));
+        }
+        final String sp = this.ph(p.skillPoints());
+        if (sp != null) {
+            out.add(new InfoRow("Очки навыков", "<gold>" + Text.escape(sp) + "</gold>"));
+        }
+        final String ap = this.ph(p.attributePoints());
+        if (ap != null) {
+            out.add(new InfoRow("Очки параметров", "<gold>" + Text.escape(ap) + "</gold>"));
+        }
+        String profile = null;
+        try {
+            profile = this.profileLabel == null ? null : this.profileLabel.get();
+        } catch (final RuntimeException e) {
+            profile = null;
+        }
+        if (profile != null) {
+            out.add(new InfoRow("Профиль", "<white>" + Text.escape(profile) + "</white>"));
+        }
+        final String balance = this.ph(st.balancePlaceholder());
+        if (balance != null) {
+            out.add(new InfoRow("Баланс", "<yellow>" + Text.escape(balance) + "</yellow>"));
+        }
+        out.add(new InfoRow("В игре", "<white>" + playtime(this.playTicks()) + "</white>"));
+        return out;
+    }
+
+    private long playTicks() {
+        try {
+            return this.player.getStatistic(org.bukkit.Statistic.PLAY_ONE_MINUTE);
+        } catch (final RuntimeException e) {
+            return 0;
+        }
+    }
+
+    /** Тики игры → «3 д 4 ч», «5 ч 12 мин», «7 мин». */
+    static String playtime(final long ticks) {
+        final long min = Math.max(0, ticks) / 20 / 60;
+        final long d = min / 1440;
+        final long h = min / 60 % 24;
+        final long m = min % 60;
+        if (d > 0) {
+            return d + " д " + h + " ч";
+        }
+        if (h > 0) {
+            return h + " ч " + m + " мин";
+        }
+        return m + " мин";
+    }
+
+    /** Правая колонка: характеристики из rpg.character.stats (что не подставилось — скрыто). */
+    private List<InfoRow> statRows() {
+        final List<InfoRow> out = new ArrayList<>();
+        for (final Settings.InfoLine line : this.settings.characterStats()) {
+            final String value = this.infoValue(line.value());
+            if (value == null) {
+                continue;
+            }
+            final String rawName = this.ph(line.name());
+            final String name = rawName != null ? rawName : line.name().contains("%") ? line.fallbackName() : line.name();
+            if (name == null || name.isBlank()) {
+                continue;
+            }
+            out.add(new InfoRow(plainName(name), "<white>" + Text.escape(value + line.suffix()) + "</white>"));
+        }
+        return out;
+    }
+
+    /** Значение строки: встроенное ($armor…), плейсхолдер или готовый текст; числа — до десятых. null — нет. */
+    private String infoValue(final String spec) {
+        if (spec == null || spec.isBlank()) {
+            return null;
+        }
+        if (spec.startsWith("$")) {
+            final double v = switch (spec.toLowerCase(Locale.ROOT)) {
+                case "$armor" -> this.attr(Attribute.ARMOR);
+                case "$armor_toughness" -> this.attr(Attribute.ARMOR_TOUGHNESS);
+                case "$attack_damage" -> this.attr(Attribute.ATTACK_DAMAGE);
+                case "$attack_speed" -> this.attr(Attribute.ATTACK_SPEED);
+                case "$move_speed" -> this.moveSpeedPercent();
+                case "$max_health" -> this.attr(Attribute.MAX_HEALTH);
+                case "$luck" -> this.attr(Attribute.LUCK);
+                default -> -1;
+            };
+            return v < 0 ? null : tenths(v);
+        }
+        final String raw = spec.contains("%") ? this.ph(spec) : spec;
+        if (raw == null) {
+            return null;
+        }
+        final String plain = plainName(raw);
+        try {
+            return tenths(Double.parseDouble(plain.replace(',', '.').strip()));
+        } catch (final NumberFormatException e) {
+            return plain;
+        }
+    }
+
+    /**
+     * Скорость передвижения в % от обычной. В меню игрок стоит (скорость ходьбы 0), поэтому база — скорость до меню
+     * (walkSpeed / 2 = база атрибута), а модификаторы (зелья, предметы) берутся с атрибута.
+     */
+    private double moveSpeedPercent() {
+        final AttributeInstance i = this.player.getAttribute(Attribute.MOVEMENT_SPEED);
+        if (i == null) {
+            return -1;
+        }
+        double add = 0;
+        double scalar = 0;
+        double mul = 1;
+        for (final org.bukkit.attribute.AttributeModifier m : i.getModifiers()) {
+            switch (m.getOperation()) {
+                case ADD_NUMBER -> add += m.getAmount();
+                case ADD_SCALAR -> scalar += m.getAmount();
+                case MULTIPLY_SCALAR_1 -> mul *= 1 + m.getAmount();
+            }
+        }
+        final double base = this.screen.saved().walkSpeed() / 2.0;
+        return Math.round(Math.max(0, (base + add) * (1 + scalar) * mul) / 0.1 * 100);
+    }
+
+    private double attr(final Attribute a) {
+        final AttributeInstance i = this.player.getAttribute(a);
+        return i == null ? -1 : i.getValue();
+    }
+
+    private static String tenths(final double v) {
+        return Text.num(Math.round(v * 10) / 10.0);
+    }
+
+    /** Без цветовых кодов (§/& и теги). */
+    private static String plainName(final String s) {
+        return s.replaceAll("(?i)[§&][0-9a-fk-orx]", "").replaceAll("<[^>]*>", "").strip();
     }
 
     /** Подсказка предмета (две строки) и кнопки — у всех вкладок, кроме «Навыков» (её фон закрывает это место). */
     private void rightCommon() {
         this.tooltip = this.text(RIGHT_X, 206, RIGHT_W, 14, 9, Component.empty(), L_TEXT, CONTENT);
         this.tooltip2 = this.text(RIGHT_X, 224, RIGHT_W, 12, 7, Component.empty(), L_TEXT, CONTENT);
-        this.button(218, 244, 134, 28, "button_hover", CONTENT, "Калибровка", b -> this.calibrateAction.run());
-        this.text(218, 244, 134, 28, 10, Text.item("<yellow>Калибровка</yellow>"), L_TEXT, CONTENT);
-        this.button(360, 244, 134, 28, "button_hover", CONTENT, "Закрыть", b -> this.closeAction.run());
-        this.text(360, 244, 134, 28, 10, Text.item("<white>Закрыть</white>"), L_TEXT, CONTENT);
+        this.buttons();
     }
 
     private void heading(final String name) {
@@ -534,7 +812,9 @@ public final class RpgScreen {
             if (!Objects.equals(this.shown.get(s.index()), norm)) {
                 this.shown.put(s.index(), norm == null ? null : norm.clone());
                 if (s.icon().isValid()) {
-                    s.icon().setItemStack(norm == null ? null : norm.clone());
+                    // Иконке количество не нужно (его пишет текст), а стопка хранилища бывает больше ванильного
+                    // предела — клиенту такое не шлём.
+                    s.icon().setItemStack(norm == null ? null : norm.asOne());
                 }
                 Screen.setText(s.count(), norm == null || norm.getAmount() <= 1 ? Component.empty()
                     : Text.item("<white>" + norm.getAmount() + "</white>"));
@@ -555,6 +835,9 @@ public final class RpgScreen {
             }
         }
         this.updateStats();
+        if (this.tab == Tab.CHARACTER) {
+            this.updateCharacter();
+        }
         this.updateTooltip();
     }
 
@@ -628,10 +911,6 @@ public final class RpgScreen {
         Screen.setText(this.attributePoints, Text.item("<gold><v></gold>",
             Placeholder.unparsed("v", or(this.ph(p.attributePoints()), "—"))));
         this.updateClassList(info, profKey, level);
-
-        if (this.equipmentText != null) {
-            Screen.setText(this.equipmentText, Text.item(this.equipmentLines()));
-        }
     }
 
     /** Ресурс класса: по ключу класса из config.yml, иначе по имени ресурса MMOCore (как MythicHUD). */
@@ -694,23 +973,6 @@ public final class RpgScreen {
         }
     }
 
-    private String equipmentLines() {
-        final StringBuilder b = new StringBuilder();
-        final AttributeInstance armor = this.player.getAttribute(Attribute.ARMOR);
-        final AttributeInstance dmg = this.player.getAttribute(Attribute.ATTACK_DAMAGE);
-        b.append("<gray>Броня (всего)</gray> <white>").append(armor == null ? "—" : Text.num(armor.getValue())).append("</white>\n");
-        b.append("<gray>Урон рукой (всего)</gray> <white>").append(dmg == null ? "—" : Text.num(dmg.getValue())).append("</white>");
-        for (final Settings.Stat stat : this.settings.equipmentLines()) {
-            final String value = this.ph(stat.value());
-            if (value == null && stat.value().contains("%")) {
-                continue;
-            }
-            b.append("\n<gray>").append(Text.escape(stat.name())).append("</gray> <white>")
-                .append(Text.escape(value == null ? stat.value() : value)).append("</white>");
-        }
-        return b.toString();
-    }
-
     private void updateTooltip() {
         final Mmocore.Skill skill = this.lastHover == null ? null : this.skillOf.get(this.lastHover);
         if (skill != null) {
@@ -768,14 +1030,6 @@ public final class RpgScreen {
                 ax = slot.x();
                 ay = slot.y();
             }
-        } else if (this.lastHover != null && this.lastHover == this.statsButton) {
-            lines = new ArrayList<>();
-            lines.add(Text.item("<gold>Характеристики снаряжения</gold>"));
-            for (final String l : this.equipmentLines().split("\n")) {
-                lines.add(Text.item(l));
-            }
-            ax = GRID_X + 8 * GRID_STEP;
-            ay = HOTBAR_Y;
         }
         final String sig = lines.isEmpty() ? "" : ax + "," + ay + ":" + lines;
         if (sig.equals(this.tipSignature)) {
@@ -823,7 +1077,7 @@ public final class RpgScreen {
 
     private static String slotName(final int index) {
         if (Stash.isStash(index)) {
-            return "Хранилище";
+            return "Хранилище · ряд " + ((index - Stash.BASE) / Stash.COLS + 1);
         }
         if (Jewelry.isJewel(index)) {
             return Jewelry.slotName(index);
@@ -834,7 +1088,7 @@ public final class RpgScreen {
             case 37 -> "Поножи";
             case 36 -> "Ботинки";
             case OFFHAND -> "Вторая рука";
-            default -> index < 9 ? "Панель быстрого доступа" : "Пусто";
+            default -> index < 9 ? "Панель быстрого доступа" : "Карман";
         };
     }
 
@@ -900,7 +1154,23 @@ public final class RpgScreen {
         this.refresh();
     }
 
-    /** Переложить из {@code from} в {@code to}: сложить одинаковые или поменять местами. null — получилось. */
+    /**
+     * Сколько штук предмета {@code item} помещается в клетку {@code index}: хранилище — до 99 (то, что стакается,
+     * см. {@link StackMath}), бижутерия и броня — 1, карман и вторая рука — ванильный предел.
+     */
+    private static int limit(final int index, final ItemStack item) {
+        if (Jewelry.isJewel(index) || ARMOR.containsKey(index)) {
+            return 1;
+        }
+        final int max = Math.max(1, item.getMaxStackSize());
+        return Stash.isStash(index) ? StackMath.stashLimit(max) : max;
+    }
+
+    /**
+     * Переложить из {@code from} в {@code to}: в пустую клетку (сколько влезет, остальное остаётся), сложить
+     * одинаковые (до предела клетки) или поменять разные местами (если обе стопки влезают целиком). Штуки никогда не
+     * появляются и не пропадают. null — получилось, иначе текст ошибки.
+     */
     private String move(final int from, final int to) {
         final ItemStack a = this.get(from);
         final ItemStack b = this.get(to);
@@ -912,38 +1182,50 @@ public final class RpgScreen {
             return "Проклятие несъёмности: снять нельзя";
         }
         if (!this.fits(to, a)) {
-            return Jewelry.isJewel(to) ? "Это не " + Jewelry.slotName(to).toLowerCase(Locale.ROOT) : "Этот предмет сюда не надеть";
+            if (Jewelry.isJewel(to)) {
+                final String deny = Jewelry.denyReason(this.settings, this.player, to, a);
+                return deny != null ? deny : "Это не " + Jewelry.slotName(to).toLowerCase(Locale.ROOT);
+            }
+            return "Этот предмет сюда не надеть";
         }
-        if (!bEmpty && !this.fits(from, b)) {
+        final boolean similar = !bEmpty && a.isSimilar(b);
+        if (!bEmpty && !similar && !this.fits(from, b)) {
             return "Нельзя поменять местами: " + slotName(from).toLowerCase(Locale.ROOT) + " не подходит";
         }
-        // В слот бижутерии кладётся один предмет.
-        if (Jewelry.isJewel(to) && a.getAmount() > 1) {
-            if (!bEmpty) {
-                return "Сначала уберите предмет из слота: сюда кладётся один";
+        final StackMath.Plan plan = StackMath.plan(a.getAmount(), bEmpty ? 0 : b.getAmount(), similar,
+            limit(to, a), bEmpty ? 1 : limit(from, b));
+        switch (plan.kind()) {
+            case MOVE, MERGE -> {
+                final ItemStack put = a.clone();
+                put.setAmount(plan.to());
+                final ItemStack left = a.clone();
+                left.setAmount(Math.max(1, plan.from()));
+                this.set(to, put);
+                this.set(from, plan.from() <= 0 ? null : left);
+                return null;
             }
-            final ItemStack one = a.clone();
-            one.setAmount(1);
-            a.setAmount(a.getAmount() - 1);
-            this.set(to, one);
-            this.set(from, a);
-            return null;
+            case SWAP -> {
+                this.set(to, a);
+                this.set(from, b);
+                return null;
+            }
+            case FULL -> {
+                return Jewelry.isJewel(to) ? "Здесь уже лежит такой же: сюда кладётся один"
+                    : "Здесь уже полный стак (" + b.getAmount() + ")";
+            }
+            default -> {
+                if (Jewelry.isJewel(to) && a.getAmount() > 1) {
+                    return "Сначала уберите предмет из слота: сюда кладётся один";
+                }
+                if (Jewelry.isJewel(from) && !bEmpty && b.getAmount() > 1) {
+                    return "Нельзя: в " + Jewelry.slotName(from).toLowerCase(Locale.ROOT) + " кладётся один предмет";
+                }
+                if (a.getAmount() > limit(to, a)) {
+                    return "Не помещается: сюда не больше " + limit(to, a) + " — положите в пустую клетку";
+                }
+                return "Нельзя поменять местами: туда не больше " + limit(from, b);
+            }
         }
-        if (!bEmpty && a.isSimilar(b) && !Jewelry.isJewel(to) && b.getAmount() < b.getMaxStackSize()) {
-            final int moved = Math.min(a.getAmount(), b.getMaxStackSize() - b.getAmount());
-            b.setAmount(b.getAmount() + moved);
-            a.setAmount(a.getAmount() - moved);
-            this.set(to, b);
-            this.set(from, a.getAmount() <= 0 ? null : a);
-            return null;
-        }
-        // Обмен кладёт b в слот бижутерии — туда можно только один предмет.
-        if (Jewelry.isJewel(from) && !bEmpty && b.getAmount() > 1) {
-            return "Нельзя: в " + Jewelry.slotName(from).toLowerCase(Locale.ROOT) + " кладётся один предмет";
-        }
-        this.set(to, a);
-        this.set(from, bEmpty ? null : b);
-        return null;
     }
 
     /** Подходит ли предмет в слот: броню — только в свой слот, бижутерию — по правилам config.yml. */
@@ -952,7 +1234,7 @@ public final class RpgScreen {
             return true;
         }
         if (Jewelry.isJewel(slot)) {
-            return Jewelry.allowed(this.settings, slot, item);
+            return Jewelry.denyReason(this.settings, this.player, slot, item) == null;
         }
         final EquipmentSlot need = ARMOR.get(slot);
         return need == null || item.getType().getEquipmentSlot() == need;

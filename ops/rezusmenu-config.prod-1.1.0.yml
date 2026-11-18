@@ -1,0 +1,318 @@
+# rezusmenu — меню /menuses и RPG-инвентарь. После правки: /menuses reload (или amazake system reload rezusmenu).
+# Тексты — MiniMessage.
+
+messages:
+  prefix: "<dark_gray>[<gold>Меню</gold>]</dark_gray> "
+
+# Родная панель Minecraft по /menuses.
+dialog:
+  title: "<gold>Меню сервера</gold>"
+  body: "<gray>Выберите, что открыть.</gray>"
+
+# Кнопки панели — все кастомные меню: rpg и profiles.
+menus:
+  rpg:
+    label: "<gold>RPG-инвентарь</gold>"
+    tooltip: "<gray>Персонаж, снаряжение и инвентарь</gray>"
+  profiles:
+    label: "<aqua>Профили</aqua>"
+    tooltip: "<gray>Персонажи: выбрать, создать новый</gray>"
+
+# RPG-меню во весь экран: на время меню игрок — наблюдатель высоко над миром и стоит на месте, мышь двигает курсор,
+# ЛКМ — нажать, пробел — курсор в центр, Shift — выйти. При первом входе — калибровка экрана (око Края в угол).
+# Картинки меню — из ресурспака (assets/rezusmenu и assets/minecraft/shaders, см. pack/ в исходниках системы):
+# без него — пустые квадраты, а шейдерный курсор идёт против мыши.
+rpg:
+  # Скорость курсора-глифа (art.shader-cursor: false) и ока при калибровке: сколько экрана за градус поворота мыши.
+  cursor-speed: 0.045
+  # Пока меню открыто, игрок не получает урона.
+  invulnerable: true
+  # Как часто обновлять предметы и значения, тиков.
+  refresh-ticks: 10
+  # Писать в консоль каждый клик: откуда пришёл (spectate — ЛКМ наблюдателя, right-click, swing), где курсор
+  # (пиксели холста 704×400) и какая кнопка под ним.
+  debug-clicks: false
+  # Значения из PlaceholderAPI. По умолчанию — RoyalQuestClasses (%hl_…%) и MMOCore (%mmocore_…%), как в MythicHUD.
+  # Не подставилось — «—» (уровень и опыт — ванильные).
+  placeholders:
+    level: "%hl_level%"
+    exp: "%hl_exp%"
+    exp-needed: "%hl_exp_needed%"
+    class: "%hl_class%"
+    class-key: "%hl_class_key%"
+    profession: "%hl_profession%"
+    profession-key: "%hl_profession_key%"
+    needs-profession: "%hl_needs_profession%"
+    skill-points: "%mmocore_skill_points%"
+    attribute-points: "%hl_stats_available%"
+  # Третья полоска — мана или энергия, как в MythicHUD. Сначала по ключу класса (class-key), иначе по имени ресурса
+  # MMOCore: равно energy-name — энергия, иначе мана.
+  resource:
+    name: "%mmocore_mana_name%"
+    energy-name: "Энергия"
+    classes:
+      swordsman: energy
+      archer: energy
+      thief: energy
+      mage: mana
+    types:
+      mana: {label: "Мана", current: "%mmocore_mana%", max: "%mmocore_stat_max_mana%"}
+      energy: {label: "Энергия", current: "%mmocore_mana%", max: "%mmocore_stat_max_mana%"}
+  # Параметры слева внизу (2 × 2). default — подпись, если плейсхолдер названия не подставился.
+  stats:
+    - {name: "%hl_stats_primary_name%", default: "Сила", value: "%hl_stats_primary%"}
+    - {name: "Ловкость", value: "%hl_stats_agility%"}
+    - {name: "Выносливость", value: "%hl_stats_stamina%"}
+    - {name: "Удача", value: "%hl_stats_luck%"}
+  # Классы RoyalQuestClasses (ключ = %hl_class_key%): название, иконка в левом крыле и профессии.
+  classes:
+    swordsman: {name: "Мечник", icon: IRON_SWORD, professions: [crusader, dark_knight]}
+    archer: {name: "Стрелок", icon: BOW, professions: [hunter, sniper]}
+    mage: {name: "Маг", icon: BLAZE_ROD, professions: [wizard, warlock]}
+    thief: {name: "Вор", icon: GOLDEN_SWORD, professions: [rogue, assassin]}
+  professions:
+    crusader: "Крестоносец"
+    dark_knight: "Тёмный рыцарь"
+    hunter: "Охотник"
+    sniper: "Снайпер"
+    wizard: "Волшебник"
+    warlock: "Чернокнижник"
+    rogue: "Разбойник"
+    assassin: "Ассасин"
+  # Иконка в левом крыле, пока класс не выбран.
+  no-class-icon: BOOK
+  # Слоты бижутерии (амулет, два кольца, тотем, артефакт): что в них можно положить. types — типы MMOItems
+  # (MMOITEMS_ITEM_TYPE), materials — материалы; подходит что-то одно. Оба списка пустые — что угодно.
+  # Предметы хранятся в данных игрока и не выпадают. Характеристики бижутерии считает seal-magic 1.2.0 (seals.yml → jewelry).
+  # Подстроки azerus_*_ / relicitems: ловят Nexo-предметы (их id и модель есть в NBT). Кольца — только 24 оставленных (id + путь модели). Тотемы — azerus_artifact_001–006 (items/azerus_totems.yml), артефакты — 007–011, 015–017.
+  # Кольца MMOItems (тип ACCESSORY, AZERUS_RING_NNN — 24 шт. в accessory.yml) проходят по типу ACCESSORY и по MMOITEMS_ITEM_ID; удалённые кольца seal-magic
+  # всё равно не считает (detect: none). ACCESSORY убран из амулета: кольцо MMOItems не должно влезать в слот амулета.
+  # Слоты бижутерии: что в них можно положить. types — типы MMOItems, materials — материалы, nbt — подстрока
+  # в NBT предмета (для обычных предметов, настроенных через NBT): например 'jewel:"ring"' для предмета с
+  # custom_data {jewel:"ring"} или 'myplugin:ring' для PDC-метки плагина. Подходит хоть одно правило — можно.
+  jewelry:
+    amulet: {types: [AMULET, NECKLACE], materials: [], nbt: ['jewel:"amulet"', 'azerus_amulet_', 'azerus_amulets/amulet_']}
+    ring: {types: [RING, ACCESSORY], materials: [], nbt: ['jewel:"ring"', 'azerus_ring_049', 'azerus_ring_050', 'azerus_ring_051', 'azerus_ring_052', 'azerus_ring_054', 'azerus_ring_057', 'azerus_ring_058', 'azerus_ring_060', 'azerus_ring_062', 'azerus_ring_065', 'azerus_ring_067', 'azerus_ring_070', 'azerus_ring_072', 'azerus_ring_074', 'azerus_ring_075', 'azerus_ring_080', 'azerus_ring_081', 'azerus_ring_082', 'azerus_ring_083', 'azerus_ring_085', 'azerus_ring_091', 'azerus_ring_095', 'azerus_ring_098', 'azerus_ring_099', 'rings_azerus/ring_049', 'rings_azerus/ring_050', 'rings_azerus/ring_051', 'rings_azerus/ring_052', 'rings_azerus/ring_054', 'rings_azerus/ring_057', 'rings_azerus/ring_058', 'rings_azerus/ring_060', 'rings_azerus/ring_062', 'rings_azerus/ring_065', 'rings_azerus/ring_067', 'rings_azerus/ring_070', 'rings_azerus/ring_072', 'rings_azerus/ring_074', 'rings_azerus/ring_075', 'rings_azerus/ring_080', 'rings_azerus/ring_081', 'rings_azerus/ring_082', 'rings_azerus/ring_083', 'rings_azerus/ring_085', 'rings_azerus/ring_091', 'rings_azerus/ring_095', 'rings_azerus/ring_098', 'rings_azerus/ring_099', 'AZERUS_RING_049', 'AZERUS_RING_050', 'AZERUS_RING_051', 'AZERUS_RING_052', 'AZERUS_RING_054', 'AZERUS_RING_057', 'AZERUS_RING_058', 'AZERUS_RING_060', 'AZERUS_RING_062', 'AZERUS_RING_065', 'AZERUS_RING_067', 'AZERUS_RING_070', 'AZERUS_RING_072', 'AZERUS_RING_074', 'AZERUS_RING_075', 'AZERUS_RING_080', 'AZERUS_RING_081', 'AZERUS_RING_082', 'AZERUS_RING_083', 'AZERUS_RING_085', 'AZERUS_RING_091', 'AZERUS_RING_095', 'AZERUS_RING_098', 'AZERUS_RING_099']}
+    totem: {types: [TOTEM], materials: [TOTEM_OF_UNDYING], nbt: ['jewel:"totem"', 'azerus_artifact_001', 'azerus_artifact_002', 'azerus_artifact_003', 'azerus_artifact_004', 'azerus_artifact_005', 'azerus_artifact_006', 'azerus_artifacts/artifact_001', 'azerus_artifacts/artifact_002', 'azerus_artifacts/artifact_003', 'azerus_artifacts/artifact_004', 'azerus_artifacts/artifact_005', 'azerus_artifacts/artifact_006']}
+    artifact: {types: [ARTIFACT, RELIC, ORNAMENT, TALISMAN], materials: [], nbt: ['jewel:"artifact"', 'azerus_artifact_007', 'azerus_artifact_008', 'azerus_artifact_009', 'azerus_artifact_010', 'azerus_artifact_011', 'azerus_artifact_015', 'azerus_artifact_016', 'azerus_artifact_017', 'azerus_artifacts/artifact_007', 'azerus_artifacts/artifact_008', 'azerus_artifacts/artifact_009', 'azerus_artifacts/artifact_010', 'azerus_artifacts/artifact_011', 'azerus_artifacts/artifact_015', 'azerus_artifacts/artifact_016', 'azerus_artifacts/artifact_017', 'relicitems:relic_']}
+    # 1.0.1: класс и уровень при надевании в 5 слотов. Сначала NBT MMOItems
+    # (MMOITEMS_REQUIRED_CLASS, MMOITEMS_LEVEL), иначе этот список — для Nexo-предметов без NBT.
+    # Пустой список классов = для всех. Ключи — id Nexo / MMOItems в нижнем регистре.
+    # Settings.jewelry читает только amulet/ring/totem/artifact, этот блок ему не мешает.
+    bind:
+      item-classes:
+        azerus_ring_051: [swordsman, crusader, dark_knight]
+        azerus_ring_074: [swordsman, crusader, dark_knight]
+        azerus_ring_052: [crusader]
+        azerus_ring_067: [crusader]
+        azerus_ring_058: [dark_knight]
+        azerus_ring_085: [dark_knight]
+        azerus_ring_054: [archer, hunter, sniper]
+        azerus_ring_070: [archer, hunter, sniper]
+        azerus_ring_075: [hunter]
+        azerus_ring_081: [hunter]
+        azerus_ring_065: [sniper]
+        azerus_ring_083: [sniper]
+        azerus_ring_049: [mage, wizard, warlock]
+        azerus_ring_062: [mage, wizard, warlock]
+        azerus_ring_057: [wizard]
+        azerus_ring_080: [wizard]
+        azerus_ring_072: [warlock]
+        azerus_ring_082: [warlock]
+        azerus_ring_060: [thief, rogue, assassin]
+        azerus_ring_095: [thief, rogue, assassin]
+        azerus_ring_050: [rogue]
+        azerus_ring_091: [rogue]
+        azerus_ring_098: [assassin]
+        azerus_ring_099: [assassin]
+        azerus_artifact_008: [swordsman, crusader, dark_knight, thief, rogue, assassin]
+        azerus_artifact_009: [mage, wizard, warlock]
+        azerus_artifact_010: [archer, hunter, sniper]
+        azerus_artifact_015: [thief, rogue, assassin]
+        azerus_artifact_016: [mage, wizard, warlock]
+        azerus_artifact_017: [mage, wizard, warlock]
+        azerus_artifact_002: [mage, wizard, warlock]
+        azerus_artifact_003: [swordsman, crusader, dark_knight, archer, hunter, sniper, thief, rogue, assassin]
+        azerus_artifact_006: [thief, rogue, assassin]
+      item-levels:
+        azerus_ring_049: 1
+        azerus_ring_050: 20
+        azerus_ring_051: 1
+        azerus_ring_052: 20
+        azerus_ring_054: 1
+        azerus_ring_057: 20
+        azerus_ring_058: 20
+        azerus_ring_060: 1
+        azerus_ring_062: 1
+        azerus_ring_065: 20
+        azerus_ring_067: 20
+        azerus_ring_070: 1
+        azerus_ring_072: 20
+        azerus_ring_074: 1
+        azerus_ring_075: 20
+        azerus_ring_080: 20
+        azerus_ring_081: 20
+        azerus_ring_082: 20
+        azerus_ring_083: 20
+        azerus_ring_085: 20
+        azerus_ring_091: 20
+        azerus_ring_095: 1
+        azerus_ring_098: 20
+        azerus_ring_099: 20
+        azerus_artifact_007: 1
+        azerus_artifact_008: 5
+        azerus_artifact_009: 5
+        azerus_artifact_010: 10
+        azerus_artifact_015: 10
+        azerus_artifact_016: 15
+        azerus_artifact_017: 15
+        azerus_artifact_011: 20
+        azerus_artifact_001: 1
+        azerus_artifact_002: 15
+        azerus_artifact_003: 5
+        azerus_artifact_004: 5
+        azerus_artifact_005: 10
+        azerus_artifact_006: 10
+  # Вкладка «Мой персонаж» (первая): только сведения о персонаже. Левая колонка «Персонаж» — ник, класс, профессия,
+  # уровень, опыт, здоровье, мана/энергия, очки навыков и параметров, профиль, баланс, время в игре (считается само).
+  # Правая колонка «Характеристики» — stats: name — подпись (можно плейсхолдер, тогда default — если не подставился),
+  # value — плейсхолдер, текст или встроенное значение: $attack_damage, $attack_speed, $armor, $armor_toughness,
+  # $move_speed (в % от обычной), $max_health, $luck; suffix — после числа. Числа округляются до десятых.
+  # Строка, чьё значение не подставилось, скрывается. Видно до 12 строк в колонке.
+  character:
+    balance: "%vault_eco_balance_formatted%"
+    stats:
+      - {name: "%hl_stats_primary_name%", default: "Сила", value: "%hl_stats_primary%"}
+      - {name: "Ловкость", value: "%hl_stats_agility%"}
+      - {name: "Выносливость", value: "%hl_stats_stamina%"}
+      - {name: "Удача", value: "%hl_stats_luck%"}
+      - {name: "Урон", value: "$attack_damage"}
+      - {name: "Скорость атаки", value: "$attack_speed"}
+      - {name: "Броня", value: "$armor"}
+      - {name: "Защита", value: "%mmocore_stat_defense%"}
+      - {name: "Крит. шанс", value: "%mmocore_stat_critical_strike_chance%", suffix: "%"}
+      - {name: "Крит. урон", value: "%mmocore_stat_critical_strike_power%", suffix: "%"}
+      - {name: "Реген. маны", value: "%mmocore_stat_mana_regeneration%", suffix: "/с"}
+      - {name: "Скорость", value: "$move_speed", suffix: "%"}
+
+# Чужой HUD (MythicHUD — боссбары с модельками) прячется, пока открыто меню: меню нарисовано в мире и не может
+# перекрыть интерфейс клиента. Команды консоли, {player} — ник. Если игрок вышел посреди меню, HUD вернётся при входе.
+hud:
+  hide-commands:
+    - "mythichud layout {player} remove mmohud-layout -s"
+    - "mythichud layout {player} remove partyhud-mmo-layout -s"
+    - "mythichud layout {player} remove skill_casting_bar-layout -s"
+  show-commands:
+    - "mythichud layout {player} add mmohud-layout -s"
+    - "mythichud layout {player} add partyhud-mmo-layout -s"
+    - "mythichud layout {player} add skill_casting_bar-layout -s"
+
+# Картинка меню — шрифт rezusmenu:ui из ресурспака. Глифы ставятся по формуле клиента 1.21.11, подстройка не нужна;
+# если всё же съехало — сдвиг картинок в пикселях текстуры (x — вправо, y — вверх).
+# shader-cursor: курсор рисует шейдер пака и он идёт за мышью с частотой кадров; false — запасной курсор-глиф,
+# который двигает сервер (раз в тик).
+art:
+  shader-cursor: true
+  glyph-offset-x: 0.0
+  glyph-offset-y: 0.0
+
+# Открыть RPG-меню клавишей. Нажатие E сервер не видит (клиент открывает свой инвентарь сам, без пакета),
+# поэтому используется F (сменить руки): в выживании и приключении F открывает меню, в творческом F и E — как обычно.
+open-key:
+  swap-hands: true
+  # true — только Shift + F (тогда обычная F меняет руки как всегда).
+  sneak: false
+
+# Хранилище во вкладке «Снаряжение» (инвентарь): под тремя рядами кармана — rows рядов по 9 слотов, у всех одинаково
+# (1..36; покупки рядов больше нет, старые base-rows / max-extra-rows не читаются). Ряды, где уже что-то лежит, видны
+# всегда, даже если rows меньше. В хранилище стакается до 99 — только то, что стакается и в ванили (мечи, посохи,
+# броня, инструменты — по одному); в кармане и на панели — ванильные стаки.
+stash:
+  rows: 6
+
+# Профили (персонажи): /profiles или /menuses open profiles. У каждого профиля свои класс, уровень и опыт,
+# параметры и навыки (RoyalQuestClasses + MMOCore), инвентарь с бронёй и второй рукой, бижутерия и хранилище
+# rezusmenu, место, здоровье, голод, эффекты и ванильный опыт. Деньги общие на аккаунт (их держит экономика).
+# Данные — systems/rezusmenu/profiles/<uuid>.yml. Первый профиль — текущий персонаж игрока (при первом открытии).
+profiles:
+  enabled: true
+  # Бесплатных слотов и максимум; остальные покупаются в меню или выдаются /menuses slots add <ник> [n].
+  free-slots: 2
+  max-slots: 4
+  # Меню при входе: always — всегда; multiple — если профилей больше одного или у персонажа нет класса;
+  # new — только без класса (новичок); never — только командой.
+  open-on-join: always
+  # Меню при входе нельзя закрыть Shift: только выбрать профиль («Продолжить» у текущего) или «В лобби».
+  require-choice: true
+  # Сколько тиков подождать после загрузки пакета ресурсов, прежде чем открыть меню при входе.
+  join-delay-ticks: 40
+  # Покупка слота в меню (кнопка «+ цена» внизу панели, второе нажатие — подтверждение).
+  buy:
+    price: 649
+    # vault — экономика Vault (на проде — встроенная экономика форка Vault, та же, что у core-vault и /eco);
+    # command — баланс плейсхолдером balance-placeholder и списание командами take-commands ({player}, {price});
+    # none — бесплатно.
+    currency: vault
+    # Подпись цены на кнопке и значок рядом (предмет).
+    label: "649"
+    icon: DIAMOND
+    balance-placeholder: ""
+    take-commands: []
+  # Новый профиль: где появляется ("мир,x,y,z[,yaw,pitch]"; пусто — точка появления первого мира) и команды
+  # консоли после создания ({player}) — например, стартовый набор.
+  new-profile:
+    location: ""
+    commands: []
+  # Кнопка «В лобби»: команды ({player}); «player: ...» — от имени игрока через ~0,5 с (меню успевает закрыться;
+  # право на саму команду выдаётся на время её выполнения), остальные — от консоли.
+  # Пусто — телепорт на точку появления первого мира.
+  lobby:
+    commands: ["player: warp 123"]
+  # После выбора класса новому профилю — те же правила, что у lobby.
+  class-chosen:
+    commands: ["player: warp 123"]
+  # Что у профилей своё (остальное — общее на аккаунт). pdc-prefixes — ключи данных игрока (PersistentDataContainer):
+  # бижутерия и хранилище rezusmenu.
+  separate:
+    ender-chest: true
+    vanilla-exp: true
+    effects: true
+    pdc-prefixes: ["rezusmenu:jewel_", "rezusmenu:stash_"]
+  # Класс и прогресс. auto — API RoyalQuestClasses + MMOCore, если RQ стоит (иначе только команды); api — только API;
+  # commands — только команды ниже; none — класс общий на аккаунт. Команды консоли: {player}, {uuid}, {class}
+  # (ключ класса), {level}, плейсхолдеры PlaceholderAPI. on-save — перед уходом из профиля, on-load — после
+  # загрузки профиля, on-create — после создания нового (и после выбора класса без API).
+  class-bridge:
+    mode: auto
+    on-save: []
+    on-load: []
+    on-create: []
+  # Свои у профиля значения, которых нет в данных игрока: read — плейсхолдер (читается при уходе из профиля),
+  # restore — команда при входе в профиль ({value}), fresh — команда для нового профиля. По умолчанию — уровень
+  # core-vault (модуль levels).
+  extra-values:
+    - {name: corevault-level, read: "%corevault_exp_total%", restore: "level set {player} exp {value}", fresh: "level set {player} exp 0"}
+  # Карточка профиля: уровень и ключ класса (если нет API RQ), характеристики (три строки).
+  card:
+    level: "%hl_level%"
+    class-key: "%hl_class_key%"
+    stats:
+      - {name: "%hl_stats_primary_name%", default: "Сила", value: "%hl_stats_primary%"}
+      - {name: "Ловкость", value: "%hl_stats_agility%"}
+      - {name: "Выносливость", value: "%hl_stats_stamina%"}
+  # Классы нового профиля (ключи RoyalQuestClasses): название, цвет, иконка, описание (до двух строк).
+  classes:
+    swordsman: {name: "Мечник", color: "<red>", icon: IRON_SWORD, description: ["Ближний бой: щит и доспехи,", "крепкий и защищённый."]}
+    archer: {name: "Стрелок", color: "<green>", icon: BOW, description: ["Дальний бой: лук и арбалет,", "бьёт точно издалека."]}
+    mage: {name: "Маг", color: "<aqua>", icon: BLAZE_ROD, description: ["Стихии и заклинания,", "урон и контроль."]}
+    thief: {name: "Вор", color: "<yellow>", icon: GOLDEN_SWORD, description: ["Скрытный и ловкий боец", "ближнего боя."]}
+  # Название места на карточке: сначала зоны (прямоугольники x/z), потом название мира, иначе имя мира.
+  locations:
+    worlds:
+      world: "Начальная деревня"
+    areas: []
+    #  - {name: "Зиркония", world: world, from: [-500, -500], to: [500, 500]}
+  # Персонаж по центру: поворот (градусы) и насколько камера смотрит сверху.
+  character:
+    yaw: 28
+    pitch: 10

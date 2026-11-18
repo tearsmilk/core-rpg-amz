@@ -130,6 +130,16 @@ final class Jewelry {
         return type != null && r.types().contains(type.toUpperCase(Locale.ROOT));
     }
 
+    /** Причина отказа (тип слота, класс, уровень) или null — см. {@link JewelGuard#denyReason}. */
+    static String denyReason(final Settings settings, final Player player, final int index, final ItemStack item) {
+        return JewelGuard.denyReason(settings, player, index, item);
+    }
+
+    /** Снять неподходящую по классу/уровню бижутерию — см. {@link JewelGuard#enforce}. */
+    static int enforce(final Player player) {
+        return JewelGuard.enforce(player);
+    }
+
     private record TypeApi(Plugin plugin, Method method) {
     }
 

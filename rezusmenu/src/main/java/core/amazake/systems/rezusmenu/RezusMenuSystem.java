@@ -43,6 +43,7 @@ public final class RezusMenuSystem implements AmazakeSystem, Listener {
         context.registerListener(this.profiles);
         context.registerCommand(new MenusCommand(this.settings::get, this.menus, this::load, this.profiles));
         context.registerCommand(new ProfilesCommand(this.menus));
+        core.amazake.systems.rezusmenu.rpg.JewelGuard.attach(this.settings::get, context.plugin(), context.logger());
         // Систему могли включить после падения, когда игроки уже онлайн: вернуть тем, кто остался наблюдателем.
         for (final Player p : org.bukkit.Bukkit.getOnlinePlayers()) {
             context.runOnceForPlayer(p, () -> {
@@ -51,6 +52,7 @@ public final class RezusMenuSystem implements AmazakeSystem, Listener {
                     core.amazake.systems.rezusmenu.screen.Screen.restore(p, saved);
                     this.menus.restoreHud(p);
                 }
+                core.amazake.systems.rezusmenu.rpg.JewelGuard.scheduleEnforce(p, 20L);
             });
         }
         context.logger().info("rezusmenu включён: меню в списке " + this.settings.get().menus().size() + ".");
@@ -80,6 +82,8 @@ public final class RezusMenuSystem implements AmazakeSystem, Listener {
         this.profileConfig.set(core.amazake.systems.rezusmenu.profiles.ProfileConfig.from(this.context.loadConfig(),
             w -> this.context.logger().warning("config.yml: " + w)));
         Text.setPrefix(parsed.prefix());
+        core.amazake.systems.rezusmenu.rpg.JewelGuard.configure(
+            this.context.loadConfig().getConfigurationSection("rpg.jewelry.bind"));
     }
 
     /** Кнопка диалога /menuses. Событие может прийти не из потока игрока: само открытие — в его потоке. */
