@@ -357,32 +357,25 @@ def coin(size=9):
     return from_map(COIN, {"O": G_OUT, "h": G_H, "l": G_L, "b": G_B, "d": G_D, "D": G_D})
 
 
+COMPASS = [
+    "...OOOOO...",
+    ".OOLLLLBOO.",
+    ".OLffRffBO.",
+    "OLfffRfffDO",
+    "OLffRRRfgDO",
+    "OLfffXfggDO",
+    "OBffNNNggDO",
+    "OBfffNgggDO",
+    ".OBffggDDO.",
+    ".OODDDDDOO.",
+    "...OOOOO...",
+]
+
+
 def compass(size=11):
-    im = new(size, size)
-    c = (size - 1) / 2
-    R = size / 2
-    face_l, face_d = H("dbe4ec"), H("a9b8c6")
-    for y in range(size):
-        for x in range(size):
-            d = math.hypot(x - c, y - c)
-            if d <= R - 0.2:
-                l = ((c - x) + (c - y)) / (2 * R)
-                if d > R - 1.2:
-                    col = OUTL
-                elif d > R - 2.3:
-                    col = G_L if l > 0.0 else (G_B if l > -0.3 else G_D)
-                else:
-                    col = face_l if l > -0.15 else face_d
-                im.putpixel((x, y), col)
-    m = size // 2
-    red_l, red_d = H("ff5a4a"), H("b0202a")
-    dk_l, dk_d = H("4f6a85"), H("1b2530")
-    px(im, m, m - 3, red_l)
-    px(im, m, m - 2, red_l); px(im, m - 1, m - 1, red_l); px(im, m, m - 1, red_d); px(im, m + 1, m - 1, red_d)
-    px(im, m, m, OUTL)
-    px(im, m - 1, m + 1, dk_l); px(im, m, m + 1, dk_d); px(im, m + 1, m + 1, dk_d)
-    px(im, m, m + 2, dk_d); px(im, m, m + 3, dk_d)
-    return im
+    """Gold-rimmed compass, red needle north, slate needle south (11x11)."""
+    return from_map(COMPASS, {"O": OUTL, "L": G_L, "B": G_B, "D": G_D, "f": H("dbe4ec"), "g": H("aebdcb"),
+                              "R": H("e8443a"), "X": OUTL, "N": S2})
 
 
 def head_frame():
@@ -409,21 +402,21 @@ def head_frame():
 
 
 def player_panel():
-    """152x40 info panel right of the portrait: two currency fields (70x11) and two bar slots."""
-    im = new(151, 40)
-    panel(im, 0, 0, 151, 40)
-    recess(im, 3, 3, 70, 11)        # coin field   x 3..72
-    recess(im, 77, 3, 70, 11)       # gem field    x 77..146
-    # small gold rivets between the fields
-    px(im, 74, 7, G_D); px(im, 75, 7, G_B); px(im, 74, 8, G_D); px(im, 75, 8, G_D)
+    """122x40 info panel right of the portrait: coin field 62x11, gem field 51x11, two bar rows."""
+    im = new(122, 40)
+    panel(im, 0, 0, 122, 40)
+    recess(im, 3, 3, 62, 11)        # coin field   x 3..64
+    recess(im, 68, 3, 51, 11)       # gem field    x 68..118
+    # small gold rivet between the fields
+    px(im, 66, 7, G_L); px(im, 66, 8, G_D)
     return im
 
 
 def location_panel():
-    """160x15 top-centre plate: compass socket on the left, recessed text field."""
-    im = new(160, 15)
-    panel(im, 0, 0, 160, 15)
-    recess(im, 16, 2, 141, 11)
+    """140x15 top-centre plate: compass socket on the left, recessed text field."""
+    im = new(140, 15)
+    panel(im, 0, 0, 140, 15)
+    recess(im, 16, 2, 121, 11)
     return im
 
 
@@ -589,10 +582,10 @@ def main():
     # top-left player panel
     made.append(save(head_frame(), "portrait_frame.png"))
     made.append(save(player_panel(), "player_panel.png"))
-    made.append(save(bar_frame(132, 10), "bar_frame_wide.png"))
-    made.append(save(bar_fill(130, 8, ramp("xp")), "fill_wide_xp.png"))
-    made.append(save(bar_fill(130, 8, ramp("mana")), "fill_wide_mana.png"))
-    made.append(save(bar_fill(130, 8, ramp("energy")), "fill_wide_energy.png"))
+    made.append(save(bar_frame(106, 10), "bar_frame_wide.png"))
+    made.append(save(bar_fill(104, 8, ramp("xp")), "fill_wide_xp.png"))
+    made.append(save(bar_fill(104, 8, ramp("mana")), "fill_wide_mana.png"))
+    made.append(save(bar_fill(104, 8, ramp("energy")), "fill_wide_energy.png"))
     made.append(save(coin(9), "icon_coin.png"))
     made.append(save(icon(GEM, "wither", {"s": H("1a1426"), "d": H("2e2247"), "b": H("4a3672"),
                                           "l": H("7a5fb0"), "h": H("c8b4ff")}), "icon_gem.png"))

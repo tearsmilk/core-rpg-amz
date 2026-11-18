@@ -5,10 +5,12 @@ import core.amazake.systems.coreportals.PortalItem;
 import core.amazake.systems.coreportals.PortalType;
 import core.amazake.systems.coreportals.Settings;
 import core.amazake.systems.coreportals.TeleportAction;
+import core.amazake.systems.coreportals.anim.GateTimeline;
 import core.amazake.systems.coreportals.anim.RiftTimeline;
 import core.amazake.systems.coreportals.anim.RingTimeline;
 import core.amazake.systems.coreportals.anim.Timeline;
 import core.amazake.systems.coreportals.geo.BlockQuery;
+import core.amazake.systems.coreportals.geo.GatePlacement;
 import core.amazake.systems.coreportals.geo.Placement;
 import core.amazake.systems.coreportals.geo.RiftPlacement;
 import core.amazake.systems.coreportals.geo.RingPlacement;
@@ -124,6 +126,8 @@ public final class PortalManager implements Listener {
         final WorldBlocks blocks = new WorldBlocks(world);
         final int distance = s.distanceFor(type);
         final Optional<Spot> found = switch (type) {
+            case GATE -> GatePlacement.find(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), distance,
+                s.groundSearch(), blocks);
             case EMERALD -> RingPlacement.find(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), distance,
                 s.groundSearch(), blocks);
             case LAPIS -> RiftPlacement.find(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), distance,
@@ -165,6 +169,7 @@ public final class PortalManager implements Listener {
 
     private void noRoom(final Player player, final PortalType type, final Settings s) {
         switch (type) {
+            case GATE -> this.messenger.send(player, s.gate().noRoom());
             case EMERALD -> this.messenger.send(player, s.messages().noRoomEmerald());
             case LAPIS -> {
                 final RiftPlacement.Size size = s.lapis().size();
@@ -182,6 +187,7 @@ public final class PortalManager implements Listener {
                       final PortalType type, final Settings s) {
         final long life = s.lifetimeFor(type);
         final PortalBody body = switch (type) {
+            case GATE -> new GateBody(world, spot, GateTimeline.of(life));
             case EMERALD -> new RingBody(world, spot, RingTimeline.of(life));
             case LAPIS -> new LapisBody(this.context, world, spot, s.lapis().size(), RiftTimeline.of(life),
                 this.instance, this.screenOwners);

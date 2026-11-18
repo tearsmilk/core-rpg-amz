@@ -506,5 +506,6 @@ public final class MenuManager implements Listener {
             Screen.restore(event.getPlayer(), saved);
         }
         this.restoreHud(event.getPlayer());
+        core.amazake.systems.rezusmenu.rpg.JewelGuard.scheduleEnforce(event.getPlayer(), 40L);
     }
 }

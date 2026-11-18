@@ -8,21 +8,23 @@ azerus_player:
   conditions:
     - gamemode{gm=creative,spectator} false hide # hidden in creative/spectator (as the old HUD)
   layers:
-    coin_value:  # plain balance (default)
+    coin_value:  # whole number - when the /menu currency toggle (deluxemenus meta 'currency') is on, as the old HUD
       conditions:
-        - placeholder{ph=%deluxemenus_meta_currency_BOOLEAN%;v=true;o==} false hide
+        - placeholder{ph=%deluxemenus_meta_currency_BOOLEAN%;v=true;o==} true hide
       text: "<#ffd25a>%vault_eco_balance_fixed%"
       font: "mmohud-font"
       align: right
+      shadow: "#10161dff"
       offset:
         x: 55
         y: -5
-    coin_value_formatted:  # formatted balance - same /menu toggle as the old HUD
+    coin_value_formatted:  # default: grouped number without the currency word (fits the 62 px field)
       conditions:
-        - placeholder{ph=%deluxemenus_meta_currency_BOOLEAN%;v=true;o==} true hide
-      text: "<#ffd25a>%vault_eco_balance_formatted%"
+        - placeholder{ph=%deluxemenus_meta_currency_BOOLEAN%;v=true;o==} false hide
+      text: "<#ffd25a>%corevault_balance_short%"
       font: "mmohud-font"
       align: right
+      shadow: "#10161dff"
       offset:
         x: 55
         y: -5
@@ -32,8 +34,9 @@ azerus_player:
       text: "<#cdb8ff>%azerus_gems%"
       font: "mmohud-font"
       align: right
+      shadow: "#10161dff"
       offset:
-        x: 129
+        x: 120
         y: -5
     gem_value_none:
       conditions:
@@ -41,8 +44,9 @@ azerus_player:
       text: "<#5d7690>-"
       font: "mmohud-font"
       align: right
+      shadow: "#10161dff"
       offset:
-        x: 129
+        x: 120
         y: -5
     coin_icon:
       texture:
@@ -54,7 +58,7 @@ azerus_player:
       texture:
         path: assets/azerus/icon_gem.png
       offset:
-        x: 118
+        x: 109
         y: -4
     head:  # player's face (8x8 skin pixels x3 = 24x24), MythicHUD head layer
       head:
@@ -82,10 +86,11 @@ azerus_player_xp:
   layers:
     label:
       text: "MMO LV.%mmocore_level% : %math_1_{mmocore_experience}*100/{mmocore_next_level}%%"
-      font: "mmohud-font-outline"
+      font: "mmohud-font"
       align: center
+      shadow: "#10161dff"
       offset:
-        x: 120
+        x: 107
         y: -18
     icon:
       texture:
@@ -101,7 +106,7 @@ azerus_player_xp:
         y: -17
       function:
         listener: mmoexp
-        increment: 65
+        increment: 52
         orientation: horizontal
     frame:
       texture:
@@ -120,19 +125,21 @@ azerus_player_mana:
       conditions:
         - placeholder{ph=%mmocore_mana_name%;v=Энергия} false hide
       text: "MP.%fill-value%/%fill-max%"
-      font: "mmohud-font-outline"
+      font: "mmohud-font"
       align: center
+      shadow: "#10161dff"
       offset:
-        x: 120
+        x: 107
         y: -30
     label_energy:
       conditions:
         - placeholder{ph=%mmocore_mana_name%;v=Энергия} true hide
       text: "EN.%fill-value%/%fill-max%"
-      font: "mmohud-font-outline"
+      font: "mmohud-font"
       align: center
+      shadow: "#10161dff"
       offset:
-        x: 120
+        x: 107
         y: -30
     icon_mana:
       conditions:
@@ -160,7 +167,7 @@ azerus_player_mana:
         y: -29
       function:
         listener: mana
-        increment: 65
+        increment: 52
         orientation: horizontal
     fill_mana:
       conditions:
@@ -172,7 +179,7 @@ azerus_player_mana:
         y: -29
       function:
         listener: mana
-        increment: 65
+        increment: 52
         orientation: horizontal
     frame:
       texture:
@@ -187,11 +194,12 @@ azerus_location:
     - gamemode{gm=creative,spectator} false hide # hidden in creative/spectator (as the old HUD)
   layers:
     text:
-      text: "<#ffd25a>%player_world%<#5d7690> | <#dce6ef>%player_x% <#5d7690>/<#dce6ef> %player_y% <#5d7690>/<#dce6ef> %player_z%"
+      text: "<#ffd25a>%player_world% <#5d7690>| <#dce6ef>%player_x% %player_y% %player_z%"
       font: "mmohud-font"
       align: center
+      shadow: "#10161dff"
       offset:
-        x: 86
+        x: 76
         y: -4
     icon:
       texture:
@@ -237,8 +245,9 @@ azerus_armor:
   layers:
     value:
       text: "%fill-value%"
-      font: "mmohud-font-outline"
+      font: "mmohud-font"
       align: center
+      shadow: "#10161dff"
       offset:
         x: 45
         y: -2
@@ -273,15 +282,17 @@ azerus_health:
   layers:
     value:
       text: "%player_health_rounded%/%player_max_health_rounded%"
-      font: "mmohud-font-outline"
+      font: "mmohud-font"
       align: ['placeholder{ph=%player_absorption%;v=0;o=>} false hide']
+      shadow: "#10161dff"
       offset:
         x: 45
         y: -10
     value_absorption:
       text: "<#ffe066>%math_0_{player_health_rounded}+{player_absorption}%<white>/%player_max_health_rounded%"
-      font: "mmohud-font-outline"
+      font: "mmohud-font"
       align: ['placeholder{ph=%player_absorption%;v=0;o=>} true hide']
+      shadow: "#10161dff"
       offset:
         x: 45
         y: -10
@@ -416,8 +427,9 @@ azerus_mana:
   layers:
     value:
       text: "%fill-value%/%fill-max%"
-      font: "mmohud-font-outline"
+      font: "mmohud-font"
       align: center
+      shadow: "#10161dff"
       offset:
         x: 35
         y: -2
@@ -452,8 +464,9 @@ azerus_energy:
   layers:
     value:
       text: "%fill-value%/%fill-max%"
-      font: "mmohud-font-outline"
+      font: "mmohud-font"
       align: center
+      shadow: "#10161dff"
       offset:
         x: 35
         y: -2
@@ -487,8 +500,9 @@ azerus_food:
   layers:
     value:
       text: "%fill-value%/20"
-      font: "mmohud-font-outline"
+      font: "mmohud-font"
       align: center
+      shadow: "#10161dff"
       offset:
         x: 35
         y: -10
@@ -570,6 +584,7 @@ azerus_level:
       text: "<#80e848>%hl_level%"
       font: "mmohud-font"
       align: center
+      shadow: "#10161dff"
       offset:
         x: 10
         y: -3

@@ -172,5 +172,75 @@ class 幾何の試験(unittest.TestCase):
         self.assertAlmostEqual(0, ronri.揺れ高さ(5, 0.2), delta=1e-9)
 
 
+class 棒の試験(unittest.TestCase):
+    """Палка: разбор секции stick, «со спины», цель удара, путь луча, коды шейдера."""
+
+    def test_bundled_stick_config(self):
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest("нет PyYAML")
+        with open(os.path.join(ここ, "config.yml"), encoding="utf-8") as f:
+            c = _設定(f.read())
+        warns = []
+        b = settei.解析(c, warns.append).棒
+        self.assertEqual([], warns)
+        self.assertEqual("STICK", b.素材)
+        self.assertEqual(frozenset(), b.nexo_ids)
+        self.assertEqual((6.0, 3.5, 6.0, 2.0, 60.0), (b.背刺.冷却, b.背刺.届き, b.背刺.傷, b.背刺.倍率, b.背刺.背角))
+        self.assertEqual((20, 10.0, 16.0, 8.0, 3.0, False),
+                         (b.余燼.詠唱, b.余燼.冷却, b.余燼.射程, b.余燼.傷, b.余燼.火秒, b.余燼.貫通))
+        self.assertTrue(b.背刺.音 and b.余燼.撃音)
+
+    def test_stick_disabled_and_ids(self):
+        s = settei.解析({"stick": {"enabled": False}})
+        self.assertIsNone(s.棒)
+        s = settei.解析({"stick": {"nexo-ids": ["azerus_stick", " "], "backstab": {"enabled": False}}})
+        self.assertEqual(frozenset({"azerus_stick"}), s.棒.nexo_ids)
+        self.assertIsNone(s.棒.背刺)
+        self.assertIsNotNone(s.棒.余燼)
+        self.assertIsNone(settei.解析({}).棒)
+
+    def test_behind(self):
+        # цель смотрит на юг (+z, yaw 0); атакующий севернее (−z) — за спиной
+        self.assertTrue(ronri.背後か(0, (0, 0, -2), (0, 0, 0), 60))
+        self.assertFalse(ronri.背後か(0, (0, 0, 2), (0, 0, 0), 60))          # спереди
+        self.assertFalse(ronri.背後か(0, (2, 0, 0), (0, 0, 0), 60))          # сбоку (90°)
+        self.assertTrue(ronri.背後か(0, (-1, 0, -2), (0, 0, 0), 60))         # 26.6° — сзади-сбоку
+        self.assertFalse(ronri.背後か(0, (-2, 0, -1), (0, 0, 0), 60))        # 63.4°
+        self.assertTrue(ronri.背後か(90, (2, 0, 0), (0, 0, 0), 60))          # смотрит на запад, мы с востока
+        self.assertFalse(ronri.背後か(0, (0, 5, 0), (0, 0, 0), 60))          # ровно сверху — не «сзади»
+
+    def test_melee_target_first_and_cone(self):
+        E = (0.0, 1.6, 0.0)
+        v = ronri.視線(0, 0)                                                 # на юг
+        zb = lambda x, z: (x - 0.3, 0.0, z - 0.3, x + 0.3, 1.95, z + 0.3)
+        hit = ronri.近接の的(E, v, [("far", zb(0, 3.0)), ("near", zb(0, 1.5))], 3.5, 20, 0.2)
+        self.assertEqual("near", hit[1])
+        self.assertAlmostEqual(1.0, hit[0], delta=1e-9)
+        self.assertIsNone(ronri.近接の的(E, v, [("behind", zb(0, -2))], 3.5, 20, 0.2))
+        self.assertIsNone(ronri.近接の的(E, v, [("far", zb(0, 4.5))], 3.5, 20, 0.2))
+        # мимо луча, но в конусе 20°: центр (0.6, 0.975, 2.6) — угол 18.4° → да; (1.6, …) → нет
+        self.assertIsNotNone(ronri.近接の的(E, v, [("c", zb(0.6, 2.6))], 3.5, 20, 0.0))
+        self.assertIsNone(ronri.近接の的(E, v, [("c", zb(1.6, 2.6))], 3.5, 20, 0.0))
+
+    def test_owned_length_cuts_at_foreign_chunk(self):
+        v = (0.0, 0.0, 1.0)
+        n = ronri.使える長さ((8.0, 64.0, 8.0), v, 16.0, 4.0, 1.3, lambda cx, cz: cz <= 0)
+        self.assertTrue(4.0 <= n < 8.0 + 1e-9)
+        self.assertAlmostEqual(16.0, ronri.使える長さ((8.0, 64.0, 8.0), v, 16.0, 4.0, 1.3, lambda cx, cz: True))
+
+    def test_shader_codes(self):
+        for tick in (0, 124, 125, 24000 + 7, 123456):
+            for crit in (False, True):
+                R = ronri.斬撃R(tick, crit)
+                self.assertTrue(0 <= R <= 249)
+                self.assertEqual((tick % 125, crit), ronri.斬撃R解読(R))
+        self.assertEqual(ronri.斬撃R(5, False), ronri.斬撃R(5 + 24000, False))   # шов дня
+        self.assertEqual((0, 250, 125), (ronri.充填R(0), ronri.充填R(1.0), ronri.充填R(0.5)))
+        self.assertEqual((1, 128, 250), (ronri.光線R(0.01), ronri.光線R(16), ronri.光線R(99)))
+        self.assertEqual(ronri.印G * 256 + ronri.印B, (233 << 8) | 253)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

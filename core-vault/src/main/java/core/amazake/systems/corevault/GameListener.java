@@ -1,6 +1,7 @@
 package core.amazake.systems.corevault;
 
 import core.amazake.systems.api.SystemContext;
+import core.amazake.systems.corevault.coin.CoinBonus;
 import core.amazake.systems.corevault.coin.Coins;
 import core.amazake.systems.corevault.coin.DropRule;
 import core.amazake.systems.corevault.data.Account;
@@ -193,7 +194,8 @@ final class GameListener implements Listener {
         }
         final ItemStack stack = item.getItemStack();
         final int amount = stack.getAmount();
-        final long total = value * amount;
+        // Бонус CUSTOM_COIN_GAIN (MythicLib) — только за поднятые с земли монеты, не за перевод из инвентаря.
+        final long total = CoinBonus.apply(p, value * amount, this.context.logger());
         final Ledger.Result r = this.treasury.deposit(p.getUniqueId(), p.getName(), total);
         if (!r.ok()) {
             this.refused(p, r);

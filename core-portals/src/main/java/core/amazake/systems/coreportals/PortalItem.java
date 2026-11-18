@@ -12,8 +12,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 /**
- * Предметы-порталы: «Портал» (RESIN_CLUMP), «Изумрудный портал» (EMERALD) и «Лазуритовый портал» (LAPIS_LAZULI),
- * у каждого своя метка в PDC.
+ * Предметы-порталы: «Портал» (RESIN_CLUMP), «Изумрудный портал» (EMERALD), «Лазуритовый портал» (LAPIS_LAZULI)
+ * и «Врата междумирья» (BREEZE_ROD), у каждого своя метка в PDC.
  * Узнаются по метке и материалу, а не по имени.
  */
 public final class PortalItem {
@@ -24,6 +24,8 @@ public final class PortalItem {
     public static final NamespacedKey KEY_EMERALD = new NamespacedKey("coreportals", "emerald_portal_item");
     /** Метка «Лазуритового портала». */
     public static final NamespacedKey KEY_LAPIS = new NamespacedKey("coreportals", "lapis_portal_item");
+    /** Метка «Врат междумирья». */
+    public static final NamespacedKey KEY_GATE = new NamespacedKey("coreportals", "gate_portal_item");
 
     private PortalItem() {
     }
@@ -40,6 +42,13 @@ public final class PortalItem {
         final String model;
         final NamespacedKey key;
         switch (type) {
+            case GATE -> {
+                material = Material.BREEZE_ROD;
+                name = s.gate().itemName();
+                loreLines = s.gate().itemLore();
+                model = s.gate().itemModel();
+                key = KEY_GATE;
+            }
             case EMERALD -> {
                 material = Material.EMERALD;
                 name = s.emerald().itemName();
@@ -87,10 +96,14 @@ public final class PortalItem {
             return null;
         }
         final Material m = stack.getType();
-        if (m != Material.RESIN_CLUMP && m != Material.EMERALD && m != Material.LAPIS_LAZULI) {
+        if (m != Material.RESIN_CLUMP && m != Material.EMERALD && m != Material.LAPIS_LAZULI
+            && m != Material.BREEZE_ROD) {
             return null;
         }
         final var pdc = stack.getItemMeta().getPersistentDataContainer();
+        if (m == Material.BREEZE_ROD && pdc.has(KEY_GATE, PersistentDataType.BYTE)) {
+            return PortalType.GATE;
+        }
         if (m == Material.RESIN_CLUMP && pdc.has(KEY, PersistentDataType.BYTE)) {
             return PortalType.RESIN;
         }

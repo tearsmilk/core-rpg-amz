@@ -245,7 +245,8 @@ def _棒(b, 警告):
     ids = frozenset(s.strip() for s in 文字列(b, "nexo-ids") if s.strip())
     bs = None
     s = 区画(b, "backstab")
-    if s is not None and 真偽(s, "enabled", True):
+    s = {} if s is None else s       # нет подсекции — всё по умолчанию
+    if 真偽(s, "enabled", True):
         bs = 背刺(max(0.0, 実数(s, "cooldown", 6.0)), max(0.0, 実数(s, "miss-cooldown", 1.0)),
                  max(0.5, min(8.0, 実数(s, "range", 3.5))), max(0.0, min(60.0, 実数(s, "cone", 20.0))),
                  max(0.0, min(1.0, 実数(s, "ray-margin", 0.2))), max(0.0, 実数(s, "damage", 6.0)),
@@ -258,7 +259,8 @@ def _棒(b, 警告):
                  _音列(s, "sounds"), _音列(s, "crit-sounds"))
     em = None
     e = 区画(b, "embers")
-    if e is not None and 真偽(e, "enabled", True):
+    e = {} if e is None else e       # нет подсекции — всё по умолчанию
+    if 真偽(e, "enabled", True):
         em = 余燼(_挟む(int(round(実数(e, "cast-seconds", 1.0) * 20.0)), 1, 200), max(0.0, 実数(e, "cooldown", 10.0)),
                  max(0.0, 実数(e, "cancel-cooldown", 1.0)), max(1.0, min(48.0, 実数(e, "range", 16.0))),
                  max(1.0, min(16.0, 実数(e, "piece-length", 4.0))), max(0.0, 実数(e, "damage", 8.0)),

@@ -322,9 +322,19 @@ def draw_layout(canvas, layout, assets, fonts, st, log):
                 txt = l["text"]
                 if fv is not None:
                     txt = txt.replace("%fill-value%", fmt(fv)).replace("%fill-max%", fmt(fm))
+                if "changeoutput_equals_input" in txt:      # skill-name chain -> sample value
+                    txt = st.ph.get("__skillname__", "")
                 txt = st.resolve(txt)
                 font = fonts.get(l.get("font", "default"), fonts["default"])
-                img, wv = font.render(parse_mm(txt))
+                segs = parse_mm(txt)
+                img, wv = font.render(segs)
+                shc = l.get("shadow")
+                if shc:
+                    shimg, _ = font.render([(t, hexc(shc[:7])) for t, _c in segs])
+                    sh_canvas = Image.new("RGBA", (img.width + 1, img.height + 1), (0, 0, 0, 0))
+                    sh_canvas.alpha_composite(shimg, (1, 1))
+                    sh_canvas.alpha_composite(img, (0, 0))
+                    img = sh_canvas
                 sc = l.get("scale", 1)
                 if isinstance(sc, (int, float)) and sc != 1:
                     img = img.resize((max(1, round(img.width * sc)), max(1, round(img.height * sc))), Image.NEAREST)
@@ -425,10 +435,11 @@ def draw_vanilla(canvas, fonts, hotbar_img, sel_img, selected=2, item_name="Ба
         img, wv = f.render([(actionbar, (255, 210, 90))])
         canvas.alpha_composite(img, (W // 2 - wv // 2, H - 68 - 4 - 8))
     if chat:
-        lines = ["<Mia> гоу в данж на 20 ур", "<Rezus> щас, докачаю ману", "[Сервер] Разлом откроется через 5 мин"]
-        y = H - 48 - 9 * len(lines)
+        # vanilla chat: 320 px wide (chat width 1.0), last line ends at H-40, 9 px lines, fades after 10 s
+        lines = ["<Mia> гоу в данж на 20 ур", "[Сервер] Разлом откроется через 5 мин"]
+        y = H - 40 - 9 * len(lines)
         for ln in lines:
-            bg = Image.new("RGBA", (160, 9), (0, 0, 0, 110))
+            bg = Image.new("RGBA", (322, 9), (0, 0, 0, 110))
             canvas.alpha_composite(bg, (0, y))
             img, wv = f.render([(ln, (240, 240, 240))])
             canvas.alpha_composite(img, (2, y + 1 - 8))
@@ -446,9 +457,9 @@ def sample_state(casting=False, held=0, absorption=0):
     ph = {
         "%player_health_rounded%": "56", "%player_max_health_rounded%": "80", "%player_absorption%": str(absorption),
         "%math_0_{player_health_rounded}+{player_absorption}%": str(56 + absorption),
-        "%vault_eco_balance_fixed%": "12450", "%vault_eco_balance_formatted%": "12 450 монет",
+        "%vault_eco_balance_fixed%": "12450", "%vault_eco_balance_formatted%": "12 450 монет", "%corevault_balance_short%": "12\u00a0450",
         "%deluxemenus_meta_currency_BOOLEAN%": "false", "%deluxemenus_meta_foodicon_BOOLEAN%": "false",
-        "%azerus_gems%": "320",
+        "%azerus_gems%": "320", "__skillname__": "<gold>Огненная стрела" if casting else "",
         "%mmocore_level%": "27", "%math_1_{mmocore_experience}*100/{mmocore_next_level}%": "45.3",
         "%hl_level%": "27", "%mmocore_mana_name%": "Мана", "%mmocore_mana%": "120",
         "%mmocore_class_id%": "MAGE", "%mmocore_is_casting%": "true" if casting else "false",

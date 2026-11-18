@@ -7,13 +7,18 @@
 #
 # Потоки: игрок (инвентарь, скорость, частицы у игрока) — только его поток; дрожь (частицы, копии блоков) — поток
 # региона точки удара. Состояние игроков — dict по UUID, каждый 持ち主 трогает только поток своего игрока.
+#
+# Палка (bou.py, секция stick): ПКМ — «Удар в спину», Shift+ПКМ — «Угли»; дисплеи эффектов — kouka.py (шейдер
+# moonstaff). Java-система core-weapons таких приёмов не имеет, поэтому они работают и во время «спячки».
 
 import uuid
 
 import java
 import amazake
+import bou
 import dougu
 import jishin
+import kouka
 import mochinushi
 import settei
 from dougu import Bukkit, EquipmentSlot, Material, ItemStack, Key, DataComponentTypes
@@ -107,6 +112,14 @@ def 起動():
                          "(снимутся при следующем входе)")
     if not _眠るべきか():
         _目覚める()
+    for p in Bukkit.getOnlinePlayers():   # хвосты дисплеев палки после сбоя — каждому в его потоке
+        amazake.run_once_for_player(p, lambda p=p: _掃除(p))
+
+
+def _掃除(p):
+    n = kouka.掃除(p)
+    if n:
+        amazake.log.info("core_weapons: убрано старых дисплеев палки: " + str(n))
 
 
 @amazake.on_unload
@@ -115,6 +128,7 @@ def 終了():
     Задачи (замах, кольцо, дрожь) ядро уже отменило, но шаг, уже вошедший в Python, может доработать (GIL
     переключается между байткодами) — флаг 終了済み ставится первым, и такие шаги сами убирают то, что успели сделать."""
     dougu.終了済み[0] = True
+    bou.片付け()
     for h in list(持ち主表.values()):
         try:
             if not h.振り中か():
@@ -142,6 +156,7 @@ def 参加(event):
 
 @amazake.on("PlayerQuitEvent", priority="monitor")
 def 退出(event):
+    bou.去る(event.getPlayer())
     h = 持ち主表.pop(_UUID(event.getPlayer()), None)
     if h is not None:
         h.停止()   # кадр не уезжает в файл игрока
@@ -201,6 +216,7 @@ def 捨てた(event):
 
 @amazake.on("PlayerDeathEvent", priority="high")
 def 死んだ(event):
+    bou.止める(event.getEntity(), "即")
     drops = event.getDrops()
     for i in range(drops.size()):
         直した = dougu.枠付き(drops.get(i), None)
@@ -228,6 +244,49 @@ def 打撃(event):
     jishin.揺れ(w.地震, event.getEntity().getLocation(), _UUID(p), 個体).開始()
 
 
+# ------------------------------------------------------------------------------------------------ палка
+
+@amazake.on("PlayerInteractEvent", priority="high", ignore_cancelled=False)
+def 棒の右クリック(event):
+    """ПКМ палкой в воздух / по блоку (поток игрока). Клик в воздух приходит «отменённым» — ignore_cancelled=False.
+    Только основная рука. Клик по двери/сундуку без Shift — как обычно (bou.発動 сам пропускает)."""
+    a = event.getAction().name()
+    if a != "RIGHT_CLICK_AIR" and a != "RIGHT_CLICK_BLOCK":
+        return
+    if event.getHand() != EquipmentSlot.HAND or settei.現在.棒 is None:
+        return
+    blk = event.getClickedBlock() if a == "RIGHT_CLICK_BLOCK" else None
+    if blk is not None and event.useInteractedBlock().name() == "DENY" and not event.getPlayer().isSneaking():
+        blk = None
+    bou.発動(event.getPlayer(), None, blk)
+
+
+@amazake.on("PlayerInteractEntityEvent", priority="high", ignore_cancelled=True)
+def 棒で生き物(event):
+    """ПКМ палкой по существу (поток игрока): цель — оно (если годится). Взаимодействие (торговля и т.п.) отменяется."""
+    if event.getHand() != EquipmentSlot.HAND or settei.現在.棒 is None:
+        return
+    if bou.発動(event.getPlayer(), event.getRightClicked(), None):
+        event.setCancelled(True)
+
+
+@amazake.on("PlayerChangedWorldEvent", priority="monitor")
+def 世界移動(event):
+    bou.止める(event.getPlayer(), "即")
+
+
+@amazake.on("PlayerTeleportEvent", priority="monitor", ignore_cancelled=True)
+def 瞬間移動(event):
+    p = event.getPlayer()
+    st = bou.状態表.get(_UUID(p))
+    if st is None or st.詠唱 is None:
+        return
+    f = event.getFrom()
+    t = event.getTo()
+    if t is None or not f.getWorld().equals(t.getWorld()) or f.distanceSquared(t) > 16.0:
+        bou.止める(p, "即")
+
+
 # ------------------------------------------------------------------------------------------------ команда
 
 def _送る(to, 鍵, **ph):
@@ -249,7 +308,7 @@ def 武器コマンド(sender, args):
         _送る(sender, "reloaded")
     elif sub == "list":
         _送る(sender, "list", list=", ".join(settei.現在.武器表.keys()) + " | игроков " + str(len(持ち主表))
-              + ", копий блоков " + str(jishin.表示数()))
+              + ", копий блоков " + str(jishin.表示数()) + " | " + bou.情報())
     elif sub == "give":
         _渡す(sender, args)
     else:

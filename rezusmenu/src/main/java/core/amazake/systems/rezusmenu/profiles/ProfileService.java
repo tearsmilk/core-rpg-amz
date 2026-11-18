@@ -285,6 +285,7 @@ public final class ProfileService implements Listener {
         this.context.logger().info("profiles: " + p.getName() + " — профиль №" + from + " → №" + target
             + (data == null ? " (новый)" : ""));
         p.sendMessage(Text.mm(Text.prefix() + "<green>Профиль загружен.</green>"));
+        core.amazake.systems.rezusmenu.rpg.JewelGuard.scheduleEnforce(p, 2L);
     }
 
     /** Надеть обратно профиль {@code from} (его снимок только что сохранён). */
@@ -303,6 +304,7 @@ public final class ProfileService implements Listener {
         this.marker(p, from, a.generation());
         p.saveData();
         this.store.save(a, null);
+        core.amazake.systems.rezusmenu.rpg.JewelGuard.scheduleEnforce(p, 2L);
     }
 
     private void extras(final Player p, final ConfigurationSection data) {

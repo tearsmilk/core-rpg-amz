@@ -26,14 +26,14 @@ azerus-layout:
       offset:
         x: 4
         y: -4
-    # top-centre plate (160 px wide)
+    # top-centre plate (140 px wide)
     location:
       asset: 'azerus_location'
       position:
         x: 50
         y: 100
       offset:
-        x: -80
+        x: -70
         y: -3
     # bottom: hotbar is 182 px wide (centre-91..centre+91), 22 px tall
     panel_left:

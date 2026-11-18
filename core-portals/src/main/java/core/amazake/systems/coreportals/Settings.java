@@ -30,12 +30,43 @@ import org.bukkit.configuration.ConfigurationSection;
  * @param emerald           «Изумрудный портал»: свои предмет, срок жизни, расстояние и (по желанию) действие
  * @param lapis             «Лазуритовый портал»: свои предмет, срок жизни, расстояние, размер разлома, эффекты на
  *                          экране, затягивание и (по желанию) действие
+ * @param gate              «Врата междумирья»: свои предмет, срок жизни, расстояние, сообщение «нет места» и
+ *                          (по желанию) действие
  */
 public record Settings(String prefix, String itemName, List<String> itemLore, String itemModel, boolean consume,
                        long cooldownTicks, long lifetimeTicks, int distance, int groundSearch, int maxPerPlayer,
                        boolean ownerOnly, long immunityTicks, String frameBlock, float viewRange,
                        TeleportAction teleport, boolean particles, boolean sounds, Messages messages,
-                       Emerald emerald, Lapis lapis) {
+                       Emerald emerald, Lapis lapis, Gate gate) {
+
+    /**
+     * Раздел {@code gate:} config.yml — «Врата междумирья» (рама 6×10, кольцо растёт от земли). В отличие от
+     * изумрудного и лазуритового, срок жизни и расстояние по умолчанию — свои (45 с и 5 рядов), а не общие
+     * {@code portal.*}: старый серверный config.yml без раздела {@code gate:} даёт ровно эти значения.
+     *
+     * @param itemName      имя предмета (MiniMessage)
+     * @param itemLore      описание предмета (MiniMessage)
+     * @param itemModel     item_model иконки (пусто — обычный стержень вихря)
+     * @param lifetimeTicks срок жизни врат
+     * @param distance      на сколько рядов блоков впереди игрока ставятся врата (4..8)
+     * @param noRoom        сообщение «здесь не открыть врата» ({@code gate.messages.no-room})
+     * @param teleport      своё действие при входе; {@code null} — общее {@code teleport}
+     */
+    public record Gate(String itemName, List<String> itemLore, String itemModel, long lifetimeTicks, int distance,
+                       String noRoom, TeleportAction teleport) {
+
+        public static final Gate DEFAULTS = new Gate(
+            "<!i><gradient:#8566ff:#ff91e6:#ffe0a0>Врата междумирья</gradient>",
+            List.of("<!i><gray>За створками дышит другое небо.",
+                "<!i><light_purple>ПКМ — открыть врата 6×10."),
+            "", 900L, 5,
+            "<red>Вратам нужно свободное место 6×10 блоков и пространство перед створками на твёрдой земле.",
+            null);
+
+        public Gate {
+            itemLore = List.copyOf(itemLore);
+        }
+    }
 
     /**
      * Раздел {@code lapis:} config.yml — «Лазуритовый портал» (разлом). Ключи, которых там нет, берутся из общих
@@ -99,6 +130,9 @@ public record Settings(String prefix, String itemName, List<String> itemLore, St
 
     /** Действие при входе в портал этого вида. */
     public TeleportAction teleportFor(final PortalType type) {
+        if (type == PortalType.GATE && this.gate.teleport() != null) {
+            return this.gate.teleport();
+        }
         if (type == PortalType.EMERALD && this.emerald.teleport() != null) {
             return this.emerald.teleport();
         }
@@ -113,6 +147,7 @@ public record Settings(String prefix, String itemName, List<String> itemLore, St
         return switch (type) {
             case EMERALD -> this.emerald.lifetimeTicks();
             case LAPIS -> this.lapis.lifetimeTicks();
+            case GATE -> this.gate.lifetimeTicks();
             default -> this.lifetimeTicks;
         };
     }
@@ -122,6 +157,7 @@ public record Settings(String prefix, String itemName, List<String> itemLore, St
         return switch (type) {
             case EMERALD -> this.emerald.distance();
             case LAPIS -> this.lapis.distance();
+            case GATE -> this.gate.distance();
             default -> this.distance;
         };
     }
@@ -146,7 +182,7 @@ public record Settings(String prefix, String itemName, List<String> itemLore, St
             "<red>Игрок <white><player></white> не в сети.",
             "<gold>Порталы (<count>):",
             "<gray>Открытых порталов нет.",
-            "<gray>/portals give [игрок] [кол-во] [resin|emerald|lapis] | reload | close | list");
+            "<gray>/portals give [игрок] [кол-во] [resin|emerald|lapis|gate] | reload | close | list");
 
         static Messages from(final ConfigurationSection s) {
             final Messages d = DEFAULTS;
@@ -169,7 +205,8 @@ public record Settings(String prefix, String itemName, List<String> itemLore, St
         "<!i><gradient:#ff2a12:#ff9a1f>Портал</gradient>",
         List.of("<!i><gray>Застывшая смола древнего разлома.", "<!i><gray>ПКМ — открыть портал перед собой."),
         "", true, 100L, 600L, 3, 3, 1, false, 60L, "POLISHED_BLACKSTONE", 1.5f,
-        TeleportAction.DEFAULT, true, true, Messages.DEFAULTS, Emerald.DEFAULTS, Lapis.DEFAULTS);
+        TeleportAction.DEFAULT, true, true, Messages.DEFAULTS, Emerald.DEFAULTS, Lapis.DEFAULTS,
+        Gate.DEFAULTS);
 
     public static Settings from(final ConfigurationSection c, final Consumer<String> warn) {
         final Settings d = DEFAULTS;
@@ -214,7 +251,26 @@ public record Settings(String prefix, String itemName, List<String> itemLore, St
             itemModel, c.getBoolean("item.consume", d.consume()), cooldown, lifetime, distance, search, max,
             ownerOnly, immunity, frameBlock, (float) view, teleport,
             c.getBoolean("effects.particles", d.particles()), c.getBoolean("effects.sounds", d.sounds()),
-            Messages.from(c.getConfigurationSection("messages")), emerald, lapis);
+            Messages.from(c.getConfigurationSection("messages")), emerald, lapis, gate(c, teleport, warn));
+    }
+
+    /**
+     * Раздел {@code gate:}. Срок жизни и расстояние по умолчанию — из {@link Gate#DEFAULTS} (не общие
+     * {@code portal.*}); действие при входе — своё, только если есть раздел {@code gate.teleport}.
+     */
+    private static Gate gate(final ConfigurationSection c, final TeleportAction shared, final Consumer<String> warn) {
+        final Gate d = Gate.DEFAULTS;
+        final TeleportAction action = c.isConfigurationSection("gate.teleport")
+            ? teleport(c, "gate.teleport", shared, warn) : null;
+        if (action != null && action.commands().isEmpty()) {
+            warn.accept("gate.teleport.commands пуст: врата никуда не ведут");
+        }
+        return new Gate(c.getString("gate.item.name", d.itemName()),
+            c.isList("gate.item.lore") ? c.getStringList("gate.item.lore") : d.itemLore(),
+            model(c, "gate.item.model", d.itemModel(), warn),
+            seconds(c, "gate.portal.lifetime-seconds", d.lifetimeTicks(), 10, 3600, warn),
+            range(c, "gate.portal.distance", d.distance(), 4, 8, warn),
+            c.getString("gate.messages.no-room", d.noRoom()), action);
     }
 
     /** Раздел {@code lapis:}: чего нет — берётся из общих настроек. */
@@ -282,7 +338,7 @@ public record Settings(String prefix, String itemName, List<String> itemLore, St
             range(c, "emerald.portal.distance", distance, 1, 6, warn), teleport);
     }
 
-    /** Действие из раздела {@code path} ({@code teleport}, {@code emerald.teleport}, {@code lapis.teleport}); чего нет — из {@code base}. */
+    /** Действие из раздела {@code path} ({@code teleport}, {@code emerald.teleport}, {@code lapis.teleport}, {@code gate.teleport}); чего нет — из {@code base}. */
     private static TeleportAction teleport(final ConfigurationSection c, final String path, final TeleportAction base,
                                            final Consumer<String> warn) {
         final String rawRunAs = c.getString(path + ".run-as");
