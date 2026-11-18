@@ -11,6 +11,8 @@ hunger:
   # true — держать насыщение полным (20): быстрая регенерация, как сразу после еды.
   # false — насыщение не трогается (регенерация медленнее, но шкала еды всё равно не падает).
   keep-saturation: true
+  # true — насыщение всегда 0 (приоритет над keep-saturation).
+  clear-saturation: false
 
 # Появление мобов.
 spawn:
@@ -47,3 +49,8 @@ explosions:
   protect-hanging: true
   # Миры, где действует. Пустой список — во всех мирах.
   worlds: []
+
+# Выборочная блокировка пассивного восстановления HP; магическое лечение разрешено.
+regeneration:
+  disable-natural: false
+  disable-mmocore: false

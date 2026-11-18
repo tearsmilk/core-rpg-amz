@@ -115,6 +115,21 @@ public final class ProfileService implements Listener {
         return a;
     }
 
+    /**
+     * «№2 из 3» — активный профиль и сколько их (для вкладки «Мой персонаж»). Только из памяти: файл не читается и
+     * профиль №1 не создаётся; null — профили выключены или аккаунт ещё не загружен.
+     */
+    public String activeLabel(final Player p) {
+        if (!this.cfg.get().enabled()) {
+            return null;
+        }
+        final Account a = this.store.cached(p.getUniqueId());
+        if (a == null || a.isEmpty()) {
+            return null;
+        }
+        return "№" + a.active() + " из " + a.profiles().size();
+    }
+
     /** Карточки: профили по порядку; у активного — живые значения. */
     public List<Card> cards(final Player p) {
         final Account a = this.ensure(p);

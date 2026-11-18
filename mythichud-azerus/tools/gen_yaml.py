@@ -154,9 +154,9 @@ armor = asset("azerus_armor", AR, comment="bottom-left, upper bar: armor (listen
 
 HP = []
 HP.append(text("value", "%player_health_rounded%/%player_max_health_rounded%", "mmohud-font", 45, -10,
-               ["placeholder{ph=%player_absorption%;v=0;o=>} false hide"]))
+               conds=["placeholder{ph=%player_absorption%;v=0;o=>} false hide"]))
 HP.append(text("value_absorption", "<#ffe066>%math_0_{player_health_rounded}+{player_absorption}%<white>/%player_max_health_rounded%",
-               "mmohud-font", 45, -10, ["placeholder{ph=%player_absorption%;v=0;o=>} true hide"]))
+               "mmohud-font", 45, -10, conds=["placeholder{ph=%player_absorption%;v=0;o=>} true hide"]))
 HP.append(tex("icon_absorption", A + "icon_heart_absorb.png", 2, -9, ["placeholder{ph=%player_absorption%;v=0;o=>} true hide"]))
 HP.append(tex("icon_burning", A + "icon_heart_burning.png", 2, -9, ["placeholder{ph=%player-j17_is_burning%;v=yes} true hide"]))
 HP.append(tex("icon_freezing", A + "icon_heart_frozen.png", 2, -9, ["placeholder{ph=%player-j17_is_freezing%;v=yes} true hide"]))

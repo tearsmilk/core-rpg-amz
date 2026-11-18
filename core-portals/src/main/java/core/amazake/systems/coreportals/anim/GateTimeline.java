@@ -68,9 +68,10 @@ public record GateTimeline(long closeStart) {
      * 44 тика (сначала сворачивается кольцо, потом уходит рама).
      */
     public double reveal(final long tick) {
-        return tick < this.closeStart
-            ? smooth((double) tick / 40.0)
-            : smooth((double) this.closeStart / 40.0) * (1.0 - smooth((double) (tick - this.closeStart - 28L) / 44.0));
+        if (tick < this.closeStart) {
+            return smooth((double) tick / 40.0);
+        }
+        return smooth((double) this.closeStart / 40.0) * (1.0 - smooth((double) (tick - this.closeStart - 28L) / 44.0));
     }
 
     /**
@@ -78,8 +79,9 @@ public record GateTimeline(long closeStart) {
      * сворачивается за 58 тиков.
      */
     public double aperture(final long tick) {
-        return tick < this.closeStart
-            ? smooth((double) (tick - 24L) / 76.0)
-            : smooth((double) (this.closeStart - 24L) / 76.0) * (1.0 - smooth((double) (tick - this.closeStart) / 58.0));
+        if (tick < this.closeStart) {
+            return smooth((double) (tick - 24L) / 76.0);
+        }
+        return smooth((double) (this.closeStart - 24L) / 76.0) * (1.0 - smooth((double) (tick - this.closeStart) / 58.0));
     }
 }

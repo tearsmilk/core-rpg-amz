@@ -36,6 +36,7 @@ class HungerSettingsTest {
         assertEquals(HungerSettings.DEFAULTS, s);
         assertTrue(s.hungerDisabled());
         assertTrue(s.keepSaturation());
+        assertFalse(s.clearSaturation());
         assertTrue(s.worlds().allWorlds());
         assertTrue(this.warnings.isEmpty());
     }
@@ -47,9 +48,11 @@ class HungerSettingsTest {
               disabled: true
               worlds: [world, Spawn]
               keep-saturation: false
+              clear-saturation: true
             """);
         assertTrue(s.hungerDisabled());
         assertFalse(s.keepSaturation());
+        assertTrue(s.clearSaturation());
         assertEquals(Set.of("world", "spawn"), s.worlds().worlds());
         assertTrue(this.warnings.isEmpty());
     }
@@ -72,7 +75,7 @@ class HungerSettingsTest {
         assertTrue(some.affects("WORLD_NETHER"));
         assertFalse(some.affects("world_the_end"));
 
-        final HungerSettings off = new HungerSettings(false, WorldFilter.ALL, true);
+        final HungerSettings off = new HungerSettings(false, WorldFilter.ALL, true, false);
         assertFalse(off.affects("world"));
     }
 
@@ -97,9 +100,10 @@ class HungerSettingsTest {
               disabled: maybe
               worlds: {a: 1}
               keep-saturation: 5
+              clear-saturation: yes-please
             """);
         assertEquals(HungerSettings.DEFAULTS, s);
-        assertEquals(3, this.warnings.size(), this.warnings.toString());
+        assertEquals(4, this.warnings.size(), this.warnings.toString());
     }
 
     @Test

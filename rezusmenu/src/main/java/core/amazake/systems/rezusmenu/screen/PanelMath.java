@@ -78,7 +78,9 @@ public final class PanelMath {
         "pf_arrow_hover", "pf_row", "pf_row_hover",
         // значки классов: 16 px (карточка) и 24 px в текстуре 32 × 32 (выбор класса)
         "pf_cls_swordsman", "pf_cls_archer", "pf_cls_mage", "pf_cls_thief",
-        "pf_cls_swordsman_l", "pf_cls_archer_l", "pf_cls_mage_l", "pf_cls_thief_l");
+        "pf_cls_swordsman_l", "pf_cls_archer_l", "pf_cls_mage_l", "pf_cls_thief_l",
+        // вкладка «Мой персонаж» RPG-меню (tools/rpg_char_art.py)
+        "char_left", "char_bg_0", "char_bg_1");
 
     private static final Map<String, Size> SIZES = Map.ofEntries(
         Map.entry("panel_0", new Size(256, 144)), Map.entry("panel_1", new Size(256, 144)),
@@ -112,7 +114,9 @@ public final class PanelMath {
         Map.entry("pf_cls_swordsman", new Size(16, 16)), Map.entry("pf_cls_archer", new Size(16, 16)),
         Map.entry("pf_cls_mage", new Size(16, 16)), Map.entry("pf_cls_thief", new Size(16, 16)),
         Map.entry("pf_cls_swordsman_l", new Size(32, 32)), Map.entry("pf_cls_archer_l", new Size(32, 32)),
-        Map.entry("pf_cls_mage_l", new Size(32, 32)), Map.entry("pf_cls_thief_l", new Size(32, 32)));
+        Map.entry("pf_cls_mage_l", new Size(32, 32)), Map.entry("pf_cls_thief_l", new Size(32, 32)),
+        Map.entry("char_left", new Size(192, 144)), Map.entry("char_bg_0", new Size(144, 192)),
+        Map.entry("char_bg_1", new Size(144, 192)));
 
     private static final Map<String, Glyph> GLYPHS;
 

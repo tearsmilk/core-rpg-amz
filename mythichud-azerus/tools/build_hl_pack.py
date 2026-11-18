@@ -8,6 +8,7 @@ the zip must be rebuilt from it, otherwise the new HUD elements have no glyphs o
   python3 -I tools/build_hl_pack.py fetch  [--out DIR]       # GET-only download of /plugins/MythicHUD/built-pack
   python3 -I tools/build_hl_pack.py build  --built DIR --base OLD.zip --out NEW.zip
   python3 -I tools/build_hl_pack.py check  NEW.zip           # sanity checks (fonts -> textures, overlays, azerus)
+  python3 -I tools/build_hl_pack.py fontdiff A.zip|DIR B.zip|DIR   # compare generated MythicHUD fonts
 
 build: keeps every entry of the old zip EXCEPT assets/mythichud/** and the mythichud-* overlay folders
 (those come 1:1 from built-pack), then adds all built-pack files (built-pack wins on conflicts, e.g.
@@ -27,6 +28,7 @@ import time
 import urllib.parse
 import zipfile
 
+ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 B = "https://mgr.hosting-minecraft.pro/api/client/servers/88635a9b"
 BUILT = "/plugins/MythicHUD/built-pack"
 DROP = re.compile(r"^(assets/mythichud/|mythichud-[^/]+/)")
@@ -110,6 +112,15 @@ def build(built, base, out):
                 entries[rel] = merge_mcmeta(old_meta, data) if old_meta else data
             else:
                 entries[rel] = data
+    # vanilla sprites from mythichud-azerus/source-pack (hotbar skin) - also present in built-pack when
+    # MythicHUD copied them, added here explicitly so the zip never keeps the old Volya hotbar
+    local_mc = os.path.join(ROOT, "source-pack/assets/minecraft")
+    for root, _, files in os.walk(local_mc):
+        for f in files:
+            full = os.path.join(root, f)
+            rel = "assets/minecraft/" + os.path.relpath(full, local_mc).replace(os.sep, "/")
+            with open(full, "rb") as fh:
+                entries[rel] = fh.read()
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         for n in sorted(entries):
             zi = zipfile.ZipInfo(n, (2026, 1, 1, 0, 0, 0))
@@ -146,9 +157,13 @@ def check(path):
         az = [n for n in names if "azerus-layout" in n]
         if not az:
             problems.append("no azerus-layout fonts (was /mythichud reload done with the new config before fetch?)")
-        for s in ("hotbar.png", "hotbar_selection.png"):
-            if "assets/minecraft/textures/gui/sprites/hud/" + s not in names:
+        for s in ("hotbar.png", "hotbar_selection.png", "hotbar_offhand_left.png", "hotbar_offhand_right.png"):
+            n = "assets/minecraft/textures/gui/sprites/hud/" + s
+            local = os.path.join(ROOT, "source-pack/assets/minecraft/textures/gui/sprites/hud", s)
+            if n not in names:
                 problems.append("hotbar sprite missing: " + s)
+            elif open(local, "rb").read() != z.read(n):
+                problems.append("hotbar sprite is not the Azerus one: " + s)
         tex = [n for n in names if n.startswith("assets/mythichud/textures/assets/azerus/")]
         print("entries:", len(names), "| font jsons:", len(fonts), "| azerus-layout files:", len(az),
               "| azerus textures:", len(tex))
@@ -158,6 +173,32 @@ def check(path):
             print("  -", p)
         sys.exit(1)
     print("OK")
+
+
+def fontdiff(a, b):
+    """Compare the MythicHUD font JSONs of two packs (zip or folder): after a rollback reload the
+    regenerated fonts must equal the backup zip's, otherwise rebuild the zip with `build`."""
+    def load(p):
+        out = {}
+        if os.path.isdir(p):
+            for root, _, files in os.walk(p):
+                for f in files:
+                    full = os.path.join(root, f)
+                    rel = os.path.relpath(full, p).replace(os.sep, "/")
+                    if rel.startswith("assets/mythichud/font/"):
+                        out[rel] = open(full, "rb").read()
+        else:
+            with zipfile.ZipFile(p) as z:
+                for n in z.namelist():
+                    if n.startswith("assets/mythichud/font/") and not n.endswith("/"):
+                        out[n] = z.read(n)
+        return out
+    x, y = load(a), load(b)
+    only_a, only_b = sorted(set(x) - set(y)), sorted(set(y) - set(x))
+    changed = sorted(n for n in set(x) & set(y) if x[n] != y[n])
+    print("fonts: %d vs %d | only in A: %d | only in B: %d | changed: %d" % (len(x), len(y), len(only_a), len(only_b), len(changed)))
+    for n in (only_a + only_b + changed)[:40]:
+        print("  ", n)
 
 
 def main():
@@ -171,11 +212,16 @@ def main():
     b.add_argument("--out", required=True)
     c = sub.add_parser("check")
     c.add_argument("zip")
+    d = sub.add_parser("fontdiff")
+    d.add_argument("a")
+    d.add_argument("b")
     a = ap.parse_args()
     if a.cmd == "fetch":
         fetch(a.out)
     elif a.cmd == "build":
         build(a.built, a.base, a.out)
+    elif a.cmd == "fontdiff":
+        fontdiff(a.a, a.b)
     else:
         check(a.zip)
 

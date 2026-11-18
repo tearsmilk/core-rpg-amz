@@ -175,7 +175,9 @@ public final class MenuManager implements Listener {
                     this.profileService.lobby(player);
                 });
         } else {
-            session.rpg = new RpgScreen(screen, s, this.skins, this.store.stashExtraRows(player.getUniqueId()),
+            final core.amazake.systems.rezusmenu.profiles.ProfileService ps = this.profileService;
+            session.rpg = new RpgScreen(screen, s, this.skins,
+                () -> ps == null ? null : ps.activeLabel(player),
                 r -> this.context.runOnceForPlayer(player, r),
                 () -> this.close(player),
                 () -> this.context.runOnceForPlayer(player, () -> this.openCalibration(player)));

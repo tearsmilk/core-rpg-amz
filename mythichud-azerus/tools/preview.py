@@ -490,9 +490,17 @@ def resolve_skillnames(st):
     return st
 
 
-def render(kind, casting=False, held=0):
+def render(kind, casting=False, held=0, status=False):
     fonts = load_fonts()
-    st = sample_state(casting, held)
+    st = sample_state(casting, held, absorption=8 if status else 0)
+    if status:   # energy class, absorption, poison, under water, hunger effect, formatted-balance toggle on
+        st.ph["%mmocore_mana_name%"] = "Энергия"
+        st.ph["%player_remaining_air%"] = "150"
+        st.ph["%deluxemenus_meta_currency_BOOLEAN%"] = "true"
+        st.ph["%deluxemenus_meta_foodicon_BOOLEAN%"] = "true"
+        st.ph["%azerus_gems%"] = "%azerus_gems%"
+        st.listeners["air"] = (150, 300)
+        st.effects = {"poison", "hunger"}
     canvas = scene()
     log = []
     if kind == "new":
@@ -530,6 +538,8 @@ def main():
         if "-v" in sys.argv:
             for r in log:
                 print(fname, *r)
+    img, _ = render("new", False, 0, status=True)
+    img.resize((W * SCALE, H * SCALE), Image.NEAREST).convert("RGB").save(os.path.join(out, "new_hud_status.png"))
     # side by side comparison (old | new), downscaled to fit
     cmp_ = Image.new("RGB", (W * 2 * 2 + 8, H * 2), (16, 22, 29))
     cmp_.paste(shots["old_hud_casting.png"].resize((W * 2, H * 2), Image.NEAREST), (0, 0))

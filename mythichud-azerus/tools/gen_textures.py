@@ -113,14 +113,11 @@ def panel(im, x, y, w, h, face=S1, hi=S3, sh=S0, glint=S4):
     hline(im, x + 1, x1 - 1, y1, OUTL)
     vline(im, x, y + 1, y1 - 1, OUTL)
     vline(im, x1, y + 1, y1 - 1, OUTL)
-    # inner corner pixels keep the rounded outline 1px thick diagonally
-    for cx, cy in ((x + 1, y + 1), (x1 - 1, y + 1), (x + 1, y1 - 1), (x1 - 1, y1 - 1)):
-        px(im, cx, cy, OUTL)
+    # rounded corner: the outline steps diagonally (corner pixel left transparent, no L-doubles)
     hline(im, x + 2, x1 - 2, y + 1, hi)
     vline(im, x + 1, y + 2, y1 - 2, hi)
     hline(im, x + 2, x1 - 1, y1 - 1, sh)
     vline(im, x1 - 1, y + 2, y1 - 2, sh)
-    px(im, x1 - 1, y1 - 1, OUTL)
     # glint: short brighter run on the lit corner
     hline(im, x + 2, x + 4, y + 1, glint)
     px(im, x + 1, y + 2, glint)
@@ -359,7 +356,7 @@ def coin(size=9):
 
 COMPASS = [
     "...OOOOO...",
-    ".OOLLLLBOO.",
+    "..OLLLLBO..",
     ".OLffRffBO.",
     "OLfffRfffDO",
     "OLffRRRfgDO",
@@ -367,7 +364,7 @@ COMPASS = [
     "OBffNNNggDO",
     "OBfffNgggDO",
     ".OBffggDDO.",
-    ".OODDDDDOO.",
+    "..ODDDDDO..",
     "...OOOOO...",
 ]
 
@@ -598,7 +595,7 @@ def main():
     # bottom
     made.append(save(bottom_panel(), "bottom_panel.png"))
     made.append(save(bar_frame(67, 7), "bar_frame.png"))
-    for n in ("health", "armor", "mana", "energy", "hunger", "hungry", "absorb", "poison", "wither",
+    for n in ("health", "armor", "mana", "energy", "hunger", "hungry", "poison", "wither",
               "frozen", "burning"):
         made.append(save(bar_fill(65, 5, ramp(n), stripe_every=8), "fill_%s.png" % n))
     made.append(save(bar_fill(65, 2, ramp("absorb"), stripe_every=8), "fill_absorb_strip.png"))
