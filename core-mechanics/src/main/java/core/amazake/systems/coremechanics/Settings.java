@@ -1,6 +1,7 @@
 package core.amazake.systems.coremechanics;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -29,7 +30,13 @@ public record Settings(
     String mineskinUrl,
     int mineskinTimeout,
     boolean libsAutoDownload,
-    List<String> libsRepositories) {
+    List<String> libsRepositories,
+    Map<String, String> tooltipFlavors) {
+
+    /** Приписки к подсказке-свитку по id Nexo; «*» — для остальных предметов (пусто — без приписки). */
+    static final Map<String, String> DEFAULT_FLAVORS = Map.of(
+        "*", "«Старая вещь. Хранит больше, чем показывает.»",
+        "royal_knight_volcano_heart", "«Выкован в жерле спящего вулкана —\nего пламя всё ещё бьётся в древке.»");
 
     public static final Settings DEFAULTS = from(new YamlConfiguration(), w -> { });
 
@@ -58,7 +65,19 @@ public record Settings(
             c.getString("mineskin.api-url", "https://api.mineskin.org/v2/generate").strip(),
             clampInt(c, "mineskin.timeout-seconds", 60, 5, 300, warn),
             c.getBoolean("libraries.auto-download", true),
-            repos(c.getConfigurationSection("libraries"), c.getStringList("libraries.repositories")));
+            repos(c.getConfigurationSection("libraries"), c.getStringList("libraries.repositories")),
+            flavors(c.getConfigurationSection("tooltip.flavors")));
+    }
+
+    private static Map<String, String> flavors(final ConfigurationSection s) {
+        if (s == null) {
+            return DEFAULT_FLAVORS;
+        }
+        final Map<String, String> out = new java.util.HashMap<>();
+        for (final String k : s.getKeys(false)) {
+            out.put(k, String.valueOf(s.getString(k, "")));
+        }
+        return Map.copyOf(out);
     }
 
     private static List<String> repos(final ConfigurationSection s, final List<String> list) {

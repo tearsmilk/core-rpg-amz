@@ -73,6 +73,15 @@
   },
   {
    "type": "bitmap",
+   "file": "azerus:font/tooltip/divider_parchment.png",
+   "height": 5,
+   "ascent": 3,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
    "file": "azerus:item/rings_azerus/ring_001.png",
    "height": 20,
    "ascent": 15,

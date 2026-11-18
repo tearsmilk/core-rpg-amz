@@ -98,6 +98,75 @@ def divider(width=150):
     return img
 
 
+# ------------------------------------------------------------------------------------------------ пергамент
+DIVIDER_PARCHMENT = '\ue421'
+
+
+def parchment_style():
+    """Стиль azerus:parchment: пергамент с рваными боками и рулонами сверху/снизу; разделитель для него (U+E421)."""
+    import numpy as np
+    S = 100
+    TAN, TAN_L, TAN_D, EDGE, OUT = (214, 166, 118), (228, 186, 140), (196, 146, 100), (120, 62, 34), (70, 34, 20)
+    ROLL = [(250, 214, 168), (236, 190, 140), (214, 160, 110), (180, 120, 76), (130, 74, 42)]
+    rng = np.random.RandomState(4)
+    bg = np.zeros((S, S, 4), np.uint8)
+    for y in range(7, 93):
+        for x in range(5, 95):
+            c = TAN
+            if (x * 7 + y * 13) % 23 == 0:
+                c = TAN_L
+            if (x * 5 + y * 11) % 29 == 0:
+                c = TAN_D
+            bg[y, x] = c + (255,)
+    for x in range(5, 95):
+        if rng.rand() < 0.3:
+            bg[12 + rng.randint(0, 3), x] = TAN_L + (255,)
+    bg[7:93, 5] = EDGE + (255,)
+    bg[7:93, 94] = EDGE + (255,)
+    bg[7:93, 6] = TAN_D + (255,)
+    bg[7:93, 93] = TAN_D + (255,)
+    for y in range(9, 91):
+        if rng.rand() < 0.2:
+            bg[y, 5] = (0, 0, 0, 0)
+            bg[y, 6] = EDGE + (255,)
+        if rng.rand() < 0.2:
+            bg[y, 94] = (0, 0, 0, 0)
+            bg[y, 93] = EDGE + (255,)
+    fr = np.zeros((S, S, 4), np.uint8)
+
+    def roll(y0):
+        for i, c in enumerate(ROLL):
+            fr[y0 + 1 + i, 3:97] = c + (255,)
+        fr[y0, 3:97] = OUT + (255,)
+        fr[y0 + 6, 3:97] = OUT + (255,)
+        for y in range(y0, y0 + 7):
+            edge = y in (y0, y0 + 6)
+            fr[y, 2] = OUT + (255,)
+            fr[y, 97] = OUT + (255,)
+            fr[y, 3] = (OUT if edge else ROLL[3]) + (255,)
+            fr[y, 96] = (OUT if edge else ROLL[3]) + (255,)
+        fr[y0 + 7, 4:96] = (60, 30, 18, 90)
+
+    roll(1)
+    roll(S - 9)
+    meta = {'gui': {'scaling': {'type': 'nine_slice', 'width': S, 'height': S, 'border': 9, 'stretch_inner': True}}}
+    for kind, a in (('background', bg), ('frame', fr)):
+        path = save(Image.fromarray(a, 'RGBA'), 'textures', 'gui', 'sprites', 'tooltip', f'parchment_{kind}.png')
+        json.dump(meta, open(path + '.mcmeta', 'w'), indent=1)
+    w = 150
+    d = np.zeros((5, w, 4), np.uint8)
+    mid = w // 2
+    for x in range(w):
+        if abs(x - mid) > 5:
+            d[2, x] = (120, 62, 34, max(int(220 * (1 - abs(x - mid) / mid) ** 0.5), 40))
+    for dx, dy in ((0, 0), (-1, 1), (1, 1), (0, 2), (-2, 2), (2, 2), (-1, 3), (1, 3), (0, 4)):
+        d[dy, mid + dx] = (150, 70, 30, 255)
+    d[2, mid] = (230, 160, 60, 255)
+    save(Image.fromarray(d, 'RGBA'), 'textures', 'font', 'tooltip', 'divider_parchment.png')
+    return {'type': 'bitmap', 'file': 'azerus:font/tooltip/divider_parchment.png', 'height': 5, 'ascent': 3,
+            'chars': [DIVIDER_PARCHMENT]}
+
+
 # ------------------------------------------------------------------------------------------------ кольца
 def ring_rarity(n):
     return 'common' if n <= 48 else 'rare'
@@ -119,6 +188,7 @@ def main():
     save(divider(), 'textures', 'font', 'tooltip', 'divider.png')
     providers.append({'type': 'bitmap', 'file': 'azerus:font/tooltip/divider.png', 'height': 5, 'ascent': 3,
                       'chars': [DIVIDER]})
+    providers.append(parchment_style())
     y = ['# Кольца AZERUS (102 шт.) — раздел rings_azerus. Подсказка в стиле карточки: tools/tooltips.py',
          '# (рамка azerus:ring, иконка слева от названия — глиф azerus:tooltip, плашки редкости/типа). Не править руками:',
          '# файл пересобирает tools/tooltips.py.', '']

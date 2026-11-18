@@ -47,3 +47,10 @@ libraries:
   repositories:
     - "https://repo1.maven.org/maven2/"
     - "https://maven-central.storage-download.googleapis.com/maven2/"
+
+# Подсказка-свиток (/ttip apply — на предмет в руке, /ttip reset — вернуть). Стиль azerus:parchment — пак nexo-items.
+# Приписка внизу подсказки по id предмета Nexo; «*» — для всех остальных (пустая строка — без приписки). \n — перенос.
+tooltip:
+  flavors:
+    "*": "«Старая вещь. Хранит больше, чем показывает.»"
+    royal_knight_volcano_heart: "«Выкован в жерле спящего вулкана —\nего пламя всё ещё бьётся в древке.»"
