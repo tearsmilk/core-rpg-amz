@@ -1,0 +1,7 @@
+# Описание системы. name и version подставляет сборка: name — rootProject.name из settings.gradle.kts, version — из build.gradle.kts.
+name: ${name}
+version: ${version}
+main: core.amazake.systems.coremechanics.CoreMechanicsSystem
+description: "Рэгдоллы игроков на физдвижке Jolt (кукла при смерти, /rd ник, таскать и бросать) и куклы-статуи с позами, анимациями и экспортом в /summon"
+authors: [tearsmilk]
+api-version: 2

@@ -58,20 +58,20 @@ public final class Doll {
     /** Желаемое тело (блоки/кубики): DollRenderer пересоздаст куски, если сменилось. */
     volatile List<Piece> body;
     volatile boolean cubed;
-    /** Подсветить часть (-1 — нет). */
+    /** Подсветить часть (-1 — нет): выбор кукловодом. */
     public volatile int glowPart = -1;
-    /** Подсветка, которую хотят включить/выключить. */
+    /** Задача отрисовки уже стоит в очереди региона. */
     final AtomicBoolean renderQueued = new AtomicBoolean();
     public final AtomicBoolean removed = new AtomicBoolean();
     volatile long lastRenderNanos = System.nanoTime();
+    /** Дисплеи переезжают teleportAsync в новый якорь. */
     volatile boolean moving;
 
     // ---- поток региона якоря
     final List<Slot> slots = new ArrayList<>();
     boolean spawned;
-    boolean bodyShown;   // куски тела соответствуют this.body
+    /** Тело, которое сейчас показано (сменилось this.body — пересоздать куски). */
     List<Piece> shownBody;
-    boolean snap;
     int glowShown = -1;
 
     // ---- поток физики

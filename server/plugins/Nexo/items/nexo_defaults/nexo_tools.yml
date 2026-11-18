@@ -3,31 +3,43 @@
 # #### Check out the Workshop Six MCModels store: https://mcmodels.net/vendors/18/workshop-six
 
 forest_axe:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: "Forest Axe"
   material: NETHERITE_AXE
   Pack:
     model: nexo:item/nexo_tools/forest_axe
 forest_hoe:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: "Forest Hoe"
   material: NETHERITE_HOE
   Pack:
     model: nexo:item/nexo_tools/forest_hoe
 forest_pickaxe:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: "Forest Pickaxe"
   material: NETHERITE_PICKAXE
   Pack:
     model: nexo:item/nexo_tools/forest_pickaxe
 forest_shovel:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: "Forest Shovel"
   material: NETHERITE_SHOVEL
   Pack:
     model: nexo:item/nexo_tools/forest_shovel
 forest_sword:
+  Components:
+    tooltip_style: royaltooltips:warrior
   itemname: "Forest Sword"
   material: NETHERITE_SWORD
   Pack:
     model: nexo:item/nexo_tools/forest_sword
 forest_shield:
+  Components:
+    tooltip_style: royaltooltips:guardian
   itemname: "Forest Shield"
   material: SHIELD
   Pack:
@@ -40,6 +52,7 @@ forest_trident:
     model: nexo:item/nexo_tools/forest_trident
   Components:
     item_model: nexo:forest_trident
+    tooltip_style: royaltooltips:warrior
   Mechanics:
     trident:
       display_transform: HEAD

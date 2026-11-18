@@ -1,0 +1,81 @@
+# Печати (Sealforge): все материалы печатей Nexo в одном разделе. ID не менялись.
+
+# Unique Nexo item: sealforge_akhi_skull_wax
+sealforge_akhi_skull_wax:
+  material: PAPER
+  itemname: Сургуч Черепа Ахи
+  lore:
+  - <gray>Оранжевая печать
+  Components:
+    item_model: sealforge:akhi_skull_wax
+    tooltip_style: royaltooltips:material
+
+# Unique Nexo item: sealforge_akhi_special_wax
+sealforge_akhi_special_wax:
+  material: PAPER
+  itemname: Особый сургуч Черепа Ахи
+  lore:
+  - <gray>Оранжевая печать с возможной привязкой
+  Components:
+    item_model: sealforge:akhi_special_wax
+    tooltip_style: royaltooltips:material
+
+# Unique Nexo item: sealforge_arconite_wax
+sealforge_arconite_wax:
+  material: PAPER
+  itemname: Арконитовый сургуч
+  lore:
+  - <gray>Изменяет цвет, сохраняя тип печати
+  Components:
+    item_model: sealforge:arconite_wax
+    tooltip_style: royaltooltips:material
+
+# Unique Nexo item: sealforge_arkon_heart
+sealforge_arkon_heart:
+  material: PAPER
+  itemname: Сердце Аркона
+  lore:
+  - <gray>Гарантирует качество не ниже синего
+  Components:
+    item_model: sealforge:arkon_heart
+    tooltip_style: royaltooltips:material
+
+# Unique Nexo item: sealforge_blood_crystal
+sealforge_blood_crystal:
+  material: PAPER
+  itemname: Кристалл крови
+  lore:
+  - <gray>Замена существующей печати
+  Components:
+    item_model: sealforge:blood_crystal
+    tooltip_style: royaltooltips:material
+
+# Unique Nexo item: sealforge_emerald
+sealforge_emerald:
+  material: PAPER
+  itemname: Изумруд
+  lore:
+  - <gray>Первая печать на C-грейде
+  Components:
+    item_model: sealforge:emerald
+    tooltip_style: royaltooltips:material
+
+# Unique Nexo item: sealforge_morion
+sealforge_morion:
+  material: PAPER
+  itemname: Морион
+  lore:
+  - <gray>Первая печать на A-грейде
+  Components:
+    item_model: sealforge:morion
+    tooltip_style: royaltooltips:material
+
+# Unique Nexo item: sealforge_sapphire
+sealforge_sapphire:
+  material: PAPER
+  itemname: Сапфир
+  lore:
+  - <gray>Первая печать на B-грейде
+  Components:
+    item_model: sealforge:sapphire
+    tooltip_style: royaltooltips:material

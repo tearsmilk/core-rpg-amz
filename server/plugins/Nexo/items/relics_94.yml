@@ -1,0 +1,32 @@
+# 94 unique relics from the two user screenshots; Minecraft 1.21.4+ / Nexo.
+# Using Components.item_model references into the bundled external resource pack.
+relic_013:
+  material: PAPER
+  itemname: <white>Магический предмет 013
+  Components:
+    item_model: relicitems:relic_013
+    tooltip_style: royaltooltips:trinket
+relic_043:
+  material: PAPER
+  itemname: <white>Магический предмет 043
+  Components:
+    item_model: relicitems:relic_043
+    tooltip_style: royaltooltips:trinket
+relic_069:
+  material: PAPER
+  itemname: <white>Магический предмет 069
+  Components:
+    item_model: relicitems:relic_069
+    tooltip_style: royaltooltips:trinket
+relic_074:
+  material: PAPER
+  itemname: <white>Магический предмет 074
+  Components:
+    item_model: relicitems:relic_074
+    tooltip_style: royaltooltips:trinket
+relic_090:
+  material: PAPER
+  itemname: <white>Магический предмет 090
+  Components:
+    item_model: relicitems:relic_090
+    tooltip_style: royaltooltips:trinket

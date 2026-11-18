@@ -89,6 +89,11 @@ public final class SkinCubes {
         return !this.config.get().key().isBlank();
     }
 
+    /** Ключ есть и MineSkin не на паузе после ошибки сети — можно обещать игроку, что тело переоденется. */
+    public boolean available() {
+        return this.enabled() && !this.stopped && System.currentTimeMillis() >= this.offlineUntil;
+    }
+
     /** Сколько коробок скина уже подписано. */
     public int done(final String hash) {
         final String[][] a = this.cache.get(hash);
@@ -132,7 +137,7 @@ public final class SkinCubes {
 
     /** Любой поток: поставить скин в очередь (urgent — вперёд). */
     public synchronized void request(final String hash, final java.net.URL url, final boolean slim, final boolean urgent) {
-        if (this.get(hash) != null || !this.enabled() || this.stopped || System.currentTimeMillis() < this.offlineUntil) {
+        if (this.get(hash) != null || !this.available()) {
             return;
         }
         if (!this.pending.add(hash)) {

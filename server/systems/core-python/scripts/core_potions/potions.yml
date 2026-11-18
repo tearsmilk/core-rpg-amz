@@ -15,6 +15,16 @@ messages:
   only-energy: "<#7dd97d>Это зелье для классов с энергией."
   full: "<gray>Сейчас оно ничего не даст — шкала полная."
 
+
+# 1.1.0: сила исцеления — стат MythicLib/MMOItems CUSTOM_HEALING_POWER (%; предметы: custom-healing-power).
+# Умножает: зелья здоровья этой системы и лечение с причинами reasons (MAGIC — мгновенное лечение,
+# MAGIC_REGEN — регенерация от зелий/эффектов, CUSTOM — heal навыков MythicLib). Естественная регенерация — нет.
+healing-power:
+  enabled: true
+  stat: CUSTOM_HEALING_POWER
+  max-percent: 50
+  reasons: [MAGIC, MAGIC_REGEN, CUSTOM]
+
 potions:
   small_health_potion:  {restore: health, amount: 10, keep-bottle: false, message: "<#ff5a5a>❤ +<amount> здоровья"}
   medium_health_potion: {restore: health, amount: 25, keep-bottle: false, message: "<#ff5a5a>❤ +<amount> здоровья"}

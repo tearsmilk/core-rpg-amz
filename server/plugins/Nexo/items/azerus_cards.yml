@@ -8,6 +8,7 @@ azerus_card_water:
   Components:
     item_model: azerus:azerus_cards/card_water
 
+    tooltip_style: royaltooltips:rune
 azerus_card_air:
   material: PAPER
   itemname: "<white>Карта воздуха"
@@ -16,6 +17,7 @@ azerus_card_air:
   Components:
     item_model: azerus:azerus_cards/card_air
 
+    tooltip_style: royaltooltips:rune
 azerus_card_earth:
   material: PAPER
   itemname: "<white>Карта земли"
@@ -24,6 +26,7 @@ azerus_card_earth:
   Components:
     item_model: azerus:azerus_cards/card_earth
 
+    tooltip_style: royaltooltips:rune
 azerus_card_fire:
   material: PAPER
   itemname: "<white>Карта огня"
@@ -32,6 +35,7 @@ azerus_card_fire:
   Components:
     item_model: azerus:azerus_cards/card_fire
 
+    tooltip_style: royaltooltips:rune
 azerus_card_chaos:
   material: PAPER
   itemname: "<white>Карта хаоса"
@@ -40,6 +44,7 @@ azerus_card_chaos:
   Components:
     item_model: azerus:azerus_cards/card_chaos
 
+    tooltip_style: royaltooltips:rune
 azerus_card_poison:
   material: PAPER
   itemname: "<white>Карта яда"
@@ -47,3 +52,4 @@ azerus_card_poison:
     model: azerus:item/azerus_cards/card_poison
   Components:
     item_model: azerus:azerus_cards/card_poison
+    tooltip_style: royaltooltips:rune

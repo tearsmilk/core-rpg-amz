@@ -2,7 +2,6 @@ package core.amazake.systems.coremechanics.doll;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
-import core.amazake.systems.coremechanics.physics.RagdollSpec;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -226,6 +225,11 @@ public final class DollRenderer {
 
     private ItemStack headItem(final Doll d, final Piece pc) {
         final ItemStack it = new ItemStack(Material.PLAYER_HEAD);
+        if (pc.texture() == null) {
+            // без текстуры (офлайн-режим, нет скина) — обычная голова: профиль только с id/ником сервер стал бы
+            // дозапрашивать у Mojang при каждой отправке предмета
+            return it;
+        }
         if (it.getItemMeta() instanceof SkullMeta sm) {
             final PlayerProfile pp;
             if (pc == d.headPiece) {
@@ -233,9 +237,7 @@ public final class DollRenderer {
             } else {
                 pp = Bukkit.createProfile(UUID.nameUUIDFromBytes(pc.texture().getBytes(StandardCharsets.UTF_8)), "rd");
             }
-            if (pc.texture() != null) {
-                pp.setProperty(new ProfileProperty("textures", pc.texture(), pc.signature()));
-            }
+            pp.setProperty(new ProfileProperty("textures", pc.texture(), pc.signature()));
             sm.setPlayerProfile(pp);
             it.setItemMeta(sm);
         }
@@ -326,15 +328,5 @@ public final class DollRenderer {
             return true;
         }
         return false;
-    }
-
-    /** Часть куклы под этим дисплеем (для подсветки/отладки), -1 — не наш. */
-    public static int partOf(final Doll d, final Entity e) {
-        for (final Doll.Slot s : d.slots) {
-            if (s.entity != null && s.entity.getUniqueId().equals(e.getUniqueId())) {
-                return s.piece.part();
-            }
-        }
-        return RagdollSpec.N;
     }
 }

@@ -5,3 +5,4 @@ corevault_coin:
     model: corevault:item/coin
   Components:
     item_model: corevault:coin
+    tooltip_style: royaltooltips:material

@@ -1,4 +1,6 @@
 small_health_potion:
+  Components:
+    tooltip_style: royaltooltips:material
   itemname: Small Health Potion
   material: POTION
   Pack:
@@ -6,6 +8,8 @@ small_health_potion:
     custom_model_data:
 
 medium_health_potion:
+  Components:
+    tooltip_style: royaltooltips:material
   itemname: Medium Health Potion
   material: POTION
   Pack:
@@ -13,6 +17,8 @@ medium_health_potion:
     custom_model_data:
 
 large_health_potion:
+  Components:
+    tooltip_style: royaltooltips:material
   itemname: Large Health Potion
   material: POTION
   Pack:
@@ -20,6 +26,8 @@ large_health_potion:
     custom_model_data:
 
 small_mana_potion:
+  Components:
+    tooltip_style: royaltooltips:material
   itemname: Small Mana Potion
   material: POTION
   Pack:
@@ -27,6 +35,8 @@ small_mana_potion:
     custom_model_data:
 
 medium_mana_potion:
+  Components:
+    tooltip_style: royaltooltips:material
   itemname: Medium Mana Potion
   material: POTION
   Pack:
@@ -34,6 +44,8 @@ medium_mana_potion:
     custom_model_data:
 
 large_mana_potion:
+  Components:
+    tooltip_style: royaltooltips:material
   itemname: Large Mana Potion
   material: POTION
   Pack:
@@ -41,6 +53,8 @@ large_mana_potion:
     custom_model_data:
 
 small_stamina_potion:
+  Components:
+    tooltip_style: royaltooltips:material
   itemname: Small Stamina Potion
   material: POTION
   Pack:
@@ -48,6 +62,8 @@ small_stamina_potion:
     custom_model_data:
 
 medium_stamina_potion:
+  Components:
+    tooltip_style: royaltooltips:material
   itemname: Medium Stamina Potion
   material: POTION
   Pack:
@@ -55,6 +71,8 @@ medium_stamina_potion:
     custom_model_data:
 
 large_stamina_potion:
+  Components:
+    tooltip_style: royaltooltips:material
   itemname: Large Stamina Potion
   material: POTION
   Pack:

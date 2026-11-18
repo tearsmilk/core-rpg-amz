@@ -13,6 +13,7 @@ forest_helmet:
   Components:
     equippable:
       slot: HEAD
+    tooltip_style: royaltooltips:guardian
 forest_chestplate:
   itemname: Forest Chestplate
   material: CHAINMAIL_CHESTPLATE
@@ -26,6 +27,7 @@ forest_chestplate:
     equippable:
       slot: CHEST
       asset_id: nexo:forest
+    tooltip_style: royaltooltips:guardian
 forest_leggings:
   itemname: Forest Leggings
   material: CHAINMAIL_LEGGINGS
@@ -37,6 +39,7 @@ forest_leggings:
     equippable:
       slot: LEGS
       asset_id: nexo:forest
+    tooltip_style: royaltooltips:guardian
 forest_boots:
   itemname: Forest Boots
   material: CHAINMAIL_BOOTS
@@ -50,6 +53,7 @@ forest_boots:
       asset_id: nexo:forest
 
 # An elytra needs its own id, wings sharing a model with armor-layers would render on the chestplate too
+    tooltip_style: royaltooltips:guardian
 forest_elytra:
   itemname: Forest Elytra
   material: ELYTRA
@@ -62,6 +66,7 @@ forest_elytra:
     equippable:
       slot: CHEST
       asset_id: nexo:forest_elytra
+    tooltip_style: royaltooltips:guardian
 forest_wolf_armor:
   itemname: Forest Wolf Armor
   material: WOLF_ARMOR
@@ -77,6 +82,7 @@ forest_wolf_armor:
       allowed_entity_types:
       - WOLF
 # PAPER has no equippable-component of its own, the slot and allowed entities come from the defined layer
+    tooltip_style: royaltooltips:guardian
 forest_llama_armor:
   itemname: Forest Llama Carpet
   material: PAPER
@@ -92,6 +98,7 @@ forest_llama_armor:
       allowed_entity_types:
       - LLAMA
       - TRADER_LLAMA
+    tooltip_style: royaltooltips:guardian
 forest_horse_armor:
   itemname: Forest Horse Armor
   material: DIAMOND_HORSE_ARMOR
@@ -106,3 +113,4 @@ forest_horse_armor:
       asset_id: nexo:forest_horse_armor
       allowed_entity_types:
       - HORSE
+    tooltip_style: royaltooltips:guardian

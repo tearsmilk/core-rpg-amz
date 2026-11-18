@@ -1,0 +1,103 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "royalcardui:font/card_empty.png",
+      "ascent": 10,
+      "height": 12,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "royalcardui:font/card_water.png",
+      "ascent": 10,
+      "height": 12,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "royalcardui:font/card_air.png",
+      "ascent": 10,
+      "height": 12,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "royalcardui:font/card_earth.png",
+      "ascent": 10,
+      "height": 12,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "royalcardui:font/card_fire.png",
+      "ascent": 10,
+      "height": 12,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "royalcardui:font/card_chaos.png",
+      "ascent": 10,
+      "height": 12,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "royalcardui:font/card_poison.png",
+      "ascent": 10,
+      "height": 12,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "royalcardui:font/card_normal.png",
+      "ascent": 10,
+      "height": 12,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "royalcardui:font/card_elite.png",
+      "ascent": 10,
+      "height": 12,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "royalcardui:font/card_boss.png",
+      "ascent": 10,
+      "height": 12,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "royalcardui:font/card_unknown.png",
+      "ascent": 10,
+      "height": 12,
+      "chars": [
+        ""
+      ]
+    }
+  ]
+}

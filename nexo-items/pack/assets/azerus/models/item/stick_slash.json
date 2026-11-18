@@ -1,0 +1,90 @@
+{
+ "textures": {
+  "1": "azerus:item/moon_staff_fx/slash_crescent",
+  "2": "azerus:item/moon_staff_fx/slash_streak",
+  "particle": "azerus:item/moon_staff_fx/slash_crescent"
+ },
+ "elements": [
+  {
+   "from": [
+    0,
+    0,
+    8.05
+   ],
+   "to": [
+    16,
+    16,
+    8.05
+   ],
+   "shade": false,
+   "light_emission": 15,
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#1",
+     "tintindex": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#1",
+     "tintindex": 0
+    }
+   }
+  },
+  {
+   "from": [
+    -2,
+    -2,
+    7.95
+   ],
+   "to": [
+    18,
+    18,
+    7.95
+   ],
+   "shade": false,
+   "light_emission": 15,
+   "rotation": {
+    "angle": -22.5,
+    "axis": "z",
+    "origin": [
+     8,
+     8,
+     8
+    ]
+   },
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#2",
+     "tintindex": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#2",
+     "tintindex": 0
+    }
+   }
+  }
+ ]
+}

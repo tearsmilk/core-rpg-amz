@@ -1,0 +1,73 @@
+# Enhancement materials - 9 cosmetic items for Nexo 1.21.4+
+enhance_philosophers_shard:
+  material: PAPER
+  itemname: <gold>Осколок философского камня
+  lore:
+  - <gray>Материал для заточки снаряжения
+  Components:
+    item_model: enhance_mmorpg:philosophers_shard
+    tooltip_style: royaltooltips:material
+enhance_philosophers_dust:
+  material: PAPER
+  itemname: <gold>Крошка философского камня
+  lore:
+  - <gray>Материал для заточки снаряжения
+  Components:
+    item_model: enhance_mmorpg:philosophers_dust
+    tooltip_style: royaltooltips:material
+enhance_ashkalot_cube:
+  material: PAPER
+  itemname: <gold>Ашкалотский кубик
+  lore:
+  - <gray>Материал для заточки снаряжения
+  Components:
+    item_model: enhance_mmorpg:ashkalot_cube
+    tooltip_style: royaltooltips:material
+enhance_black_philosophers_stone:
+  material: PAPER
+  itemname: <gold>Чёрный философский камень
+  lore:
+  - <gray>Материал для заточки снаряжения
+  Components:
+    item_model: enhance_mmorpg:black_philosophers_stone
+    tooltip_style: royaltooltips:material
+enhance_white_philosophers_stone:
+  material: PAPER
+  itemname: <gold>Белый философский камень
+  lore:
+  - <gray>Материал для заточки снаряжения
+  Components:
+    item_model: enhance_mmorpg:white_philosophers_stone
+    tooltip_style: royaltooltips:material
+enhance_red_philosophers_stone:
+  material: PAPER
+  itemname: <gold>Красный философский камень
+  lore:
+  - <gray>Материал для заточки снаряжения
+  Components:
+    item_model: enhance_mmorpg:red_philosophers_stone
+    tooltip_style: royaltooltips:material
+enhance_purple_philosophers_stone:
+  material: PAPER
+  itemname: <gold>Пурпурный философский камень
+  lore:
+  - <gray>Материал для заточки снаряжения
+  Components:
+    item_model: enhance_mmorpg:purple_philosophers_stone
+    tooltip_style: royaltooltips:material
+enhance_preservation_rune:
+  material: PAPER
+  itemname: <gold>Руна Сохранения
+  lore:
+  - <gray>Материал для заточки снаряжения
+  Components:
+    item_model: enhance_mmorpg:preservation_rune
+    tooltip_style: royaltooltips:rune
+enhance_cold_rune:
+  material: PAPER
+  itemname: <gold>Руна Холода
+  lore:
+  - <gray>Материал для заточки снаряжения
+  Components:
+    item_model: enhance_mmorpg:cold_rune
+    tooltip_style: royaltooltips:rune

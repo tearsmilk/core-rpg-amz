@@ -1,0 +1,37 @@
+# Статуи core-mechanics (пишет система; правка руками — при выключенной системе).
+
+statues:
+  e4a8634b-5acd-4750-925f-3131ec91cc52:
+    name: _TearsMilk_
+    owner: c6590eae-0fbe-3611-b1e2-8e26fc61eff3
+    tex: ewogICJ0aW1lc3RhbXAiIDogMTc5NTAyMjY5MjU0NSwKICAicHJvZmlsZUlkIiA6ICI3ZTU2MjRmNTBiMTk0OWY5OTI3NWEwMTlkMzM2ZjhkZCIsCiAgInByb2ZpbGVOYW1lIiA6ICJfVGVhcnNNaWxrXyIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS9jZTNjMzgxYmJjNjA1NDA5ZTQwNmQ2NDFkYjBmOWU1ZWY4MWI5NTRjZjY5YzhkZjEyMzJjNDNiNjU4NjY0NzM4IiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=
+    sig: rm8jMDvNN7MTwthaI7QBtIYHCCf7OqsNYcw+JA6HPzrnmirIOkzScwAtABlbxscRzkoEX91I+SOmI9N/g9aNXft8zEX+lJM66iRpnhn/QcvZXm0h8VedL9dz3upuqclffkRB4hPyDxWuJyywKCU4y5AgV+Klu44cSsPA5p6w4jkCCkPoAf5IGkv5z3NqcQewtIAFtxVdxlUR5zVCaAlDz3bDtFsCzjaeKwfZJhM17w6r5+6bALCa9YpkEU5DA5i9NBnGgfW0GsuAIS+dDlLvif9nPVoWtmIkIHPl306xKepa9EdhoxX/xheNFqKBWSoT48gM3NGE3VjiAg6HKcBMU5Wgn+utn+MO4lGbCQQpP3h51kF+2+DxhWkPH6hhfYPpH1uZNiowjBnxtj0SpoakZP0zPHQfBocvL+2a58MUWhtwFukxTKqfT88mk7Z1l2eN6E6+uS1W3AHRb/U7nW/LOdIPrKKIr0gCB03YYdx1yg/NiDCWbZeZMOY/gNnx2ebuapjyipDuPpKsUb3tNqcCOoPnEIIIlACVHdw6UXFOe1fA9GmabVw/AQEGDqjYLiGFcCmO8/wBRkPsqb79EdZsxxYQnZyY4L8+eVLoa81mruqf7tPoo7jZKgL+Cm094XOzfZvqpcmLJW4gcjEx6VHfej+S39q8yENHVrnp6usZoIA=
+    world: world
+    x: -21.159771489159205
+    y: 100.0
+    z: 22.91355706127827
+    yaw: 324.7376708984375
+    pose:
+    - 0.75
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 4.0
+    - 0.0
+    - 0.0
+    - -4.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    anim: walk
+    frames: []
+    frameTicks: 10
+    playing: false

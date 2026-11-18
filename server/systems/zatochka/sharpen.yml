@@ -29,6 +29,14 @@ combat:
   armor-bonus: true
   # Причины урона, которые заточка брони не уменьшает.
   armor-ignore-causes: [VOID, STARVATION, SUICIDE, KILL, CUSTOM, WORLD_BORDER]
+  # 1.1.3: от чего считается бонус заточки оружия.
+  #   base — +X% только к базовой силе оружия (MMOItems ATTACK_DAMAGE / атрибут предмета / материал): урон + база×X/100.
+  #          Маг. оружие: +X% к его маг. силе (items.magic.power-stat). Легендарная броня по-прежнему % ко всему удару.
+  #   hit  — как 1.1.2: весь удар ×(1 + X/100).
+  weapon-bonus-from: base
+  # base + старое маг. оружие без стата маг. силы (Nexo-экземпляры): true — оставить им % ко всему MAGIC-удару (как 1.1.2),
+  # false — такой предмет бонуса заточки не даёт.
+  legacy-magic-hit: true
 
 # Режим шансов:
 #   royal-quest — таблицы Royal Quest по категории, грейду и камню (раздел royal-quest ниже), +11 через жертву;
@@ -42,7 +50,7 @@ max-level:
   A: 11
 
 # Бонусы заточки в процентах, кумулятивные (не складываются по уровням): +10 брони даёт +200% защиты.
-# Лор предмета: «Заточка: +N (Атака +X% ×M)», где M = 1 + X/100.
+# Лор предмета: «Заточка: +N (Атака +X% ×M)», где M = 1 + X/100; в режиме combat.weapon-bonus-from: base — «Заточка: +N (Сила оружия +X%)».
 bonuses:
   armor:    # броня и щит — защита
     1: 10
@@ -394,6 +402,9 @@ simple:
 # Расходники. Набор фиксирован (механика привязана к ключу), меняются только внешний вид и имена.
 #   name     — название в сообщениях
 #   material — материал предмета (https://jd.papermc.io/paper/1.21.11/org/bukkit/Material.html)
+#   item-model    — (1.1.2) модель предмета namespace:path, например Nexo enhance_mmorpg:philosophers_shard; пусто — модель материала
+#   tooltip-style — (1.1.2) рамка подсказки namespace:path, например royaltooltips:material; пусто — обычная
+#   Модель/рамка обновляются и у уже выданных расходников (при входе игрока), метки не меняются.
 #   display  — название предмета (MiniMessage)
 #   lore     — описание (MiniMessage)
 #   aliases  — русские имена для /sharpen give (регистр, «ё» и пробелы/«_» не важны)
@@ -402,6 +413,8 @@ consumables:
   shard:
     name: "Осколок философского камня"
     material: AMETHYST_SHARD
+    item-model: "enhance_mmorpg:philosophers_shard"
+    tooltip-style: "royaltooltips:material"
     display: "<light_purple>Осколок философского камня</light_purple>"
     lore:
       - "<gray>Базовый камень заточки."
@@ -410,6 +423,8 @@ consumables:
   crumb:
     name: "Крошка философского камня"
     material: AMETHYST_CLUSTER
+    item-model: "enhance_mmorpg:philosophers_dust"
+    tooltip-style: "royaltooltips:material"
     display: "<white>Крошка философского камня</white>"
     lore:
       - "<gray>Только для грейда C."
@@ -418,6 +433,8 @@ consumables:
   cube:
     name: "Ашкалотский кубик"
     material: LODESTONE
+    item-model: "enhance_mmorpg:ashkalot_cube"
+    tooltip-style: "royaltooltips:material"
     display: "<aqua>Ашкалотский кубик</aqua>"
     lore:
       - "<gray>Не уничтожает предмет."
@@ -426,6 +443,8 @@ consumables:
   black:
     name: "Чёрный философский камень"
     material: BLACK_DYE
+    item-model: "enhance_mmorpg:black_philosophers_stone"
+    tooltip-style: "royaltooltips:material"
     display: "<dark_gray>Чёрный философский камень</dark_gray>"
     lore:
       - "<gray>Повышенный шанс успеха."
@@ -433,6 +452,8 @@ consumables:
   white:
     name: "Белый философский камень"
     material: WHITE_DYE
+    item-model: "enhance_mmorpg:white_philosophers_stone"
+    tooltip-style: "royaltooltips:material"
     display: "<white>Белый философский камень</white>"
     lore:
       - "<gray>Высокий шанс успеха."
@@ -440,6 +461,8 @@ consumables:
   red:
     name: "Красный философский камень"
     material: RED_DYE
+    item-model: "enhance_mmorpg:red_philosophers_stone"
+    tooltip-style: "royaltooltips:material"
     display: "<red>Красный философский камень</red>"
     lore:
       - "<gray>Очень высокий шанс успеха."
@@ -447,6 +470,8 @@ consumables:
   purple:
     name: "Пурпурный философский камень"
     material: PURPLE_DYE
+    item-model: "enhance_mmorpg:purple_philosophers_stone"
+    tooltip-style: "royaltooltips:material"
     display: "<dark_purple>Пурпурный философский камень</dark_purple>"
     lore:
       - "<gray>Наивысший шанс успеха."
@@ -454,6 +479,8 @@ consumables:
   rune_save:
     name: "Руна Сохранения"
     material: PAPER
+    item-model: "enhance_mmorpg:preservation_rune"
+    tooltip-style: "royaltooltips:rune"
     display: "<green>Руна Сохранения</green>"
     lore:
       - "<gray>При неудаче уровень не меняется"
@@ -462,6 +489,8 @@ consumables:
   rune_cold:
     name: "Руна Холода"
     material: BLUE_ICE
+    item-model: "enhance_mmorpg:cold_rune"
+    tooltip-style: "royaltooltips:rune"
     display: "<aqua>Руна Холода</aqua>"
     lore:
       - "<gray>При неудаче уровень не меняется"
@@ -502,3 +531,67 @@ sounds:
     sound: block.anvil.destroy
     volume: 1.0
     pitch: 1.0
+
+# ---------------------------------------------------------------------------------------------------------------------
+# zatochka 1.1.3: предметы MMOItems / Nexo, которые не узнаются по материалу, и база бонуса оружия.
+# Нет раздела — по умолчанию: грейд по материалу, магическое оружие — типы MMOItems ниже и 7 Nexo-id посохов/книг.
+# ---------------------------------------------------------------------------------------------------------------------
+items:
+  grade:
+    # Грейд MMOItems-предмета без явной записи: material — по материалу (как 1.1.2), или C / B / A.
+    mmoitems-default: material
+    # Брать грейд из тира MMOItems (MMOITEMS_TIER = C/B/A или GRADE_C…), если он задан.
+    mmoitems-tier: true
+    # Точный грейд по id MMOItems (MMOITEMS_ITEM_ID). Оружие Royal Knight (уровни 1–20) — грейд C, заточка до +10.
+    mmoitems-ids:
+      ROYAL_KNIGHT_BEGINNER_BOW: C
+      ROYAL_KNIGHT_RAM_HORN_BOW: C
+      ROYAL_KNIGHT_FOREST_HUNTER: C
+      ROYAL_KNIGHT_STINGING_BOW: C
+      ROYAL_KNIGHT_ELVEN_SONG: C
+      ROYAL_KNIGHT_FORGE_FLAME: C
+      AZERUS_NIGHT_WATCH: C
+      ROYAL_KNIGHT_SILVER_STILETTO: C
+      ROYAL_KNIGHT_SAPPHIRE_TANTO: C
+      AZERUS_FROST_NEEDLE: C
+      ROYAL_KNIGHT_ASHEN_HUNTER: C
+      AZERUS_CRIMSON_SCYTHE: C
+      ROYAL_KNIGHT_FOREST_KEEPER: C
+      ROYAL_KNIGHT_ICE_ORACLE: C
+      ROYAL_KNIGHT_VOLCANO_HEART: C
+      AZERUS_MOON_STAFF: C
+      AZERUS_IRON_VOW: C
+      ROYAL_KNIGHT_LEGIONNAIRE_FANG: C
+      ROYAL_KNIGHT_RAVEN_BEAK: C
+      AZERUS_SUNLEAF: C
+      AZERUS_TIDEKEEPER: C
+      AZERUS_MOONWARDEN: C
+      AZERUS_ASHEN_OATH: C
+      AZERUS_EMBER_DAWN: C
+      AZERUS_BLOOD_RAVEN: C
+      AZERUS_THUNDERMAUL: C
+      ROYAL_KNIGHT_HERBALIST: C
+      ROYAL_KNIGHT_STAR_ATLAS: C
+      ROYAL_KNIGHT_ASH_GRIMOIRE: C
+    # По типу MMOItems (SWORD, STAFF…): {}
+    mmoitems-types: {}
+    # По Nexo-id (старые экземпляры без MMOItems). Алмазные/незеритовые Nexo-версии оружия Royal Knight — грейд C (+10).
+    nexo-ids:
+      azerus_moonwarden: C
+      azerus_tidekeeper: C
+      azerus_ashen_oath: C
+      azerus_ember_dawn: C
+      azerus_blood_raven: C
+      azerus_sunleaf: C
+      azerus_thundermaul: C
+      azerus_crimson_scythe: C
+      azerus_moon_staff: C
+  magic:
+    # Магическое оружие: точится как одноручное, бонус заточки идёт в маг. силу (MAGIC-пакеты MythicLib), а не в физ. урон.
+    mmoitems-types: [STAFF, WAND, GREATSTAFF, CATALYST, SPELLBOOK, TOME, SCYTHE]
+    nexo-ids: [azerus_moon_staff, royal_knight_ice_oracle, royal_knight_forest_keeper, royal_knight_volcano_heart, royal_knight_star_atlas, royal_knight_ash_grimoire, royal_knight_herbalist]
+    # Стат MMOItems с плоской маг. силой (custom-stats.yml: CUSTOM_MAGIC_POWER). Итог игрока (оружие + кольца) идёт в
+    # MAGIC-пакеты; заточка +X% прибавляет X% только от силы оружия в руке.
+    power-stat: CUSTOM_MAGIC_POWER
+  # Доп. типы MMOItems, которые считать оружием, даже если материал не оружейный.
+  weapon-mmoitems-types: []

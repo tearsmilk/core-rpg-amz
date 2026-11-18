@@ -413,7 +413,8 @@ def check_logic():
     rects['leather'] = (lx, ly, 16, 16)
     tex_kind = {}
     for mname, model in (('moon_staff_circle', FX.circle_model()), ('moon_staff_beam', FX.beam_model()),
-                         ('moon_staff_barrier', FX.barrier_model())):
+                         ('moon_staff_barrier', FX.barrier_model()), ('stick_ember_orb', FX.ember_orb_model()),
+                         ('stick_ember_beam', FX.ember_beam_model()), ('stick_slash', FX.slash_model())):
         disk = json.load(open(os.path.join(AZ, 'models', 'item', mname + '.json'), encoding='utf-8'))
         if disk != model:
             bad(f'models/item/{mname}.json отличается от генератора — перезапустите moon_staff.py')
@@ -435,9 +436,10 @@ def check_logic():
                     bad(f'{mname} {face} ({name}): K {got}, ожидалось {K}')
                     break
             n += 1
-            if 5 <= K <= 8:
+            if 5 <= K <= 8 or 30 <= K <= 33:
                 луч = True
-                d_l = {5: pts[1] - pts[0], 6: pts[0] - pts[1], 7: pts[3] - pts[0], 8: pts[0] - pts[3]}[K]
+                Kb = K - 25 if K >= 30 else K
+                d_l = {5: pts[1] - pts[0], 6: pts[0] - pts[1], 7: pts[3] - pts[0], 8: pts[0] - pts[3]}[Kb]
                 d_l = d_l / np.linalg.norm(d_l)
                 if d_l @ np.array([0, 0, 1.0]) < 0.999:
                     bad(f'{mname} {face} ({name}): «вдоль луча» = {d_l.round(3)}, а не +Z')
@@ -477,7 +479,7 @@ def check_files():
         al[0, 0] = al[0, 1] = 0
         if al[:2].any() or al[-2:].any() or al[:, :2].any() or al[:, -2:].any():
             bad(f'{name}.png: рамка 2 px не прозрачная')
-        if name not in ('beam_up', 'beam_down', 'beam_west', 'beam_east') + FX.TAILS:  # хвосты комет — во весь спрайт
+        if name not in ('beam_up', 'beam_down', 'beam_west', 'beam_east') + FX.TAILS + FX.EMBER_BEAMS:  # во весь спрайт
             if (al[FX.RR > FX.CIRCLE_ART_R] > 0).any():
                 bad(f'{name}.png: рисунок за радиусом {FX.CIRCLE_ART_R}')
     st = Image.open(os.path.join(AZ, 'textures', 'item', 'moon_staff.png'))
@@ -486,7 +488,8 @@ def check_files():
     sa = np.asarray(st.convert('RGBA'))[..., 3]
     if ((sa > 0) & (sa < 255)).any():
         bad('moon_staff.png: полупрозрачные тексели (нужны только 0/255)')
-    for m in ('moon_staff', 'moon_staff_cast', 'moon_staff_circle', 'moon_staff_beam', 'moon_staff_barrier'):
+    for m in ('moon_staff', 'moon_staff_cast', 'moon_staff_circle', 'moon_staff_beam', 'moon_staff_barrier',
+              'stick_ember_orb', 'stick_ember_beam', 'stick_slash'):
         j = json.load(open(os.path.join(AZ, 'models', 'item', m + '.json'), encoding='utf-8'))
         for e in j.get('elements', []):
             for v in e['from'] + e['to']:
@@ -495,7 +498,8 @@ def check_files():
             r = e.get('rotation')
             if r and (r['angle'] not in (-45, -22.5, 0, 22.5, 45) or r['axis'] not in 'xyz'):
                 bad(f'{m}: поворот {r}')
-    for i in ('moon_staff', 'moon_staff_circle', 'moon_staff_beam', 'moon_staff_barrier'):
+    for i in ('moon_staff', 'moon_staff_circle', 'moon_staff_beam', 'moon_staff_barrier', 'stick_ember_orb',
+              'stick_ember_beam', 'stick_slash'):
         if not os.path.exists(os.path.join(AZ, 'items', i + '.json')):
             bad(f'нет items/{i}.json')
     ymls = open(os.path.join(ROOT, 'items', 'azerus_weapons.yml'), encoding='utf-8').read()
@@ -583,6 +587,51 @@ def check_barrier():
            f'при L=0, L9 > L8 > L4, t ≡ t+1200; {note}')
 
 
+# ------------------------------------------------------------------------------------------- (g) палка core_weapons
+def check_stick():
+    print('(g) палка core_weapons (K24..K33)')
+    n0 = len(PROBLEMS)
+    spr = FX.load_sprites()
+    v = (np.arange(96) + 0.5) / 96
+    lx, ly = np.meshgrid(v, v)
+    # красная сфера = логика круга: те же альфы, что у K1..4, цвет — красный (R > G, R > B)
+    for red, base in FX.EMBER_CIRCLE.items():
+        a = FX.shade(FX.KINDS[red], spr[red], lx, ly, 0.8, 3.0)
+        b = FX.shade(FX.KINDS[base], spr[base], lx, ly, 0.8, 3.0)
+        if not np.allclose(a[..., 3], b[..., 3]):
+            bad(f'{red}: альфа отличается от {base}')
+        m = a[..., 3] > 0.5
+        if m.any() and not (a[..., 0][m].mean() > a[..., 1][m].mean() + 0.2 and a[..., 0][m].mean() > a[..., 2][m].mean()):
+            bad(f'{red}: не красный')
+
+    def slash(K, age, crit=0, G=1000):
+        R = G % 125 + 125 * crit
+        return FX.shade(K, spr['slash_crescent' if K == 28 else 'slash_streak'], lx, ly, R / 250.0, (G + age) / 20.0)
+
+    if slash(28, 2.5)[..., 3].max() < 0.9 or slash(28, 9.5)[..., 3].max() > 0.0 or slash(28, 40)[..., 3].max() > 0.0:
+        bad('серп K28: не виден на 2.5 тика или виден после 9.5')
+    if slash(29, 2.0)[..., 3].max() < 0.9 or slash(29, 7.0)[..., 3].max() > 0.0 or slash(29, 9.0, 1)[..., 3].max() > 0.0:
+        bad('штрих K29: окно видимости не то')
+    if slash(28, 1.0)[..., 3].sum() >= slash(28, 2.5)[..., 3].sum():
+        bad('серп K28: дуга не растёт (1 тик → 2.5)')
+    a = slash(28, 2.5, 0, G=1000)
+    b = slash(28, 2.5, 0, G=1000 + 24000)          # шов дня: GameTime по модулю 24000 тиков
+    if not np.allclose(a, b, atol=1e-4):
+        bad('серп K28: шов GameTime (24000 тиков)')
+    # луч «Углей»: при t и t+1200 одинаково, по краю ширины альфа ~0, на оси > 0.8
+    for K, name in zip(range(30, 34), FX.EMBER_BEAMS):
+        a = FX.shade(K, spr[name], lx, ly, 100 / 250.0, 7.3)
+        b = FX.shade(K, spr[name], lx, ly, 100 / 250.0, 7.3 + 1200.0)
+        if not np.allclose(a, b, atol=1e-3):
+            bad(f'{name}: шов t/t+1200')
+    a = FX.shade(30, spr['ember_beam_up'], np.array([0.5, 0.02]), np.array([0.5, 0.5]), 100 / 250.0, 1.0)
+    if a[0, 3] < 0.8 or a[1, 3] > 0.25:
+        bad(f'ember_beam_up: ось {a[0, 3]:.2f}, край {a[1, 3]:.2f}')
+    if len(PROBLEMS) == n0:
+        ok('сфера K24..27 = альфа K1..4, красная; серп K28 растёт 0..3 тика и гаснет к 9, штрих K29 — 1..6 '
+           '(крит до 8), шов дня; луч K30..33: шов t/t+1200, ось ярко, край прозрачен')
+
+
 # ------------------------------------------------------------------------------------------- --pack
 def check_pack(path):
     print(f'(pack) {path}')
@@ -604,6 +653,9 @@ def check_pack(path):
         for rel in ['models/item/moon_staff.json', 'models/item/moon_staff_cast.json',
                     'models/item/moon_staff_circle.json', 'models/item/moon_staff_beam.json',
                     'models/item/moon_staff_barrier.json', 'items/moon_staff.json',
+                    'models/item/stick_ember_orb.json', 'models/item/stick_ember_beam.json',
+                    'models/item/stick_slash.json', 'items/stick_ember_orb.json', 'items/stick_ember_beam.json',
+                    'items/stick_slash.json',
                     'items/moon_staff_circle.json', 'items/moon_staff_beam.json', 'items/moon_staff_barrier.json']:
             zr = 'assets/azerus/' + rel
             if zr not in names:
@@ -636,6 +688,7 @@ def main(argv):
     check_logic()
     check_files()
     check_barrier()
+    check_stick()
     if pack:
         check_pack(pack)
     print('(armor3d_check.py)')

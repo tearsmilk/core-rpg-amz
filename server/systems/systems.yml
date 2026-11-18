@@ -4,6 +4,7 @@
 enabled:
   - AmazakeCore
   - AmazakeTab
+  - core-mechanics
   - core-mobs
   - core-npc
   - core-portals

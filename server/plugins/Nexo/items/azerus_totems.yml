@@ -1,0 +1,56 @@
+# Тотемы AZERUS — раздел azerus_totems в /nexo inv.
+# Предметы перенесены из azerus_artifacts.yml. ID, модели и тултипы не менялись.
+
+azerus_artifact_001:
+  material: PAPER
+  itemname: "<white>Цветочная маска друида"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_001
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_001
+    tooltip_style: royaltooltips:trinket
+
+azerus_artifact_002:
+  material: PAPER
+  itemname: "<white>Многоглазый идол"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_002
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_002
+    tooltip_style: royaltooltips:trinket
+
+azerus_artifact_003:
+  material: PAPER
+  itemname: "<white>Маска волка"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_003
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_003
+    tooltip_style: royaltooltips:trinket
+
+azerus_artifact_004:
+  material: PAPER
+  itemname: "<white>Маска жука"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_004
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_004
+    tooltip_style: royaltooltips:trinket
+
+azerus_artifact_005:
+  material: PAPER
+  itemname: "<white>Лесной идол"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_005
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_005
+    tooltip_style: royaltooltips:trinket
+
+azerus_artifact_006:
+  material: PAPER
+  itemname: "<white>Маска плута"
+  Pack:
+    model: azerus:item/azerus_artifacts/artifact_006
+  Components:
+    item_model: azerus:azerus_artifacts/artifact_006
+    tooltip_style: royaltooltips:trinket

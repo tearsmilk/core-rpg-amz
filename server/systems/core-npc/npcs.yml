@@ -1,80 +1,55 @@
 # NPC системы core-npc. Правится командами /npc; вручную — затем /npc reload.
 
 npcs:
-  ee:
+  Master:
     type: mannequin
     location:
       world: world
-      x: -27.785
+      x: -29.687
       y: 100.0
-      z: 8.389
-      yaw: -174.961
-      pitch: 25.037
-    name: <white>ee
+      z: -1.198
+      yaw: 1.72
+      pitch: 1.437
+    name: MasterSeal
     hologram: name
-    model:
-      id: janet
-      scale: 1.0
-      idle: ''
-      interact: ''
-    dialog: example
-    commands: []
+    skin:
+      name: Haiato_Katagiry
+      value: ewogICJ0aW1lc3RhbXAiIDogMTc5NTAyNDQ3ODYzNiwKICAicHJvZmlsZUlkIiA6ICI0NGE1NjM4MmM4ZTk0NDY3Yjg4NGFhMTQzOTIwMzFmZSIsCiAgInByb2ZpbGVOYW1lIiA6ICJIYWlhdG9fS2F0YWdpcnkiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZmNhMDZhNjZhYmU0ZmIwMDFhYTBlMjYxZmUzYjhmMjZhNjA3ODJmNTYyNTgwM2I1ZTAwMWQ0ZTQwMTQ0ZDBmMCIKICAgIH0sCiAgICAiQ0FQRSIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvY2I0MGE5MmUzMmI1N2ZkNzMyYTAwZmMzMjVlN2FmYjAwYTdjYTc0OTM2YWQ1MGQ4ZTg2MDE1MmU0ODJjZmJkZSIKICAgIH0KICB9Cn0=
+      signature: EwCyOFeZjdLaqG7BNQeMxAW81v0JuVCDzIBc4S1LUVQDgbuGOJsDYzSq6BCIrqSlwv5WZKC70VZ838ugDe3+m/Hq9AOy0DTQ1/IWaCZxNlCd8y6ZCLZe/5bBsw+ISi6J2cQOGWP3EJunXZs53U+LbRkRkhunlI/J/wPqKMgDKvp1myh8Pc2QRvqD1vQGDqQoCfUABRYS9EOMSzcPSfTIs/WkZbo1guweztEL/jtdjayayCQn0l73RZ6xycf1ckN3s3j2gRoQE2q1KUV9f2gpLO1e3idcztFygUax/hUDFo5vXmzqdS8OJw3aLLUrctev2JZEM97fp0W/7povzYqhFUDTUyU7SLGIOY+X3va7AktTedpTfRaxGmMDROXzFaYH5YngvCGeVmlAcVqJL901VQxXl+qk3ng4h/vNqZQGPr0UIJnUOk8t4dt25WF7ixwty+MJGrGnqN8KFfASahGGcjk+7tpSc38AaxxjUoTKtVl7qcQksXMvX3TljGhyH1Jh1gEi9urySjCv87i2NnYMUV36oQqPn8rNhYCcFrKmMWd+kAQondLaPjg2xiQkatJAdb/XBMdRZsqQ0aG8bw+lgf9KXuPkAroosIdY79bZurUzMxV3WB4KA21dksMXBBpHpveIvfP8RwkQpmKggj51GRQjUMB9le1Hx7LfduBsl/w=
+    dialog: ''
+    commands:
+    - 'console: seal'
+    - 'player: seal'
     permission: ''
     cooldown: -1.0
     left-click: false
-    look-at: false
+    look-at: true
     look-radius: -1.0
     gravity: false
     collidable: false
     scale: 1.0
-  ruka:
+  MasterZatichki:
     type: mannequin
     location:
       world: world
-      x: -14.834
+      x: -31.151
       y: 100.0
-      z: -1.825
-      yaw: 41.32
-      pitch: 11.709
-    name: <white>ruka
+      z: -1.093
+      yaw: -8.03
+      pitch: -3.213
+    name: <white>MasterZatichki
     hologram: name
-    model:
-      id: skeleton_archer
-      scale: 1.0
-      idle: ''
-      interact: ''
+    skin:
+      name: Haiato_Katagiry
+      value: ewogICJ0aW1lc3RhbXAiIDogMTc5NTAyNDQ3ODYzNiwKICAicHJvZmlsZUlkIiA6ICI0NGE1NjM4MmM4ZTk0NDY3Yjg4NGFhMTQzOTIwMzFmZSIsCiAgInByb2ZpbGVOYW1lIiA6ICJIYWlhdG9fS2F0YWdpcnkiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZmNhMDZhNjZhYmU0ZmIwMDFhYTBlMjYxZmUzYjhmMjZhNjA3ODJmNTYyNTgwM2I1ZTAwMWQ0ZTQwMTQ0ZDBmMCIKICAgIH0sCiAgICAiQ0FQRSIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvY2I0MGE5MmUzMmI1N2ZkNzMyYTAwZmMzMjVlN2FmYjAwYTdjYTc0OTM2YWQ1MGQ4ZTg2MDE1MmU0ODJjZmJkZSIKICAgIH0KICB9Cn0=
+      signature: EwCyOFeZjdLaqG7BNQeMxAW81v0JuVCDzIBc4S1LUVQDgbuGOJsDYzSq6BCIrqSlwv5WZKC70VZ838ugDe3+m/Hq9AOy0DTQ1/IWaCZxNlCd8y6ZCLZe/5bBsw+ISi6J2cQOGWP3EJunXZs53U+LbRkRkhunlI/J/wPqKMgDKvp1myh8Pc2QRvqD1vQGDqQoCfUABRYS9EOMSzcPSfTIs/WkZbo1guweztEL/jtdjayayCQn0l73RZ6xycf1ckN3s3j2gRoQE2q1KUV9f2gpLO1e3idcztFygUax/hUDFo5vXmzqdS8OJw3aLLUrctev2JZEM97fp0W/7povzYqhFUDTUyU7SLGIOY+X3va7AktTedpTfRaxGmMDROXzFaYH5YngvCGeVmlAcVqJL901VQxXl+qk3ng4h/vNqZQGPr0UIJnUOk8t4dt25WF7ixwty+MJGrGnqN8KFfASahGGcjk+7tpSc38AaxxjUoTKtVl7qcQksXMvX3TljGhyH1Jh1gEi9urySjCv87i2NnYMUV36oQqPn8rNhYCcFrKmMWd+kAQondLaPjg2xiQkatJAdb/XBMdRZsqQ0aG8bw+lgf9KXuPkAroosIdY79bZurUzMxV3WB4KA21dksMXBBpHpveIvfP8RwkQpmKggj51GRQjUMB9le1Hx7LfduBsl/w=
     dialog: ''
-    commands: []
+    commands:
+    - 'player: zat'
     permission: ''
     cooldown: -1.0
     left-click: false
-    look-at: false
-    look-radius: -1.0
-    gravity: false
-    collidable: false
-    scale: 1.0
-  rukq:
-    type: mannequin
-    location:
-      world: world
-      x: -14.581
-      y: 100.0
-      z: 6.817
-      yaw: 159.505
-      pitch: 10.953
-    name: <white>rukq
-    hologram: name
-    model:
-      id: jellyfish_abyss
-      scale: 1.0
-      idle: ''
-      interact: ''
-    dialog: ''
-    commands: []
-    permission: ''
-    cooldown: -1.0
-    left-click: false
-    look-at: false
+    look-at: true
     look-radius: -1.0
     gravity: false
     collidable: false

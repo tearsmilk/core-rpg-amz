@@ -73,6 +73,123 @@
   },
   {
    "type": "bitmap",
+   "file": "azerus:font/tooltip/divider_parchment.png",
+   "height": 7,
+   "ascent": 4,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_00.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_01.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_02.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_03.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_04.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_05.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_06.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_07.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_08.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_09.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_10.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_11.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
    "file": "azerus:item/rings_azerus/ring_001.png",
    "height": 20,
    "ascent": 15,

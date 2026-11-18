@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "enhance_mmorpg:item/cold_rune"
+  }
+}

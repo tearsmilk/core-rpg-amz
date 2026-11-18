@@ -73,5 +73,4 @@ objectives:
         triggers:
         - 'message{format="&aВы успешно прошли обучение!"}'
         - 'sound{sound="ENTITY_PLAYER_LEVELUP"}'
-        - 'mmoitem{type=SWORD;id=CUTLASS}'
         - 'experience{amount=100}'

@@ -19,6 +19,18 @@ NexoInventory:
       slot: 4
       icon: azerus_thundermaul
       itemname: <gold>Royal Knight</gold>
+    seals:
+      slot: 5
+      icon: sealforge_emerald
+      itemname: <gold>Печати</gold>
+    azerus_artifacts:
+      slot: 6
+      icon: azerus_artifact_007
+      itemname: <gold>Артефакты</gold>
+    azerus_totems:
+      slot: 7
+      icon: azerus_artifact_001
+      itemname: <gold>Тотемы</gold>
   menu_rows: 6
   menu_size: 45
   menu_title: <shift:-37><glyph:menu_items_search>
