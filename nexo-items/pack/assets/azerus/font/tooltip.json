@@ -74,8 +74,8 @@
   {
    "type": "bitmap",
    "file": "azerus:font/tooltip/divider_parchment.png",
-   "height": 5,
-   "ascent": 3,
+   "height": 7,
+   "ascent": 4,
    "chars": [
     ""
    ]
