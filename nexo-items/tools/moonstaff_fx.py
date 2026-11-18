@@ -6,8 +6,8 @@
 Модуль общий для tools/moon_staff.py (сборка) и tools/moonstaff_check.py (проверка). Запуск сам по себе не нужен.
 
 Спрайт = 128×128 RGBA в pack/assets/azerus/textures/item/moon_staff_fx/<имя>.png. Сигнатура для шейдера:
-  тексель (0,0) = S0 = (177,126,90,3), тексель (1,0) = (K,90,126,3), K — вид спрайта 1..19 (таблица KINDS),
-  K20..K31 — резерв.
+  тексель (0,0) = S0 = (177,126,90,3), тексель (1,0) = (K,90,126,3), K — вид спрайта 1..33 (таблица KINDS),
+  K34..K39 — резерв. K20..23 — фиолетовый круг телепорта (core_items); K24..33 — палка core_weapons (см. ниже).
 Альфа 3 нигде больше не встречается; остаток строк 0..1, столбцов 0..1 и рамка 2 px по краю — прозрачные.
 Рисунок кругов (и всех радиальных спрайтов) — только внутри радиуса 61 px от центра (63.5, 63.5), лучей и хвостов
 комет — во внутреннем квадрате 124×124.
@@ -15,6 +15,9 @@ K10 hex_cell — ячейка барьера (шестигранник «вер�
   255 — обвод, 254 — блёстка, 209..239 — фаска, 96..208 — заливка, 0 — вне шестигранника (шейдер различает по альфе).
 K11..K14 — огненный круг (кольца, руны, печать, языки пламени; цвета огня «запечены» в спрайты), у K14 альфа 254 —
 искры (мерцают). K15..K18 — хвост кометы (4 ориентации, как K5..K8), K19 — голова кометы (радиальная).
+K24..K27 — красная копия K1..4 (сфера «Углей»); K28 — огненный серп «Удара в спину» (дуга −110°..+110°, плавные
+градиенты), K29 — белая вспышка-штрих (альфа = близость к оси: шейдер гасит её порогом); K30..K33 — луч «Углей»
+(альфа — бесшовный дымный шум, ≥ 236 — искры; 4 ориентации, как K5..K8).
 Без шейдера (Iris, старый пак) сигнатура отрезается ванильным порогом альфы 0.1, видна обычная картинка с оттенком.
 """
 import json
@@ -38,10 +41,18 @@ KINDS = {'ring': 1, 'runes': 2, 'hexagram': 3, 'core': 4,
          'fire_ring': 11, 'fire_runes': 12, 'fire_sigil': 13, 'fire_flames': 14,
          'comet_tail_up': 15, 'comet_tail_down': 16, 'comet_tail_west': 17, 'comet_tail_east': 18,
          'comet_core': 19,
-         'tp_ring': 20, 'tp_runes': 21, 'tp_hexagram': 22, 'tp_core': 23}   # K24..K31 — резерв
+         'tp_ring': 20, 'tp_runes': 21, 'tp_hexagram': 22, 'tp_core': 23,
+         'ember_ring': 24, 'ember_runes': 25, 'ember_hexagram': 26, 'ember_core': 27,
+         'slash_crescent': 28, 'slash_streak': 29,
+         'ember_beam_up': 30, 'ember_beam_down': 31, 'ember_beam_west': 32, 'ember_beam_east': 33}   # K34..K39 — резерв
 # Круг телепорта (core_items, свиток): K20..23 = K1..4 той же логики шейдера, цвет фиолетовый (каналы R и G переставлены).
 TP_CIRCLE = {'tp_ring': 'ring', 'tp_runes': 'runes', 'tp_hexagram': 'hexagram', 'tp_core': 'core'}
+# Палка core_weapons, «Угли» (Shift+ПКМ): K24..27 = K1..4 той же логики шейдера, красная перекраска (см. ember_sprite),
+# свечение красное. K28 — серп «Удара в спину», K29 — белая вспышка-штрих поперёк серпа; K30..33 — дымный
+# тёмно-красный луч «Углей» (4 ориентации, как K5..K8, своя ветка шейдера).
+EMBER_CIRCLE = {'ember_ring': 'ring', 'ember_runes': 'runes', 'ember_hexagram': 'hexagram', 'ember_core': 'core'}
 BEAMS = ('beam_up', 'beam_down', 'beam_west', 'beam_east')
+EMBER_BEAMS = ('ember_beam_up', 'ember_beam_down', 'ember_beam_west', 'ember_beam_east')
 TAILS = ('comet_tail_up', 'comet_tail_down', 'comet_tail_west', 'comet_tail_east')
 FIRE_CIRCLE = ('fire_ring', 'fire_runes', 'fire_sigil', 'fire_flames')
 FLAMES_WIDE = 1.25                # плоскость языков пламени в 1.25 раза шире кольца (модель moon_staff_fire_circle)
@@ -621,10 +632,183 @@ def sprite_comet_core():
     return L.image(KINDS['comet_core'], True)
 
 
+# ------------------------------------------------------------------------------------------- палка: «Удар в спину» и «Угли»
+SLASH_HALF = math.radians(110.0)  # шейдер MS_SLASH_HALF: серп от −110° до +110° (0 — вверх, по часовой)
+SLASH_RO = 58.0                   # внешний край серпа, px
+SLASH_W = 25.0                    # наибольшая толщина серпа (посередине дуги), px
+# Огонь серпа по глубине от внешней кромки (u = 0) внутрь (u = 1): белый накал → золото → оранжевый → алый → розовый.
+SLASH_RAMP = [(0.00, (255, 255, 245), 255), (0.06, (255, 240, 180), 255), (0.18, (255, 186, 70), 255),
+              (0.38, (255, 110, 30), 248), (0.60, (250, 45, 45), 228), (0.80, (255, 50, 120), 188),
+              (1.00, (255, 90, 170), 90)]
+
+
+def _ramp(u, ramp):
+    """Кусочно-линейная палитра: u (массив 0..1) → (rgb, alpha)."""
+    u = np.clip(u, 0.0, 1.0)
+    rgb = np.zeros(u.shape + (3,))
+    a = np.zeros(u.shape)
+    for (u0, c0, a0), (u1, c1, a1) in zip(ramp, ramp[1:]):
+        m = (u >= u0) & (u <= u1)
+        k = ((u[m] - u0) / (u1 - u0))[..., None]
+        rgb[m] = np.array(c0) * (1 - k) + np.array(c1) * k
+        a[m] = a0 + (a1 - a0) * k[..., 0]
+    return rgb, a
+
+
+def slash_progress(ang):
+    """Угол (0 — вверх, по часовой, радианы) → доля дуги серпа p (0 — левый кончик, 1 — правый), вне дуги — <0 / >1."""
+    a = (np.asarray(ang, float) + math.pi) % (2 * math.pi) - math.pi
+    return (a + SLASH_HALF) / (2 * SLASH_HALF)
+
+
+def sprite_slash_crescent():
+    """K28: огненный серп. Толщина sin(πp)^0.7 (кончики острые), внешняя кромка — белый накал, внутрь — золото,
+    оранжевый, алый, розовый дым; внутри — два тонких «следа» (вихрь) и искры снаружи. Плавные градиенты."""
+    p = slash_progress(ANG)
+    on = (p >= 0) & (p <= 1)
+    w = SLASH_W * np.sin(np.pi * np.clip(p, 0, 1)) ** 0.7
+    u = (SLASH_RO - RR) / np.maximum(w, 1e-6)
+    rgb, a = _ramp(u, SLASH_RAMP)
+    edge = np.clip((SLASH_RO + 0.8 - RR) / 1.6, 0, 1)          # мягкая (1.6 px) внешняя кромка
+    body = on & (u <= 1.0) & (w > 0.6)
+    a = np.where(body, a * edge, 0.0)
+    # вихрь: два тонких следа внутри серпа (короче и тусклее), розово-оранжевые
+    for r0, p0, p1, wid, col, al in ((SLASH_RO - SLASH_W - 5.0, 0.12, 0.86, 2.6, (255, 120, 70), 170),
+                                     (SLASH_RO - SLASH_W - 12.0, 0.28, 0.74, 2.0, (255, 80, 150), 120)):
+        q = np.clip((p - p0) / (p1 - p0), 0, 1)
+        inside = (p >= p0) & (p <= p1)
+        ww = wid * np.sin(np.pi * q) ** 0.8
+        d = np.abs(RR - r0)
+        m = inside & (d < ww + 1.0)
+        k = np.clip(1 - d / (ww + 1.0), 0, 1)
+        aa = al * k
+        upd = m & (aa > a)
+        rgb[upd] = col
+        a[upd] = aa[upd]
+    # искры над кромкой: детерминированные точки
+    rng = np.random.default_rng(28)
+    for _ in range(14):
+        pp = rng.uniform(0.15, 0.95)
+        rr = SLASH_RO - rng.uniform(-1.5, 6.0)
+        if rr > CIRCLE_ART_R - 2.5:
+            rr = CIRCLE_ART_R - 2.5
+        ang = (pp * 2 - 1) * SLASH_HALF
+        x, y = polar_xy(rr, ang)
+        d = np.hypot(DX - x, DY - y)
+        m = d < 1.6
+        col = (255, 240, 200) if rng.random() < 0.5 else (255, 160, 80)
+        upd = m & (a < 230)
+        rgb[upd] = col
+        a[upd] = 230
+    L = Layer()
+    L.rgb, L.a = rgb, a
+    return L.image(KINDS['slash_crescent'], True)
+
+
+def sprite_slash_streak():
+    """K29: белая вспышка-штрих: горизонтальная линия через центр (длина 112 px, к концам сужается) и малая
+    четырёхлучевая звезда в центре. Альфа = «близость к оси» (255 — ядро, к краю каймы падает до 8): шейдер гасит
+    штрих порогом по альфе — линия истончается, а не сереет. Цвет по альфе: ядро белое, кайма — розово-оранжевая."""
+    half = 56.0
+    k = np.clip(1 - np.abs(DX) / half, 0, 1)
+    core = 0.35 + 1.25 * k ** 1.4                                # полутолщина ядра, px
+    glow = core + 1.5 + 3.5 * k
+    d = np.abs(DY)
+    line = np.where(k > 0, np.clip(1 - np.maximum(d - core, 0) / (glow - core), 0, 1), 0.0)
+    line = np.where(d <= core, 1.0, line * 0.92)
+    star = np.zeros_like(RR)
+    for ang, ln in ((0.0, 10.0), (math.pi / 2, 20.0), (math.pi, 10.0), (3 * math.pi / 2, 20.0)):
+        x, y = polar_xy(ln, ang)
+        dd = seg_dist(0, 0, x, y)
+        w = 0.4 + 1.6 * np.clip(1 - RR / ln, 0, 1)
+        star = np.maximum(star, np.clip(1 - np.maximum(dd - w, 0) / 3.0, 0, 1) * (dd < w + 3.0))
+    bloom = np.clip(1 - RR / 10.0, 0, 1) ** 1.2
+    v = np.maximum(np.maximum(line, star), bloom)
+    a = np.where(v > 0.03, 8 + 247 * v, 0)
+    rgb = np.array([255, 120, 120]) * (1 - v[..., None]) + np.array([255, 255, 255]) * v[..., None]
+    rgb = np.where((v < 0.75)[..., None], np.array([255, 150, 110]) * (1 - v[..., None] / 0.75)
+                   + np.array([255, 225, 230]) * (v[..., None] / 0.75), rgb)
+    L = Layer()
+    L.rgb, L.a = rgb, a
+    return L.image(KINDS['slash_streak'], True)
+
+
+def _tile_noise(h, w, cells_v, cells_u, seed, octaves=3):
+    """Плавный шум 0..1, бесшовный по обеим осям (значения в узлах сетки, косинусная интерполяция)."""
+    rng = np.random.default_rng(seed)
+    out = np.zeros((h, w))
+    amp, tot = 1.0, 0.0
+    for o in range(octaves):
+        cv, cu = cells_v * 2 ** o, cells_u * 2 ** o
+        g = rng.random((cv, cu))
+        y = np.arange(h) / h * cv
+        x = np.arange(w) / w * cu
+        y0 = np.floor(y).astype(int)
+        x0 = np.floor(x).astype(int)
+        fy = (1 - np.cos(np.pi * (y - y0))) / 2
+        fx = (1 - np.cos(np.pi * (x - x0))) / 2
+        Y0, X0 = np.meshgrid(y0 % cv, x0 % cu, indexing='ij')
+        Y1, X1 = np.meshgrid((y0 + 1) % cv, (x0 + 1) % cu, indexing='ij')
+        FY, FX = np.meshgrid(fy, fx, indexing='ij')
+        v = (g[Y0, X0] * (1 - FX) + g[Y0, X1] * FX) * (1 - FY) + (g[Y1, X0] * (1 - FX) + g[Y1, X1] * FX) * FY
+        out += amp * v
+        tot += amp
+        amp *= 0.5
+    return out / tot
+
+
+def ember_beam_art():
+    """Луч «Углей» «вверх» (K30): поперёк — u, вдоль — v (бесшовно по v: шейдер прокручивает). Альфа — дымный шум
+    (шейдер берёт его как «клубы» и искры: альфа ≥ 236 — искра), цвет — для вида без шейдера: алое ядро, тёмно-
+    красные края."""
+    n = _tile_noise(124, 124, 4, 3, 30)
+    n = (n - n.min()) / (n.max() - n.min())
+    sp = _tile_noise(124, 124, 24, 60, 31, octaves=1)
+    a_in = 30 + 200 * n
+    a_in = np.where(sp > 0.9, 250, a_in)                       # искры
+    w = (np.arange(124) + 0.5) / 124
+    d = np.abs(2 * w - 1)[None, :].repeat(124, 0)
+    col = np.where((d < 0.3)[..., None], np.array([255, 90, 40]), np.where((d < 0.65)[..., None],
+                   np.array([160, 16, 10]), np.array([40, 6, 6])))
+    rgb = np.zeros((SPRITE, SPRITE, 3))
+    a = np.zeros((SPRITE, SPRITE))
+    rgb[2:126, 2:126] = col
+    a[2:126, 2:126] = a_in
+    return rgb, a
+
+
+def ember_beam_sprite(kind_name):
+    rgb, a = ember_beam_art()
+    if kind_name == 'ember_beam_down':
+        rgb, a = rgb[::-1], a[::-1]
+    elif kind_name == 'ember_beam_west':
+        rgb, a = rgb.transpose(1, 0, 2), a.T
+    elif kind_name == 'ember_beam_east':
+        rgb, a = rgb.transpose(1, 0, 2)[:, ::-1], a.T[:, ::-1]
+    L = Layer()
+    L.rgb, L.a = rgb.copy(), a.copy()
+    return L.image(KINDS[kind_name], False)
+
+
+def ember_sprite(name, base):
+    """Красная копия спрайта круга: голубые тона → алые (R' = B, G' = 0.5·R, B' = 0.36·R): тёмно-синий → багровый,
+    голубой → алый, светло-голубой → коралловый, белый → тёплый белый. Своя метка K в (1,0)."""
+    a = base.copy()
+    body = a[..., 3] != 3
+    r = base[..., 0].astype(np.float64)
+    b = base[..., 2].astype(np.float64)
+    a[..., 0][body] = b[body].astype(np.uint8)
+    a[..., 1][body] = np.clip(np.round(r * 0.5), 0, 255).astype(np.uint8)[body]
+    a[..., 2][body] = np.clip(np.round(r * 0.36), 0, 255).astype(np.uint8)[body]
+    a[0, 1] = (KINDS[name], 90, 126, 3)
+    return a
+
+
 SPRITE_FUNCS = {'ring': sprite_ring, 'runes': sprite_runes, 'hexagram': sprite_hexagram, 'core': sprite_core,
                 'flare': sprite_flare, 'hex_cell': sprite_hex_cell,
                 'fire_ring': sprite_fire_ring, 'fire_runes': sprite_fire_runes, 'fire_sigil': sprite_fire_sigil,
-                'fire_flames': sprite_fire_flames, 'comet_core': sprite_comet_core}
+                'fire_flames': sprite_fire_flames, 'comet_core': sprite_comet_core,
+                'slash_crescent': sprite_slash_crescent, 'slash_streak': sprite_slash_streak}
 
 
 def tp_sprite(name, base):
@@ -639,16 +823,20 @@ def tp_sprite(name, base):
 def all_sprites():
     out = {}
     for name in KINDS:
-        if name in TP_CIRCLE:
+        if name in TP_CIRCLE or name in EMBER_CIRCLE:
             continue
         if name in SPRITE_FUNCS:
             out[name] = SPRITE_FUNCS[name]()
         elif name in TAILS:
             out[name] = tail_sprite(name)
+        elif name in EMBER_BEAMS:
+            out[name] = ember_beam_sprite(name)
         else:
             out[name] = beam_sprite(name)
     for name, base in TP_CIRCLE.items():
         out[name] = tp_sprite(name, out[base])
+    for name, base in EMBER_CIRCLE.items():
+        out[name] = ember_sprite(name, out[base])
     return out
 
 
@@ -749,9 +937,41 @@ def comet_model():
             'elements': els}
 
 
+def ember_orb_model():
+    """Сфера «Углей» (core_weapons): модель круга посоха со спрайтами ember_* (K24..27)."""
+    m = circle_model()
+    m['textures'] = {k: v.replace('/ring', '/ember_ring').replace('/runes', '/ember_runes')
+                     .replace('/hexagram', '/ember_hexagram').replace('/core', '/ember_core')
+                     for k, v in m['textures'].items()}
+    return m
+
+
+def ember_beam_model():
+    """Луч «Углей»: звезда из 8 плоскостей вдоль +Z (z 8..16, как moon_staff_beam), без вспышки у начала (там сфера)."""
+    m = beam_model()
+    m['elements'] = m['elements'][:8]
+    fx = f'{NS}:item/moon_staff_fx/'
+    m['textures'] = {'1': fx + 'ember_beam_up', '2': fx + 'ember_beam_down', '3': fx + 'ember_beam_west',
+                     '4': fx + 'ember_beam_east', 'particle': fx + 'ember_beam_up'}
+    return m
+
+
+def slash_model():
+    """«Удар в спину»: серп (K28, плоскость 16×16 px, z 8.05) и вспышка-штрих (K29, 20×20 px, z 7.95, повёрнута на
+    −22.5° вокруг z — наискось через серп). Грани north и south (видно с обеих сторон)."""
+    fx = f'{NS}:item/moon_staff_fx/'
+    return {'textures': {'1': fx + 'slash_crescent', '2': fx + 'slash_streak', 'particle': fx + 'slash_crescent'},
+            'elements': [{'from': [0, 0, 8.05], 'to': [16, 16, 8.05], 'shade': False, 'light_emission': 15,
+                          'faces': {'north': _face('1'), 'south': _face('1')}},
+                         {'from': [-2, -2, 7.95], 'to': [18, 18, 7.95], 'shade': False, 'light_emission': 15,
+                          'rotation': {'angle': -22.5, 'axis': 'z', 'origin': [8, 8, 8]},
+                          'faces': {'north': _face('2'), 'south': _face('2')}}]}
+
+
 EFFECT_MODELS = {'moon_staff_circle': circle_model, 'moon_staff_beam': beam_model, 'moon_staff_barrier': barrier_model,
                  'moon_staff_fire_circle': fire_circle_model, 'moon_staff_comet': comet_model,
-                 'teleport_circle': tp_circle_model}
+                 'teleport_circle': tp_circle_model,
+                 'stick_ember_orb': ember_orb_model, 'stick_ember_beam': ember_beam_model, 'stick_slash': slash_model}
 
 
 def item_def(name):
@@ -817,13 +1037,82 @@ def _sample_halo(spr, qx, qy):
 
 
 def shade(kind, spr, lx, ly, param, t):
-    """kind 1..19, lx/ly — msLocal (0..1, массивы), param — msParam, t — секунды. → RGBA (…, 4) 0..1+."""
+    """kind 1..33, lx/ly — msLocal (0..1, массивы), param — msParam, t — секунды. → RGBA (…, 4) 0..1+."""
     lx = np.asarray(lx, np.float64)
     ly = np.asarray(ly, np.float64)
     out = np.zeros(lx.shape + (4,))
-    violet = kind >= 20                       # K20..23 — фиолетовый круг телепорта (логика K1..4)
+    violet = 20 <= kind <= 23                 # K20..23 — фиолетовый круг телепорта (логика K1..4)
     if violet:
         kind -= 19
+    red = 24 <= kind <= 27                    # K24..27 — красная сфера «Углей» (логика K1..4)
+    if red:
+        kind -= 23
+    if kind in (28, 29):
+        # «Удар в спину»: msParam = (g + 125·C)/250, g — тик появления mod 125, C — крит. Возраст в тиках: t·20 = GameTime·24000.
+        code = int(math.floor(param * 250.0 + 0.5))
+        crit = code // 125
+        cr = float(crit)
+        age = (t * 20.0 - (code - 125 * crit)) % 125.0
+        if age > 117.0:
+            age = 0.0
+        dx, dy = lx - 0.5, ly - 0.5
+        r = np.hypot(dx, dy)
+        if kind == 28:
+            p = (np.arctan2(dx, -dy) + SLASH_HALF) / (2 * SLASH_HALF)
+            head = 1.15 * float(smoothstep(0.0, 3.0, age))
+            tail = 1.25 * float(smoothstep(3.0, 8.5, age)) - 0.2
+            vis = np.clip((head - p) / 0.08, 0, 1) * np.clip((p - tail) / 0.18, 0, 1)
+            fade = 1.0 - float(smoothstep(4.0, 9.0, age))
+            tex = _sample(spr, lx, ly)
+            halo = _sample_halo(spr, lx, ly)
+            fl = 0.88 + 0.12 * np.sin(TAU * (p * 5.0 - t * 4.0) + r * 60.0)
+            lit = tex[..., :3] * (fl * (1.0 + 0.25 * cr))[..., None]
+            hx = (head - p) / 0.07
+            lit = lit + np.array([1.0, 0.85, 0.6]) * (np.exp(-hx * hx) * (1.0 - float(smoothstep(2.5, 4.0, age))) * 0.8)[..., None]
+            glow = np.array([1.0, 0.3, 0.22]) * (1 - cr) + np.array([1.0, 0.45, 0.7]) * cr
+            ta = tex[..., 3:4]
+            rgb = glow * (1 - ta) + lit * ta
+            if crit == 1:
+                rgb = rgb * 0.82 + np.array([1.0, 0.9, 0.95]) * 0.18
+            al = np.maximum(tex[..., 3], halo * (0.45 + 0.25 * cr)) * vis * fade
+            al = np.where(r > EDGE, 0.0, al)
+            out[..., :3], out[..., 3] = rgb, np.clip(al, 0, 1)
+            return out
+        on = float(smoothstep(0.5, 1.5, age)) * (1.0 - float(smoothstep(2.5 + 2.0 * cr, 6.0 + 2.0 * cr, age)))
+        reach = 0.5 * float(smoothstep(0.5, 2.5, age)) + 0.03
+        tex = _sample(spr, lx, ly)
+        thr = 1.02 - on
+        rgb = tex[..., :3] * (1.0 + 0.15 * cr)
+        al = (smoothstep(thr, thr + 0.12, tex[..., 3]) * np.minimum(1.0, tex[..., 3] * (1.1 + 0.3 * cr))
+              * (1.0 - smoothstep(reach - 0.04, reach, np.abs(dx))))
+        al = np.where(r > EDGE, 0.0, al)
+        out[..., :3], out[..., 3] = rgb, np.clip(al, 0, 1)
+        return out
+    if kind >= 30:
+        # Луч «Углей» (ориентации K5..8): клубы дыма — две прокрутки шума, алое ядро, искры (альфа ≥ 236).
+        kb = kind - 25
+        s_ = {5: ly, 6: 1 - ly, 7: lx, 8: 1 - lx}[kb]
+        w = lx if kb in (5, 6) else ly
+        L = max(param * 250.0 / 8.0, 0.5)
+        wob = 0.03 * np.sin(TAU * (s_ * L * 0.5 - t * 3.0))
+        d = np.abs(2 * (w + wob) - 1)
+        ph1 = (s_ * L * 0.25 - t * 2.0) % 1.0
+        ph2 = (s_ * L * 0.5 - t * 5.0 + 0.37) % 1.0
+        n1 = (_sample(spr, w, ph1) if kb <= 6 else _sample(spr, ph1, w))[..., 3]
+        n2 = (_sample(spr, 1 - w, ph2) if kb <= 6 else _sample(spr, ph2, 1 - w))[..., 3]
+        smoke = 0.6 * n1 + 0.4 * n2
+        core = 1 - smoothstep(0.0, 0.3, d)
+        mid = 1 - smoothstep(0.15, 0.62, d)
+        outer = 1 - smoothstep(0.3, 1.0, d + 0.3 * (0.5 - smoke))
+        rgb = np.array([0.09, 0.012, 0.01]) * (1 - mid)[..., None] + np.array([0.78, 0.05, 0.02]) * mid[..., None]
+        k = (core * (0.65 + 0.35 * n2))[..., None]
+        rgb = rgb * (1 - k) + np.array([1.0, 0.5, 0.2]) * k
+        spark = (n2 >= 0.925) * (1 - smoothstep(0.5, 0.9, d))
+        rgb = rgb * (1 - spark)[..., None] + np.array([1.0, 0.72, 0.35]) * spark[..., None]
+        taper = smoothstep(0.0, 0.4 / L, s_) * (1 - smoothstep(1 - 1.2 / L, 1.0, s_))
+        al = np.clip(outer * (0.3 + 0.5 * smoke) + mid * 0.45 + core * 0.5 + spark * 0.5, 0, 1) * taper
+        out[..., :3], out[..., 3] = rgb, al
+        return out
     if kind == 10:
         # Ячейка барьера: msParam = (g + 25·L)/250, g — фаза мерцания, L — уровень (0..7 — альфа L/8, 8, 9 — вспышка).
         px = np.clip(lx * SPRITE, 0.5, SPRITE - 0.5)
@@ -952,7 +1241,8 @@ def shade(kind, spr, lx, ly, param, t):
         bright = 0.55 + 0.45 * c + 0.12 * pulse
         if c >= 0.999:
             bright += 0.25 * (0.5 + 0.5 * math.sin(TAU * 4.0 * t))
-        rgb = tex[..., :3] * bright + np.array([0.8, 0.35, 1.0] if violet else [0.35, 0.8, 1.0]) * (halo * 0.6 * (0.5 + 0.5 * c))[..., None]
+        glowC = [1.0, 0.2, 0.1] if red else ([0.8, 0.35, 1.0] if violet else [0.35, 0.8, 1.0])
+        rgb = tex[..., :3] * bright + np.array(glowC) * (halo * 0.6 * (0.5 + 0.5 * c))[..., None]
         al = np.maximum(tex[..., 3], halo * 0.45) * appear
         al = np.where(np.hypot(qx - 0.5, qy - 0.5) > EDGE, 0.0, al)
         out[..., :3], out[..., 3] = rgb, al
