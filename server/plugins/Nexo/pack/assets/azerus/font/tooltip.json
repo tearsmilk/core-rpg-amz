@@ -55,15 +55,6 @@
   },
   {
    "type": "bitmap",
-   "file": "azerus:font/tooltip/badge_grade_c.png",
-   "height": 9,
-   "ascent": 8,
-   "chars": [
-    ""
-   ]
-  },
-  {
-   "type": "bitmap",
    "file": "azerus:font/tooltip/badge_ring.png",
    "height": 9,
    "ascent": 8,
@@ -78,6 +69,555 @@
    "ascent": 3,
    "chars": [
     ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/divider_parchment.png",
+   "height": 7,
+   "ascent": 4,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_00.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_01.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_02.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_03.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_04.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_05.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_06.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_07.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_08.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_09.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_10.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:font/tooltip/class/class_11.png",
+   "height": 10,
+   "ascent": 8,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_001.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_002.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_003.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_004.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_005.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_006.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_007.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_008.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_009.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_010.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_011.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_012.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_013.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_014.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_015.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_016.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_017.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_018.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_019.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_020.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_021.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_022.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_023.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_024.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_025.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_026.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_027.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_028.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_029.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_030.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_031.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_032.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_033.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_034.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_035.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_036.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_037.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_038.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_039.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_040.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_041.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_042.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_043.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_044.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_045.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_046.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_047.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_048.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
    ]
   },
   {
@@ -118,11 +658,38 @@
   },
   {
    "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_053.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
    "file": "azerus:item/rings_azerus/ring_054.png",
    "height": 20,
    "ascent": 15,
    "chars": [
     ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_055.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_056.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
    ]
   },
   {
@@ -145,11 +712,29 @@
   },
   {
    "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_059.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
    "file": "azerus:item/rings_azerus/ring_060.png",
    "height": 20,
    "ascent": 15,
    "chars": [
     ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_061.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
    ]
   },
   {
@@ -163,11 +748,38 @@
   },
   {
    "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_063.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_064.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
    "file": "azerus:item/rings_azerus/ring_065.png",
    "height": 20,
    "ascent": 15,
    "chars": [
     ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_066.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
    ]
   },
   {
@@ -181,6 +793,24 @@
   },
   {
    "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_068.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_069.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
    "file": "azerus:item/rings_azerus/ring_070.png",
    "height": 20,
    "ascent": 15,
@@ -190,11 +820,29 @@
   },
   {
    "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_071.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
    "file": "azerus:item/rings_azerus/ring_072.png",
    "height": 20,
    "ascent": 15,
    "chars": [
     ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_073.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
    ]
   },
   {
@@ -213,6 +861,42 @@
    "ascent": 15,
    "chars": [
     ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_076.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_077.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_078.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_079.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
    ]
   },
   {
@@ -253,11 +937,65 @@
   },
   {
    "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_084.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
    "file": "azerus:item/rings_azerus/ring_085.png",
    "height": 20,
    "ascent": 15,
    "chars": [
     ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_086.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_087.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_088.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_089.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_090.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
    ]
   },
   {
@@ -271,11 +1009,56 @@
   },
   {
    "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_092.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_093.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_094.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
    "file": "azerus:item/rings_azerus/ring_095.png",
    "height": 20,
    "ascent": 15,
    "chars": [
     ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_096.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_097.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
    ]
   },
   {
@@ -294,6 +1077,33 @@
    "ascent": 15,
    "chars": [
     ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_100.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_101.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "azerus:item/rings_azerus/ring_102.png",
+   "height": 20,
+   "ascent": 15,
+   "chars": [
+    ""
    ]
   }
  ]
