@@ -255,6 +255,8 @@ def main():
     providers.append({'type': 'bitmap', 'file': 'azerus:font/tooltip/divider.png', 'height': 5, 'ascent': 3,
                       'chars': [DIVIDER]})
     providers.append(parchment_style())
+    import class_badges
+    providers += class_badges.providers()
     y = ['# Кольца AZERUS (102 шт.) — раздел rings_azerus. Подсказка в стиле карточки: tools/tooltips.py',
          '# (рамка azerus:ring, иконка слева от названия — глиф azerus:tooltip, плашки редкости/типа). Не править руками:',
          '# файл пересобирает tools/tooltips.py.', '']

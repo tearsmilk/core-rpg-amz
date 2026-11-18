@@ -103,7 +103,8 @@ public final class ParchmentTooltip {
                 }
                 continue;
             }
-            out.add(inked(line).decoration(TextDecoration.ITALIC, false));
+            final Component badges = ClassBadges.replace(plain(line));
+            out.add(badges != null ? badges : inked(line).decoration(TextDecoration.ITALIC, false));
         }
         if (flavor != null && !flavor.isBlank()) {
             if (!out.isEmpty() && !isDivider(out.get(out.size() - 1))) {

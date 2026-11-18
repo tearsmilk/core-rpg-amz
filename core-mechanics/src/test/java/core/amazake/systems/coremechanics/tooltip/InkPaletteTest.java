@@ -39,4 +39,13 @@ class InkPaletteTest {
         assertTrue(ParchmentTooltip.isDivider(out.get(3)));
         assertEquals("«x»", ParchmentTooltip.plain(out.get(4)));
     }
+
+    @Test
+    void classLineBecomesBadges() {
+        final Component c = ClassBadges.replace("Для: Маг, Волшебник, Чернокнижник");
+        assertTrue(c != null);
+        assertEquals("Для: \uE500 \uE501 \uE502", ParchmentTooltip.plain(c));
+        assertEquals(null, ClassBadges.replace("Печать: Интеллекта"));
+        assertEquals("Для: \uE508 Повар", ParchmentTooltip.plain(ClassBadges.replace("Для: Тёмный рыцарь, Повар")));
+    }
 }
