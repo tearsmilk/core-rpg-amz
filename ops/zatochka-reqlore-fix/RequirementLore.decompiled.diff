@@ -1,0 +1,31 @@
+--- a/RequirementLore.java	2026-11-18 19:20:27.139982424 +0000
++++ b/RequirementLore.java	2026-11-18 19:33:57.018067016 +0000
+@@ -67,8 +67,8 @@
+                RequirementLore.BridgeLoader var3 = new RequirementLore.BridgeLoader(var2.getClass().getClassLoader());
+                Class var4 = Class.forName("core.amazake.systems.coresharpen.pebridge.ReqLoreListener", true, var3);
+                Constructor var5 = var4.getConstructor(BiFunction.class, List.class, Consumer.class);
+-               BiFunction var6 = var1::lines;
+-               Consumer var7 = var1x -> var0.logger().warning(var1x);
++               BiFunction<java.util.UUID, Object[], List<String>> var6 = var1::lines;
++               Consumer<String> var7 = var1x -> var0.logger().warning(var1x);
+                Object var8 = var5.newInstance(var6, var1.texts.markers(), var7);
+                var4.getMethod("register").invoke(var8);
+                var1.bridge = var8;
+@@ -141,7 +141,7 @@
+    }
+ 
+    private static RequirementLore.Texts load(SystemContext var0) {
+-      Object var1 = null;
++      org.bukkit.configuration.ConfigurationSection var1 = null;
+ 
+       try {
+          Path var2 = var0.dataFolder().resolve("sharpen.yml");
+@@ -286,7 +286,7 @@
+    )
+    public void onGameMode(PlayerGameModeChangeEvent var1) {
+       Player var2 = var1.getPlayer();
+-      this.context.runForPlayer(var2, var2x -> this.refresh(var2, true), 1L);
++      this.context.runOnceForPlayer(var2, () -> this.refresh(var2, true));
+    }
+ 
+    @EventHandler

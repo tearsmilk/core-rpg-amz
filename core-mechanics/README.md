@@ -22,6 +22,9 @@
 
 Право на всё — `coremechanics.admin` (таскать/бросать кукол может любой игрок — как в оригинале).
 
+**`/rpgadmin`** — режим админа: творческий режим, и RPG-системы не трогают игрока (право `coremechanics.rpgadmin`,
+флаг `coremechanics:rpgadmin` в PDC — см. «Режим админа» ниже).
+
 ---
 
 ## Команды
@@ -54,6 +57,58 @@ F — записать кадр, Shift+F — проиграть/останови
 
 Позы: `stand tpose wave victory zombie point dab sit sitground lie facedown dead kneel salute think facepalm crossarms
 shrug bow pushup run fly`. Анимации: `wave dance walk zombie pushup jacks clap headbang floss fly bow sitwave`.
+
+---
+
+## Режим админа (`/rpgadmin`)
+
+Админу в творческом режиме RPG-системы не должны мешать: переписывать инвентарь, перехватывать F, снимать
+бижутерию, превращать монеты в баланс при клике. `/rpgadmin` включает «режим админа»: творческий режим + флаг в PDC
+игрока, который читают системы. Право — **`coremechanics.rpgadmin`** (у операторов есть).
+
+| Команда | Что делает |
+|---|---|
+| `/rpgadmin` | переключить себе (вкл → творческий режим; выкл → режим, который был до включения) |
+| `/rpgadmin on` / `off` / `status` | включить / выключить / показать |
+| `/rpgadmin <ник>`, `/rpgadmin on\|off\|status <ник>` | то же другому игроку (из консоли — только с ником) |
+
+- Флаг живёт в PDC игрока и переживает перезаход и рестарт. При входе админу возвращается творческий режим (ещё раз
+  через 10 тиков — Multiverse с `enforce-gamemode` ставит режим мира), в чат — напоминание. Право отобрали — при
+  входе режим админа снимается и возвращается прежний режим игры.
+- Сменил режим сам командой (`/gamemode survival`) — режим админа снимается (RPG-системы снова работают с ним как с
+  игроком). Смены режима плагинами (меню-наблюдатель rezusmenu и т. п.) флаг не снимают.
+
+### Флаг для других систем
+
+| Ключ PDC игрока | Тип | Значение |
+|---|---|---|
+| `coremechanics:rpgadmin` | BYTE | `1` — режим админа включён; ключа нет — выключен |
+| `coremechanics:rpgadmin_prev` | STRING | режим игры до включения (`SURVIVAL`, `ADVENTURE`…); служебный, только для core-mechanics |
+
+Проверка в своей системе (core-mechanics как зависимость не нужна):
+
+```java
+static final NamespacedKey RPG_ADMIN = new NamespacedKey("coremechanics", "rpgadmin");
+static boolean rpgAdmin(Player p) {
+    Byte b = p.getPersistentDataContainer().get(RPG_ADMIN, PersistentDataType.BYTE);
+    return b != null && b != 0;
+}
+```
+
+```python
+if amazake.data(player).has("coremechanics:rpgadmin"):   # core-python
+    return
+```
+
+Кто уже учитывает флаг: **rezusmenu** (F не открывает меню; бижутерия не снимается и не проверяется по классу и
+уровню), **core-vault** (монеты при клике не превращаются в баланс — админ держит их предметами). core_effects и
+custom_armor (core-python) творческому режиму не мешают и флаг не читают: бинты в творческом не тратятся, а
+custom_armor только дописывает характеристики устаревшей брони.
+
+**Внимание: режим админа не лечит чужую систему zatochka 1.1.5.** Её «лор требований MMOItems» на каждую смену
+режима игры запускает `updateInventory()` каждый тик (см. корневой README, «Творческий режим и zatochka»); пока это
+не исправлено в zatochka или не выключено (`requirement-lore.enabled: false` в `systems/zatochka/sharpen.yml`),
+творческий инвентарь не работает ни с `/rpgadmin`, ни без него.
 
 ---
 

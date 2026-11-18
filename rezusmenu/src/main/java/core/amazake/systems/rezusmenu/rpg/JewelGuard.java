@@ -154,6 +154,9 @@ public final class JewelGuard {
         if (!Jewelry.allowed(st, slot, item)) {
             return "Это не " + Jewelry.slotName(slot).toLowerCase(Locale.ROOT);
         }
+        if (core.amazake.systems.rezusmenu.util.AdminMode.isOn(player)) {
+            return null; // режим админа (/rpgadmin): класс и уровень не проверяются
+        }
         final String id = itemId(item);
         final Set<String> need = requiredClass(item, id);
         if (!need.isEmpty()) {
@@ -180,8 +183,8 @@ public final class JewelGuard {
      * Сколько снято. Поток игрока.
      */
     public static int enforce(final Player player) {
-        if (player == null || !player.isOnline()) {
-            return 0;
+        if (player == null || !player.isOnline() || core.amazake.systems.rezusmenu.util.AdminMode.isOn(player)) {
+            return 0; // режим админа (/rpgadmin): бижутерию не снимаем
         }
         final Settings st = settings == null ? null : settings.get();
         if (st == null) {

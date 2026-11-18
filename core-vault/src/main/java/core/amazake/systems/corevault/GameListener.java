@@ -73,7 +73,7 @@ final class GameListener implements Listener {
         if (s.modules().levels()) {
             this.levels.join(p);
         }
-        if (this.coinsOn() && s.coins().convertJoin()) {
+        if (this.coinsOn() && s.coins().convertJoin() && !AdminMode.isOn(p)) {
             this.context.runOnceForPlayer(p, () -> this.convertInventory(p));
         }
     }
@@ -239,8 +239,9 @@ final class GameListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onClick(final InventoryClickEvent e) {
-        if (!(e.getWhoClicked() instanceof Player p) || !this.coinsOn() || !this.settings.get().coins().convertClick()) {
-            return;
+        if (!(e.getWhoClicked() instanceof Player p) || !this.coinsOn() || !this.settings.get().coins().convertClick()
+            || AdminMode.isOn(p)) {
+            return; // режим админа (/rpgadmin): монеты остаются предметами
         }
         if (Coins.isCoin(e.getCurrentItem()) || Coins.isCoin(e.getCursor())) {
             this.context.runOnceForPlayer(p, () -> this.convertInventory(p));
