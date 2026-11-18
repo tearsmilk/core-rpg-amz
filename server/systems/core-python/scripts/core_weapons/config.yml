@@ -61,6 +61,78 @@ weapons:
         - "entity.generic.explode:0.5:0.55"
         - "block.deepslate.break:1.0:0.6"
 
+# Палка (ванильная STICK, любая — не только предметы Nexo): два приёма, код — bou.py, вид — шейдер moonstaff (пак
+# nexo-items: модели azerus:stick_slash, azerus:stick_ember_orb, azerus:stick_ember_beam). Перечитать: /cweapons reload.
+#   ПКМ (в воздух, по блоку или по существу)  — «Удар в спину»
+#   Shift + ПКМ                               — «Угли»
+stick:
+  enabled: true
+  material: STICK
+  nexo-ids: []             # пусто — любая палка; иначе только предметы с этими nexo:id (например [azerus_stick])
+  permission: ""           # пусто — всем; иначе право на оба приёма
+  disabled-worlds: []      # миры, где приёмы не работают
+  pvp: true                # бить игроков (если ещё и в мире включён PvP; защита регионов решает сама)
+  double-click-ms: 250     # клик по существу шлёт два события — второе в эти мс молча пропускается
+  denied-sounds: ["block.note_block.bass:0.5:0.6"]   # отказ (перезарядка), только себе
+
+  # «Удар в спину»: удар без замаха (0 с) по первой живой цели впереди. Со спины цели — урон ×2 и крит-вид.
+  backstab:
+    enabled: true
+    cooldown: 6.0            # перезарядка, с (после попадания)
+    miss-cooldown: 1.0       # перезарядка после промаха, с (серп всё равно виден)
+    range: 3.5               # дальность, блоки (от глаз)
+    cone: 20.0               # конус вокруг взгляда, градусы (кроме точного луча)
+    ray-margin: 0.2          # луч взгляда «толще» на столько блоков
+    damage: 6.0
+    damage-type: "minecraft:player_attack"   # тип урона (реестр); виновник — атакующий (PvP, защита — как обычно)
+    back-angle: 60.0         # «со спины»: угол между взглядом цели и направлением атакующий → цель меньше этого
+    back-multiplier: 2.0     # урон со спины ×
+    ignore-invulnerability: true   # не ждать кадров неуязвимости цели после чужого удара
+    slash-size: 2.6          # серп, блоки
+    crit-slash-size: 3.2     # серп при ударе со спины
+    slash-start-scale: 0.7   # серп появляется в такой доле размера и за 4 тика дорастает
+    slash-roll: 28.0         # наклон серпа вокруг взгляда, градусы (знак — случайный)
+    slash-roll-swing: 14.0   # серп доворачивается за время роста
+    slash-before-target: 0.45  # серп стоит на столько ближе цели
+    life-ticks: 8            # серп живёт (шейдер гасит его к 9-му тику)
+    view-range: 1.0          # дальность видимости дисплея (×64 блока)
+    sounds: ["entity.player.attack.sweep:1.0:1.2", "item.firecharge.use:0.6:1.5"]
+    crit-sounds: ["entity.player.attack.crit:1.0:0.8", "entity.blaze.shoot:0.8:1.3", "entity.player.attack.strong:1.0:0.7"]
+
+  # «Угли»: Shift+ПКМ — перед магом 1 с растёт красная руническая сфера (ходить можно; смена предмета, смерть,
+  # выход, другой мир — отмена), потом дымный тёмно-красный луч до первой цели: урон и поджог.
+  embers:
+    enabled: true
+    cast-seconds: 1.0        # время сотворения
+    cooldown: 10.0           # перезарядка после выстрела, с
+    cancel-cooldown: 1.0     # после отмены, с
+    range: 16.0              # дальность луча (блоки останавливают)
+    piece-length: 4.0        # шаг проверки «путь в нашем регионе»
+    damage: 8.0
+    damage-type: "minecraft:magic"
+    fire-seconds: 3.0        # поджог цели (только если урон прошёл)
+    hit-radius: 0.3          # луч «толще» на столько при поиске цели
+    pierce: false            # false — первая цель; true — все на пути
+    ignore-invulnerability: true
+    orb-size: 1.15           # сфера при полном заряде, блоки
+    orb-start-scale: 0.35
+    orb-forward: 1.3         # сфера перед глазами
+    orb-down: 0.15           # и ниже глаз
+    orb-update-ticks: 4      # яркость сферы (заряд) обновляется раз в столько тиков
+    beam-width: 0.9
+    beam-start-width: 0.3    # доля ширины в момент появления
+    beam-grow-ticks: 2
+    beam-hold-ticks: 4
+    beam-fade-ticks: 4
+    impact-size: 1.8         # вспышка-круг у цели
+    impact-ticks: 4
+    view-range: 1.5
+    start-sounds: ["block.respawn_anchor.charge:0.8:1.4", "block.fire.ambient:1.0:0.8"]
+    charge-sounds: ["block.fire.ambient:0.6:1.2"]
+    fire-sounds: ["entity.blaze.shoot:1.0:0.7", "entity.ghast.shoot:0.5:0.6"]
+    impact-sounds: ["entity.generic.burn:0.9:0.8", "entity.blaze.hurt:0.6:0.6"]
+    cancel-sounds: ["block.fire.extinguish:0.6:1.2"]
+
 messages:
   usage: "<gray>/cweapons give <оружие> [игрок] | list | reload"
   reloaded: "<green>Настройки перечитаны."
@@ -69,3 +141,8 @@ messages:
   given: "<green>Выдано: <white><weapon></white> → <white><player></white>."
   list: "<gray>Оружие: <white><list></white>"
   console: "<red>Укажите игрока."
+  stick-backstab-cooldown: "<#ff6a3a>Удар в спину</#ff6a3a> <gray>— перезарядка <white><s> с</white>"
+  stick-embers-cooldown: "<#d0302a>Угли</#d0302a> <gray>— перезарядка <white><s> с</white>"
+  stick-backstab-crit: "<#ff4a6a>✦ Удар в спину!</#ff4a6a> <gray>урон <white><dmg></white>"
+  stick-embers-cast: "<#d0302a>Угли</#d0302a> <gray>— <bar>"
+  stick-embers-cancelled: "<gray>Угли угасли."

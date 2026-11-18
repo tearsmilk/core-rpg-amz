@@ -2,9 +2,9 @@ generate-default-files: true
 generate-unicode-files: true
 layout:
   default:
-  - mmohud-layout
+  - azerus-layout
   - partyhud-mmo-layout
-  - skill_casting_bar-layout
+  - azerus-skillbar-layout
 check-update: 5
 placeholder-update: 5
 decimal-format: '#.##'

@@ -2,7 +2,7 @@
 // (rendertype_item_entity_translucent_cull.fsh). Python copy (previews, checks): nexo-items/tools/moonstaff_fx.py.
 //
 // Key B (sprite): every effect sprite is 128x128 in the item atlas, texel (0,0) = (177,126,90,3) and
-// texel (1,0) = (K,90,126,3), K = sprite kind 1..19 (20..31 reserved). Both compared exactly. Alpha 3 is below the vanilla cutout 0.1,
+// texel (1,0) = (K,90,126,3), K = sprite kind 1..33 (34..39 reserved). Both compared exactly. Alpha 3 is below the vanilla cutout 0.1,
 // so without this hook the signature is invisible. ms_fragment returns false (use vanilla) unless both match.
 //   K1 ring, K2 runes, K3 hexagram, K4 core  -> magic circle layers, msParam = charge 0..1
 //   K5 beam_up (+v), K6 beam_down (-v), K7 beam_west (+u), K8 beam_east (-u) -> beam, length L = msParam*250/8 blocks
@@ -13,6 +13,14 @@
 //       fire colours are baked into the sprites; K14 alpha 254 = ember (twinkles).
 //   K15 comet_tail_up (+v), K16 _down (-v), K17 _west (+u), K18 _east (-u) -> comet tail, s = 0 at the head;
 //   K19 comet_core (radial). Comet msParam*250 = g + 125*B: g 0..124 flicker seed, B 0 falling, 1 impact burst.
+//   K20..23 tp_* (core_items teleport circle) = K1..4 logic, violet glow.
+//   K24..27 ember_* (core_weapons stick «Угли» orb) = K1..4 logic, red glow.
+//   K28 slash_crescent, K29 slash_streak (core_weapons stick «Удар в спину»): msParam*250 = g + 125*C,
+//       g 0..124 = server game tick of the spawn mod 125, C 1 = critical (backstab). Age in ticks =
+//       mod(GameTime*24000 - g, 125) (24000 is a multiple of 125, so the day wrap is seamless): the crescent sweeps
+//       in over 3 ticks and burns away by 9; the streak flashes at 1..6 (crit: longer, pinker, brighter).
+//   K30..33 ember_beam_up/down/west/east (core_weapons «Угли» beam): like K5..8 (L = msParam*250/8 blocks), own
+//       colours: hot red core, crimson body, black-red smoke, sparks (sprite alpha >= 236).
 // Time: GameTime from the Globals block (re-import is deduplicated). t = seconds 0..1200; every rate below makes an
 // integer number of cycles per 1200 s, so the wrap of GameTime is seamless.
 // GLSL 330 core only. Names: ms / ms_ only (shared core shader).
@@ -26,6 +34,7 @@ in vec2 msLocal;
 const float MS_SPRITE_PX = 128.0;
 const float MS_TAU = 6.28318530718;
 const float MS_EDGE = 0.5 - 2.0 / 128.0;
+const float MS_SLASH_HALF = 1.91986217719;   // 110 degrees: the crescent spans -110..+110 (0 = up, clockwise)
 
 bool ms_texel_is(vec4 t, vec4 ref) {
     vec4 d = abs(t * 255.0 - ref);
@@ -54,13 +63,92 @@ bool ms_fragment(sampler2D atlas, vec2 uv, out vec4 color) {
     if (!ms_texel_is(texelFetch(atlas, p0, 0), vec4(177.0, 126.0, 90.0, 3.0))) return false;
     vec4 k4 = texelFetch(atlas, p0 + ivec2(1, 0), 0) * 255.0;
     int kind = int(floor(k4.r + 0.5));
-    if (kind < 1 || kind > 23) return false;
+    if (kind < 1 || kind > 33) return false;
     if (!ms_texel_is(k4 / 255.0, vec4(float(kind), 90.0, 126.0, 3.0))) return false;
     // K20..23 — teleport circle (core_items scroll): the K1..4 circle logic with a violet glow.
-    bool msViolet = kind >= 20;
+    bool msViolet = kind >= 20 && kind <= 23;
     if (msViolet) kind -= 19;
+    // K24..27 — core_weapons stick «Угли» orb: the K1..4 circle logic with a red glow.
+    bool msRed = kind >= 24 && kind <= 27;
+    if (msRed) kind -= 23;
 
     float t = GameTime * 1200.0;
+    if (kind == 28 || kind == 29) {
+        // Backstab slash: code = g + 125*C (g spawn tick mod 125, C crit). Age in ticks since the spawn.
+        int code = int(floor(msParam * 250.0 + 0.5));
+        int crit = code / 125;
+        float cr = float(crit);
+        float age = mod(GameTime * 24000.0 - float(code - 125 * crit), 125.0);
+        if (age > 117.0) age = 0.0;   // client clock a little behind the server: show the start
+        vec2 d = msLocal - 0.5;
+        float r = length(d);
+        if (kind == 28) {
+            // Crescent: p along the arc (0 left tip, 1 right tip); sweep-in head 0..3 ticks, burn-away tail 3..8.5,
+            // fade 4..9; hot flicker running along the arc; white-hot head while sweeping; glow from mip level 2.
+            float p = (atan(d.x, -d.y) + MS_SLASH_HALF) / (2.0 * MS_SLASH_HALF);
+            float head = 1.15 * smoothstep(0.0, 3.0, age);
+            float tail = 1.25 * smoothstep(3.0, 8.5, age) - 0.2;
+            float vis = clamp((head - p) / 0.08, 0.0, 1.0) * clamp((p - tail) / 0.18, 0.0, 1.0);
+            float fade = 1.0 - smoothstep(4.0, 9.0, age);
+            vec4 tex = texture(atlas, ms_uv(uvMin, us, msLocal));
+            float halo = textureLod(atlas, ms_uv(uvMin, us, msLocal), 2.0).a;
+            float fl = 0.88 + 0.12 * sin(MS_TAU * (p * 5.0 - t * 4.0) + r * 60.0);
+            vec3 lit = tex.rgb * fl * (1.0 + 0.25 * cr);
+            float hx = (head - p) / 0.07;
+            lit += vec3(1.0, 0.85, 0.6) * (exp(-hx * hx) * (1.0 - smoothstep(2.5, 4.0, age)) * 0.8);
+            vec3 glow = mix(vec3(1.0, 0.3, 0.22), vec3(1.0, 0.45, 0.7), cr);
+            vec3 rgb = mix(glow, lit, tex.a);
+            if (crit == 1) rgb = mix(rgb, vec3(1.0, 0.9, 0.95), 0.18);
+            float alpha = max(tex.a, halo * (0.45 + 0.25 * cr)) * vis * fade;
+            if (r > MS_EDGE) alpha = 0.0;
+            color = vec4(rgb, clamp(alpha, 0.0, 1.0));
+            return true;
+        }
+        // Streak: grows out from the centre (0.5..2.5 ticks), flashes, then thins away (alpha threshold over the
+        // sprite's «closeness to the axis» alpha — no grey half-transparent white); crit: 2 ticks longer, brighter.
+        float on = smoothstep(0.5, 1.5, age) * (1.0 - smoothstep(2.5 + 2.0 * cr, 6.0 + 2.0 * cr, age));
+        float reach = 0.5 * smoothstep(0.5, 2.5, age) + 0.03;
+        vec4 tex = texture(atlas, ms_uv(uvMin, us, msLocal));
+        float thr = 1.02 - on;
+        vec3 rgb = tex.rgb * (1.0 + 0.15 * cr);
+        float alpha = smoothstep(thr, thr + 0.12, tex.a) * min(1.0, tex.a * (1.1 + 0.3 * cr))
+                      * (1.0 - smoothstep(reach - 0.04, reach, abs(d.x)));
+        if (r > MS_EDGE) alpha = 0.0;
+        color = vec4(rgb, clamp(alpha, 0.0, 1.0));
+        return true;
+    }
+    if (kind >= 30) {
+        // Ember beam plane (K30..33 = orientations of K5..8): s along the beam (0 at the orb), w across, slight
+        // wobble; two scrolling samples of the smoke noise (alpha) make the billows; hot core, crimson body,
+        // black-red smoke edge; sparks where the noise alpha is >= 236. Rates: 2, 3, 5 cycles/s.
+        int kb = kind - 25;
+        float s = msLocal.y;
+        float w = msLocal.x;
+        if (kb == 6) s = 1.0 - msLocal.y;
+        if (kb == 7) { s = msLocal.x; w = msLocal.y; }
+        if (kb == 8) { s = 1.0 - msLocal.x; w = msLocal.y; }
+        float L = max(msParam * 250.0 / 8.0, 0.5);
+        float wob = 0.03 * sin(MS_TAU * (s * L * 0.5 - t * 3.0));
+        float d = abs(2.0 * (w + wob) - 1.0);
+        float ph1 = fract(s * L * 0.25 - t * 2.0);
+        float ph2 = fract(s * L * 0.5 - t * 5.0 + 0.37);
+        vec2 q1 = (kb <= 6) ? vec2(w, ph1) : vec2(ph1, w);
+        vec2 q2 = (kb <= 6) ? vec2(1.0 - w, ph2) : vec2(ph2, 1.0 - w);
+        float n1 = textureLod(atlas, ms_uv(uvMin, us, q1), 0.0).a;
+        float n2 = textureLod(atlas, ms_uv(uvMin, us, q2), 0.0).a;
+        float smoke = 0.6 * n1 + 0.4 * n2;
+        float core = 1.0 - smoothstep(0.0, 0.3, d);
+        float mid = 1.0 - smoothstep(0.15, 0.62, d);
+        float outer = 1.0 - smoothstep(0.3, 1.0, d + 0.3 * (0.5 - smoke));
+        vec3 rgb = mix(vec3(0.09, 0.012, 0.01), vec3(0.78, 0.05, 0.02), mid);
+        rgb = mix(rgb, vec3(1.0, 0.5, 0.2), core * (0.65 + 0.35 * n2));
+        float spark = step(0.925, n2) * (1.0 - smoothstep(0.5, 0.9, d));
+        rgb = mix(rgb, vec3(1.0, 0.72, 0.35), spark);
+        float taper = smoothstep(0.0, 0.4 / L, s) * (1.0 - smoothstep(1.0 - 1.2 / L, 1.0, s));
+        float alpha = clamp(outer * (0.3 + 0.5 * smoke) + mid * 0.45 + core * 0.5 + spark * 0.5, 0.0, 1.0) * taper;
+        color = vec4(rgb, alpha);
+        return true;
+    }
     if (kind == 10) {
         // Barrier hex cell: crisp texel (sprite pixel = msLocal * 128), light sweep top-left -> bottom-right
         // (period 4 s), breath (2 s), glint twinkle (1.5 s); level L from msParam.
@@ -215,7 +303,7 @@ bool ms_fragment(sampler2D atlas, vec2 uv, out vec4 color) {
         }
         float bright = 0.55 + 0.45 * c + 0.12 * pulse;
         if (c >= 0.999) bright += 0.25 * (0.5 + 0.5 * sin(MS_TAU * 4.0 * t));
-        vec3 glowC = msViolet ? vec3(0.8, 0.35, 1.0) : vec3(0.35, 0.8, 1.0);
+        vec3 glowC = msRed ? vec3(1.0, 0.2, 0.1) : (msViolet ? vec3(0.8, 0.35, 1.0) : vec3(0.35, 0.8, 1.0));
         vec3 rgb = tex.rgb * bright + glowC * halo * 0.6 * (0.5 + 0.5 * c);
         float alpha = max(tex.a, halo * 0.45) * appear;
         if (length(q - 0.5) > MS_EDGE) alpha = 0.0;
