@@ -1,4 +1,7 @@
 # coreshaders - настройки. Автор: tearsmilk.
+# Версия конфига, не менять. При обновлении плагин сам допишет новые картинки в images.
+config-version: 2
+
 # Картинки должны совпадать с ресурспаком: coreshaders:cube_<картинка> и coreshaders:plane_<картинка>.
 images:
   - sky_sea
@@ -6,6 +9,13 @@ images:
   - nether
   - aurora
   - end
+  - sunset
+  - volcano
+  - hell_end
+  - heaven
+  - walk
+  - rain
+  - sea_sand
 
 # Названия картинок для сообщений и подсказок жезла.
 image-names:
@@ -14,6 +24,13 @@ image-names:
   nether: "Незер"
   aurora: "Северное сияние"
   end: "Энд"
+  sunset: "Закат"
+  volcano: "Вулкан"
+  hell_end: "Ад и Энд"
+  heaven: "Рай"
+  walk: "Прогулка"
+  rain: "Дождь"
+  sea_sand: "Море и песок"
 
 defaults:
   shape: cube

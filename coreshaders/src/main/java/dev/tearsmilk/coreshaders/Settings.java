@@ -17,6 +17,12 @@ import org.bukkit.configuration.file.FileConfiguration;
 
 public final class Settings {
     private static final MiniMessage MM = MiniMessage.miniMessage();
+    public static final List<String> DEFAULT_IMAGES = List.of("sky_sea", "space", "nether", "aurora", "end", "sunset",
+        "volcano", "hell_end", "heaven", "walk", "rain", "sea_sand");
+    public static final Map<String, String> DEFAULT_NAMES = defaultNames();
+    public static final int CONFIG_VERSION = 2;
+    public static final List<String> ADDED_IN_2 = List.of("sunset", "volcano", "hell_end", "heaven", "walk", "rain",
+        "sea_sand");
 
     public final List<String> images;
     public final Map<String, String> imageNames;
@@ -38,10 +44,10 @@ public final class Settings {
             }
         }
         if (imgs.isEmpty()) {
-            imgs.add("sky_sea");
+            imgs.addAll(DEFAULT_IMAGES);
         }
         images = Collections.unmodifiableList(imgs);
-        Map<String, String> names = new LinkedHashMap<>();
+        Map<String, String> names = new LinkedHashMap<>(DEFAULT_NAMES);
         ConfigurationSection ns = c.getConfigurationSection("image-names");
         if (ns != null) {
             for (String k : ns.getKeys(false)) {
@@ -70,6 +76,46 @@ public final class Settings {
         planeOffset = Math.max(0.001, Math.min(0.2, c.getDouble("plane-offset", 0.015)));
         brightness = Math.max(0, Math.min(15, c.getInt("brightness", 15)));
         messages = c.getConfigurationSection("messages");
+    }
+
+    public static List<String> upgrade(FileConfiguration c) {
+        List<String> added = new ArrayList<>();
+        if (c.getInt("config-version", 1) >= CONFIG_VERSION) {
+            return added;
+        }
+        List<String> imgs = new ArrayList<>(c.getStringList("images"));
+        if (!imgs.isEmpty()) {
+            List<String> low = new ArrayList<>();
+            for (String s : imgs) {
+                low.add(s.trim().toLowerCase(Locale.ROOT));
+            }
+            for (String img : ADDED_IN_2) {
+                if (!low.contains(img)) {
+                    imgs.add(img);
+                    added.add(img);
+                }
+            }
+            c.set("images", imgs);
+        }
+        c.set("config-version", CONFIG_VERSION);
+        return added;
+    }
+
+    private static Map<String, String> defaultNames() {
+        Map<String, String> m = new LinkedHashMap<>();
+        m.put("sky_sea", "Небо и море");
+        m.put("space", "Космос");
+        m.put("nether", "Незер");
+        m.put("aurora", "Северное сияние");
+        m.put("end", "Энд");
+        m.put("sunset", "Закат");
+        m.put("volcano", "Вулкан");
+        m.put("hell_end", "Ад и Энд");
+        m.put("heaven", "Рай");
+        m.put("walk", "Прогулка");
+        m.put("rain", "Дождь");
+        m.put("sea_sand", "Море и песок");
+        return Collections.unmodifiableMap(m);
     }
 
     public String imageName(String image) {

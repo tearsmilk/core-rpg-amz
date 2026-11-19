@@ -2,7 +2,8 @@
 """coreshaders - previews rendered with the REAL shader pair (moderngl, EGL; Mesa llvmpipe is enough).
 
     pip install moderngl
-    python3 -I coreshaders/tools/preview.py
+    python3 -I coreshaders/tools/preview.py                     # everything
+    python3 -I coreshaders/tools/preview.py --only sunset,rain  # only pano_<name>.png for these
 
 The game side is emulated: a fake item atlas holds the panorama and glow sprites at non-zero offsets, the vertex
 stream is the baked item quad order (u0,v0), (u0,v1), (u1,v1), (u1,v0), Position is camera-relative in world axes and
@@ -21,11 +22,12 @@ from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import glsl_check  # noqa: E402
+import panoramas  # noqa: E402
 
 ROOT = glsl_check.ROOT
 OUT = os.path.join(ROOT, "preview")
 TEX = os.path.join(ROOT, "pack", "assets", "coreshaders", "textures", "item", "panorama")
-IMAGES = ["sky_sea", "space", "nether", "aurora", "end"]
+IMAGES = panoramas.IMAGES
 WIDTH, HEIGHT = 960, 540
 PANO_AT = (1024, 512)
 GLOW_AT = (48, 16)
@@ -248,6 +250,18 @@ VIEWS = [
 ]
 
 
+def pano_sheet(r, name, scale=0.6):
+    shots = [r.render(name, VIEWS[0][1], VIEWS[0][2], [("cube", (0, 0, 0))]),
+             r.render(name, (0.9, 1.4, 1.9), (0.5, 1.2, -1.0), [("plane", (0.5, 1.5, -0.99))], wall=True)]
+    w, h = int(WIDTH * scale), int(HEIGHT * scale)
+    eq = Image.open(os.path.join(TEX, name + ".png")).convert("RGB").resize((w * 2, w), Image.LANCZOS)
+    out = Image.new("RGB", (w * 2, h + w), (20, 20, 20))
+    for i, im in enumerate(shots):
+        out.paste(im.resize((w, h), Image.LANCZOS), (i * w, 0))
+    out.paste(eq, (0, h))
+    out.save(os.path.join(OUT, f"pano_{name}.png"))
+
+
 def sheet(images, cols, scale=0.5):
     w, h = int(WIDTH * scale), int(HEIGHT * scale)
     rows = (len(images) + cols - 1) // cols
@@ -260,6 +274,11 @@ def sheet(images, cols, scale=0.5):
 def main():
     os.makedirs(OUT, exist_ok=True)
     r = Renderer()
+    if "--only" in sys.argv:
+        for name in sys.argv[sys.argv.index("--only") + 1].split(","):
+            pano_sheet(r, name)
+            print("pano", name)
+        return
     all_cube = []
     for name in IMAGES:
         shots = []
@@ -269,12 +288,14 @@ def main():
         sheet(shots, 3).save(os.path.join(OUT, f"cube_{name}.png"))
         all_cube.append(shots[0])
         print("cube", name)
-    sheet(all_cube, 3).save(os.path.join(OUT, "cubes_all.png"))
+    sheet(all_cube, 4).save(os.path.join(OUT, "cubes_all.png"))
     planes = []
     for name in IMAGES:
         im = r.render(name, (0.9, 1.4, 1.9), (0.5, 1.2, -1.0), [("plane", (0.5, 1.5, -0.99))], wall=True)
         planes.append(im)
-    sheet(planes, 3).save(os.path.join(OUT, "planes_all.png"))
+    sheet(planes, 4).save(os.path.join(OUT, "planes_all.png"))
+    for name in IMAGES:
+        pano_sheet(r, name)
     big = r.render("sky_sea", (0.5, 1.6, 3.2), (0.5, 0.5, 0.5), [("cube", (0, 0, 0)), ("cube", (1, 0, 0)),
                                                                   ("cube", (-1, 0, -1))])
     big.save(os.path.join(OUT, "sky_sea_cubes_big.png"))
@@ -290,6 +311,12 @@ def main():
     drift = [r.render("sky_sea", (0.5, 1.6, 3.2), (0.5, 0.5, 0.5), [("cube", (0, 0, 0))], game_time=g)
              for g in (0.1, 0.1125, 0.125)]
     sheet(drift, 3).save(os.path.join(OUT, "sky_sea_drift.png"))
+    rain = [r.render("rain", (0.5, 1.6, 3.2), (0.5, 0.5, 0.5), [("cube", (0, 0, 0))], game_time=g)
+            for g in (117.3 / 1200.0, 117.5 / 1200.0, 0.1)]
+    sheet(rain, 3).save(os.path.join(OUT, "rain_time.png"))
+    walk = [r.render("walk", (0.9, 1.4, 1.9), (0.5, 1.2, -1.0), [("plane", (0.5, 1.5, -0.99))], wall=True, game_time=g)
+            for g in (0.1, 0.1125, 0.125)]
+    sheet(walk, 3).save(os.path.join(OUT, "walk_drift.png"))
     print("previews in", OUT)
 
 

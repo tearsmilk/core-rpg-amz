@@ -6,17 +6,18 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class CycleTest {
-    private final List<String> images = List.of("sky_sea", "space", "nether", "aurora", "end");
+    private final List<String> images = Settings.DEFAULT_IMAGES;
 
     @Test
     void forwardWraps() {
         assertEquals("space", Cycle.next(images, "sky_sea", 1));
-        assertEquals("sky_sea", Cycle.next(images, "end", 1));
+        assertEquals("sunset", Cycle.next(images, "end", 1));
+        assertEquals("sky_sea", Cycle.next(images, "sea_sand", 1));
     }
 
     @Test
     void backwardWraps() {
-        assertEquals("end", Cycle.next(images, "sky_sea", -1));
+        assertEquals("sea_sand", Cycle.next(images, "sky_sea", -1));
     }
 
     @Test

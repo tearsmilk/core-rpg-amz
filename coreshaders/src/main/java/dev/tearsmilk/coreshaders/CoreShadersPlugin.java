@@ -1,5 +1,6 @@
 package dev.tearsmilk.coreshaders;
 
+import java.util.List;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -12,6 +13,7 @@ public final class CoreShadersPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        upgradeConfig();
         settings = new Settings(getConfig());
         keys = new Keys(this);
         wand = new Wand(keys);
@@ -35,7 +37,20 @@ public final class CoreShadersPlugin extends JavaPlugin {
 
     public void reload() {
         reloadConfig();
+        upgradeConfig();
         settings = new Settings(getConfig());
+    }
+
+    private void upgradeConfig() {
+        int before = getConfig().getInt("config-version", 1);
+        List<String> added = Settings.upgrade(getConfig());
+        if (before >= Settings.CONFIG_VERSION) {
+            return;
+        }
+        saveConfig();
+        if (!added.isEmpty()) {
+            getLogger().info("config.yml updated, new images added: " + String.join(", ", added));
+        }
     }
 
     public Settings settings() {

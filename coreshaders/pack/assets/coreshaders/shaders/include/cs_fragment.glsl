@@ -9,13 +9,22 @@ const vec2 CS_GLOWPX = vec2(16.0, 16.0);
 const float CS_TAU = 6.28318530718;
 const float CS_PI = 3.14159265359;
 const float CS_HORIZON = -0.45;
+const int CS_KINDS = 12;
+const vec3 CS_SUN = vec3(-0.17196, 0.13917, -0.97522);
 
-const vec3 CS_GLOW[5] = vec3[](
+const vec3 CS_GLOW[12] = vec3[](
     vec3(0.80, 0.95, 1.00),
     vec3(0.70, 0.45, 1.00),
     vec3(1.00, 0.45, 0.12),
     vec3(0.35, 1.00, 0.60),
-    vec3(0.20, 0.85, 0.80)
+    vec3(0.20, 0.85, 0.80),
+    vec3(1.00, 0.62, 0.25),
+    vec3(1.00, 0.32, 0.08),
+    vec3(0.95, 0.22, 0.45),
+    vec3(1.00, 0.92, 0.65),
+    vec3(0.55, 0.95, 0.45),
+    vec3(0.62, 0.72, 0.86),
+    vec3(0.35, 0.95, 0.90)
 );
 
 bool cs_is(vec4 t, vec4 ref) {
@@ -74,8 +83,12 @@ vec4 cs_window(sampler2D atlas, ivec2 p0, int kind) {
     float skyW = 1.0 - smoothstep(0.47, 0.5, q.y);
     float seaW = smoothstep(0.5, 0.53, q.y);
     vec2 qs = q;
-    if (kind == 1) {
+    if (kind == 1 || kind == 10) {
         qs.x = fract(q.x + 2.0 * GameTime);
+    } else if (kind == 9) {
+        qs.x = fract(q.x + GameTime);
+    }
+    if (kind == 1 || kind == 6 || kind == 11 || kind == 12) {
         q.y += 0.0012 * sin(CS_TAU * (q.x * 120.0 + t * 0.25)) * sin(CS_TAU * (q.y * 60.0 - t * 0.2)) * seaW;
     } else if (kind == 2) {
         q.x += GameTime;
@@ -90,9 +103,17 @@ vec4 cs_window(sampler2D atlas, ivec2 p0, int kind) {
     }
     q.x = fract(q.x);
     vec3 col = cs_pano(atlas, p0, q);
-    if (kind == 1) {
-        float cw = 1.0 - smoothstep(0.482, 0.497, q.y);
+    if (kind == 1 || kind == 9 || kind == 10) {
+        float cw = (kind == 1) ? 1.0 - smoothstep(0.482, 0.497, q.y) : (kind == 9) ? smoothstep(0.515, 0.53, q.y) : 1.0 - smoothstep(0.401, 0.414, q.y);
         if (cw > 0.0) col = mix(col, cs_pano(atlas, p0, qs), cw);
+    }
+    if (kind == 1) {
+        float sd = dot(d, CS_SUN);
+        float above = smoothstep(CS_HORIZON - 0.01, CS_HORIZON + 0.03, el);
+        float clear = smoothstep(0.2, 0.45, col.b - col.r) * above;
+        float halo = exp((sd - 1.0) * 1000.0) * 0.6 + exp((sd - 1.0) * 90.0) * 0.25 + exp((sd - 1.0) * 9.0) * 0.12;
+        col = mix(col, vec3(1.0, 0.98, 0.9), smoothstep(0.99897, 0.99922, sd) * clear);
+        col += vec3(1.0, 0.92, 0.75) * halo * (0.35 + 0.65 * clear) * above;
     }
     float lum = max(col.r, max(col.g, col.b));
     if (kind == 2 || kind == 4 || kind == 5) {
@@ -104,6 +125,39 @@ vec4 cs_window(sampler2D atlas, ivec2 p0, int kind) {
     if (kind == 3) {
         float hot = smoothstep(0.55, 1.0, col.r) * seaW;
         col *= 1.0 + 0.18 * hot * sin(CS_TAU * (t * 0.2) + q.x * 40.0 + q.y * 25.0);
+    }
+    if (kind == 6) {
+        float h = cs_hash(vec3(floor(q * CS_PANO), 6.0));
+        col *= 1.0 + 0.45 * sin(CS_TAU * (t * 0.7 + h)) * smoothstep(0.6, 1.0, lum) * seaW;
+    }
+    if (kind == 7 || kind == 8) {
+        float hot = smoothstep(0.55, 1.0, col.r) * smoothstep(0.3, 0.6, col.r - col.b);
+        col *= 1.0 + 0.2 * hot * sin(CS_TAU * (t * 0.25 + q.x * 8.0) + q.y * 30.0);
+    }
+    if (kind == 8) {
+        float h = cs_hash(vec3(floor(q * CS_PANO), 8.0));
+        float starW = smoothstep(0.3, 0.9, lum) * skyW * (1.0 - smoothstep(0.1, 0.4, col.r - col.b));
+        col *= 1.0 + 0.4 * sin(CS_TAU * (t * 0.5 + h)) * starW;
+    }
+    if (kind == 11) {
+        float rain = 0.0;
+        for (int i = 0; i < 2; i++) {
+            float fi = float(i);
+            vec2 rp = vec2(q.x * (300.0 + 220.0 * fi) + q.y * 18.0, q.y * (22.0 + 12.0 * fi));
+            float h = cs_hash(vec3(floor(rp.x), fi, 11.0));
+            float fx = abs(fract(rp.x) - 0.5);
+            float line = 1.0 - smoothstep(0.08, 0.2, fx);
+            float y = fract(rp.y - t * (2.0 + floor(h * 2.0)) + h * 7.0);
+            float drop = smoothstep(0.0, 0.06, y) * (1.0 - smoothstep(0.06, 0.4, y));
+            rain += line * drop * step(0.4, h) * (0.16 - 0.07 * fi);
+        }
+        rain *= 1.0 - smoothstep(0.25, 0.42, abs(q.y - 0.5));
+        col += vec3(0.72, 0.77, 0.84) * rain;
+        float cyc = floor(t / 6.0);
+        float fh = cs_hash(vec3(cyc, 3.0, 11.0));
+        float ft = (t / 6.0 - cyc) * 6.0 - 1.0 - 3.0 * fh;
+        float flash = step(0.7, fh) * (step(0.0, ft) * exp(-max(ft, 0.0) * 9.0) + 0.6 * step(0.22, ft) * exp(-max(ft - 0.22, 0.0) * 12.0));
+        col += vec3(0.85, 0.9, 1.0) * flash * (0.45 + 0.55 * lum) * (0.4 + 0.6 * skyW);
     }
     if (kind == 4) {
         float green = clamp((col.g - max(col.r, col.b)) * 2.0, 0.0, 1.0) * skyW;
@@ -134,12 +188,12 @@ bool cs_fragment(sampler2D atlas, vec2 uv, out vec4 color) {
     color = vec4(0.0);
     ivec2 p0;
     int kind = cs_kind(atlas, uv, CS_PANO, p0);
-    if (kind >= 1 && kind <= 5) {
+    if (kind >= 1 && kind <= CS_KINDS) {
         color = cs_window(atlas, p0, kind);
         return true;
     }
     kind = cs_kind(atlas, uv, CS_GLOWPX, p0);
-    if (kind >= 17 && kind <= 21) {
+    if (kind >= 17 && kind <= 16 + CS_KINDS) {
         color = cs_frame(kind);
         return true;
     }
