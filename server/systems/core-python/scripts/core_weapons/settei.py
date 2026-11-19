@@ -112,14 +112,14 @@ class 武器(namedtuple("武器", "id 試験品 軌道 振り 地震")):
     __slots__ = ()
 
 
-class 設定(namedtuple("設定", "接頭 武器表 文言")):
+class 設定(namedtuple("設定", "接頭 武器表 文言 棒")):
     __slots__ = ()
 
     def 武器(self, id):
         return None if id is None else self.武器表.get(id)
 
 
-空 = 設定("", {}, {})
+空 = 設定("", {}, {}, None)
 
 #: Текущий снимок (подменяет main.読み込み).
 現在 = 空
@@ -173,7 +173,11 @@ def 解析(c, 警告=lambda m: None):
     if ms is not None:
         for k in ms:
             文言[k] = 文字(ms, k, "")
-    return 設定(文字(c, "prefix", ""), 武器表, 文言)
+    棒 = None
+    b = 区画(c, "stick")
+    if b is not None and 真偽(b, "enabled", True):
+        棒 = _棒(b, lambda m: 警告("stick." + m))
+    return 設定(文字(c, "prefix", ""), 武器表, 文言, 棒)
 
 
 def _武器(id, w, 警告):
@@ -216,3 +220,63 @@ def _武器(id, w, 警告):
                     _挟む(整数(r, "max-displays", 90), 0, 400), max(0.0, min(1.5, 実数(r, "kick", 0.12))),
                     真偽(r, "kick-attacker", False), max(0.0, 実数(r, "damage", 0)), tuple(音列))
     return 武器(id, test, orbit, swing, tremor)
+
+
+# ------------------------------------------------------------------------------------------- палка (bou.py)
+背刺 = namedtuple("背刺", "冷却 外れ冷却 届き 円錐 余白 傷 傷種 背角 倍率 無敵無視 大きさ 会心大きさ 始倍 回転 回転増 "
+                        "前 寿命 視距離 音 会心音")
+余燼 = namedtuple("余燼", "詠唱 冷却 中断冷却 射程 片長 傷 傷種 火秒 半径 貫通 無敵無視 球大きさ 球始倍 球前 球下 色周期 "
+                        "幅 始幅倍 伸び 保持 消え 爆大きさ 爆時間 視距離 始音 唸り音 撃音 着弾音 中断音")
+棒 = namedtuple("棒", "素材 nexo_ids 権限 禁止世界 対人 連打 背刺 余燼 拒否音")
+
+
+def _音列(c, k):
+    out = []
+    for raw in 文字列(c, k):
+        sp = 音.解析(raw)
+        if sp is not None:
+            out.append(sp)
+    return tuple(out)
+
+
+def _棒(b, 警告):
+    """Секция stick: приёмы палки. Подсекции backstab / embers; выключенная (enabled: false) — None."""
+    素材 = 文字(b, "material", "STICK").upper()
+    ids = frozenset(s.strip() for s in 文字列(b, "nexo-ids") if s.strip())
+    bs = None
+    s = 区画(b, "backstab")
+    s = {} if s is None else s       # нет подсекции — всё по умолчанию
+    if 真偽(s, "enabled", True):
+        bs = 背刺(max(0.0, 実数(s, "cooldown", 6.0)), max(0.0, 実数(s, "miss-cooldown", 1.0)),
+                 max(0.5, min(8.0, 実数(s, "range", 3.5))), max(0.0, min(60.0, 実数(s, "cone", 20.0))),
+                 max(0.0, min(1.0, 実数(s, "ray-margin", 0.2))), max(0.0, 実数(s, "damage", 6.0)),
+                 文字(s, "damage-type", "minecraft:player_attack"), max(0.0, min(180.0, 実数(s, "back-angle", 60.0))),
+                 max(0.0, 実数(s, "back-multiplier", 2.0)), 真偽(s, "ignore-invulnerability", True),
+                 max(0.2, min(8.0, 実数(s, "slash-size", 2.6))), max(0.2, min(8.0, 実数(s, "crit-slash-size", 3.2))),
+                 max(0.1, min(1.0, 実数(s, "slash-start-scale", 0.7))), 実数(s, "slash-roll", 28.0),
+                 実数(s, "slash-roll-swing", 14.0), max(0.0, 実数(s, "slash-before-target", 0.45)),
+                 _挟む(整数(s, "life-ticks", 8), 2, 8), max(0.1, 実数(s, "view-range", 1.0)),
+                 _音列(s, "sounds"), _音列(s, "crit-sounds"))
+    em = None
+    e = 区画(b, "embers")
+    e = {} if e is None else e       # нет подсекции — всё по умолчанию
+    if 真偽(e, "enabled", True):
+        em = 余燼(_挟む(int(round(実数(e, "cast-seconds", 1.0) * 20.0)), 1, 200), max(0.0, 実数(e, "cooldown", 10.0)),
+                 max(0.0, 実数(e, "cancel-cooldown", 1.0)), max(1.0, min(48.0, 実数(e, "range", 16.0))),
+                 max(1.0, min(16.0, 実数(e, "piece-length", 4.0))), max(0.0, 実数(e, "damage", 8.0)),
+                 文字(e, "damage-type", "minecraft:magic"), max(0.0, 実数(e, "fire-seconds", 3.0)),
+                 max(0.0, min(1.5, 実数(e, "hit-radius", 0.3))), 真偽(e, "pierce", False),
+                 真偽(e, "ignore-invulnerability", True),
+                 max(0.2, min(4.0, 実数(e, "orb-size", 1.15))), max(0.05, min(1.0, 実数(e, "orb-start-scale", 0.35))),
+                 max(0.3, min(4.0, 実数(e, "orb-forward", 1.3))), 実数(e, "orb-down", 0.15),
+                 _挟む(整数(e, "orb-update-ticks", 4), 1, 20),
+                 max(0.1, min(3.0, 実数(e, "beam-width", 0.9))), max(0.0, min(1.0, 実数(e, "beam-start-width", 0.3))),
+                 _挟む(整数(e, "beam-grow-ticks", 2), 1, 20), _挟む(整数(e, "beam-hold-ticks", 4), 0, 40),
+                 _挟む(整数(e, "beam-fade-ticks", 4), 1, 20), max(0.2, min(6.0, 実数(e, "impact-size", 1.8))),
+                 _挟む(整数(e, "impact-ticks", 4), 1, 20), max(0.1, 実数(e, "view-range", 1.5)),
+                 _音列(e, "start-sounds"), _音列(e, "charge-sounds"), _音列(e, "fire-sounds"),
+                 _音列(e, "impact-sounds"), _音列(e, "cancel-sounds"))
+    if bs is None and em is None:
+        警告("и backstab, и embers выключены")
+    return 棒(素材, ids, 文字(b, "permission", ""), frozenset(文字列(b, "disabled-worlds")), 真偽(b, "pvp", True),
+             max(0, 整数(b, "double-click-ms", 250)), bs, em, _音列(b, "denied-sounds"))

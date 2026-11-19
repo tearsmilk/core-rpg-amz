@@ -676,8 +676,7 @@ public final class RpgScreen {
                 case "$armor_toughness" -> this.attr(Attribute.ARMOR_TOUGHNESS);
                 case "$attack_damage" -> this.attr(Attribute.ATTACK_DAMAGE);
                 case "$attack_speed" -> this.attr(Attribute.ATTACK_SPEED);
-                case "$move_speed" -> this.attr(Attribute.MOVEMENT_SPEED) < 0 ? -1
-                    : Math.round(this.attr(Attribute.MOVEMENT_SPEED) / 0.1 * 100);
+                case "$move_speed" -> this.moveSpeedPercent();
                 case "$max_health" -> this.attr(Attribute.MAX_HEALTH);
                 case "$luck" -> this.attr(Attribute.LUCK);
                 default -> -1;
@@ -694,6 +693,29 @@ public final class RpgScreen {
         } catch (final NumberFormatException e) {
             return plain;
         }
+    }
+
+    /**
+     * Скорость передвижения в % от обычной. В меню игрок стоит (скорость ходьбы 0), поэтому база — скорость до меню
+     * (walkSpeed / 2 = база атрибута), а модификаторы (зелья, предметы) берутся с атрибута.
+     */
+    private double moveSpeedPercent() {
+        final AttributeInstance i = this.player.getAttribute(Attribute.MOVEMENT_SPEED);
+        if (i == null) {
+            return -1;
+        }
+        double add = 0;
+        double scalar = 0;
+        double mul = 1;
+        for (final org.bukkit.attribute.AttributeModifier m : i.getModifiers()) {
+            switch (m.getOperation()) {
+                case ADD_NUMBER -> add += m.getAmount();
+                case ADD_SCALAR -> scalar += m.getAmount();
+                case MULTIPLY_SCALAR_1 -> mul *= 1 + m.getAmount();
+            }
+        }
+        final double base = this.screen.saved().walkSpeed() / 2.0;
+        return Math.round(Math.max(0, (base + add) * (1 + scalar) * mul) / 0.1 * 100);
     }
 
     private double attr(final Attribute a) {

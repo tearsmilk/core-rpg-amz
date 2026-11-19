@@ -173,11 +173,27 @@ rpg:
         azerus_artifact_004: 5
         azerus_artifact_005: 10
         azerus_artifact_006: 10
-  # Вкладка «Снаряжение»: строки характеристик. Строка, чей плейсхолдер не подставился, скрывается.
-  equipment-lines:
-    - {name: "Уровень", value: "%hl_level%"}
-    - {name: "Свободные очки параметров", value: "%hl_stats_available%"}
-    - {name: "Очки навыков", value: "%mmocore_skill_points%"}
+  # Вкладка «Мой персонаж» (первая): только сведения о персонаже. Левая колонка «Персонаж» — ник, класс, профессия,
+  # уровень, опыт, здоровье, мана/энергия, очки навыков и параметров, профиль, баланс, время в игре (считается само).
+  # Правая колонка «Характеристики» — stats: name — подпись (можно плейсхолдер, тогда default — если не подставился),
+  # value — плейсхолдер, текст или встроенное значение: $attack_damage, $attack_speed, $armor, $armor_toughness,
+  # $move_speed (в % от обычной), $max_health, $luck; suffix — после числа. Числа округляются до десятых.
+  # Строка, чьё значение не подставилось, скрывается. Видно до 12 строк в колонке.
+  character:
+    balance: "%vault_eco_balance_formatted%"
+    stats:
+      - {name: "%hl_stats_primary_name%", default: "Сила", value: "%hl_stats_primary%"}
+      - {name: "Ловкость", value: "%hl_stats_agility%"}
+      - {name: "Выносливость", value: "%hl_stats_stamina%"}
+      - {name: "Удача", value: "%hl_stats_luck%"}
+      - {name: "Урон", value: "$attack_damage"}
+      - {name: "Скорость атаки", value: "$attack_speed"}
+      - {name: "Броня", value: "$armor"}
+      - {name: "Защита", value: "%mmocore_stat_defense%"}
+      - {name: "Крит. шанс", value: "%mmocore_stat_critical_strike_chance%", suffix: "%"}
+      - {name: "Крит. урон", value: "%mmocore_stat_critical_strike_power%", suffix: "%"}
+      - {name: "Реген. маны", value: "%mmocore_stat_mana_regeneration%", suffix: "/с"}
+      - {name: "Скорость", value: "$move_speed", suffix: "%"}
 
 # Чужой HUD (MythicHUD — боссбары с модельками) прячется, пока открыто меню: меню нарисовано в мире и не может
 # перекрыть интерфейс клиента. Команды консоли, {player} — ник. Если игрок вышел посреди меню, HUD вернётся при входе.
@@ -207,11 +223,12 @@ open-key:
   # true — только Shift + F (тогда обычная F меняет руки как всегда).
   sneak: false
 
-# Хранилище во вкладке «Снаряжение»: base-rows рядов по 9 слотов бесплатно, ещё до max-extra-rows рядов
-# выдаются командой /menuses rows add <ник> [n] (для доната; работает из консоли и для игрока не в сети).
+# Хранилище во вкладке «Снаряжение» (инвентарь): под тремя рядами кармана — rows рядов по 9 слотов, у всех одинаково
+# (1..36; покупки рядов больше нет, старые base-rows / max-extra-rows не читаются). Ряды, где уже что-то лежит, видны
+# всегда, даже если rows меньше. В хранилище стакается до 99 — только то, что стакается и в ванили (мечи, посохи,
+# броня, инструменты — по одному); в кармане и на панели — ванильные стаки.
 stash:
-  base-rows: 3
-  max-extra-rows: 6
+  rows: 6
 
 # Профили (персонажи): /profiles или /menuses open profiles. У каждого профиля свои класс, уровень и опыт,
 # параметры и навыки (RoyalQuestClasses + MMOCore), инвентарь с бронёй и второй рукой, бижутерия и хранилище

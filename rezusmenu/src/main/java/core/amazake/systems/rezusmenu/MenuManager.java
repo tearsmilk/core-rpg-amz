@@ -477,8 +477,9 @@ public final class MenuManager implements Listener {
     public void onSwapHands(final org.bukkit.event.player.PlayerSwapHandItemsEvent event) {
         final Player player = event.getPlayer();
         final Settings s = this.settings.get();
-        if (!s.swapHandsOpens() || this.isOpen(player) || s.swapHandsSneak() != player.isSneaking()) {
-            return;
+        if (!s.swapHandsOpens() || this.isOpen(player) || s.swapHandsSneak() != player.isSneaking()
+            || core.amazake.systems.rezusmenu.util.AdminMode.isOn(player)) {
+            return; // режим админа (/rpgadmin): F — обычная смена рук
         }
         final org.bukkit.GameMode mode = player.getGameMode();
         if (mode != org.bukkit.GameMode.SURVIVAL && mode != org.bukkit.GameMode.ADVENTURE) {

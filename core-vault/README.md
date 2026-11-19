@@ -81,6 +81,9 @@ MMOItems цепляются к этому провайдеру при своём
 RoyalQuestClasses (`/class /profession /myclass /stats /rqadmin`), MMOItems, DeluxeMenus (`/menu /maped
 /shop_mounts /shop_pets`), AmazakeCore — `/level` ни у кого нет.
 
+**Режим админа** (`/rpgadmin` из core-mechanics, флаг `coremechanics:rpgadmin` в PDC игрока): клик по монетам в
+инвентаре и вход не превращают их в баланс — админ держит монеты предметами (подбор с земли — как обычно, на баланс).
+
 ## Плейсхолдеры (PlaceholderAPI)
 
 `%corevault_balance%` (число `123.45`), `_balance_formatted` (`123,45 монеты`), `_balance_short` (`123,45`),

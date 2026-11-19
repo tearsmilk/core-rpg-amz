@@ -61,6 +61,8 @@ public final class CoreMechanicsSystem implements AmazakeSystem, Listener {
         context.registerCommand(new RdCommand(this.ragdolls, this.statues, this::status));
         context.registerCommand(new core.amazake.systems.coremechanics.tooltip.TooltipCommand(
             () -> this.settings.get().tooltipFlavors()));
+        context.registerListener(new core.amazake.systems.coremechanics.admin.RpgAdmin(context.plugin()));
+        context.registerCommand(new core.amazake.systems.coremechanics.admin.RpgAdminCommand(context));
         this.statues.start();
         for (final Player p : Bukkit.getOnlinePlayers()) {
             context.runOnceForPlayer(p, () -> this.cleanupNear(p));

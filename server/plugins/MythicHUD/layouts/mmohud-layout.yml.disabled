@@ -1,0 +1,63 @@
+mmohud-layout:
+  elements:
+    health:
+      asset: 'health'
+      position:
+        x: 50.0
+        y: 0.0
+      offset:
+        x: -99
+        y: 51
+    mana:
+      asset: 'mana'
+      position:
+        x: 50.0
+        y: 0
+      offset:
+        x: -44
+        y: 39
+    energy:
+      asset: 'energy'
+      position:
+        x: 50.0
+        y: 0
+      offset:
+        x: -44
+        y: 39
+    armor:
+      asset: 'armor'
+      position:
+        x: 50
+        y: 0.0
+      offset:
+        x: 1
+        y: 50
+    air:
+      asset: 'air'
+      align: center
+      position:
+        x: 50.0
+        y: 50.0
+      offset:
+        x: 0
+        y: -10
+    # DO NOT TOUCH
+    # %%__NONCE__%%
+    experience:
+      asset: 'experience'
+      align: center
+      position:
+        x: 50.0
+        y: 0
+      offset:
+        x: -1
+        y: 27
+    money:
+      asset: 'money'
+      align: left
+      position:
+        x: 100.0
+        y: 0
+      offset:
+        x: -2
+        y: 13

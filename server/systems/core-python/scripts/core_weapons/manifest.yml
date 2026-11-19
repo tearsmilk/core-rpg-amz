@@ -1,11 +1,11 @@
-# Python-система «Оружие» (武器) — перенос Java-системы core-weapons. Код — main.py, mochinushi.py (игрок: замах,
+# Python-система «Оружие» (武器) — перенос Java-системы core-weapons (+ приёмы палки: bou.py, kouka.py). Код — main.py, mochinushi.py (игрок: замах,
 # кольцо), jishin.py (дрожь при крите), dougu.py (предметы, классы Java), settei.py и ronri.py (чистая логика),
 # настройки — config.yml (та же структура, что у Java-версии). Тесты чистой логики: python3 tests_core_weapons.py
 name: core_weapons
 version: 1.0.0
 main: main.py
 enabled: true
-description: "Эффекты кастомного оружия Nexo: частицы вокруг клинка, кадры замаха, огненный след, дрожь земли при крите"
+description: "Эффекты кастомного оружия Nexo: частицы вокруг клинка, кадры замаха, огненный след, дрожь земли при крите; палка — «Удар в спину» и «Угли»"
 commands:
   cweapons:
     permission: coreweapons.admin
