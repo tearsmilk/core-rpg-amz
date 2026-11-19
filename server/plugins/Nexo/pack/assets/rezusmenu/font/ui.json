@@ -560,6 +560,33 @@
     },
     {
       "type": "bitmap",
+      "file": "rezusmenu:ui/char_left.png",
+      "ascent": 144,
+      "height": 144,
+      "chars": [
+        "\ue03e"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/char_bg_0.png",
+      "ascent": 192,
+      "height": 192,
+      "chars": [
+        "\ue03f"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "rezusmenu:ui/char_bg_1.png",
+      "ascent": 192,
+      "height": 192,
+      "chars": [
+        "\ue040"
+      ]
+    },
+    {
+      "type": "bitmap",
       "file": "rezusmenu:ui/pixel.png",
       "ascent": 1,
       "height": 1,
