@@ -1,0 +1,17 @@
+name: coreshaders
+version: '${version}'
+main: dev.tearsmilk.coreshaders.CoreShadersPlugin
+api-version: '1.21'
+author: tearsmilk
+authors: [tearsmilk]
+description: Shader panorama windows - cubes and planes from item displays
+commands:
+  coreshaders:
+    description: coreshaders - panorama shader effects
+    usage: /coreshaders help
+    aliases: [cs]
+    permission: coreshaders.admin
+permissions:
+  coreshaders.admin:
+    description: Use the coreshaders command and wand
+    default: op

@@ -1,0 +1,129 @@
+# coreshaders - настройки. Автор: tearsmilk.
+# Версия конфига, не менять. При обновлении плагин сам допишет новые картинки в images.
+config-version: 2
+
+# Картинки должны совпадать с ресурспаком: coreshaders:cube_<картинка> и coreshaders:plane_<картинка>.
+images:
+  - sky_sea
+  - space
+  - nether
+  - aurora
+  - end
+  - sunset
+  - volcano
+  - hell_end
+  - heaven
+  - walk
+  - rain
+  - sea_sand
+
+# Названия картинок для сообщений и подсказок жезла.
+image-names:
+  sky_sea: "Небо и море"
+  space: "Космос"
+  nether: "Незер"
+  aurora: "Северное сияние"
+  end: "Энд"
+  sunset: "Закат"
+  volcano: "Вулкан"
+  hell_end: "Ад и Энд"
+  heaven: "Рай"
+  walk: "Прогулка"
+  rain: "Дождь"
+  sea_sand: "Море и песок"
+
+defaults:
+  shape: cube
+  image: sky_sea
+  color: "#FFFFFF"
+
+# Дальность луча для команд и ЛКМ жезлом (в блоках).
+max-distance: 8.0
+
+# Отступ плоскости от грани блока (в блоках), чтобы не было мерцания.
+plane-offset: 0.015
+
+# Яркость дисплеев (0-15). Шейдер сам светится, это влияет только на клиенты без пака.
+brightness: 15
+
+# Именованные цвета для /cs color и /cs give. Можно добавлять свои: имя: "#RRGGBB".
+colors:
+  white: "#FFFFFF"
+  red: "#FF5050"
+  orange: "#FFA040"
+  yellow: "#FFE060"
+  green: "#70FF70"
+  cyan: "#60FFFF"
+  blue: "#6080FF"
+  purple: "#C070FF"
+  pink: "#FF80C0"
+  gray: "#A0A0A0"
+  dark: "#505050"
+  белый: "#FFFFFF"
+  красный: "#FF5050"
+  оранжевый: "#FFA040"
+  жёлтый: "#FFE060"
+  желтый: "#FFE060"
+  зелёный: "#70FF70"
+  зеленый: "#70FF70"
+  голубой: "#60FFFF"
+  синий: "#6080FF"
+  фиолетовый: "#C070FF"
+  розовый: "#FF80C0"
+  серый: "#A0A0A0"
+  тёмный: "#505050"
+
+# Сообщения (MiniMessage). Только короткие дефисы.
+messages:
+  prefix: "<gradient:#7fd3ff:#c69bff>coreshaders</gradient> <dark_gray>|</dark_gray> "
+  no-permission: "<red>Нет прав.</red>"
+  players-only: "<red>Эта команда - только для игрока.</red>"
+  player-not-found: "<red>Игрок <white><name></white> не найден.</red>"
+  unknown-shape: "<red>Неизвестная форма <white><value></white>. Есть: cube, plane.</red>"
+  unknown-image: "<red>Неизвестная картинка <white><value></white>. Есть: <white><list></white>.</red>"
+  unknown-color: "<red>Не понял цвет <white><value></white>. Пиши #RRGGBB или имя: <white><list></white>.</red>"
+  given: "<green>Выдан жезл игроку <white><name></white>: <white><shape></white>, <white><image></white>, <white><color></white>.</green>"
+  wand-name: "<gradient:#7fd3ff:#c69bff><bold>Шейдерный жезл</bold></gradient>"
+  wand-lore:
+    - "<gray>Форма: <white><shape></white></gray>"
+    - "<gray>Картинка: <white><image></white></gray>"
+    - "<gray>Цвет: <color_tag><color></color_tag></gray>"
+    - ""
+    - "<dark_gray>ПКМ по блоку - поставить</dark_gray>"
+    - "<dark_gray>ЛКМ по эффекту - убрать</dark_gray>"
+    - "<dark_gray>Shift + ПКМ - сменить картинку</dark_gray>"
+    - "<dark_gray>Shift + ЛКМ - сменить форму</dark_gray>"
+  placed: "<green>Поставлено: <white><shape></white>, <white><image></white>.</green>"
+  not-air: "<red>Там не воздух - некуда ставить куб.</red>"
+  not-free: "<red>Там уже есть эффект.</red>"
+  plane-blocked: "<red>Грань закрыта блоком - плоскость не будет видна.</red>"
+  no-support: "<red>За плоскостью нет блока - ей не на чем держаться.</red>"
+  occupied: "<yellow>Тут уже стоит эффект. ЛКМ жезлом - убрать, /cs image и /cs color - изменить.</yellow>"
+  bad-radius: "<red>Радиус <white><value></white> - не число от 0 до 512.</red>"
+  removeall-confirm: "<yellow>Это уберет все эффекты в мире. Подтверди: <white>/cs removeall all</white>, или укажи радиус: <white>/cs removeall 16</white>.</yellow>"
+  click-block: "<yellow>Наведись на блок, чтобы поставить эффект.</yellow>"
+  removed: "<yellow>Эффект убран.</yellow>"
+  nothing-targeted: "<red>Не вижу эффекта перед тобой (до <white><distance></white> блоков).</red>"
+  wand-image: "<aqua>Картинка жезла: <white><image></white></aqua>"
+  wand-shape: "<aqua>Форма жезла: <white><shape></white></aqua>"
+  color-set: "<green>Цвет эффекта: <color_tag><color></color_tag></green>"
+  image-set: "<green>Картинка эффекта: <white><image></white></green>"
+  shape-set: "<green>Форма эффекта: <white><shape></white></green>"
+  shape-blocked: "<red>Нельзя сменить форму: блок занят или грань закрыта.</red>"
+  info: "<gray>Эффект: форма <white><shape></white>, картинка <white><image></white>, цвет <color_tag><color></color_tag>, блок <white><x> <y> <z></white>, грань <white><face></white>.</gray>"
+  list-header: "<gray>Картинки: <white><images></white>. Формы: <white>cube, plane</white>. Цвета: <white><colors></white>.</gray>"
+  list-count: "<gray>Эффектов рядом (<white><radius></white> блоков): <white><count></white>.</gray>"
+  list-entry: "<dark_gray> - </dark_gray><white><shape></white> <gray><image></gray> <color_tag><color></color_tag> <dark_gray>(<x> <y> <z>)</dark_gray>"
+  removed-all: "<yellow>Убрано эффектов: <white><count></white>.</yellow>"
+  reloaded: "<green>Конфиг перезагружен.</green>"
+  help:
+    - "<gradient:#7fd3ff:#c69bff>coreshaders</gradient> <gray>- команды:</gray>"
+    - "<white>/cs give [игрок] [cube|plane] [картинка] [цвет]</white> <gray>- жезл</gray>"
+    - "<white>/cs color <#RRGGBB|имя></white> <gray>- цвет эффекта под прицелом</gray>"
+    - "<white>/cs image <картинка></white> <gray>- картинка эффекта под прицелом</gray>"
+    - "<white>/cs shape <cube|plane></white> <gray>- форма эффекта под прицелом</gray>"
+    - "<white>/cs remove</white> <gray>- убрать эффект под прицелом</gray>"
+    - "<white>/cs info</white> <gray>- что за эффект под прицелом</gray>"
+    - "<white>/cs list</white> <gray>- картинки, цвета и эффекты рядом</gray>"
+    - "<white>/cs removeall <радиус|all></white> <gray>- убрать эффекты рядом или во всем мире</gray>"
+    - "<white>/cs reload</white> <gray>- перезагрузить конфиг</gray>"
