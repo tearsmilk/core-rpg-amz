@@ -33,7 +33,7 @@ MMO_PERCENT = "%math_1_{mmocore_experience}*100/{mmocore_next_level}%"
 BOTTOM_LEVEL = "%hl_level%"   # same as the old HUD (RoyalQuestClasses level, green number)
 WORLD = "%player_world%"
 
-NOT_CREATIVE = "    - gamemode{gm=creative,spectator} false hide # hidden in creative/spectator (as the old HUD)"
+NOT_CREATIVE = None   # HUD виден всегда: и в творческом/наблюдателе (владелец: «худ должен быть всегда»)
 CLASS_ONLY = "        - placeholder{ph=%mmocore_class_id%;v=HUMAN} false hide # bar only for players with an RQ/MMOCore skill class"
 IS_ENERGY = "placeholder{ph=%mmocore_mana_name%;v=Энергия}"
 
@@ -71,6 +71,7 @@ def asset(name, layers, conds=(NOT_CREATIVE,), comment=None):
     if comment:
         s += "".join("# %s\n" % l for l in comment.split("\n"))
     s += "%s:\n" % name
+    conds = [c for c in (conds or ()) if c]
     if conds:
         s += "  conditions:\n" + "".join(c + "\n" for c in conds)
     s += "  layers:\n" + "".join(layers)
@@ -99,7 +100,7 @@ PL.append(text("gem_value_none", "<#5d7690>-", "mmohud-font", 120, -5, "right",
 PL.append(tex("coin_icon", A + "icon_coin.png", 44, -4))
 PL.append(tex("gem_icon", A + "icon_gem.png", 109, -4))
 PL.append("    head:  # player's face (8x8 skin pixels x3 = 24x24), MythicHUD head layer\n"
-          "      head:\n        size: 3\n      offset:\n        x: 7\n        y: -8\n")
+          "      head:\n        size: 3\n      offset:\n        x: 7\n        y: -32\n")   # голова рисуется ВВЕРХ от точки привязки (проверено в игре): -8 - 24
 PL.append(tex("portrait", A + "portrait_frame.png", 0, -1))
 PL.append(tex("panel", A + "player_panel.png", 40, 0))
 player = asset("azerus_player", PL, comment=(
@@ -229,13 +230,13 @@ with open(os.path.join(ROOT, "hud_assets/hud/azerus-hud.yml"), "w", encoding="ut
 
 # ---------------------------------------------------------------------------------------------
 # Skill bar: 6 slots 22x22, pitch 25, on a 153x28 backing plate. Element origin = backing top-left.
-old = open(os.path.join(SNAP, "hud_assets/hud/skill_casting_bar-hud.yml"), encoding="utf-8").read()
+old = open(os.path.join(SNAP, "hud_assets/hud/skill_casting_bar-hud.yml.disabled"), encoding="utf-8").read()
 ids = re.findall(r"placeholder\{ph=%mmocore_id_bound_1%;v=([A-Z0-9_]+)\} true texture (\S+)", old)
 assert len(ids) >= 50, len(ids)
 SB = []
 SB.append(text("skillnames",
                re.search(r'skillnames:.*?\n\s+conditions:\n.*?\n\s+text: "(.*?)"\n', old, re.S).group(1).replace('"', '\\"'),
-               "default", 76, 11, conds=["placeholder{ph=%mmocore_class_id%;v=HUMAN} false hide"],
+               "default", 76, 11,
                comment="name of the skill just cast (~2 s), same placeholder chain as the old bar"))
 for i in range(1, 7):
     sx = 3 + 25 * (i - 1)
@@ -260,7 +261,7 @@ for i in range(1, 7):
                   ["placeholder{ph=%mmocore_is_casting%;v=true} true texture " + A + "skill_slot_active.png"],
                   comment="gold corner brackets in casting mode"))
 SB.append(tex("backing", A + "skill_backing.png", 0, 0))
-skillbar = asset("azerus_skillbar", SB, conds=("    - placeholder{ph=%mmocore_class_id%;v=HUMAN} false hide # bar only for players with an RQ/MMOCore skill class",),
+skillbar = asset("azerus_skillbar", SB, conds=(),   # видна всегда, даже без класса (пустые слоты)
                  comment=(
                      "AZERUS SKILL BAR - 6 MMOCore skills in the slate+gold style. Same logic as skill_casting_bar-hud.yml:\n"
                      "icons by %mmocore_id_bound_N%, cooldown veil + seconds (%mmocore_cooldown_bound_N%), not-enough-mana tint,\n"
