@@ -4,6 +4,11 @@
     pip install moderngl
     python3 -I coreshaders/tools/preview.py                     # everything
     python3 -I coreshaders/tools/preview.py --only sunset,rain  # only pano_<name>.png for these
+    python3 -I coreshaders/tools/preview.py --walls             # wall_cubes.png, wall_planes.png, wall_single.png
+    python3 -I coreshaders/tools/preview.py --custom NAME DIR   # a custom image from DIR (textures/item/panorama)
+
+Walls: 3x3 cubes and 3x3 planes, panels: old look (rim on every edge), rim off (default), rim on (outer outline only),
+side view. The camera sits far from the origin and every item gets its own float32 translation, as in the game.
 
 The game side is emulated: a fake item atlas holds the panorama and glow sprites at non-zero offsets, the vertex
 stream is the baked item quad order (u0,v0), (u0,v1), (u1,v1), (u1,v0), Position is camera-relative in world axes and
@@ -143,9 +148,10 @@ class Renderer:
         fs = glsl_check.expand(open(core + ".fsh", encoding="utf-8").read(), vanilla, set())
         return vs, fs
 
-    def atlas(self, name):
-        pano = np.array(Image.open(os.path.join(TEX, name + ".png")).convert("RGBA"))
-        glow = np.array(Image.open(os.path.join(TEX, name + "_glow.png")).convert("RGBA"))
+    def atlas(self, name, tex=None):
+        tex = tex or TEX
+        pano = np.array(Image.open(os.path.join(tex, name + ".png")).convert("RGBA"))
+        glow = np.array(Image.open(os.path.join(tex, name + "_glow.png")).convert("RGBA"))
         a = np.zeros((1024, 2048, 4), np.uint8)
         a[..., :] = (120, 80, 200, 255)
         y, x = PANO_AT[1], PANO_AT[0]
@@ -165,10 +171,12 @@ class Renderer:
 
     def item_vao(self, quads, tint):
         rows = []
-        for pts, (u0, v0, u1, v1), normal in quads:
+        for q in quads:
+            pts, (u0, v0, u1, v1), normal = q[:3]
+            qt = q[3] if len(q) > 3 else tint
             uvs = [(u0, v0), (u0, v1), (u1, v1), (u1, v0)]
             for p, uv in zip(pts, uvs):
-                rows.append(struct.pack("3f4f2f2f2i3f", *p, *tint, *uv, 0.0, 0.0, 240, 240, *normal))
+                rows.append(struct.pack("3f4f2f2f2i3f", *p, *qt, *uv, 0.0, 0.0, 240, 240, *normal))
         vbo = self.ctx.buffer(b"".join(rows))
         idx = []
         for q in range(len(quads)):
@@ -182,7 +190,7 @@ class Renderer:
         attrs = [n for n in names if n in self.prog]
         return self.ctx.vertex_array(self.prog, [(vbo, fmt, *attrs)], ibo)
 
-    def render(self, name, cam, target, items, wall=False, game_time=0.3, tint=(1, 1, 1, 1)):
+    def render(self, name, cam, target, items, wall=False, game_time=0.3, tint=(1, 1, 1, 1), tex=None, origin=None):
         ctx = self.ctx
         self.fbo.use()
         ctx.viewport = (0, 0, WIDTH, HEIGHT)
@@ -199,7 +207,7 @@ class Renderer:
         self.scene["mvp"].write(mat_bytes(proj @ rot))
         self.scene["cam"].value = tuple(cam)
         svao.render()
-        atlas = self.atlas(name)
+        atlas = self.atlas(name, tex)
         atlas.use(0)
         self.light.use(2)
         if "Sampler0" in self.prog:
@@ -218,29 +226,105 @@ class Renderer:
         aw, ah = 2048.0, 1024.0
         pano_uv = (PANO_AT[0] / aw, PANO_AT[1] / ah, (PANO_AT[0] + 1024) / aw, (PANO_AT[1] + 512) / ah)
         glow_uv = (GLOW_AT[0] / aw, GLOW_AT[1] / ah, (GLOW_AT[0] + 16) / aw, (GLOW_AT[1] + 16) / ah)
-        for kind, data in items:
-            quads = []
+        far = np.asarray(origin if origin is not None else (0.0, 0.0, 0.0), float)
+        for it in items:
+            kind, data = it[0], it[1]
+            masks = it[2] if len(it) > 2 else None
             if kind == "cube":
                 lo = np.asarray(data, float)
-                f = box_faces(*lo, *(lo + 1))
+                trans = np.float32(lo + 0.5 + far - (cam + far))
+                f = box_faces(-0.5, -0.5, -0.5, 0.5, 0.5, 0.5)
                 normals = {"up": (0, 1, 0), "down": (0, -1, 0), "north": (0, 0, -1), "south": (0, 0, 1),
                            "west": (-1, 0, 0), "east": (1, 0, 0)}
+                quads = []
                 for k, pts in f.items():
-                    quads.append(([tuple(np.asarray(p) - cam) for p in pts], pano_uv, normals[k]))
+                    m = 0 if masks is None else masks[k]
+                    quads.append(([tuple(np.float32(trans + np.float32(p))) for p in pts], pano_uv, normals[k],
+                                  encode_tint(tint, m)))
                 vao = self.item_vao(quads, tint)
                 vao.render()
             else:
-                center, size = np.asarray(data, float), 1.0
-                for s, uv in ((0.5, pano_uv), (0.5 * 22 / 16, glow_uv)):
-                    x0, x1, y0, y1 = center[0] - s, center[0] + s, center[1] - s, center[1] + s
-                    z = center[2]
-                    pts = [(x0, y1, z), (x0, y0, z), (x1, y0, z), (x1, y1, z)]
-                    vao = self.item_vao([([tuple(np.asarray(p) - cam) for p in pts], uv, (0, 0, 1))], tint)
+                center = np.asarray(data, float)
+                trans = np.float32(center + far - (cam + far))
+                m = 0 if masks is None else masks
+                for half, uv in ((0.5 + PLANE_PAD / 16.0, pano_uv), (0.5 * 22 / 16, glow_uv)):
+                    pts = [(-half, half, 0.0), (-half, -half, 0.0), (half, -half, 0.0), (half, half, 0.0)]
+                    quad = ([tuple(np.float32(trans + np.float32(p))) for p in pts], uv, (0, 0, 1), encode_tint(tint, m))
+                    vao = self.item_vao([quad], tint)
                     vao.render()
         ctx.disable(moderngl.BLEND)
         atlas.release()
         img = Image.frombytes("RGBA", (WIDTH, HEIGHT), self.fbo.read(components=4)).transpose(Image.FLIP_TOP_BOTTOM)
         return img.convert("RGB")
+
+
+PLANE_PAD = 0.02
+FACE_AXES = {"north": ((-1, 0, 0), (0, -1, 0)), "south": ((1, 0, 0), (0, -1, 0)), "east": ((0, 0, -1), (0, -1, 0)),
+             "west": ((0, 0, 1), (0, -1, 0)), "up": ((1, 0, 0), (0, 0, 1)), "down": ((1, 0, 0), (0, 0, -1))}
+FACE_NORMALS = {"up": (0, 1, 0), "down": (0, -1, 0), "north": (0, 0, -1), "south": (0, 0, 1), "west": (-1, 0, 0),
+                "east": (1, 0, 0)}
+
+
+def encode_tint(tint, mask):
+    c = [int(round(v * 255)) for v in tint[:3]]
+    c[1] = (c[1] & 0xFC) | (mask & 3)
+    c[2] = (c[2] & 0xFC) | ((mask >> 2) & 3)
+    return (c[0] / 255.0, c[1] / 255.0, c[2] / 255.0, tint[3])
+
+
+def cube_masks(cubes, pos, rim=True):
+    """The same rule as Faces.cubeMasks, written in world axes of the preview quads."""
+    cs = set(map(tuple, cubes))
+    out = {}
+    for face, (u, v) in FACE_AXES.items():
+        n = FACE_NORMALS[face]
+        add = lambda a, b: tuple(int(x) + int(y) for x, y in zip(a, b))
+        if not rim or add(pos, n) in cs:
+            out[face] = 0
+            continue
+        m = 0
+        for bit, e in enumerate((tuple(-x for x in u), u, tuple(-x for x in v), v)):
+            if add(pos, e) not in cs and add(add(pos, n), e) not in cs:
+                m |= 1 << bit
+        out[face] = m
+    return out
+
+
+def plane_mask(planes, pos, rim=True):
+    ps = set(map(tuple, planes))
+    if not rim:
+        return 0
+    m = 0
+    for bit, e in enumerate(((-1, 0), (1, 0), (0, 1), (0, -1))):
+        if (pos[0] + e[0], pos[1] + e[1]) not in ps:
+            m |= 1 << bit
+    return m
+
+
+def wall_scenes(r, name="sky_sea", tex=None, prefix="wall"):
+    far = (1234.37, 0.0, -876.61)
+    cubes = [(x, y, -1) for x in range(-1, 2) for y in range(0, 3)]
+    cam, tgt = (0.9, 1.7, 3.6), (0.5, 1.3, -0.5)
+    full = {f: 15 for f in FACE_AXES}
+    legacy = r.render(name, cam, tgt, [("cube", c, full) for c in cubes], tex=tex, origin=far)
+    clean = r.render(name, cam, tgt, [("cube", c, cube_masks(cubes, c, False)) for c in cubes], tex=tex, origin=far)
+    outline = r.render(name, cam, tgt, [("cube", c, cube_masks(cubes, c, True)) for c in cubes], tex=tex, origin=far)
+    side = r.render(name, (3.4, 2.2, 2.2), (0.0, 1.2, -0.5), [("cube", c, cube_masks(cubes, c, False)) for c in cubes],
+                    tex=tex, origin=far)
+    sheet([legacy, clean, outline, side], 2).save(os.path.join(OUT, f"{prefix}_cubes.png"))
+    planes = [(x, y) for x in range(-1, 2) for y in range(0, 3)]
+    pitems = lambda rim: [("plane", (x + 0.5, y + 0.5, -0.985), plane_mask(planes, (x, y), rim)) for x, y in planes]
+    pcam, ptgt = (0.6, 1.6, 3.0), (0.5, 1.4, -2.0)
+    p_legacy = r.render(name, pcam, ptgt, [("plane", (x + 0.5, y + 0.5, -0.985), 15) for x, y in planes], wall=True,
+                        tex=tex, origin=far)
+    p_clean = r.render(name, pcam, ptgt, pitems(False), wall=True, tex=tex, origin=far)
+    p_outline = r.render(name, pcam, ptgt, pitems(True), wall=True, tex=tex, origin=far)
+    p_side = r.render(name, (2.9, 1.2, 0.6), (0.0, 1.5, -2.0), pitems(False), wall=True, tex=tex, origin=far)
+    sheet([p_legacy, p_clean, p_outline, p_side], 2).save(os.path.join(OUT, f"{prefix}_planes.png"))
+    single = [r.render(name, VIEWS[0][1], VIEWS[0][2], [("cube", (0, 0, 0), {f: 15 for f in FACE_AXES})], tex=tex),
+              r.render(name, VIEWS[0][1], VIEWS[0][2], [("cube", (0, 0, 0), cube_masks([(0, 0, 0)], (0, 0, 0), False))],
+                       tex=tex)]
+    sheet(single, 2).save(os.path.join(OUT, f"{prefix}_single.png"))
 
 
 VIEWS = [
@@ -250,11 +334,11 @@ VIEWS = [
 ]
 
 
-def pano_sheet(r, name, scale=0.6):
-    shots = [r.render(name, VIEWS[0][1], VIEWS[0][2], [("cube", (0, 0, 0))]),
-             r.render(name, (0.9, 1.4, 1.9), (0.5, 1.2, -1.0), [("plane", (0.5, 1.5, -0.99))], wall=True)]
+def pano_sheet(r, name, scale=0.6, tex=None):
+    shots = [r.render(name, VIEWS[0][1], VIEWS[0][2], [("cube", (0, 0, 0))], tex=tex),
+             r.render(name, (0.9, 1.4, 1.9), (0.5, 1.2, -1.0), [("plane", (0.5, 1.5, -0.99))], wall=True, tex=tex)]
     w, h = int(WIDTH * scale), int(HEIGHT * scale)
-    eq = Image.open(os.path.join(TEX, name + ".png")).convert("RGB").resize((w * 2, w), Image.LANCZOS)
+    eq = Image.open(os.path.join(tex or TEX, name + ".png")).convert("RGB").resize((w * 2, w), Image.LANCZOS)
     out = Image.new("RGB", (w * 2, h + w), (20, 20, 20))
     for i, im in enumerate(shots):
         out.paste(im.resize((w, h), Image.LANCZOS), (i * w, 0))
@@ -274,6 +358,17 @@ def sheet(images, cols, scale=0.5):
 def main():
     os.makedirs(OUT, exist_ok=True)
     r = Renderer()
+    if "--custom" in sys.argv:
+        i = sys.argv.index("--custom")
+        name, tex = sys.argv[i + 1], sys.argv[i + 2]
+        pano_sheet(r, name, tex=tex)
+        wall_scenes(r, name, tex=tex, prefix="custom_" + name)
+        print("custom", name)
+        return
+    if "--walls" in sys.argv:
+        wall_scenes(r)
+        print("walls")
+        return
     if "--only" in sys.argv:
         for name in sys.argv[sys.argv.index("--only") + 1].split(","):
             pano_sheet(r, name)
@@ -317,6 +412,7 @@ def main():
     walk = [r.render("walk", (0.9, 1.4, 1.9), (0.5, 1.2, -1.0), [("plane", (0.5, 1.5, -0.99))], wall=True, game_time=g)
             for g in (0.1, 0.1125, 0.125)]
     sheet(walk, 3).save(os.path.join(OUT, "walk_drift.png"))
+    wall_scenes(r)
     print("previews in", OUT)
 
 

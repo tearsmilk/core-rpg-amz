@@ -12,20 +12,9 @@ const float CS_HORIZON = -0.45;
 const int CS_KINDS = 12;
 const vec3 CS_SUN = vec3(-0.17196, 0.13917, -0.97522);
 
-const vec3 CS_GLOW[12] = vec3[](
-    vec3(0.80, 0.95, 1.00),
-    vec3(0.70, 0.45, 1.00),
-    vec3(1.00, 0.45, 0.12),
-    vec3(0.35, 1.00, 0.60),
-    vec3(0.20, 0.85, 0.80),
-    vec3(1.00, 0.62, 0.25),
-    vec3(1.00, 0.32, 0.08),
-    vec3(0.95, 0.22, 0.45),
-    vec3(1.00, 0.92, 0.65),
-    vec3(0.55, 0.95, 0.45),
-    vec3(0.62, 0.72, 0.86),
-    vec3(0.35, 0.95, 0.90)
-);
+const int CS_CUSTOM_MIN = 33;
+const int CS_CUSTOM_MAX = 200;
+const int CS_GLOW_CUSTOM = 255;
 
 bool cs_is(vec4 t, vec4 ref) {
     vec4 d = abs(t * 255.0 - ref);
@@ -36,7 +25,7 @@ int cs_kind(sampler2D atlas, vec2 uv, vec2 spritePx, out ivec2 p0) {
     ivec2 size = textureSize(atlas, 0);
     vec2 as = vec2(size);
     vec2 uvMin = uv - csLocal * (spritePx / as);
-    p0 = clamp(ivec2(floor(uvMin * as + 0.5)), ivec2(0), size - ivec2(2, 1));
+    p0 = clamp(ivec2(floor(uvMin * as + 0.5)), ivec2(0), size - ivec2(3, 1));
     if (!cs_is(texelFetch(atlas, p0, 0), vec4(61.0, 203.0, 147.0, 3.0))) return 0;
     vec4 k = texelFetch(atlas, p0 + ivec2(1, 0), 0) * 255.0;
     int kind = int(floor(k.r + 0.5));
@@ -69,9 +58,22 @@ float cs_hash(vec3 p) {
     return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
 }
 
-float cs_edge(vec2 l) {
-    vec2 e = min(l, 1.0 - l);
-    return min(e.x, e.y);
+int cs_mask() {
+    ivec3 c = ivec3(floor(csTint.rgb * 255.0 + 0.5));
+    return (c.g & 3) | ((c.b & 3) << 2);
+}
+
+float cs_edge(vec2 l, int m) {
+    float e = 4.0;
+    if ((m & 1) != 0) e = min(e, l.x);
+    if ((m & 2) != 0) e = min(e, 1.0 - l.x);
+    if ((m & 4) != 0) e = min(e, l.y);
+    if ((m & 8) != 0) e = min(e, 1.0 - l.y);
+    return e;
+}
+
+vec3 cs_glow(sampler2D atlas, ivec2 p0) {
+    return texelFetch(atlas, p0 + ivec2(2, 0), 0).rgb;
 }
 
 vec4 cs_window(sampler2D atlas, ivec2 p0, int kind) {
@@ -163,23 +165,38 @@ vec4 cs_window(sampler2D atlas, ivec2 p0, int kind) {
         float green = clamp((col.g - max(col.r, col.b)) * 2.0, 0.0, 1.0) * skyW;
         col += col * green * 0.3 * sin(CS_TAU * (q.x * 5.0 - t * 0.05));
     }
-    vec3 glow = CS_GLOW[kind - 1];
-    float e = cs_edge(csLocal);
-    float rim = exp(-e * 45.0) * 0.45 + exp(-e * 10.0) * 0.08;
-    rim *= 0.85 + 0.15 * sin(CS_TAU * t * 0.5);
-    col = col + glow * rim;
+    int m = cs_mask();
+    if (m != 0) {
+        float e = cs_edge(csLocal, m);
+        float rim = exp(-e * 45.0) * 0.45 + exp(-e * 10.0) * 0.08;
+        rim *= 0.85 + 0.15 * sin(CS_TAU * t * 0.5);
+        col = col + cs_glow(atlas, p0) * rim;
+    }
     return vec4(col * csTint.rgb, 1.0);
 }
 
-vec4 cs_frame(int kind) {
+vec4 cs_frame(sampler2D atlas, ivec2 p0) {
     float t = GameTime * 1200.0;
-    vec2 p = abs(csLocal * 22.0 - 11.0) - 8.0;
+    int m = cs_mask();
+    if (m == 0) return vec4(0.0);
+    vec2 s = csLocal * 22.0 - 11.0;
+    vec2 p = abs(s) - 8.0;
+    bool sideX = (s.x < 0.0) ? (m & 1) != 0 : (m & 2) != 0;
+    bool sideY = (s.y < 0.0) ? (m & 4) != 0 : (m & 8) != 0;
+    if (!sideX) {
+        if (p.x > 0.0) return vec4(0.0);
+        p.x = -1.0;
+    }
+    if (!sideY) {
+        if (p.y > 0.0) return vec4(0.0);
+        p.y = -1.0;
+    }
     if (max(p.x, p.y) <= 0.0) return vec4(0.0);
     float dist = length(max(p, 0.0));
     float pulse = 0.85 + 0.15 * sin(CS_TAU * t * 0.5);
     float a = (exp(-dist / 0.9) * 0.75 + exp(-dist / 2.2) * 0.3) * pulse;
     a *= 1.0 - smoothstep(2.4, 3.0, dist);
-    vec3 glow = CS_GLOW[kind - 17];
+    vec3 glow = cs_glow(atlas, p0);
     vec3 col = mix(glow, vec3(1.0), exp(-dist / 0.5) * 0.5);
     return vec4(col * csTint.rgb, clamp(a, 0.0, 1.0));
 }
@@ -188,13 +205,13 @@ bool cs_fragment(sampler2D atlas, vec2 uv, out vec4 color) {
     color = vec4(0.0);
     ivec2 p0;
     int kind = cs_kind(atlas, uv, CS_PANO, p0);
-    if (kind >= 1 && kind <= CS_KINDS) {
+    if ((kind >= 1 && kind <= CS_KINDS) || (kind >= CS_CUSTOM_MIN && kind <= CS_CUSTOM_MAX)) {
         color = cs_window(atlas, p0, kind);
         return true;
     }
     kind = cs_kind(atlas, uv, CS_GLOWPX, p0);
-    if (kind >= 17 && kind <= 16 + CS_KINDS) {
-        color = cs_frame(kind);
+    if ((kind >= 17 && kind <= 16 + CS_KINDS) || kind == CS_GLOW_CUSTOM) {
+        color = cs_frame(atlas, p0);
         return true;
     }
     return false;

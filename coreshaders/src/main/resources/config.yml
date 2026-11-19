@@ -1,6 +1,6 @@
 # coreshaders - настройки. Автор: tearsmilk.
 # Версия конфига, не менять. При обновлении плагин сам допишет новые картинки в images.
-config-version: 2
+config-version: 3
 
 # Картинки должны совпадать с ресурспаком: coreshaders:cube_<картинка> и coreshaders:plane_<картинка>.
 images:
@@ -42,6 +42,37 @@ max-distance: 8.0
 
 # Отступ плоскости от грани блока (в блоках), чтобы не было мерцания.
 plane-offset: 0.015
+
+# Светящийся обод по краям граней и рамка вокруг плоскости. По умолчанию выключен: окна без линий,
+# соседние кубы и плоскости сливаются в одну поверхность. Для отдельного эффекта: /cs rim on|off [group].
+# Если обод включен, он рисуется только по внешнему краю группы соседних эффектов.
+rim: false
+
+# Команды на эффектах (порталы, варпы).
+commands:
+  # Триггер по умолчанию при первой команде: enter (вошел в блок эффекта), click (ПКМ без жезла), both.
+  default-trigger: enter
+  # Пауза между срабатываниями для игрока, секунды (защита от петель телепорта). /cs cooldown меняет у эффекта.
+  default-cooldown: 2.0
+  # Максимум эффектов в группе (флаг group - все соседние эффекты, например стена портала).
+  max-group: 1024
+
+# Свои картинки: /cs upload <имя> <https-ссылка>, /cs import <имя> (из plugins/coreshaders/images/<имя>.png|jpg).
+custom-images:
+  # Сколько своих картинок можно добавить (каждая - спрайт 1024x512 в атласе, 2 МБ видеопамяти).
+  max: 24
+  # Предел размера файла (МБ) и картинки (мегапиксели).
+  max-download-mb: 16
+  max-megapixels: 40
+  timeout-seconds: 20
+  # Куда писать файлы пака (относительно папки plugins или абсолютный путь).
+  pack-assets: "Nexo/pack/assets"
+  # Плагин пака и команды пересборки (из консоли). Пустой список - пересобрать вручную.
+  pack-plugin: Nexo
+  reload-commands:
+    - "nexo reload pack"
+  # Номера картинок для шейдера (33-200). Заполняет плагин, руками не менять.
+  kinds: {}
 
 # Яркость дисплеев (0-15). Шейдер сам светится, это влияет только на клиенты без пака.
 brightness: 15
@@ -110,7 +141,53 @@ messages:
   image-set: "<green>Картинка эффекта: <white><image></white></green>"
   shape-set: "<green>Форма эффекта: <white><shape></white></green>"
   shape-blocked: "<red>Нельзя сменить форму: блок занят или грань закрыта.</red>"
-  info: "<gray>Эффект: форма <white><shape></white>, картинка <white><image></white>, цвет <color_tag><color></color_tag>, блок <white><x> <y> <z></white>, грань <white><face></white>.</gray>"
+  info: "<gray>Эффект: форма <white><shape></white>, картинка <white><image></white>, цвет <color_tag><color></color_tag>, блок <white><x> <y> <z></white>, грань <white><face></white>, обод <white><rim></white>.</gray>"
+  scope-one: "эффект"
+  scope-group: "группа"
+  cmd-usage: "<red>Пиши: <white>/cs cmd add <player|console> <команда> [group]</white>, <white>/cs cmd list</white>, <white>/cs cmd remove <номер> [group]</white>, <white>/cs cmd clear [group]</white>, <white>/cs cmd perm <право|off> [group]</white>, <white>/cs cmd msg <текст|off> [group]</white>.</red>"
+  cmd-added: "<green>Команда добавлена (<scope>, эффектов: <white><count></white>): <white><value></white></green>"
+  cmd-removed: "<yellow>Команда убрана (<scope>, эффектов: <white><count></white>): <white><value></white></yellow>"
+  cmd-cleared: "<yellow>Команды очищены (<scope>, эффектов: <white><count></white>).</yellow>"
+  cmd-perm-set: "<green>Право для срабатывания (<scope>, эффектов: <white><count></white>): <white><value></white></green>"
+  cmd-msg-set: "<green>Сообщение при срабатывании (<scope>, эффектов: <white><count></white>): <white><value></white></green>"
+  cmd-console-denied: "<red>Команды от консоли может ставить только тот, у кого есть право <white><permission></white>. Можно <white>player</white>.</red>"
+  cmd-bad-index: "<red>Нет команды с номером <white><value></white> (всего <white><count></white>).</red>"
+  cmd-header: "<gray>Команды: <white><count></white>, триггер <white><trigger></white>, пауза <white><cooldown></white> с, право <white><permission></white>, сообщение <white><message></white>, эффектов в группе <white><group></white>.</gray>"
+  cmd-entry: "<dark_gray> <index>.</dark_gray> <aqua><executor></aqua> <white>/<command></white>"
+  trigger-usage: "<red>Пиши: <white>/cs trigger <enter|click|both|off> [group]</white>.</red>"
+  trigger-set: "<green>Триггер (<scope>, эффектов: <white><count></white>): <white><value></white></green>"
+  cooldown-usage: "<red>Пауза <white><value></white> - не число от 0 до 86400. Пиши: <white>/cs cooldown <секунды> [group]</white>.</red>"
+  cooldown-set: "<green>Пауза (<scope>, эффектов: <white><count></white>): <white><value></white> с</green>"
+  rim-usage: "<red>Пиши: <white>/cs rim <on|off> [group]</white>.</red>"
+  rim-set: "<green>Обод (<scope>, эффектов: <white><count></white>): <white><value></white></green>"
+  trigger-no-permission: "<red>Нет прав на этот портал.</red>"
+  trigger-cooldown: "<yellow>Подожди немного.</yellow>"
+  upload-usage: "<red>Пиши: <white>/cs upload <имя> <https-ссылка на png/jpg></white>. Имя: a-z, 0-9, _.</red>"
+  import-usage: "<red>Пиши: <white>/cs import <имя></white> (файл plugins/coreshaders/images/<имя>.png или .jpg). Есть: <white><list></white>.</red>"
+  delete-usage: "<red>Пиши: <white>/cs delete-image <имя></white>. Свои картинки: <white><list></white>.</red>"
+  image-bad-name: "<red>Имя <white><value></white> не подходит: только a-z, 0-9, _ (до 32 символов).</red>"
+  image-builtin: "<red><white><image></white> - встроенная картинка, ее не заменить.</red>"
+  image-reserved: "<red>Имя <white><image></white> занято: имена на <white>_glow</white> нельзя (так называются рамки картинок).</red>"
+  image-exists: "<red>Имя <white><image></white> занято: файл <white><value></white> уже есть в паке. Выбери другое имя.</red>"
+  image-limit: "<red>Уже максимум своих картинок (<white><max></white>). Удали лишнюю: /cs delete-image.</red>"
+  image-busy: "<yellow>С картинкой <white><image></white> уже идет работа, подожди.</yellow>"
+  image-bad-url: "<red>Ссылка <white><value></white> не подходит: нужна https.</red>"
+  image-no-file: "<red>Нет файла <white><image>.png</white> (или .jpg) в <white><folder></white>.</red>"
+  image-downloading: "<gray>Скачиваю <white><image></white>...</gray>"
+  image-too-big: "<red>Файл <white><image></white> больше <white><value></white> МБ.</red>"
+  image-too-large: "<red>Картинка <white><image></white> слишком большая: <white><value></white>.</red>"
+  image-not-image: "<red><white><image></white> - не png и не jpg.</red>"
+  image-timeout: "<red>Не скачалось <white><image></white>: дольше <white><value></white> с.</red>"
+  image-private: "<red>Не скачалось <white><image></white>: адрес <white><value></white> внутренний (локальная сеть, localhost) - так нельзя.</red>"
+  image-http: "<red>Не скачалось <white><image></white>: ответ <white><value></white>.</red>"
+  image-failed: "<red>Не вышло с <white><image></white>: <white><value></white>.</red>"
+  image-added: "<green>Картинка <white><image></white> готова (<white><size></white>, <white><mode></white>, номер <white><kind></white>). Файлы: <white><path></white>.</green>"
+  image-not-custom: "<red><white><image></white> - не своя картинка (удалять можно только добавленные через upload/import).</red>"
+  image-deleted: "<yellow>Картинка <white><image></white> удалена: файлов <white><files></white>, эффектов переключено на картинку по умолчанию <white><count></white>.</yellow>"
+  pack-reloading: "<green>Пересборка пака: <white>/<command></white>. Игроки получат новый пак, когда Nexo его разошлет.</green>"
+  pack-reload-failed: "<red>Не вышло выполнить <white>/<command></white>. Пересобери пак вручную.</red>"
+  pack-no-plugin: "<yellow>Плагина <white><plugin></white> нет - пак не пересобран, сделай это вручную.</yellow>"
+  pack-manual: "<yellow>Команды пересборки не заданы - пересобери пак вручную.</yellow>"
   list-header: "<gray>Картинки: <white><images></white>. Формы: <white>cube, plane</white>. Цвета: <white><colors></white>.</gray>"
   list-count: "<gray>Эффектов рядом (<white><radius></white> блоков): <white><count></white>.</gray>"
   list-entry: "<dark_gray> - </dark_gray><white><shape></white> <gray><image></gray> <color_tag><color></color_tag> <dark_gray>(<x> <y> <z>)</dark_gray>"
@@ -126,4 +203,12 @@ messages:
     - "<white>/cs info</white> <gray>- что за эффект под прицелом</gray>"
     - "<white>/cs list</white> <gray>- картинки, цвета и эффекты рядом</gray>"
     - "<white>/cs removeall <радиус|all></white> <gray>- убрать эффекты рядом или во всем мире</gray>"
+    - "<white>/cs cmd add <player|console> <команда> [group]</white> <gray>- команда на эффект (портал, варп)</gray>"
+    - "<white>/cs cmd list|remove <n>|clear|perm <право>|msg <текст></white> <gray>- команды эффекта</gray>"
+    - "<white>/cs trigger <enter|click|both|off> [group]</white> <gray>- когда срабатывает</gray>"
+    - "<white>/cs cooldown <секунды> [group]</white> <gray>- пауза для игрока</gray>"
+    - "<white>/cs rim <on|off> [group]</white> <gray>- светящийся обод</gray>"
+    - "<white>/cs upload <имя> <ссылка></white> <gray>- своя картинка из интернета</gray>"
+    - "<white>/cs import <имя></white> <gray>- своя картинка из plugins/coreshaders/images</gray>"
+    - "<white>/cs delete-image <имя></white> <gray>- удалить свою картинку</gray>"
     - "<white>/cs reload</white> <gray>- перезагрузить конфиг</gray>"

@@ -16,12 +16,14 @@ import org.bukkit.entity.Player;
 
 public final class CoreCommand implements TabExecutor {
     private static final List<String> SUBS = List.of("give", "color", "image", "shape", "remove", "info", "list",
-        "removeall", "reload", "help");
+        "removeall", "cmd", "trigger", "cooldown", "rim", "upload", "import", "delete-image", "reload", "help");
 
     private final CoreShadersPlugin plugin;
+    private final EffectCommands fx;
 
     public CoreCommand(CoreShadersPlugin plugin) {
         this.plugin = plugin;
+        this.fx = new EffectCommands(plugin);
     }
 
     @Override
@@ -41,6 +43,33 @@ public final class CoreCommand implements TabExecutor {
             case "info" -> onTarget(sender, args, "info");
             case "list" -> list(sender);
             case "removeall" -> removeAll(sender, args);
+            case "cmd", "command", "команда" -> fx.cmd(sender, args);
+            case "trigger", "триггер" -> fx.trigger(sender, args);
+            case "cooldown", "кд" -> fx.cooldown(sender, args);
+            case "rim", "обод" -> fx.rim(sender, args);
+            case "upload" -> {
+                if (args.length < 3) {
+                    sender.sendMessage(s.msg("upload-usage"));
+                } else {
+                    plugin.images().upload(sender, args[1], args[2]);
+                }
+            }
+            case "import" -> {
+                if (args.length < 2) {
+                    sender.sendMessage(s.msg("import-usage", Placeholder.unparsed("list",
+                        String.join(", ", plugin.images().importable()))));
+                } else {
+                    plugin.images().importFile(sender, args[1]);
+                }
+            }
+            case "delete-image", "deleteimage" -> {
+                if (args.length < 2) {
+                    sender.sendMessage(s.msg("delete-usage", Placeholder.unparsed("list",
+                        String.join(", ", s.customKinds.keySet()))));
+                } else {
+                    plugin.images().delete(sender, args[1]);
+                }
+            }
             case "reload" -> {
                 plugin.reload();
                 sender.sendMessage(plugin.settings().msg("reloaded"));
@@ -154,15 +183,15 @@ public final class CoreCommand implements TabExecutor {
             p.sendMessage(s.msg("nothing-targeted", Placeholder.unparsed("distance", WandListener.fmt(s.maxDistance))));
             return;
         }
-        Effects fx = plugin.effects();
-        EffectData e = fx.data(d);
+        Effects fxs = plugin.effects();
+        EffectData e = fxs.data(d);
         switch (what) {
             case "color" -> {
                 Integer c = color(p, args[1]);
                 if (c == null) {
                     return;
                 }
-                fx.update(d, e.withColor(c));
+                fxs.update(d, e.withColor(c));
                 p.sendMessage(s.msg("color-set", Placeholder.unparsed("color", Colors.hex(c)), Settings.colorTag(c)));
             }
             case "image" -> {
@@ -170,7 +199,7 @@ public final class CoreCommand implements TabExecutor {
                 if (img == null) {
                     return;
                 }
-                fx.update(d, e.withImage(img));
+                fxs.update(d, e.withImage(img));
                 p.sendMessage(s.msg("image-set", Placeholder.unparsed("image", s.imageName(img))));
             }
             case "shape" -> {
@@ -180,21 +209,27 @@ public final class CoreCommand implements TabExecutor {
                     return;
                 }
                 EffectData n = e.withShape(sh);
-                Effects.PlaceResult r = fx.check(d.getWorld(), n, d);
+                Effects.PlaceResult r = fxs.check(d.getWorld(), n, d);
                 if (r != Effects.PlaceResult.OK) {
                     p.sendMessage(s.msg(r == Effects.PlaceResult.NO_SUPPORT ? "no-support" : "shape-blocked"));
                     return;
                 }
-                fx.update(d, n);
+                fxs.update(d, n);
                 p.sendMessage(s.msg("shape-set", Placeholder.unparsed("shape", sh.id())));
             }
             case "remove" -> {
-                fx.remove(d);
+                fxs.remove(d);
                 p.sendMessage(s.msg("removed"));
             }
-            default -> p.sendMessage(s.msg("info", resolver(e.shape(), e.image(), e.color()),
-                Placeholder.unparsed("x", String.valueOf(e.bx())), Placeholder.unparsed("y", String.valueOf(e.by())),
-                Placeholder.unparsed("z", String.valueOf(e.bz())), Placeholder.unparsed("face", e.face().id())));
+            default -> {
+                p.sendMessage(s.msg("info", resolver(e.shape(), e.image(), e.color()),
+                    Placeholder.unparsed("x", String.valueOf(e.bx())), Placeholder.unparsed("y", String.valueOf(e.by())),
+                    Placeholder.unparsed("z", String.valueOf(e.bz())), Placeholder.unparsed("face", e.face().id()),
+                    Placeholder.unparsed("rim", e.rim() ? "on" : "off")));
+                if (fxs.hasActions(d)) {
+                    this.fx.list(p, d);
+                }
+            }
         }
     }
 
@@ -308,6 +343,34 @@ public final class CoreCommand implements TabExecutor {
                 case "removeall" -> {
                     if (n == 2) {
                         opts.addAll(List.of("8", "16", "32", "all"));
+                    }
+                }
+                case "cmd", "trigger", "cooldown", "rim" -> {
+                    int max = 1;
+                    if (sender instanceof Player p && n == 3 && sub.equals("cmd")) {
+                        ItemDisplay d = plugin.effects().target(p);
+                        if (d != null) {
+                            max = plugin.effects().actions(d).actions().size();
+                        }
+                    }
+                    opts.addAll(EffectCommands.complete(sub, args, max,
+                        sender.hasPermission(EffectCommands.CONSOLE_PERMISSION)));
+                }
+                case "upload" -> {
+                    if (n == 2) {
+                        opts.add("<name>");
+                    } else if (n == 3) {
+                        opts.add("https://");
+                    }
+                }
+                case "import" -> {
+                    if (n == 2) {
+                        opts.addAll(plugin.images().importable());
+                    }
+                }
+                case "delete-image" -> {
+                    if (n == 2) {
+                        opts.addAll(s.customKinds.keySet());
                     }
                 }
                 default -> {

@@ -20,7 +20,7 @@ public final class Settings {
     public static final List<String> DEFAULT_IMAGES = List.of("sky_sea", "space", "nether", "aurora", "end", "sunset",
         "volcano", "hell_end", "heaven", "walk", "rain", "sea_sand");
     public static final Map<String, String> DEFAULT_NAMES = defaultNames();
-    public static final int CONFIG_VERSION = 2;
+    public static final int CONFIG_VERSION = 3;
     public static final List<String> ADDED_IN_2 = List.of("sunset", "volcano", "hell_end", "heaven", "walk", "rain",
         "sea_sand");
 
@@ -33,6 +33,18 @@ public final class Settings {
     public final double maxDistance;
     public final double planeOffset;
     public final int brightness;
+    public final boolean rimDefault;
+    public final Actions.Trigger defaultTrigger;
+    public final double defaultCooldown;
+    public final int maxGroup;
+    public final int customMax;
+    public final long maxDownloadBytes;
+    public final long maxPixels;
+    public final int downloadTimeout;
+    public final String packAssets;
+    public final String packPlugin;
+    public final List<String> reloadCommands;
+    public final Map<String, Integer> customKinds;
     private final ConfigurationSection messages;
 
     public Settings(FileConfiguration c) {
@@ -75,16 +87,43 @@ public final class Settings {
         maxDistance = Math.max(1.0, Math.min(64.0, c.getDouble("max-distance", 8.0)));
         planeOffset = Math.max(0.001, Math.min(0.2, c.getDouble("plane-offset", 0.015)));
         brightness = Math.max(0, Math.min(15, c.getInt("brightness", 15)));
+        rimDefault = c.getBoolean("rim", false);
+        Actions.Trigger tr = Actions.Trigger.parse(c.getString("commands.default-trigger", "enter"));
+        defaultTrigger = tr == null || tr == Actions.Trigger.OFF ? Actions.Trigger.ENTER : tr;
+        defaultCooldown = Math.max(0.0, Math.min(86400.0, c.getDouble("commands.default-cooldown", 2.0)));
+        maxGroup = Math.max(1, Math.min(16384, c.getInt("commands.max-group", 1024)));
+        customMax = Math.max(0, Math.min(Panorama.KIND_MAX - Panorama.KIND_MIN + 1, c.getInt("custom-images.max", 24)));
+        maxDownloadBytes = (long) (Math.max(0.1, Math.min(256.0, c.getDouble("custom-images.max-download-mb", 16.0)))
+            * 1024 * 1024);
+        maxPixels = (long) (Math.max(0.1, Math.min(200.0, c.getDouble("custom-images.max-megapixels", 40.0)))
+            * 1_000_000);
+        downloadTimeout = Math.max(1, Math.min(300, c.getInt("custom-images.timeout-seconds", 20)));
+        packAssets = c.getString("custom-images.pack-assets", "Nexo/pack/assets");
+        packPlugin = c.getString("custom-images.pack-plugin", "Nexo");
+        reloadCommands = List.copyOf(c.getStringList("custom-images.reload-commands"));
+        Map<String, Integer> kinds = new LinkedHashMap<>();
+        ConfigurationSection ks = c.getConfigurationSection("custom-images.kinds");
+        if (ks != null) {
+            for (String k : ks.getKeys(false)) {
+                int v = ks.getInt(k, -1);
+                String n = k.toLowerCase(Locale.ROOT);
+                if (v >= Panorama.KIND_MIN && v <= Panorama.KIND_MAX && Panorama.validName(n)) {
+                    kinds.put(n, v);
+                }
+            }
+        }
+        customKinds = Collections.unmodifiableMap(kinds);
         messages = c.getConfigurationSection("messages");
     }
 
     public static List<String> upgrade(FileConfiguration c) {
         List<String> added = new ArrayList<>();
-        if (c.getInt("config-version", 1) >= CONFIG_VERSION) {
+        int version = c.getInt("config-version", 1);
+        if (version >= CONFIG_VERSION) {
             return added;
         }
         List<String> imgs = new ArrayList<>(c.getStringList("images"));
-        if (!imgs.isEmpty()) {
+        if (version < 2 && !imgs.isEmpty()) {
             List<String> low = new ArrayList<>();
             for (String s : imgs) {
                 low.add(s.trim().toLowerCase(Locale.ROOT));
@@ -97,8 +136,20 @@ public final class Settings {
             }
             c.set("images", imgs);
         }
+        if (version < 3 && c.getDefaults() != null) {
+            for (String key : List.of("messages.help", "messages.wand-lore")) {
+                List<String> def = c.getDefaults().getStringList(key);
+                if (!def.isEmpty()) {
+                    c.set(key, def);
+                }
+            }
+        }
         c.set("config-version", CONFIG_VERSION);
         return added;
+    }
+
+    public boolean isCustom(String image) {
+        return customKinds.containsKey(image);
     }
 
     private static Map<String, String> defaultNames() {
@@ -140,7 +191,12 @@ public final class Settings {
         if (messages == null) {
             return key;
         }
-        return messages.getString(key, key);
+        String v = messages.getString(key);
+        return v == null ? key : v;
+    }
+
+    public String rawText(String key) {
+        return raw(key);
     }
 
     public static TagResolver colorTag(int rgb) {
