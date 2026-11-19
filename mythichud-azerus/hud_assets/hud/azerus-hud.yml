@@ -5,8 +5,6 @@
 #  AZERUS HUD (slate + gold) - top-left player panel: head portrait + currencies
 # =====================================================================================
 azerus_player:
-  conditions:
-    - gamemode{gm=creative,spectator} false hide # hidden in creative/spectator (as the old HUD)
   layers:
     coin_value:  # whole number - when the /menu currency toggle (deluxemenus meta 'currency') is on, as the old HUD
       conditions:
@@ -65,7 +63,7 @@ azerus_player:
         size: 3
       offset:
         x: 7
-        y: -8
+        y: -32
     portrait:
       texture:
         path: assets/azerus/portrait_frame.png
@@ -81,8 +79,6 @@ azerus_player:
 
 # top-left: MMOCore level / exp bar (listener mmoexp = %mmocore_experience% / %mmocore_next_level%)
 azerus_player_xp:
-  conditions:
-    - gamemode{gm=creative,spectator} false hide # hidden in creative/spectator (as the old HUD)
   layers:
     label:
       text: "MMO LV.%mmocore_level% : %math_1_{mmocore_experience}*100/{mmocore_next_level}%%"
@@ -118,8 +114,6 @@ azerus_player_xp:
 # top-left: mana bar "MP.cur/max" (listener mana = %mmocore_mana% / %mmocore_stat_max_mana%);
 # classes whose MMOCore resource is called 'Энергия' get the gold "EN." variant (same condition as the old HUD)
 azerus_player_mana:
-  conditions:
-    - gamemode{gm=creative,spectator} false hide # hidden in creative/spectator (as the old HUD)
   layers:
     label_mana:
       conditions:
@@ -190,8 +184,6 @@ azerus_player_mana:
 
 # top-centre: compass + world name + block coordinates
 azerus_location:
-  conditions:
-    - gamemode{gm=creative,spectator} false hide # hidden in creative/spectator (as the old HUD)
   layers:
     text:
       text: "<#ffd25a>%player_world% <#5d7690>| <#dce6ef>%player_x% %player_y% %player_z%"
@@ -216,8 +208,6 @@ azerus_location:
 
 # bottom-left plate (armor + health bars sit on it)
 azerus_panel_left:
-  conditions:
-    - gamemode{gm=creative,spectator} false hide # hidden in creative/spectator (as the old HUD)
   layers:
     panel:
       texture:
@@ -228,8 +218,6 @@ azerus_panel_left:
 
 # bottom-right plate (mana/energy + hunger bars sit on it)
 azerus_panel_right:
-  conditions:
-    - gamemode{gm=creative,spectator} false hide # hidden in creative/spectator (as the old HUD)
   layers:
     panel:
       texture:
@@ -240,8 +228,6 @@ azerus_panel_right:
 
 # bottom-left, upper bar: armor (listener armor40 = %mmocore_stat_armor% / 40)
 azerus_armor:
-  conditions:
-    - gamemode{gm=creative,spectator} false hide # hidden in creative/spectator (as the old HUD)
   layers:
     value:
       text: "%fill-value%"
@@ -277,8 +263,6 @@ azerus_armor:
 # bottom-left, lower bar: health. Status variants (burning / freezing / poison / wither / absorption) use the
 # same conditions and placeholders as the old Volya HUD; the first visible layer in the list wins.
 azerus_health:
-  conditions:
-    - gamemode{gm=creative,spectator} false hide # hidden in creative/spectator (as the old HUD)
   layers:
     value:
       conditions:
@@ -426,7 +410,6 @@ azerus_health:
 # bottom-right, upper bar: mana (blue)
 azerus_mana:
   conditions:
-    - gamemode{gm=creative,spectator} false hide # hidden in creative/spectator (as the old HUD)
     - placeholder{ph=%mmocore_mana_name%;v=Энергия} false hide # energy classes use azerus_energy
   layers:
     value:
@@ -463,7 +446,6 @@ azerus_mana:
 # bottom-right, upper bar for energy classes (MMOCore resource 'Энергия'): gold
 azerus_energy:
   conditions:
-    - gamemode{gm=creative,spectator} false hide # hidden in creative/spectator (as the old HUD)
     - placeholder{ph=%mmocore_mana_name%;v=Энергия} true hide # only for energy classes
   layers:
     value:
@@ -499,8 +481,6 @@ azerus_energy:
 
 # bottom-right, lower bar: hunger (orange; olive while the Hunger effect is on)
 azerus_food:
-  conditions:
-    - gamemode{gm=creative,spectator} false hide # hidden in creative/spectator (as the old HUD)
   layers:
     value:
       text: "%fill-value%/20"
@@ -559,8 +539,6 @@ azerus_food:
 
 # bottom-centre XP bar right above the hotbar (RoyalQuestClasses exp, listener rqexp, as the old HUD)
 azerus_xp:
-  conditions:
-    - gamemode{gm=creative,spectator} false hide # hidden in creative/spectator (as the old HUD)
   layers:
     fill:
       texture:
@@ -581,8 +559,6 @@ azerus_xp:
 
 # green level number between the two plates, above the XP bar (%hl_level% as the old HUD)
 azerus_level:
-  conditions:
-    - gamemode{gm=creative,spectator} false hide # hidden in creative/spectator (as the old HUD)
   layers:
     value:
       text: "<#80e848>%hl_level%"
@@ -601,8 +577,6 @@ azerus_level:
 
 # air bubbles under water: small bar under the crosshair (only while air < max)
 azerus_air:
-  conditions:
-    - gamemode{gm=creative,spectator} false hide # hidden in creative/spectator (as the old HUD)
   layers:
     icon:
       conditions:

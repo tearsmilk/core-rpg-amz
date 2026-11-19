@@ -4,12 +4,8 @@
 # icons by %mmocore_id_bound_N%, cooldown veil + seconds (%mmocore_cooldown_bound_N%), not-enough-mana tint,
 # hotbar key hints in casting mode (%player_held_item_slot% shift), gold brackets while %mmocore_is_casting%.
 azerus_skillbar:
-  conditions:
-    - placeholder{ph=%mmocore_class_id%;v=HUMAN} false hide # bar only for players with an RQ/MMOCore skill class
   layers:
     skillnames:  # name of the skill just cast (~2 s), same placeholder chain as the old bar
-      conditions:
-        - placeholder{ph=%mmocore_class_id%;v=HUMAN} false hide
       text: "<gold>%changeoutput_equals_input:{utils_shortcut_justcast:1}_matcher:1_ifmatch:{utils_uncolor:each_mmocore_bound_1}  _else:%%changeoutput_equals_input:{utils_shortcut_justcast:2}_matcher:1_ifmatch:{utils_uncolor:each_mmocore_bound_2}  _else:%%changeoutput_equals_input:{utils_shortcut_justcast:3}_matcher:1_ifmatch:{utils_uncolor:each_mmocore_bound_3}  _else:%%changeoutput_equals_input:{utils_shortcut_justcast:4}_matcher:1_ifmatch:{utils_uncolor:each_mmocore_bound_4}  _else:%%changeoutput_equals_input:{utils_shortcut_justcast:5}_matcher:1_ifmatch:{utils_uncolor:each_mmocore_bound_5}  _else:%%changeoutput_equals_input:{utils_shortcut_justcast:6}_matcher:1_ifmatch:{utils_uncolor:each_mmocore_bound_6}  _else:%"
       font: "default"
       align: center
