@@ -6,6 +6,7 @@
     python3 -I coreshaders/tools/preview.py --only sunset,rain  # only pano_<name>.png for these
     python3 -I coreshaders/tools/preview.py --walls             # wall_cubes.png, wall_planes.png, wall_single.png
     python3 -I coreshaders/tools/preview.py --custom NAME DIR   # a custom image from DIR (textures/item/panorama)
+    python3 -I coreshaders/tools/preview.py --anim NAME DIR     # an animated custom image (NAME.png + NAME.png.mcmeta)
 
 Walls: 3x3 cubes and 3x3 planes, panels: old look (rim on every edge), rim off (default), rim on (outer outline only),
 side view. The camera sits far from the origin and every item gets its own float32 translation, as in the game.
@@ -14,8 +15,11 @@ The game side is emulated: a fake item atlas holds the panorama and glow sprites
 stream is the baked item quad order (u0,v0), (u0,v1), (u1,v1), (u1,v0), Position is camera-relative in world axes and
 ModelViewMat is the camera rotation (as in 1.21.11 entity rendering), the uniform blocks are filled in std140.
 A simple world (sky, grass blocks, a stone wall) is drawn first so the window effect reads in context.
+Animated images: as in 1.21.11 the atlas holds one frame-sized rect (width x height from the .mcmeta) and the current
+frame is copied into it; a legacy 1024x512 panorama (sky_sea) sits next to it to catch wrong sprite size guesses.
 Output: coreshaders/preview/*.png
 """
+import json
 import math
 import os
 import struct
@@ -148,14 +152,24 @@ class Renderer:
         fs = glsl_check.expand(open(core + ".fsh", encoding="utf-8").read(), vanilla, set())
         return vs, fs
 
-    def atlas(self, name, tex=None):
+    def atlas(self, name, tex=None, frame=0):
         tex = tex or TEX
         pano = np.array(Image.open(os.path.join(tex, name + ".png")).convert("RGBA"))
-        glow = np.array(Image.open(os.path.join(tex, name + "_glow.png")).convert("RGBA"))
+        meta = os.path.join(tex, name + ".png.mcmeta")
         a = np.zeros((1024, 2048, 4), np.uint8)
         a[..., :] = (120, 80, 200, 255)
+        if os.path.exists(meta):
+            anim = json.load(open(meta, encoding="utf-8"))["animation"]
+            fw, fh = anim["width"], anim["height"]
+            count = pano.shape[0] // fh
+            k = frame % count
+            pano = pano[k * fh:(k + 1) * fh, :fw]
+            other = np.array(Image.open(os.path.join(TEX, "sky_sea.png")).convert("RGBA"))
+            a[512:1024, 0:1024] = other
+        self.pano_size = (pano.shape[1], pano.shape[0])
         y, x = PANO_AT[1], PANO_AT[0]
-        a[y:y + 512, x:x + 1024] = pano
+        a[y:y + pano.shape[0], x:x + pano.shape[1]] = pano
+        glow = np.array(Image.open(os.path.join(tex, name + "_glow.png")).convert("RGBA"))
         a[GLOW_AT[1]:GLOW_AT[1] + 16, GLOW_AT[0]:GLOW_AT[0] + 16] = glow
         t = self.ctx.texture((2048, 1024), 4, a.tobytes())
         t.filter = (moderngl.NEAREST, moderngl.NEAREST)
@@ -190,7 +204,8 @@ class Renderer:
         attrs = [n for n in names if n in self.prog]
         return self.ctx.vertex_array(self.prog, [(vbo, fmt, *attrs)], ibo)
 
-    def render(self, name, cam, target, items, wall=False, game_time=0.3, tint=(1, 1, 1, 1), tex=None, origin=None):
+    def render(self, name, cam, target, items, wall=False, game_time=0.3, tint=(1, 1, 1, 1), tex=None, origin=None,
+               frame=0):
         ctx = self.ctx
         self.fbo.use()
         ctx.viewport = (0, 0, WIDTH, HEIGHT)
@@ -207,7 +222,7 @@ class Renderer:
         self.scene["mvp"].write(mat_bytes(proj @ rot))
         self.scene["cam"].value = tuple(cam)
         svao.render()
-        atlas = self.atlas(name, tex)
+        atlas = self.atlas(name, tex, frame)
         atlas.use(0)
         self.light.use(2)
         if "Sampler0" in self.prog:
@@ -224,7 +239,8 @@ class Renderer:
         ctx.enable(moderngl.BLEND)
         ctx.blend_func = moderngl.SRC_ALPHA, moderngl.ONE_MINUS_SRC_ALPHA
         aw, ah = 2048.0, 1024.0
-        pano_uv = (PANO_AT[0] / aw, PANO_AT[1] / ah, (PANO_AT[0] + 1024) / aw, (PANO_AT[1] + 512) / ah)
+        pw, ph = self.pano_size
+        pano_uv = (PANO_AT[0] / aw, PANO_AT[1] / ah, (PANO_AT[0] + pw) / aw, (PANO_AT[1] + ph) / ah)
         glow_uv = (GLOW_AT[0] / aw, GLOW_AT[1] / ah, (GLOW_AT[0] + 16) / aw, (GLOW_AT[1] + 16) / ah)
         far = np.asarray(origin if origin is not None else (0.0, 0.0, 0.0), float)
         for it in items:
@@ -355,9 +371,41 @@ def sheet(images, cols, scale=0.5):
     return out
 
 
+def anim_sheet(r, name, tex):
+    meta = json.load(open(os.path.join(tex, name + ".png.mcmeta"), encoding="utf-8"))["animation"]
+    strip = Image.open(os.path.join(tex, name + ".png")).convert("RGB")
+    count = strip.height // meta["height"]
+    frames = sorted(set([0, count // 4, count // 2, (3 * count) // 4]))
+    shots = []
+    for k in frames:
+        shots.append(r.render(name, VIEWS[0][1], VIEWS[0][2], [("cube", (0, 0, 0))], tex=tex, frame=k))
+    for k in frames:
+        shots.append(r.render(name, (0.9, 1.4, 1.9), (0.5, 1.2, -1.0), [("plane", (0.5, 1.5, -0.99))], wall=True,
+                              tex=tex, frame=k))
+    for k in frames:
+        cubes = [(x, y, -1) for x in range(-1, 2) for y in range(0, 3)]
+        shots.append(r.render(name, (0.9, 1.7, 3.6), (0.5, 1.3, -0.5), [("cube", c) for c in cubes], tex=tex,
+                              origin=(1234.37, 0.0, -876.61), frame=k))
+    top = sheet(shots, len(frames), 0.4)
+    fw, fh = meta["width"], meta["height"]
+    row = Image.new("RGB", (top.width, int(top.width / len(frames) / 2) + 4), (20, 20, 20))
+    cw = top.width // len(frames)
+    for i, k in enumerate(frames):
+        row.paste(strip.crop((0, k * fh, fw, (k + 1) * fh)).resize((cw - 4, (cw - 4) // 2), Image.LANCZOS), (i * cw + 2, 2))
+    out = Image.new("RGB", (top.width, top.height + row.height), (20, 20, 20))
+    out.paste(top, (0, 0))
+    out.paste(row, (0, top.height))
+    out.save(os.path.join(OUT, f"anim_{name}.png"))
+    print("anim", name, "frames", count, "shown", frames)
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     r = Renderer()
+    if "--anim" in sys.argv:
+        i = sys.argv.index("--anim")
+        anim_sheet(r, sys.argv[i + 1], sys.argv[i + 2])
+        return
     if "--custom" in sys.argv:
         i = sys.argv.index("--custom")
         name, tex = sys.argv[i + 1], sys.argv[i + 2]

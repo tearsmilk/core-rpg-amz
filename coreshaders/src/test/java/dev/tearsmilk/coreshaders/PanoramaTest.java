@@ -112,6 +112,12 @@ class PanoramaTest {
         assertEquals(147, ch(s[1], 8));
         assertEquals(203, ch(s[1], 0));
         assertEquals(0x03123456, s[2]);
+        assertEquals(0x03402059, s[3]);
+        int[] small = Panorama.withSentinel(Panorama.convert(gradient(256, 128), 256, 128, 512, 256), 512, 256, 40,
+            0x123456);
+        assertEquals(512 * 256, small.length);
+        assertEquals(0x03201059, small[3]);
+        assertEquals(0x033DCB93, small[0]);
         assertEquals(pano[Panorama.W + 5], s[5]);
         int[] g = Panorama.glowSprite(0xFF8040);
         assertEquals(256, g.length);

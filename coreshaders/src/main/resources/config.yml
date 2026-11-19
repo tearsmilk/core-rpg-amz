@@ -1,6 +1,6 @@
 # coreshaders - настройки. Автор: tearsmilk.
 # Версия конфига, не менять. При обновлении плагин сам допишет новые картинки в images.
-config-version: 3
+config-version: 4
 
 # Картинки должны совпадать с ресурспаком: coreshaders:cube_<картинка> и coreshaders:plane_<картинка>.
 images:
@@ -57,9 +57,10 @@ commands:
   # Максимум эффектов в группе (флаг group - все соседние эффекты, например стена портала).
   max-group: 1024
 
-# Свои картинки: /cs upload <имя> <https-ссылка>, /cs import <имя> (из plugins/coreshaders/images/<имя>.png|jpg).
+# Свои картинки: /cs upload <имя> <https-ссылка>, /cs import <имя> (из plugins/coreshaders/images/<имя>.png|jpg|gif).
 custom-images:
-  # Сколько своих картинок можно добавить (каждая - спрайт 1024x512 в атласе, 2 МБ видеопамяти).
+  # Сколько своих картинок можно добавить (картинка - спрайт 1024x512 в атласе, 2 МБ видеопамяти; анимация - один
+  # кадр в атласе, по умолчанию 512x256).
   max: 24
   # Предел размера файла (МБ) и картинки (мегапиксели).
   max-download-mb: 16
@@ -73,6 +74,23 @@ custom-images:
     - "nexo reload pack"
   # Номера картинок для шейдера (33-200). Заполняет плагин, руками не менять.
   kinds: {}
+  # Анимированные GIF: каждый кадр превращается в панораму как обычная картинка, кадры идут столбиком в одном PNG
+  # с .png.mcmeta. В атласе анимация занимает один кадр, но клиент держит в памяти все кадры.
+  animation:
+    # Не больше стольких кадров (время сохраняется: кадры GIF прореживаются, frametime подбирается).
+    max-frames: 32
+    # Ширина кадра: 256, 512 или 1024 (высота - половина). Другие числа округляются до ближайшего.
+    width: 512
+    # Плавный переход между кадрами (interpolate в mcmeta).
+    interpolate: false
+    # Предел одной анимации в памяти клиента (ширина x высота x кадры x 4 байта), МБ.
+    max-texture-mb: 16
+    # Предел всех своих анимаций вместе в памяти клиента, МБ.
+    total-texture-mb: 96
+    # Предел размера PNG одной анимации в паке, МБ.
+    max-file-mb: 8
+    # Сколько кадров может быть в исходном GIF.
+    max-source-frames: 1000
 
 # Яркость дисплеев (0-15). Шейдер сам светится, это влияет только на клиенты без пака.
 brightness: 15
@@ -162,8 +180,8 @@ messages:
   rim-set: "<green>Обод (<scope>, эффектов: <white><count></white>): <white><value></white></green>"
   trigger-no-permission: "<red>Нет прав на этот портал.</red>"
   trigger-cooldown: "<yellow>Подожди немного.</yellow>"
-  upload-usage: "<red>Пиши: <white>/cs upload <имя> <https-ссылка на png/jpg></white>. Имя: a-z, 0-9, _.</red>"
-  import-usage: "<red>Пиши: <white>/cs import <имя></white> (файл plugins/coreshaders/images/<имя>.png или .jpg). Есть: <white><list></white>.</red>"
+  upload-usage: "<red>Пиши: <white>/cs upload <имя> <https-ссылка на png/jpg/gif></white>. Имя: a-z, 0-9, _.</red>"
+  import-usage: "<red>Пиши: <white>/cs import <имя></white> (файл plugins/coreshaders/images/<имя>.png, .jpg или .gif). Есть: <white><list></white>.</red>"
   delete-usage: "<red>Пиши: <white>/cs delete-image <имя></white>. Свои картинки: <white><list></white>.</red>"
   image-bad-name: "<red>Имя <white><value></white> не подходит: только a-z, 0-9, _ (до 32 символов).</red>"
   image-builtin: "<red><white><image></white> - встроенная картинка, ее не заменить.</red>"
@@ -172,16 +190,21 @@ messages:
   image-limit: "<red>Уже максимум своих картинок (<white><max></white>). Удали лишнюю: /cs delete-image.</red>"
   image-busy: "<yellow>С картинкой <white><image></white> уже идет работа, подожди.</yellow>"
   image-bad-url: "<red>Ссылка <white><value></white> не подходит: нужна https.</red>"
-  image-no-file: "<red>Нет файла <white><image>.png</white> (или .jpg) в <white><folder></white>.</red>"
+  image-no-file: "<red>Нет файла <white><image>.png</white> (или .jpg, .gif) в <white><folder></white>.</red>"
   image-downloading: "<gray>Скачиваю <white><image></white>...</gray>"
   image-too-big: "<red>Файл <white><image></white> больше <white><value></white> МБ.</red>"
   image-too-large: "<red>Картинка <white><image></white> слишком большая: <white><value></white>.</red>"
-  image-not-image: "<red><white><image></white> - не png и не jpg.</red>"
+  image-not-image: "<red><white><image></white> - не png, не jpg и не gif.</red>"
+  image-anim-frames: "<red>В GIF <white><image></white> слишком много кадров: <white><value></white>. Обрежь GIF или подними <white>custom-images.animation.max-source-frames</white>.</red>"
+  image-anim-budget: "<red>Анимация <white><image></white> слишком тяжелая для клиента: <white><value></white> МБ. Уменьши <white>animation.max-frames</white> или <white>animation.width</white> (или подними <white>animation.max-texture-mb</white>).</red>"
+  image-anim-total: "<red>Не хватает места под анимацию <white><image></white>: все свои анимации займут <white><value></white> МБ памяти клиента. Удали лишнюю (/cs delete-image) или подними <white>animation.total-texture-mb</white>.</red>"
+  image-anim-file: "<red>Анимация <white><image></white> вышла слишком большой для пака: PNG <white><value></white> МБ. Уменьши <white>animation.max-frames</white> или <white>animation.width</white> (или подними <white>animation.max-file-mb</white>).</red>"
   image-timeout: "<red>Не скачалось <white><image></white>: дольше <white><value></white> с.</red>"
   image-private: "<red>Не скачалось <white><image></white>: адрес <white><value></white> внутренний (локальная сеть, localhost) - так нельзя.</red>"
   image-http: "<red>Не скачалось <white><image></white>: ответ <white><value></white>.</red>"
   image-failed: "<red>Не вышло с <white><image></white>: <white><value></white>.</red>"
   image-added: "<green>Картинка <white><image></white> готова (<white><size></white>, <white><mode></white>, номер <white><kind></white>). Файлы: <white><path></white>.</green>"
+  image-added-anim: "<green>Анимация <white><image></white> готова (<white><size></white>, <white><mode></white>, кадров <white><frames></white> по <white><frame></white>, цикл <white><seconds></white> с, PNG <white><file></white> МБ, номер <white><kind></white>). Файлы: <white><path></white>.</green>"
   image-not-custom: "<red><white><image></white> - не своя картинка (удалять можно только добавленные через upload/import).</red>"
   image-deleted: "<yellow>Картинка <white><image></white> удалена: файлов <white><files></white>, эффектов переключено на картинку по умолчанию <white><count></white>.</yellow>"
   pack-reloading: "<green>Пересборка пака: <white>/<command></white>. Игроки получат новый пак, когда Nexo его разошлет.</green>"
@@ -208,7 +231,7 @@ messages:
     - "<white>/cs trigger <enter|click|both|off> [group]</white> <gray>- когда срабатывает</gray>"
     - "<white>/cs cooldown <секунды> [group]</white> <gray>- пауза для игрока</gray>"
     - "<white>/cs rim <on|off> [group]</white> <gray>- светящийся обод</gray>"
-    - "<white>/cs upload <имя> <ссылка></white> <gray>- своя картинка из интернета</gray>"
-    - "<white>/cs import <имя></white> <gray>- своя картинка из plugins/coreshaders/images</gray>"
+    - "<white>/cs upload <имя> <ссылка></white> <gray>- своя картинка из интернета (png, jpg, gif)</gray>"
+    - "<white>/cs import <имя></white> <gray>- своя картинка или GIF из plugins/coreshaders/images</gray>"
     - "<white>/cs delete-image <имя></white> <gray>- удалить свою картинку</gray>"
     - "<white>/cs reload</white> <gray>- перезагрузить конфиг</gray>"

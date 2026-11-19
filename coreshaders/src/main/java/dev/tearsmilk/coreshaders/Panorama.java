@@ -1,6 +1,7 @@
 package dev.tearsmilk.coreshaders;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.regex.Pattern;
 
 public final class Panorama {
@@ -11,6 +12,8 @@ public final class Panorama {
     public static final int KIND_MAX = 200;
     public static final int GLOW_KIND = 255;
     public static final double PANORAMA_ASPECT = 1.8;
+    public static final int SIZE_TAG = 89;
+    public static final List<Integer> WIDTHS = List.of(1024, 512, 256);
     private static final int[] SENT = {61, 203, 147, 3};
     private static final Pattern NAME = Pattern.compile("[a-z0-9_]{1,32}");
 
@@ -43,25 +46,39 @@ public final class Panorama {
         return (double) w / h >= PANORAMA_ASPECT ? Mode.PANORAMA : Mode.MIRROR;
     }
 
+    public static int frameWidth(int requested) {
+        int best = WIDTHS.get(0);
+        for (int v : WIDTHS) {
+            if (Math.abs(v - requested) < Math.abs(best - requested)) {
+                best = v;
+            }
+        }
+        return best;
+    }
+
     public static int[] convert(int[] argb, int w, int h) {
-        if (w <= 0 || h <= 0 || argb.length < w * h) {
+        return convert(argb, w, h, W, H);
+    }
+
+    public static int[] convert(int[] argb, int w, int h, int pw, int ph) {
+        if (w <= 0 || h <= 0 || argb.length < w * h || pw < 4 || ph < 2) {
             throw new IllegalArgumentException("bad image size");
         }
-        int[] out = new int[W * H];
+        int[] out = new int[pw * ph];
         if (mode(w, h) == Mode.PANORAMA) {
             double cw = Math.min(w, h * 2.0);
             double ch = cw / 2.0;
-            int[] body = resample(argb, w, h, (w - cw) / 2.0, (h - ch) / 2.0, cw, ch, W, H);
+            int[] body = resample(argb, w, h, (w - cw) / 2.0, (h - ch) / 2.0, cw, ch, pw, ph);
             System.arraycopy(body, 0, out, 0, out.length);
         } else {
             double side = Math.min(w, h);
-            int half = W / 2;
-            int[] tile = resample(argb, w, h, (w - side) / 2.0, (h - side) / 2.0, side, side, half, H);
-            for (int y = 0; y < H; y++) {
+            int half = pw / 2;
+            int[] tile = resample(argb, w, h, (w - side) / 2.0, (h - side) / 2.0, side, side, half, ph);
+            for (int y = 0; y < ph; y++) {
                 for (int x = 0; x < half; x++) {
                     int c = tile[y * half + x];
-                    out[y * W + x] = c;
-                    out[y * W + W - 1 - x] = c;
+                    out[y * pw + x] = c;
+                    out[y * pw + pw - 1 - x] = c;
                 }
             }
         }
@@ -234,11 +251,19 @@ public final class Panorama {
     }
 
     public static int[] withSentinel(int[] pano, int kind, int glow) {
+        return withSentinel(pano, W, H, kind, glow);
+    }
+
+    public static int[] withSentinel(int[] pano, int pw, int ph, int kind, int glow) {
+        if (pano.length != pw * ph || pw % 16 != 0 || ph % 16 != 0 || pw > 4080 || ph > 4080) {
+            throw new IllegalArgumentException("bad sprite size");
+        }
         int[] out = pano.clone();
-        System.arraycopy(out, W, out, 0, W);
+        System.arraycopy(out, pw, out, 0, pw);
         out[0] = argb(SENT[3], SENT[0], SENT[1], SENT[2]);
         out[1] = argb(3, kind, SENT[2], SENT[1]);
         out[2] = (3 << 24) | (glow & 0xFFFFFF);
+        out[3] = argb(3, pw / 16, ph / 16, SIZE_TAG);
         return out;
     }
 

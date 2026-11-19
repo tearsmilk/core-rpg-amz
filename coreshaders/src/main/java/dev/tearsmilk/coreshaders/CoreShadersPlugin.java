@@ -1,5 +1,7 @@
 package dev.tearsmilk.coreshaders;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -49,11 +51,16 @@ public final class CoreShadersPlugin extends JavaPlugin {
 
     private void upgradeConfig() {
         int before = getConfig().getInt("config-version", 1);
-        List<String> added = Settings.upgrade(getConfig());
+        List<String> kept = new ArrayList<>();
+        List<String> added = Settings.upgrade(getConfig(), kept);
         if (before >= Settings.CONFIG_VERSION) {
             return;
         }
         saveConfig();
+        if (!kept.isEmpty()) {
+            getLogger().info("config.yml: custom messages kept, add GIF to them by hand if needed: "
+                + String.join(", ", new LinkedHashSet<>(kept)));
+        }
         if (!added.isEmpty()) {
             getLogger().info("config.yml updated, new images added: " + String.join(", ", added));
         }

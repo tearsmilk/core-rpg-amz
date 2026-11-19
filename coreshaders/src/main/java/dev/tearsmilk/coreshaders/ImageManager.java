@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -47,10 +48,11 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.ItemDisplay;
 
 public final class ImageManager {
-    public static final List<String> EXTENSIONS = List.of(".png", ".jpg", ".jpeg");
+    public static final List<String> EXTENSIONS = List.of(".png", ".jpg", ".jpeg", ".gif");
     public static final int MAX_REDIRECTS = 5;
 
     private final CoreShadersPlugin plugin;
+    private static final Object WRITE_LOCK = new Object();
     private final Set<String> busy = ConcurrentHashMap.newKeySet();
     private final Map<String, Integer> pending = new ConcurrentHashMap<>();
 
@@ -235,24 +237,54 @@ public final class ImageManager {
         });
     }
 
+    record Anim(int maxFrames, int width, boolean interpolate, long maxTextureBytes, long totalTextureBytes,
+        long maxFileBytes, int maxSourceFrames) {
+        static Anim of(Settings s) {
+            return new Anim(s.animMaxFrames, s.animWidth, s.animInterpolate, s.animMaxTextureBytes,
+                s.animTotalTextureBytes, s.animMaxFileBytes, s.animMaxSourceFrames);
+        }
+
+        int height() {
+            return width / 2;
+        }
+    }
+
+    record Built(int width, int height, Panorama.Mode mode, int frameW, int frameH, int[] ticks,
+        boolean interpolate, byte[] png, int glow) {
+        boolean animated() {
+            return ticks != null;
+        }
+
+        long textureBytes() {
+            return (long) frameW * frameH * (ticks == null ? 1 : ticks.length) * 4L;
+        }
+    }
+
     private void start(CommandSender sender, String name, int kind, Source source) {
         Settings s = plugin.settings();
         Path root = assets(s);
         long maxPixels = s.maxPixels;
+        Anim anim = Anim.of(s);
+        Set<String> others = new HashSet<>(s.customKinds.keySet());
+        others.remove(name);
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
                 byte[] bytes = source.read();
-                BufferedImage img = decode(bytes, maxPixels);
-                int w = img.getWidth();
-                int h = img.getHeight();
-                int[] argb = img.getRGB(0, 0, w, h, null, 0, w);
-                img = null;
-                int[] pano = Panorama.convert(argb, w, h);
-                argb = null;
-                int glow = Panorama.glowColor(pano);
-                write(root, name, Panorama.withSentinel(pano, kind, glow), Panorama.glowSprite(glow));
-                Panorama.Mode mode = Panorama.mode(w, h);
-                Bukkit.getScheduler().runTask(plugin, () -> finish(sender, name, kind, w, h, mode));
+                Built b = build(bytes, maxPixels, kind, anim);
+                bytes = null;
+                synchronized (WRITE_LOCK) {
+                    if (b.animated()) {
+                        Set<String> all = new HashSet<>(others);
+                        all.addAll(pending.keySet());
+                        all.remove(name);
+                        long total = b.textureBytes() + animatedBytes(root, all);
+                        if (total > anim.totalTextureBytes()) {
+                            throw new Fail("image-anim-total", mbText(total) + " / " + mbText(anim.totalTextureBytes()));
+                        }
+                    }
+                    write(root, name, b);
+                }
+                Bukkit.getScheduler().runTask(plugin, () -> finish(sender, name, kind, b));
             } catch (Fail f) {
                 Bukkit.getScheduler().runTask(plugin, () -> failed(sender, name, f.key, f.detail));
             } catch (Exception | OutOfMemoryError ex) {
@@ -261,6 +293,151 @@ public final class ImageManager {
                 Bukkit.getScheduler().runTask(plugin, () -> failed(sender, name, "image-failed", d));
             }
         });
+    }
+
+    static String mbText(long bytes) {
+        return String.format(Locale.ROOT, "%.1f", bytes / 1024.0 / 1024.0);
+    }
+
+    static long animatedBytes(Path root, Set<String> names) {
+        long sum = 0;
+        for (String n : names) {
+            if (!Files.isRegularFile(root.resolve(PackFiles.meta(n)))) {
+                continue;
+            }
+            int[] wh = pngSize(root.resolve(PackFiles.paths(n).get(0)));
+            if (wh != null) {
+                sum += (long) wh[0] * wh[1] * 4L;
+            }
+        }
+        return sum;
+    }
+
+    static int[] pngSize(Path file) {
+        try (java.io.InputStream in = Files.newInputStream(file)) {
+            byte[] h = in.readNBytes(24);
+            if (h.length < 24 || (h[0] & 255) != 0x89 || h[1] != 'P' || h[12] != 'I' || h[15] != 'R') {
+                return null;
+            }
+            ByteBuffer bb = ByteBuffer.wrap(h);
+            return new int[] {bb.getInt(16), bb.getInt(20)};
+        } catch (IOException ex) {
+            return null;
+        }
+    }
+
+    static Built build(byte[] bytes, long maxPixels, int kind, Anim anim) throws Exception {
+        try (ImageInputStream in = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes))) {
+            if (in == null) {
+                throw new Fail("image-not-image", "");
+            }
+            Iterator<ImageReader> it = ImageIO.getImageReaders(in);
+            if (!it.hasNext()) {
+                throw new Fail("image-not-image", "");
+            }
+            ImageReader r = it.next();
+            try {
+                String fmt = r.getFormatName().toLowerCase(Locale.ROOT);
+                if (fmt.equals("gif")) {
+                    r.setInput(in, false, false);
+                    return gif(r, maxPixels, kind, anim);
+                }
+                if (!fmt.equals("png") && !fmt.equals("jpeg") && !fmt.equals("jpg")) {
+                    throw new Fail("image-not-image", fmt);
+                }
+                r.setInput(in, true, true);
+                int w = r.getWidth(0);
+                int h = r.getHeight(0);
+                checkSize(w, h, maxPixels);
+                BufferedImage img = r.read(0);
+                if (img == null) {
+                    throw new Fail("image-not-image", fmt);
+                }
+                int[] argb = img.getRGB(0, 0, img.getWidth(), img.getHeight(), null, 0, img.getWidth());
+                return still(argb, img.getWidth(), img.getHeight(), kind);
+            } catch (IOException ex) {
+                throw new Fail("image-not-image", ex.getMessage());
+            } finally {
+                r.dispose();
+            }
+        }
+    }
+
+    private static void checkSize(int w, int h, long maxPixels) throws Fail {
+        if ((long) w * h > maxPixels || w < 2 || h < 2) {
+            throw new Fail("image-too-large", w + "x" + h);
+        }
+    }
+
+    static void checkFrames(Gif.Header hd, long maxPixels) throws Fail {
+        long screen = (long) hd.width() * hd.height();
+        for (Gif.FrameInfo f : hd.frames()) {
+            long area = (long) f.width() * f.height();
+            if (area > maxPixels || area > screen * 4L + 65536L) {
+                throw new Fail("image-too-large", f.width() + "x" + f.height());
+            }
+        }
+    }
+
+    static Built still(int[] argb, int w, int h, int kind) throws IOException {
+        int[] pano = Panorama.convert(argb, w, h);
+        int glow = Panorama.glowColor(pano);
+        byte[] data = png(image(Panorama.withSentinel(pano, kind, glow), Panorama.W, Panorama.H));
+        return new Built(w, h, Panorama.mode(w, h), Panorama.W, Panorama.H, null, false, data, glow);
+    }
+
+    static Built gif(ImageReader r, long maxPixels, int kind, Anim anim) throws Exception {
+        Gif.Header hd;
+        try {
+            hd = Gif.header(r, anim.maxSourceFrames());
+        } catch (Gif.FrameLimit ex) {
+            throw new Fail("image-anim-frames", ex.count + " > " + anim.maxSourceFrames());
+        }
+        int w = hd.width();
+        int h = hd.height();
+        checkSize(w, h, maxPixels);
+        checkFrames(hd, maxPixels);
+        int count = hd.frames().size();
+        int fw = anim.width();
+        int fh = anim.height();
+        int fit = (int) Math.min(anim.maxFrames(), anim.maxTextureBytes() / ((long) fw * fh * 4L));
+        if (count > 1 && fit < 2) {
+            long two = (long) fw * fh * 8L;
+            throw new Fail("image-anim-budget", "2 x " + fw + "x" + fh + " = " + mbText(two) + " / "
+                + mbText(anim.maxTextureBytes()));
+        }
+        Gif.Plan plan = count == 1 ? new Gif.Plan(new int[] {0}, new int[] {1}) : Gif.plan(hd.delays(), fit);
+        boolean[] wanted = new boolean[count];
+        int[] out = new int[count];
+        for (int i = 0; i < plan.count(); i++) {
+            wanted[plan.sources()[i]] = true;
+            out[plan.sources()[i]] = i;
+        }
+        if (plan.count() == 1) {
+            int[][] one = new int[1][];
+            Gif.decode(r, hd, wanted, (i, canvas, cw, ch) -> one[0] = canvas.clone());
+            return still(one[0], w, h, kind);
+        }
+        int n = plan.count();
+        long tex = (long) fw * fh * n * 4L;
+        if (tex > anim.maxTextureBytes()) {
+            throw new Fail("image-anim-budget", n + " x " + fw + "x" + fh + " = " + mbText(tex) + " / "
+                + mbText(anim.maxTextureBytes()));
+        }
+        int frame = fw * fh;
+        int[] strip = new int[frame * n];
+        Gif.decode(r, hd, wanted, (i, canvas, cw, ch) ->
+            System.arraycopy(Panorama.convert(canvas, cw, ch, fw, fh), 0, strip, out[i] * frame, frame));
+        int glow = Panorama.glowColor(strip);
+        for (int k = 0; k < n; k++) {
+            int[] f = Arrays.copyOfRange(strip, k * frame, (k + 1) * frame);
+            System.arraycopy(Panorama.withSentinel(f, fw, fh, kind, glow), 0, strip, k * frame, frame);
+        }
+        byte[] data = png(image(strip, fw, fh * n));
+        if (data.length > anim.maxFileBytes()) {
+            throw new Fail("image-anim-file", mbText(data.length) + " / " + mbText(anim.maxFileBytes()));
+        }
+        return new Built(w, h, Panorama.mode(w, h), fw, fh, plan.ticks(), anim.interpolate(), data, glow);
     }
 
     private void failed(CommandSender sender, String name, String key, String detail) {
@@ -441,7 +618,7 @@ public final class ImageManager {
             throw new Fail("image-timeout", "0");
         }
         HttpRequest req = HttpRequest.newBuilder(uri).timeout(Duration.ofNanos(left))
-            .header("User-Agent", "coreshaders").header("Accept", "image/png,image/jpeg").GET().build();
+            .header("User-Agent", "coreshaders").header("Accept", "image/png,image/jpeg,image/gif").GET().build();
         AtomicReference<Limited> body = new AtomicReference<>();
         CompletableFuture<HttpResponse<byte[]>> fut = client.sendAsync(req, info -> {
             if (info.statusCode() / 100 != 2) {
@@ -492,39 +669,6 @@ public final class ImageManager {
         return new Fetched(st, resp.body(), null);
     }
 
-    static BufferedImage decode(byte[] bytes, long maxPixels) throws Exception {
-        try (ImageInputStream in = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes))) {
-            if (in == null) {
-                throw new Fail("image-not-image", "");
-            }
-            Iterator<ImageReader> it = ImageIO.getImageReaders(in);
-            if (!it.hasNext()) {
-                throw new Fail("image-not-image", "");
-            }
-            ImageReader r = it.next();
-            try {
-                String fmt = r.getFormatName().toLowerCase(Locale.ROOT);
-                if (!fmt.equals("png") && !fmt.equals("jpeg") && !fmt.equals("jpg")) {
-                    throw new Fail("image-not-image", fmt);
-                }
-                r.setInput(in, true, true);
-                long px = (long) r.getWidth(0) * r.getHeight(0);
-                if (px > maxPixels || r.getWidth(0) < 2 || r.getHeight(0) < 2) {
-                    throw new Fail("image-too-large", r.getWidth(0) + "x" + r.getHeight(0));
-                }
-                BufferedImage img = r.read(0);
-                if (img == null) {
-                    throw new Fail("image-not-image", fmt);
-                }
-                return img;
-            } catch (IOException ex) {
-                throw new Fail("image-not-image", ex.getMessage());
-            } finally {
-                r.dispose();
-            }
-        }
-    }
-
     private static BufferedImage image(int[] argb, int w, int h) {
         BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
         img.setRGB(0, 0, w, h, argb, 0, w);
@@ -551,9 +695,21 @@ public final class ImageManager {
     }
 
     static void write(Path root, String name, int[] pano, int[] glow) throws IOException {
+        write(root, name, new Built(Panorama.W, Panorama.H, Panorama.Mode.PANORAMA, Panorama.W, Panorama.H, null,
+            false, png(image(pano, Panorama.W, Panorama.H)), glow[2] & 0xFFFFFF));
+    }
+
+    static void write(Path root, String name, Built b) throws IOException {
         List<String> p = PackFiles.paths(name);
-        writeFile(root.resolve(p.get(0)), png(image(pano, Panorama.W, Panorama.H)));
-        writeFile(root.resolve(p.get(1)), png(image(glow, Panorama.GLOW, Panorama.GLOW)));
+        Path meta = root.resolve(PackFiles.meta(name));
+        if (b.animated()) {
+            writeFile(meta, PackFiles.json(PackFiles.animation(b.frameW(), b.frameH(), b.ticks(), b.interpolate()))
+                .getBytes(StandardCharsets.UTF_8));
+        } else {
+            Files.deleteIfExists(meta);
+        }
+        writeFile(root.resolve(p.get(0)), b.png());
+        writeFile(root.resolve(p.get(1)), png(image(Panorama.glowSprite(b.glow()), Panorama.GLOW, Panorama.GLOW)));
         writeFile(root.resolve(p.get(2)), PackFiles.json(PackFiles.cubeModel(name)).getBytes(StandardCharsets.UTF_8));
         writeFile(root.resolve(p.get(3)), PackFiles.json(PackFiles.planeModel(name)).getBytes(StandardCharsets.UTF_8));
         writeFile(root.resolve(p.get(4)),
@@ -562,7 +718,7 @@ public final class ImageManager {
             PackFiles.json(PackFiles.itemDefinition("plane_" + name, Faces.PLANE_TINTS)).getBytes(StandardCharsets.UTF_8));
     }
 
-    private void finish(CommandSender sender, String name, int kind, int w, int h, Panorama.Mode mode) {
+    private void finish(CommandSender sender, String name, int kind, Built b) {
         busy.remove(name);
         pending.remove(name);
         FileConfiguration c = plugin.getConfig();
@@ -578,9 +734,19 @@ public final class ImageManager {
         plugin.saveConfig();
         plugin.reload();
         Settings s = plugin.settings();
-        sender.sendMessage(s.msg("image-added", Placeholder.unparsed("image", name),
-            Placeholder.unparsed("kind", String.valueOf(kind)), Placeholder.unparsed("size", w + "x" + h),
-            Placeholder.unparsed("mode", mode == Panorama.Mode.PANORAMA ? "panorama" : "mirror"),
+        long ticks = 0;
+        if (b.animated()) {
+            for (int t : b.ticks()) {
+                ticks += t;
+            }
+        }
+        sender.sendMessage(s.msg(b.animated() ? "image-added-anim" : "image-added", Placeholder.unparsed("image", name),
+            Placeholder.unparsed("kind", String.valueOf(kind)), Placeholder.unparsed("size", b.width() + "x" + b.height()),
+            Placeholder.unparsed("mode", b.mode() == Panorama.Mode.PANORAMA ? "panorama" : "mirror"),
+            Placeholder.unparsed("frames", String.valueOf(b.animated() ? b.ticks().length : 1)),
+            Placeholder.unparsed("frame", b.frameW() + "x" + b.frameH()),
+            Placeholder.unparsed("seconds", String.format(Locale.ROOT, "%.1f", ticks / 20.0)),
+            Placeholder.unparsed("file", mbText(b.png().length)),
             Placeholder.unparsed("path", assets(s).toString())));
         reloadPack(sender);
     }
@@ -599,7 +765,9 @@ public final class ImageManager {
         Path root = assets(s);
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             int removed = 0;
-            for (String rel : PackFiles.paths(name)) {
+            List<String> rels = new ArrayList<>(PackFiles.paths(name));
+            rels.add(PackFiles.meta(name));
+            for (String rel : rels) {
                 try {
                     if (Files.deleteIfExists(root.resolve(rel))) {
                         removed++;

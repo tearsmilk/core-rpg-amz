@@ -28,6 +28,55 @@ public final class PackFiles {
             "coreshaders/items/plane_" + name + ".json");
     }
 
+    public static String meta(String name) {
+        return "coreshaders/textures/item/panorama/" + name + ".png.mcmeta";
+    }
+
+    public static JsonObject animation(int frameW, int frameH, int[] ticks, boolean interpolate) {
+        JsonObject a = new JsonObject();
+        int main = ticks[0];
+        boolean uniform = true;
+        for (int t : ticks) {
+            uniform &= t == main;
+        }
+        if (!uniform) {
+            int bestN = 0;
+            for (int t : ticks) {
+                int n = 0;
+                for (int u : ticks) {
+                    n += u == t ? 1 : 0;
+                }
+                if (n > bestN) {
+                    bestN = n;
+                    main = t;
+                }
+            }
+        }
+        if (interpolate) {
+            a.addProperty("interpolate", true);
+        }
+        a.addProperty("width", frameW);
+        a.addProperty("height", frameH);
+        a.addProperty("frametime", main);
+        if (!uniform) {
+            JsonArray frames = new JsonArray();
+            for (int i = 0; i < ticks.length; i++) {
+                if (ticks[i] == main) {
+                    frames.add(i);
+                } else {
+                    JsonObject f = new JsonObject();
+                    f.addProperty("index", i);
+                    f.addProperty("time", ticks[i]);
+                    frames.add(f);
+                }
+            }
+            a.add("frames", frames);
+        }
+        JsonObject root = new JsonObject();
+        root.add("animation", a);
+        return root;
+    }
+
     public static List<String> clashes(String name, Collection<String> others) {
         Set<String> taken = new HashSet<>();
         for (String o : others) {
