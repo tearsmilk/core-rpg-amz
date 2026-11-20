@@ -194,6 +194,11 @@ key Escape
 sleep 1
 key t
 sleep 1
+xdotool type --delay 60 "/ts preview sparkle"
+key Return
+sleep 1.5
+key t
+sleep 1
 xdotool type --delay 60 "hello chat"
 sleep 1
 shot 06_chat

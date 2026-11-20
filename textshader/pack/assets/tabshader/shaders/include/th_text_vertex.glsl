@@ -28,7 +28,8 @@ void th_text_vertex(vec3 pos, vec4 color, vec2 uv, int vertexId, inout vec4 outC
     thTextLocal = vec2(0.0);
     ivec3 c = ivec3(round(color.rgb * 255.0));
     int kind = c.g >> 4;
-    if (c.r != TH_MARK_R || kind < 1 || kind > 4) {
+    bool place = c.r >= TH_MARK_R + 1 && c.r <= TH_MARK_R + 3 && kind <= 1;
+    if (!place && (c.r != TH_MARK_R || kind < 1 || kind > 4)) {
         return;
     }
     int corner = vertexId % 4;
@@ -38,7 +39,7 @@ void th_text_vertex(vec3 pos, vec4 color, vec2 uv, int vertexId, inout vec4 outC
     if (texel != TH_MARK_TEXEL) {
         return;
     }
-    if (ProjMat[2][3] != 0.0) {
+    if (place || ProjMat[2][3] != 0.0) {
         outColor.a = 0.0;
         return;
     }

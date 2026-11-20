@@ -63,7 +63,7 @@ void th_gui_vertex(vec3 pos, vec4 color, int vertexId) {
         grow = TH_GROW_BOARD;
     }
     if (grow > 0.0) {
-        vec2 side = vec2(corner >= 2 ? 1.0 : -1.0, (corner == 1 || corner == 2) ? 1.0 : -1.0);
+        vec2 side = vec2(corner >= 2 ? -1.0 : 1.0, (corner == 1 || corner == 2) ? -1.0 : 1.0);
         vec2 grown = pos.xy + side * grow;
         thGuiPos = grown;
         gl_Position = ProjMat * ModelViewMat * vec4(grown, pos.z, 1.0);
