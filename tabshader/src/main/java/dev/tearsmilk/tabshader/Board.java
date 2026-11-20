@@ -49,32 +49,27 @@ final class Board {
             changes++;
         }
         int n = Math.min(MAX_LINES, lines.size());
-        for (int i = 0; i < n; i++) {
-            Component c = lines.get(i);
-            if (i < shown.size() && Objects.equals(shown.get(i), c)) {
-                continue;
+        if (n != shown.size()) {
+            for (int i = n; i < shown.size(); i++) {
+                scoreboard.resetScores(entry(i));
             }
-            var score = objective.getScore(entry(i));
-            if (i >= shown.size()) {
-                score.setScore(n - i);
-                shown.add(c);
-            } else {
-                shown.set(i, c);
+            while (shown.size() > n) {
+                shown.removeLast();
             }
-            score.customName(c);
+            for (int i = 0; i < n; i++) {
+                objective.getScore(entry(i)).setScore(n - i);
+            }
+            while (shown.size() < n) {
+                shown.add(null);
+            }
             changes++;
         }
-        if (shown.size() != n) {
-            for (int i = shown.size() - 1; i >= n; i--) {
-                scoreboard.resetScores(entry(i));
-                shown.remove(i);
-                changes++;
-            }
-        }
         for (int i = 0; i < n; i++) {
-            var score = objective.getScore(entry(i));
-            if (score.getScore() != n - i) {
-                score.setScore(n - i);
+            Component c = lines.get(i);
+            if (!Objects.equals(shown.get(i), c)) {
+                objective.getScore(entry(i)).customName(c);
+                shown.set(i, c);
+                changes++;
             }
         }
         return changes;

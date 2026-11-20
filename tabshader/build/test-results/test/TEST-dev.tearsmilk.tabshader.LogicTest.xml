@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.tearsmilk.tabshader.LogicTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-20T16:41:31.841Z" hostname="vm" time="0.058">
+  <properties/>
+  <testcase name="settingsParsing()" classname="dev.tearsmilk.tabshader.LogicTest" time="0.004"/>
+  <testcase name="commandHelpers()" classname="dev.tearsmilk.tabshader.LogicTest" time="0.002"/>
+  <testcase name="boardEntriesUnique()" classname="dev.tearsmilk.tabshader.LogicTest" time="0.002"/>
+  <testcase name="fillEscapesValues()" classname="dev.tearsmilk.tabshader.LogicTest" time="0.04"/>
+  <testcase name="parts()" classname="dev.tearsmilk.tabshader.LogicTest" time="0.001"/>
+  <testcase name="progressModes()" classname="dev.tearsmilk.tabshader.LogicTest" time="0.004"/>
+  <testcase name="togglesFormat()" classname="dev.tearsmilk.tabshader.LogicTest" time="0.001"/>
+  <testcase name="varsHelpers()" classname="dev.tearsmilk.tabshader.LogicTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -4,6 +4,7 @@
 #moj_import <minecraft:dynamictransforms.glsl>
 #moj_import <minecraft:projection.glsl>
 #moj_import <textshader:ts_vertex.glsl>
+#moj_import <tabshader:th_text_vertex.glsl>
 
 in vec3 Position;
 in vec4 Color;
@@ -25,4 +26,5 @@ void main() {
     vertexColor = Color * texelFetch(Sampler2, UV2 / 16, 0);
     texCoord0 = UV0;
     ts_vertex(Color, UV0, gl_VertexID, texelFetch(Sampler2, UV2 / 16, 0), vertexColor);
+    th_text_vertex(Position, Color, UV0, gl_VertexID, vertexColor);
 }

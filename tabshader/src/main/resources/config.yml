@@ -1,0 +1,65 @@
+config-version: 1
+
+server-name: "Amazake"
+time-zone: "Europe/Moscow"
+time-format: "HH:mm"
+date-format: "dd.MM.yyyy"
+update-ticks: 20
+
+tab:
+  enabled: true
+  header:
+    - "<gradient:#ffb3d1:#ff3d6e><b>{server}</b></gradient>"
+    - "<#ff7aaa>Онлайн: <white>{online}</white>   Пинг: <white>{ping} мс</white>"
+  footer:
+    - "<#ff7aaa>TPS: <white>{tps}</white>   Время: <white>{time}</white>"
+
+board:
+  enabled: true
+  respect-other-scoreboards: true
+  title: "<gradient:#ffb3d1:#ff3d6e><b>{server}</b></gradient>"
+  lines:
+    - "<#ff7aaa>Игрок: <white>{player}"
+    - "<#ff7aaa>Онлайн: <white>{online}"
+    - "<#ff7aaa>Пинг: <white>{ping} мс"
+    - "<#ff7aaa>Мир: <white>{world}"
+    - "<#ff7aaa>XYZ: <white>{x} {y} {z}"
+    - "<#ff7aaa>Время: <white>{time}"
+
+bossbar:
+  enabled: true
+  text: "<#ffd6e6>Онлайн <#ff8fbd>{online}/{max}</#ff8fbd> <#ff7aaa>-</#ff7aaa> <white>{time}"
+  progress: clock
+  color: pink
+  overlay: progress
+
+actionbar:
+  test: "<#ffd6e6>Тест актионбара: <gradient:#ff8fbd:#ff3d6e>розово-кримсон</gradient>"
+
+title:
+  test-title: "<gradient:#ffb3d1:#ff3d6e><b>{server}</b></gradient>"
+  test-subtitle: "<#ffd6e6>Добро пожаловать, <#ff8fbd>{player}"
+  fade-in: 10
+  stay: 60
+  fade-out: 15
+
+messages:
+  help: "<#ff8fbd>tabshader</#ff8fbd> <gray>- стиль таба, табло, боссбара, актионбара и тайтла</gray>\n<#ff7aaa>/tsh toggle <tab|board|bossbar|actionbar|title> [игрок]</#ff7aaa> <gray>- вкл/выкл</gray>\n<#ff7aaa>/tsh test-title [игрок|*]</#ff7aaa> <gray>- тестовый тайтл</gray>\n<#ff7aaa>/tsh test-actionbar [игрок|*]</#ff7aaa> <gray>- тестовый актионбар</gray>\n<#ff7aaa>/tsh title <игрок|*> <текст> [| подзаголовок]</#ff7aaa> <gray>- тайтл с подложкой</gray>\n<#ff7aaa>/tsh actionbar <игрок|*> <текст></#ff7aaa> <gray>- актионбар с подложкой</gray>\n<#ff7aaa>/tsh reload</#ff7aaa> <gray>- перечитать config.yml</gray>"
+  no-permission: "<#ff3d6e>Нет прав.</#ff3d6e>"
+  only-players: "<#ff3d6e>Укажите игрока.</#ff3d6e>"
+  player-not-found: "<#ff3d6e>Игрок <white><player></white> не найден.</#ff3d6e>"
+  unknown-part: "<#ff3d6e>Неизвестная часть: <white><part></white>. Есть: tab, board, bossbar, actionbar, title.</#ff3d6e>"
+  usage-toggle: "<#ff7aaa>/tsh toggle <tab|board|bossbar|actionbar|title> [игрок]</#ff7aaa>"
+  usage-title: "<#ff7aaa>/tsh title <игрок|*> <текст> [| подзаголовок]</#ff7aaa>"
+  usage-actionbar: "<#ff7aaa>/tsh actionbar <игрок|*> <текст></#ff7aaa>"
+  toggled-on: "<#ff8fbd><part></#ff8fbd> <gray>для</gray> <white><player></white><gray>:</gray> <#7dffb0>включено</#7dffb0>"
+  toggled-off: "<#ff8fbd><part></#ff8fbd> <gray>для</gray> <white><player></white><gray>:</gray> <#ff3d6e>выключено</#ff3d6e>"
+  sent-title: "<gray>Тайтл отправлен:</gray> <white><player></white>"
+  sent-actionbar: "<gray>Актионбар отправлен:</gray> <white><player></white>"
+  reloaded: "<#ff8fbd>tabshader:</#ff8fbd> <gray>config.yml перечитан.</gray>"
+  status: "<#ff8fbd>tabshader:</#ff8fbd> <gray>игроков</gray> <white><players></white><gray>, обновлений</gray> <white><updates></white><gray>, ширин глифов</gray> <white><widths></white>"
+  part-tab: "Таб"
+  part-board: "Табло"
+  part-bossbar: "Боссбар"
+  part-actionbar: "Актионбар"
+  part-title: "Тайтл"

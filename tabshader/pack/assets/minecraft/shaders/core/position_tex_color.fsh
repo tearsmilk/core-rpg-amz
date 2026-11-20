@@ -12,9 +12,8 @@ in vec4 vertexColor;
 out vec4 fragColor;
 
 void main() {
-    vec4 tex = texture(Sampler0, texCoord0);
-    vec4 color = tex * vertexColor;
-    color = th_sprite_fragment(color, tex, texCoord0);
+    vec4 color = texture(Sampler0, texCoord0) * vertexColor;
+    color = th_sprite_fragment(color, texture(Sampler0, texCoord0), texCoord0);
     if (color.a == 0.0) {
         discard;
     }
