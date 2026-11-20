@@ -7,6 +7,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,8 +66,15 @@ final class Hud {
         Map<String, String> v = plugin.vars().of(p, global);
 
         if (s.tab() && !off.contains(Part.TAB)) {
-            Component header = join(t.render(p, s.header(), v));
-            Component footer = join(t.render(p, s.footer(), v));
+            List<Component> headerLines = new ArrayList<>(t.render(p, s.header(), v));
+            List<Component> footerLines = new ArrayList<>(t.render(p, s.footer(), v));
+            int hidden = plugin.limiter().hidden(p);
+            if (hidden > 0) {
+                footerLines.add(t.get("tab-hidden", "count", hidden));
+            }
+            decorateTab(p, s, headerLines, footerLines);
+            Component header = join(headerLines);
+            Component footer = join(footerLines);
             if (!Objects.equals(header, st.header) || !Objects.equals(footer, st.footer)) {
                 p.sendPlayerListHeaderAndFooter(header, footer);
                 st.header = header;
@@ -94,7 +102,12 @@ final class Hud {
                 if (st.board == null) {
                     st.board = new Board();
                 }
-                packets += st.board.update(t.render(p, s.boardTitle(), v), t.render(p, s.boardLines(), v));
+                Component title = t.render(p, s.boardTitle(), v);
+                List<Component> lines = t.render(p, s.boardLines(), v);
+                if (s.markers()) {
+                    title = boardTitle(title, lines, s, plugin.widths());
+                }
+                packets += st.board.update(title, lines);
                 st.board.show(p);
             }
         } else if (st.board != null) {
@@ -131,6 +144,65 @@ final class Hud {
             st.bar = null;
             packets++;
         }
+    }
+
+    int tabWidth(Settings s) {
+        if (s.tabWidth() != Settings.AUTO_WIDTH) {
+            return s.tabWidth();
+        }
+        int chars = s.maxNameLength() > 0 ? s.maxNameLength() : 16;
+        int cols = s.maxColumns() > 0 ? s.maxColumns() : 2;
+        return TabLayout.defaultWidth(plugin.widths(), chars, cols);
+    }
+
+    private int maxNameWidth(Player viewer) {
+        Widths w = plugin.widths();
+        int best = plugin.names().width(viewer, w);
+        for (Player o : Bukkit.getOnlinePlayers()) {
+            if (o != viewer && viewer.canSee(o) && viewer.isListed(o)) {
+                best = Math.max(best, plugin.names().width(o, w));
+            }
+        }
+        return best;
+    }
+
+    void decorateTab(Player p, Settings s, List<Component> headerLines, List<Component> footerLines) {
+        Widths w = plugin.widths();
+        if (headerLines.isEmpty()) {
+            headerLines.add(BLANK);
+        }
+        Component first = headerLines.getFirst();
+        TabLayout.Padded padded = TabLayout.pad(first, w.width(first), tabWidth(s), w);
+        int shown = plugin.limiter().shown(p);
+        int content = Math.max(padded.width(), TabLayout.listWidth(shown, maxNameWidth(p), true));
+        for (int i = 1; i < headerLines.size(); i++) {
+            content = Math.max(content, w.width(headerLines.get(i)));
+        }
+        for (Component c : footerLines) {
+            content = Math.max(content, w.width(c));
+        }
+        Component line = padded.line();
+        if (s.markers()) {
+            int height = TabLayout.panelHeight(headerLines.size(), TabLayout.rows(shown), footerLines.size());
+            line = Component.text()
+                    .append(TabLayout.markers(PositionCode.Element.TAB, s.tabPosition(), s.tabMargin(), content, height))
+                    .append(line)
+                    .build();
+        }
+        headerLines.set(0, line);
+    }
+
+    static Component boardTitle(Component title, List<Component> lines, Settings s, Widths w) {
+        int width = Math.max(0, w.width(title));
+        int n = Math.min(Board.MAX_LINES, lines.size());
+        for (int i = 0; i < n; i++) {
+            width = Math.max(width, w.width(lines.get(i)));
+        }
+        int height = n * TabLayout.ROW + TabLayout.ROW + 1;
+        return Component.text()
+                .append(TabLayout.markers(PositionCode.Element.BOARD, s.boardPosition(), s.boardMargin(), width, height))
+                .append(title)
+                .build();
     }
 
     private static Component join(List<Component> lines) {

@@ -1,5 +1,7 @@
 config-version: 1
 
+position-markers: true
+
 server-name: "Amazake"
 time-zone: "Europe/Moscow"
 time-format: "HH:mm"
@@ -9,22 +11,29 @@ update-ticks: 20
 tab:
   enabled: true
   header:
-    - "<gradient:#ffb3d1:#ff3d6e><b>{server}</b></gradient>"
-    - "<#ff7aaa>Онлайн: <white>{online}</white>   Пинг: <white>{ping} мс</white>"
+    - "<shadow:#5a0a26E6><gradient:#ffffff:#ffd6e2><b>{server}</b></gradient>"
+    - "<shadow:#5a0a26E6><#ffe0ea>Онлайн: <white>{online}</white>   Пинг: <white>{ping} мс</white>"
   footer:
-    - "<#ff7aaa>TPS: <white>{tps}</white>   Время: <white>{time}</white>"
+    - "<shadow:#5a0a26E6><#ffe0ea>TPS: <white>{tps}</white>   Время: <white>{time}</white>"
+  max-name-length: 12
+  max-columns: 2
+  position: center
+  margin: 4
+  width: auto
 
 board:
   enabled: true
   respect-other-scoreboards: true
-  title: "<gradient:#ffb3d1:#ff3d6e><b>{server}</b></gradient>"
+  position: right
+  margin: 4
+  title: "<shadow:#5a0a26E6><gradient:#ffffff:#ffd6e2><b>{server}</b></gradient>"
   lines:
-    - "<#ff7aaa>Игрок: <white>{player}"
-    - "<#ff7aaa>Онлайн: <white>{online}"
-    - "<#ff7aaa>Пинг: <white>{ping} мс"
-    - "<#ff7aaa>Мир: <white>{world}"
-    - "<#ff7aaa>XYZ: <white>{x} {y} {z}"
-    - "<#ff7aaa>Время: <white>{time}"
+    - "<shadow:#5a0a26E6><#ffe0ea>Игрок: <white>{player}"
+    - "<shadow:#5a0a26E6><#ffe0ea>Онлайн: <white>{online}"
+    - "<shadow:#5a0a26E6><#ffe0ea>Пинг: <white>{ping} мс"
+    - "<shadow:#5a0a26E6><#ffe0ea>Мир: <white>{world}"
+    - "<shadow:#5a0a26E6><#ffe0ea>XYZ: <white>{x} {y} {z}"
+    - "<shadow:#5a0a26E6><#ffe0ea>Время: <white>{time}"
 
 bossbar:
   enabled: true
@@ -34,11 +43,11 @@ bossbar:
   overlay: progress
 
 actionbar:
-  test: "<#ffd6e6>Тест актионбара: <gradient:#ff8fbd:#ff3d6e>розово-кримсон</gradient>"
+  test: "<shadow:#5a0a26E6><#ffd6e6>Тест актионбара: <gradient:#ffffff:#ffc2d4>розово-кримсон</gradient>"
 
 title:
-  test-title: "<gradient:#ffb3d1:#ff3d6e><b>{server}</b></gradient>"
-  test-subtitle: "<#ffd6e6>Добро пожаловать, <#ff8fbd>{player}"
+  test-title: "<shadow:#5a0a26E6><gradient:#ffffff:#ffd6e2><b>{server}</b></gradient>"
+  test-subtitle: "<shadow:#5a0a26E6><#ffe0ea>Добро пожаловать, <white>{player}"
   fade-in: 10
   stay: 60
   fade-out: 15
@@ -58,6 +67,8 @@ messages:
   sent-actionbar: "<gray>Актионбар отправлен:</gray> <white><player></white>"
   reloaded: "<#ff8fbd>tabshader:</#ff8fbd> <gray>config.yml перечитан.</gray>"
   status: "<#ff8fbd>tabshader:</#ff8fbd> <gray>игроков</gray> <white><players></white><gray>, обновлений</gray> <white><updates></white><gray>, ширин глифов</gray> <white><widths></white>"
+  status-tab: "<gray>Таб: лимит</gray> <white><limit></white><gray>, скрыто</gray> <white><hidden></white><gray>, обрезано ников</gray> <white><cut></white><gray>, ширина</gray> <white><width></white><gray>, таб</gray> <white><tab></white><gray>, табло</gray> <white><board></white>"
+  tab-hidden: "<shadow:#5a0a26E6><#ffe0ea>И еще <white>+<count></white> в сети"
   part-tab: "Таб"
   part-board: "Табло"
   part-bossbar: "Боссбар"

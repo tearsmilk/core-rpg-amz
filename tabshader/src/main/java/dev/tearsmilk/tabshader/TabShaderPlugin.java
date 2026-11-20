@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -18,6 +19,8 @@ public final class TabShaderPlugin extends JavaPlugin implements Listener {
     private Widths widths;
     private Toggles toggles;
     private Hud hud;
+    private TabNames names;
+    private TabLimiter limiter;
     private BukkitTask task;
 
     @Override
@@ -27,6 +30,8 @@ public final class TabShaderPlugin extends JavaPlugin implements Listener {
         toggles = new Toggles(getName());
         texts = new Texts(getConfig());
         hud = new Hud(this);
+        names = new TabNames();
+        limiter = new TabLimiter();
         if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             texts.external(PapiBridge::apply);
             getLogger().info("PlaceholderAPI: placeholders in texts enabled");
@@ -53,6 +58,12 @@ public final class TabShaderPlugin extends JavaPlugin implements Listener {
         if (hud != null) {
             hud.clearAll();
         }
+        if (limiter != null) {
+            limiter.relistAll();
+        }
+        if (names != null) {
+            names.restoreAll();
+        }
         TabShaderApi.bind(null);
     }
 
@@ -62,30 +73,58 @@ public final class TabShaderPlugin extends JavaPlugin implements Listener {
         if (task != null) {
             task.cancel();
         }
-        task = Bukkit.getScheduler().runTaskTimer(this, hud::tick, 20L, settings.period());
+        task = Bukkit.getScheduler().runTaskTimer(this, this::tick, 20L, settings.period());
+    }
+
+    void tick() {
+        if (settings.tab()) {
+            names.tick(settings.maxNameLength(), widths);
+            limiter.reconcile(TabLayout.maxEntries(settings.maxColumns()));
+        }
+        hud.tick();
     }
 
     void reload() {
         reloadConfig();
         texts.reload(getConfig());
         hud.clearAll();
+        limiter.relistAll();
+        names.restoreAll();
         applyConfig();
-        hud.tick();
+        tick();
     }
 
-    @EventHandler
+    private void retab() {
+        if (settings.tab()) {
+            limiter.reconcile(TabLayout.maxEntries(settings.maxColumns()));
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent e) {
         Player p = e.getPlayer();
+        if (settings.tab()) {
+            names.update(p, settings.maxNameLength(), widths);
+        }
+        retab();
         Bukkit.getScheduler().runTaskLater(this, () -> {
             if (p.isOnline()) {
+                if (settings.tab()) {
+                    names.update(p, settings.maxNameLength(), widths);
+                }
+                retab();
                 hud.update(p);
             }
         }, 10L);
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(PlayerQuitEvent e) {
-        hud.forget(e.getPlayer());
+        Player p = e.getPlayer();
+        hud.forget(p);
+        limiter.quit(p);
+        names.forget(p);
+        Bukkit.getScheduler().runTask(this, this::retab);
     }
 
     Settings settings() {
@@ -110,5 +149,13 @@ public final class TabShaderPlugin extends JavaPlugin implements Listener {
 
     Hud hud() {
         return hud;
+    }
+
+    TabNames names() {
+        return names;
+    }
+
+    TabLimiter limiter() {
+        return limiter;
     }
 }

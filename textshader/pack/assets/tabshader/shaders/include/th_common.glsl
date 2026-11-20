@@ -4,12 +4,12 @@
 
 #define TH_TAU 6.2831853
 
-const vec3 TH_DEEP = vec3(0.196, 0.020, 0.078);
-const vec3 TH_WINE = vec3(0.420, 0.035, 0.153);
-const vec3 TH_CRIMSON = vec3(0.780, 0.071, 0.255);
-const vec3 TH_ROSE = vec3(0.925, 0.290, 0.502);
-const vec3 TH_PINK = vec3(1.000, 0.561, 0.741);
-const float TH_ALPHA = 0.88;
+const vec3 TH_DEEP = vec3(0.722, 0.165, 0.310);
+const vec3 TH_WINE = vec3(0.910, 0.271, 0.420);
+const vec3 TH_CRIMSON = vec3(1.000, 0.420, 0.557);
+const vec3 TH_ROSE = vec3(1.000, 0.561, 0.671);
+const vec3 TH_PINK = vec3(1.000, 0.702, 0.780);
+const float TH_ALPHA = 0.84;
 
 float th_phase(float cycles) {
     return GameTime * cycles;
@@ -22,14 +22,14 @@ float th_box(vec2 p, vec2 half_size, vec4 r) {
 }
 
 vec3 th_flow(vec2 g) {
-    float a = sin(TH_TAU * ((g.x * 0.85 + g.y * 0.55) / 150.0 - th_phase(96.0)));
-    float b = sin(TH_TAU * ((g.x * 0.35 - g.y * 0.9) / 95.0 + th_phase(60.0)) + 1.3);
-    float m = clamp(0.5 + 0.32 * a + 0.18 * b, 0.0, 1.0);
-    vec3 c = mix(TH_DEEP, TH_WINE, smoothstep(0.05, 0.6, m));
-    c = mix(c, TH_CRIMSON * 0.72, smoothstep(0.6, 1.0, m) * 0.8);
-    float sweep = fract((g.x + g.y * 0.45) / 260.0 - th_phase(72.0));
-    float band = exp(-pow((sweep - 0.5) * 9.0, 2.0));
-    c += TH_ROSE * 0.16 * band;
+    float a = sin(TH_TAU * ((g.x * 0.85 + g.y * 0.55) / 72.0 - th_phase(300.0)));
+    float b = sin(TH_TAU * ((g.x * 0.35 - g.y * 0.9) / 46.0 + th_phase(220.0)) + 1.3);
+    float m = clamp(0.5 + 0.34 * a + 0.16 * b, 0.0, 1.0);
+    vec3 c = mix(TH_DEEP, TH_WINE, smoothstep(0.0, 0.55, m));
+    c = mix(c, TH_CRIMSON, smoothstep(0.45, 1.0, m) * 0.85);
+    float sweep = fract((g.x + g.y * 0.45) / 180.0 - th_phase(180.0));
+    float band = exp(-pow((sweep - 0.5) * 7.0, 2.0));
+    c = mix(c, TH_PINK, 0.34 * band);
     return c;
 }
 
@@ -50,9 +50,9 @@ vec4 th_panel(vec2 g, vec2 lo, vec2 hi, vec4 radii, float px, vec4 open) {
     vec3 c = th_flow(g);
     float rim_w = max(px, 0.5);
     float rim = 1.0 - smoothstep(0.0, rim_w, -d - rim_w * 0.5);
-    float glint = 0.5 + 0.5 * sin(TH_TAU * ((g.x - g.y) / 120.0 - th_phase(48.0)));
-    vec3 rim_c = mix(TH_CRIMSON, TH_PINK, glint);
-    c = mix(c, rim_c, rim * (0.55 + 0.25 * glint));
-    float a = mix(TH_ALPHA, 0.95, rim * 0.6);
+    float glint = 0.5 + 0.5 * sin(TH_TAU * ((g.x - g.y) / 90.0 - th_phase(160.0)));
+    vec3 rim_c = mix(TH_ROSE, vec3(1.0, 0.89, 0.93), glint);
+    c = mix(c, rim_c, rim * (0.6 + 0.3 * glint));
+    float a = mix(TH_ALPHA, 0.97, rim * 0.7);
     return vec4(c, a * cover);
 }
