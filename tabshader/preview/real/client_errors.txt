@@ -1,0 +1,18 @@
+[17:30:47] [Download-1/WARN]: Couldn't look up profile properties for 30fecbe1-2271-3418-8553-d3ded0e95f56
+com.mojang.authlib.exceptions.MinecraftClientException: Failed to read from https://sessionserver.mojang.com/session/minecraft/profile/30fecbe1227134188553d3ded0e95f56?unsigned=false due to sessionserver.mojang.com
+Caused by: java.net.UnknownHostException: sessionserver.mojang.com
+[17:30:47] [Yggdrasil Key Fetcher/ERROR]: Failed to request yggdrasil public key
+com.mojang.authlib.exceptions.MinecraftClientException: Failed to read from https://api.minecraftservices.com/publickeys due to api.minecraftservices.com
+Caused by: java.net.UnknownHostException: api.minecraftservices.com
+[17:30:47] [Download-2/ERROR]: Failed to fetch user properties
+com.mojang.authlib.exceptions.AuthenticationUnavailableException
+	at com.mojang.authlib.exceptions.MinecraftClientException.toAuthenticationException(MinecraftClientException.java:29)
+[17:30:47] [Render thread/ERROR]: Couldn't set icon
+java.io.FileNotFoundException: icons/icon_16x16.png
+[17:30:48] [Download-1/ERROR]: Failed to fetch Realms feature flags
+[17:30:48] [Render thread/INFO]: Reloading ResourceManager: vanilla, file/tabshader-test.zip
+[17:30:51] [Render thread/ERROR]: Error starting SoundSystem. Turning off sounds & music
+java.lang.IllegalStateException: Failed to open OpenAL device
+[17:30:52] [Download-1/ERROR]: Failed to retrieve profile key pair
+com.mojang.authlib.exceptions.MinecraftClientException: Failed to POST https://api.minecraftservices.com/player/certificates
+Caused by: java.net.UnknownHostException: api.minecraftservices.com

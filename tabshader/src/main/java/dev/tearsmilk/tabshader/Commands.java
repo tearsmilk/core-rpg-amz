@@ -58,8 +58,14 @@ public final class Commands implements TabExecutor {
                 plugin.reload();
                 texts().send(s, "reloaded");
             }
-            case "status" -> texts().send(s, "status", "players", plugin.hud().tracked(), "updates",
-                    plugin.hud().packets(), "widths", plugin.widths().size());
+            case "status" -> {
+                texts().send(s, "status", "players", plugin.hud().tracked(), "updates",
+                        plugin.hud().packets(), "widths", plugin.widths().size());
+                Settings st = plugin.settings();
+                texts().send(s, "status-tab", "limit", TabLayout.maxEntries(st.maxColumns()), "hidden",
+                        plugin.limiter().hiddenTotal(), "cut", plugin.names().truncated(), "width", plugin.hud().tabWidth(st),
+                        "tab", st.tabPosition().key(), "board", st.boardPosition().key());
+            }
             default -> help(s);
         }
         return true;

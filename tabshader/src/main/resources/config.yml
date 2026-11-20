@@ -1,5 +1,7 @@
 config-version: 1
 
+position-markers: true
+
 server-name: "Amazake"
 time-zone: "Europe/Moscow"
 time-format: "HH:mm"
@@ -13,10 +15,17 @@ tab:
     - "<#ff7aaa>Онлайн: <white>{online}</white>   Пинг: <white>{ping} мс</white>"
   footer:
     - "<#ff7aaa>TPS: <white>{tps}</white>   Время: <white>{time}</white>"
+  max-name-length: 12
+  max-columns: 2
+  position: center
+  margin: 4
+  width: auto
 
 board:
   enabled: true
   respect-other-scoreboards: true
+  position: right
+  margin: 4
   title: "<gradient:#ffb3d1:#ff3d6e><b>{server}</b></gradient>"
   lines:
     - "<#ff7aaa>Игрок: <white>{player}"
@@ -58,6 +67,8 @@ messages:
   sent-actionbar: "<gray>Актионбар отправлен:</gray> <white><player></white>"
   reloaded: "<#ff8fbd>tabshader:</#ff8fbd> <gray>config.yml перечитан.</gray>"
   status: "<#ff8fbd>tabshader:</#ff8fbd> <gray>игроков</gray> <white><players></white><gray>, обновлений</gray> <white><updates></white><gray>, ширин глифов</gray> <white><widths></white>"
+  status-tab: "<gray>Таб: лимит</gray> <white><limit></white><gray>, скрыто</gray> <white><hidden></white><gray>, обрезано ников</gray> <white><cut></white><gray>, ширина</gray> <white><width></white><gray>, таб</gray> <white><tab></white><gray>, табло</gray> <white><board></white>"
+  tab-hidden: "<#ff7aaa>И еще <white>+<count></white> в сети"
   part-tab: "Таб"
   part-board: "Табло"
   part-bossbar: "Боссбар"

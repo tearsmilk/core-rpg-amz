@@ -16,9 +16,17 @@ record Settings(
         boolean tab,
         List<String> header,
         List<String> footer,
+        int maxNameLength,
+        int maxColumns,
+        PositionCode.Position tabPosition,
+        int tabMargin,
+        int tabWidth,
+        boolean markers,
         boolean board,
         boolean respectOther,
         String boardTitle,
+        PositionCode.Position boardPosition,
+        int boardMargin,
         List<String> boardLines,
         boolean bossbar,
         String bossbarText,
@@ -42,9 +50,17 @@ record Settings(
                 c.getBoolean("tab.enabled", true),
                 c.getStringList("tab.header"),
                 c.getStringList("tab.footer"),
+                Math.max(0, c.getInt("tab.max-name-length", 12)),
+                Math.max(0, Math.min(4, c.getInt("tab.max-columns", 2))),
+                PositionCode.parse(c.getString("tab.position"), PositionCode.Element.TAB, PositionCode.Position.CENTER),
+                PositionCode.clampMargin(c.getInt("tab.margin", 4)),
+                width(c.getString("tab.width", "auto")),
+                c.getBoolean("position-markers", true),
                 c.getBoolean("board.enabled", true),
                 c.getBoolean("board.respect-other-scoreboards", true),
                 c.getString("board.title", "{server}"),
+                PositionCode.parse(c.getString("board.position"), PositionCode.Element.BOARD, PositionCode.Position.RIGHT),
+                PositionCode.clampMargin(c.getInt("board.margin", 4)),
                 c.getStringList("board.lines"),
                 c.getBoolean("bossbar.enabled", true),
                 c.getString("bossbar.text", "{server}"),
@@ -57,6 +73,23 @@ record Settings(
                 ticks(c.getConfigurationSection("title"), "fade-in", 10),
                 ticks(c.getConfigurationSection("title"), "stay", 60),
                 ticks(c.getConfigurationSection("title"), "fade-out", 15));
+    }
+
+    static final int AUTO_WIDTH = -1;
+
+    static int width(String s) {
+        if (s == null) {
+            return AUTO_WIDTH;
+        }
+        String k = s.trim().toLowerCase(Locale.ROOT);
+        if (k.isEmpty() || k.equals("auto")) {
+            return AUTO_WIDTH;
+        }
+        try {
+            return PositionCode.clampValue(Integer.parseInt(k));
+        } catch (NumberFormatException e) {
+            return AUTO_WIDTH;
+        }
     }
 
     private static int ticks(ConfigurationSection s, String key, int def) {

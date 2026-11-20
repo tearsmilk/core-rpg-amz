@@ -38,6 +38,14 @@ def main():
             if name in merged and merged[name] != data:
                 conflicts.append(name)
             merged[name] = data
+    overlay = sys.argv[4] if len(sys.argv) > 4 else ""
+    if overlay:
+        for d, _, files in os.walk(overlay):
+            for f in files:
+                path = os.path.join(d, f)
+                with open(path, "rb") as fh:
+                    merged[os.path.relpath(path, overlay).replace(os.sep, "/")] = fh.read()
+                print("overlay: " + os.path.relpath(path, overlay))
     meta = {"pack": {"description": "tabshader + textshader test (" + (ref or "worktree") + ")", "pack_format": PACK_FORMAT, "min_format": PACK_FORMAT, "max_format": PACK_FORMAT}}
     os.makedirs(os.path.dirname(dest), exist_ok=True)
     tmp = dest + ".part"

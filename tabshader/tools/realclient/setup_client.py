@@ -76,14 +76,12 @@ def main():
     cp.append(jar)
     with open(os.path.join(root, "classpath.txt"), "w") as f:
         f.write(":".join(cp))
-    ai = meta["assetIndex"]
-    idx = os.path.join(root, "assets", "indexes", ai["id"] + ".json")
-    try:
-        fetch(ai["url"], idx, ai["sha1"])
-    except Exception as e:
-        print("asset index not available: " + str(e))
+    idx = os.path.join(root, "assets", "indexes", "realclient-empty.json")
+    os.makedirs(os.path.dirname(idx), exist_ok=True)
+    with open(idx, "w") as f:
+        f.write('{"objects": {}}')
     with open(os.path.join(root, "assetindex.txt"), "w") as f:
-        f.write(ai["id"])
+        f.write("realclient-empty")
     print("client ready: " + str(len(cp)) + " jars")
 
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Real Minecraft 1.21.11 client test: builds the pack, starts mc-skilltest + client under Xvfb, takes screenshots.
-# Usage: tools/realclient.sh [--ref HEAD|worktree] [--pack none] [--gui 2] [--size 1280x800] [--out DIR] [--no-jars] [--keep]
+# Usage: tools/realclient.sh [--ref HEAD|worktree] [--pack none] [--overlay DIR] [--gui 2] [--size 1280x800] [--out DIR] [--shots all|quick] [--no-jars] [--keep]
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
 PROJ="$(cd "$HERE/.." && pwd)"
@@ -17,7 +17,8 @@ SIZE="1280x800"
 OUT="$PROJ/preview/real"
 JARS=1
 KEEP=0
-SHOTS=""
+SHOTS="all"
+OVERLAY=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --ref) REF="$2"; shift 2 ;;
@@ -28,6 +29,7 @@ while [ $# -gt 0 ]; do
         --no-jars) JARS=0; shift ;;
         --keep) KEEP=1; shift ;;
         --shots) SHOTS="$2"; shift 2 ;;
+        --overlay) OVERLAY="$(cd "$2" && pwd)"; shift 2 ;;
         *) echo "unknown arg: $1"; exit 1 ;;
     esac
 done
@@ -75,7 +77,7 @@ trap 'exit 130' INT TERM
 python3 -I "$HERE/realclient/setup_client.py" "$CLIENT" "$CLIENT_JAR_SRC" | tee -a "$LOG" || exit 1
 
 if [ "$PACKMODE" != "none" ]; then
-    python3 -I "$HERE/realclient/build_pack.py" "$REPO" "$GAME/resourcepacks/$PACKNAME" "$REF" | tee -a "$LOG"
+    python3 -I "$HERE/realclient/build_pack.py" "$REPO" "$GAME/resourcepacks/$PACKNAME" "$REF" "$OVERLAY" | tee -a "$LOG"
     [ "${PIPESTATUS[0]}" = 0 ] || { say "pack build failed"; exit 1; }
     cp "$GAME/resourcepacks/$PACKNAME" "$OUT/pack.zip"
     PACKARG="$PACKNAME"
@@ -96,13 +98,17 @@ fi
 
 if ! pgrep -f 'mc-skilltest-marker' >/dev/null; then
     say "start server"
+    T0=$(date +%s)
     "$SERVER/start.sh" >> "$LOG" 2>&1
     STARTED_SERVER=1
-    for _ in $(seq 120); do
-        grep -q 'Done (' "$SERVER/server.log" 2>/dev/null && break
+    ok=0
+    for _ in $(seq 150); do
         sleep 1
+        [ "$(stat -c %Y "$SERVER/server.log")" -ge "$T0" ] || continue
+        head -3 "$SERVER/server.log" | grep -q 'JAVA_TOOL_OPTIONS\|Starting' || continue
+        grep -q 'Done (' "$SERVER/server.log" && { ok=1; break; }
     done
-    grep -q 'Done (' "$SERVER/server.log" || { say "server did not start"; exit 1; }
+    [ "$ok" = 1 ] || { say "server did not start"; exit 1; }
 else
     say "server already running, reusing it"
 fi
@@ -172,6 +178,7 @@ sleep 2
 shot 02_tab
 xdotool keyup Tab
 sleep 1
+if [ "$SHOTS" = "all" ]; then
 con "tsh test-title TestBot"
 sleep 2
 shot 03_title
@@ -201,6 +208,7 @@ xdotool keydown Tab
 sleep 1.5
 shot 08_tab_again
 xdotool keyup Tab
+fi
 
 crop 02_tab 02_tab_zoom "$((220 * GUI))x$((60 * GUI))+$((W / 2 - 110 * GUI))+0"
 crop 01_hud 01_sidebar_zoom "$((90 * GUI))x$((100 * GUI))+$((W - 90 * GUI))+$((H / 2 - 50 * GUI))"
