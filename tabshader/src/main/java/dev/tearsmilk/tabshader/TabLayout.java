@@ -47,6 +47,11 @@ public final class TabLayout {
         return Math.min(CLIENT_CAP, maxColumns * ROWS_PER_COLUMN);
     }
 
+    public static int maxEntries(int maxColumns, int maxPlayers) {
+        int byColumns = maxEntries(maxColumns);
+        return maxPlayers > 0 ? Math.min(byColumns, maxPlayers) : byColumns;
+    }
+
     public static int listWidth(int entries, int maxNameWidth, boolean heads) {
         if (entries <= 0) {
             return 0;
@@ -327,12 +332,16 @@ public final class TabLayout {
     }
 
     public static Component boardTitle(Component title, int titleWidth, int contentWidth, int code) {
+        return boardTitle(title, titleWidth, contentWidth, code, 0);
+    }
+
+    public static Component boardTitle(Component title, int titleWidth, int contentWidth, int code, int align) {
         int content = Math.max(contentWidth, titleWidth);
-        long total = PositionCode.boardTitleWidth(code, content);
+        long total = PositionCode.boardTitleWidth(code, content, align);
         int before = Math.max(0, (content - titleWidth) / 2);
         long after = total - before - titleWidth;
         return Component.text()
-                .append(marker(PositionCode.boardMarker(content)))
+                .append(marker(PositionCode.boardMarker(content, align)))
                 .append(pad(before))
                 .append(title)
                 .append(pad(after))

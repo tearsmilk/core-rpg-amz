@@ -17,6 +17,7 @@ tab:
     - "<shadow:#5a0a26E6><#ffe0ea>TPS: <white>{tps}</white>   Время: <white>{time}</white>"
   max-name-length: 12
   max-columns: 2
+  max-players: 15
   position: center
   margin: 4
   width: auto
@@ -28,6 +29,7 @@ board:
   respect-other-scoreboards: true
   position: right
   margin: 4
+  avoid-tab: overlap
   title: "<shadow:#5a0a26E6><gradient:#ffffff:#ffd6e2><b>{server}</b></gradient>"
   lines:
     - "<shadow:#5a0a26E6><#ffe0ea>Игрок: <white>{player}"
@@ -69,7 +71,7 @@ messages:
   sent-actionbar: "<gray>Актионбар отправлен:</gray> <white><player></white>"
   reloaded: "<#ff8fbd>tabshader:</#ff8fbd> <gray>config.yml перечитан.</gray>"
   status: "<#ff8fbd>tabshader:</#ff8fbd> <gray>игроков</gray> <white><players></white><gray>, обновлений</gray> <white><updates></white><gray>, ширин глифов</gray> <white><widths></white>"
-  status-tab: "<gray>Таб: лимит</gray> <white><limit></white><gray>, скрыто</gray> <white><hidden></white><gray>, обрезано ников</gray> <white><cut></white><gray>, ширина</gray> <white><width></white><gray>, таб</gray> <white><tab></white><gray>, табло</gray> <white><board></white><gray>, табло шире 236 px (стоит справа)</gray> <white><wide></white>"
+  status-tab: "<gray>Таб: лимит</gray> <white><limit></white><gray>, скрыто</gray> <white><hidden></white><gray>, обрезано ников</gray> <white><cut></white><gray>, ширина</gray> <white><width></white><gray>, таб</gray> <white><tab></white><gray>, табло</gray> <white><board></white><gray>, обход таба</gray> <white><avoid></white><gray>, табло шире <max> px (стоит справа)</gray> <white><wide></white>"
   status-ping: "<gray>Полоски пинга (tab.ping-bars):</gray> <white><state></white><gray>, сейчас убраны у</gray> <white><hidden></white><gray> из</gray> <white><players></white><gray> игроков</gray>"
   ping-on: "показаны"
   ping-off: "скрыты"
