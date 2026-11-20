@@ -1,5 +1,7 @@
 package dev.tearsmilk.coreshaders;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -9,6 +11,8 @@ public final class CoreShadersPlugin extends JavaPlugin {
     private Keys keys;
     private Wand wand;
     private Effects effects;
+    private Triggers triggers;
+    private ImageManager images;
 
     @Override
     public void onEnable() {
@@ -18,6 +22,9 @@ public final class CoreShadersPlugin extends JavaPlugin {
         keys = new Keys(this);
         wand = new Wand(keys);
         effects = new Effects(this, keys);
+        triggers = new Triggers(this);
+        images = new ImageManager(this);
+        images.prepare();
         CoreCommand cmd = new CoreCommand(this);
         PluginCommand pc = getCommand("coreshaders");
         if (pc != null) {
@@ -25,13 +32,14 @@ public final class CoreShadersPlugin extends JavaPlugin {
             pc.setTabCompleter(cmd);
         }
         getServer().getPluginManager().registerEvents(new WandListener(this), this);
+        getServer().getPluginManager().registerEvents(triggers, this);
         getServer().getScheduler().runTaskLater(this, () -> {
-            int n = effects.verifyAll();
+            int n = effects.verifyAll(true);
             if (n > 0) {
                 getLogger().info("Hitboxes fixed: " + n);
             }
         }, 20L);
-        getServer().getScheduler().runTaskTimer(this, effects::verifyAll, 600L, 600L);
+        getServer().getScheduler().runTaskTimer(this, () -> effects.verifyAll(false), 600L, 600L);
         getLogger().info("coreshaders by tearsmilk - images: " + String.join(", ", settings.images));
     }
 
@@ -43,11 +51,16 @@ public final class CoreShadersPlugin extends JavaPlugin {
 
     private void upgradeConfig() {
         int before = getConfig().getInt("config-version", 1);
-        List<String> added = Settings.upgrade(getConfig());
+        List<String> kept = new ArrayList<>();
+        List<String> added = Settings.upgrade(getConfig(), kept);
         if (before >= Settings.CONFIG_VERSION) {
             return;
         }
         saveConfig();
+        if (!kept.isEmpty()) {
+            getLogger().info("config.yml: custom messages kept, add GIF to them by hand if needed: "
+                + String.join(", ", new LinkedHashSet<>(kept)));
+        }
         if (!added.isEmpty()) {
             getLogger().info("config.yml updated, new images added: " + String.join(", ", added));
         }
@@ -63,5 +76,13 @@ public final class CoreShadersPlugin extends JavaPlugin {
 
     public Effects effects() {
         return effects;
+    }
+
+    public Triggers triggers() {
+        return triggers;
+    }
+
+    public ImageManager images() {
+        return images;
     }
 }

@@ -7,13 +7,13 @@
  "elements": [
   {
    "from": [
-    0,
-    0,
+    -0.02,
+    -0.02,
     8
    ],
    "to": [
-    16,
-    16,
+    16.02,
+    16.02,
     8
    ],
    "shade": false,
@@ -37,7 +37,7 @@
       16
      ],
      "texture": "#p",
-     "tintindex": 0
+     "tintindex": 1
     }
    }
   },
@@ -73,7 +73,7 @@
       16
      ],
      "texture": "#g",
-     "tintindex": 0
+     "tintindex": 1
     }
    }
   }

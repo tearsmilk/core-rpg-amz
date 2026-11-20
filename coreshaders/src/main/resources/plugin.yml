@@ -15,3 +15,6 @@ permissions:
   coreshaders.admin:
     description: Use the coreshaders command and wand
     default: op
+  coreshaders.commands.console:
+    description: Attach console-executed commands to effects (/cs cmd add console)
+    default: op

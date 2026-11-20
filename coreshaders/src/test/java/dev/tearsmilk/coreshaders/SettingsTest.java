@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.junit.jupiter.api.Test;
@@ -67,6 +68,35 @@ class SettingsTest {
         c.set("images", List.of("sky_sea", "rain"));
         assertTrue(Settings.upgrade(c).isEmpty());
         assertEquals(List.of("sky_sea", "rain"), new Settings(c).images);
+    }
+
+    @Test
+    void upgradeTo4KeepsCustomMessagesAndWritesAnimation() {
+        YamlConfiguration c = new YamlConfiguration();
+        c.setDefaults(bundled());
+        c.set("config-version", 3);
+        c.set("messages.upload-usage", Settings.OLD_IN_3.get("messages.upload-usage"));
+        c.set("messages.image-not-image", "<red>свой текст</red>");
+        List<String> help = new ArrayList<>(List.of("<white>моя строка</white>"));
+        help.addAll(Settings.OLD_HELP_IN_3);
+        c.set("messages.help", help);
+        c.set("custom-images.animation.max-frames", 12);
+        List<String> kept = new ArrayList<>();
+        Settings.upgrade(c, kept);
+        YamlConfiguration d = bundled();
+        assertEquals(d.getString("messages.upload-usage"), c.getString("messages.upload-usage"));
+        assertEquals("<red>свой текст</red>", c.getString("messages.image-not-image"));
+        assertEquals(List.of("messages.image-not-image"), kept);
+        List<String> h = c.getStringList("messages.help");
+        assertEquals("<white>моя строка</white>", h.get(0));
+        assertTrue(h.get(1).contains("png, jpg, gif"));
+        assertTrue(h.get(2).contains("GIF"));
+        assertTrue(c.isSet("messages.image-anim-budget"));
+        assertEquals(12, c.getInt("custom-images.animation.max-frames"));
+        assertTrue(c.isSet("custom-images.animation.width"));
+        assertTrue(c.isSet("custom-images.animation.max-texture-mb"));
+        assertTrue(c.isSet("custom-images.animation.total-texture-mb"));
+        assertEquals(Settings.CONFIG_VERSION, c.getInt("config-version"));
     }
 
     @Test

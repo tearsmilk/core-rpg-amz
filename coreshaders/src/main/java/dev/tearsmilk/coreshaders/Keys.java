@@ -13,6 +13,13 @@ public final class Keys {
     public final NamespacedKey link;
     public final NamespacedKey owner;
     public final NamespacedKey wand;
+    public final NamespacedKey rim;
+    public final NamespacedKey commands;
+    public final NamespacedKey trigger;
+    public final NamespacedKey cooldown;
+    public final NamespacedKey permission;
+    public final NamespacedKey message;
+    public final NamespacedKey group;
 
     public Keys(Plugin plugin) {
         effect = new NamespacedKey(plugin, "effect");
@@ -24,5 +31,12 @@ public final class Keys {
         link = new NamespacedKey(plugin, "link");
         owner = new NamespacedKey(plugin, "owner");
         wand = new NamespacedKey(plugin, "wand");
+        rim = new NamespacedKey(plugin, "rim");
+        commands = new NamespacedKey(plugin, "commands");
+        trigger = new NamespacedKey(plugin, "trigger");
+        cooldown = new NamespacedKey(plugin, "cooldown");
+        permission = new NamespacedKey(plugin, "permission");
+        message = new NamespacedKey(plugin, "message");
+        group = new NamespacedKey(plugin, "group");
     }
 }

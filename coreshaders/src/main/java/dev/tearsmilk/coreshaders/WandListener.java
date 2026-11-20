@@ -30,6 +30,7 @@ public final class WandListener implements Listener {
     private final CoreShadersPlugin plugin;
     private final Map<UUID, Integer> lastLeft = new HashMap<>();
     private final Map<UUID, Integer> lastRight = new HashMap<>();
+    private final Map<UUID, Integer> lastUse = new HashMap<>();
 
     public WandListener(CoreShadersPlugin plugin) {
         this.plugin = plugin;
@@ -191,6 +192,9 @@ public final class WandListener implements Listener {
         Player p = event.getPlayer();
         ItemStack wand = heldWand(p);
         if (wand == null) {
+            if (event.getHand() == EquipmentSlot.HAND && once(lastUse, p) && plugin.triggers().click(p, d)) {
+                event.setCancelled(true);
+            }
             return;
         }
         event.setCancelled(true);
@@ -225,7 +229,7 @@ public final class WandListener implements Listener {
             }
         }
         if (ours) {
-            Bukkit.getScheduler().runTaskLater(plugin, () -> plugin.effects().verify(list), 2L);
+            Bukkit.getScheduler().runTaskLater(plugin, () -> plugin.effects().verify(list, true), 2L);
         }
     }
 }

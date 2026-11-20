@@ -1,0 +1,22 @@
+name: textshader
+version: '1.0.0'
+main: dev.tearsmilk.textshader.TextShaderPlugin
+api-version: '1.21'
+author: tearsmilk
+authors: [tearsmilk]
+description: Animated text effects drawn by the resource pack core shader (chat, tab, titles, item names)
+softdepend: [PlaceholderAPI]
+commands:
+  textshader:
+    description: textshader - animated text effects
+    usage: /textshader help
+    aliases: [ts]
+permissions:
+  textshader.use:
+    description: Choose your own chat and nick effect, menu, preview, list
+    default: true
+  textshader.admin:
+    description: give-name, title, broadcast, player, reload
+    default: op
+    children:
+      textshader.use: true

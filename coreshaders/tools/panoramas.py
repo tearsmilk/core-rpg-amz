@@ -5,9 +5,13 @@
     python3 -I coreshaders/tools/panoramas.py --only sky_sea
 
 Every panorama is W x H = 1024 x 512, u = atan(d.z, d.x) / 2pi + 0.5, v = acos(d.y) / pi (v = 0 is straight up).
-Row 0 is the sentinel row: texel (0,0) = (61,203,147,3), texel (1,0) = (K,147,203,3), K = image kind 1..12 (IMAGES order),
+Row 0 is the sentinel row: texel (0,0) = (61,203,147,3), texel (1,0) = (K,147,203,3), texel (2,0) = (glow rgb, 3), K = kind 1..12 (IMAGES order),
 the rest of row 0 repeats row 1. The shader samples rows 1..H-1 only.
-Glow sprites (plane frame) are 16 x 16: texel (0,0) = (61,203,147,3), texel (1,0) = (16+K,147,203,3).
+Glow sprites (plane frame) are 16 x 16: texel (0,0) = (61,203,147,3), texel (1,0) = (16+K,147,203,3), texel (2,0) = (glow, 3).
+Custom images made by the plugin (/cs upload, /cs import) use kinds 33..200 and glow sprites with K = 255.
+Models: cube faces north, south, east, west, up, down get tintindex 0..5, plane sides north/south 0/1 (the frame quads share
+them). The plugin puts per-face rim flags into the low 2 bits of green and blue of each tint (see Faces.java).
+    python3 -I coreshaders/tools/panoramas.py --models   # only models, item definitions and sentinel texels
 The shader shows the horizon (v = 0.5) at CS_HORIZON = -0.45 rad below eye level, so the newer panoramas are drawn in
 View angles: a = degrees above that shown horizon, and shapes are laid out in world degrees around it.
 """
@@ -1279,48 +1283,78 @@ def to_rgba8(img):
     return np.concatenate([rgb, a], axis=-1)
 
 
-def with_sentinel(rgba, kind):
+def glow8(name):
+    return tuple(int(round(c * 255)) for c in GLOW[name])
+
+
+def with_sentinel(rgba, kind, glow):
     out = rgba.copy()
     out[0] = out[1]
     out[0, 0] = SENT
     out[0, 1] = (kind, SENT[2], SENT[1], 3)
+    out[0, 2] = (glow[0], glow[1], glow[2], 3)
     return out
 
 
 def glow_sprite(name):
     g = np.zeros((16, 16, 4), np.uint8)
-    r, gg, b = (int(round(c * 255)) for c in GLOW[name])
+    r, gg, b = glow8(name)
     g[..., 0], g[..., 1], g[..., 2] = r, gg, b
     g[..., 3] = 0
     g[0, 0] = SENT
     g[0, 1] = (GLOW_KIND_BASE + KIND[name], SENT[2], SENT[1], 3)
+    g[0, 2] = (r, gg, b, 3)
     return g
 
 
-def face(tex):
-    return {"uv": [0, 0, 16, 16], "texture": "#" + tex, "tintindex": 0}
+CUBE_FACES = ("north", "south", "east", "west", "up", "down")
+PLANE_PAD = 0.02
+
+
+def face(tex, tint):
+    return {"uv": [0, 0, 16, 16], "texture": "#" + tex, "tintindex": tint}
 
 
 def cube_model(name):
     return {"textures": {"p": f"{NS}:item/panorama/{name}", "particle": f"{NS}:item/panorama/{name}"},
             "elements": [{"from": [0, 0, 0], "to": [16, 16, 16], "shade": False, "light_emission": 15,
-                          "faces": {f: face("p") for f in ("north", "south", "east", "west", "up", "down")}}],
+                          "faces": {f: face("p", i) for i, f in enumerate(CUBE_FACES)}}],
             "display": {}}
 
 
 def plane_model(name):
+    lo, hi = -PLANE_PAD, 16 + PLANE_PAD
     return {"textures": {"p": f"{NS}:item/panorama/{name}", "g": f"{NS}:item/panorama/{name}_glow",
                          "particle": f"{NS}:item/panorama/{name}"},
-            "elements": [{"from": [0, 0, 8], "to": [16, 16, 8], "shade": False, "light_emission": 15,
-                          "faces": {"north": face("p"), "south": face("p")}},
+            "elements": [{"from": [lo, lo, 8], "to": [hi, hi, 8], "shade": False, "light_emission": 15,
+                          "faces": {"north": face("p", 0), "south": face("p", 1)}},
                          {"from": [-3, -3, 8], "to": [19, 19, 8], "shade": False, "light_emission": 15,
-                          "faces": {"north": face("g"), "south": face("g")}}],
+                          "faces": {"north": face("g", 0), "south": face("g", 1)}}],
             "display": {}}
 
 
-def item_def(model):
+def item_def(model, tints):
     return {"model": {"type": "minecraft:model", "model": f"{NS}:item/{model}",
-                      "tints": [{"type": "minecraft:custom_model_data", "index": 0, "default": -1}]}}
+                      "tints": [{"type": "minecraft:custom_model_data", "index": i, "default": -1} for i in range(tints)]}}
+
+
+def patch_sentinels():
+    tdir = os.path.join(ASSETS, NS, "textures", "item", "panorama")
+    for name in IMAGES:
+        glow = glow8(name)
+        pano = np.array(Image.open(os.path.join(tdir, name + ".png")).convert("RGBA"))
+        pano[0, 2] = (glow[0], glow[1], glow[2], 3)
+        Image.fromarray(pano, "RGBA").save(os.path.join(tdir, name + ".png"), optimize=True)
+        Image.fromarray(glow_sprite(name), "RGBA").save(os.path.join(tdir, name + "_glow.png"))
+        print("sentinels", name)
+
+
+def write_models():
+    for name in IMAGES:
+        dump(os.path.join(ASSETS, NS, "models", "item", f"cube_{name}.json"), cube_model(name))
+        dump(os.path.join(ASSETS, NS, "models", "item", f"plane_{name}.json"), plane_model(name))
+        dump(os.path.join(ASSETS, NS, "items", f"cube_{name}.json"), item_def(f"cube_{name}", 6))
+        dump(os.path.join(ASSETS, NS, "items", f"plane_{name}.json"), item_def(f"plane_{name}", 2))
 
 
 def dump(path, obj):
@@ -1338,21 +1372,21 @@ def build(only=None):
         if only and name not in only:
             continue
         img = PANORAMAS[name]()
-        rgba = with_sentinel(to_rgba8(img), KIND[name])
+        rgba = with_sentinel(to_rgba8(img), KIND[name], glow8(name))
         Image.fromarray(rgba, "RGBA").save(os.path.join(tdir, name + ".png"), optimize=True)
         Image.fromarray(glow_sprite(name), "RGBA").save(os.path.join(tdir, name + "_glow.png"))
         out[name] = rgba
         print("panorama", name, rgba.shape)
-    for name in IMAGES:
-        dump(os.path.join(ASSETS, NS, "models", "item", f"cube_{name}.json"), cube_model(name))
-        dump(os.path.join(ASSETS, NS, "models", "item", f"plane_{name}.json"), plane_model(name))
-        dump(os.path.join(ASSETS, NS, "items", f"cube_{name}.json"), item_def(f"cube_{name}"))
-        dump(os.path.join(ASSETS, NS, "items", f"plane_{name}.json"), item_def(f"plane_{name}"))
+    write_models()
     return out
 
 
 if __name__ == "__main__":
     only = None
+    if "--models" in sys.argv:
+        patch_sentinels()
+        write_models()
+        sys.exit(0)
     if "--only" in sys.argv:
         only = sys.argv[sys.argv.index("--only") + 1].split(",")
     build(only)

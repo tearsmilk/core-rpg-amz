@@ -2,9 +2,14 @@ package dev.tearsmilk.coreshaders;
 
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.CustomModelData;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import net.kyori.adventure.key.Key;
 import org.bukkit.Bukkit;
@@ -12,6 +17,7 @@ import org.bukkit.Color;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Display;
@@ -95,7 +101,7 @@ public final class Effects {
         if (shape == null) {
             shape = Shape.CUBE;
         }
-        if (image == null) {
+        if (image == null || (!s().images.contains(image) && !Settings.DEFAULT_IMAGES.contains(image))) {
             image = s().defaultImage;
         }
         if (face == null) {
@@ -105,15 +111,163 @@ public final class Effects {
             Location l = d.getLocation();
             b = new int[] {l.getBlockX(), l.getBlockY(), l.getBlockZ()};
         }
-        return new EffectData(shape, image, color == null ? 0xFFFFFF : color, face, b[0], b[1], b[2]);
+        Byte rim = pdc.get(keys.rim, PersistentDataType.BYTE);
+        boolean r = rim == null ? s().rimDefault : rim != 0;
+        return new EffectData(shape, image, color == null ? 0xFFFFFF : color, face, b[0], b[1], b[2], r);
     }
 
-    public ItemStack displayItem(EffectData e) {
+    public String storedImage(ItemDisplay d) {
+        return d.getPersistentDataContainer().get(keys.image, PersistentDataType.STRING);
+    }
+
+    public ItemStack displayItem(EffectData e, int[] masks) {
         ItemStack item = new ItemStack(Material.PAPER);
         item.setData(DataComponentTypes.ITEM_MODEL, Key.key(NAMESPACE, e.modelKey()));
-        item.setData(DataComponentTypes.CUSTOM_MODEL_DATA,
-            CustomModelData.customModelData().addColor(Color.fromRGB(e.color() & 0xFFFFFF)).build());
+        CustomModelData.Builder b = CustomModelData.customModelData();
+        for (int m : masks) {
+            b.addColor(Color.fromRGB(Faces.encode(e.color() & 0xFFFFFF, m)));
+        }
+        item.setData(DataComponentTypes.CUSTOM_MODEL_DATA, b.build());
         return item;
+    }
+
+    private static long blockKey(int x, int y, int z) {
+        return ((long) x & 0x3FFFFFFL) << 38 | ((long) z & 0x3FFFFFFL) << 12 | ((long) y & 0xFFFL);
+    }
+
+    private final class Area implements Faces.Lookup {
+        private final Set<Long> cubes = new HashSet<>();
+        private final Set<Long> planes = new HashSet<>();
+        private final Map<ItemDisplay, EffectData> all = new LinkedHashMap<>();
+
+        Area(World w, double x, double y, double z, double radius) {
+            for (ItemDisplay d : near(new Location(w, x, y, z), radius)) {
+                EffectData e = data(d);
+                all.put(d, e);
+                long k = blockKey(e.bx(), e.by(), e.bz());
+                if (e.shape() == Shape.CUBE) {
+                    cubes.add(k);
+                } else {
+                    planes.add(k * 8 + e.face().ordinal());
+                }
+            }
+        }
+
+        @Override
+        public boolean cube(int x, int y, int z) {
+            return cubes.contains(blockKey(x, y, z));
+        }
+
+        @Override
+        public boolean plane(int x, int y, int z, Dir face) {
+            return planes.contains(blockKey(x, y, z) * 8 + face.ordinal());
+        }
+
+        int[] masks(EffectData e) {
+            return e.shape() == Shape.CUBE ? Faces.cubeMasks(e.rim(), e.bx(), e.by(), e.bz(), this)
+                : Faces.planeMasks(e.rim(), e.bx(), e.by(), e.bz(), e.face(), this);
+        }
+    }
+
+    private boolean apply(ItemDisplay d, EffectData e, Area a) {
+        ItemStack item = displayItem(e, a.masks(e));
+        if (item.isSimilar(d.getItemStack())) {
+            return false;
+        }
+        d.setItemStack(item);
+        return true;
+    }
+
+    public void refreshAround(World w, int x, int y, int z) {
+        Area a = new Area(w, x + 0.5, y + 0.5, z + 0.5, 4.2);
+        for (Map.Entry<ItemDisplay, EffectData> en : a.all.entrySet()) {
+            EffectData e = en.getValue();
+            if (Math.abs(e.bx() - x) <= 1 && Math.abs(e.by() - y) <= 1 && Math.abs(e.bz() - z) <= 1) {
+                apply(en.getKey(), e, a);
+            }
+        }
+    }
+
+    public boolean refresh(ItemDisplay d) {
+        EffectData e = data(d);
+        return apply(d, e, new Area(d.getWorld(), e.bx() + 0.5, e.by() + 0.5, e.bz() + 0.5, 2.8));
+    }
+
+    public List<ItemDisplay> group(ItemDisplay start, int max) {
+        List<ItemDisplay> out = new ArrayList<>();
+        Set<UUID> seen = new HashSet<>();
+        ArrayDeque<ItemDisplay> queue = new ArrayDeque<>();
+        queue.add(start);
+        seen.add(start.getUniqueId());
+        while (!queue.isEmpty() && out.size() < max) {
+            ItemDisplay d = queue.poll();
+            out.add(d);
+            EffectData e = data(d);
+            for (ItemDisplay o : near(new Location(d.getWorld(), e.bx() + 0.5, e.by() + 0.5, e.bz() + 0.5), 1.9)) {
+                if (seen.contains(o.getUniqueId())) {
+                    continue;
+                }
+                EffectData oe = data(o);
+                int dist = Math.abs(oe.bx() - e.bx()) + Math.abs(oe.by() - e.by()) + Math.abs(oe.bz() - e.bz());
+                if (dist <= 1) {
+                    seen.add(o.getUniqueId());
+                    queue.add(o);
+                }
+            }
+        }
+        return out;
+    }
+
+    public Actions.Data actions(ItemDisplay d) {
+        PersistentDataContainer pdc = d.getPersistentDataContainer();
+        List<Actions.Action> list = new ArrayList<>();
+        List<String> raw = pdc.get(keys.commands, PersistentDataType.LIST.strings());
+        if (raw != null) {
+            for (String r : raw) {
+                Actions.Action a = Actions.Action.decode(r);
+                if (a != null) {
+                    list.add(a);
+                }
+            }
+        }
+        Actions.Trigger t = Actions.Trigger.parse(pdc.get(keys.trigger, PersistentDataType.STRING));
+        Double cd = pdc.get(keys.cooldown, PersistentDataType.DOUBLE);
+        String perm = pdc.get(keys.permission, PersistentDataType.STRING);
+        String msg = pdc.get(keys.message, PersistentDataType.STRING);
+        String group = pdc.get(keys.group, PersistentDataType.STRING);
+        return new Actions.Data(list, t == null ? s().defaultTrigger : t, cd == null ? s().defaultCooldown : cd,
+            perm, msg, group == null ? d.getUniqueId().toString() : group);
+    }
+
+    public void setActions(ItemDisplay d, Actions.Data a) {
+        PersistentDataContainer pdc = d.getPersistentDataContainer();
+        List<String> raw = new ArrayList<>();
+        for (Actions.Action x : a.actions()) {
+            raw.add(x.encode());
+        }
+        if (raw.isEmpty()) {
+            pdc.remove(keys.commands);
+        } else {
+            pdc.set(keys.commands, PersistentDataType.LIST.strings(), raw);
+        }
+        pdc.set(keys.trigger, PersistentDataType.STRING, a.trigger().id());
+        pdc.set(keys.cooldown, PersistentDataType.DOUBLE, a.cooldown());
+        setOrRemove(pdc, keys.permission, a.permission());
+        setOrRemove(pdc, keys.message, a.message());
+        setOrRemove(pdc, keys.group, a.group());
+        plugin.triggers().index(d);
+    }
+
+    private static void setOrRemove(PersistentDataContainer pdc, NamespacedKey k, String v) {
+        if (v == null || v.isEmpty()) {
+            pdc.remove(k);
+        } else {
+            pdc.set(k, PersistentDataType.STRING, v);
+        }
+    }
+
+    public boolean hasActions(ItemDisplay d) {
+        return d.getPersistentDataContainer().has(keys.commands);
     }
 
     private Location displayLocation(World w, EffectData e) {
@@ -135,12 +289,14 @@ public final class Effects {
         pdc.set(keys.color, PersistentDataType.INTEGER, e.color());
         pdc.set(keys.face, PersistentDataType.STRING, e.face().id());
         pdc.set(keys.block, PersistentDataType.INTEGER_ARRAY, new int[] {e.bx(), e.by(), e.bz()});
+        pdc.set(keys.rim, PersistentDataType.BYTE, (byte) (e.rim() ? 1 : 0));
     }
 
     public ItemDisplay spawn(World w, EffectData e) {
         Settings st = s();
+        int n = e.shape() == Shape.CUBE ? Faces.CUBE_TINTS : Faces.PLANE_TINTS;
         ItemDisplay d = w.spawn(displayLocation(w, e), ItemDisplay.class, disp -> {
-            disp.setItemStack(displayItem(e));
+            disp.setItemStack(displayItem(e, new int[n]));
             disp.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.NONE);
             disp.setTransformation(transformation(e));
             disp.setBrightness(new Display.Brightness(st.brightness, st.brightness));
@@ -149,6 +305,7 @@ public final class Effects {
             writeData(disp, e);
         });
         spawnHitbox(d, e);
+        refreshAround(w, e.bx(), e.by(), e.bz());
         return d;
     }
 
@@ -173,7 +330,6 @@ public final class Effects {
 
     public void update(ItemDisplay d, EffectData e) {
         writeData(d, e);
-        d.setItemStack(displayItem(e));
         d.teleport(displayLocation(d.getWorld(), e));
         d.setTransformation(transformation(e));
         Interaction i = hitbox(d);
@@ -181,6 +337,8 @@ public final class Effects {
             i.remove();
         }
         spawnHitbox(d, e);
+        refreshAround(d.getWorld(), e.bx(), e.by(), e.bz());
+        plugin.triggers().index(d);
     }
 
     public void remove(ItemDisplay d) {
@@ -188,7 +346,11 @@ public final class Effects {
         if (i != null) {
             i.remove();
         }
+        EffectData e = data(d);
+        World w = d.getWorld();
+        plugin.triggers().unindex(d);
         d.remove();
+        refreshAround(w, e.bx(), e.by(), e.bz());
     }
 
     public List<ItemDisplay> near(Location center, double radius) {
@@ -245,7 +407,8 @@ public final class Effects {
 
     public PlaceResult place(Block clicked, Dir face, Wand.State st) {
         Block b = clicked.getRelative(face.dx, face.dy, face.dz);
-        EffectData e = new EffectData(st.shape(), st.image(), st.color(), face, b.getX(), b.getY(), b.getZ());
+        EffectData e = new EffectData(st.shape(), st.image(), st.color(), face, b.getX(), b.getY(), b.getZ(),
+            s().rimDefault);
         PlaceResult r = check(clicked.getWorld(), e, null);
         if (r == PlaceResult.OK) {
             spawn(clicked.getWorld(), e);
@@ -280,6 +443,10 @@ public final class Effects {
     }
 
     public int verify(Collection<? extends Entity> entities) {
+        return verify(entities, false);
+    }
+
+    public int verify(Collection<? extends Entity> entities, boolean refreshItems) {
         int fixed = 0;
         for (Entity en : entities) {
             if (!en.isValid()) {
@@ -298,18 +465,32 @@ public final class Effects {
                     spawnHitbox(d, data(d));
                     fixed++;
                 }
+                if (refreshItems) {
+                    String stored = d.getPersistentDataContainer().get(keys.image, PersistentDataType.STRING);
+                    EffectData e = data(d);
+                    if (stored != null && !stored.equals(e.image())) {
+                        d.getPersistentDataContainer().set(keys.image, PersistentDataType.STRING, e.image());
+                        fixed++;
+                    }
+                    refresh(d);
+                    plugin.triggers().index(d);
+                }
             }
         }
         return fixed;
     }
 
     public int verifyAll() {
+        return verifyAll(false);
+    }
+
+    public int verifyAll(boolean refreshItems) {
         int n = 0;
         for (World w : Bukkit.getWorlds()) {
             List<Entity> list = new ArrayList<>();
             list.addAll(w.getEntitiesByClass(Interaction.class));
             list.addAll(w.getEntitiesByClass(ItemDisplay.class));
-            n += verify(list);
+            n += verify(list, refreshItems);
         }
         return n;
     }
