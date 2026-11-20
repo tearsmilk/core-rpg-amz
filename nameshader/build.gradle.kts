@@ -35,6 +35,12 @@ tasks.processResources {
     filesMatching("plugin.yml") {
         expand(props)
     }
+    from("pack/assets") {
+        into("shaderpack/assets")
+    }
+    from("pack/stubs") {
+        into("shaderpack/stubs")
+    }
 }
 
 tasks.jar {
