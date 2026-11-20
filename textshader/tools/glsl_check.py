@@ -5,7 +5,8 @@
 
 #moj_import is expanded like the client does it: files from textshader/pack/assets first, then the vanilla includes
 from the client jar (each include once). The vanilla pairs are compiled too, as a control. The core files are also
-compared with vanilla: only lines that mention ts_ may differ.
+compared with vanilla: only hook lines may differ (ts_ and the tabshader th_text hooks, which rendertype_text shares
+with tabshader; the tabshader includes are shipped in this pack too, see tabshader/tools/sync_textshader.py).
 """
 import difflib
 import os
@@ -19,6 +20,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REPO = os.path.dirname(ROOT)
 ASSETS = os.path.join(ROOT, "pack", "assets")
 JAR = os.path.join(REPO, "core-npc", "tools", ".cache", "client-1.21.11.jar")
+HOOK = ("ts_", "th_text_", "tabshader:")
 CORES = ("rendertype_text", "rendertype_text_see_through", "rendertype_text_intensity",
          "rendertype_text_intensity_see_through")
 
@@ -77,8 +79,8 @@ def diff_vanilla(vanilla):
         theirs = vanilla[f"assets/minecraft/shaders/core/{fn}"].split("\n")
         changed = [l for l in difflib.unified_diff(theirs, ours, lineterm="", n=0)
                    if l[:1] in "+-" and not l.startswith(("+++", "---"))]
-        bad = [l for l in changed if l.strip("+- ") and "ts_" not in l]
-        print(f"DIFF {fn}: {len(changed)} changed lines" + (" (only ts_ hooks)" if not bad else ""))
+        bad = [l for l in changed if l.strip("+- ") and not any(h in l for h in HOOK)]
+        print(f"DIFF {fn}: {len(changed)} changed lines" + (" (only hooks)" if not bad else ""))
         for l in changed:
             print("    " + l)
         ok &= not bad
