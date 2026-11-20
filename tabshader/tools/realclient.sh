@@ -1,6 +1,10 @@
 #!/bin/bash
 # Real Minecraft 1.21.11 client test: builds the pack, starts mc-skilltest + client under Xvfb, takes screenshots.
-# Usage: tools/realclient.sh [--ref HEAD|worktree] [--pack none] [--overlay DIR] [--gui 2] [--size 1280x800] [--out DIR] [--shots all|quick] [--no-jars] [--keep]
+# Usage: tools/realclient.sh [--ref HEAD|worktree] [--pack none] [--overlay DIR] [--extpacks raw|patched] [--gui 2] [--size 1280x800] [--out DIR] [--shots all|quick|positions] [--no-jars] [--keep]
+# --extpacks layers the production MythicHUD pack (RC_EXTPACK, default server/plugins/Nexo/pack/external_packs/hl-resourcepack.zip)
+# under ours with its overlays: raw = as deployed, patched = with tools/mythichud_patch.py applied.
+# positions: for each "tab:board" pair in RC_POSITIONS edits plugins/tabshader/config.yml (backup restored at the end),
+# runs /tsh reload and takes the HUD and the held tab; RC_CONFIG adds "section.key=value" edits.
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
 PROJ="$(cd "$HERE/.." && pwd)"
@@ -19,6 +23,8 @@ JARS=1
 KEEP=0
 SHOTS="all"
 OVERLAY=""
+EXTMODE=""
+EXTPACK="${RC_EXTPACK:-$REPO/server/plugins/Nexo/pack/external_packs/hl-resourcepack.zip}"
 while [ $# -gt 0 ]; do
     case "$1" in
         --ref) REF="$2"; shift 2 ;;
@@ -30,6 +36,7 @@ while [ $# -gt 0 ]; do
         --keep) KEEP=1; shift ;;
         --shots) SHOTS="$2"; shift 2 ;;
         --overlay) OVERLAY="$(cd "$2" && pwd)"; shift 2 ;;
+        --extpacks) EXTMODE="$2"; shift 2 ;;
         *) echo "unknown arg: $1"; exit 1 ;;
     esac
 done
@@ -77,7 +84,7 @@ trap 'exit 130' INT TERM
 python3 -I "$HERE/realclient/setup_client.py" "$CLIENT" "$CLIENT_JAR_SRC" | tee -a "$LOG" || exit 1
 
 if [ "$PACKMODE" != "none" ]; then
-    python3 -I "$HERE/realclient/build_pack.py" "$REPO" "$GAME/resourcepacks/$PACKNAME" "$REF" "$OVERLAY" | tee -a "$LOG"
+    python3 -I "$HERE/realclient/build_pack.py" "$REPO" "$GAME/resourcepacks/$PACKNAME" "$REF" "$OVERLAY" "$EXTMODE" "$EXTPACK" | tee -a "$LOG"
     [ "${PIPESTATUS[0]}" = 0 ] || { say "pack build failed"; exit 1; }
     cp "$GAME/resourcepacks/$PACKNAME" "$OUT/pack.zip"
     PACKARG="$PACKNAME"
@@ -171,6 +178,32 @@ crop() {
     convert "$OUT/$1.png" -crop "$3" +repage -filter point -resize 300% "$OUT/$2.png" 2>> "$LOG"
 }
 key() { xdotool key --delay 80 "$@"; }
+
+if [ "$SHOTS" = "positions" ]; then
+    CFG="$SERVER/plugins/tabshader/config.yml"
+    [ -f "$CFG" ] || { say "missing $CFG"; exit 1; }
+    cp "$CFG" "$OUT/config_backup.yml"
+    for combo in ${RC_POSITIONS:-center:right top-left:right top-right:left bottom-left:top-right bottom-right:top-left center:bottom-left center:bottom-right top-left:top-left top-right:right bottom-left:left}; do
+        tp="${combo%%:*}"
+        bp="${combo#*:}"
+        python3 -I "$HERE/realclient/set_config.py" "$CFG" "tab.position=$tp" "board.position=$bp" ${RC_CONFIG:-} >> "$LOG" 2>&1 \
+            || { say "config edit failed"; break; }
+        con "tsh reload"
+        sleep 3
+        shot "pos_${tp}__${bp}_hud"
+        xdotool keydown Tab
+        sleep 2
+        shot "pos_${tp}__${bp}_tab"
+        xdotool keyup Tab
+        sleep 1
+    done
+    cp "$OUT/config_backup.yml" "$CFG"
+    con "tsh reload"
+    sleep 2
+    grep -E 'Shader|shader|GLSL|Couldn.t|Failed|ERROR|Exception' "$OUT/client.log" | head -40 > "$OUT/client_errors.txt"
+    say "done: $OUT"
+    exit 0
+fi
 
 shot 01_hud
 xdotool keydown Tab

@@ -21,6 +21,7 @@ record Settings(
         PositionCode.Position tabPosition,
         int tabMargin,
         int tabWidth,
+        int bossbarRows,
         boolean markers,
         boolean board,
         boolean respectOther,
@@ -53,14 +54,15 @@ record Settings(
                 Math.max(0, c.getInt("tab.max-name-length", 12)),
                 Math.max(0, Math.min(4, c.getInt("tab.max-columns", 2))),
                 PositionCode.parse(c.getString("tab.position"), PositionCode.Element.TAB, PositionCode.Position.CENTER),
-                PositionCode.clampMargin(c.getInt("tab.margin", 4)),
-                width(c.getString("tab.width", "auto")),
+                PositionCode.clamp(c.getInt("tab.margin", 4), PositionCode.TAB_MAX_MARGIN),
+                width(c.getString("tab.width", "205")),
+                bossbarRows(c.getString("tab.bossbar-rows", "own")),
                 c.getBoolean("position-markers", true),
                 c.getBoolean("board.enabled", true),
                 c.getBoolean("board.respect-other-scoreboards", true),
                 c.getString("board.title", "{server}"),
                 PositionCode.parse(c.getString("board.position"), PositionCode.Element.BOARD, PositionCode.Position.RIGHT),
-                PositionCode.clampMargin(c.getInt("board.margin", 4)),
+                PositionCode.clamp(c.getInt("board.margin", 4), PositionCode.BOARD_MAX_MARGIN),
                 c.getStringList("board.lines"),
                 c.getBoolean("bossbar.enabled", true),
                 c.getString("bossbar.text", "{server}"),
@@ -76,6 +78,20 @@ record Settings(
     }
 
     static final int AUTO_WIDTH = -1;
+    static final int ROWS_OWN = -1;
+    static final int ROWS_ALL = -2;
+
+    static int bossbarRows(String s) {
+        String k = s == null ? "own" : s.trim().toLowerCase(Locale.ROOT);
+        if (k.equals("all")) {
+            return ROWS_ALL;
+        }
+        try {
+            return PositionCode.clamp(Integer.parseInt(k), PositionCode.MAX_BOSSBAR_ROWS);
+        } catch (NumberFormatException e) {
+            return ROWS_OWN;
+        }
+    }
 
     static int width(String s) {
         if (s == null) {

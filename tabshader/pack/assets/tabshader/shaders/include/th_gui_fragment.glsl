@@ -1,8 +1,9 @@
 #version 330
 
 #moj_import <tabshader:th_common.glsl>
+#moj_import <tabshader:th_layout.glsl>
 
-#define TH_RADIUS 4.0
+#define TH_RADIUS TH_RADIUS_HUD
 
 flat in int thGuiKind;
 flat in vec2 thGuiScreen;
@@ -59,6 +60,21 @@ vec4 th_gui_fragment(vec4 color) {
     vec2 screen = ceil(thGuiScreen - 0.001);
     float mid = 2.0 * floor(screen.x * 0.5);
     float h = rect.w - rect.y;
+    int band = th_tab_code(rect.w);
+    if (band >= 0) {
+        if (thGuiKind != 1 || th_tab_code(rect.y) != band) {
+            return vec4(0.0);
+        }
+        vec2 shift = th_tab_shift(band, screen);
+        int slot = th_gui_mod9(rect.y);
+        if (slot == 2) {
+            return th_gui_card(p, rect + shift.xyxy, vec4(2.0, 0.0, 2.0, 2.0), vec4(0.0, 0.0, TH_RADIUS, TH_RADIUS), vec4(0.0, 1.0, 0.0, 0.0), 1.0);
+        }
+        if (slot == 1) {
+            return th_gui_card(p, rect + shift.xyxy, vec4(2.0, 0.0, 2.0, 0.0), vec4(0.0), vec4(0.0, 1.0, 0.0, 1.0), 1.0);
+        }
+        return th_gui_plain(color, p, rect + shift.xyxy);
+    }
     if (th_gui_tab_row(rect, screen, h)) {
         return vec4(0.0);
     }

@@ -16,5 +16,5 @@ void main() {
 
     texCoord0 = UV0;
     vertexColor = Color;
-    th_sprite_vertex(UV0, gl_VertexID);
+    th_sprite_vertex(Position, UV0, gl_VertexID);
 }

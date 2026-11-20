@@ -64,7 +64,8 @@ public final class Commands implements TabExecutor {
                 Settings st = plugin.settings();
                 texts().send(s, "status-tab", "limit", TabLayout.maxEntries(st.maxColumns()), "hidden",
                         plugin.limiter().hiddenTotal(), "cut", plugin.names().truncated(), "width", plugin.hud().tabWidth(st),
-                        "tab", st.tabPosition().key(), "board", st.boardPosition().key());
+                        "tab", st.tabPosition().key(), "board", st.boardPosition().key(),
+                        "wide", plugin.hud().boardTooWide());
             }
             default -> help(s);
         }

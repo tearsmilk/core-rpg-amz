@@ -6,68 +6,78 @@ import java.util.Set;
 
 public final class PositionCode {
 
-    public static final int PLACE_R = 232;
-    public static final int WIDTH_R = 233;
-    public static final int HEIGHT_R = 234;
-    public static final int MAX_MARGIN = 255;
+    public static final int TAB_MARKER_R = 232;
+    public static final int BOARD_MARKER_R = 233;
+    public static final int TAB_WIDTH = 205;
+    public static final int TAB_BAND = 32;
+    public static final int TAB_BASE = 9;
+    public static final int TAB_MAX_MARGIN = 15;
+    public static final int TAB_MAX_LINES = TAB_BAND - 4;
+    public static final int TAB_MAX_HEADER = 15;
+    public static final int TAB_CENTER = 64;
+    public static final int TAB_CODES = 80;
+    public static final int MAX_BOSSBAR_ROWS = TAB_CODES - TAB_CENTER - 1;
+    public static final int BOARD_CELL = 256;
+    public static final int BOARD_BASE = 64;
+    public static final int BOARD_MAX_MARGIN = 15;
+    public static final int BOARD_MAX_LINES = 15;
+    public static final int BOARD_SLACK = 8;
+    public static final int BOARD_MAX_WIDTH = BOARD_CELL - 2 * BOARD_SLACK - 4;
+    public static final int BOARD_CODES = 6 * 16 * 17 * 16;
     public static final int MAX_VALUE = 4095;
 
     public enum Element {
-        TAB(0),
-        BOARD(1);
+        TAB,
+        BOARD
+    }
 
-        private final int id;
-
-        Element(int id) {
-            this.id = id;
-        }
-
-        public int id() {
-            return id;
-        }
-
-        public static Element byId(int id) {
-            for (Element e : values()) {
-                if (e.id == id) {
-                    return e;
-                }
-            }
-            return null;
-        }
+    public enum Side {
+        NONE,
+        LEFT,
+        RIGHT
     }
 
     public enum Position {
-        CENTER(0, "center"),
-        TOP_LEFT(1, "top-left"),
-        TOP_RIGHT(2, "top-right"),
-        BOTTOM_LEFT(3, "bottom-left"),
-        BOTTOM_RIGHT(4, "bottom-right"),
-        LEFT(5, "left"),
-        RIGHT(6, "right");
+        CENTER("center", -1, -1),
+        TOP_LEFT("top-left", 0, 1),
+        TOP_RIGHT("top-right", 1, 2),
+        BOTTOM_LEFT("bottom-left", 2, 3),
+        BOTTOM_RIGHT("bottom-right", 3, 4),
+        LEFT("left", -1, 0),
+        RIGHT("right", -1, 5);
 
-        private final int id;
         private final String key;
+        private final int tabSlot;
+        private final int boardSlot;
 
-        Position(int id, String key) {
-            this.id = id;
+        Position(String key, int tabSlot, int boardSlot) {
             this.key = key;
-        }
-
-        public int id() {
-            return id;
+            this.tabSlot = tabSlot;
+            this.boardSlot = boardSlot;
         }
 
         public String key() {
             return key;
         }
 
-        public static Position byId(int id) {
-            for (Position p : values()) {
-                if (p.id == id) {
-                    return p;
-                }
-            }
-            return null;
+        public int tabSlot() {
+            return tabSlot;
+        }
+
+        public int boardSlot() {
+            return boardSlot;
+        }
+
+        public Side side() {
+            return switch (this) {
+                case TOP_LEFT, BOTTOM_LEFT, LEFT -> Side.LEFT;
+                case TOP_RIGHT, BOTTOM_RIGHT, RIGHT -> Side.RIGHT;
+                case CENTER -> Side.NONE;
+            };
+        }
+
+        public boolean bottom() {
+            return this == BOTTOM_LEFT || this == BOTTOM_RIGHT;
         }
     }
 
@@ -93,59 +103,114 @@ public final class PositionCode {
         return def;
     }
 
-    public static int clampMargin(int margin) {
-        return Math.max(0, Math.min(MAX_MARGIN, margin));
+    public static int clamp(int v, int max) {
+        return Math.max(0, Math.min(max, v));
     }
 
     public static int clampValue(int value) {
-        return Math.max(0, Math.min(MAX_VALUE, value));
+        return clamp(value, MAX_VALUE);
     }
 
-    public static int place(Element element, Position position, int margin) {
-        int g = (element.id() << 4) | position.id();
-        return (PLACE_R << 16) | (g << 8) | clampMargin(margin);
+    public static int tabCode(Position position, int margin) {
+        if (position.tabSlot() < 0) {
+            return -1;
+        }
+        return clamp(margin, TAB_MAX_MARGIN) * 4 + position.tabSlot();
     }
 
-    public static int width(Element element, int width) {
-        return sized(WIDTH_R, element, width);
+    public static int centerCode(int bossbarRows) {
+        if (bossbarRows <= 0) {
+            return -1;
+        }
+        return TAB_CENTER + clamp(bossbarRows, MAX_BOSSBAR_ROWS);
     }
 
-    public static int height(Element element, int height) {
-        return sized(HEIGHT_R, element, height);
+    public static int tabCode(Position position, int margin, int bossbarRows) {
+        return position == Position.CENTER ? centerCode(bossbarRows) : tabCode(position, margin);
     }
 
-    private static int sized(int r, Element element, int value) {
-        int v = clampValue(value);
-        int g = (element.id() << 4) | (v >> 8);
-        return (r << 16) | (g << 8) | (v & 255);
+    public static boolean tabFits(int lines) {
+        return lines >= 1 && lines <= TAB_MAX_LINES;
+    }
+
+    public static int tabPadLines(Position position, int margin, int lines) {
+        return tabPadLines(position, margin, lines, 0);
+    }
+
+    public static int tabPadLines(Position position, int margin, int lines, int bossbarRows) {
+        int code = tabCode(position, margin, bossbarRows);
+        if (code < 0 || !tabFits(lines)) {
+            return 0;
+        }
+        int band = TAB_BAND * (code + TAB_BASE);
+        return position.bottom() ? band + TAB_BAND - 2 - lines : band + 2;
+    }
+
+    public static int tabCodeAt(double y) {
+        double c = Math.floor((y - 9.0) / (9.0 * TAB_BAND)) - TAB_BASE;
+        return c < 0 || c >= TAB_CODES ? -1 : (int) c;
+    }
+
+    public static int boardCode(Position position, int lines, int tabMargin, int margin) {
+        int slot = position.boardSlot();
+        if (slot < 0) {
+            return -1;
+        }
+        int n = clamp(lines, BOARD_MAX_LINES);
+        int t = tabMargin < 0 ? 0 : 1 + clamp(tabMargin, TAB_MAX_MARGIN);
+        return ((slot * 16 + n) * 17 + t) * 16 + clamp(margin, BOARD_MAX_MARGIN);
+    }
+
+    public static int[] boardFields(int code) {
+        int margin = code % 16;
+        int r = code / 16;
+        int tab = r % 17;
+        r /= 17;
+        return new int[]{r / 16, r % 16, tab, margin};
+    }
+
+    public static boolean boardFromRight(int slot) {
+        return slot == 2 || slot == 4 || slot == 5;
+    }
+
+    public static long boardTitleWidth(int code, int contentWidth) {
+        long k = (long) code + BOARD_BASE;
+        int slot = boardFields(code)[0];
+        if (boardFromRight(slot)) {
+            return BOARD_CELL * (k - 1) + 2 + BOARD_SLACK + clamp(contentWidth, BOARD_MAX_WIDTH);
+        }
+        return BOARD_CELL * k - BOARD_SLACK;
+    }
+
+    public static int boardCodeAt(double x, int screenWidth) {
+        if (x > -8192) {
+            return -1;
+        }
+        double k = Math.ceil((screenWidth - 3.0 - x) / BOARD_CELL) - BOARD_BASE;
+        return k < 0 || k >= BOARD_CODES ? -1 : (int) k;
+    }
+
+    public static boolean sameSide(Position tab, Position board) {
+        return tab.side() != Side.NONE && tab.side() == board.side();
+    }
+
+    public static int tabMarker(int headerLines) {
+        return (TAB_MARKER_R << 16) | (clamp(headerLines, TAB_MAX_HEADER) << 8);
+    }
+
+    public static int boardMarker(int width) {
+        int w = clampValue(width);
+        return (BOARD_MARKER_R << 16) | ((w >> 8) << 8) | (w & 255);
     }
 
     public static int red(int rgb) {
         return (rgb >> 16) & 255;
     }
 
-    public static boolean isCode(int rgb) {
-        int r = red(rgb);
-        return (r == PLACE_R || r == WIDTH_R || r == HEIGHT_R) && element(rgb) != null
-                && (r != PLACE_R || position(rgb) != null);
-    }
-
-    public static Element element(int rgb) {
-        return Element.byId(((rgb >> 8) & 255) >> 4);
-    }
-
-    public static Position position(int rgb) {
-        if (red(rgb) != PLACE_R) {
-            return null;
+    public static int markerValue(int rgb) {
+        if (red(rgb) == TAB_MARKER_R) {
+            return (rgb >> 8) & 15;
         }
-        return Position.byId((rgb >> 8) & 15);
-    }
-
-    public static int margin(int rgb) {
-        return rgb & 255;
-    }
-
-    public static int value(int rgb) {
         return (((rgb >> 8) & 15) << 8) | (rgb & 255);
     }
 }

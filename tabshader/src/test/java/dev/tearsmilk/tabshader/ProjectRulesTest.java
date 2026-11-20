@@ -17,6 +17,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProjectRulesTest {
@@ -81,6 +82,11 @@ class ProjectRulesTest {
         Path dir = assets().resolve("minecraft/textures/gui/sprites/boss_bar");
         List<String[]> want = new ArrayList<>();
         for (int i = 0; i < COLOURS.size(); i++) {
+            if (COLOURS.get(i).equals("yellow")) {
+                assertFalse(Files.exists(dir.resolve("yellow_background.png")));
+                assertFalse(Files.exists(dir.resolve("yellow_progress.png")));
+                continue;
+            }
             want.add(new String[]{COLOURS.get(i) + "_background.png", "250", String.valueOf(i)});
             want.add(new String[]{COLOURS.get(i) + "_progress.png", "251", String.valueOf(i)});
         }
@@ -123,13 +129,14 @@ class ProjectRulesTest {
         Path core = assets().resolve("minecraft/shaders/core");
         assertTrue(read(core.resolve("gui.vsh")).contains("th_gui_vertex(Position, Color, gl_VertexID);"));
         assertTrue(read(core.resolve("gui.fsh")).contains("color = th_gui_fragment(color);"));
-        assertTrue(read(core.resolve("position_tex_color.vsh")).contains("th_sprite_vertex(UV0, gl_VertexID);"));
+        assertTrue(read(core.resolve("position_tex_color.vsh")).contains("th_sprite_vertex(Position, UV0, gl_VertexID);"));
         assertTrue(read(core.resolve("position_tex_color.fsh")).contains("th_sprite_fragment(color, texture(Sampler0, texCoord0), texCoord0)"));
         String tv = read(core.resolve("rendertype_text.vsh"));
         String tf = read(core.resolve("rendertype_text.fsh"));
         assertTrue(tv.contains("ts_vertex(") && tv.contains("th_text_vertex("));
         assertTrue(tf.contains("ts_fragment(") && tf.contains("th_text_fragment("));
         assertTrue(tv.indexOf("ts_vertex(") < tv.indexOf("th_text_vertex("));
+        assertTrue(tv.contains("vec4(th_layout_shift(Position), 1.0)") && tv.indexOf("th_layout_shift(") < tv.indexOf("ts_vertex("));
         String[] names;
         try (Stream<Path> s = Files.list(core)) {
             names = s.map(p -> p.getFileName().toString()).sorted().toArray(String[]::new);
@@ -148,7 +155,8 @@ class ProjectRulesTest {
         }
         List<String> rel = new ArrayList<>(Arrays.asList("minecraft/shaders/core/rendertype_text.vsh",
                 "minecraft/shaders/core/rendertype_text.fsh", "tabshader/shaders/include/th_common.glsl",
-                "tabshader/shaders/include/th_text_vertex.glsl", "tabshader/shaders/include/th_text_fragment.glsl"));
+                "tabshader/shaders/include/th_text_vertex.glsl", "tabshader/shaders/include/th_text_fragment.glsl",
+                "tabshader/shaders/include/th_layout.glsl"));
         try (Stream<Path> s = Files.list(assets().resolve("textshader/shaders/include"))) {
             s.forEach(p -> rel.add("textshader/shaders/include/" + p.getFileName()));
         }

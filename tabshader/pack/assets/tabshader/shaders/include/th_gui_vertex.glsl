@@ -2,6 +2,7 @@
 
 #moj_import <minecraft:dynamictransforms.glsl>
 #moj_import <minecraft:projection.glsl>
+#moj_import <tabshader:th_layout.glsl>
 
 #define TH_GROW_TAB 2.0
 #define TH_GROW_BOARD 1.0
@@ -40,7 +41,7 @@ void th_gui_vertex(vec3 pos, vec4 color, int vertexId) {
     thGuiA = vec3(0.0);
     thGuiC = vec3(0.0);
     thGuiOk = vec2(0.0);
-    if (ProjMat[3][3] != 1.0 || ProjMat[2][3] != 0.0 || ProjMat[1][1] >= 0.0) {
+    if (!th_is_gui()) {
         return;
     }
     int corner = vertexId % 4;
@@ -49,7 +50,35 @@ void th_gui_vertex(vec3 pos, vec4 color, int vertexId) {
     } else if (corner == 2) {
         thGuiC = vec3(pos.xy, 1.0);
     }
+    vec2 screen = th_screen();
+    vec2 side = vec2(corner >= 2 ? -1.0 : 1.0, (corner == 1 || corner == 2) ? -1.0 : 1.0);
     int kind = th_gui_candidate(color);
+    int tab = th_tab_code(pos.y);
+    if (tab < 0 && th_board_code(pos.x, screen.x) >= 0) {
+        thGuiPos = vec2(screen.x + 8.0, pos.y);
+        gl_Position = ProjMat * ModelViewMat * vec4(thGuiPos, pos.z, 1.0);
+        return;
+    }
+    if (tab >= 0) {
+        int slot = int(round(pos.y)) % 9;
+        bool bottom = corner == 0 || corner == 3;
+        if (kind == 2 || (kind == 1 && slot == 1 && bottom)) {
+            float half_w = th_tab_half() + 1.0 + TH_GROW_TAB;
+            thGuiPos = vec2(floor(screen.x * 0.5) + (side.x > 0.0 ? half_w : -half_w), 9.0 - TH_GROW_TAB);
+            gl_Position = ProjMat * ModelViewMat * vec4(thGuiPos, pos.z, 1.0);
+            return;
+        }
+        vec2 moved = pos.xy + th_tab_shift(tab, screen);
+        if (kind == 1) {
+            thGuiKind = 1;
+            thGuiOk = vec2(1.0, 1.0);
+            thGuiScreen = vec2(2.0 / ProjMat[0][0], -2.0 / ProjMat[1][1]);
+            moved += side * TH_GROW_TAB;
+        }
+        thGuiPos = moved;
+        gl_Position = ProjMat * ModelViewMat * vec4(moved, pos.z, 1.0);
+        return;
+    }
     if (kind == 0) {
         return;
     }
@@ -63,7 +92,6 @@ void th_gui_vertex(vec3 pos, vec4 color, int vertexId) {
         grow = TH_GROW_BOARD;
     }
     if (grow > 0.0) {
-        vec2 side = vec2(corner >= 2 ? -1.0 : 1.0, (corner == 1 || corner == 2) ? -1.0 : 1.0);
         vec2 grown = pos.xy + side * grow;
         thGuiPos = grown;
         gl_Position = ProjMat * ModelViewMat * vec4(grown, pos.z, 1.0);

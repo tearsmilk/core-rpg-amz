@@ -1,5 +1,6 @@
 package dev.tearsmilk.tabshader;
 
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.ShadowColor;
@@ -95,13 +96,70 @@ public final class TabLayout {
         }
     }
 
+    public static boolean atomic(int cp) {
+        return (cp >= 0xE000 && cp <= 0xF8FF) || cp >= 0xF0000;
+    }
+
+    public static int nameBudget(int maxChars, Widths w) {
+        return maxChars * w.advance('W', false) + w.width(ELLIPSIS, false);
+    }
+
     public static Component truncate(Component c, int max) {
-        if (c == null || max <= 0 || visibleLength(c) <= max) {
+        return truncate(c, max, null);
+    }
+
+    public static Component truncate(Component c, int max, Widths w) {
+        if (c == null || max <= 0) {
             return c;
         }
-        Cut cut = new Cut(max);
+        Scan scan = new Scan(w);
+        scan.walk(c, Style.empty(), false, false);
+        int budget = w == null ? Integer.MAX_VALUE : nameBudget(max, w);
+        if (scan.letters <= max && scan.total <= budget) {
+            return c;
+        }
+        int keep = Math.min(max, scan.letters);
+        while (keep > 0 && w != null && scan.prefix.get(keep - 1) + w.width(ELLIPSIS, scan.bold.get(keep - 1)) > budget) {
+            keep--;
+        }
+        Cut cut = new Cut(keep);
         Component body = cut.walk(c, Style.empty());
         return body.append(Component.text(ELLIPSIS, cut.last));
+    }
+
+    private static final class Scan {
+        final Widths w;
+        int letters;
+        int total;
+        final List<Integer> prefix = new ArrayList<>();
+        final List<Boolean> bold = new ArrayList<>();
+
+        Scan(Widths w) {
+            this.w = w;
+        }
+
+        void walk(Component c, Style parent, boolean parentBold, boolean parentForeign) {
+            Style effective = c.style().merge(parent, Style.Merge.Strategy.IF_ABSENT_ON_TARGET);
+            TextDecoration.State st = c.style().decoration(TextDecoration.BOLD);
+            boolean b = st == TextDecoration.State.TRUE || (st == TextDecoration.State.NOT_SET && parentBold);
+            boolean foreign = parentForeign || (c.style().font() != null && !Widths.DEFAULT_FONT.equals(c.style().font()));
+            if (c instanceof TextComponent t) {
+                String s = t.content();
+                for (int i = 0; i < s.length(); ) {
+                    int cp = s.codePointAt(i);
+                    i += Character.charCount(cp);
+                    total += w == null ? 0 : (foreign ? Widths.UNKNOWN : w.advance(cp, b));
+                    if (!foreign && !atomic(cp)) {
+                        letters++;
+                        prefix.add(total);
+                        bold.add(b);
+                    }
+                }
+            }
+            for (Component child : c.children()) {
+                walk(child, effective, b, foreign);
+            }
+        }
     }
 
     private static final class Cut {
@@ -114,21 +172,22 @@ public final class TabLayout {
 
         Component walk(Component c, Style parent) {
             Style effective = c.style().merge(parent, Style.Merge.Strategy.IF_ABSENT_ON_TARGET);
+            Key font = effective.font();
+            boolean foreign = font != null && !Widths.DEFAULT_FONT.equals(font);
             Component self = c;
             if (c instanceof TextComponent t) {
                 String s = t.content();
-                int n = s.codePointCount(0, s.length());
-                if (n > 0) {
-                    if (n > left) {
-                        s = s.substring(0, s.offsetByCodePoints(0, left));
-                        n = left;
-                    }
-                    left -= n;
-                    if (n > 0) {
+                StringBuilder kept = new StringBuilder();
+                for (int i = 0; i < s.length() && left > 0; ) {
+                    int cp = s.codePointAt(i);
+                    i += Character.charCount(cp);
+                    kept.appendCodePoint(cp);
+                    if (!foreign && !atomic(cp)) {
+                        left--;
                         last = effective;
                     }
                 }
-                self = t.content(s);
+                self = t.content(kept.toString());
             }
             List<Component> kids = new ArrayList<>();
             for (Component child : c.children()) {
@@ -228,12 +287,55 @@ public final class TabLayout {
         return Component.text(MARKER_GLYPHS, style);
     }
 
-    public static Component markers(PositionCode.Element element, PositionCode.Position position, int margin,
-                                    int width, int height) {
+    public static final char PAD_FIRST = '\ue100';
+    public static final int PAD_BITS = 23;
+
+    public static Component pad(long px) {
+        if (px <= 0) {
+            return Component.empty();
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int bit = 0; bit < PAD_BITS; bit++) {
+            if ((px >> bit & 1) != 0) {
+                sb.append((char) (PAD_FIRST + bit));
+            }
+        }
+        if (px >> PAD_BITS != 0) {
+            throw new IllegalArgumentException("pad too wide: " + px);
+        }
+        return Component.text(sb.toString(), Style.style().font(Backing.FONT).build());
+    }
+
+    public static long padWidth(String glyphs) {
+        long w = 0;
+        for (int i = 0; i < glyphs.length(); i++) {
+            int bit = glyphs.charAt(i) - PAD_FIRST;
+            if (bit >= 0 && bit < PAD_BITS) {
+                w += 1L << bit;
+            }
+        }
+        return w;
+    }
+
+    public static List<Component> tabHeader(List<Component> lines, int padLines) {
+        List<Component> out = new ArrayList<>(padLines + lines.size());
+        for (int i = 0; i < padLines; i++) {
+            out.add(Component.empty());
+        }
+        out.addAll(lines);
+        return out;
+    }
+
+    public static Component boardTitle(Component title, int titleWidth, int contentWidth, int code) {
+        int content = Math.max(contentWidth, titleWidth);
+        long total = PositionCode.boardTitleWidth(code, content);
+        int before = Math.max(0, (content - titleWidth) / 2);
+        long after = total - before - titleWidth;
         return Component.text()
-                .append(marker(PositionCode.place(element, position, margin)))
-                .append(marker(PositionCode.width(element, width)))
-                .append(marker(PositionCode.height(element, height)))
+                .append(marker(PositionCode.boardMarker(content)))
+                .append(pad(before))
+                .append(title)
+                .append(pad(after))
                 .build();
     }
 }

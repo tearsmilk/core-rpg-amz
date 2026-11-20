@@ -151,6 +151,10 @@ renderer позже нас (тоже HIGHEST/MONITOR) или собирает ф
   `th_text_vertex.glsl`, `th_text_fragment.glsl`. Копии в обоих проектах побайтно одинаковы, синхронизация -
   `tabshader/tools/sync_textshader.py`. Хуки не мешают друг другу: маркер tabshader - цвет `R = 231` плюс
   проверка текселя глифа `tabshader:hud`, коды textshader - `R = 214` / тени `R = 53`.
+- MythicHUD: его пак `hl-resourcepack.zip` кладет свои `rendertype_text.*` в оверлей `mythichud-1_21_6`, а оверлей
+  важнее базовых ассетов - без правки эффектов textshader не будет. `pack/overlays/mythichud-1_21_6/...` - наш
+  `rendertype_text` плюс `applyCustomHud()` MythicHUD (копия из tabshader). Вставить в zip:
+  `python3 -I tabshader/tools/mythichud_patch.py IN.zip OUT.zip` (подробно в README tabshader, раздел MythicHUD).
 - `rendertype_item_entity_translucent_cull.*` (coreshaders) не пересекается с нами.
 - Ограничения: курсив у буквы с эффектом не наклоняется (плагин ставит italic false), шрифты TrueType
   не анимируются (только цвет). Запас квада рассчитан на масштаб до 4x (заголовки); у текста крупнее

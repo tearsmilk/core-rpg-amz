@@ -3,6 +3,7 @@
 #moj_import <minecraft:globals.glsl>
 
 #define TH_TAU 6.2831853
+#define TH_RADIUS_HUD 4.0
 
 const vec3 TH_DEEP = vec3(0.722, 0.165, 0.310);
 const vec3 TH_WINE = vec3(0.910, 0.271, 0.420);
