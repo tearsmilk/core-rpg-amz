@@ -9,7 +9,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -155,18 +154,20 @@ class ProjectRulesTest {
     }
 
     @Test
-    void coreFilesCarryHooks() {
+    void hookFilesCallOurShaders() {
+        Path inc = assets().resolve("tabshader/shaders/include");
+        assertTrue(read(inc.resolve("th_hook_gui_vertex.glsl")).contains("th_gui_vertex(pos, color, vertexId);"));
+        assertTrue(read(inc.resolve("th_hook_gui_fragment.glsl")).contains("return th_gui_fragment(color);"));
+        assertTrue(read(inc.resolve("th_hook_sprite_vertex.glsl")).contains("th_sprite_vertex(pos, uv, vertexId);"));
+        assertTrue(read(inc.resolve("th_hook_sprite_fragment.glsl")).contains("return th_sprite_fragment(color, tex, uv);"));
+        String tv = read(inc.resolve("th_hook_text_vertex.glsl"));
+        assertTrue(tv.contains("pos = th_layout_shift(pos);") && tv.contains("th_text_vertex(pos, color, uv, vertexId, outColor);"));
+        assertTrue(read(inc.resolve("th_hook_text_fragment.glsl")).contains("return th_text_fragment(color, vertexColor);"));
         Path core = assets().resolve("minecraft/shaders/core");
-        assertTrue(read(core.resolve("gui.vsh")).contains("th_gui_vertex(Position, Color, gl_VertexID);"));
-        assertTrue(read(core.resolve("gui.fsh")).contains("color = th_gui_fragment(color);"));
-        assertTrue(read(core.resolve("position_tex_color.vsh")).contains("th_sprite_vertex(Position, UV0, gl_VertexID);"));
-        assertTrue(read(core.resolve("position_tex_color.fsh")).contains("th_sprite_fragment(color, texture(Sampler0, texCoord0), texCoord0)"));
-        String tv = read(core.resolve("rendertype_text.vsh"));
-        String tf = read(core.resolve("rendertype_text.fsh"));
-        assertTrue(tv.contains("ts_vertex(") && tv.contains("th_text_vertex("));
-        assertTrue(tf.contains("ts_fragment(") && tf.contains("th_text_fragment("));
-        assertTrue(tv.indexOf("ts_vertex(") < tv.indexOf("th_text_vertex("));
-        assertTrue(tv.contains("vec4(th_layout_shift(Position), 1.0)") && tv.indexOf("th_layout_shift(") < tv.indexOf("ts_vertex("));
+        String text = read(core.resolve("rendertype_text.vsh"));
+        assertTrue(text.indexOf("th_hook_text_position(pos);") < text.indexOf("vec4(pos, 1.0)"));
+        assertTrue(text.indexOf("vec4(pos, 1.0)") < text.indexOf("ts_hook_text_vertex("));
+        assertTrue(text.indexOf("ts_hook_text_vertex(") < text.indexOf("th_hook_text_vertex("));
         String[] names;
         try (Stream<Path> s = Files.list(core)) {
             names = s.map(p -> p.getFileName().toString()).sorted().toArray(String[]::new);
@@ -175,30 +176,8 @@ class ProjectRulesTest {
         }
         assertArrayEquals(new String[]{"gui.fsh", "gui.vsh", "position_tex_color.fsh", "position_tex_color.vsh",
                 "rendertype_text.fsh", "rendertype_text.vsh"}, names);
-    }
-
-    @Test
-    void sharedCopiesMatchTextshader() throws IOException {
-        Path other = root().getParent().resolve("textshader/pack/assets");
-        if (!Files.isDirectory(other)) {
-            return;
-        }
-        List<String> rel = new ArrayList<>(Arrays.asList("minecraft/shaders/core/rendertype_text.vsh",
-                "minecraft/shaders/core/rendertype_text.fsh", "tabshader/shaders/include/th_common.glsl",
-                "tabshader/shaders/include/th_text_vertex.glsl", "tabshader/shaders/include/th_text_fragment.glsl",
-                "tabshader/shaders/include/th_layout.glsl"));
-        try (Stream<Path> s = Files.list(assets().resolve("textshader/shaders/include"))) {
-            s.forEach(p -> rel.add("textshader/shaders/include/" + p.getFileName()));
-        }
-        List<String> diff = new ArrayList<>();
-        for (String r : rel) {
-            Path a = assets().resolve(r);
-            Path b = other.resolve(r);
-            if (!Files.exists(b) || !Arrays.equals(Files.readAllBytes(a), Files.readAllBytes(b))) {
-                diff.add(r);
-            }
-        }
-        assertEquals(List.of(), diff);
+        assertFalse(Files.exists(assets().resolve("textshader")));
+        assertFalse(read(inc.resolve("th_text_vertex.glsl")).contains("uniform sampler2D Sampler0;"));
     }
 
     @Test

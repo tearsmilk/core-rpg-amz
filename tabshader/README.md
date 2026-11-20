@@ -18,7 +18,8 @@
 | Полоски пинга в табе | спрайты `icon/ping_1..5`, `icon/ping_unknown` | ванильная картинка; при `tab.ping-bars: false` убираются (см. "Полоски пинга") |
 | Актионбар, тайтл, подзаголовок | только фон "текст на фоне" из настроек доступности | этот фон убран; плагин добавляет перед текстом невидимый маркер, шейдер рисует под текстом панель по ширине текста |
 
-Как шейдер узнает элементы (`pack/assets/tabshader/shaders/include/`):
+Как шейдер узнает элементы (`pack/assets/tabshader/shaders/include/`). В общие core-файлы они подключаются через
+хуки `th_hook_gui_*`, `th_hook_sprite_*`, `th_hook_text_*` (см. "Общие core-шейдеры"):
 
 - `th_gui_vertex.glsl`, `th_gui_fragment.glsl` (в `gui.vsh/fsh`): заливки GUI. Квад узнается по точному
   ванильному цвету и положению: таб - `0x80000000`, центр по экрану (x0 + x1 = 2 * (ширина / 2)), верх >= 9,
@@ -43,7 +44,8 @@
   делений. Другие спрайты не трогаются (нужны альфа 250-253 и высота квада ровно 5 текселей). Спрайты пинга
   таба (`icon/ping_*`, 10x8) - ванильные картинки с альфой 254 у видимых текселей; шейдер рисует их как обычно
   (альфа возвращается к 1) или выбрасывает, если вершина лежит в полосе таба "без пинга" (см. "Полоски пинга").
-- `th_text_vertex.glsl`, `th_text_fragment.glsl` (в `rendertype_text.vsh/fsh`, общих с textshader): маркер -
+- `th_text_vertex.glsl`, `th_text_fragment.glsl` (в `rendertype_text.vsh/fsh`, общих с textshader, nameshader и chatshader; `uniform sampler2D Sampler0` объявляет
+  сам канонический `rendertype_text.vsh`): маркер -
   глиф `U+E000` шрифта `tabshader:hud` (8x8, цвет `#E7074D`) + пробел `U+E001` шириной -9. Цвет компонента
   маркера: `R = 231`, `G = вид << 4 | ширина >> 8`, `B = ширина & 255`; вид 1 - актионбар (1x), 2 - тайтл (4x),
   3 - подзаголовок (2x); ширина - ширина текста в пикселях шрифта, плагин считает ее по таблице ширин ванильного
@@ -334,15 +336,58 @@ config.yml и `/tsh reload`, сразу у всех игроков, без пе�
 Цвета `#E710xx`-`#E73Fxx` для обычного текста не использовать - шейдер их узнает только
 вместе с глифом маркера, но лучше не пересекаться.
 
-## Общие файлы с textshader
+## Общие core-шейдеры: схема хуков (shaderhooks)
 
-`rendertype_text.vsh/.fsh` содержат хуки обоих плагинов: `ts_vertex`/`ts_fragment` (textshader) и
-`th_text_vertex`/`th_text_fragment` (tabshader). Оба проекта поставляют одинаковые копии: в `tabshader/pack`
-лежат еще и инклуды `textshader/shaders/include/*`, в `textshader/pack` - `tabshader/shaders/include/th_common.glsl`,
-`th_layout.glsl`, `th_text_vertex.glsl`, `th_text_fragment.glsl`. Поэтому любой из паков можно ставить отдельно или оба вместе в
-любом порядке. Синхронизация: `python3 -I tools/sync_textshader.py` (проверка), `--write` (копировать: текстовые
-хуки tabshader -> textshader, инклуды textshader -> tabshader). `glsl_check.py` и тест `sharedCopiesMatchTextshader`
-падают при расхождении.
+textshader, tabshader, nameshader и chatshader (будущий) меняют одни и те же core-шейдеры. Чтобы каждый плагин
+работал один и в любом сочетании, а порядок установки не играл роли, используется одна схема во всех проектах:
+
+- `gui.vsh/.fsh`, `position_tex_color.vsh/.fsh`, `rendertype_text.vsh/.fsh` - канонические файлы, побайтно
+  одинаковые во всех плагинах (строка `#define SHADERHOOKS_VERSION 1`). Они вызывают фиксированный список хуков, по
+  одному include на плагин и стадию: `<плагин>:<префикс>_hook_<программа>_<стадия>.glsl`. Префиксы: `ts` -
+  textshader, `th` - tabshader, `ns` - nameshader, `cs` - chatshader. Программы: `gui`, `sprite`
+  (`position_tex_color`), `text` (`rendertype_text`). Вершинная стадия: сначала `<p>_hook_<prog>_position(inout vec3
+  pos)` у всех плагинов (сдвиг вершины до `gl_Position`), потом `<p>_hook_<prog>_vertex(...)` (исходная `Position`,
+  цвет, UV, `gl_VertexID`, для текста свет, `inout vertexColor`). Фрагментная: `color = <p>_hook_<prog>_fragment(color,
+  ...)` перед ванильным `discard`. Порядок вызова всегда ts, th, ns, cs.
+- Настоящие хуки плагина лежат в `pack/assets/<плагин>/shaders/include/<p>_hook_*.glsl` (тонкие адаптеры, вызывают
+  функции плагина), заглушки всех четырех плагинов (пустые функции, `return color`) - в `pack/stubs/`. Путь у
+  настоящего хука и у заглушки один и тот же, поэтому руками это не копируется: плагин при старте сам пишет файлы в
+  `plugins/Nexo/pack/assets` (класс `ShaderHooks`, файлы берет из своего jar, `shaderpack/`):
+  1. канонические файлы тех программ, где у него есть настоящий (не равный заглушке) хук - парой vsh+fsh. Чужой
+     файл (без `#moj_import` наших плагинов) не заменяется, в логе красная строка, программа пропускается целиком.
+     Файл с более новым `SHADERHOOKS_VERSION` тоже не заменяется (старый jar не откатывает новый);
+  2. все остальные свои файлы: include, свои хуки, текстуры, шрифты, свои отдельные core-файлы (если они не чужие);
+  3. если в паке есть хоть один канонический файл - заглушки всех остальных плагинов, которых нет на сервере, или
+     чьи хук-файлы неполные. Хуки удаленного плагина при следующем старте любого из оставшихся заменяются
+     заглушками, его эффект в общих шейдерах пропадает.
+  Файл пишется, только если содержимое другое (через временный файл и переименование). Nexo собирает пак на первом
+  тике после включения всех плагинов, поэтому при старте сервера ничего перезагружать не надо. Если файлы
+  изменились позже (`reload` плагина, загрузка на ходу) и Nexo включен - плагин сам вызывает `nexo reload pack`.
+- Итог не зависит от порядка: общие файлы у всех одинаковые, свои файлы пишет только владелец, а заглушки - только
+  за отсутствующие плагины. Проверки: `python3 -I tools/shaderhooks/shaderhooks.py combos` (каждый плагин отдельно,
+  все пары, все вместе, все порядки установки: одинаковые файлы, повторная установка ничего не пишет, все
+  программы компилируются glslangValidator 330 и 410, после удаления плагина его хуки - заглушки, чужой `gui.vsh` не
+  тронут, более новая версия осталась; запускается и из `glsl_check.py`), JUnit `ShaderHooksTest` (то же для
+  Java-кода на всех 15 наборах из 4 плагинов и всех порядках, совпадение общих файлов и `ShaderHooks.java` с
+  соседними проектами), живой клиент `tabshader/tools/realclient.sh --server-pack` (пак пишут сами плагины на
+  тестовом сервере, результат сверяется с эмуляцией `shaderhooks.py install`).
+- `tools/shaderhooks/` (скрипт и шаблоны `ShaderHooks.java.in`, `ShaderHooksTest.java.in`) одинаковый во всех
+  проектах. Правка - в любом проекте, потом `python3 -I tools/shaderhooks/shaderhooks.py --write` из него: папка
+  копируется в остальные проекты, перегенерируются канонические файлы, заглушки, оверлей MythicHUD,
+  `ShaderHooks.java` и `ShaderHooksTest.java` (отличаются только пакетом). Без `--write` - проверка, что все
+  совпадает (ее запускает и `glsl_check.py`).
+- config.yml каждого плагина: `pack.install` (по умолчанию `true`), `pack.dir` (пусто - `plugins/Nexo/pack/assets`;
+  другой путь - для тестов), `pack.reload-nexo` (по умолчанию `true`). Без Nexo (нет `plugins/Nexo/pack`) плагин
+  ничего не пишет и предупреждает в логе. Ручная установка при `pack.install: false`:
+  `python3 -I tools/shaderhooks/shaderhooks.py install --dest plugins/Nexo/pack/assets --plugins textshader,tabshader,nameshader`
+  (перечислить все наши плагины, что стоят на сервере). Копировать `pack/assets` руками нельзя: канонические файлы
+  импортируют хуки всех плагинов, без заглушек пак не скомпилируется у игроков.
+- chatshader: префикс `cs` уже есть в канонических файлах, его заглушки ставятся уже сейчас, хуки `cs_hook_gui_*`,
+  `cs_hook_sprite_*`, `cs_hook_text_*` зарезервированы. Новая программа или другая сигнатура - только с новым
+  `SHADERHOOKS_VERSION` во всех плагинах сразу.
+- Отдельные (не общие) core-файлы остаются у своих владельцев: textshader - `rendertype_text_see_through.vsh`,
+  `rendertype_text_intensity*.vsh`; nameshader - `rendertype_text_see_through.fsh`, `rendertype_text_background*`.
+  При удалении плагина их надо убрать из пака вручную (общие хуки плагин-сосед сам заменит заглушками).
 
 ## MythicHUD (hl-resourcepack.zip)
 
@@ -356,7 +401,7 @@ config.yml и `/tsh reload`, сразу у всех игроков, без пе�
 `rendertype_text` плюс `applyCustomHud()` MythicHUD (`#moj_import <minecraft:mythichud_utils.glsl>`, MH_VERSION 5).
 `.fsh` равен нашему, в `.vsh` после наших хуков вызывается `applyCustomHud()`; если MythicHUD вершину не двигал
 (результат равен ванильной позиции), возвращается наша позиция. Текст MythicHUD (y > 100067) и наши полосы
-(y 2601..48681, x < -8192) не пересекаются. Файлы общие с textshader (`sync_textshader.py`), `glsl_check.py`
+(y 2601..48681, x < -8192) не пересекаются. Файлы генерирует `tools/shaderhooks` (тот же оверлей в textshader), `glsl_check.py`
 компилирует их с `mythichud_utils.glsl` из zip и проверяет, что `.vsh` отличается от нашего только строками
 MythicHUD.
 
@@ -374,8 +419,11 @@ MythicHUD.
 cd tabshader
 gradle --offline build                           # тесты + build/libs/tabshader-1.0.0.jar
 python3 -I tools/gen_assets.py                   # спрайты боссбара и пинга, шрифт маркера, src/main/resources/widths.txt
-python3 -I tools/glsl_check.py                   # glslangValidator 330 и 410, дифф с ванилью, общие копии
-python3 -I tools/sync_textshader.py              # копии rendertype_text, инклудов и оверлея MythicHUD совпадают с textshader
+python3 -I tools/glsl_check.py                   # glslangValidator 330 и 410, дифф с ванилью, shaderhooks и все сочетания
+python3 -I tools/shaderhooks/shaderhooks.py      # общие файлы схемы хуков совпадают во всех проектах (--write - обновить)
+python3 -I tools/shaderhooks/shaderhooks.py combos   # каждый плагин, пары, все вместе, все порядки: компилируются
+tools/realclient.sh --server-pack --plugins textshader,tabshader,nameshader --out ABS_DIR   # пак пишут сами плагины
+tools/realclient.sh --plugins tabshader          # пак только с tabshader (остальные - заглушки)
 python3 -I tools/mythichud_patch.py --check ../server/plugins/Nexo/pack/external_packs/hl-resourcepack.zip
 tools/realclient.sh --extpacks patched           # живой клиент с паком MythicHUD как на сервере (raw - без патча)
 python3 -I tools/preview.py                      # превью настоящими шейдерами в preview/
@@ -389,6 +437,14 @@ python3 -I tools/preview.py --scale 3 --size 1366x768   # дробная шир�
 слева ваниль), `bossbar_fallback.png` (наши спрайты с ванильным шейдером). Раскладка повторяет код клиента
 1.21.11 (`PlayerTabOverlay`, `Gui`, `BossHealthOverlay`), заливки, спрайты и глифы идут через настоящие шейдеры
 из пака. Ник в подзаголовке покрашен кодом textshader (wave) - видно, что оба хука работают вместе.
+
+Снимки живого клиента после перехода на схему хуков: `preview/real_hooks_g2/` (GUI 2, пак записали сами
+textshader, tabshader и nameshader на mc-skilltest через `--server-pack`, `parity.txt` пустой - совпадает с
+`shaderhooks.py install`; `compare_before_after_*.png` - слева прогон до перехода, справа после: отличаются только
+облака, фаза перелива и цифры пинга/времени), `preview/real_hooks_g4/` (GUI 4, 1920x1080),
+`preview/real_hooks_alone/` (пак только с tabshader - эффекты textshader обычным цветом; только с textshader -
+эффекты есть, таб без шейдера tabshader темный, как и должно быть без его пака). Превью `tools/preview.py`
+(textshader и tabshader) до и после перехода совпадают побайтно.
 
 Тесты: кодирование маркера (все виды и ширины), маркер первым ребенком со шрифтом, без тени и без жирного,
 ширины ванильного шрифта и наследование жирного, выключатели, подстановки с экранированием, режимы прогресса,
@@ -407,7 +463,8 @@ python3 -I tools/preview.py --scale 3 --size 1366x768   # дробная шир�
 `board.avoid-tab` в конфиге,
 полосы "без пинга" (`pingHiddenBandsKeepEveryPosition`: тот же сдвиг панели во всех позициях, центр без боссбаров
 на ванильном месте), `tab.ping-bars` по умолчанию `false`, альфа 254 у спрайтов пинга и хуки в шейдерах,
-коды маркеров, точная ширина пустых глифов и заголовка табло, совпадение констант Java и `th_layout.glsl`, выравнивание шапки до ширины по таблице ширин, совпадение общих копий с textshader, все ключи сообщений есть в config.yml, нет комментариев
+коды маркеров, точная ширина пустых глифов и заголовка табло, совпадение констант Java и `th_layout.glsl`, выравнивание шапки до ширины по таблице ширин, хуки tabshader вызывают свои функции и сдвиг `th_layout_shift` идет до `gl_Position`, общие файлы и
+`ShaderHooks.java` совпадают с соседними проектами, установка пака в любом порядке (`ShaderHooksTest`), все ключи сообщений есть в config.yml, нет комментариев
 в Java и шейдерах и нет длинных тире во всем проекте.
 
 Живой тест (mc-skilltest, бот `/home/user/mc-bot/th1_tabshader.js`): 21/21 - шапка и подвал таба, objective
@@ -418,30 +475,32 @@ python3 -I tools/preview.py --scale 3 --size 1366x768   # дробная шир�
 
 ## Деплой
 
-1. Проверить `plugins/Nexo/pack/assets/minecraft/shaders/core/`: там не должно быть чужих `gui.vsh`, `gui.fsh`,
-   `position_tex_color.vsh`, `position_tex_color.fsh` (и `rendertype_text.*` кроме наших). Если есть - объединять,
-   а не перезаписывать. В Nexo `settings.yml` `hide_tablist_background` и `hide_scoreboard_*` оставить
-   выключенными: иначе Nexo положит свой `gui.vsh` поверх нашего. Анимированные (gif) глифы Nexo тоже не включать
-   (Nexo тогда кладет свои `rendertype_text*`).
-2. Скопировать содержимое `tabshader/pack/assets/` в `plugins/Nexo/pack/assets/`: `minecraft/shaders/core`
-   (6 файлов), `minecraft/textures/gui/sprites/icon` (6 спрайтов пинга `ping_1..5`, `ping_unknown`), `minecraft/textures/gui/sprites/boss_bar` (20 спрайтов; если там остались наши старые
-   `yellow_background.png` и `yellow_progress.png` - удалить именно эти два файла), `tabshader/` (инклуды, шрифт `hud.json`,
-   `textures/font/marker.png`), `textshader/shaders/include` (те же файлы, что у textshader). Если textshader уже
-   стоит - его `rendertype_text.*` заменятся на идентичные (проверено `sync_textshader.py`).
+1. В Nexo `settings.yml` `hide_tablist_background` и `hide_scoreboard_*` оставить выключенными: иначе Nexo
+   положит свой `gui.vsh` поверх нашего. Анимированные (gif) глифы Nexo тоже не включать (Nexo тогда кладет свои
+   `rendertype_text*`).
+2. Положить `build/libs/tabshader-1.0.0.jar` в `plugins/`. Файлы пака руками не копировать: при старте плагин сам
+   пишет в `plugins/Nexo/pack/assets` общие core-шейдеры (`gui.*`, `position_tex_color.*`, `rendertype_text.*`),
+   свои include, шрифт и маркер, спрайты пинга и боссбара и заглушки отсутствующих плагинов (см. "Общие
+   core-шейдеры"). В логе: `Шейдеры в .../plugins/Nexo/pack/assets: записано файлов N`. Красная строка "Чужой
+   шейдер ... не заменен" - в паке лежит чужой `gui.*` / `position_tex_color.*` / `rendertype_text.*`: объединить
+   вручную или убрать и перезапустить. Если в `boss_bar/` остались наши старые `yellow_background.png` и
+   `yellow_progress.png` - удалить именно эти два файла. Состояние: `/tsh status`, строка "Шейдеры в паке Nexo".
 3. MythicHUD: `python3 -I tools/mythichud_patch.py plugins/Nexo/pack/external_packs/hl-resourcepack.zip /tmp/hl-patched.zip`,
    проверить вывод (`REPLACE ...rendertype_text.vsh/.fsh`, без `PROBLEM`), сохранить старый zip рядом
-   (`hl-resourcepack.zip.before-tabshader`) и положить патченный на его место.
-   Положить `build/libs/tabshader-1.0.0.jar` в `plugins/`.
-4. Рестарт (Nexo пересоберет пак, Hermes раздаст).
-5. Проверить zip, который раздает Hermes (обфускация SIMPLE): `assets/minecraft/shaders/core/gui.vsh` содержит
-   `th_gui_vertex`, `rendertype_text.vsh` содержит и `ts_vertex`, и `th_text_vertex`;
-   `mythichud-1_21_6/assets/minecraft/shaders/core/rendertype_text.vsh` содержит и `th_text_vertex`, и
-   `applyCustomHud`; есть
-   `assets/tabshader/shaders/include/*.glsl` и `assets/minecraft/textures/gui/sprites/boss_bar/*.png`; шрифт
-   `assets/tabshader/font/hud.json` ссылается на существующую текстуру (Nexo может переименовать
-   `marker.png` - ссылка в шрифте должна обновиться вместе с ней).
-   Проверить, что в zip есть `assets/minecraft/textures/gui/sprites/icon/ping_*.png` (6 файлов) и
-   `position_tex_color.fsh` содержит `th_sprite_fragment`, а `gui.fsh` -
-   `th_gui_fragment` (иначе стили не работают; боссбар тогда просто статичная розовая картинка).
+   (`hl-resourcepack.zip.before-tabshader`) и положить патченный на его место. После смены `SHADERHOOKS_VERSION`
+   патч надо повторить (в оверлее лежит копия канонического `rendertype_text`).
+4. Рестарт (Nexo соберет пак на первом тике, Hermes раздаст). Порядок установки textshader, tabshader, nameshader
+   не важен.
+5. Проверить zip, который раздает Hermes (обфускация SIMPLE шейдеры не трогает): `assets/minecraft/shaders/core/gui.vsh`,
+   `position_tex_color.*` и `rendertype_text.*` содержат `SHADERHOOKS_VERSION`, `assets/tabshader/shaders/include/`
+   содержит `th_hook_*.glsl` (не заглушки: в `th_hook_gui_vertex.glsl` есть `th_gui_vertex(`), есть
+   `textshader/`, `nameshader/`, `chatshader/` с `*_hook_*.glsl` (настоящие или заглушки);
+   `mythichud-1_21_6/assets/minecraft/shaders/core/rendertype_text.vsh` содержит и `th_hook_text_vertex`, и
+   `applyCustomHud`; есть `assets/minecraft/textures/gui/sprites/boss_bar/*.png` и
+   `assets/minecraft/textures/gui/sprites/icon/ping_*.png` (6 файлов); шрифт `assets/tabshader/font/hud.json`
+   ссылается на существующую текстуру (Nexo может переименовать `marker.png` - ссылка в шрифте должна обновиться
+   вместе с ней).
 6. В игре: Tab, табло справа, боссбар сверху, `/tsh test-title`, `/tsh test-actionbar`. Если шейдер не
    собрался, клиент пишет ошибку в лог и откатывает пак - смотреть `latest.log` клиента.
+7. Откат: удалить jar; хуки `th_hook_*` любой из оставшихся наших плагинов при старте заменит заглушками (папку
+   `tabshader/shaders/include` тогда не удалять). Спрайты пинга и боссбара и шрифт `tabshader/font` удалить вручную.

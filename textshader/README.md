@@ -136,8 +136,9 @@ renderer позже нас (тоже HIGHEST/MONITOR) или собирает ф
 
 ## Ресурспак
 
-- `pack/assets/minecraft/shaders/core/rendertype_text.{vsh,fsh}` - ванильные 1.21.11 + хук (импорт и одна строка в
-  main), `rendertype_text_see_through.vsh` - то же для ников сквозь стены (только цвет в мире),
+- `pack/assets/minecraft/shaders/core/rendertype_text.{vsh,fsh}` (и `gui.*`, `position_tex_color.*`) - общие
+  канонические файлы схемы хуков (см. ниже), эффекты подключаются через `textshader:ts_hook_text_vertex.glsl` /
+  `ts_hook_text_fragment.glsl` (вызывают `ts_vertex` / `ts_fragment`), `rendertype_text_see_through.vsh` - то же для ников сквозь стены (только цвет в мире),
   `rendertype_text_intensity.vsh` и `rendertype_text_intensity_see_through.vsh` - TrueType-шрифты: код заменяется
   на цвет палитры (без анимации) и в GUI, и в мире. Фрагментные `*_see_through.fsh`, `rendertype_text_intensity.fsh`
   и `rendertype_text_background*` не трогаются.
@@ -146,26 +147,79 @@ renderer позже нас (тоже HIGHEST/MONITOR) или собирает ф
   `ts_margin`, рассчитанный на заголовок 4x: обычно 4 GUI px, у bounce 40 по вертикали, у echo/extrude/sparkle/
   swing/vampire/sweep 8-16; углы 0 и 2 передаются во фрагмент; мир: цвет вершины = цвет палитры), `ts_fragment.glsl` (восстановление координат внутри буквы, сборка цвета),
   `ts_effects.glsl` (все эффекты, `ts_apply` по номеру).
-- `rendertype_text.vsh/.fsh` общие с плагином tabshader: в них еще хуки `th_text_vertex` / `th_text_fragment`
-  (подложка актионбара и тайтла), поэтому пак textshader содержит и `tabshader/shaders/include/th_common.glsl`,
-  `th_text_vertex.glsl`, `th_text_fragment.glsl`. Копии в обоих проектах побайтно одинаковы, синхронизация -
-  `tabshader/tools/sync_textshader.py`. Хуки не мешают друг другу: маркер tabshader - цвет `R = 231` плюс
-  проверка текселя глифа `tabshader:hud`, коды textshader - `R = 214` / тени `R = 53`.
+- `rendertype_text.vsh/.fsh` общие с tabshader, nameshader и chatshader, но чужих include в паке textshader больше
+  нет: только свои файлы, свои хуки и заглушки остальных (`pack/stubs`). Коды не мешают друг другу: маркер
+  tabshader - цвет `R = 231` плюс проверка текселя глифа `tabshader:hud`, коды textshader - `R = 214` / тени `R = 53`.
 - MythicHUD: его пак `hl-resourcepack.zip` кладет свои `rendertype_text.*` в оверлей `mythichud-1_21_6`, а оверлей
   важнее базовых ассетов - без правки эффектов textshader не будет. `pack/overlays/mythichud-1_21_6/...` - наш
-  `rendertype_text` плюс `applyCustomHud()` MythicHUD (копия из tabshader). Вставить в zip:
+  `rendertype_text` плюс `applyCustomHud()` MythicHUD (генерирует `tools/shaderhooks`, тот же файл в tabshader). Вставить в zip:
   `python3 -I tabshader/tools/mythichud_patch.py IN.zip OUT.zip` (подробно в README tabshader, раздел MythicHUD).
 - `rendertype_item_entity_translucent_cull.*` (coreshaders) не пересекается с нами.
 - Ограничения: курсив у буквы с эффектом не наклоняется (плагин ставит italic false), шрифты TrueType
   не анимируются (только цвет). Запас квада рассчитан на масштаб до 4x (заголовки); у текста крупнее
   часть эффекта за пределами буквы может обрезаться.
 
+## Общие core-шейдеры: схема хуков (shaderhooks)
+
+textshader, tabshader, nameshader и chatshader (будущий) меняют одни и те же core-шейдеры. Чтобы каждый плагин
+работал один и в любом сочетании, а порядок установки не играл роли, используется одна схема во всех проектах:
+
+- `gui.vsh/.fsh`, `position_tex_color.vsh/.fsh`, `rendertype_text.vsh/.fsh` - канонические файлы, побайтно
+  одинаковые во всех плагинах (строка `#define SHADERHOOKS_VERSION 1`). Они вызывают фиксированный список хуков, по
+  одному include на плагин и стадию: `<плагин>:<префикс>_hook_<программа>_<стадия>.glsl`. Префиксы: `ts` -
+  textshader, `th` - tabshader, `ns` - nameshader, `cs` - chatshader. Программы: `gui`, `sprite`
+  (`position_tex_color`), `text` (`rendertype_text`). Вершинная стадия: сначала `<p>_hook_<prog>_position(inout vec3
+  pos)` у всех плагинов (сдвиг вершины до `gl_Position`), потом `<p>_hook_<prog>_vertex(...)` (исходная `Position`,
+  цвет, UV, `gl_VertexID`, для текста свет, `inout vertexColor`). Фрагментная: `color = <p>_hook_<prog>_fragment(color,
+  ...)` перед ванильным `discard`. Порядок вызова всегда ts, th, ns, cs.
+- Настоящие хуки плагина лежат в `pack/assets/<плагин>/shaders/include/<p>_hook_*.glsl` (тонкие адаптеры, вызывают
+  функции плагина), заглушки всех четырех плагинов (пустые функции, `return color`) - в `pack/stubs/`. Путь у
+  настоящего хука и у заглушки один и тот же, поэтому руками это не копируется: плагин при старте сам пишет файлы в
+  `plugins/Nexo/pack/assets` (класс `ShaderHooks`, файлы берет из своего jar, `shaderpack/`):
+  1. канонические файлы тех программ, где у него есть настоящий (не равный заглушке) хук - парой vsh+fsh. Чужой
+     файл (без `#moj_import` наших плагинов) не заменяется, в логе красная строка, программа пропускается целиком.
+     Файл с более новым `SHADERHOOKS_VERSION` тоже не заменяется (старый jar не откатывает новый);
+  2. все остальные свои файлы: include, свои хуки, текстуры, шрифты, свои отдельные core-файлы (если они не чужие);
+  3. если в паке есть хоть один канонический файл - заглушки всех остальных плагинов, которых нет на сервере, или
+     чьи хук-файлы неполные. Хуки удаленного плагина при следующем старте любого из оставшихся заменяются
+     заглушками, его эффект в общих шейдерах пропадает.
+  Файл пишется, только если содержимое другое (через временный файл и переименование). Nexo собирает пак на первом
+  тике после включения всех плагинов, поэтому при старте сервера ничего перезагружать не надо. Если файлы
+  изменились позже (`reload` плагина, загрузка на ходу) и Nexo включен - плагин сам вызывает `nexo reload pack`.
+- Итог не зависит от порядка: общие файлы у всех одинаковые, свои файлы пишет только владелец, а заглушки - только
+  за отсутствующие плагины. Проверки: `python3 -I tools/shaderhooks/shaderhooks.py combos` (каждый плагин отдельно,
+  все пары, все вместе, все порядки установки: одинаковые файлы, повторная установка ничего не пишет, все
+  программы компилируются glslangValidator 330 и 410, после удаления плагина его хуки - заглушки, чужой `gui.vsh` не
+  тронут, более новая версия осталась; запускается и из `glsl_check.py`), JUnit `ShaderHooksTest` (то же для
+  Java-кода на всех 15 наборах из 4 плагинов и всех порядках, совпадение общих файлов и `ShaderHooks.java` с
+  соседними проектами), живой клиент `tabshader/tools/realclient.sh --server-pack` (пак пишут сами плагины на
+  тестовом сервере, результат сверяется с эмуляцией `shaderhooks.py install`).
+- `tools/shaderhooks/` (скрипт и шаблоны `ShaderHooks.java.in`, `ShaderHooksTest.java.in`) одинаковый во всех
+  проектах. Правка - в любом проекте, потом `python3 -I tools/shaderhooks/shaderhooks.py --write` из него: папка
+  копируется в остальные проекты, перегенерируются канонические файлы, заглушки, оверлей MythicHUD,
+  `ShaderHooks.java` и `ShaderHooksTest.java` (отличаются только пакетом). Без `--write` - проверка, что все
+  совпадает (ее запускает и `glsl_check.py`).
+- config.yml каждого плагина: `pack.install` (по умолчанию `true`), `pack.dir` (пусто - `plugins/Nexo/pack/assets`;
+  другой путь - для тестов), `pack.reload-nexo` (по умолчанию `true`). Без Nexo (нет `plugins/Nexo/pack`) плагин
+  ничего не пишет и предупреждает в логе. Ручная установка при `pack.install: false`:
+  `python3 -I tools/shaderhooks/shaderhooks.py install --dest plugins/Nexo/pack/assets --plugins textshader,tabshader,nameshader`
+  (перечислить все наши плагины, что стоят на сервере). Копировать `pack/assets` руками нельзя: канонические файлы
+  импортируют хуки всех плагинов, без заглушек пак не скомпилируется у игроков.
+- chatshader: префикс `cs` уже есть в канонических файлах, его заглушки ставятся уже сейчас, хуки `cs_hook_gui_*`,
+  `cs_hook_sprite_*`, `cs_hook_text_*` зарезервированы. Новая программа или другая сигнатура - только с новым
+  `SHADERHOOKS_VERSION` во всех плагинах сразу.
+- Отдельные (не общие) core-файлы остаются у своих владельцев: textshader - `rendertype_text_see_through.vsh`,
+  `rendertype_text_intensity*.vsh`; nameshader - `rendertype_text_see_through.fsh`, `rendertype_text_background*`.
+  При удалении плагина их надо убрать из пака вручную (общие хуки плагин-сосед сам заменит заглушками).
+
 ## Сборка и проверки
 
 ```
 cd textshader
 ./gradlew --offline build                      # тесты + build/libs/textshader-1.0.0.jar
-python3 -I tools/glsl_check.py                 # glslangValidator: компиляция и линковка GLSL 330 и 410, дифф с ванилью
+python3 -I tools/glsl_check.py                 # glslangValidator: компиляция и линковка GLSL 330 и 410, дифф с ванилью, shaderhooks
+python3 -I tools/shaderhooks/shaderhooks.py    # общие файлы схемы хуков совпадают во всех проектах (--write - обновить)
+python3 -I tools/shaderhooks/shaderhooks.py combos   # все сочетания плагинов и порядки установки компилируются
 python3 -I tools/preview.py                    # превью настоящими шейдерами (moderngl, EGL) в preview/
 python3 -I tools/preview.py --only ocean,sweep # отдельные эффекты
 python3 -I tools/preview.py --world            # текст в мире
@@ -182,22 +236,25 @@ python3 -I tools/preview.py --title            # заголовок 4x: bounce, 
 
 ## Деплой
 
-1. Скопировать содержимое `textshader/pack/assets/` в `plugins/Nexo/pack/assets/` (папки `minecraft/shaders/core` и
-   `textshader/shaders/include`). Перед этим проверить, что в `plugins/Nexo/pack/assets/minecraft/shaders/core/` нет
-   чужих `rendertype_text.vsh`, `rendertype_text.fsh`, `rendertype_text_see_through.vsh`,
-   `rendertype_text_intensity.vsh`, `rendertype_text_intensity_see_through.vsh` - если есть, их надо объединить,
-   а не перезаписывать.
+1. Положить `build/libs/textshader-1.0.0.jar` в `plugins/`. Файлы пака руками не копировать: при старте плагин сам
+   пишет в `plugins/Nexo/pack/assets` свои файлы, общие core-шейдеры и заглушки отсутствующих плагинов (см. "Общие
+   core-шейдеры"). В логе: `Шейдеры в .../plugins/Nexo/pack/assets: записано файлов N` (или "все файлы на месте").
+   Красная строка "Чужой шейдер ... не заменен" - в паке лежит чей-то `rendertype_text.*` (например, Nexo с
+   gif-глифами): его надо объединить вручную или убрать, иначе эффектов не будет.
    Важно про Nexo: Nexo 1.30 при сборке пака сам кладет свои `rendertype_text*` шейдеры, если настроен хоть один
    анимированный (gif) глиф, и другие core-шейдеры при `hide_tablist_background` / `hide_scoreboard_*` в
    settings.yml. Сейчас это выключено и gif-глифов нет. Не включать это вместе с textshader (или объединять шейдеры
    вручную), иначе эффекты молча пропадут или сломаются.
-2. Положить `build/libs/textshader-1.0.0.jar` в `plugins/`.
-3. Рестарт сервера (Nexo пересоберет пак, Hermes раздаст). Без пака игроки увидят обычный цвет `#D6....` вместо
-   анимации - плагин работает, но эффектов не видно.
-4. Проверить в игре: `/ts preview sparkle`, `/ts list`, `/ts`. Если включена обфускация SIMPLE - открыть zip, который
-   раздает Hermes, и убедиться, что `assets/minecraft/shaders/core/rendertype_text.*` на месте, а импорт
-   `textshader:ts_vertex.glsl` находит файл (Nexo шейдеры не переименовывает, у coreshaders тот же способ работает).
-   Там же проверить, что `rendertype_text.vsh` в zip - именно наш (есть строка `ts_vertex`), а не Nexo-шный.
-   Если вместе с textshader стоит tabshader - его `rendertype_text.*` идентичны нашим, порядок копирования
-   не важен (в файле есть и `ts_vertex`, и `th_text_vertex`).
-5. Для таба через TAB-плагин (если он есть): в формате имени `%textshader_nick%`; без TAB плагин ставит ник в таб сам.
+2. Рестарт сервера (Nexo соберет пак на первом тике, Hermes раздаст). Без пака игроки увидят обычный цвет `#D6....`
+   вместо анимации - плагин работает, но эффектов не видно.
+3. Проверить в игре: `/ts preview sparkle`, `/ts list`, `/ts`. Обфускация SIMPLE шейдеры и include не трогает; в zip,
+   который раздает Hermes, `assets/minecraft/shaders/core/rendertype_text.vsh` содержит `SHADERHOOKS_VERSION` и
+   `ts_hook_text_vertex`, есть `assets/textshader/shaders/include/*.glsl` и заглушки
+   `assets/{tabshader,nameshader,chatshader}/shaders/include/*_hook_*.glsl` для тех, кого нет на сервере. Порядок
+   установки плагинов (textshader, tabshader, nameshader) не важен.
+4. Для таба через TAB-плагин (если он есть): в формате имени `%textshader_nick%`; без TAB плагин ставит ник в таб сам.
+5. Откат: удалить jar и из пака отдельные файлы textshader - `rendertype_text_see_through.vsh`,
+   `rendertype_text_intensity.vsh`, `rendertype_text_intensity_see_through.vsh`. Хуки `ts_hook_*` в общих файлах
+   любой из оставшихся наших плагинов при старте заменит заглушками (папку `textshader/shaders/include` тогда не
+   удалять - в ней эти заглушки). Если наших плагинов больше нет - удалить и общие файлы (`gui.*`,
+   `position_tex_color.*`, `rendertype_text.*`) и папки `textshader/`, `tabshader/`, `nameshader/`, `chatshader/`.

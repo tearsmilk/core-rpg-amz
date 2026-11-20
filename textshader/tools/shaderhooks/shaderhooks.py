@@ -528,6 +528,8 @@ def combos(argv):
         for r in range(1, len(names) + 1):
             for subset in itertools.combinations(names, r):
                 label = "+".join(subset)
+                before = ok
+                ok = True
                 trees = []
                 for order in itertools.permutations(subset):
                     d = os.path.join(work, "_".join(order))
@@ -570,6 +572,7 @@ def combos(argv):
                 ok &= good
                 total += count
                 print(f"{'OK ' if ok else 'ERR'} {label}: {len(trees)} orders, same files, programs compile")
+                ok = ok and before
                 shutil.rmtree(work)
         foreign = os.path.join(tmp, "foreign")
         fs_put(foreign, core_path("gui", "vsh"), b"#version 330\nvoid main() {\n}\n", [])

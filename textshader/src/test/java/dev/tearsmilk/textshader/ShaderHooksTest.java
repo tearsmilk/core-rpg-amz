@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -242,5 +243,38 @@ class ShaderHooksTest {
                 assertTrue(text.contains("#moj_import <" + p + ":"), c + " " + p);
             }
         }
+    }
+
+    @Test
+    void sharedFilesMatchTheOtherPlugins() throws IOException {
+        Map<String, byte[]> mine = tree(root().resolve("pack/stubs"));
+        Map<String, byte[]> assets = tree(root().resolve("pack/assets"));
+        for (String c : ShaderHooks.canonicalPaths()) {
+            mine.put("core:" + c, assets.get(c));
+        }
+        String hooks = Files.readString(root().resolve("src/main/java/" + getClass().getPackageName().replace('.', '/') + "/ShaderHooks.java"));
+        List<String> diff = new ArrayList<>();
+        for (String other : ShaderHooks.PLUGINS) {
+            Path o = root().toAbsolutePath().getParent().resolve(other);
+            if (other.equals(SELF) || !Files.isDirectory(o.resolve("pack/assets"))) {
+                continue;
+            }
+            Map<String, byte[]> theirs = tree(o.resolve("pack/stubs"));
+            Map<String, byte[]> theirAssets = tree(o.resolve("pack/assets"));
+            for (String c : ShaderHooks.canonicalPaths()) {
+                theirs.put("core:" + c, theirAssets.get(c));
+            }
+            for (String k : mine.keySet()) {
+                if (!theirs.containsKey(k) || !Arrays.equals(mine.get(k), theirs.get(k))) {
+                    diff.add(other + " " + k);
+                }
+            }
+            Path java = o.resolve("src/main/java/dev/tearsmilk/" + other + "/ShaderHooks.java");
+            String theirHooks = Files.readString(java).replace("package dev.tearsmilk." + other + ";", "package " + getClass().getPackageName() + ";");
+            if (!hooks.equals(theirHooks)) {
+                diff.add(other + " ShaderHooks.java");
+            }
+        }
+        assertEquals(List.of(), diff);
     }
 }

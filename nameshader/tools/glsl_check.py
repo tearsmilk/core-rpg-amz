@@ -3,12 +3,14 @@
 
     python3 -I nameshader/tools/glsl_check.py [client-1.21.11.jar]
 
-#moj_import is expanded like the client does it (each include once): nameshader/pack/assets first, then the
-vanilla includes from the client jar. Every program is compiled with the vanilla pair as a control, with our pair,
-and rendertype_text_see_through also with the textshader vertex shader (textshader/pack), because that .vsh belongs
-to textshader and is paired with our .fsh when both packs are installed. The core files are compared with
-vanilla: only hook lines (ns_, nameshader:) may differ. No core file of ours may exist in textshader/pack or
-tabshader/pack.
+#moj_import is expanded like the client does it (each include once): nameshader/pack/assets first, then the packs of
+the other plugins in this repo, then the hook stubs (pack/stubs), then the vanilla includes from the client jar.
+Every exclusive program is compiled with the vanilla pair as a control, with our pair, and
+rendertype_text_see_through also with the textshader vertex shader (textshader/pack), because that .vsh belongs to
+textshader and is paired with our .fsh when both are installed. Exclusive core files are compared with vanilla:
+only hook lines (ns_, nameshader:) may differ, and no other pack may ship them. gui.*, position_tex_color.* and
+rendertype_text.* are the shared canonical files of tools/shaderhooks (checked by shaderhooks.py, which runs here
+too: every combination of plugins and every install order compiles).
 """
 import difflib
 import os
@@ -23,7 +25,10 @@ REPO = os.path.dirname(ROOT)
 ASSETS = os.path.join(ROOT, "pack", "assets")
 OTHERS = {"textshader": os.path.join(REPO, "textshader", "pack", "assets"),
           "tabshader": os.path.join(REPO, "tabshader", "pack", "assets")}
+STUBS = os.path.join(ROOT, "pack", "stubs")
 JAR = os.path.join(REPO, "core-npc", "tools", ".cache", "client-1.21.11.jar")
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "shaderhooks"))
+import shaderhooks
 CORES = ("rendertype_text_see_through", "rendertype_text_background", "rendertype_text_background_see_through")
 HOOK = ("ns_", "nameshader:")
 
@@ -81,7 +86,7 @@ def check(name, vsrc, fsrc, tmp):
 def diff_vanilla(vanilla):
     ok = True
     core_dir = os.path.join(ASSETS, "minecraft", "shaders", "core")
-    names = sorted(os.listdir(core_dir))
+    names = sorted(n for n in os.listdir(core_dir) if "minecraft/shaders/core/" + n not in shaderhooks.canonical_paths())
     want = sorted(["rendertype_text_see_through.fsh"] + [f"{c}.{e}" for c in CORES[1:] for e in ("vsh", "fsh")])
     if names != want:
         print("ERR core files: " + ", ".join(names))
@@ -106,7 +111,8 @@ def diff_vanilla(vanilla):
 def main(argv):
     vanilla = load_vanilla(argv[0] if argv else JAR)
     ok = diff_vanilla(vanilla)
-    roots = [ASSETS, OTHERS["textshader"], OTHERS["tabshader"]]
+    ok &= shaderhooks.check(False)
+    roots = [ASSETS, OTHERS["textshader"], OTHERS["tabshader"], STUBS]
     with tempfile.TemporaryDirectory() as tmp:
         for core in CORES:
             variants = [("vanilla", None, None), ("nameshader", ASSETS, ASSETS)]
@@ -118,6 +124,8 @@ def main(argv):
                 for ver in ("330", "410"):
                     ok &= check(f"{label}_{core}_glsl{ver}", vs.replace("#version 330", f"#version {ver}", 1),
                                 fs.replace("#version 330", f"#version {ver}", 1), tmp)
+    ok &= shaderhooks.vanilla_diff(argv[:1])
+    ok &= shaderhooks.combos(argv[:1])
     print("RESULT:", "compiles and links" if ok else "ERRORS")
     return 0 if ok else 1
 

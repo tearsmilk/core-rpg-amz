@@ -4,8 +4,8 @@
 # Usage: tools/realclient.sh [--packs textshader,tabshader,nameshader] [--gui 2] [--size 1280x800] [--out DIR]
 #        [--bg chat|everywhere] [--opacity 0.5] [--shots all|tags] [--packzip ZIP] [--keep]
 # --packzip: use a ready pack zip (for example one written by Nexo's pack writer) instead of building one.
-# --packs: projects merged into the test pack in this order (a later one wins on equal paths; differing equal paths
-# are reported as CONFLICT and stop the run). "none" runs without a resource pack.
+# --packs: plugins whose files go into the test pack, installed by tools/shaderhooks in this order (stubs for the
+# plugins that are not listed); the content sha1 does not depend on the order. "none" runs without a resource pack.
 # Everything the script places in the world (wall of white_wool, one oak_sign) is removed at the end; the nameshader
 # jar and plugins/nameshader are removed at the end if the script created them.
 set -u

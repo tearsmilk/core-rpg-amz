@@ -1,6 +1,10 @@
 #!/bin/bash
 # Real Minecraft 1.21.11 client test: builds the pack, starts mc-skilltest + client under Xvfb, takes screenshots.
-# Usage: tools/realclient.sh [--ref HEAD|worktree] [--pack none] [--overlay DIR] [--extpacks raw|patched] [--gui 2] [--size 1280x800] [--out DIR] [--shots all|quick|positions] [--no-jars] [--keep]
+# Usage: tools/realclient.sh [--plugins textshader,tabshader[,nameshader]] [--server-pack] [--pack none] [--overlay DIR] [--extpacks raw|patched] [--gui 2] [--size 1280x800] [--out DIR] [--shots all|quick|positions] [--no-jars] [--keep]
+# --plugins: plugins whose files go into the test pack, installed by tools/shaderhooks in this order (stubs for the rest).
+# --server-pack: the pack is written by the plugins themselves on mc-skilltest (pack.dir in their configs points to
+# OUT/nexo/assets, configs are restored at the end), then compared with the shaderhooks emulation of the same plugins.
+# nameshader in --plugins with --server-pack also puts the nameshader jar on the server (removed at the end if created).
 # --extpacks layers the production MythicHUD pack (RC_EXTPACK, default server/plugins/Nexo/pack/external_packs/hl-resourcepack.zip)
 # under ours with its overlays: raw = as deployed, patched = with tools/mythichud_patch.py applied.
 # positions: for each "tab:board" pair in RC_POSITIONS edits plugins/tabshader/config.yml (backup restored at the end),
@@ -16,6 +20,8 @@ CLIENT_JAR_SRC="${RC_CLIENT_JAR:-$REPO/core-npc/tools/.cache/client-1.21.11.jar}
 PORT="${RC_PORT:-25601}"
 DISPLAY_NUM="${RC_DISPLAY:-:99}"
 REF="worktree"
+PLUGINS="textshader,tabshader"
+SERVERPACK=0
 PACKMODE="pack"
 GUI="2"
 SIZE="1280x800"
@@ -29,6 +35,8 @@ EXTPACK="${RC_EXTPACK:-$REPO/server/plugins/Nexo/pack/external_packs/hl-resource
 while [ $# -gt 0 ]; do
     case "$1" in
         --ref) REF="$2"; shift 2 ;;
+        --plugins) PLUGINS="$2"; shift 2 ;;
+        --server-pack) SERVERPACK=1; shift ;;
         --pack) PACKMODE="$2"; shift 2 ;;
         --gui) GUI="$2"; shift 2 ;;
         --size) SIZE="$2"; shift 2 ;;
@@ -54,6 +62,12 @@ XVFB_PID=""
 CLIENT_PID=""
 STARTED_SERVER=0
 TIME_CHANGED=0
+NEXO_DIR="$OUT/nexo/assets"
+NS_JAR="$SERVER/plugins/nameshader-1.0.0.jar"
+NS_DIR="$SERVER/plugins/nameshader"
+NS_JAR_CREATED=0
+NS_DIR_CREATED=0
+CONFIGS_CHANGED=""
 
 con() { echo "$*" > "$SERVER/console.in"; }
 
@@ -73,6 +87,17 @@ cleanup() {
     fi
     if [ "$STARTED_SERVER" = 1 ]; then
         "$SERVER/stop.sh" >> "$LOG" 2>&1
+        for _ in $(seq 60); do pgrep -f 'mc-skilltest-marker' >/dev/null || break; sleep 1; done
+    fi
+    for p in $CONFIGS_CHANGED; do
+        if [ -f "$OUT/${p}_config_backup.yml" ]; then cp "$OUT/${p}_config_backup.yml" "$SERVER/plugins/$p/config.yml"; say "restored plugins/$p/config.yml"; fi
+    done
+    if ! pgrep -f 'mc-skilltest-marker' >/dev/null; then
+        if [ "$NS_JAR_CREATED" = 1 ] && [ -f "$NS_JAR" ]; then rm -f -- "$NS_JAR"; say "removed $NS_JAR"; fi
+        if [ "$NS_DIR_CREATED" = 1 ] && [ -d "$NS_DIR" ] && [ "$NS_DIR" = "$SERVER/plugins/nameshader" ]; then
+            rm -f -- "$NS_DIR/config.yml"
+            rmdir -- "$NS_DIR" 2>/dev/null && say "removed $NS_DIR"
+        fi
     fi
     if [ -n "$XVFB_PID" ] && kill -0 "$XVFB_PID" 2>/dev/null; then
         kill "$XVFB_PID" 2>/dev/null
@@ -84,10 +109,13 @@ trap 'exit 130' INT TERM
 
 python3 -I "$HERE/realclient/setup_client.py" "$CLIENT" "$CLIENT_JAR_SRC" | tee -a "$LOG" || exit 1
 
-if [ "$PACKMODE" != "none" ]; then
-    python3 -I "$HERE/realclient/build_pack.py" "$REPO" "$GAME/resourcepacks/$PACKNAME" "$REF" "$OVERLAY" "$EXTMODE" "$EXTPACK" | tee -a "$LOG"
+build_pack() {
+    python3 -I "$HERE/realclient/build_pack.py" "$REPO" "$GAME/resourcepacks/$PACKNAME" "$REF" "$OVERLAY" "$EXTMODE" "$EXTPACK" "$PLUGINS" "$1" | tee -a "$LOG"
     [ "${PIPESTATUS[0]}" = 0 ] || { say "pack build failed"; exit 1; }
     cp "$GAME/resourcepacks/$PACKNAME" "$OUT/pack.zip"
+}
+if [ "$PACKMODE" != "none" ]; then
+    [ "$SERVERPACK" = 1 ] || build_pack ""
     PACKARG="$PACKNAME"
 else
     PACKARG="none"
@@ -102,6 +130,37 @@ if [ "$JARS" = 1 ]; then
         [ -f "$src" ] || { say "missing $src"; exit 1; }
         cp "$src" "$SERVER/plugins/$p-1.0.0.jar"
     done
+fi
+
+if [ "$SERVERPACK" = 1 ]; then
+    pgrep -f 'mc-skilltest-marker' >/dev/null && { say "--server-pack: stop the server first (plugins install the pack at start)"; exit 1; }
+    case "$OUT" in /*) ;; *) say "--out must be absolute"; exit 1 ;; esac
+    if [ -d "$OUT/nexo" ]; then rm -rf -- "$OUT/nexo"; fi
+    mkdir -p "$NEXO_DIR"
+    for p in textshader tabshader; do
+        cfg="$SERVER/plugins/$p/config.yml"
+        [ -f "$cfg" ] || continue
+        cp "$cfg" "$OUT/${p}_config_backup.yml"
+        CONFIGS_CHANGED="$CONFIGS_CHANGED $p"
+        python3 -I "$HERE/realclient/set_config.py" "$cfg" "pack.dir=\"$NEXO_DIR\"" >> "$LOG" 2>&1 || { say "config edit failed: $p"; exit 1; }
+    done
+    case ",$PLUGINS," in
+        *,nameshader,*)
+            [ -e "$NS_JAR" ] || NS_JAR_CREATED=1
+            (cd "$REPO/nameshader" && gradle --offline -q jar >> "$LOG" 2>&1) || { say "gradle jar failed for nameshader"; exit 1; }
+            cp "$REPO/nameshader/build/libs/nameshader-1.0.0.jar" "$NS_JAR"
+            if [ ! -e "$NS_DIR" ]; then
+                NS_DIR_CREATED=1
+                mkdir -p "$NS_DIR"
+                cp "$REPO/nameshader/src/main/resources/config.yml" "$NS_DIR/config.yml"
+                python3 -I "$HERE/realclient/set_config.py" "$NS_DIR/config.yml" "pack.dir=\"$NEXO_DIR\"" >> "$LOG" 2>&1
+            else
+                cp "$NS_DIR/config.yml" "$OUT/nameshader_config_backup.yml"
+                CONFIGS_CHANGED="$CONFIGS_CHANGED nameshader"
+                python3 -I "$HERE/realclient/set_config.py" "$NS_DIR/config.yml" "pack.dir=\"$NEXO_DIR\"" >> "$LOG" 2>&1
+            fi
+            ;;
+    esac
 fi
 
 if ! pgrep -f 'mc-skilltest-marker' >/dev/null; then
@@ -121,6 +180,13 @@ else
     say "server already running, reusing it"
 fi
 SLOG_START=$(wc -l < "$SERVER/server.log")
+if [ "$SERVERPACK" = 1 ]; then
+    grep -E 'Шейдеры|шейдер|Чужой' "$SERVER/server.log" | tee -a "$LOG" > "$OUT/server_install.txt"
+    build_pack "$NEXO_DIR"
+    rm -rf -- "$OUT/emu"
+    python3 -I "$HERE/shaderhooks/shaderhooks.py" install --dest "$OUT/emu" --plugins "$PLUGINS" >> "$LOG" 2>&1
+    if diff -r "$NEXO_DIR" "$OUT/emu" > "$OUT/parity.txt" 2>&1; then say "parity: server pack == shaderhooks emulation"; else say "parity: DIFFERENT, see parity.txt"; fi
+fi
 
 Xvfb "$DISPLAY_NUM" -screen 0 "${W}x${H}x24" -nolisten tcp >> "$LOG" 2>&1 &
 XVFB_PID=$!
