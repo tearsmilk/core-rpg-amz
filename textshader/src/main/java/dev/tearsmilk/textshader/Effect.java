@@ -65,8 +65,12 @@ public enum Effect {
 
     public static final int MAX_LETTER = 63;
     public static final int MAX_EFFECTS = 64;
+    public static final int RESERVED_FROM = 52;
+    public static final int RESERVED_TO = 55;
+    public static final int ID_LIMIT = 60;
 
     private static final List<Effect> VISIBLE;
+    private static final Effect[] BY_ID = new Effect[MAX_EFFECTS];
 
     static {
         List<Effect> list = new ArrayList<>();
@@ -74,8 +78,13 @@ public enum Effect {
             if (!e.hidden()) {
                 list.add(e);
             }
+            BY_ID[e.id()] = e;
         }
         VISIBLE = Collections.unmodifiableList(list);
+    }
+
+    public static boolean reserved(int id) {
+        return id >= RESERVED_FROM && id <= RESERVED_TO;
     }
 
     private final String key;
@@ -113,7 +122,8 @@ public enum Effect {
     }
 
     public int id() {
-        return ordinal();
+        int i = ordinal();
+        return i < RESERVED_FROM ? i : i + RESERVED_TO - RESERVED_FROM + 1;
     }
 
     public boolean hidden() {
@@ -129,8 +139,7 @@ public enum Effect {
     }
 
     public static Effect byId(int id) {
-        Effect[] all = values();
-        return id >= 0 && id < all.length ? all[id] : null;
+        return id >= 0 && id < MAX_EFFECTS ? BY_ID[id] : null;
     }
 
     public static Effect byKey(String raw) {

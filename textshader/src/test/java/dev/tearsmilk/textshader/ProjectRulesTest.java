@@ -51,9 +51,11 @@ class ProjectRulesTest {
         String common = read(include("ts_common.glsl"));
         Matcher n = Pattern.compile("#define TS_EFFECTS (\\d+)").matcher(common);
         assertTrue(n.find());
-        assertEquals(Effect.values().length, Integer.parseInt(n.group(1)));
+        assertEquals(Effect.ID_LIMIT, Integer.parseInt(n.group(1)));
+        assertTrue(common.contains("#define TS_RESERVED_FROM " + Effect.RESERVED_FROM));
+        assertTrue(common.contains("#define TS_RESERVED_TO " + Effect.RESERVED_TO));
         List<String> own = arrayItems(common, "TS_OWN");
-        assertEquals(Effect.values().length, own.size());
+        assertEquals(Effect.ID_LIMIT, own.size());
         for (Effect e : Effect.values()) {
             assertEquals(e.ownColors(), Boolean.parseBoolean(own.get(e.id())), e.key());
         }
@@ -66,8 +68,8 @@ class ProjectRulesTest {
                 assertEquals(rgb[i] / 255.0, Double.parseDouble(f[i].trim()), 0.0001, p.key());
             }
         }
-        assertEquals(Effect.values().length, arrayItems(common, "TS_WORLD").size());
-        assertTrue(common.contains("effect == " + Effect.BOUNCE.id() + " ? 12.0"));
+        assertEquals(Effect.ID_LIMIT, arrayItems(common, "TS_WORLD").size());
+        assertTrue(common.contains("effect == " + Effect.BOUNCE.id() + ") {\n        return vec2(4.0, 40.0);"));
         String effects = read(include("ts_effects.glsl"));
         for (Effect e : Effect.values()) {
             assertTrue(effects.contains("id == " + e.id() + ")"), e.key());
@@ -76,6 +78,25 @@ class ProjectRulesTest {
         for (Effect e : Effect.values()) {
             assertTrue(preview.contains("\"" + e.key() + "\""), e.key());
         }
+    }
+
+    @Test
+    void everyMessageKeyUsedInCodeExists() throws IOException {
+        String config = read(root().resolve("src/main/resources/config.yml"));
+        Pattern use = Pattern.compile("(?:line|send|get|raw)\\(\\s*(?:[a-zA-Z]+,\\s*)?\"([a-z0-9-]+)\"");
+        List<String> missing = new ArrayList<>();
+        try (Stream<Path> files = Files.walk(root().resolve("src/main/java"))) {
+            for (Path p : files.filter(f -> f.toString().endsWith(".java")).toList()) {
+                Matcher m = use.matcher(read(p));
+                while (m.find()) {
+                    String key = m.group(1);
+                    if (!config.contains("\n  " + key + ":")) {
+                        missing.add(p.getFileName() + ": " + key);
+                    }
+                }
+            }
+        }
+        assertEquals(List.of(), missing);
     }
 
     @Test

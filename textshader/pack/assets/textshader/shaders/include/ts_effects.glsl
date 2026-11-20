@@ -750,9 +750,9 @@ void ts_apply(int id, vec3 p) {
     else if (id == 49) { fx_electric(); }
     else if (id == 50) { fx_sunset(); }
     else if (id == 51) { fx_ocean(); }
-    else if (id == 52) { fx_bounce(p); }
-    else if (id == 53) { fx_scramble(p); }
-    else if (id == 54) { fx_extrude(p); }
-    else if (id == 55) { fx_sweep(p); }
+    else if (id == 56) { fx_bounce(p); }
+    else if (id == 57) { fx_scramble(p); }
+    else if (id == 58) { fx_extrude(p); }
+    else if (id == 59) { fx_sweep(p); }
     else { ts_set(p); }
 }

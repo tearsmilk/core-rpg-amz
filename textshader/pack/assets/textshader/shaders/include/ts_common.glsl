@@ -2,7 +2,9 @@
 
 #moj_import <minecraft:globals.glsl>
 
-#define TS_EFFECTS 56
+#define TS_EFFECTS 60
+#define TS_RESERVED_FROM 52
+#define TS_RESERVED_TO 55
 #define TS_COLORS 16
 
 const vec3 TS_PALETTE[TS_COLORS] = vec3[](
@@ -19,7 +21,8 @@ const bool TS_OWN[TS_EFFECTS] = bool[](
     true, true, true, false, false, false, false, false,
     false, true, true, false, false, false, true, true,
     true, false, true, true, false, false, false, true,
-    true, true, true, true, false, false, false, false
+    true, true, true, true, false, false, false, false,
+    false, false, false, false
 );
 
 const vec3 TS_WORLD[TS_EFFECTS] = vec3[](
@@ -29,16 +32,21 @@ const vec3 TS_WORLD[TS_EFFECTS] = vec3[](
     vec3(0.58, 0.8, 0.45), vec3(1.0, 0.96, 0.17), vec3(0.6, 0.85, 1.0), vec3(1.0), vec3(1.0), vec3(1.0), vec3(1.0), vec3(1.0),
     vec3(1.0), vec3(1.0, 0.78, 0.25), vec3(0.55, 0.35, 0.95), vec3(1.0), vec3(1.0), vec3(1.0), vec3(1.0, 0.6, 0.3), vec3(0.45, 1.0, 0.2),
     vec3(0.62, 0.02, 0.05), vec3(1.0), vec3(1.0, 0.45, 0.1), vec3(0.7, 0.6, 1.0), vec3(1.0), vec3(1.0), vec3(1.0), vec3(0.2, 0.9, 0.35),
-    vec3(0.7, 0.9, 1.0), vec3(0.5, 0.9, 1.0), vec3(1.0, 0.6, 0.3), vec3(0.2, 0.6, 0.95), vec3(1.0), vec3(1.0), vec3(1.0), vec3(1.0)
+    vec3(0.7, 0.9, 1.0), vec3(0.5, 0.9, 1.0), vec3(1.0, 0.6, 0.3), vec3(0.2, 0.6, 0.95), vec3(1.0), vec3(1.0), vec3(1.0), vec3(1.0),
+    vec3(1.0), vec3(1.0), vec3(1.0), vec3(1.0)
 );
+
+bool ts_known(int id) {
+    return id >= 0 && id < TS_EFFECTS && (id < TS_RESERVED_FROM || id > TS_RESERVED_TO);
+}
 
 ivec4 ts_decode(vec3 rgb) {
     ivec3 c = ivec3(round(rgb * 255.0));
-    if (c.r == 214 && (c.g >> 2) < TS_EFFECTS) {
+    if (c.r == 214 && ts_known(c.g >> 2)) {
         int letter = ((c.b >> 6) << 4) | ((c.g & 3) << 2) | (c.b & 3);
         return ivec4(c.g >> 2, (c.b >> 2) & 15, letter, 0);
     }
-    if (c.r == 53 && c.g < TS_EFFECTS) {
+    if (c.r == 53 && ts_known(c.g)) {
         return ivec4(c.g, c.b & 15, -1, 1);
     }
     return ivec4(-1, 0, -1, 0);
@@ -51,6 +59,27 @@ vec3 ts_world_color(int effect, int palette) {
     return TS_PALETTE[palette];
 }
 
-float ts_margin(int effect) {
-    return effect == 52 ? 12.0 : 4.0;
+vec2 ts_margin(int effect) {
+    if (effect == 56) {
+        return vec2(4.0, 40.0);
+    }
+    if (effect == 37) {
+        return vec2(16.0, 4.0);
+    }
+    if (effect == 40) {
+        return vec2(4.0, 14.0);
+    }
+    if (effect == 58) {
+        return vec2(14.0, 14.0);
+    }
+    if (effect == 46 || effect == 36) {
+        return vec2(12.0, 12.0);
+    }
+    if (effect == 59) {
+        return vec2(12.0, 8.0);
+    }
+    if (effect == 5 || effect == 32 || effect == 35) {
+        return vec2(8.0, 8.0);
+    }
+    return vec2(4.0, 4.0);
 }

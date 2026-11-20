@@ -36,11 +36,11 @@ EFFECTS = [
     "fade", "blink", "glow", "outline", "thin", "pride", "lesbian", "mlm", "bi", "trans", "pan", "ace", "aro", "enby",
     "rainbowwave", "neon", "glitch", "ice", "holo", "type", "heart", "gold", "galaxy", "quake", "swing", "echo", "jeb",
     "toxic", "vampire", "ghost", "lava", "hue", "wavyoutline", "typecursor", "sparkle", "matrix", "frost", "electric",
-    "sunset", "ocean", "bounce", "scramble", "extrude", "sweep",
+    "sunset", "ocean", None, None, None, None, "bounce", "scramble", "extrude", "sweep",
 ]
 PALETTE = ["white", "red", "orange", "yellow", "lime", "green", "aqua", "cyan", "blue", "purple", "magenta", "pink",
            "gold", "gray", "black", "brown"]
-NEW = EFFECTS[EFFECTS.index("sparkle"):]
+NEW = [n for n in EFFECTS[EFFECTS.index("sparkle"):] if n]
 INDEXED = {"type", "bounce", "scramble"}
 SAMPLE = "Привет, мир! Text FX 123"
 
@@ -108,19 +108,19 @@ class Font:
     def width(self, text):
         return sum(4 if ch == " " else self.glyphs.get(ch, (0, 0, 5))[2] + 1 for ch in text)
 
-    def quads(self, text, x, y, colors):
+    def quads(self, text, x, y, colors, s=1):
         out = []
         for i, ch in enumerate(text):
             if ch == " ":
-                x += 4
+                x += 4 * s
                 continue
             gx, gy, w = self.glyphs.get(ch, self.glyphs["?"])
             rgb = colors(i)
             shadow = tuple(int(c * 0.25) for c in rgb)
             uv = (gx / 256.0, gy / 256.0, (gx + w) / 256.0, (gy + 8) / 256.0)
-            out.append((x + 1, y + 1, w, uv, shadow))
-            out.append((x, y, w, uv, rgb))
-            x += w + 1
+            out.append((x + s, y + s, w * s, uv, shadow, 8 * s))
+            out.append((x, y, w * s, uv, rgb, 8 * s))
+            x += (w + 1) * s
         return out
 
 
@@ -136,7 +136,8 @@ void main() { o = vc; }
 
 
 class Renderer:
-    def __init__(self):
+    def __init__(self, gui=(GUI_W, GUI_H)):
+        self.gui = gui
         self.ctx = moderngl.create_context(standalone=True, require=330, backend="egl")
         vanilla = glsl_check.load_vanilla(glsl_check.JAR)
         self.font = Font(glsl_check.JAR)
@@ -153,7 +154,7 @@ class Renderer:
             if name in self.prog:
                 self.prog[name].binding = i
                 self.blocks[name] = (i, None)
-        self.size = (GUI_W * SCALE, GUI_H * SCALE)
+        self.size = (gui[0] * SCALE, gui[1] * SCALE)
         self.fbo = self.ctx.framebuffer(self.ctx.renderbuffer(self.size, 4), self.ctx.depth_renderbuffer(self.size))
 
     def ubo(self, name, data):
@@ -166,9 +167,9 @@ class Renderer:
 
     def text_vao(self, quads, z=0.0):
         rows = []
-        for x, y, w, (u0, v0, u1, v1), rgb in quads:
+        for x, y, w, (u0, v0, u1, v1), rgb, h in quads:
             col = [c / 255.0 for c in rgb] + [1.0]
-            for px, py, u, v in ((x, y, u0, v0), (x, y + 8, u0, v1), (x + w, y + 8, u1, v1), (x + w, y, u1, v0)):
+            for px, py, u, v in ((x, y, u0, v0), (x, y + h, u0, v1), (x + w, y + h, u1, v1), (x + w, y, u1, v0)):
                 rows.append(struct.pack("3f4f2f2i", px, py, z, *col, u, v, 240, 240))
         vbo = self.ctx.buffer(b"".join(rows))
         idx = []
@@ -188,7 +189,7 @@ class Renderer:
             for px, py in ((x0, y0), (x0, y1), (x1, y1), (x0, y0), (x1, y1), (x1, y0)):
                 rows.append(struct.pack("2f4f", px, py, *col))
         vao = self.ctx.vertex_array(self.bg, [(self.ctx.buffer(b"".join(rows)), "2f 4f", "p", "c")])
-        self.bg["gui"].value = (GUI_W, GUI_H)
+        self.bg["gui"].value = self.gui
         vao.render()
 
     def frame(self, lines, tick):
@@ -199,7 +200,7 @@ class Renderer:
         ctx.enable(moderngl.BLEND)
         ctx.blend_func = moderngl.SRC_ALPHA, moderngl.ONE_MINUS_SRC_ALPHA
         ctx.disable(moderngl.DEPTH_TEST)
-        self.background([(0, 0, GUI_W, GUI_H, (0.0, 0.0, 0.0, 0.5))])
+        self.background([(0, 0, *self.gui, (0.0, 0.0, 0.0, 0.5))])
         self.tex.use(0)
         self.light.use(2)
         self.prog["Sampler0"].value = 0
@@ -207,13 +208,13 @@ class Renderer:
             self.prog["Sampler2"].value = 2
         self.ubo("DynamicTransforms", mat_bytes(np.eye(4)) + struct.pack("4f", 1, 1, 1, 1)
                  + struct.pack("4f", 0, 0, 0, 0) + mat_bytes(np.eye(4)))
-        self.ubo("Projection", mat_bytes(ortho(GUI_W, GUI_H)))
+        self.ubo("Projection", mat_bytes(ortho(*self.gui)))
         game_time = ((1000 + tick) % 24000) / 24000.0
         self.ubo("Globals", struct.pack("3i4x3f4x2ff f ii8x", 0, 0, 0, 0, 0, 0, *self.size, 1.0, game_time, 0, 0))
         self.ubo("Fog", struct.pack("4f6f8x", 0, 0, 0, 0, 1e9, 2e9, 1e9, 2e9, 1e9, 1e9))
         quads = []
-        for text, x, y, colors in lines:
-            quads += self.font.quads(text, x, y, colors)
+        for line in lines:
+            quads += self.font.quads(*line)
         self.text_vao(quads).render()
         data = self.fbo.read(components=4)
         return Image.frombytes("RGBA", self.size, data).transpose(Image.FLIP_TOP_BOTTOM).convert("RGB")
@@ -272,6 +273,8 @@ def label(img, text):
 
 def main(argv):
     os.makedirs(OUT, exist_ok=True)
+    if "--title" in argv:
+        return titles()
     r = Renderer()
     if "--world" in argv:
         lines = []
@@ -284,8 +287,8 @@ def main(argv):
     only = None
     if "--only" in argv:
         only = argv[argv.index("--only") + 1].split(",")
-    names = [n for n in EFFECTS if n != "typecursor" and (only is None or n in only)]
-    second = {n: PALETTE[(EFFECTS.index(n) % 15) + 1] for n in EFFECTS}
+    names = [n for n in EFFECTS if n and n != "typecursor" and (only is None or n in only)]
+    second = {n: PALETTE[(EFFECTS.index(n) % 15) + 1] for n in EFFECTS if n}
     sheet_cols = 4
     sheet = []
     for name in names:
@@ -317,6 +320,34 @@ def main(argv):
             for x, f in enumerate(row):
                 img.paste(f, (x * w, y * h))
         img.save(os.path.join(OUT, "sheet_new.png"))
+    return 0
+
+
+TITLE_FX = ["bounce", "extrude", "sweep", "sparkle", "echo", "glow", "swing", "vampire", "frost", "electric"]
+
+
+def titles():
+    r = Renderer((260, 70))
+    rows = []
+    for name in TITLE_FX:
+        e = EFFECTS.index(name)
+        indexed = name in INDEXED
+        lines = [("Титул", 10, 26, lambda i, e=e, x=indexed: rgb(code(e, 0, i if x else 0)), 4),
+                 (name, 190, 58, lambda i, e=e: rgb(code(e, 0)), 1)]
+        count, step = (40, 3) if indexed else (24, 2)
+        start = 118 if indexed else 0
+        frames = [r.frame(lines, start + k * step) for k in range(count)]
+        frames[0].save(os.path.join(OUT, f"title_{name}.gif"), save_all=True, append_images=frames[1:],
+                       duration=step * 50, loop=0)
+        rows.append([frames[int(k * (count - 1) / 3)] for k in (0, 1, 2, 3)] if not indexed
+                    else [frames[k] for k in (1, 3, 6, 10)])
+        print("title", name)
+    w, h = rows[0][0].size
+    img = Image.new("RGB", (w * 4, h * len(rows)))
+    for y, row in enumerate(rows):
+        for x, f in enumerate(row):
+            img.paste(f, (x * w, y * h))
+    img.save(os.path.join(OUT, "sheet_title.png"))
     return 0
 
 
