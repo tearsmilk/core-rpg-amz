@@ -1,7 +1,7 @@
 #version 330
 
 #moj_import <minecraft:projection.glsl>
-#moj_import <textshader:ts_common.glsl>
+#moj_import <textshader:ts_plain.glsl>
 
 flat out int tsEffect;
 flat out int tsPalette;
@@ -28,8 +28,7 @@ void ts_vertex(vec4 color, vec2 uv, int vertexId, vec4 light, inout vec4 outColo
         return;
     }
     if (ProjMat[2][3] != 0.0) {
-        vec3 rgb = ts_world_color(code.x, code.y);
-        outColor = vec4(code.w == 1 ? rgb * 0.25 : rgb, color.a) * light;
+        ts_plain(color, light, outColor);
         return;
     }
     tsEffect = code.x;

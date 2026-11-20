@@ -2,6 +2,10 @@ package dev.tearsmilk.textshader;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.junit.jupiter.api.Test;
@@ -92,5 +96,80 @@ class TagsTest {
             assertEquals(Palette.AQUA, d.palette());
             assertEquals(i, d.letter());
         }
+    }
+
+    private static Component find(Component c, String content) {
+        if (c instanceof TextComponent t && t.content().equals(content)) {
+            return c;
+        }
+        for (Component child : c.children()) {
+            Component f = find(child, content);
+            if (f != null) {
+                return f;
+            }
+        }
+        return null;
+    }
+
+    private static boolean hasEvents(Component root, String text) {
+        if (root instanceof TextComponent t && root.hoverEvent() != null && root.clickEvent() != null) {
+            return PlainTextComponentSerializer.plainText().serialize(root).contains(text);
+        }
+        for (Component child : root.children()) {
+            if (hasEvents(child, text)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Test
+    void chatKeepsForeignComponentsAndEvents() {
+        Component item = Component.text("[меч]", NamedTextColor.AQUA)
+                .hoverEvent(HoverEvent.showText(Component.text("tip")))
+                .clickEvent(ClickEvent.runCommand("/x"));
+        Component msg = Component.text("look <wave>here</wave> ").append(item).append(Component.text(" ok"));
+        Component out = ChatFx.apply(msg, FxSpec.of(Effect.FIRE), true, true, e -> true);
+        assertEquals("look here [меч] ok", PlainTextComponentSerializer.plainText().serialize(out));
+        assertTrue(hasEvents(out, "[меч]"));
+        Component kept = find(out, "[меч]");
+        assertEquals(NamedTextColor.AQUA, kept.color());
+        assertEquals(FxCode.encode(Effect.WAVE, Palette.WHITE), find(out, "here").color().value());
+        assertEquals(FxCode.encode(Effect.FIRE, Palette.WHITE), find(out, "look ").color().value());
+        assertEquals(FxCode.encode(Effect.FIRE, Palette.WHITE), find(out, " ok").color().value());
+    }
+
+    @Test
+    void chatNumberingRunsAcrossSegmentsAndComponents() {
+        Component msg = Component.text("<bounce>hi</bounce> th").append(Component.text("ere"));
+        Component out = ChatFx.apply(msg, FxSpec.of(Effect.BOUNCE), true, true, e -> true);
+        List<TextComponent> l = leaves(out);
+        assertEquals("hi there", String.join("", l.stream().map(TextComponent::content).toList()));
+        for (int i = 0; i < l.size(); i++) {
+            FxCode.Decoded d = FxCode.decode(l.get(i).color().value());
+            assertEquals(Effect.BOUNCE, d.effect());
+            assertEquals(i, d.letter());
+        }
+    }
+
+    @Test
+    void chatWithoutChangesKeepsTheSameComponent() {
+        Component msg = Component.text("hello <3");
+        assertTrue(msg == ChatFx.apply(msg, null, true, true, e -> true));
+    }
+
+    @Test
+    void chatSanitizesForeignEffectCodes() {
+        Component hidden = Component.text("ghost", TextColor.color(FxCode.encode(Effect.TYPE_CURSOR, Palette.WHITE)));
+        Component locked = Component.text("lock", TextColor.color(FxCode.encode(Effect.GALAXY, Palette.WHITE)));
+        Component grey = Component.text("grey", TextColor.color(0xD6D6D6));
+        Component out = ChatFx.apply(Component.text("a").append(hidden).append(locked).append(grey), null, true, true,
+                e -> e != Effect.GALAXY);
+        assertNull(find(out, "ghost").color());
+        assertNull(find(out, "lock").color());
+        assertEquals(0xD6D6D6, find(out, "grey").color().value());
+        Component denied = ChatFx.apply(Component.text("<galaxy>x</galaxy>"), null, true, true, e -> e != Effect.GALAXY);
+        assertEquals("x", PlainTextComponentSerializer.plainText().serialize(denied));
+        assertNull(find(denied, "x").color());
     }
 }

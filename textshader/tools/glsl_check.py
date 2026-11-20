@@ -19,7 +19,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REPO = os.path.dirname(ROOT)
 ASSETS = os.path.join(ROOT, "pack", "assets")
 JAR = os.path.join(REPO, "core-npc", "tools", ".cache", "client-1.21.11.jar")
-CORES = ("rendertype_text", "rendertype_text_see_through")
+CORES = ("rendertype_text", "rendertype_text_see_through", "rendertype_text_intensity",
+         "rendertype_text_intensity_see_through")
 
 
 def load_vanilla(jar):
