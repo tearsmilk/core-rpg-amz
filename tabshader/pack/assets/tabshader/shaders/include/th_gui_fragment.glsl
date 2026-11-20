@@ -3,7 +3,7 @@
 #moj_import <tabshader:th_common.glsl>
 #moj_import <tabshader:th_layout.glsl>
 
-#define TH_RADIUS 4.0
+#define TH_RADIUS TH_RADIUS_HUD
 
 flat in int thGuiKind;
 flat in vec2 thGuiScreen;
@@ -25,7 +25,7 @@ vec4 th_gui_card(vec2 p, vec4 rect, vec4 grow, vec4 radii, vec4 open, float divi
     vec2 lo = rect.xy - grow.xy;
     vec2 hi = rect.zw + grow.zw;
     vec4 c = th_panel(p, lo, hi, radii, px, open);
-    if (divider > 0.0 && c.a > 0.0) {
+    if (divider > 1.0 && c.a > 0.0) {
         float line = 1.0 - smoothstep(0.0, px, abs(p.y - rect.y) - px * 0.5);
         float fade = smoothstep(lo.x + 2.0, lo.x + 8.0, p.x) * smoothstep(hi.x - 2.0, hi.x - 8.0, p.x);
         c.rgb = mix(c.rgb, vec3(1.0, 0.9, 0.94), line * fade * 0.6);

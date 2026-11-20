@@ -20,7 +20,8 @@ OURS = os.path.join(ROOT, "pack", "assets")
 THEIRS = os.path.join(REPO, "textshader", "pack", "assets")
 FROM_US = ["minecraft/shaders/core/rendertype_text.vsh", "minecraft/shaders/core/rendertype_text.fsh",
            "tabshader/shaders/include/th_common.glsl", "tabshader/shaders/include/th_text_vertex.glsl",
-           "tabshader/shaders/include/th_text_fragment.glsl"]
+           "tabshader/shaders/include/th_text_fragment.glsl",
+           "tabshader/shaders/include/th_layout.glsl"]
 
 
 def from_them():

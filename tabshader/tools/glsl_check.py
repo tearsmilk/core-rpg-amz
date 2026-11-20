@@ -95,8 +95,10 @@ def diff_vanilla(vanilla):
         theirs = vanilla[f"assets/minecraft/shaders/core/{fn}"].split("\n")
         changed = [l for l in difflib.unified_diff(theirs, ours, lineterm="", n=0)
                    if l[:1] in "+-" and not l.startswith(("+++", "---"))]
+        wrapped = {re.sub(r"th_[a-z_]+\((\w+)\)", r"\1", l[1:]) for l in changed if l.startswith("+") and "th_" in l}
         bad = [l for l in changed if l.strip("+- ") and not any(h in l for h in HOOK)
-               and not (fn in HEADER_SWAP and header_line(l[1:]))]
+               and not (fn in HEADER_SWAP and header_line(l[1:]))
+               and not (l.startswith("-") and l[1:] in wrapped)]
         print(f"DIFF {fn}: {len(changed)} changed lines" + (" (only hooks)" if not bad else " UNEXPECTED"))
         for l in changed:
             print("    " + l)
@@ -114,7 +116,7 @@ def shared_copies():
             if os.path.isdir(full):
                 names |= {n for n in os.listdir(full) if n.endswith(".glsl")}
         for n in sorted(names):
-            if d.startswith("tabshader") and not n.startswith(("th_text", "th_common")):
+            if d.startswith("tabshader") and not n.startswith(("th_text", "th_common", "th_layout")):
                 continue
             pairs.append((os.path.join(ASSETS, d, n), os.path.join(TEXTSHADER, d, n)))
     if not os.path.isdir(TEXTSHADER):

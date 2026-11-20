@@ -102,11 +102,11 @@ def marker():
     font = {"providers": [
         {"type": "bitmap", "file": "tabshader:font/marker.png", "ascent": 7, "height": 8, "chars": [""]},
         {"type": "space", "advances": {"": -9}},
+        {"type": "space", "advances": {chr(0xE100 + bit): 1 << bit for bit in range(23)}},
     ]}
     os.makedirs(os.path.join(ASSETS, "tabshader", "font"), exist_ok=True)
     with open(os.path.join(ASSETS, "tabshader", "font", "hud.json"), "w", encoding="utf-8") as f:
-        json.dump(font, f, indent=2)
-        f.write("\n")
+        f.write(json.dumps(font, indent=2, ensure_ascii=True) + "\n")
 
 
 def widths(jar):

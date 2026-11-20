@@ -104,9 +104,7 @@ final class Hud {
                 }
                 Component title = t.render(p, s.boardTitle(), v);
                 List<Component> lines = t.render(p, s.boardLines(), v);
-                if (s.markers()) {
-                    title = boardTitle(title, lines, s, plugin.widths());
-                }
+                title = boardTitle(title, lines, s, plugin.widths(), tabMoved(s, off));
                 packets += st.board.update(title, lines);
                 st.board.show(p);
             }
@@ -155,15 +153,9 @@ final class Hud {
         return TabLayout.defaultWidth(plugin.widths(), chars, cols);
     }
 
-    private int maxNameWidth(Player viewer) {
-        Widths w = plugin.widths();
-        int best = plugin.names().width(viewer, w);
-        for (Player o : Bukkit.getOnlinePlayers()) {
-            if (o != viewer && viewer.canSee(o) && viewer.isListed(o)) {
-                best = Math.max(best, plugin.names().width(o, w));
-            }
-        }
-        return best;
+    static boolean tabMoved(Settings s, Set<Part> off) {
+        return s.tab() && !off.contains(Part.TAB) && s.markers()
+                && s.tabPosition() != PositionCode.Position.CENTER;
     }
 
     void decorateTab(Player p, Settings s, List<Component> headerLines, List<Component> footerLines) {
@@ -173,36 +165,48 @@ final class Hud {
         }
         Component first = headerLines.getFirst();
         TabLayout.Padded padded = TabLayout.pad(first, w.width(first), tabWidth(s), w);
-        int shown = plugin.limiter().shown(p);
-        int content = Math.max(padded.width(), TabLayout.listWidth(shown, maxNameWidth(p), true));
-        for (int i = 1; i < headerLines.size(); i++) {
-            content = Math.max(content, w.width(headerLines.get(i)));
-        }
-        for (Component c : footerLines) {
-            content = Math.max(content, w.width(c));
-        }
         Component line = padded.line();
-        if (s.markers()) {
-            int height = TabLayout.panelHeight(headerLines.size(), TabLayout.rows(shown), footerLines.size());
+        int rows = TabLayout.rows(Math.max(1, plugin.limiter().shown(p)));
+        int pad = 0;
+        if (s.markers() && headerLines.size() <= PositionCode.TAB_MAX_HEADER) {
+            pad = PositionCode.tabPadLines(s.tabPosition(), s.tabMargin(), headerLines.size() + rows + footerLines.size());
+        }
+        if (pad > 0) {
             line = Component.text()
-                    .append(TabLayout.markers(PositionCode.Element.TAB, s.tabPosition(), s.tabMargin(), content, height))
+                    .append(TabLayout.marker(PositionCode.tabMarker(headerLines.size())))
                     .append(line)
                     .build();
         }
         headerLines.set(0, line);
+        if (pad > 0) {
+            List<Component> all = TabLayout.tabHeader(headerLines, pad);
+            headerLines.clear();
+            headerLines.addAll(all);
+        }
     }
 
-    static Component boardTitle(Component title, List<Component> lines, Settings s, Widths w) {
-        int width = Math.max(0, w.width(title));
-        int n = Math.min(Board.MAX_LINES, lines.size());
-        for (int i = 0; i < n; i++) {
-            width = Math.max(width, w.width(lines.get(i)));
+    static int measure(Component c, Widths w) {
+        int width = w.width(c);
+        return width >= 0 ? width : w.width(TabLayout.plain(c), false);
+    }
+
+    static Component boardTitle(Component title, List<Component> lines, Settings s, Widths w, boolean tabMoved) {
+        PositionCode.Position pos = s.boardPosition();
+        boolean beside = tabMoved && PositionCode.sameSide(s.tabPosition(), pos);
+        if (!s.markers() || (pos == PositionCode.Position.RIGHT && !beside)) {
+            return title;
         }
-        int height = n * TabLayout.ROW + TabLayout.ROW + 1;
-        return Component.text()
-                .append(TabLayout.markers(PositionCode.Element.BOARD, s.boardPosition(), s.boardMargin(), width, height))
-                .append(title)
-                .build();
+        int n = Math.min(Board.MAX_LINES, lines.size());
+        int content = 0;
+        for (int i = 0; i < n; i++) {
+            content = Math.max(content, measure(lines.get(i), w));
+        }
+        int titleWidth = measure(title, w);
+        if (Math.max(content, titleWidth) > PositionCode.BOARD_MAX_WIDTH) {
+            return title;
+        }
+        int code = PositionCode.boardCode(pos, n, beside ? s.tabMargin() : -1, s.boardMargin());
+        return TabLayout.boardTitle(title, titleWidth, content, code);
     }
 
     private static Component join(List<Component> lines) {

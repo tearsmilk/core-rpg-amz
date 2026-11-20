@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LayoutTest {
@@ -181,40 +182,216 @@ class LayoutTest {
         assertEquals(5, TabLimiter.priority(List.of("TabShader.Tab.Priority.5", "tabshader.tab.priority.x", "tabshader.tab.priority.")));
     }
 
+    private static final int[][] SCREENS = {{480, 270}, {640, 400}, {683, 384}, {960, 540}, {1920, 1080}, {3840, 2160}};
+
+    private static double[] tabShift(int code, int sw, int sh) {
+        int p = code & 3;
+        double m = code >> 2;
+        double c = code + PositionCode.TAB_BASE;
+        double b = PositionCode.TAB_BAND;
+        double half = 205 / 2;
+        double mid = Math.floor(sw * 0.5);
+        double dx = (p & 1) == 0 ? m + 2 - (mid - half - 1) : sw - m - 2 - (mid + half + 1);
+        double dy = p < 2 ? m + 1 - (9 + 9 * (b * c + 2)) : sh - m - 2 - (12 + 9 * (b * c + b - 2));
+        return new double[]{dx, dy};
+    }
+
     @Test
-    void positionCodeRoundTrip() {
-        for (PositionCode.Element e : PositionCode.Element.values()) {
-            for (PositionCode.Position p : PositionCode.Position.values()) {
-                for (int m : new int[]{0, 1, 4, 31, 200, 255}) {
-                    int rgb = PositionCode.place(e, p, m);
-                    assertEquals(PositionCode.PLACE_R, PositionCode.red(rgb));
-                    assertEquals(e, PositionCode.element(rgb));
-                    assertEquals(p, PositionCode.position(rgb));
-                    assertEquals(m, PositionCode.margin(rgb));
-                    assertTrue(PositionCode.isCode(rgb));
-                    assertTrue(rgb >= 0 && rgb <= 0xFFFFFF);
+    void tabBandPlacesPanelAtEveryCorner() {
+        PositionCode.Position[] corners = {PositionCode.Position.TOP_LEFT, PositionCode.Position.TOP_RIGHT,
+                PositionCode.Position.BOTTOM_LEFT, PositionCode.Position.BOTTOM_RIGHT};
+        assertTrue(9 + 9 * PositionCode.TAB_BAND * PositionCode.TAB_BASE > 2160 + 20);
+        for (PositionCode.Position pos : corners) {
+            for (int margin = 0; margin <= 15; margin++) {
+                int code = PositionCode.tabCode(pos, margin);
+                assertTrue(code >= 0 && code < 64);
+                for (int h0 = 1; h0 <= 3; h0++) {
+                    for (int rows = 1; rows <= 20; rows++) {
+                        for (int f = 1; f <= 3; f++) {
+                            int lines = h0 + rows + f;
+                            int pad = PositionCode.tabPadLines(pos, margin, lines);
+                            int hT = pad + h0;
+                            int top = 9 + 9 * pad;
+                            int bottom = 12 + 9 * (pad + lines);
+                            int[] ys = {top, 10 + 9 * pad, 10 + 9 * pad + 8 + 1, 10 + 9 * hT, 11 + 9 * hT + 9 * rows,
+                                    12 + 9 * (hT + rows) + 9 * (f - 1) + 9, top - 1, bottom + 2};
+                            for (int y : ys) {
+                                assertEquals(code, PositionCode.tabCodeAt(y), pos + " m" + margin + " y" + y);
+                            }
+                            for (int[] scr : SCREENS) {
+                                assertTrue(top - 1 > scr[1] + 16);
+                                double[] d = tabShift(code, scr[0], scr[1]);
+                                int mid = scr[0] / 2;
+                                double left = mid - 205 / 2 - 1 - 2 + d[0];
+                                double right = mid + 205 / 2 + 1 + 2 + d[0];
+                                double gTop = top - 1 + d[1];
+                                double gBottom = bottom + 2 + d[1];
+                                if (pos.side() == PositionCode.Side.LEFT) {
+                                    assertEquals(margin, left, 1e-9);
+                                } else {
+                                    assertEquals(scr[0] - margin, right, 1e-9);
+                                }
+                                if (pos.bottom()) {
+                                    assertEquals(scr[1] - margin, gBottom, 1e-9);
+                                } else {
+                                    assertEquals(margin, gTop, 1e-9);
+                                }
+                                assertEquals(9 * lines + 3 + 3, gBottom - gTop, 1e-9);
+                            }
+                        }
+                    }
                 }
             }
-            for (int v = 0; v <= PositionCode.MAX_VALUE; v++) {
-                int w = PositionCode.width(e, v);
-                int h = PositionCode.height(e, v);
-                assertEquals(PositionCode.WIDTH_R, PositionCode.red(w));
-                assertEquals(PositionCode.HEIGHT_R, PositionCode.red(h));
-                assertEquals(e, PositionCode.element(w));
-                assertEquals(e, PositionCode.element(h));
-                assertEquals(v, PositionCode.value(w));
-                assertEquals(v, PositionCode.value(h));
-                assertNull(PositionCode.position(w));
+        }
+        assertEquals(0, PositionCode.tabPadLines(PositionCode.Position.CENTER, 4, 5));
+        assertEquals(0, PositionCode.tabPadLines(PositionCode.Position.TOP_LEFT, 4, PositionCode.TAB_MAX_LINES + 1));
+        assertEquals(-1, PositionCode.tabCodeAt(500));
+        assertEquals(PositionCode.tabCode(PositionCode.Position.TOP_LEFT, 99), PositionCode.tabCode(PositionCode.Position.TOP_LEFT, 15));
+    }
+
+    private static double[] boardShift(int code, int sw, int sh, int width) {
+        int[] f = PositionCode.boardFields(code);
+        double k = code + PositionCode.BOARD_BASE;
+        double cell = PositionCode.BOARD_CELL;
+        double n = f[1];
+        double bottom = Math.floor(sh * 0.5) + 3 * n;
+        double top = bottom - 9 * n;
+        boolean right = PositionCode.boardFromRight(f[0]);
+        double edge = right ? sw - 5 - cell * (k - 1) : sw - 3 - cell * k;
+        double m = f[3];
+        double side = f[2] > 0 ? f[2] - 1 + 2 * (205 / 2) + 6 : 0;
+        double dx = right ? sw - m - side - (edge + 3) : m + side - (edge - 3);
+        double dy = 0;
+        if (f[0] == 1 || f[0] == 2) {
+            dy = m - (top - 11);
+        } else if (f[0] == 3) {
+            dy = sh - m - 132 - (bottom + 1);
+        } else if (f[0] == 4) {
+            dy = sh - m - 60 - (bottom + 1);
+        }
+        double lo = right ? edge - width - 3 : edge - 3;
+        return new double[]{lo + dx, top - 11 + dy, lo + width + 6 + dx, bottom + 1 + dy};
+    }
+
+    @Test
+    void boardBandPlacesPanel() {
+        PositionCode.Position[] all = {PositionCode.Position.LEFT, PositionCode.Position.TOP_LEFT,
+                PositionCode.Position.TOP_RIGHT, PositionCode.Position.BOTTOM_LEFT, PositionCode.Position.BOTTOM_RIGHT,
+                PositionCode.Position.RIGHT};
+        assertTrue((long) PositionCode.BOARD_CELL * (PositionCode.BOARD_BASE + PositionCode.BOARD_CODES) < (1L << 23));
+        assertTrue((long) PositionCode.BOARD_CELL * PositionCode.BOARD_BASE > 8192 + 3840 + 8);
+        for (PositionCode.Position pos : all) {
+            for (int n = 0; n <= 15; n += 3) {
+                for (int tab : new int[]{-1, 0, 4, 15}) {
+                    for (int margin : new int[]{0, 4, 15}) {
+                        int code = PositionCode.boardCode(pos, n, tab, margin);
+                        assertTrue(code >= 0 && code < PositionCode.BOARD_CODES);
+                        int[] f = PositionCode.boardFields(code);
+                        assertEquals(pos.boardSlot(), f[0]);
+                        assertEquals(n, f[1]);
+                        assertEquals(tab < 0 ? 0 : tab + 1, f[2]);
+                        assertEquals(margin, f[3]);
+                        for (int width : new int[]{1, 40, 120, PositionCode.BOARD_MAX_WIDTH}) {
+                            long total = PositionCode.boardTitleWidth(code, width);
+                            for (int[] scr : SCREENS) {
+                                long x0 = scr[0] - total - 3;
+                                for (long x = x0; x <= x0 + width + 1; x++) {
+                                    assertEquals(code, PositionCode.boardCodeAt(x, scr[0]), pos + " x" + (x - x0));
+                                }
+                                assertTrue(x0 - 2 < -8192);
+                                double[] r = boardShift(code, scr[0], scr[1], width);
+                                double side = tab < 0 ? 0 : tab + 2 * 102 + 6;
+                                assertEquals(width + 6, r[2] - r[0], 1e-9);
+                                assertEquals(9 * n + 12, r[3] - r[1], 1e-9);
+                                if (pos.side() == PositionCode.Side.LEFT) {
+                                    assertEquals(margin + side, r[0], 1e-9);
+                                } else {
+                                    assertEquals(scr[0] - margin - side, r[2], 1e-9);
+                                }
+                                double vanillaBottom = scr[1] / 2 + 3 * n + 1;
+                                switch (pos) {
+                                    case TOP_LEFT, TOP_RIGHT -> assertEquals(margin, r[1], 1e-9);
+                                    case BOTTOM_LEFT -> assertEquals(scr[1] - margin - 132, r[3], 1e-9);
+                                    case BOTTOM_RIGHT -> assertEquals(scr[1] - margin - 60, r[3], 1e-9);
+                                    default -> assertEquals(vanillaBottom, r[3], 1e-9);
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
-        assertEquals(PositionCode.MAX_VALUE, PositionCode.value(PositionCode.width(PositionCode.Element.TAB, 99999)));
-        assertEquals(255, PositionCode.margin(PositionCode.place(PositionCode.Element.TAB, PositionCode.Position.CENTER, 999)));
-        assertEquals(0xE80000, PositionCode.place(PositionCode.Element.TAB, PositionCode.Position.CENTER, 0));
-        assertEquals(0xE81604, PositionCode.place(PositionCode.Element.BOARD, PositionCode.Position.RIGHT, 4));
-        assertEquals(0xE900CD, PositionCode.width(PositionCode.Element.TAB, 205));
-        assertFalse(PositionCode.isCode(Backing.code(Backing.Kind.TITLE, 100)));
-        assertFalse(PositionCode.isCode(0xE8F000));
-        assertNull(PositionCode.element(0xE82000));
+        assertEquals(-1, PositionCode.boardCode(PositionCode.Position.CENTER, 3, -1, 4));
+        assertEquals(-1, PositionCode.boardCodeAt(100, 640));
+        assertTrue(PositionCode.sameSide(PositionCode.Position.TOP_LEFT, PositionCode.Position.LEFT));
+        assertTrue(PositionCode.sameSide(PositionCode.Position.BOTTOM_RIGHT, PositionCode.Position.RIGHT));
+        assertFalse(PositionCode.sameSide(PositionCode.Position.CENTER, PositionCode.Position.RIGHT));
+        assertFalse(PositionCode.sameSide(PositionCode.Position.TOP_LEFT, PositionCode.Position.TOP_RIGHT));
+    }
+
+    @Test
+    void markerCodes() {
+        for (int h = 0; h <= 15; h++) {
+            int rgb = PositionCode.tabMarker(h);
+            assertEquals(PositionCode.TAB_MARKER_R, PositionCode.red(rgb));
+            assertEquals(h, PositionCode.markerValue(rgb));
+        }
+        assertEquals(15, PositionCode.markerValue(PositionCode.tabMarker(40)));
+        for (int w = 0; w <= PositionCode.MAX_VALUE; w++) {
+            int rgb = PositionCode.boardMarker(w);
+            assertEquals(PositionCode.BOARD_MARKER_R, PositionCode.red(rgb));
+            assertEquals(w, PositionCode.markerValue(rgb));
+        }
+        assertEquals(0xE80200, PositionCode.tabMarker(2));
+        assertEquals(0xE90078, PositionCode.boardMarker(120));
+        assertTrue(PositionCode.red(Backing.code(Backing.Kind.TITLE, 100)) != PositionCode.TAB_MARKER_R);
+    }
+
+    @Test
+    void padGlyphsAreExact() {
+        for (long px : new long[]{1, 2, 3, 7, 100, 255, 4096, 123457, 6_700_000, (1L << 23) - 1}) {
+            Component c = TabLayout.pad(px);
+            assertEquals(Backing.FONT, c.style().font());
+            assertEquals(px, TabLayout.padWidth(((TextComponent) c).content()));
+        }
+        assertEquals(Component.empty(), TabLayout.pad(0));
+        assertThrows(IllegalArgumentException.class, () -> TabLayout.pad(1L << 23));
+    }
+
+    @Test
+    void boardTitleHasExactWidth() {
+        Component title = MiniMessage.miniMessage().deserialize("<b>Amazake</b>");
+        int tw = W.width(title);
+        for (PositionCode.Position pos : new PositionCode.Position[]{PositionCode.Position.LEFT,
+                PositionCode.Position.TOP_RIGHT, PositionCode.Position.BOTTOM_LEFT}) {
+            int code = PositionCode.boardCode(pos, 6, -1, 4);
+            Component t = TabLayout.boardTitle(title, tw, 90, code);
+            long w = 0;
+            for (Component c : t.children()) {
+                if (Backing.FONT.equals(c.style().font())) {
+                    String s = ((TextComponent) c).content();
+                    w += s.equals(TabLayout.MARKER_GLYPHS) ? 0 : TabLayout.padWidth(s);
+                } else {
+                    w += W.width(c);
+                }
+            }
+            assertEquals(PositionCode.boardTitleWidth(code, 90), w);
+            assertEquals(PositionCode.boardMarker(90), t.children().getFirst().color().value());
+            assertEquals((90 - tw) / 2, TabLayout.padWidth(((TextComponent) t.children().get(1)).content()));
+        }
+    }
+
+    @Test
+    void shaderConstantsMatch() throws Exception {
+        String glsl = java.nio.file.Files.readString(java.nio.file.Path.of("pack/assets/tabshader/shaders/include/th_layout.glsl"));
+        assertTrue(glsl.contains("#define TH_TAB_WIDTH 205\n"));
+        assertTrue(glsl.contains("#define TH_TAB_BAND " + PositionCode.TAB_BAND + "\n"));
+        assertTrue(glsl.contains("#define TH_TAB_BASE " + PositionCode.TAB_BASE + "\n"));
+        assertTrue(glsl.contains("#define TH_BOARD_CELL " + PositionCode.BOARD_CELL + "\n"));
+        assertTrue(glsl.contains("#define TH_BOARD_BASE " + PositionCode.BOARD_BASE + "\n"));
+        assertTrue(glsl.contains("#define TH_BOARD_CODES " + PositionCode.BOARD_CODES + "\n"));
+        assertEquals(205, Settings.width("205"));
+        assertEquals(205, TabLayout.defaultWidth(W, 12, 2));
     }
 
     @Test
@@ -231,20 +408,6 @@ class LayoutTest {
         assertEquals(Settings.AUTO_WIDTH, Settings.width("x"));
         assertEquals(240, Settings.width("240"));
         assertEquals(0, Settings.width("-5"));
-    }
-
-    @Test
-    void markersHaveZeroWidthAndCarryCodes() {
-        Component m = TabLayout.markers(PositionCode.Element.TAB, PositionCode.Position.TOP_RIGHT, 6, 205, 120);
-        List<Integer> codes = new ArrayList<>();
-        for (Component c : m.children()) {
-            assertEquals(Backing.FONT, c.style().font());
-            assertEquals(TabLayout.MARKER_GLYPHS, ((TextComponent) c).content());
-            assertEquals(0, c.style().shadowColor().alpha());
-            codes.add(c.color().value());
-        }
-        assertEquals(List.of(PositionCode.place(PositionCode.Element.TAB, PositionCode.Position.TOP_RIGHT, 6),
-                PositionCode.width(PositionCode.Element.TAB, 205), PositionCode.height(PositionCode.Element.TAB, 120)), codes);
     }
 
     @Test

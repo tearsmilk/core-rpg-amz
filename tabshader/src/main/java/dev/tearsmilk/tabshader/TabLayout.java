@@ -228,12 +228,55 @@ public final class TabLayout {
         return Component.text(MARKER_GLYPHS, style);
     }
 
-    public static Component markers(PositionCode.Element element, PositionCode.Position position, int margin,
-                                    int width, int height) {
+    public static final char PAD_FIRST = '\ue100';
+    public static final int PAD_BITS = 23;
+
+    public static Component pad(long px) {
+        if (px <= 0) {
+            return Component.empty();
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int bit = 0; bit < PAD_BITS; bit++) {
+            if ((px >> bit & 1) != 0) {
+                sb.append((char) (PAD_FIRST + bit));
+            }
+        }
+        if (px >> PAD_BITS != 0) {
+            throw new IllegalArgumentException("pad too wide: " + px);
+        }
+        return Component.text(sb.toString(), Style.style().font(Backing.FONT).build());
+    }
+
+    public static long padWidth(String glyphs) {
+        long w = 0;
+        for (int i = 0; i < glyphs.length(); i++) {
+            int bit = glyphs.charAt(i) - PAD_FIRST;
+            if (bit >= 0 && bit < PAD_BITS) {
+                w += 1L << bit;
+            }
+        }
+        return w;
+    }
+
+    public static List<Component> tabHeader(List<Component> lines, int padLines) {
+        List<Component> out = new ArrayList<>(padLines + lines.size());
+        for (int i = 0; i < padLines; i++) {
+            out.add(Component.empty());
+        }
+        out.addAll(lines);
+        return out;
+    }
+
+    public static Component boardTitle(Component title, int titleWidth, int contentWidth, int code) {
+        int content = Math.max(contentWidth, titleWidth);
+        long total = PositionCode.boardTitleWidth(code, content);
+        int before = Math.max(0, (content - titleWidth) / 2);
+        long after = total - before - titleWidth;
         return Component.text()
-                .append(marker(PositionCode.place(element, position, margin)))
-                .append(marker(PositionCode.width(element, width)))
-                .append(marker(PositionCode.height(element, height)))
+                .append(marker(PositionCode.boardMarker(content)))
+                .append(pad(before))
+                .append(title)
+                .append(pad(after))
                 .build();
     }
 }
