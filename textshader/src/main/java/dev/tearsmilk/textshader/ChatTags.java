@@ -2,12 +2,13 @@ package dev.tearsmilk.textshader;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class ChatTags {
 
-    public record Segment(String text, FxSpec spec) {
+    public record Segment(String text, FxSpec spec, boolean tagged) {
     }
 
     private static final Pattern TAG = Pattern.compile("<(/)?(?:(?:fx|textshader):)?([a-zA-Z_-]*)(?::([a-zA-Z_]+))?>");
@@ -29,43 +30,69 @@ public final class ChatTags {
     }
 
     public static List<Segment> parse(String text, FxSpec base) {
-        List<Segment> out = new ArrayList<>();
-        if (text == null) {
+        return new Parser(base, e -> true).feed(text);
+    }
+
+    public static final class Parser {
+        private final FxSpec base;
+        private final Predicate<Effect> allowed;
+        private final List<FxSpec> stack = new ArrayList<>();
+
+        public Parser(FxSpec base, Predicate<Effect> allowed) {
+            this.base = base;
+            this.allowed = allowed;
+        }
+
+        public List<Segment> feed(String text) {
+            List<Segment> out = new ArrayList<>();
+            if (text == null) {
+                return out;
+            }
+            Matcher m = TAG.matcher(text);
+            StringBuilder buf = new StringBuilder();
+            int pos = 0;
+            while (m.find()) {
+                boolean closing = m.group(1) != null;
+                FxSpec spec = closing ? null : specOf(m);
+                if (!closing && spec == null) {
+                    continue;
+                }
+                if (closing && stack.isEmpty()) {
+                    continue;
+                }
+                if (closing && !m.group(2).isEmpty() && !closes(stack.get(stack.size() - 1), m.group(2))) {
+                    continue;
+                }
+                buf.append(text, pos, m.start());
+                flush(out, buf);
+                if (closing) {
+                    stack.remove(stack.size() - 1);
+                } else {
+                    stack.add(allowed.test(spec.effect()) ? spec : null);
+                }
+                pos = m.end();
+            }
+            buf.append(text, pos, text.length());
+            flush(out, buf);
             return out;
         }
-        Matcher m = TAG.matcher(text);
-        StringBuilder buf = new StringBuilder();
-        List<FxSpec> stack = new ArrayList<>();
-        int pos = 0;
-        while (m.find()) {
-            boolean closing = m.group(1) != null;
-            FxSpec spec = closing ? null : specOf(m);
-            if (!closing && spec == null) {
-                continue;
+
+        private void flush(List<Segment> out, StringBuilder buf) {
+            if (buf.length() == 0) {
+                return;
             }
-            if (closing && stack.isEmpty()) {
-                continue;
+            FxSpec top = null;
+            for (int i = stack.size() - 1; i >= 0 && top == null; i--) {
+                top = stack.get(i);
             }
-            if (closing && !m.group(2).isEmpty() && !closes(stack.get(stack.size() - 1), m.group(2))) {
-                continue;
-            }
-            buf.append(text, pos, m.start());
-            flush(out, buf, current(stack, base));
-            if (closing) {
-                stack.remove(stack.size() - 1);
-            } else {
-                stack.add(spec);
-            }
-            pos = m.end();
+            out.add(new Segment(buf.toString(), top != null ? top : base, top != null));
+            buf.setLength(0);
         }
-        buf.append(text, pos, text.length());
-        flush(out, buf, current(stack, base));
-        return out;
     }
 
     private static boolean closes(FxSpec open, String name) {
         Effect e = Effect.byKey(name);
-        return e != null && e == open.effect();
+        return e != null && (open == null || e == open.effect());
     }
 
     private static FxSpec specOf(Matcher m) {
@@ -82,17 +109,5 @@ public final class ChatTags {
         }
         Palette p = Palette.byKey(m.group(3));
         return p == null ? null : new FxSpec(e, p);
-    }
-
-    private static FxSpec current(List<FxSpec> stack, FxSpec base) {
-        return stack.isEmpty() ? base : stack.get(stack.size() - 1);
-    }
-
-    private static void flush(List<Segment> out, StringBuilder buf, FxSpec spec) {
-        if (buf.length() == 0) {
-            return;
-        }
-        out.add(new Segment(buf.toString(), spec));
-        buf.setLength(0);
     }
 }

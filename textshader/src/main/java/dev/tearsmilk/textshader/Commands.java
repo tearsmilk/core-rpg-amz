@@ -297,7 +297,7 @@ public final class Commands implements TabExecutor {
             return;
         }
         String text = String.join(" ", Arrays.copyOfRange(a, from, a.length));
-        Component line = ChatTags.hasTags(text) ? ChatListener.tagged(null, text, spec) : FxText.render(text, spec);
+        Component line = ChatTags.hasTags(text) ? ChatFx.render(text, spec) : FxText.render(text, spec);
         Bukkit.broadcast(line);
     }
 

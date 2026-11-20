@@ -3,6 +3,7 @@ config-version: 1
 chat:
   enabled: true
   tags: true
+  sanitize: true
 
 nick:
   tab: true
@@ -56,6 +57,7 @@ messages:
   menu-color-hint: "<gray>Нажми - сменить цвет текущего эффекта"
   menu-pick-effect-first: "<red>Сначала выбери эффект."
   menu-off: "<red>Выключить эффект (<target>)"
+  menu-close: "<red>Закрыть"
   menu-help: "<gold>Как это работает"
   menu-help-1: "<gray>Анимацию рисует ресурспак сервера, мод не нужен."
   menu-help-2: "<gray>Видно в чате, табе, заголовках, названиях предметов."

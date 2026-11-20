@@ -489,20 +489,20 @@ void fx_sparkle(vec3 c) {
 void fx_matrix() {
     float cell = ts_cell();
     float r = ts_hash(vec2(cell, 17.0));
-    float span = 13.0 + floor(r * 6.0);
-    float head = mod(tsSec * (9.0 + r * 5.0) + r * 40.0, span);
+    float span = 11.0 + floor(r * 4.0);
+    float head = mod(tsSec * (7.0 + r * 4.0) + r * 40.0, span);
     float dist = head - float(ts_row());
-    float trail = dist >= 0.0 && dist < 6.0 ? 1.0 - dist / 6.0 : 0.0;
-    vec3 c = mix(vec3(0.12, 0.66, 0.27), vec3(0.45, 1.0, 0.55), trail);
+    float trail = dist >= 0.0 && dist < 5.0 ? 1.0 - dist / 5.0 : 0.0;
+    vec3 c = mix(vec3(0.1, 0.5, 0.2), vec3(0.42, 1.0, 0.52), trail * trail);
     if (dist >= 0.0 && dist < 1.0) {
-        c = vec3(0.9, 1.0, 0.92);
+        c = vec3(0.88, 1.0, 0.9);
     }
-    if (ts_hash(vec2(floor(tsSec * 10.0), cell)) > 0.95) {
-        c = mix(c, vec3(0.8, 1.0, 0.8), 0.6);
+    if (ts_hash(vec2(floor(tsSec * 10.0), cell)) > 0.96) {
+        c = mix(c, vec3(0.6, 1.0, 0.65), 0.5);
     }
     ts_set(c);
     if (tsIsShadow) {
-        tsFill.rgb = vec3(0.0, 0.1, 0.03);
+        tsFill.rgb = vec3(0.0, 0.06, 0.02);
     }
 }
 
@@ -510,15 +510,15 @@ void fx_frost() {
     float f = clamp((float(ts_row()) + 0.5) / max(tsSize.y, 1.0), 0.0, 1.0);
     vec3 c = mix(vec3(0.93, 0.98, 1.0), vec3(0.45, 0.72, 1.0), f);
     vec2 px = floor(tsPos);
-    if (ts_hash(px * 0.73 + 4.1) > 0.78) {
-        c *= 0.78;
+    if (ts_hash(px * 0.73 + 4.1) > 0.86) {
+        c *= 0.84;
     }
     ts_set(c);
     if (tsIsShadow) {
         tsFill.rgb = vec3(0.04, 0.1, 0.22);
         return;
     }
-    if (ts_hash(px + floor(tsSec * 5.0) * 0.37) > 0.965) {
+    if (ts_hash(px + floor(tsSec * 5.0) * 0.37) > 0.975) {
         tsFill.rgb = vec3(1.0);
     }
     if (ts_solid(tsUv)) {
@@ -529,10 +529,10 @@ void fx_frost() {
     bool up = ts_solid(ts_texel(vec2(0.0, 1.0)));
     bool side = ts_solid(ts_texel(vec2(1.0, 0.0))) || ts_solid(ts_texel(vec2(-1.0, 0.0)));
     float n = ts_hash(px * 1.31 + 9.7);
-    if (up && !ts_solid(ts_texel(vec2(0.0, -1.0))) && n < 0.15 + 0.6 * grow) {
-        tsBack = vec4(0.85, 0.96, 1.0, 0.95);
-    } else if (side && n < 0.35 * grow) {
-        tsBack = vec4(0.7, 0.88, 1.0, 0.55);
+    if (up && !ts_solid(ts_texel(vec2(0.0, -1.0))) && n < 0.1 + 0.32 * grow) {
+        tsBack = vec4(0.85, 0.96, 1.0, 0.7);
+    } else if (side && n < 0.12 * grow) {
+        tsBack = vec4(0.7, 0.88, 1.0, 0.35);
     }
 }
 

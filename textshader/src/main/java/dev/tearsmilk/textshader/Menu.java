@@ -67,6 +67,14 @@ public final class Menu implements Listener {
         show(p, v);
     }
 
+    private void later(Player p, View v) {
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (p.isOnline()) {
+                show(p, v);
+            }
+        });
+    }
+
     private void show(Player p, View v) {
         String title = plugin.msg().raw(v.pending == null ? "menu-title" : "menu-color-title")
                 .replace("<target>", v.target.title());
@@ -177,7 +185,7 @@ public final class Menu implements Listener {
         if (v.pending != null) {
             if (slot == SLOT_BACK) {
                 v.pending = null;
-                show(p, v);
+                later(p, v);
                 return;
             }
             int row = slot / 9 - 1;
@@ -192,7 +200,7 @@ public final class Menu implements Listener {
             plugin.apply(p, v.target, new FxSpec(v.pending, c), true);
             click(p);
             v.pending = null;
-            show(p, v);
+            later(p, v);
             return;
         }
         Effect ef = effectAt(v.page, slot);
@@ -204,7 +212,7 @@ public final class Menu implements Listener {
             }
             if (e.isRightClick()) {
                 v.pending = ef;
-                show(p, v);
+                later(p, v);
                 return;
             }
             FxSpec cur = current(p, v);
@@ -228,7 +236,7 @@ public final class Menu implements Listener {
             }
             case SLOT_TARGET -> {
                 v.target = v.target.other();
-                show(p, v);
+                later(p, v);
             }
             case SLOT_COLOR -> {
                 FxSpec cur = current(p, v);
@@ -238,7 +246,7 @@ public final class Menu implements Listener {
                     return;
                 }
                 v.pending = cur.effect();
-                show(p, v);
+                later(p, v);
             }
             case SLOT_OFF -> {
                 plugin.apply(p, v.target, null, true);
