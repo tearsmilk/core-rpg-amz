@@ -17,7 +17,8 @@ public final class PositionCode {
     public static final int BOARD_BASE = 64;
     public static final int BOARD_MAX_MARGIN = 15;
     public static final int BOARD_MAX_LINES = 15;
-    public static final int BOARD_MAX_WIDTH = BOARD_CELL - 3;
+    public static final int BOARD_SLACK = 8;
+    public static final int BOARD_MAX_WIDTH = BOARD_CELL - 2 * BOARD_SLACK - 4;
     public static final int BOARD_CODES = 6 * 16 * 17 * 16;
     public static final int MAX_VALUE = 4095;
 
@@ -157,9 +158,9 @@ public final class PositionCode {
         long k = (long) code + BOARD_BASE;
         int slot = boardFields(code)[0];
         if (boardFromRight(slot)) {
-            return BOARD_CELL * (k - 1) + 2 + clamp(contentWidth, BOARD_MAX_WIDTH);
+            return BOARD_CELL * (k - 1) + 2 + BOARD_SLACK + clamp(contentWidth, BOARD_MAX_WIDTH);
         }
-        return BOARD_CELL * k;
+        return BOARD_CELL * k - BOARD_SLACK;
     }
 
     public static int boardCodeAt(double x, int screenWidth) {

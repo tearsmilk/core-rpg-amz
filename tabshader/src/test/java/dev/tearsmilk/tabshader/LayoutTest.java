@@ -257,7 +257,7 @@ class LayoutTest {
         double bottom = Math.floor(sh * 0.5) + 3 * n;
         double top = bottom - 9 * n;
         boolean right = PositionCode.boardFromRight(f[0]);
-        double edge = right ? sw - 5 - cell * (k - 1) : sw - 3 - cell * k;
+        double edge = right ? sw - 5 - 8 - cell * (k - 1) : sw - 3 + 8 - cell * k;
         double m = f[3];
         double side = f[2] > 0 ? f[2] - 1 + 2 * (205 / 2) + 6 : 0;
         double dx = right ? sw - m - side - (edge + 3) : m + side - (edge - 3);
@@ -295,7 +295,7 @@ class LayoutTest {
                             long total = PositionCode.boardTitleWidth(code, width);
                             for (int[] scr : SCREENS) {
                                 long x0 = scr[0] - total - 3;
-                                for (long x = x0; x <= x0 + width + 1; x++) {
+                                for (long x = x0 - 6; x <= x0 + width + 6; x++) {
                                     assertEquals(code, PositionCode.boardCodeAt(x, scr[0]), pos + " x" + (x - x0));
                                 }
                                 assertTrue(x0 - 2 < -8192);

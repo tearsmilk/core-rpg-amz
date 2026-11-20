@@ -10,6 +10,7 @@
 #define TH_BOARD_BASE 64
 #define TH_BOARD_CODES 26112
 #define TH_BOARD_EDGE 8192.0
+#define TH_BOARD_SLACK 8.0
 #define TH_CHAT_LIFT 132.0
 #define TH_HOTBAR_LIFT 60.0
 
@@ -76,7 +77,7 @@ vec4 th_board_frame(int code, vec2 screen) {
     float n = float(f.y);
     float bottom = floor(screen.y * 0.5) + 3.0 * n;
     float top = bottom - 9.0 * n;
-    float edge = th_board_right(f.x) ? screen.x - 5.0 - cell * (k - 1.0) : screen.x - 3.0 - cell * k;
+    float edge = th_board_right(f.x) ? screen.x - 5.0 - TH_BOARD_SLACK - cell * (k - 1.0) : screen.x - 3.0 + TH_BOARD_SLACK - cell * k;
     return vec4(edge, top - 11.0, bottom + 1.0, n);
 }
 
