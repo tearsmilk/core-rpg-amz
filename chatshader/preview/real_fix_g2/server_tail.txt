@@ -1,0 +1,34 @@
+[22:26:50 WARN]: java.util.concurrent.CompletionException: java.lang.RuntimeException: Skin URL is null
+[22:26:50 WARN]: Caused by: java.lang.RuntimeException: Skin URL is null
+[22:27:10 INFO]: [91mПозиция:[0m [97mв конфиге bottom-left, отступ 0; в шейдере bottom-left, отступ 0.[0m
+[22:27:10 INFO]: [91mМетка сообщений:[0m [97mвыкл, помечено 0, ошибка: -.[0m
+[22:27:10 INFO]: [91mШейдеры в паке:[0m [97mзаписано файлов: 9 (/home/user/core-rpg-amz/chatshader/preview/real_fix_g2/nexo/assets)[0m
+[22:27:13 INFO]: [91mchatshader:[0m [97mотправлено строк: 6 игроку TestBot.[0m
+[22:27:36 INFO]: [91mchatshader:[0m [97mконфиг перечитан, позиция top-left, отступ 0. Пак обновляется в фоне, игроки получат его после перезагрузки пака Nexo; итог - /csh status.[0m
+[22:27:36 WARN]: [chatshader] Замененные файлы пака сохранены в /home/user/mc-skilltest/plugins/chatshader/pack-backup/20261120-222736-199: chatshader/shaders/include/cs_config.glsl
+[22:27:36 INFO]: [chatshader] Шейдеры в /home/user/core-rpg-amz/chatshader/preview/real_fix_g2/nexo/assets: записано файлов 1: chatshader/shaders/include/cs_config.glsl
+[22:27:36 INFO]: [chatshader] Чат: позиция top-left, отступ 0; в паке top-left, отступ 0; метка сообщений включена.
+[22:27:53 INFO]: [91mПозиция:[0m [97mв конфиге top-left, отступ 0; в шейдере top-left, отступ 0.[0m
+[22:27:53 INFO]: [91mМетка сообщений:[0m [97mвкл, помечено 0, ошибка: -.[0m
+[22:27:53 INFO]: [91mШейдеры в паке:[0m [97mзаписано файлов: 1, старые файлы сохранены в /home/user/mc-skilltest/plugins/chatshader/pack-backup/20261120-222736-199 (/home/user/core-rpg-amz/chatshader/preview/real_fix_g2/nexo/assets)[0m
+[22:27:56 INFO]: [91mchatshader:[0m [97mотправлено строк: 6 игроку TestBot.[0m
+[22:28:31 INFO]: [91mchatshader:[0m [97mотправлено строк: 6 игроку TestBot.[0m
+[22:29:00 WARN]: [chatshader] Чат (top-right) и табло tabshader (board.position: right) стоят с одной стороны экрана и перекрываются. Поменяйте chat.position или board.position.
+[22:29:00 INFO]: [91mchatshader:[0m [97mконфиг перечитан, позиция top-right, отступ 0. Пак обновляется в фоне, игроки получат его после перезагрузки пака Nexo; итог - /csh status.[0m
+[22:29:00 WARN]: [chatshader] Замененные файлы пака сохранены в /home/user/mc-skilltest/plugins/chatshader/pack-backup/20261120-222900-350: chatshader/shaders/include/cs_config.glsl
+[22:29:00 INFO]: [chatshader] Шейдеры в /home/user/core-rpg-amz/chatshader/preview/real_fix_g2/nexo/assets: записано файлов 1: chatshader/shaders/include/cs_config.glsl
+[22:29:00 INFO]: [chatshader] Чат: позиция top-right, отступ 0; в паке top-right, отступ 0; метка сообщений включена.
+[22:29:17 INFO]: [91mПозиция:[0m [97mв конфиге top-right, отступ 0; в шейдере top-right, отступ 0.[0m
+[22:29:17 INFO]: [91mМетка сообщений:[0m [97mвкл, помечено 15, ошибка: -.[0m
+[22:29:17 INFO]: [91mШейдеры в паке:[0m [97mзаписано файлов: 1, старые файлы сохранены в /home/user/mc-skilltest/plugins/chatshader/pack-backup/20261120-222900-350 (/home/user/core-rpg-amz/chatshader/preview/real_fix_g2/nexo/assets)[0m
+[22:29:20 INFO]: [91mchatshader:[0m [97mотправлено строк: 6 игроку TestBot.[0m
+[22:29:55 INFO]: [91mchatshader:[0m [97mотправлено строк: 6 игроку TestBot.[0m
+[22:30:24 WARN]: [chatshader] Чат (bottom-right) и табло tabshader (board.position: right) стоят с одной стороны экрана и перекрываются. Поменяйте chat.position или board.position.
+[22:30:24 INFO]: [91mchatshader:[0m [97mконфиг перечитан, позиция bottom-right, отступ 0. Пак обновляется в фоне, игроки получат его после перезагрузки пака Nexo; итог - /csh status.[0m
+[22:30:24 WARN]: [chatshader] Замененные файлы пака сохранены в /home/user/mc-skilltest/plugins/chatshader/pack-backup/20261120-223024-400: chatshader/shaders/include/cs_config.glsl
+[22:30:24 INFO]: [chatshader] Шейдеры в /home/user/core-rpg-amz/chatshader/preview/real_fix_g2/nexo/assets: записано файлов 1: chatshader/shaders/include/cs_config.glsl
+[22:30:24 INFO]: [chatshader] Чат: позиция bottom-right, отступ 0; в паке bottom-right, отступ 0; метка сообщений включена.
+[22:30:41 INFO]: [91mПозиция:[0m [97mв конфиге bottom-right, отступ 0; в шейдере bottom-right, отступ 0.[0m
+[22:30:41 INFO]: [91mМетка сообщений:[0m [97mвкл, помечено 30, ошибка: -.[0m
+[22:30:41 INFO]: [91mШейдеры в паке:[0m [97mзаписано файлов: 1, старые файлы сохранены в /home/user/mc-skilltest/plugins/chatshader/pack-backup/20261120-223024-400 (/home/user/core-rpg-amz/chatshader/preview/real_fix_g2/nexo/assets)[0m
+[22:30:44 INFO]: [91mchatshader:[0m [97mотправлено строк: 6 игроку TestBot.[0m

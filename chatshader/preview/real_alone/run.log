@@ -1,0 +1,70 @@
+client ready: 61 jars
+install chatshader: written 34 foreign [] kept []
+pack: /home/user/core-rpg-amz/nameshader/tools/.cache/client/game/resourcepacks/nameshader-test.zip order=chatshader files=34 sha1=1c317692bcf009683f5649123d77cfa01e4ee9cd
+content sha1: bb699e4a252894a8faf0f0ddafcb04bf35ea320b
+[realclient] build nameshader jar
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=36663 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+[realclient] start server
+started
+ - MMOCore (1.13.1-SNAPSHOT), ModelEngine (R4.2.0), MythicLib (1.7.1-SNAPSHOT), PlaceholderAPI (2.12.3), nameshader (1.0.0), tabshader (1.0.0), textshader (1.0.0)
+[21:55:37 INFO]: [nameshader] Loading server plugin nameshader v1.0.0
+[21:55:39 INFO]: [nameshader] Enabling nameshader v1.0.0
+[21:55:39 WARN]: [nameshader] Нет папки /home/user/mc-skilltest/plugins/Nexo/pack: шейдеры не установлены. Поставьте Nexo или укажите pack.dir.
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Could not resolve keysym XF86CameraAccessEnable
+> Warning:          Could not resolve keysym XF86CameraAccessDisable
+> Warning:          Could not resolve keysym XF86CameraAccessToggle
+> Warning:          Could not resolve keysym XF86NextElement
+> Warning:          Could not resolve keysym XF86PreviousElement
+> Warning:          Could not resolve keysym XF86AutopilotEngageToggle
+> Warning:          Could not resolve keysym XF86MarkWaypoint
+> Warning:          Could not resolve keysym XF86Sos
+> Warning:          Could not resolve keysym XF86NavChart
+> Warning:          Could not resolve keysym XF86FishingChart
+> Warning:          Could not resolve keysym XF86SingleRangeRadar
+> Warning:          Could not resolve keysym XF86DualRangeRadar
+> Warning:          Could not resolve keysym XF86RadarOverlay
+> Warning:          Could not resolve keysym XF86TraditionalSonar
+> Warning:          Could not resolve keysym XF86ClearvuSonar
+> Warning:          Could not resolve keysym XF86SidevuSonar
+> Warning:          Could not resolve keysym XF86NavInfo
+Errors from xkbcomp are not fatal to the X server
+[realclient] start client 1280x800 gui=2 pack=nameshader-test.zip packs=chatshader bg=chat opacity=0.5
+[realclient] joined
+[realclient] shot 01_front
+[realclient] shot 02_side
+[realclient] shot 03_wall
+[realclient] shot 04_sneak
+[realclient] shot 05_sneak_wall
+[realclient] shot 06_far
+[realclient] shot 06b_night
+[realclient] shot 07_test
+[realclient] shot 08_sign_item
+[realclient] shot 09_chat
+[realclient] shot 10_tab
+[realclient] shot 11_displays_styled
+[realclient] shot 12_displays_back
+[realclient] done: /home/user/core-rpg-amz/chatshader/preview/real_alone
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Could not resolve keysym XF86CameraAccessEnable
+> Warning:          Could not resolve keysym XF86CameraAccessDisable
+> Warning:          Could not resolve keysym XF86CameraAccessToggle
+> Warning:          Could not resolve keysym XF86NextElement
+> Warning:          Could not resolve keysym XF86PreviousElement
+> Warning:          Could not resolve keysym XF86AutopilotEngageToggle
+> Warning:          Could not resolve keysym XF86MarkWaypoint
+> Warning:          Could not resolve keysym XF86Sos
+> Warning:          Could not resolve keysym XF86NavChart
+> Warning:          Could not resolve keysym XF86FishingChart
+> Warning:          Could not resolve keysym XF86SingleRangeRadar
+> Warning:          Could not resolve keysym XF86DualRangeRadar
+> Warning:          Could not resolve keysym XF86RadarOverlay
+> Warning:          Could not resolve keysym XF86TraditionalSonar
+> Warning:          Could not resolve keysym XF86ClearvuSonar
+> Warning:          Could not resolve keysym XF86SidevuSonar
+> Warning:          Could not resolve keysym XF86NavInfo
+Errors from xkbcomp are not fatal to the X server
+stopped
+[realclient] removed /home/user/mc-skilltest/plugins/nameshader-1.0.0.jar
+[realclient] removed /home/user/mc-skilltest/plugins/nameshader
+[realclient] stopped

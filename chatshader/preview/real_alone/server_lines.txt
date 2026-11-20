@@ -1,0 +1,15 @@
+[21:55:58 WARN]: java.util.concurrent.CompletionException: java.lang.RuntimeException: Skin URL is null
+[21:55:58 WARN]: Caused by: java.lang.RuntimeException: Skin URL is null
+[21:56:00 WARN]: java.util.concurrent.CompletionException: java.lang.RuntimeException: Skin URL is null
+[21:56:00 WARN]: Caused by: java.lang.RuntimeException: Skin URL is null
+[21:56:46 INFO]: [91mnameshader:[0m [97mтестовые ники рядом на 30 с (обычный, присевший, текстовый дисплей).[0m
+[21:57:06 WARN]: [nameshader] Нет папки /home/user/mc-skilltest/plugins/Nexo/pack: шейдеры не установлены. Поставьте Nexo или укажите pack.dir.
+[21:57:06 INFO]: [91mnameshader:[0m [97mконфиг перечитан, стиль текстовых дисплеев: вкл.[0m
+[21:57:07 INFO]: [91mnameshader:[0m [97mтестовые ники рядом на 30 с (обычный, присевший, текстовый дисплей).[0m
+[21:57:13 INFO]: [91mТекстовые дисплеи:[0m [97mстиль вкл, тег любой, со стилем 3 из 3 загруженных.[0m
+[21:57:13 INFO]: [91mТестовые сущности:[0m [97m3[0m
+[21:57:13 INFO]: [91mПлагины:[0m [97mtextshader +, tabshader +, Nexo -, SkinsRestorer -[0m
+[21:57:13 INFO]: [91mПак Nexo:[0m [93mшейдеры nameshader: 0 из 5, нет: rendertype_text_see_through.fsh, rendertype_text_background.vsh, rendertype_text_background.fsh, rendertype_text_background_see_through.vsh, rendertype_text_background_see_through.fsh.[0m
+[21:57:13 INFO]: [91mInclude nameshader:[0m [93m0 из 4, нет: ns_common.glsl, ns_tag.glsl, ns_display_vertex.glsl, ns_display_fragment.glsl.[0m
+[21:57:14 WARN]: [nameshader] Нет папки /home/user/mc-skilltest/plugins/Nexo/pack: шейдеры не установлены. Поставьте Nexo или укажите pack.dir.
+[21:57:14 INFO]: [91mnameshader:[0m [97mконфиг перечитан, стиль текстовых дисплеев: выкл.[0m

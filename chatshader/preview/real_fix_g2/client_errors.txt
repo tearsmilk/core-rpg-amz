@@ -1,0 +1,33 @@
+[22:26:40] [Yggdrasil Key Fetcher/ERROR]: Failed to request yggdrasil public key
+com.mojang.authlib.exceptions.MinecraftClientException: Failed to read from https://api.minecraftservices.com/publickeys due to api.minecraftservices.com
+Caused by: java.net.UnknownHostException: api.minecraftservices.com
+[22:26:40] [Download-2/ERROR]: Failed to fetch user properties
+com.mojang.authlib.exceptions.AuthenticationUnavailableException
+	at com.mojang.authlib.exceptions.MinecraftClientException.toAuthenticationException(MinecraftClientException.java:29)
+[22:26:40] [Download-1/WARN]: Couldn't look up profile properties for 30fecbe1-2271-3418-8553-d3ded0e95f56
+com.mojang.authlib.exceptions.MinecraftClientException: Failed to read from https://sessionserver.mojang.com/session/minecraft/profile/30fecbe1227134188553d3ded0e95f56?unsigned=false due to sessionserver.mojang.com
+Caused by: java.net.UnknownHostException: sessionserver.mojang.com
+[22:26:41] [Render thread/ERROR]: Couldn't set icon
+java.io.FileNotFoundException: icons/icon_16x16.png
+[22:26:42] [Download-1/ERROR]: Failed to fetch Realms feature flags
+[22:26:42] [Render thread/INFO]: Reloading ResourceManager: vanilla, file/chatshader-test.zip
+[22:26:46] [Render thread/ERROR]: Error starting SoundSystem. Turning off sounds & music
+java.lang.IllegalStateException: Failed to open OpenAL device
+[22:26:47] [Download-1/ERROR]: Failed to retrieve profile key pair
+com.mojang.authlib.exceptions.MinecraftClientException: Failed to POST https://api.minecraftservices.com/player/certificates
+Caused by: java.net.UnknownHostException: api.minecraftservices.com
+[22:27:13] [Render thread/INFO]: [System] [CHAT] Волна textshader в чате и обычный текст рядом.
+[22:27:39] [Render thread/INFO]: Reloading ResourceManager: vanilla, file/chatshader-test.zip
+[22:27:41] [Render thread/ERROR]: Error starting SoundSystem. Turning off sounds & music
+java.lang.IllegalStateException: Failed to open OpenAL device
+[22:27:56] [Render thread/INFO]: [System] [CHAT] Волна textshader в чате и обычный текст рядом.
+[22:28:31] [Render thread/INFO]: [System] [CHAT] Волна textshader в чате и обычный текст рядом.
+[22:29:03] [Render thread/INFO]: Reloading ResourceManager: vanilla, file/chatshader-test.zip
+[22:29:04] [Render thread/ERROR]: Error starting SoundSystem. Turning off sounds & music
+java.lang.IllegalStateException: Failed to open OpenAL device
+[22:29:20] [Render thread/INFO]: [System] [CHAT] Волна textshader в чате и обычный текст рядом.
+[22:29:55] [Render thread/INFO]: [System] [CHAT] Волна textshader в чате и обычный текст рядом.
+[22:30:27] [Render thread/INFO]: Reloading ResourceManager: vanilla, file/chatshader-test.zip
+[22:30:28] [Render thread/ERROR]: Error starting SoundSystem. Turning off sounds & music
+java.lang.IllegalStateException: Failed to open OpenAL device
+[22:30:44] [Render thread/INFO]: [System] [CHAT] Волна textshader в чате и обычный текст рядом.
