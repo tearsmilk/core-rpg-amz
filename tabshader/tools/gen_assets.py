@@ -11,6 +11,10 @@ Yellow is not generated: MythicHUD draws its HUD in yellow boss bars and hides t
 yellow_background.png, so yellow bars stay vanilla (and MythicHUD's). position_tex_color.fsh takes the column and row from
 the quad UV and draws the bar itself. Notch sprites only cover the notch columns, the rest is transparent.
 
+Tab ping sprites (icon/ping_1..5, icon/ping_unknown, 10x8): the vanilla pictures from the client jar with every
+visible texel at alpha 254 (PING_KIND). position_tex_color.fsh draws them as usual, or drops them when the vertex sits
+in a tab band of the "no ping" half (code >= 80, tab.ping-bars: false). With another shader they look vanilla.
+
 Marker font tabshader:hud: U+E000 is an 8x8 glyph of colour (231, 7, 77) that rendertype_text.vsh recognises,
 U+E001 is a space of -9, so the marker takes no room.
 
@@ -33,6 +37,8 @@ COLOURS = ["pink", "blue", "red", "green", "yellow", "purple", "white"]
 SKIP = {"yellow"}
 NOTCHES = [6, 10, 12, 20]
 MARK = (231, 7, 77, 255)
+PING_KIND = 254
+PINGS = ["ping_1", "ping_2", "ping_3", "ping_4", "ping_5", "ping_unknown"]
 
 
 DEEP = np.array((50, 5, 20), float)
@@ -100,6 +106,17 @@ def sprites():
         notched(253, i, n).save(os.path.join(out, f"notched_{n}_progress.png"))
 
 
+def pings(jar):
+    out = os.path.join(ASSETS, "minecraft", "textures", "gui", "sprites", "icon")
+    os.makedirs(out, exist_ok=True)
+    with zipfile.ZipFile(jar) as z:
+        for name in PINGS:
+            img = np.array(Image.open(z.open(f"assets/minecraft/textures/gui/sprites/icon/{name}.png")).convert("RGBA"))
+            img[..., 3] = np.where(img[..., 3] > 0, PING_KIND, 0)
+            img[img[..., 3] == 0] = 0
+            Image.fromarray(img, "RGBA").save(os.path.join(out, f"{name}.png"))
+
+
 def marker():
     tex = os.path.join(ASSETS, "tabshader", "textures", "font")
     os.makedirs(tex, exist_ok=True)
@@ -150,9 +167,10 @@ def widths(jar):
 def main(argv):
     jar = argv[0] if argv else JAR
     sprites()
+    pings(jar)
     marker()
     n = widths(jar)
-    print(f"sprites: {(len(COLOURS) - len(SKIP)) * 2 + len(NOTCHES) * 2}, marker font, widths: {n} characters")
+    print(f"sprites: {(len(COLOURS) - len(SKIP)) * 2 + len(NOTCHES) * 2}, pings: {len(PINGS)}, marker font, widths: {n} characters")
     return 0
 
 

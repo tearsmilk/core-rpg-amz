@@ -16,6 +16,8 @@ public final class PositionCode {
     public static final int TAB_MAX_HEADER = 15;
     public static final int TAB_CENTER = 64;
     public static final int TAB_CODES = 80;
+    public static final int TAB_NOPING = TAB_CODES;
+    public static final int TAB_BANDS = 2 * TAB_CODES;
     public static final int MAX_BOSSBAR_ROWS = TAB_CODES - TAB_CENTER - 1;
     public static final int BOARD_CELL = 256;
     public static final int BOARD_BASE = 64;
@@ -119,14 +121,34 @@ public final class PositionCode {
     }
 
     public static int centerCode(int bossbarRows) {
-        if (bossbarRows <= 0) {
+        return centerCode(bossbarRows, false);
+    }
+
+    public static int centerCode(int bossbarRows, boolean pingHidden) {
+        if (bossbarRows <= 0 && !pingHidden) {
             return -1;
         }
         return TAB_CENTER + clamp(bossbarRows, MAX_BOSSBAR_ROWS);
     }
 
     public static int tabCode(Position position, int margin, int bossbarRows) {
-        return position == Position.CENTER ? centerCode(bossbarRows) : tabCode(position, margin);
+        return tabCode(position, margin, bossbarRows, false);
+    }
+
+    public static int tabCode(Position position, int margin, int bossbarRows, boolean pingHidden) {
+        return position == Position.CENTER ? centerCode(bossbarRows, pingHidden) : tabCode(position, margin);
+    }
+
+    public static int tabBand(int code, boolean pingHidden) {
+        return code < 0 ? -1 : code + (pingHidden ? TAB_NOPING : 0);
+    }
+
+    public static int tabLayout(int band) {
+        return band < 0 ? -1 : band % TAB_CODES;
+    }
+
+    public static boolean tabPingHidden(int band) {
+        return band >= TAB_NOPING;
     }
 
     public static boolean tabFits(int lines) {
@@ -138,17 +160,21 @@ public final class PositionCode {
     }
 
     public static int tabPadLines(Position position, int margin, int lines, int bossbarRows) {
-        int code = tabCode(position, margin, bossbarRows);
-        if (code < 0 || !tabFits(lines)) {
+        return tabPadLines(position, margin, lines, bossbarRows, false);
+    }
+
+    public static int tabPadLines(Position position, int margin, int lines, int bossbarRows, boolean pingHidden) {
+        int band = tabBand(tabCode(position, margin, bossbarRows, pingHidden), pingHidden);
+        if (band < 0 || !tabFits(lines)) {
             return 0;
         }
-        int band = TAB_BAND * (code + TAB_BASE);
-        return position.bottom() ? band + TAB_BAND - 2 - lines : band + 2;
+        int start = TAB_BAND * (band + TAB_BASE);
+        return position.bottom() ? start + TAB_BAND - 2 - lines : start + 2;
     }
 
     public static int tabCodeAt(double y) {
         double c = Math.floor((y - 9.0) / (9.0 * TAB_BAND)) - TAB_BASE;
-        return c < 0 || c >= TAB_CODES ? -1 : (int) c;
+        return c < 0 || c >= TAB_BANDS ? -1 : (int) c;
     }
 
     public static int boardCode(Position position, int lines, int tabMargin, int margin) {

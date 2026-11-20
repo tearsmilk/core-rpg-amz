@@ -25,6 +25,7 @@ final class Hud {
         Board board;
         BossBar bar;
         boolean tabMoved;
+        boolean pingHidden;
         boolean boardTooWide;
     }
 
@@ -74,8 +75,9 @@ final class Hud {
             if (hidden > 0) {
                 footerLines.add(t.get("tab-hidden", "count", hidden));
             }
-            st.tabMoved = decorateTab(p, s, headerLines, footerLines, bossbarRows(p, s, off))
-                    && s.tabPosition() != PositionCode.Position.CENTER;
+            int band = decorateTab(p, s, headerLines, footerLines, bossbarRows(p, s, off));
+            st.tabMoved = band >= 0 && s.tabPosition() != PositionCode.Position.CENTER;
+            st.pingHidden = PositionCode.tabPingHidden(band);
             Component header = join(headerLines);
             Component footer = join(footerLines);
             if (!Objects.equals(header, st.header) || !Objects.equals(footer, st.footer)) {
@@ -86,6 +88,7 @@ final class Hud {
             }
         } else if (s.tab()) {
             st.tabMoved = false;
+            st.pingHidden = false;
             if (st.header != BLANK || st.footer != BLANK) {
                 p.sendPlayerListHeaderAndFooter(BLANK, BLANK);
                 st.header = BLANK;
@@ -94,6 +97,7 @@ final class Hud {
             }
         } else if (st.header != null || st.footer != null) {
             st.tabMoved = false;
+            st.pingHidden = false;
             p.sendPlayerListHeaderAndFooter(Component.empty(), Component.empty());
             st.header = null;
             st.footer = null;
@@ -156,11 +160,15 @@ final class Hud {
     }
 
     int tabWidth(Settings s) {
-        return tabWidth(s, 0);
+        return tabWidth(s, 0, !s.pingBars());
     }
 
     int tabWidth(Settings s, int bossbarRows) {
-        if (s.markers() && (s.tabPosition() != PositionCode.Position.CENTER || bossbarRows > 0)) {
+        return tabWidth(s, bossbarRows, false);
+    }
+
+    int tabWidth(Settings s, int bossbarRows, boolean pingHidden) {
+        if (s.markers() && (s.tabPosition() != PositionCode.Position.CENTER || bossbarRows > 0 || pingHidden)) {
             return PositionCode.TAB_WIDTH;
         }
         return s.tabWidth() == Settings.AUTO_WIDTH ? PositionCode.TAB_WIDTH : s.tabWidth();
@@ -195,7 +203,11 @@ final class Hud {
         return TabLayout.listWidth(entries, name, true) <= PositionCode.TAB_WIDTH;
     }
 
-    boolean decorateTab(Player p, Settings s, List<Component> headerLines, List<Component> footerLines, int bossbarRows) {
+    static boolean tabShifts(boolean fits, int headerLines, int lines) {
+        return fits && headerLines <= PositionCode.TAB_MAX_HEADER && PositionCode.tabFits(lines);
+    }
+
+    int decorateTab(Player p, Settings s, List<Component> headerLines, List<Component> footerLines, int bossbarRows) {
         Widths w = plugin.widths();
         if (headerLines.isEmpty()) {
             headerLines.add(BLANK);
@@ -203,12 +215,15 @@ final class Hud {
         Component first = headerLines.getFirst();
         boolean fits = s.markers() && listFits(p);
         int bars = fits ? bossbarRows : 0;
-        TabLayout.Padded padded = TabLayout.pad(first, w.width(first), tabWidth(s, bars), w);
-        Component line = padded.line();
         int rows = TabLayout.rows(Math.max(1, plugin.limiter().shown(p)));
+        int lines = headerLines.size() + rows + footerLines.size();
+        boolean shifts = tabShifts(fits, headerLines.size(), lines);
+        boolean noPing = shifts && !s.pingBars();
+        TabLayout.Padded padded = TabLayout.pad(first, w.width(first), tabWidth(s, bars, noPing), w);
+        Component line = padded.line();
         int pad = 0;
-        if (fits && headerLines.size() <= PositionCode.TAB_MAX_HEADER) {
-            pad = PositionCode.tabPadLines(s.tabPosition(), s.tabMargin(), headerLines.size() + rows + footerLines.size(), bars);
+        if (shifts) {
+            pad = PositionCode.tabPadLines(s.tabPosition(), s.tabMargin(), lines, bars, noPing);
         }
         if (pad > 0) {
             line = Component.text()
@@ -222,7 +237,7 @@ final class Hud {
             headerLines.clear();
             headerLines.addAll(all);
         }
-        return pad > 0;
+        return pad > 0 ? PositionCode.tabBand(PositionCode.tabCode(s.tabPosition(), s.tabMargin(), bars, noPing), noPing) : -1;
     }
 
     static boolean boardTooWide(Component title, List<Component> lines, Settings s, Widths w) {
@@ -235,6 +250,16 @@ final class Hud {
             content = Math.max(content, measure(lines.get(i), w));
         }
         return content > PositionCode.BOARD_MAX_WIDTH;
+    }
+
+    int pingHidden() {
+        int n = 0;
+        for (State st : states.values()) {
+            if (st.pingHidden) {
+                n++;
+            }
+        }
+        return n;
     }
 
     int boardTooWide() {

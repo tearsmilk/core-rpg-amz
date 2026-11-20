@@ -7,6 +7,8 @@
 #define TH_TAB_BASE 9
 #define TH_TAB_CODES 80
 #define TH_TAB_CENTER 64
+#define TH_TAB_NOPING 80
+#define TH_TAB_BANDS 160
 #define TH_BOSSBAR_ROW 19.0
 #define TH_HOTBAR_HALF 92.0
 #define TH_BOARD_CELL 256
@@ -31,21 +33,31 @@ float th_tab_half() {
 
 int th_tab_code(float y) {
     float c = floor((y - 9.0) / (9.0 * float(TH_TAB_BAND))) - float(TH_TAB_BASE);
-    if (c < 0.0 || c >= float(TH_TAB_CODES)) {
+    if (c < 0.0 || c >= float(TH_TAB_BANDS)) {
         return -1;
     }
     return int(c);
+}
+
+float th_tab_origin(float y) {
+    int band = th_tab_code(y);
+    return band < 0 ? 0.0 : 9.0 + 9.0 * float(TH_TAB_BAND) * float(band + TH_TAB_BASE);
+}
+
+bool th_tab_noping(vec3 pos) {
+    return th_is_gui() && th_tab_code(pos.y) >= TH_TAB_NOPING;
 }
 
 bool th_tab_narrow(float m, vec2 screen) {
     return screen.x < 2.0 * (float(TH_TAB_WIDTH) + m + 6.0) + 2.0 * TH_HOTBAR_HALF;
 }
 
-vec2 th_tab_shift(int code, vec2 screen) {
-    float c = float(code + TH_TAB_BASE);
+vec2 th_tab_shift(int band, vec2 screen) {
+    float c = float(band + TH_TAB_BASE);
     float b = float(TH_TAB_BAND);
+    int code = band % TH_TAB_CODES;
     if (code >= TH_TAB_CENTER) {
-        return vec2(0.0, TH_BOSSBAR_ROW * float(code - TH_TAB_CENTER) + 2.0 - (9.0 + 9.0 * (b * c + 2.0)));
+        return vec2(0.0, max(TH_BOSSBAR_ROW * float(code - TH_TAB_CENTER) + 2.0, 9.0) - (9.0 + 9.0 * (b * c + 2.0)));
     }
     int p = code & 3;
     float m = float(code >> 2);

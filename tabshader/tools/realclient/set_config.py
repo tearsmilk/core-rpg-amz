@@ -20,7 +20,10 @@ for i, line in enumerate(lines):
     if (section, name) in changes:
         lines[i] = "  " + name + ": " + changes[(section, name)]
         done.add((section, name))
-missing = set(changes) - done
-if missing:
-    raise SystemExit("not found in config: " + ", ".join(s + "." + n for s, n in sorted(missing)))
+for section_name, name in sorted(set(changes) - done):
+    head = section_name + ":"
+    if head not in lines:
+        raise SystemExit("section not found in config: " + section_name)
+    lines.insert(lines.index(head) + 1, "  " + name + ": " + changes[(section_name, name)])
+    done.add((section_name, name))
 open(path, "w", encoding="utf-8").write("\n".join(lines))

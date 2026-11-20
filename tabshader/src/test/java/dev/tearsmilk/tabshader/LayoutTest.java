@@ -84,8 +84,8 @@ class LayoutTest {
                 }
             }
         }
-        assertTrue(9 + 9 * b * (PositionCode.TAB_CODES + PositionCode.TAB_BASE) < 100067);
-        assertEquals(-1, PositionCode.tabCodeAt(9 + 9 * b * (PositionCode.TAB_CODES + PositionCode.TAB_BASE) + 1));
+        assertTrue(9 + 9 * b * (PositionCode.TAB_BANDS + PositionCode.TAB_BASE) < 100067);
+        assertEquals(-1, PositionCode.tabCodeAt(9 + 9 * b * (PositionCode.TAB_BANDS + PositionCode.TAB_BASE) + 1));
         assertEquals(Settings.ROWS_OWN, Settings.bossbarRows(null));
         assertEquals(Settings.ROWS_OWN, Settings.bossbarRows("own"));
         assertEquals(Settings.ROWS_ALL, Settings.bossbarRows("ALL"));
@@ -258,11 +258,12 @@ class LayoutTest {
         return sw < 2 * (205 + m + 6) + 2 * 92;
     }
 
-    private static double[] tabShift(int code, int sw, int sh) {
-        double c = code + PositionCode.TAB_BASE;
+    private static double[] tabShift(int band, int sw, int sh) {
+        double c = band + PositionCode.TAB_BASE;
         double b = PositionCode.TAB_BAND;
+        int code = band % PositionCode.TAB_CODES;
         if (code >= PositionCode.TAB_CENTER) {
-            return new double[]{0, 19 * (code - PositionCode.TAB_CENTER) + 2 - (9 + 9 * (b * c + 2))};
+            return new double[]{0, Math.max(19 * (code - PositionCode.TAB_CENTER) + 2, 9) - (9 + 9 * (b * c + 2))};
         }
         int p = code & 3;
         double m = code >> 2;
@@ -330,6 +331,80 @@ class LayoutTest {
         assertEquals(0, PositionCode.tabPadLines(PositionCode.Position.TOP_LEFT, 4, PositionCode.TAB_MAX_LINES + 1));
         assertEquals(-1, PositionCode.tabCodeAt(500));
         assertEquals(PositionCode.tabCode(PositionCode.Position.TOP_LEFT, 99), PositionCode.tabCode(PositionCode.Position.TOP_LEFT, 15));
+    }
+
+    @Test
+    void pingBarsSettingDefaultsToHidden() throws Exception {
+        org.bukkit.configuration.file.YamlConfiguration empty = new org.bukkit.configuration.file.YamlConfiguration();
+        assertFalse(Settings.of(empty).pingBars());
+        org.bukkit.configuration.file.YamlConfiguration on = new org.bukkit.configuration.file.YamlConfiguration();
+        on.loadFromString("tab:\n  ping-bars: true\n");
+        assertTrue(Settings.of(on).pingBars());
+        org.bukkit.configuration.file.YamlConfiguration bundled = new org.bukkit.configuration.file.YamlConfiguration();
+        bundled.loadFromString(java.nio.file.Files.readString(java.nio.file.Path.of("src/main/resources/config.yml")));
+        assertTrue(bundled.isBoolean("tab.ping-bars"));
+        assertFalse(Settings.of(bundled).pingBars());
+    }
+
+    @Test
+    void pingHiddenOnlyWhenTabIsShifted() {
+        assertTrue(Hud.tabShifts(true, 3, 10));
+        assertTrue(Hud.tabShifts(true, PositionCode.TAB_MAX_HEADER, PositionCode.TAB_MAX_LINES));
+        assertFalse(Hud.tabShifts(false, 3, 10));
+        assertFalse(Hud.tabShifts(true, PositionCode.TAB_MAX_HEADER + 1, 20));
+        assertFalse(Hud.tabShifts(true, 3, PositionCode.TAB_MAX_LINES + 1));
+        assertEquals(0, PositionCode.tabPadLines(PositionCode.Position.CENTER, 0, PositionCode.TAB_MAX_LINES + 1, 0, true));
+    }
+
+    @Test
+    void pingHiddenBandsKeepEveryPosition() {
+        PositionCode.Position[] all = {PositionCode.Position.TOP_LEFT, PositionCode.Position.TOP_RIGHT,
+                PositionCode.Position.BOTTOM_LEFT, PositionCode.Position.BOTTOM_RIGHT, PositionCode.Position.CENTER};
+        for (PositionCode.Position pos : all) {
+            for (int margin = 0; margin <= 15; margin += 5) {
+                for (int bars = 0; bars <= PositionCode.MAX_BOSSBAR_ROWS; bars += pos == PositionCode.Position.CENTER ? 1 : 99) {
+                    for (int lines = 3; lines <= PositionCode.TAB_MAX_LINES; lines++) {
+                        int code = PositionCode.tabCode(pos, margin, bars, true);
+                        assertTrue(code >= 0 && code < PositionCode.TAB_CODES, pos + " " + bars);
+                        int band = PositionCode.tabBand(code, true);
+                        assertEquals(code + PositionCode.TAB_NOPING, band);
+                        int hidden = PositionCode.tabPadLines(pos, margin, lines, bars, true);
+                        int top = 9 + 9 * hidden;
+                        int bottom = 12 + 9 * (hidden + lines);
+                        for (int y : new int[]{top - 1, top, 10 + 9 * hidden + 9, bottom, bottom + 2}) {
+                            assertEquals(band, PositionCode.tabCodeAt(y), pos + " y" + y);
+                            assertTrue(PositionCode.tabPingHidden(PositionCode.tabCodeAt(y)));
+                            assertEquals(code, PositionCode.tabLayout(PositionCode.tabCodeAt(y)));
+                        }
+                        int shown = PositionCode.tabPadLines(pos, margin, lines, bars, false);
+                        if (shown > 0) {
+                            int shownBand = PositionCode.tabCodeAt(9 + 9 * shown);
+                            assertFalse(PositionCode.tabPingHidden(shownBand));
+                            assertEquals(code, shownBand);
+                            assertEquals(hidden - shown, PositionCode.TAB_BAND * PositionCode.TAB_NOPING);
+                        }
+                        for (int[] scr : SCREENS) {
+                            double[] d = tabShift(band, scr[0], scr[1]);
+                            if (shown > 0) {
+                                double[] e = tabShift(code, scr[0], scr[1]);
+                                assertEquals(9 + 9 * shown + e[1], top + d[1], 1e-9);
+                                assertEquals(e[0], d[0], 1e-9);
+                            } else {
+                                assertEquals(PositionCode.Position.CENTER, pos);
+                                assertEquals(0, bars);
+                                assertEquals(0, d[0], 1e-9);
+                                assertEquals(9, top + d[1], 1e-9);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        assertEquals(-1, PositionCode.centerCode(0));
+        assertEquals(PositionCode.TAB_CENTER, PositionCode.centerCode(0, true));
+        assertEquals(-1, PositionCode.tabBand(-1, true));
+        assertEquals(0, PositionCode.tabPadLines(PositionCode.Position.CENTER, 4, PositionCode.TAB_MAX_LINES + 1, 0, true));
+        assertTrue(9 + 9 * PositionCode.TAB_BAND * (PositionCode.TAB_BANDS + PositionCode.TAB_BASE) < 100067);
     }
 
     private static double[] boardShift(int code, int sw, int sh, int width) {
@@ -484,6 +559,10 @@ class LayoutTest {
         assertTrue(glsl.contains("#define TH_TAB_BAND " + PositionCode.TAB_BAND + "\n"));
         assertTrue(glsl.contains("#define TH_TAB_CODES " + PositionCode.TAB_CODES + "\n"));
         assertTrue(glsl.contains("#define TH_TAB_CENTER " + PositionCode.TAB_CENTER + "\n"));
+        assertTrue(glsl.contains("#define TH_TAB_NOPING " + PositionCode.TAB_NOPING + "\n"));
+        assertTrue(glsl.contains("#define TH_TAB_BANDS " + PositionCode.TAB_BANDS + "\n"));
+        assertTrue(glsl.contains("int code = band % TH_TAB_CODES;"));
+        assertTrue(glsl.contains("max(TH_BOSSBAR_ROW * float(code - TH_TAB_CENTER) + 2.0, 9.0)"));
         assertTrue(glsl.contains("#define TH_TAB_BASE " + PositionCode.TAB_BASE + "\n"));
         assertTrue(glsl.contains("#define TH_BOARD_CELL " + PositionCode.BOARD_CELL + "\n"));
         assertTrue(glsl.contains("#define TH_BOARD_BASE " + PositionCode.BOARD_BASE + "\n"));
