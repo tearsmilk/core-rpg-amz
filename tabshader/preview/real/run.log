@@ -7,3 +7,5 @@ Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cace
 [realclient] start server
 started
 [realclient] server did not start
+stopped
+[realclient] stopped
