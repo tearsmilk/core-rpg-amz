@@ -2,14 +2,9 @@
 
 #moj_import <minecraft:dynamictransforms.glsl>
 
-#define SHADERHOOKS_VERSION 1
-
 uniform sampler2D Sampler0;
 
-#moj_import <textshader:ts_hook_sprite_fragment.glsl>
-#moj_import <tabshader:th_hook_sprite_fragment.glsl>
-#moj_import <nameshader:ns_hook_sprite_fragment.glsl>
-#moj_import <chatshader:cs_hook_sprite_fragment.glsl>
+#moj_import <tabshader:th_sprite_fragment.glsl>
 
 in vec2 texCoord0;
 in vec4 vertexColor;
@@ -17,12 +12,8 @@ in vec4 vertexColor;
 out vec4 fragColor;
 
 void main() {
-    vec4 tex = texture(Sampler0, texCoord0);
-    vec4 color = tex * vertexColor;
-    color = ts_hook_sprite_fragment(color, tex, texCoord0, vertexColor);
-    color = th_hook_sprite_fragment(color, tex, texCoord0, vertexColor);
-    color = ns_hook_sprite_fragment(color, tex, texCoord0, vertexColor);
-    color = cs_hook_sprite_fragment(color, tex, texCoord0, vertexColor);
+    vec4 color = texture(Sampler0, texCoord0) * vertexColor;
+    color = th_sprite_fragment(color, texture(Sampler0, texCoord0), texCoord0);
     if (color.a == 0.0) {
         discard;
     }
