@@ -10,8 +10,8 @@
 flat out int thGuiKind;
 flat out vec2 thGuiScreen;
 out vec2 thGuiPos;
-out vec3 thGuiA;
-out vec3 thGuiC;
+out vec4 thGuiA;
+out vec4 thGuiC;
 out vec2 thGuiOk;
 
 int th_gui_candidate(vec4 color) {
@@ -38,17 +38,18 @@ void th_gui_vertex(vec3 pos, vec4 color, int vertexId) {
     thGuiKind = 0;
     thGuiScreen = vec2(0.0);
     thGuiPos = pos.xy;
-    thGuiA = vec3(0.0);
-    thGuiC = vec3(0.0);
+    thGuiA = vec4(0.0);
+    thGuiC = vec4(0.0);
     thGuiOk = vec2(0.0);
     if (!th_is_gui()) {
         return;
     }
     int corner = vertexId % 4;
+    float origin = th_tab_origin(pos.y);
     if (corner == 0) {
-        thGuiA = vec3(pos.xy, 1.0);
+        thGuiA = vec4(pos.x, pos.y - origin, origin, 1.0);
     } else if (corner == 2) {
-        thGuiC = vec3(pos.xy, 1.0);
+        thGuiC = vec4(pos.x, pos.y - origin, origin, 1.0);
     }
     vec2 screen = th_screen();
     vec2 side = vec2(corner >= 2 ? -1.0 : 1.0, (corner == 1 || corner == 2) ? -1.0 : 1.0);

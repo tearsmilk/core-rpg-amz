@@ -4,7 +4,8 @@
 # --extpacks layers the production MythicHUD pack (RC_EXTPACK, default server/plugins/Nexo/pack/external_packs/hl-resourcepack.zip)
 # under ours with its overlays: raw = as deployed, patched = with tools/mythichud_patch.py applied.
 # positions: for each "tab:board" pair in RC_POSITIONS edits plugins/tabshader/config.yml (backup restored at the end),
-# runs /tsh reload and takes the HUD and the held tab; RC_CONFIG adds "section.key=value" edits.
+# runs /tsh reload and takes the HUD and the held tab; RC_CONFIG adds "section.key=value" edits (a missing key is added to its section),
+# e.g. RC_CONFIG="tab.ping-bars=true".
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
 PROJ="$(cd "$HERE/.." && pwd)"

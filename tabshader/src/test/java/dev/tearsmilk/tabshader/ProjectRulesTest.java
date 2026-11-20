@@ -125,6 +125,36 @@ class ProjectRulesTest {
     }
 
     @Test
+    void pingSpritesCarryKind() {
+        Path dir = assets().resolve("minecraft/textures/gui/sprites/icon");
+        for (String name : List.of("ping_1", "ping_2", "ping_3", "ping_4", "ping_5", "ping_unknown")) {
+            BufferedImage img = image(dir.resolve(name + ".png"));
+            assertEquals(10, img.getWidth(), name);
+            assertEquals(8, img.getHeight(), name);
+            int coded = 0;
+            for (int y = 0; y < 8; y++) {
+                for (int x = 0; x < 10; x++) {
+                    int a = (img.getRGB(x, y) >>> 24) & 255;
+                    assertTrue(a == 0 || a == 254, name + " " + x + "," + y + " a=" + a);
+                    coded += a == 254 ? 1 : 0;
+                }
+            }
+            assertTrue(coded >= 10, name);
+        }
+        String frag = read(assets().resolve("tabshader/shaders/include/th_sprite_fragment.glsl"));
+        assertTrue(frag.contains("#define TH_PING_KIND 254"));
+        assertTrue(frag.contains("abs(rows - 8.0) > 0.05 || abs(x_end - 10.0) > 0.05"));
+        assertTrue(frag.contains("if (thSprNoPing > 0.5) {"));
+        String vert = read(assets().resolve("tabshader/shaders/include/th_sprite_vertex.glsl"));
+        assertTrue(vert.contains("thSprNoPing = th_tab_noping(pos) ? 1.0 : 0.0;"));
+        String guiVert = read(assets().resolve("tabshader/shaders/include/th_gui_vertex.glsl"));
+        assertTrue(guiVert.contains("thGuiA = vec4(pos.x, pos.y - origin, origin, 1.0);"));
+        assertTrue(guiVert.contains("thGuiC = vec4(pos.x, pos.y - origin, origin, 1.0);"));
+        String guiFrag = read(assets().resolve("tabshader/shaders/include/th_gui_fragment.glsl"));
+        assertTrue(guiFrag.contains("vec4 rect = vec4(th_gui_corner(thGuiA), th_gui_corner(thGuiC));"));
+    }
+
+    @Test
     void coreFilesCarryHooks() {
         Path core = assets().resolve("minecraft/shaders/core");
         assertTrue(read(core.resolve("gui.vsh")).contains("th_gui_vertex(Position, Color, gl_VertexID);"));

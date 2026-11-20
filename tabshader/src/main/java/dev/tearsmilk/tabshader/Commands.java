@@ -66,6 +66,8 @@ public final class Commands implements TabExecutor {
                         plugin.limiter().hiddenTotal(), "cut", plugin.names().truncated(), "width", plugin.hud().tabWidth(st),
                         "tab", st.tabPosition().key(), "board", st.boardPosition().key(),
                         "wide", plugin.hud().boardTooWide());
+                texts().send(s, "status-ping", "state", texts().get(st.pingBars() ? "ping-on" : "ping-off"),
+                        "hidden", plugin.hud().pingHidden(), "players", plugin.hud().tracked());
             }
             default -> help(s);
         }

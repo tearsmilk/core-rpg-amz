@@ -8,8 +8,8 @@
 flat in int thGuiKind;
 flat in vec2 thGuiScreen;
 in vec2 thGuiPos;
-in vec3 thGuiA;
-in vec3 thGuiC;
+in vec4 thGuiA;
+in vec4 thGuiC;
 in vec2 thGuiOk;
 
 bool th_gui_inside(vec2 p, vec4 rect) {
@@ -33,6 +33,11 @@ vec4 th_gui_card(vec2 p, vec4 rect, vec4 grow, vec4 radii, vec4 open, float divi
     return c;
 }
 
+vec2 th_gui_corner(vec4 v) {
+    float w = max(v.w, 1e-6);
+    return vec2(v.x / w, th_tab_origin(v.z / w + 0.5 * 9.0 * float(TH_TAB_BAND)) + v.y / w);
+}
+
 bool th_gui_near(float v, float t) {
     return abs(v - t) < 0.01;
 }
@@ -51,7 +56,7 @@ vec4 th_gui_fragment(vec4 color) {
         return color;
     }
     vec2 p = thGuiPos;
-    vec4 rect = vec4(thGuiA.xy / max(thGuiA.z, 1e-6), thGuiC.xy / max(thGuiC.z, 1e-6));
+    vec4 rect = vec4(th_gui_corner(thGuiA), th_gui_corner(thGuiC));
     rect = vec4(min(rect.xy, rect.zw), max(rect.xy, rect.zw));
     float k = float(thGuiKind);
     if (thGuiKind == 0 || abs(thGuiOk.x - k) > 0.001 || abs(thGuiOk.y - k * k) > 0.01) {

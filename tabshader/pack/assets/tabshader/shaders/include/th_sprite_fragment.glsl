@@ -4,6 +4,9 @@
 
 in vec3 thSprA;
 in vec3 thSprC;
+flat in float thSprNoPing;
+
+#define TH_PING_KIND 254
 
 vec3 th_bar_tint(int variant, float x) {
     vec3 a = TH_CRIMSON;
@@ -78,7 +81,7 @@ vec4 th_sprite_fragment(vec4 color, vec4 tex, vec2 uv) {
     vec2 atlas = vec2(textureSize(Sampler0, 0));
     float px = max(fwidth(uv.x * atlas.x), 1e-4);
     int kind = int(round(tex.a * 255.0));
-    if (kind < 250 || kind > 253 || thSprA.z <= 0.0 || thSprC.z <= 0.0) {
+    if (thSprA.z <= 0.0 || thSprC.z <= 0.0) {
         return color;
     }
     vec2 ua = thSprA.xy / thSprA.z;
@@ -87,6 +90,18 @@ vec4 th_sprite_fragment(vec4 color, vec4 tex, vec2 uv) {
     vec2 hi = max(ua, uc);
     float rows = (hi.y - lo.y) * atlas.y;
     float x_end = (hi.x - lo.x) * atlas.x;
+    if (kind == TH_PING_KIND) {
+        if (abs(rows - 8.0) > 0.05 || abs(x_end - 10.0) > 0.05) {
+            return color;
+        }
+        if (thSprNoPing > 0.5) {
+            return vec4(0.0);
+        }
+        return vec4(color.rgb, color.a / tex.a);
+    }
+    if (kind < 250 || kind > 253) {
+        return color;
+    }
     if (abs(rows - 5.0) > 0.05 || x_end < 0.5 || x_end > 182.05) {
         return color;
     }
