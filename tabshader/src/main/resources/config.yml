@@ -8,6 +8,11 @@ time-format: "HH:mm"
 date-format: "dd.MM.yyyy"
 update-ticks: 20
 
+pack:
+  install: true
+  dir: ""
+  reload-nexo: true
+
 tab:
   enabled: true
   header:
@@ -72,6 +77,7 @@ messages:
   reloaded: "<#ff8fbd>tabshader:</#ff8fbd> <gray>config.yml перечитан.</gray>"
   status: "<#ff8fbd>tabshader:</#ff8fbd> <gray>игроков</gray> <white><players></white><gray>, обновлений</gray> <white><updates></white><gray>, ширин глифов</gray> <white><widths></white>"
   status-tab: "<gray>Таб: лимит</gray> <white><limit></white><gray>, скрыто</gray> <white><hidden></white><gray>, обрезано ников</gray> <white><cut></white><gray>, ширина</gray> <white><width></white><gray>, таб</gray> <white><tab></white><gray>, табло</gray> <white><board></white><gray>, обход таба</gray> <white><avoid></white><gray>, табло шире <max> px (стоит справа)</gray> <white><wide></white>"
+  status-pack: "<gray>Шейдеры в паке Nexo:</gray> <white><state></white>"
   status-ping: "<gray>Полоски пинга (tab.ping-bars):</gray> <white><state></white><gray>, сейчас убраны у</gray> <white><hidden></white><gray> из</gray> <white><players></white><gray> игроков</gray>"
   ping-on: "показаны"
   ping-off: "скрыты"

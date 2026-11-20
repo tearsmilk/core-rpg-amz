@@ -3,11 +3,11 @@
 
     python3 -I tabshader/tools/glsl_check.py [client-1.21.11.jar]
 
-#moj_import is expanded like the client does it: files from tabshader/pack/assets first, then the vanilla includes
-from the client jar (each include once). The vanilla pairs are compiled too, as a control. The core files are
-compared with vanilla: only hook lines (ts_, th_, textshader:, tabshader:) may differ, and in gui.* and
-position_tex_color.* the inline uniform blocks are replaced by the vanilla includes. The merged text shaders and
-the textshader includes must be byte-identical to the copies in textshader/pack.
+#moj_import is expanded like the client does it: files from tabshader/pack/assets first, then (for the "all" run)
+the packs of the other plugins in this repo, then the hook stubs (pack/stubs), then the vanilla includes from the
+client jar (each include once). The vanilla pairs are compiled too, as a control. gui.*, position_tex_color.* and
+rendertype_text.* are the shared canonical files of tools/shaderhooks: they are checked (generated files up to date,
+vanilla diff, every combination of plugins and install order compiles) by shaderhooks.py, which runs here too.
 The merged MythicHUD overlay (pack/overlays/*/rendertype_text.*) is compiled with mythichud_utils.glsl taken from
 the production hl-resourcepack.zip (MYTHICHUD_ZIP); its .fsh must equal ours and its .vsh may only add the
 MythicHUD lines.
@@ -23,12 +23,16 @@ import zipfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REPO = os.path.dirname(ROOT)
 ASSETS = os.path.join(ROOT, "pack", "assets")
-TEXTSHADER = os.path.join(REPO, "textshader", "pack", "assets")
+STUBS = os.path.join(ROOT, "pack", "stubs")
+SIBLINGS = [os.path.join(REPO, n, "pack", "assets") for n in ("textshader", "nameshader", "chatshader")
+            if os.path.isdir(os.path.join(REPO, n, "pack", "assets"))]
+ALONE = [ASSETS, STUBS]
+ALL = [ASSETS] + SIBLINGS + [STUBS]
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "shaderhooks"))
+import shaderhooks
 JAR = os.path.join(REPO, "core-npc", "tools", ".cache", "client-1.21.11.jar")
 CORES = ("gui", "position_tex_color", "rendertype_text")
-HEADER_SWAP = ("gui.vsh", "gui.fsh", "position_tex_color.vsh", "position_tex_color.fsh")
-SHARED = ("minecraft/shaders/core/rendertype_text.vsh", "minecraft/shaders/core/rendertype_text.fsh")
-HOOK = ("ts_", "th_", "textshader:", "tabshader:")
+HOOK = ("th_", "tabshader:")
 MH_ZIP = os.environ.get("MYTHICHUD_ZIP", os.path.join(REPO, "server", "plugins", "Nexo", "pack", "external_packs", "hl-resourcepack.zip"))
 OVERLAYS = os.path.join(ROOT, "pack", "overlays")
 MH_LINES = {"#define MH_VERSION 5", "#moj_import <minecraft:mythichud_utils.glsl>", "applyCustomHud();",
@@ -80,7 +84,7 @@ def expand_extra(src, vanilla, extra):
     merged = dict(vanilla)
     for (ns, p), text in extra.items():
         merged[f"assets/{ns}/shaders/include/{p}"] = text
-    return expand(src, merged, set())
+    return expand(src, merged, set(), ALL)
 
 
 def load_vanilla(jar):
@@ -88,7 +92,8 @@ def load_vanilla(jar):
         return {n: z.read(n).decode() for n in z.namelist() if n.startswith("assets/minecraft/shaders/")}
 
 
-def expand(src, vanilla, seen, assets=ASSETS):
+def expand(src, vanilla, seen, roots=None):
+    roots = ALL if roots is None else roots
     out = []
     for line in src.split("\n"):
         m = re.match(r"^#moj_import <([a-z_]+):([^>]+)>", line)
@@ -99,13 +104,16 @@ def expand(src, vanilla, seen, assets=ASSETS):
         if (ns, p) in seen:
             continue
         seen.add((ns, p))
-        own = os.path.join(assets, ns, "shaders", "include", p)
-        if os.path.exists(own):
-            text = open(own, encoding="utf-8").read()
-        else:
+        text = None
+        for base in roots:
+            own = os.path.join(base, ns, "shaders", "include", p)
+            if os.path.exists(own):
+                text = open(own, encoding="utf-8").read()
+                break
+        if text is None:
             text = vanilla[f"assets/{ns}/shaders/include/{p}"]
         text = "\n".join(l for l in text.split("\n") if not l.startswith("#version"))
-        out.append(expand(text, vanilla, seen, assets))
+        out.append(expand(text, vanilla, seen, roots))
     return "\n".join(out)
 
 
@@ -116,9 +124,9 @@ def core_source(vanilla, name, ext, own, assets=ASSETS):
     return vanilla[f"assets/minecraft/shaders/core/{name}.{ext}"]
 
 
-def program(vanilla, name, own=True, assets=ASSETS):
-    vs = expand(core_source(vanilla, name, "vsh", own, assets), vanilla, set(), assets)
-    fs = expand(core_source(vanilla, name, "fsh", own, assets), vanilla, set(), assets)
+def program(vanilla, name, own=True, assets=ASSETS, roots=None):
+    vs = expand(core_source(vanilla, name, "vsh", own, assets), vanilla, set(), roots)
+    fs = expand(core_source(vanilla, name, "fsh", own, assets), vanilla, set(), roots)
     return vs, fs
 
 
@@ -135,25 +143,17 @@ def check(name, vsrc, fsrc, tmp):
     return r.returncode == 0
 
 
-def header_line(line):
-    s = line.strip()
-    return (s.startswith("//") or s.startswith("layout(std140)") or s in ("};", "")
-            or re.match(r"^(mat4|vec4|vec3) [A-Za-z]+;$", s) is not None
-            or s.startswith("#moj_import <minecraft:"))
-
-
 def diff_vanilla(vanilla):
     ok = True
     core_dir = os.path.join(ASSETS, "minecraft", "shaders", "core")
     for fn in sorted(os.listdir(core_dir)):
+        if "minecraft/shaders/core/" + fn in shaderhooks.canonical_paths():
+            continue
         ours = open(os.path.join(core_dir, fn), encoding="utf-8").read().split("\n")
         theirs = vanilla[f"assets/minecraft/shaders/core/{fn}"].split("\n")
         changed = [l for l in difflib.unified_diff(theirs, ours, lineterm="", n=0)
                    if l[:1] in "+-" and not l.startswith(("+++", "---"))]
-        wrapped = {re.sub(r"th_[a-z_]+\((\w+)\)", r"\1", l[1:]) for l in changed if l.startswith("+") and "th_" in l}
-        bad = [l for l in changed if l.strip("+- ") and not any(h in l for h in HOOK)
-               and not (fn in HEADER_SWAP and header_line(l[1:]))
-               and not (l.startswith("-") and l[1:] in wrapped)]
+        bad = [l for l in changed if l.strip("+- ") and not any(h in l for h in HOOK)]
         print(f"DIFF {fn}: {len(changed)} changed lines" + (" (only hooks)" if not bad else " UNEXPECTED"))
         for l in changed:
             print("    " + l)
@@ -161,41 +161,20 @@ def diff_vanilla(vanilla):
     return ok
 
 
-def shared_copies():
-    ok = True
-    pairs = [(os.path.join(ASSETS, p), os.path.join(TEXTSHADER, p)) for p in SHARED]
-    for d in (os.path.join("textshader", "shaders", "include"), os.path.join("tabshader", "shaders", "include")):
-        names = set()
-        for base in (ASSETS, TEXTSHADER):
-            full = os.path.join(base, d)
-            if os.path.isdir(full):
-                names |= {n for n in os.listdir(full) if n.endswith(".glsl")}
-        for n in sorted(names):
-            if d.startswith("tabshader") and not n.startswith(("th_text", "th_common", "th_layout")):
-                continue
-            pairs.append((os.path.join(ASSETS, d, n), os.path.join(TEXTSHADER, d, n)))
-    if not os.path.isdir(TEXTSHADER):
-        print("SKIP shared copies: textshader/pack not found")
-        return True
-    for a, b in pairs:
-        same = os.path.exists(a) and os.path.exists(b) and open(a, "rb").read() == open(b, "rb").read()
-        print(("SAME " if same else "DIFF ") + os.path.relpath(a, ASSETS))
-        ok &= same
-    return ok
-
-
 def main(argv):
     vanilla = load_vanilla(argv[0] if argv else JAR)
     ok = diff_vanilla(vanilla)
-    ok &= shared_copies()
+    ok &= shaderhooks.check(False)
     with tempfile.TemporaryDirectory() as tmp:
         for core in CORES:
-            for label, own in (("vanilla", False), ("tabshader", True)):
-                vs, fs = program(vanilla, core, own)
+            for label, own, roots in (("vanilla", False, ALL), ("tabshader_alone", True, ALONE), ("tabshader_all", True, ALL)):
+                vs, fs = program(vanilla, core, own, ASSETS, roots)
                 for ver in ("330", "410"):
                     ok &= check(f"{label}_{core}_glsl{ver}", vs.replace("#version 330", f"#version {ver}", 1),
                                 fs.replace("#version 330", f"#version {ver}", 1), tmp)
         ok &= mythichud(vanilla, tmp)
+    ok &= shaderhooks.vanilla_diff(argv[:1])
+    ok &= shaderhooks.combos(argv[:1])
     print("RESULT:", "compiles and links" if ok else "ERRORS")
     return 0 if ok else 1
 

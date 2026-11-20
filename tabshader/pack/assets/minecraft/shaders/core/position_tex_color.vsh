@@ -2,7 +2,13 @@
 
 #moj_import <minecraft:dynamictransforms.glsl>
 #moj_import <minecraft:projection.glsl>
-#moj_import <tabshader:th_sprite_vertex.glsl>
+
+#define SHADERHOOKS_VERSION 1
+
+#moj_import <textshader:ts_hook_sprite_vertex.glsl>
+#moj_import <tabshader:th_hook_sprite_vertex.glsl>
+#moj_import <nameshader:ns_hook_sprite_vertex.glsl>
+#moj_import <chatshader:cs_hook_sprite_vertex.glsl>
 
 in vec3 Position;
 in vec2 UV0;
@@ -12,9 +18,17 @@ out vec2 texCoord0;
 out vec4 vertexColor;
 
 void main() {
-    gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
+    vec3 pos = Position;
+    ts_hook_sprite_position(pos);
+    th_hook_sprite_position(pos);
+    ns_hook_sprite_position(pos);
+    cs_hook_sprite_position(pos);
+    gl_Position = ProjMat * ModelViewMat * vec4(pos, 1.0);
 
     texCoord0 = UV0;
     vertexColor = Color;
-    th_sprite_vertex(Position, UV0, gl_VertexID);
+    ts_hook_sprite_vertex(Position, UV0, Color, gl_VertexID, vertexColor);
+    th_hook_sprite_vertex(Position, UV0, Color, gl_VertexID, vertexColor);
+    ns_hook_sprite_vertex(Position, UV0, Color, gl_VertexID, vertexColor);
+    cs_hook_sprite_vertex(Position, UV0, Color, gl_VertexID, vertexColor);
 }

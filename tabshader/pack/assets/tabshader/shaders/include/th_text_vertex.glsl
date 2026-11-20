@@ -7,8 +7,6 @@
 #define TH_MARK_R 231
 #define TH_MARK_TEXEL ivec4(231, 7, 77, 255)
 
-uniform sampler2D Sampler0;
-
 flat out int thTextKind;
 flat out vec4 thTextBox;
 out vec2 thTextLocal;

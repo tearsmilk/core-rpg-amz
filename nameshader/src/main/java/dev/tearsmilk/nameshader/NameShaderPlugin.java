@@ -9,11 +9,13 @@ public final class NameShaderPlugin extends JavaPlugin {
     private Texts texts;
     private DisplayStyler styler;
     private TestSpawner tests;
+    private ShaderHooks.Report pack;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
         reloadConfig();
+        pack = ShaderHooks.run(this, getConfig().getBoolean("pack.install", true), getConfig().getString("pack.dir", ""), getConfig().getBoolean("pack.reload-nexo", true));
         settings = Settings.from(getConfig());
         texts = new Texts(getConfig());
         styler = new DisplayStyler(this);
@@ -41,9 +43,14 @@ public final class NameShaderPlugin extends JavaPlugin {
 
     public void reloadAll() {
         reloadConfig();
+        pack = ShaderHooks.run(this, getConfig().getBoolean("pack.install", true), getConfig().getString("pack.dir", ""), getConfig().getBoolean("pack.reload-nexo", true));
         settings = Settings.from(getConfig());
         texts.reload(getConfig());
         styler.applyLoaded();
+    }
+
+    ShaderHooks.Report pack() {
+        return pack;
     }
 
     public Settings settings() {
