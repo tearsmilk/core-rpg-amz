@@ -8,6 +8,7 @@ public final class PositionCode {
 
     public static final int TAB_MARKER_R = 232;
     public static final int BOARD_MARKER_R = 233;
+    public static final int TAB_WIDTH = 205;
     public static final int TAB_BAND = 32;
     public static final int TAB_BASE = 9;
     public static final int TAB_MAX_MARGIN = 15;

@@ -384,14 +384,14 @@ class LayoutTest {
     @Test
     void shaderConstantsMatch() throws Exception {
         String glsl = java.nio.file.Files.readString(java.nio.file.Path.of("pack/assets/tabshader/shaders/include/th_layout.glsl"));
-        assertTrue(glsl.contains("#define TH_TAB_WIDTH 205\n"));
+        assertTrue(glsl.contains("#define TH_TAB_WIDTH " + PositionCode.TAB_WIDTH + "\n"));
         assertTrue(glsl.contains("#define TH_TAB_BAND " + PositionCode.TAB_BAND + "\n"));
         assertTrue(glsl.contains("#define TH_TAB_BASE " + PositionCode.TAB_BASE + "\n"));
         assertTrue(glsl.contains("#define TH_BOARD_CELL " + PositionCode.BOARD_CELL + "\n"));
         assertTrue(glsl.contains("#define TH_BOARD_BASE " + PositionCode.BOARD_BASE + "\n"));
         assertTrue(glsl.contains("#define TH_BOARD_CODES " + PositionCode.BOARD_CODES + "\n"));
         assertEquals(205, Settings.width("205"));
-        assertEquals(205, TabLayout.defaultWidth(W, 12, 2));
+        assertEquals(PositionCode.TAB_WIDTH, TabLayout.defaultWidth(W, 12, 2));
     }
 
     @Test

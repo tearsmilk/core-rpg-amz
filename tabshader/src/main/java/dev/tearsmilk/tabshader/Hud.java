@@ -145,12 +145,10 @@ final class Hud {
     }
 
     int tabWidth(Settings s) {
-        if (s.tabWidth() != Settings.AUTO_WIDTH) {
-            return s.tabWidth();
+        if (s.markers() && s.tabPosition() != PositionCode.Position.CENTER) {
+            return PositionCode.TAB_WIDTH;
         }
-        int chars = s.maxNameLength() > 0 ? s.maxNameLength() : 16;
-        int cols = s.maxColumns() > 0 ? s.maxColumns() : 2;
-        return TabLayout.defaultWidth(plugin.widths(), chars, cols);
+        return s.tabWidth() == Settings.AUTO_WIDTH ? PositionCode.TAB_WIDTH : s.tabWidth();
     }
 
     static boolean tabMoved(Settings s, Set<Part> off) {
