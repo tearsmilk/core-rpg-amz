@@ -2,6 +2,7 @@ package dev.tearsmilk.nameshader;
 
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
+import java.util.Map;
 
 public final class NameShaderPlugin extends JavaPlugin {
 
@@ -9,11 +10,13 @@ public final class NameShaderPlugin extends JavaPlugin {
     private Texts texts;
     private DisplayStyler styler;
     private TestSpawner tests;
+    private ShaderHooks.Report pack;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
         reloadConfig();
+        pack = ShaderHooks.run(this, getConfig().getBoolean("pack.install", true), getConfig().getString("pack.dir", ""), getConfig().getBoolean("pack.reload-nexo", true));
         settings = Settings.from(getConfig());
         texts = new Texts(getConfig());
         styler = new DisplayStyler(this);
@@ -41,9 +44,14 @@ public final class NameShaderPlugin extends JavaPlugin {
 
     public void reloadAll() {
         reloadConfig();
+        ShaderHooks.runAsync(this, getConfig().getBoolean("pack.install", true), getConfig().getString("pack.dir", ""), getConfig().getBoolean("pack.reload-nexo", true), Map.of(), r -> pack = r);
         settings = Settings.from(getConfig());
         texts.reload(getConfig());
         styler.applyLoaded();
+    }
+
+    ShaderHooks.Report pack() {
+        return pack;
     }
 
     public Settings settings() {

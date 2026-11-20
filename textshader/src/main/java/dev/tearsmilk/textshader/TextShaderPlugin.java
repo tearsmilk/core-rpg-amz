@@ -30,11 +30,13 @@ public final class TextShaderPlugin extends JavaPlugin {
     private Menu menu;
     private final Set<UUID> tabbed = ConcurrentHashMap.newKeySet();
     private final Set<UUID> named = ConcurrentHashMap.newKeySet();
+    private ShaderHooks.Report pack;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
         migrate();
+        pack = ShaderHooks.run(this, getConfig().getBoolean("pack.install", true), getConfig().getString("pack.dir", ""), getConfig().getBoolean("pack.reload-nexo", true));
         msg = new Msg(getConfig());
         choices = new Choices(getName());
         menu = new Menu(this);
@@ -58,6 +60,10 @@ public final class TextShaderPlugin extends JavaPlugin {
             applyNick(p);
         }
         getLogger().info("textshader: " + Effect.visible().size() + " effects, " + Palette.values().length + " colours");
+    }
+
+    ShaderHooks.Report pack() {
+        return pack;
     }
 
     @Override
@@ -132,6 +138,7 @@ public final class TextShaderPlugin extends JavaPlugin {
 
     public void reload() {
         reloadConfig();
+        ShaderHooks.runAsync(this, getConfig().getBoolean("pack.install", true), getConfig().getString("pack.dir", ""), getConfig().getBoolean("pack.reload-nexo", true), Map.of(), r -> pack = r);
         msg.reload(getConfig());
         registerPermissions();
         for (Player p : Bukkit.getOnlinePlayers()) {

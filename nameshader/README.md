@@ -5,7 +5,7 @@
 команд проверки и (по желанию) для текстовых дисплеев.
 
 Автор: tearsmilk. Сервер: Leaf 1.21.11 (Paper API), Java 21. Работает с textshader и tabshader и без них, порядок
-копирования паков не важен (общих файлов нет).
+установки не важен: общие core-шейдеры и хуки ставит сам плагин по общей схеме (см. "Общие core-шейдеры").
 
 ## Как клиент 1.21.11 рисует ник (разобрано из jar клиента)
 
@@ -32,14 +32,17 @@
 | файл | что делает |
 |------|------------|
 | `minecraft/shaders/core/rendertype_text_see_through.fsh` | ванильный + хук `ns_tag(...)`: плашки ников (не присел) |
+| `nameshader/shaders/include/ns_hook_text_fragment.glsl` | хук в общем `rendertype_text.fsh`: `ns_tag_plate_only(...)` - плашка ника присевшего игрока (фон присевшего рисуется проходом NORMAL, то есть `rendertype_text`) |
 | `minecraft/shaders/core/rendertype_text_background{,_see_through}.{vsh,fsh}` | ванильные + хуки `ns_display_*`: плашки текстовых дисплеев с цветом-маркером |
 | `nameshader/shaders/include/ns_common.glsl` | палитра, градиент (`GameTime`), SDF скругленного прямоугольника, рамка с бликом |
-| `nameshader/shaders/include/ns_tag.glsl` | узнавание фона ника и плашка |
+| `nameshader/shaders/include/ns_tag.glsl` | узнавание фона ника и плашка: `ns_tag` (сквозной проход: плашка и альфа текста `0x80`) и `ns_tag_plate_only` (общий `rendertype_text`: только плашка, текст не трогается) |
 | `nameshader/shaders/include/ns_display_vertex.glsl`, `ns_display_fragment.glsl` | плашка текстового дисплея |
+| `nameshader/shaders/include/ns_hook_{gui,sprite}_*.glsl`, `ns_hook_text_vertex.glsl` | остальные хуки nameshader в общих шейдерах, равны заглушкам |
+| `minecraft/shaders/core/{gui,position_tex_color,rendertype_text}.*` | общие канонические файлы схемы хуков (одинаковые во всех плагинах); nameshader пишет в пак только `rendertype_text.*` (там его настоящий хук), `gui.*` и `position_tex_color.*` - нет |
 
-Чьи файлы чьи: tabshader - `gui.*`, `position_tex_color.*`, `rendertype_text.*` (общие с textshader); textshader -
-`rendertype_text.*`, `rendertype_text_see_through.vsh`, `rendertype_text_intensity*.vsh`. nameshader -
-только перечисленные выше файлы; их нет ни в одном из двух паков (проверяет `tools/glsl_check.py` и тест
+Чьи файлы чьи: `gui.*`, `position_tex_color.*`, `rendertype_text.*` - общие (схема хуков); textshader -
+`rendertype_text_see_through.vsh`, `rendertype_text_intensity*.vsh`. nameshader - `rendertype_text_see_through.fsh`
+и `rendertype_text_background*`; их нет ни в одном другом паке (проверяет `tools/glsl_check.py` и тест
 `ProjectRulesTest`). Фрагментный `rendertype_text_see_through.fsh` берет из вершинного только `vertexColor` и
 `texCoord0`, поэтому работает в паре и с ванильным `.vsh`, и с `.vsh` textshader (проверено компиляцией обеих пар).
 
@@ -69,6 +72,16 @@
 SEE_THROUGH, без теста глубины, и шейдер не знает, загорожен ли ник. В ванили так же: черный фон 25 % одинаковый
 за стеной и без нее, тускнеет только текст.
 
+### Присевший игрок (`ns_hook_text_fragment`)
+
+Присевшего клиент рисует одним проходом NORMAL (`rendertype_text`, общий файл схемы хуков): фон `0x40000000` белым
+глифом и текст `0x80FFFFFF`. Хук `ns_hook_text_fragment` вызывает `ns_tag_plate_only`: тот же узнаватель фона, что
+и в сквозном проходе (UV белого глифа, черный цвет с альфой, размер ника в мире 0.025 блока на пиксель, не GUI), и
+та же плашка. Текст в этом проходе не трогается: обычный ник (не присел) рисует здесь непрозрачный текст, а мировой
+текст с альфой `0x80` (например, текстовый дисплей с `text_opacity: 128`) остается ванильным. Фоны текстовых
+дисплеев идут через `rendertype_text_background`, их этот хук не видит. Снимки: `preview/real_sneak_g2/`
+(`04_sneak*.png`, `05_sneak_wall*.png`; пак textshader, tabshader, nameshader, chatshader).
+
 ### Текстовые дисплеи (`ns_display_*`)
 
 Шейдер красит только фон с точным цветом-маркером `#B45C0E2A` (ARGB: альфа 180, `#5C0E2A`). Ванильный цвет
@@ -90,16 +103,11 @@ SEE_THROUGH, без теста глубины, и шейдер не знает, 
 
 ## Ограничения
 
-- **НЕ СДЕЛАНО, нужно решение владельцев textshader и tabshader: ник присевшего игрока остается ванильным**
-  (тусклый темный прямоугольник). Клиент рисует фон ника присевшего в `rendertype_text` (не `_see_through`), а
-  `rendertype_text.fsh` - общий файл textshader и tabshader, nameshader его не поставляет и не меняет. Чтобы
-  присевшие тоже были на розовых плашках, в общий `rendertype_text.fsh` (в обоих проектах одинаково) надо добавить
-  две строки: `#moj_import <nameshader:ns_tag.glsl>` после остальных `#moj_import` и
-  `color = ns_tag(color, vertexColor, texCoord0);` перед проверкой `color.a < 0.1`. Include к этому готов: в GUI
-  (ортографическая проекция) он сразу возвращает цвет, то есть чат, таб, табло и меню не меняются. Без пака
-  nameshader такой `#moj_import` не найдется - поэтому хук можно добавлять только вместе с обязательной установкой
-  nameshader (или nameshader кладет include, а владельцы - хук). После этого прогнать `tools/realclient.sh` в обоих
-  порядках копирования и проверить снимок `04_sneak`.
+- **Пока не сделано: ник присевшего игрока остается ванильным** (тусклый темный прямоугольник). Клиент рисует фон
+  ника присевшего в `rendertype_text` (не `_see_through`), это общий файл. Место для фикса уже есть: общий
+  `rendertype_text.fsh` вызывает `ns_hook_text_fragment(color, vertexColor, texCoord0)` (сейчас nameshader ставит
+  туда заглушку `return color`). Фикс - следующий этап: в `ns_hook_text_fragment.glsl` вызвать `ns_tag`; без
+  nameshader на сервере там остается заглушка, поэтому другим плагинам он не нужен.
 - **Плашку получают все ники сущностей, не только игроков.** Шейдер видит только квад фона ника и не знает, чья это
   сущность. Розовая плашка (62-93 % непрозрачности, видна сквозь стены, как ванильный фон) будет у: именованных
   мобов (MythicMobs, MMOCore, бирки), голограмм на стойках для брони (DecentHolograms, CMI, HolographicDisplays,
@@ -130,7 +138,7 @@ SEE_THROUGH, без теста глубины, и шейдер не знает, 
 |---------|-------|------------|
 | `/nsh`, `/nsh help` | - | справка |
 | `/nsh test [игрок]` | `nameshader.test` (другой игрок и консоль - `nameshader.admin`) | на `test.seconds` (30 с) перед игроком: стойка с ником, присевшая стойка ("Присел"), текстовый дисплей с ванильным фоном (со стилем, если `style-text-displays: true`). Сущности не сохраняются в мир и убираются при выключении плагина |
-| `/nsh status` | `nameshader.admin` | стиль дисплеев, сколько загруженных дисплеев со стилем, активные тестовые сущности, textshader/tabshader/Nexo/SkinsRestorer, есть ли хуки nameshader в `plugins/Nexo/pack/assets/minecraft/shaders/core` (5 файлов) и include в `plugins/Nexo/pack/assets/nameshader/shaders/include` (4 файла); core без include - ОШИБКА красным (такой пак не скомпилируется у игроков) |
+| `/nsh status` | `nameshader.admin` | стиль дисплеев, сколько загруженных дисплеев со стилем, активные тестовые сущности, textshader/tabshader/Nexo/SkinsRestorer, итог установки шейдеров в пак ("Шейдеры в паке"), есть ли хуки nameshader в `plugins/Nexo/pack/assets/minecraft/shaders/core` (5 файлов) и include в `plugins/Nexo/pack/assets/nameshader/shaders/include` (4 файла); core без include - ОШИБКА красным (такой пак не скомпилируется у игроков) |
 | `/nsh reload` | `nameshader.admin` | перечитать config.yml и пересчитать дисплеи |
 
 Права: `nameshader.test` (оп), `nameshader.admin` (оп, включает test).
@@ -138,6 +146,10 @@ SEE_THROUGH, без теста глубины, и шейдер не знает, 
 ## config.yml
 
 ```yaml
+pack:
+  install: true                # ставить файлы пака в plugins/Nexo/pack/assets при старте и /nsh reload
+  dir: ""                      # пусто - plugins/Nexo/pack/assets
+  reload-nexo: true            # nexo reload pack, если файлы изменились после старта сервера
 nametags:
   style-text-displays: false   # true - плагин ставит маркер-фон дисплеям с ванильным фоном
   text-display-tag: ""         # не пусто - только дисплеи с этим scoreboard-тегом
@@ -149,50 +161,118 @@ test:
 messages: ...                  # MiniMessage, русские
 ```
 
+## Общие core-шейдеры: схема хуков (shaderhooks)
+
+textshader, tabshader, nameshader и chatshader меняют одни и те же core-шейдеры. Чтобы каждый плагин
+работал один и в любом сочетании, а порядок установки не играл роли, используется одна схема во всех проектах:
+
+- `gui.vsh/.fsh`, `position_tex_color.vsh/.fsh`, `rendertype_text.vsh/.fsh` - канонические файлы, побайтно
+  одинаковые во всех плагинах (строки `#define SHADERHOOKS_VERSION 1` и `#define SHADERHOOKS_HASH h<16 hex>` -
+  хэш содержимого без этой строки). Они вызывают фиксированный список хуков, по
+  одному include на плагин и стадию: `<плагин>:<префикс>_hook_<программа>_<стадия>.glsl`. Префиксы: `ts` -
+  textshader, `th` - tabshader, `ns` - nameshader, `cs` - chatshader. Программы: `gui`, `sprite`
+  (`position_tex_color`), `text` (`rendertype_text`). Вершинная стадия: сначала `<p>_hook_<prog>_position(inout vec3
+  pos)` у всех плагинов (сдвиг вершины до `gl_Position`; у `text` - `(inout vec3 pos, inout vec4 color)`, цвет
+  вершины можно поправить до остальных хуков, так chatshader возвращает textshader-коду сообщений чата обычный вид), потом `<p>_hook_<prog>_vertex(...)` (исходная `Position`,
+  цвет, UV, `gl_VertexID`, для текста свет, `inout vertexColor`). Фрагментная: `color = <p>_hook_<prog>_fragment(color,
+  ...)` перед ванильным `discard`. Порядок вызова всегда ts, th, ns, cs.
+- Настоящие хуки плагина лежат в `pack/assets/<плагин>/shaders/include/<p>_hook_*.glsl` (тонкие адаптеры, вызывают
+  функции плагина), заглушки всех четырех плагинов (пустые функции, `return color`) - в `pack/stubs/`. Путь у
+  настоящего хука и у заглушки один и тот же, поэтому руками это не копируется: плагин при старте сам пишет файлы в
+  `plugins/Nexo/pack/assets` (класс `ShaderHooks`, файлы берет из своего jar, `shaderpack/`):
+  1. канонические файлы тех программ, где у него есть настоящий (не равный заглушке) хук - парой vsh+fsh. Чужой
+     файл (без `#moj_import` наших плагинов) не заменяется, в логе красная строка, программа пропускается целиком.
+     Файл с более новым `SHADERHOOKS_VERSION` тоже не заменяется (старый jar не откатывает новый). Файл той же версии
+     с целым, но другим `SHADERHOOKS_HASH` (другая сборка той же версии) тоже не заменяется: красная строка
+     "КОНФЛИКТ", пара пропускается, поэтому два разных jar не перезаписывают друг друга по кругу. Файл, правленный
+     руками (хэш не сходится с содержимым), или старый без хэша заменяется, но сначала копируется в бэкап;
+  2. все остальные свои файлы: include, свои хуки, текстуры, шрифты, свои отдельные core-файлы (если они не чужие);
+  3. если в паке есть хоть один канонический файл - заглушки всех остальных плагинов, которых нет на сервере, или
+     чьи хук-файлы неполные. Хуки удаленного плагина при следующем старте любого из оставшихся заменяются
+     заглушками, его эффект в общих шейдерах пропадает.
+  Файл пишется, только если содержимое другое (временный файл `*.shaderhooks.tmp` лежит в папке плагина, вне
+  пака, потом переименование). Перед заменой общего core-файла или чужого хука (кроме заглушки) старое содержимое
+  копируется в `plugins/<плагин>/pack-backup/<дата-время>/<путь>`, путь пишется в лог. Установка идет под одной
+  общей для всех наших плагинов блокировкой JVM, так что два плагина не пишут пак одновременно. При старте сервера
+  установка синхронная (до первого тика, когда Nexo собирает пак), при `reload` плагина - в фоновом потоке, итог и
+  `nexo reload pack` - снова в основном. Nexo собирает пак на первом
+  тике после включения всех плагинов, поэтому при старте сервера ничего перезагружать не надо. Если файлы
+  изменились позже (`reload` плагина, загрузка на ходу) и Nexo включен - плагин сам вызывает `nexo reload pack`.
+- Итог не зависит от порядка: общие файлы у всех одинаковые, свои файлы пишет только владелец, а заглушки - только
+  за отсутствующие плагины. Проверки: `python3 -I tools/shaderhooks/shaderhooks.py combos` (каждый плагин отдельно,
+  все пары и тройки, все вместе, все порядки установки: одинаковые файлы, повторная установка ничего не пишет, все
+  программы компилируются glslangValidator 330 и 410, после удаления плагина его хуки - заглушки, чужой `gui.vsh` не
+  тронут, более новая версия осталась; запускается и из `glsl_check.py`), JUnit `ShaderHooksTest` (то же для
+  Java-кода на всех 15 наборах из 4 плагинов и всех порядках, совпадение общих файлов и `ShaderHooks.java` с
+  соседними проектами), живой клиент `tabshader/tools/realclient.sh --server-pack` (пак пишут сами плагины на
+  тестовом сервере, результат сверяется с эмуляцией `shaderhooks.py install`).
+- `tools/shaderhooks/` (скрипт и шаблоны `ShaderHooks.java.in`, `ShaderHooksTest.java.in`) одинаковый во всех
+  проектах. Правка - в любом проекте, потом `python3 -I tools/shaderhooks/shaderhooks.py --write` из него: папка
+  копируется в остальные проекты, перегенерируются канонические файлы, заглушки, оверлей MythicHUD,
+  `ShaderHooks.java` и `ShaderHooksTest.java` (отличаются только пакетом). Без `--write` - проверка, что все
+  совпадает (ее запускает и `glsl_check.py`).
+- config.yml каждого плагина: `pack.install` (по умолчанию `true`), `pack.dir` (пусто - `plugins/Nexo/pack/assets`;
+  другой путь - для тестов), `pack.reload-nexo` (по умолчанию `true`). Без Nexo (нет `plugins/Nexo/pack`) плагин
+  ничего не пишет и предупреждает в логе. Ручная установка при `pack.install: false`:
+  `python3 -I tools/shaderhooks/shaderhooks.py install --dest plugins/Nexo/pack/assets --plugins textshader,tabshader,nameshader,chatshader`
+  (перечислить все наши плагины, что стоят на сервере). Копировать `pack/assets` руками нельзя: канонические файлы
+  импортируют хуки всех плагинов, без заглушек пак не скомпилируется у игроков.
+- chatshader (префикс `cs`): настоящие хуки `cs_hook_gui_*` (панель чата, поле ввода, подсказки команд) и
+  `cs_hook_text_vertex` (сдвиг текста чата при `chat.position` не bottom-left); `cs_hook_sprite_*` и
+  `cs_hook_text_fragment` равны заглушкам. chatshader пишет еще свой `chatshader:cs_config.glsl` из config.yml.
+  nameshader с фиксом присевших ников пишет `rendertype_text.*` (настоящий `ns_hook_text_fragment`). Новая программа
+  или другая сигнатура - только с новым `SHADERHOOKS_VERSION` во всех плагинах сразу. Хэши общих файлов каждой
+  версии закреплены в `PINNED` в `shaderhooks.py`: проверка падает, если общий файл изменился без новой версии.
+- Отдельные (не общие) core-файлы остаются у своих владельцев: textshader - `rendertype_text_see_through.vsh`,
+  `rendertype_text_intensity*.vsh`; nameshader - `rendertype_text_see_through.fsh`, `rendertype_text_background*`.
+  При удалении плагина их надо убрать из пака вручную (общие хуки плагин-сосед сам заменит заглушками).
+
 ## Установка (прод)
 
-1. Собрать: `cd nameshader && gradle --offline build` -> `build/libs/nameshader-1.0.0.jar` в `plugins/`.
-2. Скопировать содержимое `nameshader/pack/assets/` в `plugins/Nexo/pack/assets/` (папки
-   `minecraft/shaders/core` - 5 файлов и `nameshader/shaders/include` - 4 файла). Перед этим проверить, что в
-   `plugins/Nexo/pack/assets/minecraft/shaders/core/` нет чужих `rendertype_text_see_through.fsh` и
-   `rendertype_text_background*.{vsh,fsh}`. textshader и tabshader эти файлы не ставят, порядок копирования
-   любой.
-3. `/nexo reload pack` (или рестарт), игроки получают пак через Hermes как обычно. Обфускация SIMPLE не
+1. Собрать: `cd nameshader && gradle --offline build` -> `build/libs/nameshader-1.0.0.jar` в `plugins/`. Файлы пака
+   руками не копировать: при старте плагин сам пишет в `plugins/Nexo/pack/assets` свои 5 core-файлов, 4 include,
+   свои хуки и (если в паке есть общие файлы) заглушки отсутствующих плагинов. Чужие
+   `rendertype_text_see_through.fsh` и `rendertype_text_background*` не заменяются (красная строка в логе).
+2. Рестарт сервера: Nexo соберет пак на первом тике, игроки получают его через Hermes как обычно. Обфускация SIMPLE не
    трогает шейдеры и include: `PackObfuscator` Nexo 1.30-dev переименовывает только предметы, модели, текстуры,
    шрифты, атласы, звуки и экипировку, а шейдеры и `.glsl` для библиотеки пака (creative) - "unknown files",
    которые пишутся байт в байт. Проверено: пак textshader + tabshader + nameshader прочитан и записан в zip
    ридером/райтером creative из jar Nexo 1.30-dev - все 9 файлов nameshader побайтно совпали, и этот zip прогнан
    настоящим клиентом (`tools/realclient.sh --packzip`). Полная сборка Nexo на сервере с SIMPLE не проверялась
-   (на тестовом сервере нет Nexo) - поэтому пункт 6 обязателен.
-4. Рестарт сервера (или загрузить плагин), `/nsh status` - "Пак Nexo: все 5 шейдера" и "Include nameshader: все 4
-   файла". Красная строка "ОШИБКА ... include нет" - сразу убрать 5 core-файлов или докопировать include и
-   пересобрать пак, иначе у игроков не загрузится пак.
-5. `/nsh test` - перед вами стойка с розовой плашкой, присевшая стойка (ванильный фон) и дисплей (ванильный фон).
-6. Проверить в zip, который раздает Hermes, что `assets/minecraft/shaders/core/rendertype_text_see_through.fsh`
+   (на тестовом сервере нет Nexo) - поэтому пункт 5 обязателен.
+3. `/nsh status` - "Шейдеры в паке: все файлы на месте", "Пак Nexo: все 5 шейдера" и "Include nameshader: все 4
+   файла".
+4. `/nsh test` - перед вами стойка с розовой плашкой, присевшая стойка (ванильный фон) и дисплей (ванильный фон).
+5. Проверить в zip, который раздает Hermes, что `assets/minecraft/shaders/core/rendertype_text_see_through.fsh`
    содержит `ns_tag` и `#moj_import <nameshader:ns_tag.glsl>`, и есть все 4 файла
    `assets/nameshader/shaders/include/*.glsl` (папка `nameshader`, не переименована). Лучше всего - один раз
    прогнать `tools/realclient.sh --packzip <этот zip>` на тестовом сервере.
 
-Откат: удалить 5 файлов core и папку `nameshader/` из пака Nexo, пересобрать пак; jar можно оставить.
+Откат: удалить jar, 5 файлов core nameshader (`rendertype_text_see_through.fsh`, `rendertype_text_background*`) и
+`nameshader/shaders/include/ns_{common,tag,display_vertex,display_fragment}.glsl`; хуки `ns_hook_*` не трогать,
+если стоят другие наши плагины (они сами поставят заглушки при старте).
 
 ## Проверки
 
 ```bash
-python3 -I nameshader/tools/glsl_check.py      # glslangValidator, GLSL 330 и 410, сверка с ванилью
+python3 -I nameshader/tools/glsl_check.py      # glslangValidator, GLSL 330 и 410, сверка с ванилью, shaderhooks
+python3 -I nameshader/tools/shaderhooks/shaderhooks.py combos   # все сочетания плагинов и порядки установки
 cd nameshader && gradle --offline build        # сборка + JUnit
 nameshader/tools/realclient.sh --gui 2 --out DIR   # настоящий клиент 1.21.11 под Xvfb на mc-skilltest
 ```
 
 `glsl_check.py`: раскрывает `#moj_import` как клиент, компилирует и линкует ванильные пары (контроль), наши пары и
-`rendertype_text_see_through` с `.vsh` textshader; core-файлы отличаются от ванили только строками хуков; ни
-один наш core-файл не лежит в паках textshader/tabshader.
+`rendertype_text_see_through` с `.vsh` textshader; отдельные core-файлы отличаются от ванили только строками хуков;
+ни один из них не лежит в паках textshader/tabshader; общие файлы и все сочетания плагинов проверяет
+`shaderhooks.py`.
 
 JUnit: маркер в Java = маркер в шейдере, UV белого глифа, хуки во всех core-файлах, производные считаются до
-ветвлений, ключи сообщений есть в config.yml, `style-text-displays` по умолчанию `false`, нет комментариев в Java и
+ветвлений, установка пака в любом порядке и в любом наборе плагинов (`ShaderHooksTest`), ключи сообщений есть в
+config.yml, `style-text-displays` по умолчанию `false`, нет комментариев в Java и
 шейдерах и нет длинных тире во всем проекте; логика маркера, сохранения исходного фона и настроек.
 
-`tools/realclient.sh`: собирает тестовый пак (`--packs textshader,tabshader,nameshader`, порядок задается,
-конфликт одинаковых путей останавливает прогон), ставит jar на mc-skilltest, запускает сервер, клиент `NsCam`
+`tools/realclient.sh`: собирает тестовый пак (`--packs textshader,tabshader,nameshader`: эти плагины ставятся
+через `shaderhooks.py` в заданном порядке, остальные - заглушки; "content sha1" в логе от порядка не зависит), ставит jar на mc-skilltest, запускает сервер, клиент `NsCam`
 (свой каталог `tools/.cache/client`, дисплей `:97`) и бота `NameBot` (mineflayer). Сцена в пустом месте
 `RC_X`/`RC_Z` (40, 40; перед съемкой проверяется, что там только воздух). Снимки: спереди, сбоку, за стеной
 (сквозной ник), присел, присел за стеной, издалека, ночью, `/nsh test`, табличка и имя предмета, чат, таб и
@@ -201,8 +281,14 @@ JUnit: маркер в Java = маркер в шейдере, UV белого г
 
 GUI 4 в окне 1280x800 клиент ограничивает до 3, поэтому для GUI 4 - `--gui 4 --size 1920x1080`.
 
+Снимки после перехода на схему хуков: `preview/real_hooks_g2/` - GUI 2, паки textshader, tabshader, nameshader
+через `shaderhooks.py` (content sha1 одинаковый в порядках textshader,tabshader,nameshader и
+nameshader,tabshader,textshader), `nameshader_only_*.png` - пак только с nameshader (общих файлов он не ставит),
+`compare_before_after_*_zoom.png` - слева до перехода, справа после (отличается только фаза перелива; присевший
+пока ванильный).
+
 Снимки настоящего клиента (`preview/`): `nametags.png` - крупно (GUI 4, скругление 2.5 px): спереди, сбоку, за
-стеной, ночью, присевший (ваниль); `displays.png` - `/nsh test` и дисплей со стилем и без; `gui2_*.png`
+стеной, ночью, присевший (ваниль, до фикса присевших); `displays.png` - `/nsh test` и дисплей со стилем и без; `gui2_*.png`
 (1280x800, GUI 2) и `gui4_*.png` (1920x1080, GUI 4) - полные кадры, в том числе табличка и имя предмета, чат,
 таб и табло tabshader (не изменились). Прогоны: textshader + tabshader + nameshader в обоих порядках копирования и
 только nameshader (ванильный `rendertype_text_see_through.vsh`) - одинаковый результат, ошибок шейдеров в логе

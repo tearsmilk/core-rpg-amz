@@ -25,7 +25,7 @@ for i, line in enumerate(lines):
 for section_name, name in sorted(set(changes) - done):
     head = section_name + ":"
     if head not in lines:
-        raise SystemExit("section not found in config: " + section_name)
+        lines += ["", head]
     lines.insert(lines.index(head) + 1, "  " + name + ": " + changes[(section_name, name)])
     done.add((section_name, name))
 open(path, "w", encoding="utf-8").write("\n".join(lines))

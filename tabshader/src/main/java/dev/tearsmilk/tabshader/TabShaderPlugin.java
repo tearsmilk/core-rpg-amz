@@ -10,6 +10,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
+import java.util.Map;
 
 public final class TabShaderPlugin extends JavaPlugin implements Listener {
 
@@ -22,10 +23,12 @@ public final class TabShaderPlugin extends JavaPlugin implements Listener {
     private TabNames names;
     private TabLimiter limiter;
     private BukkitTask task;
+    private ShaderHooks.Report pack;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        pack = ShaderHooks.run(this, getConfig().getBoolean("pack.install", true), getConfig().getString("pack.dir", ""), getConfig().getBoolean("pack.reload-nexo", true));
         widths = Widths.load();
         toggles = new Toggles(getName());
         texts = new Texts(getConfig());
@@ -47,6 +50,10 @@ public final class TabShaderPlugin extends JavaPlugin implements Listener {
         }
         getLogger().info("tabshader: tab, board, bossbar every " + settings.period() + " ticks, "
                 + widths.size() + " glyph widths");
+    }
+
+    ShaderHooks.Report pack() {
+        return pack;
     }
 
     @Override
@@ -86,6 +93,7 @@ public final class TabShaderPlugin extends JavaPlugin implements Listener {
 
     void reload() {
         reloadConfig();
+        ShaderHooks.runAsync(this, getConfig().getBoolean("pack.install", true), getConfig().getString("pack.dir", ""), getConfig().getBoolean("pack.reload-nexo", true), Map.of(), r -> pack = r);
         texts.reload(getConfig());
         hud.clearAll();
         limiter.relistAll();

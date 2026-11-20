@@ -1,0 +1,17 @@
+name: chatshader
+version: '${version}'
+main: dev.tearsmilk.chatshader.ChatShaderPlugin
+api-version: '1.21'
+author: tearsmilk
+authors: [tearsmilk]
+description: Pink chat panel drawn by resource pack core shaders
+softdepend: [Nexo, textshader, tabshader, nameshader]
+commands:
+  chatshader:
+    description: chatshader - pink chat panel
+    usage: /chatshader help
+    aliases: [csh]
+permissions:
+  chatshader.admin:
+    description: /csh reload, /csh status, /csh test
+    default: op

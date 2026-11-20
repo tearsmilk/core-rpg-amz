@@ -23,7 +23,7 @@ float ns_tag_env() {
     return clamp(0.3 + 0.9 * sky, 0.42, 1.0);
 }
 
-vec4 ns_tag(vec4 color, vec4 tint, vec2 uv) {
+vec4 ns_tag_any(vec4 color, vec4 tint, vec2 uv, bool text) {
     vec2 local = vec2((uv.y - NS_WHITE_V0) / (NS_WHITE_V1 - NS_WHITE_V0), (uv.x - NS_WHITE_U0) / (NS_WHITE_U1 - NS_WHITE_U0));
     vec2 lx = dFdx(local);
     vec2 ly = dFdy(local);
@@ -32,7 +32,7 @@ vec4 ns_tag(vec4 color, vec4 tint, vec2 uv) {
     }
     bool white = all(greaterThanEqual(local, vec2(-0.01))) && all(lessThanEqual(local, vec2(1.01)));
     if (!white) {
-        if (abs(tint.a - 128.0 / 255.0) < 0.002) {
+        if (text && abs(tint.a - 128.0 / 255.0) < 0.002) {
             color.a = color.a / tint.a * NS_TAG_TEXT_ALPHA;
         }
         return color;
@@ -57,4 +57,12 @@ vec4 ns_tag(vec4 color, vec4 tint, vec2 uv) {
     vec2 p = clamp(local, 0.0, 1.0) * size;
     vec4 plate = ns_plate(p, size, NS_TAG_RADIUS, 1.0 / max(px, 0.05), ns_tag_alpha(tint.a), NS_TAG_RIM);
     return vec4(plate.rgb * ns_tag_env(), plate.a);
+}
+
+vec4 ns_tag(vec4 color, vec4 tint, vec2 uv) {
+    return ns_tag_any(color, tint, uv, true);
+}
+
+vec4 ns_tag_plate_only(vec4 color, vec4 tint, vec2 uv) {
+    return ns_tag_any(color, tint, uv, false);
 }

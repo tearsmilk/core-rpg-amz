@@ -1,0 +1,35 @@
+chat:
+  position: bottom-left
+  margin: 0
+
+pack:
+  install: true
+  dir: ""
+  reload-nexo: true
+
+test:
+  lines:
+    - "<white>Обычная строка чата: белый текст на розовой панели."
+    - "<#FF8FAB>Розовый</#FF8FAB> <gray>серый</gray> <gold>золотой</gold> <aqua>бирюзовый</aqua> <green>зеленый</green>"
+    - "<#D60400>Волна textshader в чате</#D60400> <white>и обычный текст рядом."
+    - "<white>Ссылка: <u><click:open_url:'https://example.com'><hover:show_text:'подсказка'>подчеркнутый текст</hover></click></u>, <st>зачеркнутый</st>, <b>жирный</b>, <i>курсив</i>."
+    - "<white>Длинная строка, которую клиент переносит на несколько строк по ширине чата игрока: раз, два, три, четыре, пять, шесть, семь, восемь, девять, десять."
+    - "<yellow>[Система]</yellow> <white>последняя тестовая строка."
+
+messages:
+  help: "<#FF8FAB>chatshader</#FF8FAB> <gray>- розовая панель чата.</gray>\n<white>/csh status</white> <gray>- состояние</gray>\n<white>/csh test [игрок]</white> <gray>- тестовые строки в чат</gray>\n<white>/csh reload</white> <gray>- перечитать config.yml</gray>"
+  no-permission: "<red>Нет прав."
+  no-player: "<red>Игрок <name> не в сети."
+  reloaded: "<#FF8FAB>chatshader:</#FF8FAB> <white>конфиг перечитан, позиция <position>, отступ <margin>. Пак обновляется в фоне, игроки получат его после перезагрузки пака Nexo; итог - /csh status."
+  marker-failed: "<red>Метка сообщений не подключилась (<error>): чат остается внизу слева без отступа."
+  test-sent: "<#FF8FAB>chatshader:</#FF8FAB> <white>отправлено строк: <count> игроку <name>."
+  status-position: "<#FF8FAB>Позиция:</#FF8FAB> <white>в конфиге <position>, отступ <margin>; в шейдере <effective>, отступ <effective-margin>."
+  status-marker: "<#FF8FAB>Метка сообщений:</#FF8FAB> <white><state>, помечено <count>, ошибка: <error>."
+  status-pack-config: "<#FF8FAB>cs_config.glsl в паке:</#FF8FAB> <white><state>"
+  status-legacy: "<#FF8FAB>Старый пак:</#FF8FAB> <white>у <count> игроков еще может быть прежняя позиция - метка сообщений включена, пока они не получат новый пак или не выйдут."
+  overlap: "<yellow><text>"
+  no-config: "нет (шейдер chatshader не в паке)"
+  status-shaderhooks: "<#FF8FAB>Шейдеры в паке:</#FF8FAB> <white><state>"
+  status-plugins: "<#FF8FAB>Плагины:</#FF8FAB> <white><list>"
+  "on": "вкл"
+  "off": "выкл"

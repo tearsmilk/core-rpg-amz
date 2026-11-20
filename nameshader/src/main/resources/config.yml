@@ -2,6 +2,11 @@ nametags:
   style-text-displays: false
   text-display-tag: ""
 
+pack:
+  install: true
+  dir: ""
+  reload-nexo: true
+
 test:
   seconds: 30
   distance: 3.0
@@ -19,6 +24,7 @@ messages:
   status-displays: "<#FF8FAB>Текстовые дисплеи:</#FF8FAB> <white>стиль <state>, тег <tag>, со стилем <styled> из <total> загруженных."
   status-tests: "<#FF8FAB>Тестовые сущности:</#FF8FAB> <white><count>"
   status-plugins: "<#FF8FAB>Плагины:</#FF8FAB> <white><list>"
+  status-shaderhooks: "<#FF8FAB>Шейдеры в паке:</#FF8FAB> <white><state>"
   status-pack-ok: "<#FF8FAB>Пак Nexo:</#FF8FAB> <green>все <count> шейдера nameshader на месте."
   status-pack-missing: "<#FF8FAB>Пак Nexo:</#FF8FAB> <yellow>шейдеры nameshader: <count> из <total>, нет: <files>."
   status-include-ok: "<#FF8FAB>Include nameshader:</#FF8FAB> <green>все <count> файла на месте."

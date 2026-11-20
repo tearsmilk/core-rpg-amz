@@ -12,6 +12,11 @@ nick:
 
 effects-default: true
 
+pack:
+  install: true
+  dir: ""
+  reload-nexo: true
+
 menu-sample: "Привет всем!"
 preview-text: "Пример текста с эффектом"
 

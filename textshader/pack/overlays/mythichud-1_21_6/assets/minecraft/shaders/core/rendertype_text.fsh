@@ -3,10 +3,15 @@
 #moj_import <minecraft:fog.glsl>
 #moj_import <minecraft:dynamictransforms.glsl>
 
+#define SHADERHOOKS_VERSION 1
+#define SHADERHOOKS_HASH hf96cfbc4e34a2b45
+
 uniform sampler2D Sampler0;
 
-#moj_import <textshader:ts_fragment.glsl>
-#moj_import <tabshader:th_text_fragment.glsl>
+#moj_import <textshader:ts_hook_text_fragment.glsl>
+#moj_import <tabshader:th_hook_text_fragment.glsl>
+#moj_import <nameshader:ns_hook_text_fragment.glsl>
+#moj_import <chatshader:cs_hook_text_fragment.glsl>
 
 in float sphericalVertexDistance;
 in float cylindricalVertexDistance;
@@ -17,8 +22,10 @@ out vec4 fragColor;
 
 void main() {
     vec4 color = texture(Sampler0, texCoord0) * vertexColor * ColorModulator;
-    color = ts_fragment(color, vertexColor, ColorModulator);
-    color = th_text_fragment(color, vertexColor);
+    color = ts_hook_text_fragment(color, vertexColor, texCoord0);
+    color = th_hook_text_fragment(color, vertexColor, texCoord0);
+    color = ns_hook_text_fragment(color, vertexColor, texCoord0);
+    color = cs_hook_text_fragment(color, vertexColor, texCoord0);
     if (color.a < 0.1) {
         discard;
     }

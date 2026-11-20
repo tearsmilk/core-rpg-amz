@@ -66,7 +66,8 @@ class ProjectRulesTest {
         Path core = assets().resolve("minecraft/shaders/core");
         String[] names;
         try (Stream<Path> s = Files.list(core)) {
-            names = s.map(p -> p.getFileName().toString()).sorted().toArray(String[]::new);
+            names = s.map(p -> p.getFileName().toString()).filter(n -> !ShaderHooks.canonicalPaths().contains(ShaderHooks.CORE_DIR + n))
+                    .sorted().toArray(String[]::new);
         }
         assertArrayEquals(new String[]{"rendertype_text_background.fsh", "rendertype_text_background.vsh",
                 "rendertype_text_background_see_through.fsh", "rendertype_text_background_see_through.vsh",

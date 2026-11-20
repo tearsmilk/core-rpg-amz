@@ -3,10 +3,12 @@
 
     python3 -I textshader/tools/glsl_check.py [client-1.21.11.jar]
 
-#moj_import is expanded like the client does it: files from textshader/pack/assets first, then the vanilla includes
-from the client jar (each include once). The vanilla pairs are compiled too, as a control. The core files are also
-compared with vanilla: only hook lines may differ (ts_ and the tabshader th_text hooks, which rendertype_text shares
-with tabshader; the tabshader includes are shipped in this pack too, see tabshader/tools/sync_textshader.py).
+#moj_import is expanded like the client does it: files from textshader/pack/assets first, then (for the "all" run)
+the packs of the other plugins in this repo, then the hook stubs (pack/stubs), then the vanilla includes from the
+client jar (each include once). The vanilla pairs are compiled too, as a control. Exclusive core files are compared
+with vanilla: only hook lines may differ. gui.*, position_tex_color.* and rendertype_text.* are the shared canonical
+files of tools/shaderhooks (checked by shaderhooks.py, which runs here too: every combination of plugins and every
+install order compiles).
 """
 import difflib
 import os
@@ -19,8 +21,15 @@ import zipfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REPO = os.path.dirname(ROOT)
 ASSETS = os.path.join(ROOT, "pack", "assets")
+STUBS = os.path.join(ROOT, "pack", "stubs")
+SIBLINGS = [os.path.join(REPO, n, "pack", "assets") for n in ("tabshader", "nameshader", "chatshader")
+            if os.path.isdir(os.path.join(REPO, n, "pack", "assets"))]
+ALONE = [ASSETS, STUBS]
+ALL = [ASSETS] + SIBLINGS + [STUBS]
 JAR = os.path.join(REPO, "core-npc", "tools", ".cache", "client-1.21.11.jar")
-HOOK = ("ts_", "th_text_", "tabshader:")
+HOOK = ("ts_", "textshader:")
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "shaderhooks"))
+import shaderhooks
 CORES = ("rendertype_text", "rendertype_text_see_through", "rendertype_text_intensity",
          "rendertype_text_intensity_see_through")
 
@@ -30,7 +39,8 @@ def load_vanilla(jar):
         return {n: z.read(n).decode() for n in z.namelist() if n.startswith("assets/minecraft/shaders/")}
 
 
-def expand(src, vanilla, seen):
+def expand(src, vanilla, seen, roots=None):
+    roots = ALL if roots is None else roots
     out = []
     for line in src.split("\n"):
         m = re.match(r"^#moj_import <([a-z_]+):([^>]+)>", line)
@@ -41,13 +51,16 @@ def expand(src, vanilla, seen):
         if (ns, p) in seen:
             continue
         seen.add((ns, p))
-        own = os.path.join(ASSETS, ns, "shaders", "include", p)
-        if os.path.exists(own):
-            text = open(own, encoding="utf-8").read()
-        else:
+        text = None
+        for base in roots:
+            own = os.path.join(base, ns, "shaders", "include", p)
+            if os.path.exists(own):
+                text = open(own, encoding="utf-8").read()
+                break
+        if text is None:
             text = vanilla[f"assets/{ns}/shaders/include/{p}"]
         text = "\n".join(l for l in text.split("\n") if not l.startswith("#version"))
-        out.append(expand(text, vanilla, seen))
+        out.append(expand(text, vanilla, seen, roots))
     return "\n".join(out)
 
 
@@ -75,6 +88,8 @@ def diff_vanilla(vanilla):
     ok = True
     core_dir = os.path.join(ASSETS, "minecraft", "shaders", "core")
     for fn in sorted(os.listdir(core_dir)):
+        if "minecraft/shaders/core/" + fn in shaderhooks.canonical_paths():
+            continue
         ours = open(os.path.join(core_dir, fn), encoding="utf-8").read().split("\n")
         theirs = vanilla[f"assets/minecraft/shaders/core/{fn}"].split("\n")
         changed = [l for l in difflib.unified_diff(theirs, ours, lineterm="", n=0)
@@ -90,14 +105,17 @@ def diff_vanilla(vanilla):
 def main(argv):
     vanilla = load_vanilla(argv[0] if argv else JAR)
     ok = diff_vanilla(vanilla)
+    ok &= shaderhooks.check(False)
     with tempfile.TemporaryDirectory() as tmp:
         for core in CORES:
-            for label, own in (("vanilla", False), ("textshader", True)):
-                vs = expand(core_source(vanilla, core, "vsh", own), vanilla, set())
-                fs = expand(core_source(vanilla, core, "fsh", own), vanilla, set())
+            for label, own, roots in (("vanilla", False, ALL), ("textshader_alone", True, ALONE), ("textshader_all", True, ALL)):
+                vs = expand(core_source(vanilla, core, "vsh", own), vanilla, set(), roots)
+                fs = expand(core_source(vanilla, core, "fsh", own), vanilla, set(), roots)
                 for ver in ("330", "410"):
                     ok &= check(f"{label}_{core}_glsl{ver}", vs.replace("#version 330", f"#version {ver}", 1),
                                 fs.replace("#version 330", f"#version {ver}", 1), tmp)
+    ok &= shaderhooks.vanilla_diff(argv[:1])
+    ok &= shaderhooks.combos(argv[:1])
     print("RESULT:", "compiles and links" if ok else "ERRORS")
     return 0 if ok else 1
 

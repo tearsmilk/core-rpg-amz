@@ -92,6 +92,7 @@ public final class Commands implements TabExecutor {
                 "styled", String.valueOf(c[0]), "total", String.valueOf(c[1]));
         t.send(sender, "status-tests", "count", String.valueOf(plugin.tests().active()));
         t.send(sender, "status-plugins", "list", others());
+        t.send(sender, "status-shaderhooks", "state", plugin.pack() == null ? "-" : plugin.pack().summary());
         Path assets = plugin.getDataFolder().toPath().getParent().resolve("Nexo/pack/assets");
         Path core = assets.resolve("minecraft/shaders/core");
         Path include = assets.resolve("nameshader/shaders/include");
