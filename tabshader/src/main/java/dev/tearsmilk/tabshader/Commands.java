@@ -62,9 +62,10 @@ public final class Commands implements TabExecutor {
                 texts().send(s, "status", "players", plugin.hud().tracked(), "updates",
                         plugin.hud().packets(), "widths", plugin.widths().size());
                 Settings st = plugin.settings();
-                texts().send(s, "status-tab", "limit", TabLayout.maxEntries(st.maxColumns()), "hidden",
+                texts().send(s, "status-tab", "limit", st.tabLimit(), "hidden",
                         plugin.limiter().hiddenTotal(), "cut", plugin.names().truncated(), "width", plugin.hud().tabWidth(st),
                         "tab", st.tabPosition().key(), "board", st.boardPosition().key(),
+                        "avoid", st.boardAvoid().key(), "max", Hud.maxWidth(st),
                         "wide", plugin.hud().boardTooWide());
                 texts().send(s, "status-ping", "state", texts().get(st.pingBars() ? "ping-on" : "ping-off"),
                         "hidden", plugin.hud().pingHidden(), "players", plugin.hud().tracked());

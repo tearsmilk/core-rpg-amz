@@ -81,9 +81,10 @@ void th_text_vertex(vec3 pos, vec4 color, vec2 uv, int vertexId, inout vec4 outC
         vec2 shift = th_board_shift(board, screen);
         vec4 frame = th_board_frame(board, screen);
         float width = float(((c.g & 15) << 8) | c.b);
-        bool from_right = th_board_right(th_board_fields(board).x);
-        float lo = from_right ? frame.x - width - 3.0 : frame.x - 3.0;
-        float hi = from_right ? frame.x + 3.0 : frame.x + width + 3.0;
+        bool from_right = th_board_right(th_board_slot(board));
+        float edge = frame.x + (from_right ? -1.0 : 1.0) * float(c.g >> 4);
+        float lo = from_right ? edge - width - 3.0 : edge - 3.0;
+        float hi = from_right ? edge + 3.0 : edge + width + 3.0;
         th_text_panel(6, vec4(lo, frame.y, hi, frame.z) + shift.xyxy, pos, right, bottom, color, outColor);
         return;
     }

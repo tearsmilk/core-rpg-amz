@@ -25,7 +25,18 @@ public final class PositionCode {
     public static final int BOARD_MAX_LINES = 15;
     public static final int BOARD_SLACK = 8;
     public static final int BOARD_MAX_WIDTH = BOARD_CELL - 2 * BOARD_SLACK - 4;
-    public static final int BOARD_CODES = 6 * 16 * 17 * 16;
+    public static final int BOARD_PLAIN = 6 * 16 * 16;
+    public static final int TAB_MARGIN_STEP = 3;
+    public static final int TAB_MARGIN_LEVELS = TAB_MAX_MARGIN / TAB_MARGIN_STEP + 1;
+    public static final int BOARD_EXACT = TAB_MAX_LINES * TAB_MARGIN_LEVELS;
+    public static final int BOARD_CENTRED = 2 * 2 * 16 * BOARD_EXACT;
+    public static final int BOARD_SAME = 2 * 16 * BOARD_EXACT;
+    public static final int BOARD_COARSE_STEP = 32;
+    public static final int BOARD_COARSE = 9;
+    public static final int BOARD_OPPOSITE = 6 * 16 * 16 * BOARD_COARSE;
+    public static final int BOARD_CODES = BOARD_PLAIN + BOARD_CENTRED + BOARD_SAME + BOARD_OPPOSITE;
+    public static final int TAB_PANEL_EXTRA = 6;
+    public static final int BOARD_GAP = 3;
     public static final int MAX_VALUE = 4095;
 
     public enum Element {
@@ -177,35 +188,135 @@ public final class PositionCode {
         return c < 0 || c >= TAB_BANDS ? -1 : (int) c;
     }
 
-    public static int boardCode(Position position, int lines, int tabMargin, int margin) {
+    public enum Avoid {
+        NEVER("never"),
+        OVERLAP("overlap");
+
+        private final String key;
+
+        Avoid(String key) {
+            this.key = key;
+        }
+
+        public String key() {
+            return key;
+        }
+
+        public static Avoid parse(String s, Avoid def) {
+            if (s == null) {
+                return def;
+            }
+            String k = s.trim().toLowerCase(Locale.ROOT);
+            for (Avoid a : values()) {
+                if (a.key.equals(k)) {
+                    return a;
+                }
+            }
+            return def;
+        }
+    }
+
+    public record BoardFields(int slot, int lines, int margin, boolean tab, boolean tabBottom, int tabExtent,
+                              int tabMargin) {
+    }
+
+    public static int tabExtent(int tabMargin, int tabLines) {
+        return clamp(tabMargin, TAB_MAX_MARGIN) + 9 * tabLines + TAB_PANEL_EXTRA;
+    }
+
+    public static int tabMarginLevel(int tabMargin) {
+        return (clamp(tabMargin, TAB_MAX_MARGIN) + TAB_MARGIN_STEP - 1) / TAB_MARGIN_STEP;
+    }
+
+    public static int boardCode(Position position, int lines, int margin) {
         int slot = position.boardSlot();
         if (slot < 0) {
             return -1;
         }
-        int n = clamp(lines, BOARD_MAX_LINES);
-        int t = tabMargin < 0 ? 0 : 1 + clamp(tabMargin, TAB_MAX_MARGIN);
-        return ((slot * 16 + n) * 17 + t) * 16 + clamp(margin, BOARD_MAX_MARGIN);
+        return (slot * 16 + clamp(lines, BOARD_MAX_LINES)) * 16 + clamp(margin, BOARD_MAX_MARGIN);
     }
 
-    public static int[] boardFields(int code) {
-        int margin = code % 16;
-        int r = code / 16;
-        int tab = r % 17;
-        r /= 17;
-        return new int[]{r / 16, r % 16, tab, margin};
+    public static boolean avoids(Position board, Position tab, int tabLines) {
+        return board.boardSlot() >= 0 && tab != null && tab.tabSlot() >= 0 && sameSide(tab, board) && tabFits(tabLines);
+    }
+
+    public static int boardCode(Position position, int lines, int margin, Position tab, int tabMargin, int tabLines) {
+        if (!avoids(position, tab, tabLines)) {
+            return boardCode(position, lines, margin);
+        }
+        int n = clamp(lines, BOARD_MAX_LINES);
+        int exact = (tabLines - 1) * TAB_MARGIN_LEVELS + tabMarginLevel(tabMargin);
+        if (position == Position.LEFT || position == Position.RIGHT) {
+            int s = position == Position.LEFT ? 0 : 1;
+            int end = tab.bottom() ? 1 : 0;
+            return BOARD_PLAIN + ((s * 2 + end) * 16 + n) * BOARD_EXACT + exact;
+        }
+        int corner = position.boardSlot() - 1;
+        if (!tab.bottom() && !position.bottom()) {
+            return BOARD_PLAIN + BOARD_CENTRED + (corner * 16 + n) * BOARD_EXACT + exact;
+        }
+        int pair = corner < 2 ? corner : (tab.bottom() ? corner + 2 : corner);
+        int extent = tabExtent(tabMargin, tabLines);
+        int coarse = clamp((extent + BOARD_COARSE_STEP - 1) / BOARD_COARSE_STEP - 1, BOARD_COARSE - 1);
+        return BOARD_PLAIN + BOARD_CENTRED + BOARD_SAME
+                + ((pair * 16 + n) * 16 + clamp(margin, BOARD_MAX_MARGIN)) * BOARD_COARSE + coarse;
+    }
+
+    private static BoardFields exactTab(int slot, int lines, boolean bottom, int exact, boolean marginFromTab, int margin) {
+        int m = TAB_MARGIN_STEP * (exact % TAB_MARGIN_LEVELS);
+        int tabLines = exact / TAB_MARGIN_LEVELS + 1;
+        return new BoardFields(slot, lines, marginFromTab ? m : margin, true, bottom, m + 9 * tabLines + TAB_PANEL_EXTRA, m);
+    }
+
+    public static BoardFields boardFields(int code) {
+        if (code < BOARD_PLAIN) {
+            return new BoardFields(code / 256, (code / 16) % 16, code % 16, false, false, 0, 0);
+        }
+        int r = code - BOARD_PLAIN;
+        if (r < BOARD_CENTRED) {
+            int exact = r % BOARD_EXACT;
+            r /= BOARD_EXACT;
+            int n = r % 16;
+            r /= 16;
+            boolean bottom = r % 2 == 1;
+            return exactTab(r / 2 == 0 ? 0 : 5, n, bottom, exact, false, 0);
+        }
+        r -= BOARD_CENTRED;
+        if (r < BOARD_SAME) {
+            int exact = r % BOARD_EXACT;
+            r /= BOARD_EXACT;
+            return exactTab(r / 16 + 1, r % 16, false, exact, true, 0);
+        }
+        r -= BOARD_SAME;
+        int coarse = r % BOARD_COARSE;
+        r /= BOARD_COARSE;
+        int margin = r % 16;
+        r /= 16;
+        int pair = r / 16;
+        int slot = pair < 4 ? pair + 1 : pair - 1;
+        return new BoardFields(slot, r % 16, margin, true, pair < 2 || pair >= 4, BOARD_COARSE_STEP * (coarse + 1), TAB_MAX_MARGIN);
     }
 
     public static boolean boardFromRight(int slot) {
         return slot == 2 || slot == 4 || slot == 5;
     }
 
+    public static int boardMaxWidth(int align) {
+        return BOARD_MAX_WIDTH - clamp(align, BOARD_MAX_MARGIN);
+    }
+
     public static long boardTitleWidth(int code, int contentWidth) {
+        return boardTitleWidth(code, contentWidth, 0);
+    }
+
+    public static long boardTitleWidth(int code, int contentWidth, int align) {
         long k = (long) code + BOARD_BASE;
-        int slot = boardFields(code)[0];
+        int slot = boardFields(code).slot();
+        int a = clamp(align, BOARD_MAX_MARGIN);
         if (boardFromRight(slot)) {
-            return BOARD_CELL * (k - 1) + 2 + BOARD_SLACK + clamp(contentWidth, BOARD_MAX_WIDTH);
+            return BOARD_CELL * (k - 1) + 2 + BOARD_SLACK + clamp(contentWidth, boardMaxWidth(a)) + a;
         }
-        return BOARD_CELL * k - BOARD_SLACK;
+        return BOARD_CELL * k - BOARD_SLACK - a;
     }
 
     public static int boardCodeAt(double x, int screenWidth) {
@@ -225,8 +336,16 @@ public final class PositionCode {
     }
 
     public static int boardMarker(int width) {
+        return boardMarker(width, 0);
+    }
+
+    public static int boardMarker(int width, int align) {
         int w = clampValue(width);
-        return (BOARD_MARKER_R << 16) | ((w >> 8) << 8) | (w & 255);
+        return (BOARD_MARKER_R << 16) | ((clamp(align, BOARD_MAX_MARGIN) << 4 | (w >> 8)) << 8) | (w & 255);
+    }
+
+    public static int markerAlign(int rgb) {
+        return red(rgb) == BOARD_MARKER_R ? (rgb >> 12) & 15 : 0;
     }
 
     public static int red(int rgb) {

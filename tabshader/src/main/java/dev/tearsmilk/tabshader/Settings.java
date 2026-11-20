@@ -18,6 +18,7 @@ record Settings(
         List<String> footer,
         int maxNameLength,
         int maxColumns,
+        int maxPlayers,
         PositionCode.Position tabPosition,
         int tabMargin,
         int tabWidth,
@@ -29,6 +30,7 @@ record Settings(
         String boardTitle,
         PositionCode.Position boardPosition,
         int boardMargin,
+        PositionCode.Avoid boardAvoid,
         List<String> boardLines,
         boolean bossbar,
         String bossbarText,
@@ -54,6 +56,7 @@ record Settings(
                 c.getStringList("tab.footer"),
                 Math.max(0, c.getInt("tab.max-name-length", 12)),
                 Math.max(0, Math.min(4, c.getInt("tab.max-columns", 2))),
+                Math.max(0, Math.min(TabLayout.CLIENT_CAP, c.getInt("tab.max-players", 15))),
                 PositionCode.parse(c.getString("tab.position"), PositionCode.Element.TAB, PositionCode.Position.CENTER),
                 PositionCode.clamp(c.getInt("tab.margin", 4), PositionCode.TAB_MAX_MARGIN),
                 width(c.getString("tab.width", "205")),
@@ -65,6 +68,7 @@ record Settings(
                 c.getString("board.title", "{server}"),
                 PositionCode.parse(c.getString("board.position"), PositionCode.Element.BOARD, PositionCode.Position.RIGHT),
                 PositionCode.clamp(c.getInt("board.margin", 4), PositionCode.BOARD_MAX_MARGIN),
+                PositionCode.Avoid.parse(c.getString("board.avoid-tab"), PositionCode.Avoid.OVERLAP),
                 c.getStringList("board.lines"),
                 c.getBoolean("bossbar.enabled", true),
                 c.getString("bossbar.text", "{server}"),
@@ -77,6 +81,10 @@ record Settings(
                 ticks(c.getConfigurationSection("title"), "fade-in", 10),
                 ticks(c.getConfigurationSection("title"), "stay", 60),
                 ticks(c.getConfigurationSection("title"), "fade-out", 15));
+    }
+
+    int tabLimit() {
+        return TabLayout.maxEntries(maxColumns, maxPlayers);
     }
 
     static final int AUTO_WIDTH = -1;

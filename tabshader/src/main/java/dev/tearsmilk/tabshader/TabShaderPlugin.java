@@ -79,7 +79,7 @@ public final class TabShaderPlugin extends JavaPlugin implements Listener {
     void tick() {
         if (settings.tab()) {
             names.tick(settings.maxNameLength(), widths);
-            limiter.reconcile(TabLayout.maxEntries(settings.maxColumns()));
+            limiter.reconcile(settings.tabLimit());
         }
         hud.tick();
     }
@@ -96,7 +96,7 @@ public final class TabShaderPlugin extends JavaPlugin implements Listener {
 
     private void retab() {
         if (settings.tab()) {
-            limiter.reconcile(TabLayout.maxEntries(settings.maxColumns()));
+            limiter.reconcile(settings.tabLimit());
         }
     }
 

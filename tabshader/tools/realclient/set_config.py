@@ -20,6 +20,8 @@ for i, line in enumerate(lines):
     if (section, name) in changes:
         lines[i] = "  " + name + ": " + changes[(section, name)]
         done.add((section, name))
+        while i + 1 < len(lines) and lines[i + 1].startswith("    "):
+            del lines[i + 1]
 for section_name, name in sorted(set(changes) - done):
     head = section_name + ":"
     if head not in lines:
