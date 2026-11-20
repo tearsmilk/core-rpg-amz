@@ -61,6 +61,76 @@ class LayoutTest {
     }
 
     @Test
+    void centerTabClearsBossbars() {
+        assertEquals(-1, PositionCode.centerCode(0));
+        assertEquals(0, PositionCode.tabPadLines(PositionCode.Position.CENTER, 4, 5, 0));
+        int b = PositionCode.TAB_BAND;
+        for (int bars = 1; bars <= PositionCode.MAX_BOSSBAR_ROWS; bars++) {
+            int code = PositionCode.centerCode(bars);
+            assertTrue(code >= PositionCode.TAB_CENTER && code < PositionCode.TAB_CODES);
+            for (int lines = 3; lines <= PositionCode.TAB_MAX_LINES; lines++) {
+                int pad = PositionCode.tabPadLines(PositionCode.Position.CENTER, 4, lines, bars);
+                assertEquals(b * (code + PositionCode.TAB_BASE) + 2, pad);
+                int top = 9 + 9 * pad;
+                int bottom = 12 + 9 * (pad + lines);
+                assertEquals(code, PositionCode.tabCodeAt(top - 1));
+                assertEquals(code, PositionCode.tabCodeAt(bottom + 2));
+                for (int[] scr : SCREENS) {
+                    double[] d = tabShift(code, scr[0], scr[1]);
+                    assertEquals(0, d[0], 1e-9);
+                    double panelTop = top - 1 + d[1];
+                    assertEquals(19 * bars + 1, panelTop, 1e-9);
+                    assertTrue(panelTop > 12 + 19 * (bars - 1) + 5);
+                }
+            }
+        }
+        assertTrue(9 + 9 * b * (PositionCode.TAB_CODES + PositionCode.TAB_BASE) < 100067);
+        assertEquals(-1, PositionCode.tabCodeAt(9 + 9 * b * (PositionCode.TAB_CODES + PositionCode.TAB_BASE) + 1));
+        assertEquals(Settings.ROWS_OWN, Settings.bossbarRows(null));
+        assertEquals(Settings.ROWS_OWN, Settings.bossbarRows("own"));
+        assertEquals(Settings.ROWS_ALL, Settings.bossbarRows("ALL"));
+        assertEquals(3, Settings.bossbarRows("3"));
+        assertEquals(PositionCode.MAX_BOSSBAR_ROWS, Settings.bossbarRows("99"));
+    }
+
+    @Test
+    void truncationRespectsPixelBudgetAndGlyphs() {
+        int budget = TabLayout.nameBudget(12, W);
+        assertEquals(78, budget);
+        Component wide = Component.text("@@@@@@@@@@@@");
+        Component cut = TabLayout.truncate(wide, 12, W);
+        assertTrue(W.width(cut) <= budget, TabLayout.plain(cut));
+        assertTrue(TabLayout.plain(cut).endsWith("..."));
+        Component bold = Component.text("Abcdefghijklmn", Style.style(TextDecoration.BOLD));
+        Component boldCut = TabLayout.truncate(bold, 12, W);
+        assertTrue(W.width(boldCut) <= budget, TabLayout.plain(boldCut) + " " + W.width(boldCut));
+        String shifts = "\uF801\uF802";
+        Component nexo = Component.text()
+                .append(Component.text("\uE123" + shifts))
+                .append(Component.text("Abcdefghijklmnop", NamedTextColor.RED))
+                .build();
+        Component nexoCut = TabLayout.truncate(nexo, 12, W);
+        String plain = TabLayout.plain(nexoCut);
+        assertTrue(plain.startsWith("\uE123" + shifts), plain);
+        assertTrue(plain.endsWith("..."));
+        int px = 0;
+        for (int i = 0; i < plain.length(); i++) {
+            px += W.advance(plain.charAt(i), false);
+        }
+        assertTrue(px <= budget, plain + " " + px);
+        Component glyphFont = Component.text()
+                .append(Component.text("AB", Style.style().font(net.kyori.adventure.key.Key.key("nexo", "default")).build()))
+                .append(Component.text("Abcdefghijklmnop"))
+                .build();
+        String gp = TabLayout.plain(TabLayout.truncate(glyphFont, 12, W));
+        assertTrue(gp.startsWith("AB"), gp);
+        Component shortName = Component.text("\uE123" + shifts + "Bob");
+        assertSame(shortName, TabLayout.truncate(shortName, 12, W));
+        Component exact = Component.text("abcdefghijkl");
+        assertSame(exact, TabLayout.truncate(exact, 12, W));
+    }
+
+    @Test
     void truncationKeepsPerLetterColours() {
         Component name = letters("LongNicknameHere");
         Component cut = TabLayout.truncate(name, 12);
@@ -184,15 +254,25 @@ class LayoutTest {
 
     private static final int[][] SCREENS = {{480, 270}, {640, 400}, {683, 384}, {960, 540}, {1920, 1080}, {3840, 2160}};
 
+    private static boolean narrow(double m, int sw) {
+        return sw < 2 * (205 + m + 6) + 2 * 92;
+    }
+
     private static double[] tabShift(int code, int sw, int sh) {
-        int p = code & 3;
-        double m = code >> 2;
         double c = code + PositionCode.TAB_BASE;
         double b = PositionCode.TAB_BAND;
+        if (code >= PositionCode.TAB_CENTER) {
+            return new double[]{0, 19 * (code - PositionCode.TAB_CENTER) + 2 - (9 + 9 * (b * c + 2))};
+        }
+        int p = code & 3;
+        double m = code >> 2;
         double half = 205 / 2;
         double mid = Math.floor(sw * 0.5);
         double dx = (p & 1) == 0 ? m + 2 - (mid - half - 1) : sw - m - 2 - (mid + half + 1);
         double dy = p < 2 ? m + 1 - (9 + 9 * (b * c + 2)) : sh - m - 2 - (12 + 9 * (b * c + b - 2));
+        if (p >= 2 && narrow(m, sw)) {
+            dy -= 60;
+        }
         return new double[]{dx, dy};
     }
 
@@ -232,7 +312,10 @@ class LayoutTest {
                                     assertEquals(scr[0] - margin, right, 1e-9);
                                 }
                                 if (pos.bottom()) {
-                                    assertEquals(scr[1] - margin, gBottom, 1e-9);
+                                    assertEquals(scr[1] - margin - (narrow(margin, scr[0]) ? 60 : 0), gBottom, 1e-9);
+                                    if (!narrow(margin, scr[0])) {
+                                        assertTrue(pos.side() == PositionCode.Side.LEFT ? right <= scr[0] / 2 - 92 : left >= scr[0] / 2 + 92);
+                                    }
                                 } else {
                                     assertEquals(margin, gTop, 1e-9);
                                 }
@@ -264,6 +347,12 @@ class LayoutTest {
         double dy = 0;
         if (f[0] == 1 || f[0] == 2) {
             dy = m - (top - 11);
+            double reach = right ? sw - m - side - 6 - 236 : m + side + 6 + 236;
+            double mid = Math.floor(sw * 0.5);
+            boolean covers = right ? reach < mid + 92 : reach > mid - 92;
+            if (f[2] > 0 && covers) {
+                dy = Math.max(m, 21) - (top - 11);
+            }
         } else if (f[0] == 3) {
             dy = sh - m - 132 - (bottom + 1);
         } else if (f[0] == 4) {
@@ -310,7 +399,14 @@ class LayoutTest {
                                 }
                                 double vanillaBottom = scr[1] / 2 + 3 * n + 1;
                                 switch (pos) {
-                                    case TOP_LEFT, TOP_RIGHT -> assertEquals(margin, r[1], 1e-9);
+                                    case TOP_LEFT, TOP_RIGHT -> {
+                                        if (tab < 0) {
+                                            assertEquals(margin, r[1], 1e-9);
+                                        } else {
+                                            boolean clear = pos.side() == PositionCode.Side.LEFT ? r[2] <= scr[0] / 2 - 92 : r[0] >= scr[0] / 2 + 92;
+                                            assertTrue(clear || r[1] >= 21, pos + " " + scr[0]);
+                                        }
+                                    }
                                     case BOTTOM_LEFT -> assertEquals(scr[1] - margin - 132, r[3], 1e-9);
                                     case BOTTOM_RIGHT -> assertEquals(scr[1] - margin - 60, r[3], 1e-9);
                                     default -> assertEquals(vanillaBottom, r[3], 1e-9);
@@ -386,6 +482,8 @@ class LayoutTest {
         String glsl = java.nio.file.Files.readString(java.nio.file.Path.of("pack/assets/tabshader/shaders/include/th_layout.glsl"));
         assertTrue(glsl.contains("#define TH_TAB_WIDTH " + PositionCode.TAB_WIDTH + "\n"));
         assertTrue(glsl.contains("#define TH_TAB_BAND " + PositionCode.TAB_BAND + "\n"));
+        assertTrue(glsl.contains("#define TH_TAB_CODES " + PositionCode.TAB_CODES + "\n"));
+        assertTrue(glsl.contains("#define TH_TAB_CENTER " + PositionCode.TAB_CENTER + "\n"));
         assertTrue(glsl.contains("#define TH_TAB_BASE " + PositionCode.TAB_BASE + "\n"));
         assertTrue(glsl.contains("#define TH_BOARD_CELL " + PositionCode.BOARD_CELL + "\n"));
         assertTrue(glsl.contains("#define TH_BOARD_BASE " + PositionCode.BOARD_BASE + "\n"));

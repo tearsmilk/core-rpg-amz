@@ -7,7 +7,8 @@
 Shared: minecraft/shaders/core/rendertype_text.vsh and .fsh (both hooks: ts_vertex/ts_fragment and
 th_text_vertex/th_text_fragment), the tabshader text includes (th_common, th_text_vertex, th_text_fragment) and
 the textshader includes. The tabshader text hook files are owned here and copied to textshader/pack; the
-textshader includes are owned by textshader and copied here. Both packs can then be deployed alone or together
+textshader includes are owned by textshader and copied here. The merged MythicHUD overlay text shaders
+(pack/overlays/, see mythichud_patch.py) are owned here and copied too. Both packs can then be deployed alone or together
 in any order: the files are byte-identical.
 """
 import os
@@ -18,6 +19,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REPO = os.path.dirname(ROOT)
 OURS = os.path.join(ROOT, "pack", "assets")
 THEIRS = os.path.join(REPO, "textshader", "pack", "assets")
+OURS_PACK = os.path.join(ROOT, "pack")
+THEIRS_PACK = os.path.join(REPO, "textshader", "pack")
 FROM_US = ["minecraft/shaders/core/rendertype_text.vsh", "minecraft/shaders/core/rendertype_text.fsh",
            "tabshader/shaders/include/th_common.glsl", "tabshader/shaders/include/th_text_vertex.glsl",
            "tabshader/shaders/include/th_text_fragment.glsl",
@@ -29,6 +32,15 @@ def from_them():
     return ["textshader/shaders/include/" + n for n in sorted(os.listdir(d)) if n.endswith(".glsl")]
 
 
+def overlays():
+    out = []
+    base = os.path.join(OURS_PACK, "overlays")
+    for d, _, files in os.walk(base):
+        for f in sorted(files):
+            out.append(os.path.relpath(os.path.join(d, f), OURS_PACK).replace(os.sep, "/"))
+    return sorted(out)
+
+
 def same(a, b):
     return os.path.exists(a) and os.path.exists(b) and open(a, "rb").read() == open(b, "rb").read()
 
@@ -38,6 +50,7 @@ def main(argv):
     ok = True
     pairs = [(os.path.join(OURS, r), os.path.join(THEIRS, r), r) for r in FROM_US]
     pairs += [(os.path.join(THEIRS, r), os.path.join(OURS, r), r) for r in from_them()]
+    pairs += [(os.path.join(OURS_PACK, r), os.path.join(THEIRS_PACK, r), r) for r in overlays()]
     for src, dst, rel in pairs:
         if same(src, dst):
             print("SAME", rel)

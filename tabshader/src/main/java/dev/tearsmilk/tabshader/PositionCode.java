@@ -14,6 +14,9 @@ public final class PositionCode {
     public static final int TAB_MAX_MARGIN = 15;
     public static final int TAB_MAX_LINES = TAB_BAND - 4;
     public static final int TAB_MAX_HEADER = 15;
+    public static final int TAB_CENTER = 64;
+    public static final int TAB_CODES = 80;
+    public static final int MAX_BOSSBAR_ROWS = TAB_CODES - TAB_CENTER - 1;
     public static final int BOARD_CELL = 256;
     public static final int BOARD_BASE = 64;
     public static final int BOARD_MAX_MARGIN = 15;
@@ -115,12 +118,27 @@ public final class PositionCode {
         return clamp(margin, TAB_MAX_MARGIN) * 4 + position.tabSlot();
     }
 
+    public static int centerCode(int bossbarRows) {
+        if (bossbarRows <= 0) {
+            return -1;
+        }
+        return TAB_CENTER + clamp(bossbarRows, MAX_BOSSBAR_ROWS);
+    }
+
+    public static int tabCode(Position position, int margin, int bossbarRows) {
+        return position == Position.CENTER ? centerCode(bossbarRows) : tabCode(position, margin);
+    }
+
     public static boolean tabFits(int lines) {
         return lines >= 1 && lines <= TAB_MAX_LINES;
     }
 
     public static int tabPadLines(Position position, int margin, int lines) {
-        int code = tabCode(position, margin);
+        return tabPadLines(position, margin, lines, 0);
+    }
+
+    public static int tabPadLines(Position position, int margin, int lines, int bossbarRows) {
+        int code = tabCode(position, margin, bossbarRows);
         if (code < 0 || !tabFits(lines)) {
             return 0;
         }
@@ -130,7 +148,7 @@ public final class PositionCode {
 
     public static int tabCodeAt(double y) {
         double c = Math.floor((y - 9.0) / (9.0 * TAB_BAND)) - TAB_BASE;
-        return c < 0 || c >= 64 ? -1 : (int) c;
+        return c < 0 || c >= TAB_CODES ? -1 : (int) c;
     }
 
     public static int boardCode(Position position, int lines, int tabMargin, int margin) {

@@ -5,7 +5,10 @@
 #define TH_TAB_WIDTH 205
 #define TH_TAB_BAND 32
 #define TH_TAB_BASE 9
-#define TH_TAB_CODES 64
+#define TH_TAB_CODES 80
+#define TH_TAB_CENTER 64
+#define TH_BOSSBAR_ROW 19.0
+#define TH_HOTBAR_HALF 92.0
 #define TH_BOARD_CELL 256
 #define TH_BOARD_BASE 64
 #define TH_BOARD_CODES 26112
@@ -34,16 +37,26 @@ int th_tab_code(float y) {
     return int(c);
 }
 
+bool th_tab_narrow(float m, vec2 screen) {
+    return screen.x < 2.0 * (float(TH_TAB_WIDTH) + m + 6.0) + 2.0 * TH_HOTBAR_HALF;
+}
+
 vec2 th_tab_shift(int code, vec2 screen) {
-    int p = code & 3;
-    float m = float(code >> 2);
     float c = float(code + TH_TAB_BASE);
     float b = float(TH_TAB_BAND);
+    if (code >= TH_TAB_CENTER) {
+        return vec2(0.0, TH_BOSSBAR_ROW * float(code - TH_TAB_CENTER) + 2.0 - (9.0 + 9.0 * (b * c + 2.0)));
+    }
+    int p = code & 3;
+    float m = float(code >> 2);
     float mid = floor(screen.x * 0.5);
     float left = mid - th_tab_half() - 1.0;
     float right = mid + th_tab_half() + 1.0;
     float dx = (p & 1) == 0 ? m + 2.0 - left : screen.x - m - 2.0 - right;
     float dy = p < 2 ? m + 1.0 - (9.0 + 9.0 * (b * c + 2.0)) : screen.y - m - 2.0 - (12.0 + 9.0 * (b * c + b - 2.0));
+    if (p >= 2 && th_tab_narrow(m, screen)) {
+        dy -= TH_HOTBAR_LIFT;
+    }
     return vec2(dx, dy);
 }
 
@@ -90,6 +103,12 @@ vec2 th_board_shift(int code, vec2 screen) {
     float dy = 0.0;
     if (f.x == 1 || f.x == 2) {
         dy = m - frame.y;
+        float reach = th_board_right(f.x) ? screen.x - m - side - 6.0 - float(TH_BOARD_CELL - 20) : m + side + 6.0 + float(TH_BOARD_CELL - 20);
+        float mid = floor(screen.x * 0.5);
+        bool covers = th_board_right(f.x) ? reach < mid + TH_HOTBAR_HALF : reach > mid - TH_HOTBAR_HALF;
+        if (f.z > 0 && covers) {
+            dy = max(m, TH_BOSSBAR_ROW + 2.0) - frame.y;
+        }
     } else if (f.x == 3) {
         dy = screen.y - m - TH_CHAT_LIFT - frame.z;
     } else if (f.x == 4) {

@@ -30,7 +30,7 @@ final class TabNames {
         if (a != null && Objects.equals(current, a.shown())) {
             return;
         }
-        Component cut = TabLayout.truncate(current, max);
+        Component cut = TabLayout.truncate(current, max, w);
         if (cut != null && !cut.equals(current)) {
             p.playerListName(cut);
             applied.put(id, new Applied(current, cut));

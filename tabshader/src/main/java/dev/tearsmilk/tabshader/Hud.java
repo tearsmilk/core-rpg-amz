@@ -24,6 +24,8 @@ final class Hud {
         Component footer;
         Board board;
         BossBar bar;
+        boolean tabMoved;
+        boolean boardTooWide;
     }
 
     private final TabShaderPlugin plugin;
@@ -72,7 +74,8 @@ final class Hud {
             if (hidden > 0) {
                 footerLines.add(t.get("tab-hidden", "count", hidden));
             }
-            decorateTab(p, s, headerLines, footerLines);
+            st.tabMoved = decorateTab(p, s, headerLines, footerLines, bossbarRows(p, s, off))
+                    && s.tabPosition() != PositionCode.Position.CENTER;
             Component header = join(headerLines);
             Component footer = join(footerLines);
             if (!Objects.equals(header, st.header) || !Objects.equals(footer, st.footer)) {
@@ -82,6 +85,7 @@ final class Hud {
                 packets++;
             }
         } else if (s.tab()) {
+            st.tabMoved = false;
             if (st.header != BLANK || st.footer != BLANK) {
                 p.sendPlayerListHeaderAndFooter(BLANK, BLANK);
                 st.header = BLANK;
@@ -89,6 +93,7 @@ final class Hud {
                 packets++;
             }
         } else if (st.header != null || st.footer != null) {
+            st.tabMoved = false;
             p.sendPlayerListHeaderAndFooter(Component.empty(), Component.empty());
             st.header = null;
             st.footer = null;
@@ -104,7 +109,13 @@ final class Hud {
                 }
                 Component title = t.render(p, s.boardTitle(), v);
                 List<Component> lines = t.render(p, s.boardLines(), v);
-                title = boardTitle(title, lines, s, plugin.widths(), tabMoved(s, off));
+                boolean tooWide = boardTooWide(title, lines, s, plugin.widths());
+                if (tooWide && !st.boardTooWide) {
+                    plugin.getLogger().warning("Табло для " + p.getName() + " шире " + PositionCode.BOARD_MAX_WIDTH
+                            + " px: board.position не применяется, табло стоит справа как в ванили");
+                }
+                st.boardTooWide = tooWide;
+                title = boardTitle(title, lines, s, plugin.widths(), st.tabMoved);
                 packets += st.board.update(title, lines);
                 st.board.show(p);
             }
@@ -145,29 +156,59 @@ final class Hud {
     }
 
     int tabWidth(Settings s) {
-        if (s.markers() && s.tabPosition() != PositionCode.Position.CENTER) {
+        return tabWidth(s, 0);
+    }
+
+    int tabWidth(Settings s, int bossbarRows) {
+        if (s.markers() && (s.tabPosition() != PositionCode.Position.CENTER || bossbarRows > 0)) {
             return PositionCode.TAB_WIDTH;
         }
         return s.tabWidth() == Settings.AUTO_WIDTH ? PositionCode.TAB_WIDTH : s.tabWidth();
     }
 
-    static boolean tabMoved(Settings s, Set<Part> off) {
-        return s.tab() && !off.contains(Part.TAB) && s.markers()
-                && s.tabPosition() != PositionCode.Position.CENTER;
+    int bossbarRows(Player p, Settings s, Set<Part> off) {
+        if (s.bossbarRows() >= 0) {
+            return s.bossbarRows();
+        }
+        boolean own = s.bossbar() && !off.contains(Part.BOSSBAR);
+        if (s.bossbarRows() == Settings.ROWS_OWN) {
+            return own ? 1 : 0;
+        }
+        int n = 0;
+        boolean ownCounted = false;
+        State st = states.get(p.getUniqueId());
+        for (BossBar bar : p.activeBossBars()) {
+            n++;
+            if (st != null && bar == st.bar) {
+                ownCounted = true;
+            }
+        }
+        return own && !ownCounted ? n + 1 : n;
     }
 
-    void decorateTab(Player p, Settings s, List<Component> headerLines, List<Component> footerLines) {
+    boolean listFits(Player p) {
+        int name = 0;
+        for (Player other : Bukkit.getOnlinePlayers()) {
+            name = Math.max(name, plugin.names().width(other, plugin.widths()));
+        }
+        int entries = Math.max(1, plugin.limiter().shown(p));
+        return TabLayout.listWidth(entries, name, true) <= PositionCode.TAB_WIDTH;
+    }
+
+    boolean decorateTab(Player p, Settings s, List<Component> headerLines, List<Component> footerLines, int bossbarRows) {
         Widths w = plugin.widths();
         if (headerLines.isEmpty()) {
             headerLines.add(BLANK);
         }
         Component first = headerLines.getFirst();
-        TabLayout.Padded padded = TabLayout.pad(first, w.width(first), tabWidth(s), w);
+        boolean fits = s.markers() && listFits(p);
+        int bars = fits ? bossbarRows : 0;
+        TabLayout.Padded padded = TabLayout.pad(first, w.width(first), tabWidth(s, bars), w);
         Component line = padded.line();
         int rows = TabLayout.rows(Math.max(1, plugin.limiter().shown(p)));
         int pad = 0;
-        if (s.markers() && headerLines.size() <= PositionCode.TAB_MAX_HEADER) {
-            pad = PositionCode.tabPadLines(s.tabPosition(), s.tabMargin(), headerLines.size() + rows + footerLines.size());
+        if (fits && headerLines.size() <= PositionCode.TAB_MAX_HEADER) {
+            pad = PositionCode.tabPadLines(s.tabPosition(), s.tabMargin(), headerLines.size() + rows + footerLines.size(), bars);
         }
         if (pad > 0) {
             line = Component.text()
@@ -181,6 +222,29 @@ final class Hud {
             headerLines.clear();
             headerLines.addAll(all);
         }
+        return pad > 0;
+    }
+
+    static boolean boardTooWide(Component title, List<Component> lines, Settings s, Widths w) {
+        if (!s.markers() || s.boardPosition() == PositionCode.Position.RIGHT) {
+            return false;
+        }
+        int n = Math.min(Board.MAX_LINES, lines.size());
+        int content = measure(title, w);
+        for (int i = 0; i < n; i++) {
+            content = Math.max(content, measure(lines.get(i), w));
+        }
+        return content > PositionCode.BOARD_MAX_WIDTH;
+    }
+
+    int boardTooWide() {
+        int n = 0;
+        for (State st : states.values()) {
+            if (st.board != null && st.boardTooWide) {
+                n++;
+            }
+        }
+        return n;
     }
 
     static int measure(Component c, Widths w) {

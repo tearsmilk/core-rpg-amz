@@ -5,7 +5,23 @@ import subprocess
 import sys
 import zipfile
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import mythichud_patch
+
 PACK_FORMAT = 75
+
+
+def external(path, mode):
+    with zipfile.ZipFile(path) as z:
+        entries = {i.filename: z.read(i.filename) for i in z.infolist() if not i.is_dir()}
+    meta = json.loads(entries.pop("pack.mcmeta", b"{}").decode("utf-8"))
+    if mode == "patched":
+        entries, changed, problems = mythichud_patch.patch_entries(entries)
+        for c in changed:
+            print("extpack patched: " + c)
+        for p in problems:
+            print("extpack PROBLEM: " + p)
+    return entries, meta.get("overlays")
 
 
 def tree_files(repo, ref, project):
@@ -46,7 +62,22 @@ def main():
                 with open(path, "rb") as fh:
                     merged[os.path.relpath(path, overlay).replace(os.sep, "/")] = fh.read()
                 print("overlay: " + os.path.relpath(path, overlay))
+    extmode = sys.argv[5] if len(sys.argv) > 5 else ""
+    overlays = None
+    if extmode:
+        extzip = sys.argv[6]
+        entries, overlays = external(extzip, extmode)
+        added = 0
+        for name, data in entries.items():
+            if name.startswith("assets/") and name in merged:
+                print("extpack base asset kept ours: " + name)
+                continue
+            merged[name] = data
+            added += 1
+        print("extpack " + extmode + ": " + extzip + " files=" + str(added))
     meta = {"pack": {"description": "tabshader + textshader test (" + (ref or "worktree") + ")", "pack_format": PACK_FORMAT, "min_format": PACK_FORMAT, "max_format": PACK_FORMAT}}
+    if overlays:
+        meta["overlays"] = overlays
     os.makedirs(os.path.dirname(dest), exist_ok=True)
     tmp = dest + ".part"
     with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as z:

@@ -6,7 +6,9 @@
 Boss bar sprites (182x5, same names as vanilla) are a plain pink-crimson picture, so they still look right if
 another position_tex_color shader wins. A = kind: 250 track, 251 progress, 252 notches over the track, 253 notches
 over the progress. The lowest bits of R, G, B hold the variant (R*4 + G*2 + B): the bar colour (0 pink ... 6 white,
-enum order) or the notch index (0: 6, 1: 10, 2: 12, 3: 20). position_tex_color.fsh takes the column and row from
+enum order) or the notch index (0: 6, 1: 10, 2: 12, 3: 20).
+Yellow is not generated: MythicHUD draws its HUD in yellow boss bars and hides them with a transparent
+yellow_background.png, so yellow bars stay vanilla (and MythicHUD's). position_tex_color.fsh takes the column and row from
 the quad UV and draws the bar itself. Notch sprites only cover the notch columns, the rest is transparent.
 
 Marker font tabshader:hud: U+E000 is an 8x8 glyph of colour (231, 7, 77) that rendertype_text.vsh recognises,
@@ -28,6 +30,7 @@ REPO = os.path.dirname(ROOT)
 JAR = os.path.join(REPO, "core-npc", "tools", ".cache", "client-1.21.11.jar")
 ASSETS = os.path.join(ROOT, "pack", "assets")
 COLOURS = ["pink", "blue", "red", "green", "yellow", "purple", "white"]
+SKIP = {"yellow"}
 NOTCHES = [6, 10, 12, 20]
 MARK = (231, 7, 77, 255)
 
@@ -88,6 +91,8 @@ def sprites():
     out = os.path.join(ASSETS, "minecraft", "textures", "gui", "sprites", "boss_bar")
     os.makedirs(out, exist_ok=True)
     for i, c in enumerate(COLOURS):
+        if c in SKIP:
+            continue
         bar(250, i).save(os.path.join(out, f"{c}_background.png"))
         bar(251, i).save(os.path.join(out, f"{c}_progress.png"))
     for i, n in enumerate(NOTCHES):
@@ -147,7 +152,7 @@ def main(argv):
     sprites()
     marker()
     n = widths(jar)
-    print(f"sprites: {len(COLOURS) * 2 + len(NOTCHES) * 2}, marker font, widths: {n} characters")
+    print(f"sprites: {(len(COLOURS) - len(SKIP)) * 2 + len(NOTCHES) * 2}, marker font, widths: {n} characters")
     return 0
 
 

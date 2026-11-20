@@ -21,6 +21,7 @@ record Settings(
         PositionCode.Position tabPosition,
         int tabMargin,
         int tabWidth,
+        int bossbarRows,
         boolean markers,
         boolean board,
         boolean respectOther,
@@ -55,6 +56,7 @@ record Settings(
                 PositionCode.parse(c.getString("tab.position"), PositionCode.Element.TAB, PositionCode.Position.CENTER),
                 PositionCode.clamp(c.getInt("tab.margin", 4), PositionCode.TAB_MAX_MARGIN),
                 width(c.getString("tab.width", "205")),
+                bossbarRows(c.getString("tab.bossbar-rows", "own")),
                 c.getBoolean("position-markers", true),
                 c.getBoolean("board.enabled", true),
                 c.getBoolean("board.respect-other-scoreboards", true),
@@ -76,6 +78,20 @@ record Settings(
     }
 
     static final int AUTO_WIDTH = -1;
+    static final int ROWS_OWN = -1;
+    static final int ROWS_ALL = -2;
+
+    static int bossbarRows(String s) {
+        String k = s == null ? "own" : s.trim().toLowerCase(Locale.ROOT);
+        if (k.equals("all")) {
+            return ROWS_ALL;
+        }
+        try {
+            return PositionCode.clamp(Integer.parseInt(k), PositionCode.MAX_BOSSBAR_ROWS);
+        } catch (NumberFormatException e) {
+            return ROWS_OWN;
+        }
+    }
 
     static int width(String s) {
         if (s == null) {

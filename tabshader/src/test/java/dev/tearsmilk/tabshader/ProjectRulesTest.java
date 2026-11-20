@@ -17,6 +17,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProjectRulesTest {
@@ -81,6 +82,11 @@ class ProjectRulesTest {
         Path dir = assets().resolve("minecraft/textures/gui/sprites/boss_bar");
         List<String[]> want = new ArrayList<>();
         for (int i = 0; i < COLOURS.size(); i++) {
+            if (COLOURS.get(i).equals("yellow")) {
+                assertFalse(Files.exists(dir.resolve("yellow_background.png")));
+                assertFalse(Files.exists(dir.resolve("yellow_progress.png")));
+                continue;
+            }
             want.add(new String[]{COLOURS.get(i) + "_background.png", "250", String.valueOf(i)});
             want.add(new String[]{COLOURS.get(i) + "_progress.png", "251", String.valueOf(i)});
         }

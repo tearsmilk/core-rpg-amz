@@ -77,8 +77,10 @@
   шириной 8. У игрока с "Принудительный Unicode-шрифт" ширины другие - панель может быть чуть шире или уже.
 - Значения PlaceholderAPI (`%...%`) экранируются, как и `{переменные}`: теги MiniMessage из ников и префиксов
   не выполняются. Цвета в выводе PAPI (`&c`, `<red>`) поэтому не применяются.
-- Боссбары всех цветов стали розово-кримсон (red - ближе к кримсону, purple - малиновый, white - светлый).
-  Чужие боссбары (MythicMobs и т.п.) тоже.
+- Боссбары всех цветов, кроме желтого, стали розово-кримсон (red - ближе к кримсону, purple - малиновый,
+  white - светлый). Чужие боссбары (MythicMobs и т.п.) тоже. Желтые спрайты пак не поставляет: MythicHUD рисует
+  свой HUD в желтых боссбарах и прячет их прозрачным `yellow_background.png`; наш спрайт показал бы до 7 пустых
+  розовых полос. `bossbar.color: yellow` поэтому выглядит как в ванили.
 
 ## Команды (`/tabshader`, алиас `/tsh`)
 
@@ -101,7 +103,7 @@
 
 `server-name`, `time-zone`, `time-format`, `date-format`, `update-ticks` (раз в сколько тиков обновлять, по
 умолчанию 20). `tab.header` / `tab.footer` - строки, `board.title` / `board.lines` (до 15),
-`tab.max-name-length`, `tab.max-columns`, `tab.position`, `tab.margin`, `tab.width`, `board.position`, `board.margin`,
+`tab.max-name-length`, `tab.max-columns`, `tab.position`, `tab.margin`, `tab.width`, `tab.bossbar-rows`, `board.position`, `board.margin`,
 `position-markers` (см. "Таб: ники, колонки, позиция"),
 `board.respect-other-scoreboards` (если игроку уже поставил скорборд другой плагин - табло не ставится),
 `bossbar.text`, `bossbar.progress` (`clock` - доля суток по времени сервера, `day` - время мира, `online` -
@@ -121,7 +123,11 @@
 
 Ник длиннее `tab.max-name-length` (12) показывается в табе как первые 12 символов + `...`
 (`grgwgrgwgrgwgrgw` -> `grgwgrgwgrgw...`). Режется видимый текст компонента `playerListName` по кодовым точкам,
-стили не ломаются: у каждой оставшейся буквы ее цвет и оформление (эффекты textshader - это цвета букв),
+и еще по ширине: имя с `...` не шире `12 * 6 + 6 = 78` px (ширина колонки при 205 px таба), поэтому широкие и
+жирные буквы режутся раньше. Глифы (символы Private Use Area `U+E000..U+F8FF`, в том числе сдвиги Nexo) и текст
+другого шрифта (`<glyph>`, `<font>`) буквами не считаются и не разрезаются: они остаются целиком, если стоят до
+места обрезки, их ширина берется как 8 px на символ (настоящая неизвестна, у сдвигов она отрицательная - оценка
+с запасом). Стили не ломаются: у каждой оставшейся буквы ее цвет и оформление (эффекты textshader - это цвета букв),
 `...` получает стиль последней оставшейся буквы. Плагин раз в `update-ticks` и при входе смотрит текущее имя в
 табе: если его поменял другой плагин (textshader и т.п.), обрезает заново, свое обрезанное имя не трогает.
 При `/tsh reload` и выключении плагина возвращается исходное имя. `0` - не обрезать.
@@ -160,9 +166,25 @@ listed игроков; режим SkinsRestorer с телепортом (`telepo
 
 Нижние углы табло не заходят на HUD: `bottom-left` стоит выше чата (низ на 132 px выше края экрана),
 `bottom-right` - выше хотбара, сердец и голода (60 px). Таб в нижних углах прижат к краю (он виден, только пока
-зажат Tab). Если таб и табло на одной стороне (таб `top-left`/`bottom-left` и табло `left`/`top-left`/`bottom-left`,
-или то же справа), табло всегда стоит рядом с табом: на `tab.margin` + ширина панели таба (211) + `board.margin`
-от края, так что они не перекрываются при любом числе строк.
+зажат Tab). Если экран узкий и таб в нижнем углу дошел бы до хотбара (ширина GUI меньше
+`2 * (205 + tab.margin + 6) + 184`, например 1920x1080 с масштабом 4 или 1366x768 с масштабом 3), таб поднимается
+на 60 px - выше хотбара, сердец и брони. Если таб и табло на одной стороне (таб `top-left`/`bottom-left` и табло
+`left`/`top-left`/`bottom-left`, или то же справа), табло всегда стоит рядом с табом: на `tab.margin` + ширина
+панели таба (211) + `board.margin` от края, так что они не перекрываются при любом числе строк. Шейдер не знает,
+зажат ли Tab (вершины табло не видят вершин таба), поэтому табло стоит там и без таба. Верхнее табло рядом с табом,
+которое может дойти до средней полосы боссбара (`|x - центр| < 92`), опускается под первый боссбар (верх на 21 px),
+чтобы не закрывать его надпись.
+
+Таб `center` и боссбары. Ванильный таб начинается на y = 10 и накрывает боссбары (полоса просвечивает через
+панель, надпись режется верхом панели). Поэтому центральный таб сдвигается вниз под `tab.bossbar-rows` строк
+боссбара (19 px на строку, верх панели на `19 * N + 1`): `own` (по умолчанию) - 1, если наш боссбар включен у
+игрока, иначе 0; `all` - все боссбары игрока (`Player#activeBossBars()`; невидимые боссбары MythicHUD тоже
+считаются, поэтому с MythicHUD лучше `own` или число); число 0..15 - ровно столько. Сдвиг идет тем же механизмом
+кодов (коды 64..79), ширина панели при этом 205.
+
+Сдвиг таба включается, только если список помещается в 205 px (по самому широкому нику онлайн-игроков, с головой и
+пингом); если нет (например `max-columns` 3-4 или длинные ники при `max-name-length` больше 12) - таб стоит на
+ванильном месте, чтобы шапка и список не разъехались.
 
 Ширина таба при сдвиге фиксированная - 205 px (`TH_TAB_WIDTH` в `th_layout.glsl` = `PositionCode.TAB_WIDTH`, это
 2 колонки по 12 символов + `...` с головой и пингом). Первая строка шапки дополняется пробелами до 205 (обычный
@@ -180,8 +202,9 @@ listed игроков; режим SkinsRestorer с телепортом (`telepo
 
 - Таб (по вертикали). Перед шапкой плагин ставит пустые строки: `32 * (9 + код)` строк + 2 (верхние углы) или
   `32 * (9 + код) + 30 - T` (нижние, `T` = строки шапки + строки списка + строки подвала), где
-  `код = отступ * 4 + угол` (0 top-left, 1 top-right, 2 bottom-left, 3 bottom-right). Пустые строки клиент не
-  рисует (у пустого текста нет границ, он даже не попадает в очередь отрисовки), это 300-2400 символов `\n` в
+  `код = отступ * 4 + угол` (0 top-left, 1 top-right, 2 bottom-left, 3 bottom-right), 64 + N - центр под N
+  строками боссбара. Пустые строки клиент не
+  рисует (у пустого текста нет границ, он даже не попадает в очередь отрисовки), это 300-2900 символов `\n` в
   пакете шапки. Каждая вершина ниже `9 + 9 * 32 * 9 = 2601` px (ниже любого экрана до 4K при масштабе 1)
   считает `код = floor((y - 9) / 288) - 9`, из него угол и отступ, и сдвигается целиком на один и тот же вектор:
   текст (`rendertype_text`, вместе с тенями и эффектами textshader), головы и пинг (`position_tex_color`),
@@ -230,6 +253,30 @@ listed игроков; режим SkinsRestorer с телепортом (`telepo
 хуки tabshader -> textshader, инклуды textshader -> tabshader). `glsl_check.py` и тест `sharedCopiesMatchTextshader`
 падают при расхождении.
 
+## MythicHUD (hl-resourcepack.zip)
+
+На сервере в `plugins/Nexo/pack/external_packs/hl-resourcepack.zip` лежит пак MythicHUD. В нем оверлей
+`mythichud-1_21_6` (форматы 63-83, у 1.21.11 формат 75) со своими `minecraft/shaders/core/rendertype_text.vsh/.fsh`.
+Оверлей важнее базовых ассетов, поэтому без правки клиент берет текстовый шейдер MythicHUD, и наши хуки пропадают:
+сдвинутый таб - пустая розовая панель с одними пингами, табло в углу не видно вовсе, нет эффектов textshader
+(проверено в клиенте: `tools/realclient.sh --extpacks raw`).
+
+Решение: `pack/overlays/mythichud-1_21_6/assets/minecraft/shaders/core/rendertype_text.vsh/.fsh` - наш
+`rendertype_text` плюс `applyCustomHud()` MythicHUD (`#moj_import <minecraft:mythichud_utils.glsl>`, MH_VERSION 5).
+`.fsh` равен нашему, в `.vsh` после наших хуков вызывается `applyCustomHud()`; если MythicHUD вершину не двигал
+(результат равен ванильной позиции), возвращается наша позиция. Текст MythicHUD (y > 100067) и наши полосы
+(y 2601..25641, x < -8192) не пересекаются. Файлы общие с textshader (`sync_textshader.py`), `glsl_check.py`
+компилирует их с `mythichud_utils.glsl` из zip и проверяет, что `.vsh` отличается от нашего только строками
+MythicHUD.
+
+`python3 -I tools/mythichud_patch.py IN.zip OUT.zip` пишет копию zip, где в оверлее `mythichud-1_21_6` наши
+файлы вместо файлов MythicHUD (проверяет MH_VERSION; `--check IN.zip` - только показать). Если MythicHUD
+пересоберет свой пак, патч надо повторить, а при другом `MH_VERSION` - сначала обновить объединенный `.vsh`.
+
+Хотбар на скриншоте с сервера (темная плоская полоса и синий квадрат выбранного слота) - текстуры
+`hud/hotbar.png` и `hotbar_selection.png` из hl-resourcepack (скиллбар MythicHUD, `hide-vanilla-hud: true`), не
+наш шейдер.
+
 ## Сборка и проверки
 
 ```
@@ -237,7 +284,9 @@ cd tabshader
 gradle --offline build                           # тесты + build/libs/tabshader-1.0.0.jar
 python3 -I tools/gen_assets.py                   # спрайты боссбара, шрифт маркера, src/main/resources/widths.txt
 python3 -I tools/glsl_check.py                   # glslangValidator 330 и 410, дифф с ванилью, общие копии
-python3 -I tools/sync_textshader.py              # копии rendertype_text и инклудов совпадают с textshader
+python3 -I tools/sync_textshader.py              # копии rendertype_text, инклудов и оверлея MythicHUD совпадают с textshader
+python3 -I tools/mythichud_patch.py --check ../server/plugins/Nexo/pack/external_packs/hl-resourcepack.zip
+tools/realclient.sh --extpacks patched           # живой клиент с паком MythicHUD как на сервере (raw - без патча)
 python3 -I tools/preview.py                      # превью настоящими шейдерами в preview/
 python3 -I tools/preview.py --scale 3 --size 1366x768   # дробная ширина GUI
 ```
@@ -275,13 +324,19 @@ python3 -I tools/preview.py --scale 3 --size 1366x768   # дробная шир�
    выключенными: иначе Nexo положит свой `gui.vsh` поверх нашего. Анимированные (gif) глифы Nexo тоже не включать
    (Nexo тогда кладет свои `rendertype_text*`).
 2. Скопировать содержимое `tabshader/pack/assets/` в `plugins/Nexo/pack/assets/`: `minecraft/shaders/core`
-   (6 файлов), `minecraft/textures/gui/sprites/boss_bar` (22 спрайта), `tabshader/` (инклуды, шрифт `hud.json`,
+   (6 файлов), `minecraft/textures/gui/sprites/boss_bar` (20 спрайтов; если там остались наши старые
+   `yellow_background.png` и `yellow_progress.png` - удалить именно эти два файла), `tabshader/` (инклуды, шрифт `hud.json`,
    `textures/font/marker.png`), `textshader/shaders/include` (те же файлы, что у textshader). Если textshader уже
    стоит - его `rendertype_text.*` заменятся на идентичные (проверено `sync_textshader.py`).
-3. Положить `build/libs/tabshader-1.0.0.jar` в `plugins/`.
+3. MythicHUD: `python3 -I tools/mythichud_patch.py plugins/Nexo/pack/external_packs/hl-resourcepack.zip /tmp/hl-patched.zip`,
+   проверить вывод (`REPLACE ...rendertype_text.vsh/.fsh`, без `PROBLEM`), сохранить старый zip рядом
+   (`hl-resourcepack.zip.before-tabshader`) и положить патченный на его место.
+   Положить `build/libs/tabshader-1.0.0.jar` в `plugins/`.
 4. Рестарт (Nexo пересоберет пак, Hermes раздаст).
 5. Проверить zip, который раздает Hermes (обфускация SIMPLE): `assets/minecraft/shaders/core/gui.vsh` содержит
-   `th_gui_vertex`, `rendertype_text.vsh` содержит и `ts_vertex`, и `th_text_vertex`; есть
+   `th_gui_vertex`, `rendertype_text.vsh` содержит и `ts_vertex`, и `th_text_vertex`;
+   `mythichud-1_21_6/assets/minecraft/shaders/core/rendertype_text.vsh` содержит и `th_text_vertex`, и
+   `applyCustomHud`; есть
    `assets/tabshader/shaders/include/*.glsl` и `assets/minecraft/textures/gui/sprites/boss_bar/*.png`; шрифт
    `assets/tabshader/font/hud.json` ссылается на существующую текстуру (Nexo может переименовать
    `marker.png` - ссылка в шрифте должна обновиться вместе с ней).
