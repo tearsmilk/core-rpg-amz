@@ -1,0 +1,22 @@
+name: nameshader
+version: '${version}'
+main: dev.tearsmilk.nameshader.NameShaderPlugin
+api-version: '1.21'
+author: tearsmilk
+authors: [tearsmilk]
+description: Rounded pink nametag plates drawn by resource pack core shaders
+softdepend: [Nexo]
+commands:
+  nameshader:
+    description: nameshader - rounded pink nametag plates
+    usage: /nameshader help
+    aliases: [nsh]
+permissions:
+  nameshader.test:
+    description: /nsh test - sample nametags near you
+    default: op
+  nameshader.admin:
+    description: /nsh reload, /nsh status
+    default: op
+    children:
+      nameshader.test: true

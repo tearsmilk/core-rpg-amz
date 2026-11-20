@@ -1,0 +1,29 @@
+nametags:
+  style-text-displays: false
+  text-display-tag: ""
+
+test:
+  seconds: 30
+  distance: 3.0
+  name: "<white>Тестовый ник"
+  display-text: "<white>Текстовый дисплей"
+
+messages:
+  help: "<#FF8FAB>nameshader</#FF8FAB> <gray>- розовые плашки ников.</gray>\n<white>/nsh test [игрок]</white> <gray>- тестовые ники рядом (test.seconds)</gray>\n<white>/nsh status</white> <gray>- состояние</gray>\n<white>/nsh reload</white> <gray>- перечитать config.yml</gray>"
+  no-permission: "<red>Нет прав."
+  players-only: "<red>Из консоли укажите игрока: /nsh test <игрок>"
+  no-player: "<red>Игрок <name> не в сети."
+  reloaded: "<#FF8FAB>nameshader:</#FF8FAB> <white>конфиг перечитан, стиль текстовых дисплеев: <displays>."
+  test-spawned: "<#FF8FAB>nameshader:</#FF8FAB> <white>тестовые ники рядом на <seconds> с (обычный, присевший, текстовый дисплей)."
+  test-sneak-name: "<white>Присел"
+  status-displays: "<#FF8FAB>Текстовые дисплеи:</#FF8FAB> <white>стиль <state>, тег <tag>, со стилем <styled> из <total> загруженных."
+  status-tests: "<#FF8FAB>Тестовые сущности:</#FF8FAB> <white><count>"
+  status-plugins: "<#FF8FAB>Плагины:</#FF8FAB> <white><list>"
+  status-pack-ok: "<#FF8FAB>Пак Nexo:</#FF8FAB> <green>все <count> шейдера nameshader на месте."
+  status-pack-missing: "<#FF8FAB>Пак Nexo:</#FF8FAB> <yellow>шейдеры nameshader: <count> из <total>, нет: <files>."
+  status-include-ok: "<#FF8FAB>Include nameshader:</#FF8FAB> <green>все <count> файла на месте."
+  status-include-missing: "<#FF8FAB>Include nameshader:</#FF8FAB> <yellow><count> из <total>, нет: <files>."
+  status-include-broken: "<#FF8FAB>Include nameshader:</#FF8FAB> <red>ОШИБКА: core-шейдеры nameshader в паке есть, а include нет (<files>). Шейдеры не скомпилируются, пак сломается у всех игроков: скопируйте assets/nameshader/shaders/include или уберите 5 core-файлов."
+  "on": "вкл"
+  "off": "выкл"
+  any: "любой"
