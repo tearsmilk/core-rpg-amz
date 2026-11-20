@@ -12,12 +12,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public final class Texts {
 
     private final MiniMessage mm = MiniMessage.miniMessage();
     private FileConfiguration config;
     private BiFunction<Player, String, String> external = (p, s) -> s;
+    private boolean noExternal = true;
 
     public Texts(FileConfiguration config) {
         this.config = config;
@@ -29,6 +31,7 @@ public final class Texts {
 
     public void external(BiFunction<Player, String, String> f) {
         this.external = f == null ? (p, s) -> s : f;
+        this.noExternal = f == null;
     }
 
     public MiniMessage mini() {
@@ -36,8 +39,15 @@ public final class Texts {
     }
 
     public static String fill(String template, Map<String, String> vars, MiniMessage mm) {
-        if (template == null || template.indexOf('{') < 0) {
-            return template == null ? "" : template;
+        return fill(template, vars, mm, null);
+    }
+
+    public static String fill(String template, Map<String, String> vars, MiniMessage mm, Function<String, String> external) {
+        if (template == null) {
+            return "";
+        }
+        if (template.indexOf('{') < 0 && (external == null || template.indexOf('%') < 0)) {
+            return template;
         }
         StringBuilder out = new StringBuilder(template.length() + 16);
         int i = 0;
@@ -54,6 +64,15 @@ public final class Texts {
                         continue;
                     }
                 }
+            } else if (c == '%' && external != null) {
+                int end = template.indexOf('%', i + 1);
+                if (end > i + 1 && isToken(template, i + 1, end)) {
+                    String token = template.substring(i, end + 1);
+                    String v = external.apply(token);
+                    out.append(mm.escapeTags(v == null ? token : v));
+                    i = end + 1;
+                    continue;
+                }
             }
             out.append(c);
             i++;
@@ -61,12 +80,19 @@ public final class Texts {
         return out.toString();
     }
 
-    public Component render(Player p, String template, Map<String, String> vars) {
-        String s = fill(template, vars, mm);
-        if (p != null) {
-            s = external.apply(p, s);
+    static boolean isToken(String s, int from, int to) {
+        for (int i = from; i < to; i++) {
+            char c = s.charAt(i);
+            if (Character.isWhitespace(c) || c == '<' || c == '>' || c == '{' || c == '}') {
+                return false;
+            }
         }
-        return mm.deserialize(s);
+        return true;
+    }
+
+    public Component render(Player p, String template, Map<String, String> vars) {
+        Function<String, String> ext = p == null || noExternal ? null : token -> external.apply(p, token);
+        return mm.deserialize(fill(template, vars, mm, ext));
     }
 
     public List<Component> render(Player p, List<String> templates, Map<String, String> vars) {

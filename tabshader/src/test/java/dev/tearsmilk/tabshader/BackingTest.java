@@ -58,6 +58,16 @@ class BackingTest {
     }
 
     @Test
+    void unknownFontOrNonTextSkipsBacking() {
+        Component glyph = Component.text("Hi ").append(Component.text("x").font(net.kyori.adventure.key.Key.key("nexo", "default")));
+        assertSame(glyph, Backing.wrap(glyph, Backing.Kind.TITLE, widths));
+        Component tr = Component.text("Hi ").append(Component.translatable("block.minecraft.stone"));
+        assertSame(tr, Backing.wrap(tr, Backing.Kind.ACTIONBAR, widths));
+        Component explicit = Component.text("Hi").font(net.kyori.adventure.key.Key.key("minecraft", "default"));
+        assertTrue(Backing.wrap(explicit, Backing.Kind.ACTIONBAR, widths) != explicit);
+    }
+
+    @Test
     void emptyStaysEmpty() {
         assertEquals(Component.empty(), Backing.wrap(Component.empty(), Backing.Kind.TITLE, widths));
         assertNull(Backing.wrap(null, Backing.Kind.TITLE, widths));

@@ -50,6 +50,16 @@ class LogicTest {
     }
 
     @Test
+    void fillEscapesExternalPlaceholders() {
+        MiniMessage mm = MiniMessage.miniMessage();
+        Map<String, String> v = Map.of("player", "Neko");
+        java.util.function.Function<String, String> papi = t -> t.equals("%prefix%") ? "<click:run_command:/op>x" : t;
+        assertEquals("\\<click:run_command:/op>x Neko 100% ok", Texts.fill("%prefix% {player} 100% ok", v, mm, papi));
+        assertEquals("<red>%unknown_tag%", Texts.fill("<red>%unknown_tag%", v, mm, t -> t));
+        assertEquals("a % b", Texts.fill("a % b", v, mm, t -> "X"));
+    }
+
+    @Test
     void varsHelpers() {
         assertEquals("20.0", Vars.tps(20.7));
         assertEquals("19.4", Vars.tps(19.43));

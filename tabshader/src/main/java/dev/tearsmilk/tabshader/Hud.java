@@ -16,6 +16,8 @@ import java.util.UUID;
 
 final class Hud {
 
+    static final Component BLANK = Component.text(" ");
+
     static final class State {
         Component header;
         Component footer;
@@ -69,6 +71,13 @@ final class Hud {
                 p.sendPlayerListHeaderAndFooter(header, footer);
                 st.header = header;
                 st.footer = footer;
+                packets++;
+            }
+        } else if (s.tab()) {
+            if (st.header != BLANK || st.footer != BLANK) {
+                p.sendPlayerListHeaderAndFooter(BLANK, BLANK);
+                st.header = BLANK;
+                st.footer = BLANK;
                 packets++;
             }
         } else if (st.header != null || st.footer != null) {
@@ -125,6 +134,9 @@ final class Hud {
     }
 
     private static Component join(List<Component> lines) {
+        if (lines.isEmpty()) {
+            return BLANK;
+        }
         return Component.join(JoinConfiguration.newlines(), lines);
     }
 

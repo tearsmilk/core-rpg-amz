@@ -84,20 +84,34 @@ class ProjectRulesTest {
             want.add(new String[]{COLOURS.get(i) + "_background.png", "250", String.valueOf(i)});
             want.add(new String[]{COLOURS.get(i) + "_progress.png", "251", String.valueOf(i)});
         }
-        for (int n : NOTCHES) {
-            want.add(new String[]{"notched_" + n + "_background.png", "252", String.valueOf(n)});
-            want.add(new String[]{"notched_" + n + "_progress.png", "253", String.valueOf(n)});
+        for (int i = 0; i < NOTCHES.size(); i++) {
+            int n = NOTCHES.get(i);
+            want.add(new String[]{"notched_" + n + "_background.png", "252", String.valueOf(i)});
+            want.add(new String[]{"notched_" + n + "_progress.png", "253", String.valueOf(i)});
         }
         for (String[] w : want) {
             BufferedImage img = image(dir.resolve(w[0]));
             assertEquals(182, img.getWidth(), w[0]);
             assertEquals(5, img.getHeight(), w[0]);
+            int kind = Integer.parseInt(w[1]);
+            int variant = Integer.parseInt(w[2]);
+            int coded = 0;
             for (int y = 0; y < 5; y++) {
                 for (int x = 0; x < 182; x++) {
                     int argb = img.getRGB(x, y);
-                    assertArrayEquals(new int[]{Integer.parseInt(w[1]), x, y, Integer.parseInt(w[2])},
-                            new int[]{(argb >>> 24) & 255, (argb >> 16) & 255, (argb >> 8) & 255, argb & 255}, w[0]);
+                    int a = (argb >>> 24) & 255;
+                    if (a == 0) {
+                        continue;
+                    }
+                    coded++;
+                    int v = (((argb >> 16) & 1) << 2) | (((argb >> 8) & 1) << 1) | (argb & 1);
+                    assertArrayEquals(new int[]{kind, variant}, new int[]{a, v}, w[0] + " " + x + "," + y);
                 }
+            }
+            assertTrue(coded >= (kind >= 252 ? 9 : 500), w[0]);
+            if (kind == 251) {
+                int mid = img.getRGB(90, 2);
+                assertTrue(((mid >> 16) & 255) > 150, w[0]);
             }
         }
         String frag = read(assets().resolve("tabshader/shaders/include/th_sprite_fragment.glsl"));

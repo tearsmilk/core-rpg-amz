@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="dev.tearsmilk.tabshader.WidthsTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-20T16:41:31.901Z" hostname="vm" time="0.005">
-  <properties/>
-  <testcase name="vanillaAdvances()" classname="dev.tearsmilk.tabshader.WidthsTest" time="0.001"/>
-  <testcase name="stringWidth()" classname="dev.tearsmilk.tabshader.WidthsTest" time="0.001"/>
-  <testcase name="componentWidthFollowsBoldInheritance()" classname="dev.tearsmilk.tabshader.WidthsTest" time="0.001"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

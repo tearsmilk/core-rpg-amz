@@ -10,7 +10,8 @@ BossHealthOverlay, Gui.renderOverlayMessage, Gui.renderTitle): the same fills wi
 ping icons, hotbar) and the same glyph quads (corners TL, BL, BR, TR, shadow first). Fills go through gui.vsh/fsh,
 sprites through position_tex_color.vsh/fsh, text through rendertype_text.vsh/fsh, all taken from tabshader/pack
 (or from the client jar for the vanilla picture). The world behind is a simple block landscape made from vanilla
-block textures. GameTime advances 1/24000 per tick.
+block textures. GameTime advances 1/24000 per tick. The player name in the subtitle carries a textshader code
+(wave, pink: #D6042C), so the picture also shows both hooks of the merged rendertype_text working together.
 Output: tabshader/preview/
 """
 import json
@@ -37,6 +38,7 @@ ROSE = (255, 122, 170)
 CRIMSON = (255, 61, 110)
 SOFT = (255, 214, 230)
 WHITE = (255, 255, 255)
+TS_WAVE_PINK = (214, 4, 44)
 
 
 BG_VS = """#version 330
@@ -116,8 +118,9 @@ def spans_width(font, spans):
 
 
 class Hud:
-    def __init__(self, own, scale, size):
+    def __init__(self, own, scale, size, sprite_shader=None, everywhere=None):
         self.own = own
+        self.everywhere = everywhere
         self.scale = scale
         self.size = size
         self.gw = size[0] / scale
@@ -131,7 +134,8 @@ class Hud:
         vanilla = glsl_check.load_vanilla(glsl_check.JAR)
         self.progs = {}
         for name in ("gui", "position_tex_color", "rendertype_text"):
-            vs, fs = glsl_check.program(vanilla, name, own)
+            mine = own if name != "position_tex_color" or sprite_shader is None else sprite_shader
+            vs, fs = glsl_check.program(vanilla, name, mine)
             self.progs[name] = self.ctx.program(vertex_shader=vs, fragment_shader=fs)
         self.blocks = {}
         for prog in self.progs.values():
@@ -243,6 +247,17 @@ class Hud:
         a, r, g, b = (argb >> 24) & 255, (argb >> 16) & 255, (argb >> 8) & 255, argb & 255
         self.ops.append(("gui", (x0, y0, x1, y1, (r, g, b, a))))
 
+    def gradient_fill(self, x0, y0, x1, y1, top, bottom):
+        def rgba(argb):
+            return ((argb >> 16) & 255, (argb >> 8) & 255, argb & 255, (argb >> 24) & 255)
+        self.ops.append(("gui", (x0, y0, x1, y1, (rgba(top), rgba(bottom), rgba(bottom), rgba(top)))))
+
+    def backdrop(self, x, y, w, scale=1.0, ox=0.0, oy=0.0):
+        if self.everywhere is None:
+            return
+        a = self.everywhere << 24
+        self.fill(ox + (x - 2) * scale, oy + (y - 2) * scale, ox + (x + w + 2) * scale, oy + (y + 9 + 2) * scale, a)
+
     def blit(self, name, x, y, w=None, h=None, u_w=None):
         sx, sy, sw, sh = self.sprites[name]
         w = sw if w is None else w
@@ -309,9 +324,9 @@ class Hud:
         if kind == "gui":
             prog = self.progs["gui"]
             for q, (x0, y0, x1, y1, col) in enumerate(items):
-                c = [v / 255.0 for v in col]
-                for px, py in ((x0, y0), (x0, y1), (x1, y1), (x1, y0)):
-                    rows.append(struct.pack("3f4f", px, py, 0.0, *c))
+                cols = col if isinstance(col[0], tuple) else (col,) * 4
+                for (px, py), cc in zip(((x0, y0), (x0, y1), (x1, y1), (x1, y0)), cols):
+                    rows.append(struct.pack("3f4f", px, py, 0.0, *[v / 255.0 for v in cc]))
                 idx += [q * 4, q * 4 + 1, q * 4 + 2, q * 4 + 2, q * 4 + 3, q * 4]
             fmt, names = "3f 4f", ["Position", "Color"]
         elif kind == "tex":
@@ -409,21 +424,25 @@ class Scene:
         width = col_w * cols + (cols - 1) * 5
         for line in header + footer:
             width = max(width, f.width(line))
-        h.fill(w // 2 - width // 2 - 1, y - 1, w // 2 + width // 2 + 1, y + len(header) * 9, 0x80000000)
+        if header:
+            h.fill(w // 2 - width // 2 - 1, y - 1, w // 2 + width // 2 + 1, y + len(header) * 9, 0x80000000)
         for line in header:
             lw = f.width(line)
             h.text(line, w // 2 - lw // 2, y)
             y += 9
-        y += 1
+        if header:
+            y += 1
         h.fill(w // 2 - width // 2 - 1, y - 1, w // 2 + width // 2 + 1, y + rows * 9, 0x80000000)
         for i, (name, skin, ping) in enumerate(players):
             c, r = i // rows, i % rows
             x = left + c * col_w + c * 5
             yy = y + r * 9
-            h.fill(x, yy, x + col_w, yy + 8, 0x20FFFFFF)
+            h.fill(x, yy, x + col_w, yy + 8, 0x20FFFFFF if h.everywhere is None else h.everywhere << 24)
             h.blit(f"face/{skin}", x, yy)
             h.text(name, x + 9, yy)
             h.blit(f"icon/ping_{ping}.png", x + col_w - 11, yy, 10, 8)
+        if not footer:
+            return
         y += rows * 9 + 1
         h.fill(w // 2 - width // 2 - 1, y - 1, w // 2 + width // 2 + 1, y + len(footer) * 9, 0x80000000)
         for line in footer:
@@ -441,8 +460,8 @@ class Scene:
         x0 = h.gwi - mw - 3
         x1 = h.gwi - 3 + 2
         top = bottom - n * 9
-        h.fill(x0 - 2, top - 9 - 1, x1, top - 1, 0x66000000)
-        h.fill(x0 - 2, top - 1, x1, bottom, 0x4C000000)
+        h.fill(x0 - 2, top - 9 - 1, x1, top - 1, 0x66000000 if h.everywhere is None else h.everywhere << 24)
+        h.fill(x0 - 2, top - 1, x1, bottom, 0x4C000000 if h.everywhere is None else h.everywhere << 24)
         h.text(title, x0 + mw // 2 - tw // 2, top - 9, shadow=False)
         for i, line in enumerate(lines):
             h.text(line, x0, bottom - (n - i) * 9, shadow=False)
@@ -466,18 +485,53 @@ class Scene:
     def actionbar(self, spans):
         h = self.h
         spans, w = h.marked(1, spans) if h.own else (spans, h.font.width(spans))
+        h.backdrop(-(w // 2), -4, w, ox=h.gwi // 2, oy=h.ghi - 68)
         h.text(spans, -(w // 2), -4, ox=h.gwi // 2, oy=h.ghi - 68)
 
     def title(self, title, subtitle):
         h = self.h
         t, tw = h.marked(2, title) if h.own else (title, h.font.width(title))
+        h.backdrop(-(tw // 2), -10, tw, scale=4, ox=h.gwi // 2, oy=h.ghi // 2)
         h.text(t, -(tw // 2), -10, scale=4, ox=h.gwi // 2, oy=h.ghi // 2)
         s, sw = h.marked(3, subtitle) if h.own else (subtitle, h.font.width(subtitle))
+        h.backdrop(-(sw // 2), 5, sw, scale=2, ox=h.gwi // 2, oy=h.ghi // 2)
         h.text(s, -(sw // 2), 5, scale=2, ox=h.gwi // 2, oy=h.ghi // 2)
 
 
 def g(text, a=PINK, b=CRIMSON, bold=False):
     return (text, gradient(a, b, len(text)), bold)
+
+
+def edge_cases(hud):
+    s = Scene(hud)
+    hud.ops = []
+    s.hotbar()
+    gw, gh = hud.gwi, hud.ghi
+    hud.gradient_fill(20, 20, 120, 60, 0xC0000000, 0x00000000)
+    hud.gradient_fill(gw - 121, 70, gw - 1, 110, 0x66000000, 0x00000000)
+    hud.gradient_fill(gw // 2 - 60, 9, gw // 2 + 60, 46, 0x80000000, 0x00000000)
+    hud.gradient_fill(20, 70, 120, 110, 0x00000000, 0x80000000)
+    hud.fill(140, 20, 200, 28, 0x20FFFFFF)
+    hud.fill(140, 40, 200, 80, 0x4C000000)
+    hud.fill(gw // 2 - 40, gh - 120, gw // 2 + 40, gh - 100, 0x80000000)
+    return hud
+
+
+def tab_variants(hud, variant):
+    s = Scene(hud)
+    hud.ops = []
+    s.hotbar()
+    s.bossbar([g("Онлайн 4/100", SOFT, PINK, False), ("  -  ", ROSE, False), ("14:32", WHITE, False)], 0.62)
+    players = [([("tearsmilk", WHITE, False)], "steve", 5), ([("Kotik_228", WHITE, False)], "alex", 5),
+               ([("Neko", WHITE, False)], "steve", 4)]
+    blank = [[(" ", WHITE, False)]]
+    if variant == "off":
+        s.tab(blank, players, blank)
+    elif variant == "nofooter":
+        s.tab([[g("Amazake", PINK, CRIMSON, True)]], players, [])
+    else:
+        s.tab([], players, [])
+    return hud
 
 
 def build(hud, tick=0, parts=("hotbar", "boss", "action", "title", "board", "tab")):
@@ -490,7 +544,7 @@ def build(hud, tick=0, parts=("hotbar", "boss", "action", "title", "board", "tab
     if "action" in parts:
         s.actionbar([("Тест актионбара: ", SOFT, False), g("розово-кримсон", PINK, CRIMSON)])
     if "title" in parts:
-        s.title([g("Amazake", PINK, CRIMSON, True)], [("Добро пожаловать, ", SOFT, False), ("tearsmilk", PINK, False)])
+        s.title([g("Amazake", PINK, CRIMSON, True)], [("Добро пожаловать, ", SOFT, False), ("tearsmilk", TS_WAVE_PINK, False)])
     if "board" in parts:
         s.sidebar([g("Amazake", PINK, CRIMSON, True)],
                   [[("Игрок: ", ROSE, False), ("tearsmilk", WHITE, False)],
@@ -566,6 +620,36 @@ def main(argv):
         for k in range(4):
             strip.paste(frames[k * 10], (0, k * frames[0].height))
         strip.save(os.path.join(OUT, f"strip_{name}.png"))
+    for opacity in (127, 102):
+        ev = Hud(True, scale, size, everywhere=opacity)
+        evv = Hud(False, scale, size, everywhere=opacity)
+        for name, parts in SCENES.items():
+            a = build(ev, 0, parts).render(0)
+            b = build(evv, 0, parts).render(0)
+            cmp_img = Image.new("RGB", (a.width * 2 + 8, a.height), (20, 20, 20))
+            cmp_img.paste(b, (0, 0))
+            cmp_img.paste(a, (a.width + 8, 0))
+            cmp_img.save(os.path.join(OUT, f"everywhere{opacity}_{name}.png"))
+    a = edge_cases(ours).render(0)
+    b = edge_cases(van).render(0)
+    diff = np.abs(np.asarray(a, np.int16) - np.asarray(b, np.int16)).max()
+    cmp_img = Image.new("RGB", (a.width * 2 + 8, a.height), (20, 20, 20))
+    cmp_img.paste(b, (0, 0))
+    cmp_img.paste(a, (a.width + 8, 0))
+    cmp_img.save(os.path.join(OUT, "edge_cases.png"))
+    print("edge cases max channel difference vs vanilla:", int(diff))
+    tiles = []
+    for variant in ("off", "nofooter", "bare"):
+        img = tab_variants(ours, variant).render(0)
+        tiles.append(crop(img, scale, (gw / 2 - 70, 0, gw / 2 + 70, 60)))
+    strip = Image.new("RGB", (tiles[0].width * 3 + 16, tiles[0].height), (20, 20, 20))
+    for k, t in enumerate(tiles):
+        strip.paste(t, (k * (t.width + 8), 0))
+    strip.save(os.path.join(OUT, "tab_variants.png"))
+    fb = Hud(True, scale, size, sprite_shader=False)
+    a = build(fb, 0, ("hotbar", "boss")).render(0)
+    crop(a, scale, (gw / 2 - 100, 0, gw / 2 + 100, 22)).resize(
+        (int(200 * scale * 2), int(22 * scale * 2)), Image.NEAREST).save(os.path.join(OUT, "bossbar_fallback.png"))
     print("saved hud_*.png compare_*.png hud_*.gif strip_*.png and zoomed crops")
     return 0
 

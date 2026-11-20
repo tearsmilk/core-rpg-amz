@@ -146,6 +146,11 @@ renderer позже нас (тоже HIGHEST/MONITOR) или собирает ф
   `ts_margin`, рассчитанный на заголовок 4x: обычно 4 GUI px, у bounce 40 по вертикали, у echo/extrude/sparkle/
   swing/vampire/sweep 8-16; углы 0 и 2 передаются во фрагмент; мир: цвет вершины = цвет палитры), `ts_fragment.glsl` (восстановление координат внутри буквы, сборка цвета),
   `ts_effects.glsl` (все эффекты, `ts_apply` по номеру).
+- `rendertype_text.vsh/.fsh` общие с плагином tabshader: в них еще хуки `th_text_vertex` / `th_text_fragment`
+  (подложка актионбара и тайтла), поэтому пак textshader содержит и `tabshader/shaders/include/th_common.glsl`,
+  `th_text_vertex.glsl`, `th_text_fragment.glsl`. Копии в обоих проектах побайтно одинаковы, синхронизация -
+  `tabshader/tools/sync_textshader.py`. Хуки не мешают друг другу: маркер tabshader - цвет `R = 231` плюс
+  проверка текселя глифа `tabshader:hud`, коды textshader - `R = 214` / тени `R = 53`.
 - `rendertype_item_entity_translucent_cull.*` (coreshaders) не пересекается с нами.
 - Ограничения: курсив у буквы с эффектом не наклоняется (плагин ставит italic false), шрифты TrueType
   не анимируются (только цвет). Запас квада рассчитан на масштаб до 4x (заголовки); у текста крупнее
@@ -189,4 +194,6 @@ python3 -I tools/preview.py --title            # заголовок 4x: bounce, 
    раздает Hermes, и убедиться, что `assets/minecraft/shaders/core/rendertype_text.*` на месте, а импорт
    `textshader:ts_vertex.glsl` находит файл (Nexo шейдеры не переименовывает, у coreshaders тот же способ работает).
    Там же проверить, что `rendertype_text.vsh` в zip - именно наш (есть строка `ts_vertex`), а не Nexo-шный.
+   Если вместе с textshader стоит tabshader - его `rendertype_text.*` идентичны нашим, порядок копирования
+   не важен (в файле есть и `ts_vertex`, и `th_text_vertex`).
 5. Для таба через TAB-плагин (если он есть): в формате имени `%textshader_nick%`; без TAB плагин ставит ник в таб сам.

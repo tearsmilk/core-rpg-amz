@@ -1,10 +1,10 @@
 package dev.tearsmilk.tabshader;
 
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,13 +12,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public final class Widths {
 
     public static final int DEFAULT = 6;
     public static final int UNKNOWN = 8;
+    public static final Key DEFAULT_FONT = Key.key("minecraft", "default");
 
     private final Map<Integer, Integer> advance;
 
@@ -87,15 +87,21 @@ public final class Widths {
     }
 
     private int width(Component c, boolean parentBold) {
-        boolean bold = bold(c.style(), parentBold);
-        int w = 0;
-        if (c instanceof TextComponent t) {
-            w += width(t.content(), bold);
-        } else {
-            w += width(PlainTextComponentSerializer.plainText().serialize(c.children(List.of())), bold);
+        Key font = c.style().font();
+        if (font != null && !DEFAULT_FONT.equals(font)) {
+            return -1;
         }
+        if (!(c instanceof TextComponent t)) {
+            return -1;
+        }
+        boolean bold = bold(c.style(), parentBold);
+        int w = width(t.content(), bold);
         for (Component child : c.children()) {
-            w += width(child, bold);
+            int cw = width(child, bold);
+            if (cw < 0) {
+                return -1;
+            }
+            w += cw;
         }
         return w;
     }
