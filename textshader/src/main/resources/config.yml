@@ -1,9 +1,10 @@
-config-version: 1
+config-version: 2
 
 chat:
   enabled: true
   tags: true
   sanitize: true
+  nick: true
 
 nick:
   tab: true
@@ -11,7 +12,7 @@ nick:
 
 effects-default: true
 
-menu-sample: "Пример текста"
+menu-sample: "Привет всем!"
 preview-text: "Пример текста с эффектом"
 
 messages:
@@ -21,8 +22,8 @@ messages:
   no-effect-permission: "<red>Эффект <white><effect></white> тебе недоступен."
   effect-set: "<gray><target>: <sample> <dark_gray>(<effect>, <colour>)"
   effect-off: "<gray><target>: эффект выключен."
-  usage-set: "<yellow>/ts set <эффект> [цвет]</yellow> <gray>- эффект твоих сообщений, <yellow>/ts set off</yellow> - выключить"
-  usage-nick: "<yellow>/ts nick <эффект> [цвет]</yellow> <gray>- эффект ника в табе, <yellow>/ts nick off</yellow> - выключить"
+  usage-set: "<yellow>/ts set <эффект> [цвет]</yellow> <gray>- эффект твоих сообщений в чате, <yellow>/ts set off</yellow> - выключить"
+  usage-nick: "<yellow>/ts nick <эффект> [цвет]</yellow> <gray>- эффект ника в чате и табе, <yellow>/ts nick off</yellow> - выключить"
   usage-preview: "<yellow>/ts preview <эффект> [текст]"
   usage-give-name: "<yellow>/ts give-name <эффект> [цвет] [текст]</yellow> <gray>- название предмета в руке"
   usage-title: "<yellow>/ts title <игрок|*> <эффект[:цвет]> <текст> [| подзаголовок]"
@@ -39,26 +40,46 @@ messages:
   player-set: "<green><player> (<target>): <effect>"
   off-word: "выкл"
   reloaded: "<green>textshader перезагружен."
-  help: "<gold>textshader</gold><gray> - анимированный текст (рисует ресурспак).\n<yellow>/ts</yellow> <gray>- меню, <yellow>/ts set <эффект> [цвет]</yellow> - чат, <yellow>/ts nick <эффект> [цвет]</yellow> - ник\n<yellow>/ts off</yellow> <gray>- выключить, <yellow>/ts preview <эффект> [текст]</yellow>, <yellow>/ts list</yellow>, <yellow>/ts code <эффект> [цвет]</yellow>\n<gray>В чате: \\<wave>текст\\</wave>, \\<wave:red>текст"
-  menu-title: "<dark_gray>Эффекты текста - <target>"
-  menu-color-title: "<dark_gray>Цвет эффекта - <target>"
-  menu-effect-tag: "<dark_gray>Тег: \\<<key>> или \\<<key>:red>"
+  help: "<gold>textshader</gold><gray> - анимированный текст (рисует ресурспак).\n<yellow>/ts</yellow> <gray>- меню (ЛКМ - ник, ПКМ - сообщения), <yellow>/ts set <эффект> [цвет]</yellow> - сообщения, <yellow>/ts nick <эффект> [цвет]</yellow> - ник\n<yellow>/ts off</yellow> <gray>- выключить, <yellow>/ts preview <эффект> [текст]</yellow>, <yellow>/ts list</yellow>, <yellow>/ts code <эффект> [цвет]</yellow>\n<gray>В чате: \\<wave>текст\\</wave>, \\<wave:red>текст"
+  menu-title: "<dark_gray>Эффекты текста <page>/<pages>"
+  menu-color-title: "<dark_gray>Цвет - <target>: <effect>"
+  menu-lore-nick: "<gray>Ник: <nick>"
+  menu-lore-chat: "<gray>Сообщение: <sample>"
   menu-own-colors: "<dark_gray>Свои цвета, выбранный цвет перекрашивает"
-  menu-effect-lore: "<gray>ЛКМ - выбрать, ПКМ - выбрать с цветом"
-  menu-locked: "<red>Недоступно"
-  menu-selected: "<green>Выбрано"
-  menu-color-lore: "<gray>Нажми - выбрать этот цвет"
+  menu-on-nick: "<green>Сейчас на нике"
+  menu-on-chat: "<green>Сейчас на сообщениях"
+  menu-hint-nick: "<yellow>ЛКМ</yellow> <gray>- на ник (чат и таб)"
+  menu-hint-chat: "<yellow>ПКМ</yellow> <gray>- на сообщения в чате"
+  menu-hint-color: "<yellow>Shift+ЛКМ / Shift+ПКМ</yellow> <gray>- выбрать цвет (ник / сообщения)"
+  menu-locked: "<red>Нет доступа"
+  menu-effect-tag: "<dark_gray>Тег: \\<<key>> или \\<<key>:red>"
+  menu-info-nick: "<aqua>Ник: <value>"
+  menu-info-chat: "<aqua>Сообщения: <value>"
+  menu-info-none: "<gray>без эффекта"
+  menu-info-effect: "<gray>Эффект: <white><effect></white>, цвет: <white><colour>"
+  menu-info-nick-lore: "<gray>Нажми - сменить цвет ника"
+  menu-info-chat-lore: "<gray>Нажми - сменить цвет сообщений"
+  menu-color-nick: "<white>Цвет ника: <colour>"
+  menu-color-chat: "<white>Цвет сообщений: <colour>"
+  menu-color-hint: "<gray>Нажми - выбрать цвет для текущего эффекта"
+  menu-reset-nick: "<red>Снять эффект с ника"
+  menu-reset-chat: "<red>Снять эффект с сообщений"
+  menu-reset-lore: "<gray>Нажми - вернуть обычный текст"
+  menu-reset-empty: "<dark_gray>Сейчас эффекта нет"
+  menu-header: "<gold>Эффекты текста"
+  menu-header-1: "<gray>Название каждого эффекта - живое превью."
+  menu-header-2: "<yellow>ЛКМ</yellow> <gray>- на ник (чат и таб)"
+  menu-header-3: "<yellow>ПКМ</yellow> <gray>- на сообщения в чате"
+  menu-header-4: "<yellow>Shift+ЛКМ / Shift+ПКМ</yellow> <gray>- цвет для ника / сообщений"
+  menu-header-5: "<gray>Теги в сообщении: \\<wave>привет\\</wave>"
+  menu-header-6: "<dark_gray>Анимацию рисует ресурспак сервера, мод не нужен."
+  menu-color-lore: "<gray>Нажми - этот цвет (<target>)"
+  menu-color-for: "<gray>Для: <white><target>"
+  menu-color-sample: "<gray>Так сейчас выглядит"
+  menu-selected: "<green>Сейчас выбрано"
   menu-back: "<yellow>Назад"
   menu-prev: "<yellow>Предыдущая страница"
   menu-next: "<yellow>Следующая страница"
-  menu-target: "<aqua>Сейчас: <target> <gray>(нажми - переключить)"
-  menu-target-lore: "<gray>Чат - твои сообщения, ник - имя в табе"
-  menu-color: "<white>Цвет: <colour>"
-  menu-color-hint: "<gray>Нажми - сменить цвет текущего эффекта"
-  menu-pick-effect-first: "<red>Сначала выбери эффект."
-  menu-off: "<red>Выключить эффект (<target>)"
+  menu-page: "<gray>Страница <page> из <pages>"
+  menu-pick-effect-first: "<red>Сначала выбери эффект (<target>): ЛКМ - ник, ПКМ - сообщения."
   menu-close: "<red>Закрыть"
-  menu-help: "<gold>Как это работает"
-  menu-help-1: "<gray>Анимацию рисует ресурспак сервера, мод не нужен."
-  menu-help-2: "<gray>Видно в чате, табе, заголовках, названиях предметов."
-  menu-help-3: "<gray>Теги в сообщении: \\<wave>привет\\</wave>, \\<rainbow>..."

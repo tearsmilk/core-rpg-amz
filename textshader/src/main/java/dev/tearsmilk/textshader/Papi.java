@@ -2,6 +2,7 @@ package dev.tearsmilk.textshader;
 
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
 
 import java.util.Locale;
 
@@ -37,8 +38,9 @@ final class Papi extends PlaceholderExpansion {
     public String onRequest(OfflinePlayer player, String params) {
         String name = player != null && player.getName() != null ? player.getName() : "";
         String q = params.toLowerCase(Locale.ROOT);
-        FxSpec nick = player != null ? plugin.choices().get(player.getUniqueId(), Choices.Target.NICK) : null;
-        FxSpec chat = player != null ? plugin.choices().get(player.getUniqueId(), Choices.Target.CHAT) : null;
+        Player online = player != null ? player.getPlayer() : null;
+        FxSpec nick = online != null ? plugin.active(online, Choices.Target.NICK) : null;
+        FxSpec chat = online != null ? plugin.active(online, Choices.Target.CHAT) : null;
         switch (q) {
             case "nick" -> {
                 return nick == null ? name : FxText.legacy(name, nick);
