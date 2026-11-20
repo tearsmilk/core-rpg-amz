@@ -4,9 +4,10 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.Plugin;
 
 import java.util.EnumMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,15 +15,17 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class Choices {
 
     public enum Target {
-        CHAT("chat", "Чат"),
-        NICK("nick", "Ник");
+        CHAT("chat", "Сообщения", List.of("msg", "message", "messages")),
+        NICK("nick", "Ник", List.of("name", "tab"));
 
         private final String key;
         private final String title;
+        private final List<String> aliases;
 
-        Target(String key, String title) {
+        Target(String key, String title, List<String> aliases) {
             this.key = key;
             this.title = title;
+            this.aliases = aliases;
         }
 
         public String key() {
@@ -38,8 +41,12 @@ public final class Choices {
         }
 
         public static Target byKey(String s) {
+            if (s == null) {
+                return null;
+            }
+            String k = s.toLowerCase(Locale.ROOT);
             for (Target t : values()) {
-                if (t.key.equalsIgnoreCase(s)) {
+                if (t.key.equals(k) || t.aliases.contains(k)) {
                     return t;
                 }
             }
@@ -47,49 +54,81 @@ public final class Choices {
         }
     }
 
-    private final Map<Target, NamespacedKey> keys = new EnumMap<>(Target.class);
-    private final Map<UUID, FxSpec> chat = new ConcurrentHashMap<>();
-    private final Map<UUID, FxSpec> nick = new ConcurrentHashMap<>();
+    public interface Store {
+        String read(Target t);
 
-    public Choices(Plugin plugin) {
+        void write(Target t, String value);
+    }
+
+    private final Map<Target, NamespacedKey> keys = new EnumMap<>(Target.class);
+    private final Map<Target, Map<UUID, FxSpec>> maps = new EnumMap<>(Target.class);
+
+    public Choices(String namespace) {
         for (Target t : Target.values()) {
-            keys.put(t, new NamespacedKey(plugin, t.key()));
+            keys.put(t, new NamespacedKey(namespace.toLowerCase(Locale.ROOT), t.key()));
+            maps.put(t, new ConcurrentHashMap<>());
         }
     }
 
-    private Map<UUID, FxSpec> map(Target t) {
-        return t == Target.CHAT ? chat : nick;
+    public NamespacedKey key(Target t) {
+        return keys.get(t);
     }
 
     public FxSpec get(UUID id, Target t) {
-        return map(t).get(id);
+        return maps.get(t).get(id);
     }
 
-    public void load(Player p) {
-        PersistentDataContainer pdc = p.getPersistentDataContainer();
+    public void load(UUID id, Store store) {
         for (Target t : Target.values()) {
-            FxSpec spec = FxSpec.parse(pdc.get(keys.get(t), PersistentDataType.STRING));
+            FxSpec spec = FxSpec.parse(store.read(t));
             if (spec == null) {
-                map(t).remove(p.getUniqueId());
+                maps.get(t).remove(id);
             } else {
-                map(t).put(p.getUniqueId(), spec);
+                maps.get(t).put(id, spec);
             }
         }
     }
 
+    public void set(UUID id, Store store, Target t, FxSpec spec) {
+        if (spec == null) {
+            store.write(t, null);
+            maps.get(t).remove(id);
+        } else {
+            store.write(t, spec.serialize());
+            maps.get(t).put(id, spec);
+        }
+    }
+
     public void forget(UUID id) {
-        chat.remove(id);
-        nick.remove(id);
+        for (Map<UUID, FxSpec> m : maps.values()) {
+            m.remove(id);
+        }
+    }
+
+    public Store store(Player p) {
+        PersistentDataContainer pdc = p.getPersistentDataContainer();
+        return new Store() {
+            @Override
+            public String read(Target t) {
+                return pdc.get(keys.get(t), PersistentDataType.STRING);
+            }
+
+            @Override
+            public void write(Target t, String value) {
+                if (value == null) {
+                    pdc.remove(keys.get(t));
+                } else {
+                    pdc.set(keys.get(t), PersistentDataType.STRING, value);
+                }
+            }
+        };
+    }
+
+    public void load(Player p) {
+        load(p.getUniqueId(), store(p));
     }
 
     public void set(Player p, Target t, FxSpec spec) {
-        PersistentDataContainer pdc = p.getPersistentDataContainer();
-        if (spec == null) {
-            pdc.remove(keys.get(t));
-            map(t).remove(p.getUniqueId());
-        } else {
-            pdc.set(keys.get(t), PersistentDataType.STRING, spec.serialize());
-            map(t).put(p.getUniqueId(), spec);
-        }
+        set(p.getUniqueId(), store(p), t, spec);
     }
 }

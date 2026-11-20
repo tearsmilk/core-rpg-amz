@@ -115,8 +115,15 @@ public final class Commands implements TabExecutor {
         if (p == null) {
             return;
         }
-        Choices.Target t = a.length > 1 && "nick".equalsIgnoreCase(a[1]) ? Choices.Target.NICK : Choices.Target.CHAT;
-        plugin.menu().open(p, t);
+        int page = 0;
+        if (a.length > 1) {
+            try {
+                page = Integer.parseInt(a[1]) - 1;
+            } catch (NumberFormatException ignored) {
+                page = 0;
+            }
+        }
+        plugin.menu().open(p, page);
     }
 
     private void set(CommandSender s, String[] a, Choices.Target target) {
@@ -356,8 +363,9 @@ public final class Commands implements TabExecutor {
                 out.add("chat");
                 out.add("nick");
             } else if (sub.equals("menu") && idx == 1) {
-                out.add("chat");
-                out.add("nick");
+                for (int i = 1; i <= MenuLayout.pages(MenuLayout.effects().size()); i++) {
+                    out.add(String.valueOf(i));
+                }
             } else if (idx == effectArg) {
                 if (sub.equals("set") || sub.equals("nick") || sub.equals("player")) {
                     out.add("off");

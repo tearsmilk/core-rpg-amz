@@ -1,6 +1,8 @@
 package dev.tearsmilk.textshader;
 
+import io.papermc.paper.chat.ChatRenderer;
 import io.papermc.paper.event.player.AsyncChatEvent;
+import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -25,6 +27,7 @@ public final class ChatListener implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
         plugin.choices().forget(e.getPlayer().getUniqueId());
+        plugin.forgetNick(e.getPlayer().getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -44,5 +47,22 @@ public final class ChatListener implements Listener {
         }
         boolean tags = use && plugin.getConfig().getBoolean("chat.tags", true);
         e.message(ChatFx.apply(e.message(), base, tags, sanitize, ef -> use && p.hasPermission(ef.permission())));
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onChatName(AsyncChatEvent e) {
+        if (!plugin.getConfig().getBoolean("chat.nick", true)) {
+            return;
+        }
+        FxSpec nick = plugin.active(e.getPlayer(), Choices.Target.NICK);
+        if (nick == null) {
+            return;
+        }
+        ChatRenderer old = e.renderer();
+        e.renderer((source, name, message, viewer) -> old.render(source, nickName(name, nick), message, viewer));
+    }
+
+    static Component nickName(Component name, FxSpec nick) {
+        return ChatFx.apply(name, nick, false, false, ef -> true);
     }
 }
