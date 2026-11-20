@@ -2025,3 +2025,4 @@ Caused by: java.net.UnknownHostException: api.minecraftservices.com
 [20:23:41] [Render thread/INFO]: Resizing Chunk Sections UBO, capacity limit of 8 reached during a single frame. New capacity will be 16.
 [20:23:41] [Render thread/INFO]: Resizing Chunk Sections UBO, capacity limit of 16 reached during a single frame. New capacity will be 32.
 [20:23:42] [Render thread/INFO]: Resizing Chunk Sections UBO, capacity limit of 32 reached during a single frame. New capacity will be 64.
+[20:25:01] [Render thread/INFO]: [System] [CHAT] NameBot left the game
