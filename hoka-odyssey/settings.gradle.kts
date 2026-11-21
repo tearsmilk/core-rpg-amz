@@ -42,3 +42,4 @@ include("spacesky")      // космическое небо: шейдер неб
 include("gravity")       // невесомость/вакуум на выбранных картах (/hograv)
 include("oxygen")        // нет воздуха на выбранных картах — нужен скафандр (/hosuit)
 include("items")         // выбрасывание и подбор предметов как в ванили (ItemEntity)
+include("gravzones")     // зоны гравитации, выделяемые топориком (/hozone, depends: gravity)

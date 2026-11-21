@@ -89,16 +89,20 @@ public final class GravityModule extends OdysseyModule {
     /** Очередь правок config.yml: пишем строго по одной и по порядку команд. */
     private final Queue<ConfigWrite> writes = new ConcurrentLinkedQueue<>();
     private final AtomicBoolean writing = new AtomicBoolean();
+    /** Вакуум отдельным игрокам поверх карт — сервис {@link VacuumService} для других модулей (gravzones). */
+    private final VacuumOverrides overrides = new VacuumOverrides(floaters);
 
     @Override
     protected void onEnable() {
         settings = Settings.from(config());
+        services().register(VacuumService.class, overrides);
         registerCommand(new HoGravCommand(this));
         // PlayerSpawnEvent срабатывает и при входе, и при каждой смене карты (setInstance)
         events().addListener(PlayerSpawnEvent.class, e -> refresh(e.getPlayer(), e.getInstance(), true));
         events().addListener(PlayerDisconnectEvent.class, e -> {
             floaters.remove(e.getPlayer().getUuid());
             spawnCooldown.remove(e.getPlayer().getUuid());
+            overrides.forget(e.getPlayer().getUuid());
         });
         // предмет появился на карте с вакуумом — сразу без гравитации (до первого тика физики, иначе он успеет
         // набрать скорость падения)
@@ -126,6 +130,7 @@ public final class GravityModule extends OdysseyModule {
             restore(e.getKey(), e.getValue());
         }
         items.clear();
+        overrides.clear();
     }
 
     Settings settings() {
@@ -275,13 +280,19 @@ public final class GravityModule extends OdysseyModule {
         }
     }
 
+    /** В вакууме ли игрок: сначала решение через VacuumService, иначе — по карте. */
+    private boolean inVacuum(Player p, Instance instance) {
+        Boolean forced = overrides.decide(p);
+        return forced != null ? forced && instance != null : inVacuum(instance);
+    }
+
     private boolean inVacuum(Instance instance) {
         return mapOf(instance).map(settings.maps()::contains).orElse(false);
     }
 
     /** Привести игрока в соответствие с картой: включить/выключить вакуум. reset — игрок только что появился. */
     private void refresh(Player p, Instance instance, boolean reset) {
-        boolean should = inVacuum(instance);
+        boolean should = inVacuum(p, instance);
         Floater f = floaters.get(p.getUuid());
         if (should) {
             if (f == null) {
@@ -328,7 +339,7 @@ public final class GravityModule extends OdysseyModule {
         ticks++;
         for (Player p : MinecraftServer.getConnectionManager().getOnlinePlayers()) {
             Instance instance = p.getInstance();
-            boolean should = inVacuum(instance);
+            boolean should = inVacuum(p, instance);
             if (should != floaters.containsKey(p.getUuid())) {
                 refresh(p, instance, true);                     // карту включили/выключили, а игрок уже там
             }
