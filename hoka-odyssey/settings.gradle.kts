@@ -38,3 +38,4 @@ includeBuild(coreDir) { name = "hoka-core" }
 
 include("respack-api")   // интерфейс ResourcePackApi модуля respack (Takuyamo) — только для компиляции
 include("coreshaders")   // «окна в другой мир»: панорамы-шейдеры на ItemDisplay (depends: respack)
+include("spacesky")      // космическое небо: шейдер неба в ресурспаке (depends: respack)
