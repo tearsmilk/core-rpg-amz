@@ -1,0 +1,60 @@
+pack:
+  install: true
+  dir: ""
+  reload-nexo: true
+
+hud:
+  hotbar:
+    enabled: true
+  offhand:
+    enabled: true
+  hearts:
+    enabled: true
+  armor:
+    enabled: true
+  food:
+    enabled: true
+  air:
+    enabled: true
+  mount:
+    enabled: true
+  xp:
+    enabled: true
+  item-name:
+    enabled: true
+
+messages:
+  help: "<#8FD3FF>AuraHud</#8FD3FF> <gray>- раскладка HUD игрока.</gray>\n<white>/ah status</white> <gray>- состояние</gray>\n<white>/ah reload</white> <gray>- перечитать config.yml и обновить пак</gray>\n<white>/ah preset [имя]</white> <gray>- список пресетов или применить пресет</gray>\n<white>/ah preset save <имя></white> <gray>- сохранить текущую раскладку в plugins/AuraHud/presets</gray>\n<white>/ah set <элемент> <ключ> <значение></white> <gray>- поменять настройку</gray>\n<white>/ah hide|show <элемент></white> <gray>- скрыть или вернуть элемент</gray>\n<white>/ah reset <элемент|all></white> <gray>- вернуть ванильное место</gray>\n<gray>Элементы: hotbar, offhand, hearts, armor, food, air, mount, xp, item-name.</gray>"
+  no-permission: "<red>Нет прав."
+  reloaded: "<#8FD3FF>AuraHud:</#8FD3FF> <white>конфиг перечитан. Пак обновляется в фоне, итог - /ah status."
+  status-shaderhooks: "<#8FD3FF>Шейдеры в паке:</#8FD3FF> <white><state>"
+  status-modules: "<#8FD3FF>Модули:</#8FD3FF> <white><list>"
+  status-layout-vanilla: "<#8FD3FF>Раскладка:</#8FD3FF> <white>ванильная, шейдеры ничего не двигают."
+  status-layout-active: "<#8FD3FF>Раскладка:</#8FD3FF> <white>своя."
+  status-element-vanilla: "<gray> - <element>: на ванильном месте"
+  status-element-hidden: "<gray> - <element>: </gray><red>скрыт"
+  status-element-moved: "<gray> - <element>: </gray><white>якорь <anchor>, x <x>, y <y>, <layout>"
+  status-markers: "<#8FD3FF>Метки текстур:</#8FD3FF> <white>помечено сейчас <changed> из <total>; не удалось: <bad>"
+  status-warnings: "<#FFB86B>Замечания к config.yml:</#FFB86B> <white><list>"
+  pack-pending: "еще не установлены"
+  pack-installing: "(идет установка)"
+  no-modules: "нет"
+  none: "нет"
+  preset-list: "<#8FD3FF>Пресеты:</#8FD3FF> <white><list></white>\n<gray>/ah preset <имя> - применить</gray>"
+  preset-applied: "<#8FD3FF>AuraHud:</#8FD3FF> <white>пресет <name> применен, пак обновляется."
+  preset-unknown: "<red>Нет пресета <name>.</red> <gray>Есть: <list>"
+  preset-saved: "<#8FD3FF>AuraHud:</#8FD3FF> <white>раскладка сохранена как пресет <name>."
+  preset-save-usage: "<red>/ah preset save <имя></red> <gray>- латиница, цифры, - и _, не имя встроенного пресета"
+  preset-save-failed: "<red>Не удалось сохранить пресет: <error>"
+  set-usage: "<red>/ah set <элемент> <ключ> <значение></red>\n<gray>Ключи: enabled, anchor, x, y, layout, per-line, gap, line-gap, direction, wrap, reverse, attack-indicator, follow, rotate, level, level-x, level-y, slot.<1-9>.x|y|hidden"
+  set-done: "<#8FD3FF>AuraHud:</#8FD3FF> <white><element>.<key> = <value>, пак обновляется."
+  anchor-reset: "<gray>x и y сброшены в 0 - отступ теперь считается от нового якоря."
+  unknown-element: "<red>Нет элемента <element>.</red> <gray>Есть: <list>"
+  unknown-key: "<red>Нет ключа <key>.</red> <gray>Есть: <list>"
+  key-not-for: "<red>Ключ <key> не подходит для <element>."
+  bad-value: "<red>Плохое значение <value> для <key>.</red> <gray>Например: <hint>"
+  toggle-usage: "<red>/ah hide <элемент></red> <gray>или</gray> <red>/ah show <элемент>"
+  hidden: "<#8FD3FF>AuraHud:</#8FD3FF> <white><element> скрыт, пак обновляется."
+  shown: "<#8FD3FF>AuraHud:</#8FD3FF> <white><element> снова виден, пак обновляется."
+  reset-usage: "<red>/ah reset <элемент|all>"
+  reset-done: "<#8FD3FF>AuraHud:</#8FD3FF> <white><element> на ванильном месте, пак обновляется."

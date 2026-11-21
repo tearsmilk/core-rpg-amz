@@ -2,8 +2,8 @@
 
 #moj_import <minecraft:dynamictransforms.glsl>
 
-#define SHADERHOOKS_VERSION 1
-#define SHADERHOOKS_HASH h0ccd4fb99906d5d6
+#define SHADERHOOKS_VERSION 2
+#define SHADERHOOKS_HASH h053c129e8f7c9e1c
 
 uniform sampler2D Sampler0;
 
@@ -11,6 +11,7 @@ uniform sampler2D Sampler0;
 #moj_import <tabshader:th_hook_sprite_fragment.glsl>
 #moj_import <nameshader:ns_hook_sprite_fragment.glsl>
 #moj_import <chatshader:cs_hook_sprite_fragment.glsl>
+#moj_import <aurahud:ah_hook_sprite_fragment.glsl>
 
 in vec2 texCoord0;
 in vec4 vertexColor;
@@ -24,6 +25,7 @@ void main() {
     color = th_hook_sprite_fragment(color, tex, texCoord0, vertexColor);
     color = ns_hook_sprite_fragment(color, tex, texCoord0, vertexColor);
     color = cs_hook_sprite_fragment(color, tex, texCoord0, vertexColor);
+    color = ah_hook_sprite_fragment(color, tex, texCoord0, vertexColor);
     if (color.a == 0.0) {
         discard;
     }

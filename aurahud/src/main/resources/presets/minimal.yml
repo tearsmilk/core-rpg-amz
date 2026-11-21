@@ -1,0 +1,8 @@
+description: "Только хотбар, сердца и еда: опыт, броня и название предмета скрыты"
+hud:
+  xp:
+    enabled: false
+  armor:
+    enabled: false
+  item-name:
+    enabled: false

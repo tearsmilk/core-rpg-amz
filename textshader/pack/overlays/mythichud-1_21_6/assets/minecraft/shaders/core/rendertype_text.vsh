@@ -4,8 +4,8 @@
 #moj_import <minecraft:dynamictransforms.glsl>
 #moj_import <minecraft:projection.glsl>
 
-#define SHADERHOOKS_VERSION 1
-#define SHADERHOOKS_HASH h735d72e16320cb34
+#define SHADERHOOKS_VERSION 2
+#define SHADERHOOKS_HASH h7bb3052363d9687e
 
 uniform sampler2D Sampler0;
 uniform sampler2D Sampler2;
@@ -14,6 +14,7 @@ uniform sampler2D Sampler2;
 #moj_import <tabshader:th_hook_text_vertex.glsl>
 #moj_import <nameshader:ns_hook_text_vertex.glsl>
 #moj_import <chatshader:cs_hook_text_vertex.glsl>
+#moj_import <aurahud:ah_hook_text_vertex.glsl>
 
 in vec3 Position;
 in vec4 Color;
@@ -35,6 +36,7 @@ void main() {
     th_hook_text_position(pos, color);
     ns_hook_text_position(pos, color);
     cs_hook_text_position(pos, color);
+    ah_hook_text_position(pos, color);
     gl_Position = ProjMat * ModelViewMat * vec4(pos, 1.0);
 
     sphericalVertexDistance = fog_spherical_distance(Position);
@@ -46,6 +48,7 @@ void main() {
     th_hook_text_vertex(Position, color, UV0, gl_VertexID, light, vertexColor);
     ns_hook_text_vertex(Position, color, UV0, gl_VertexID, light, vertexColor);
     cs_hook_text_vertex(Position, color, UV0, gl_VertexID, light, vertexColor);
+    ah_hook_text_vertex(Position, color, UV0, gl_VertexID, light, vertexColor);
     vec4 thPosition = gl_Position;
     float thSpherical = sphericalVertexDistance;
     float thCylindrical = cylindricalVertexDistance;

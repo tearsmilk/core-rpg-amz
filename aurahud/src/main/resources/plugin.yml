@@ -1,0 +1,17 @@
+name: AuraHud
+version: '${version}'
+main: dev.tearsmilk.aurahud.AuraHudPlugin
+api-version: '1.21'
+author: tearsmilk
+authors: [tearsmilk]
+description: Vanilla player HUD layout drawn by resource pack core shaders
+softdepend: [Nexo, textshader, tabshader, nameshader, chatshader]
+commands:
+  aurahud:
+    description: AuraHud - player HUD layout
+    usage: /aurahud help
+    aliases: [ah]
+permissions:
+  aurahud.admin:
+    description: /ah - status, reload, preset, set, hide, show, reset
+    default: op

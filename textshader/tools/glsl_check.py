@@ -22,7 +22,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REPO = os.path.dirname(ROOT)
 ASSETS = os.path.join(ROOT, "pack", "assets")
 STUBS = os.path.join(ROOT, "pack", "stubs")
-SIBLINGS = [os.path.join(REPO, n, "pack", "assets") for n in ("tabshader", "nameshader", "chatshader")
+SIBLINGS = [os.path.join(REPO, n, "pack", "assets") for n in ("tabshader", "nameshader", "chatshader", "aurahud")
             if os.path.isdir(os.path.join(REPO, n, "pack", "assets"))]
 ALONE = [ASSETS, STUBS]
 ALL = [ASSETS] + SIBLINGS + [STUBS]

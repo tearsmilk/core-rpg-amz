@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""shaderhooks - shared core shader hooks of textshader, tabshader, nameshader and chatshader.
+"""shaderhooks - shared core shader hooks of textshader, tabshader, nameshader, chatshader and aurahud.
 
     python3 -I tools/shaderhooks/shaderhooks.py                 # check: generated files up to date in every project
     python3 -I tools/shaderhooks/shaderhooks.py --write         # regenerate in every project, copy this tool dir
@@ -8,7 +8,7 @@
 
 Several plugins need hooks in the same core shaders (gui, position_tex_color, rendertype_text). Every project
 ships the same canonical core files; each calls a fixed list of hook functions, one include per plugin and stage:
-<plugin>:<prefix>_hook_<program>_<stage>.glsl (prefixes ts, th, ns, cs; programs gui, sprite, text; stages vertex,
+<plugin>:<prefix>_hook_<program>_<stage>.glsl (prefixes ts, th, ns, cs, ah; programs gui, sprite, text; stages vertex,
 fragment). A plugin ships its own real hook files in pack/assets and no-op stubs of every plugin in pack/stubs.
 Real files and stubs have the same path, so they are never copied by hand: the plugin (ShaderHooks.java, generated
 from ShaderHooks.java.in) writes them into plugins/Nexo/pack/assets at startup:
@@ -25,6 +25,10 @@ real client harness and for manual deployment), "combos" proves it: every combin
 every install order, the same files and every program compiles (glslangValidator 330 and 410); stale real hooks of
 a removed plugin are replaced by stubs. The tool dir is identical in every project; --write copies the dir of the
 project it runs from to the others.
+
+Version 2 added aurahud (prefix ah) and declares Sampler0 in position_tex_color.vsh, so sprite vertex hooks may
+sample the bound texture (textureLod or texelFetch). Hook signatures are unchanged since version 1, so hook files of
+older builds still compile against newer canonical files.
 """
 import difflib
 import hashlib
@@ -40,7 +44,7 @@ import zipfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 PROJECT = os.path.dirname(os.path.dirname(HERE))
 REPO = os.path.dirname(PROJECT)
-VERSION = 1
+VERSION = 2
 MARK = "#define SHADERHOOKS_VERSION "
 HASH = "#define SHADERHOOKS_HASH h"
 HASH_LINE = re.compile(r"^" + re.escape(HASH) + r"([0-9a-f]+)\n", re.M)
@@ -53,8 +57,16 @@ PINNED = {
         "minecraft/shaders/core/rendertype_text.vsh": "1c3e6d9f4f995cc0",
         "minecraft/shaders/core/rendertype_text.fsh": "f96cfbc4e34a2b45",
     },
+    2: {
+        "minecraft/shaders/core/gui.vsh": "112703f677f079fe",
+        "minecraft/shaders/core/gui.fsh": "d70c9091d7707e35",
+        "minecraft/shaders/core/position_tex_color.vsh": "69432dfed00751bc",
+        "minecraft/shaders/core/position_tex_color.fsh": "053c129e8f7c9e1c",
+        "minecraft/shaders/core/rendertype_text.vsh": "d33ec8f3acba8b1a",
+        "minecraft/shaders/core/rendertype_text.fsh": "82351350c84208d6",
+    },
 }
-PLUGINS = [("textshader", "ts"), ("tabshader", "th"), ("nameshader", "ns"), ("chatshader", "cs")]
+PLUGINS = [("textshader", "ts"), ("tabshader", "th"), ("nameshader", "ns"), ("chatshader", "cs"), ("aurahud", "ah")]
 NAMES = [n for n, _ in PLUGINS]
 PREFIX = dict(PLUGINS)
 PROGRAMS = [("gui", "gui"), ("sprite", "position_tex_color"), ("text", "rendertype_text")]
@@ -178,7 +190,7 @@ def canonical(prog, ext):
         lines += ["    if (color.a == 0.0) {", "        discard;", "    }", "    fragColor = color * ColorModulator;", "}"]
     elif prog == "sprite" and ext == "vsh":
         lines = head + ["#moj_import <minecraft:dynamictransforms.glsl>", "#moj_import <minecraft:projection.glsl>", ""] + mark
-        lines += imports("sprite", "vertex") + ["", "in vec3 Position;", "in vec2 UV0;", "in vec4 Color;", "",
+        lines += ["uniform sampler2D Sampler0;", ""] + imports("sprite", "vertex") + ["", "in vec3 Position;", "in vec2 UV0;", "in vec4 Color;", "",
                                                 "out vec2 texCoord0;", "out vec4 vertexColor;", "", "void main() {"]
         lines += position_block("sprite") + ["", "    texCoord0 = UV0;", "    vertexColor = Color;"]
         lines += calls(CALL_VERTEX["sprite"], "sprite") + ["}"]

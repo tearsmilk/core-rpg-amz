@@ -1,0 +1,34 @@
+description: "Сердца и броня столбиками слева, еда и воздух справа, опыт вертикально у левого края"
+hud:
+  xp:
+    anchor: bottom-left
+    x: 2
+    y: -2
+    rotate: 270
+    level-x: 4
+    level-y: -92
+  hearts:
+    anchor: bottom-left
+    x: 10
+    y: -2
+    layout: column
+  armor:
+    anchor: bottom-left
+    x: 22
+    y: -2
+    layout: column
+  food:
+    anchor: bottom-right
+    x: -10
+    y: -2
+    layout: column
+  air:
+    anchor: bottom-right
+    x: -22
+    y: -2
+    layout: column
+  mount:
+    anchor: bottom-right
+    x: -10
+    y: -2
+    layout: column

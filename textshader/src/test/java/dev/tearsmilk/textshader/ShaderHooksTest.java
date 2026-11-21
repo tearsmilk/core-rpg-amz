@@ -57,7 +57,7 @@ class ShaderHooksTest {
         }
         int index = ShaderHooks.PLUGINS.indexOf(plugin);
         for (String program : ShaderHooks.PROGRAMS) {
-            boolean real = index < 2 || (index == 3 && program.equals("text"));
+            boolean real = index < 2 || index == 4 || (index == 3 && program.equals("text"));
             for (String stage : ShaderHooks.STAGES) {
                 String h = ShaderHooks.hook(plugin, program, stage);
                 String s = new String(stubs.get(h), StandardCharsets.UTF_8);
@@ -114,9 +114,9 @@ class ShaderHooksTest {
     @Test
     void anySetOfPluginsInAnyOrderGivesTheSamePack() throws IOException {
         int run = 0;
-        for (int mask = 1; mask < 16; mask++) {
+        for (int mask = 1; mask < 1 << ShaderHooks.PLUGINS.size(); mask++) {
             List<String> subset = new ArrayList<>();
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < ShaderHooks.PLUGINS.size(); i++) {
                 if ((mask & (1 << i)) != 0) {
                     subset.add(ShaderHooks.PLUGINS.get(i));
                 }
@@ -144,13 +144,13 @@ class ShaderHooksTest {
     @Test
     void realHooksOnlyFromInstalledPluginsStubsForTheRest() throws IOException {
         Map<String, byte[]> stubs = stubs();
-        for (int mask = 1; mask < 16; mask++) {
+        for (int mask = 1; mask < 1 << ShaderHooks.PLUGINS.size(); mask++) {
             Path dir = tmp.resolve("m" + mask);
             for (String p : ShaderHooks.PLUGINS) {
                 install(dir, p, Set.copyOf(ShaderHooks.PLUGINS));
             }
             List<String> subset = new ArrayList<>();
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < ShaderHooks.PLUGINS.size(); i++) {
                 if ((mask & (1 << i)) != 0) {
                     subset.add(ShaderHooks.PLUGINS.get(i));
                 }

@@ -1,0 +1,43 @@
+description: "Хотбар кубом 3x3 в правом нижнем углу, вертикальный опыт, полоски слева внизу"
+hud:
+  hotbar:
+    anchor: bottom-right
+    x: -2
+    y: -2
+    layout: grid
+    per-line: 3
+    attack-x: -24
+    attack-y: -90
+  offhand:
+    follow: none
+    anchor: bottom-right
+    x: -2
+    y: -66
+  xp:
+    anchor: bottom-right
+    x: -68
+    y: -2
+    rotate: 270
+    level-x: -10
+  hearts:
+    anchor: bottom-left
+    x: 2
+    y: -2
+  armor:
+    anchor: bottom-left
+    x: 2
+    y: -12
+  food:
+    anchor: bottom-left
+    x: 88
+    y: -2
+  air:
+    anchor: bottom-left
+    x: 88
+    y: -12
+  mount:
+    anchor: bottom-left
+    x: 88
+    y: -2
+  item-name:
+    y: -30

@@ -1,0 +1,26 @@
+description: "Хотбар столбиком у правого края, полоски внизу по центру"
+hud:
+  hotbar:
+    anchor: center-right
+    x: -2
+    y: 0
+    layout: column
+  offhand:
+    follow: none
+    anchor: center-right
+    x: -2
+    y: 105
+  xp:
+    y: -2
+  hearts:
+    y: -8
+  armor:
+    y: -18
+  food:
+    y: -8
+  air:
+    y: -18
+  mount:
+    y: -8
+  item-name:
+    y: -42

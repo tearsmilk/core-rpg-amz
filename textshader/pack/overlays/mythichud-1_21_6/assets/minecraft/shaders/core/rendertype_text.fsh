@@ -3,8 +3,8 @@
 #moj_import <minecraft:fog.glsl>
 #moj_import <minecraft:dynamictransforms.glsl>
 
-#define SHADERHOOKS_VERSION 1
-#define SHADERHOOKS_HASH hf96cfbc4e34a2b45
+#define SHADERHOOKS_VERSION 2
+#define SHADERHOOKS_HASH h82351350c84208d6
 
 uniform sampler2D Sampler0;
 
@@ -12,6 +12,7 @@ uniform sampler2D Sampler0;
 #moj_import <tabshader:th_hook_text_fragment.glsl>
 #moj_import <nameshader:ns_hook_text_fragment.glsl>
 #moj_import <chatshader:cs_hook_text_fragment.glsl>
+#moj_import <aurahud:ah_hook_text_fragment.glsl>
 
 in float sphericalVertexDistance;
 in float cylindricalVertexDistance;
@@ -26,6 +27,7 @@ void main() {
     color = th_hook_text_fragment(color, vertexColor, texCoord0);
     color = ns_hook_text_fragment(color, vertexColor, texCoord0);
     color = cs_hook_text_fragment(color, vertexColor, texCoord0);
+    color = ah_hook_text_fragment(color, vertexColor, texCoord0);
     if (color.a < 0.1) {
         discard;
     }

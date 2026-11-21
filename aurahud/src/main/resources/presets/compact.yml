@@ -1,0 +1,35 @@
+description: "Все у хотбара: сердца и еда блоками 5x2 по бокам, опыт прямо над слотами"
+hud:
+  offhand:
+    follow: none
+    x: -106
+    y: -28
+  xp:
+    y: -22
+  hearts:
+    layout: grid
+    per-line: 5
+    x: -116
+    y: -1
+  armor:
+    layout: grid
+    per-line: 5
+    x: -161
+    y: -1
+  food:
+    layout: grid
+    per-line: 5
+    x: 115
+    y: -1
+  air:
+    layout: grid
+    per-line: 5
+    x: 160
+    y: -1
+  mount:
+    layout: grid
+    per-line: 5
+    x: 115
+    y: -1
+  item-name:
+    y: -42

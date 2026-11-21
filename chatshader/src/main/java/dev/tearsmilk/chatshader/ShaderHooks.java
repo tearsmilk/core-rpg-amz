@@ -35,13 +35,13 @@ import java.util.stream.Stream;
 
 final class ShaderHooks {
 
-    static final int VERSION = 1;
+    static final int VERSION = 2;
     static final String MARK = "#define SHADERHOOKS_VERSION ";
     static final String HASH = "#define SHADERHOOKS_HASH h";
     static final String LOCK = "dev.tearsmilk.shaderhooks.install";
     static final String BACKUP_DIR = "pack-backup";
-    static final List<String> PLUGINS = List.of("textshader", "tabshader", "nameshader", "chatshader");
-    static final List<String> PREFIXES = List.of("ts", "th", "ns", "cs");
+    static final List<String> PLUGINS = List.of("textshader", "tabshader", "nameshader", "chatshader", "aurahud");
+    static final List<String> PREFIXES = List.of("ts", "th", "ns", "cs", "ah");
     static final List<String> PROGRAMS = List.of("gui", "sprite", "text");
     static final List<String> CORES = List.of("gui", "position_tex_color", "rendertype_text");
     static final List<String> STAGES = List.of("vertex", "fragment");
@@ -433,7 +433,7 @@ final class ShaderHooks {
                 }
             }
             Path work = plugin.getDataFolder().toPath().toAbsolutePath();
-            return new Job(dir, work, own, stubs, Set.copyOf(present), plugin.getName());
+            return new Job(dir, work, own, stubs, Set.copyOf(present), plugin.getName().toLowerCase(java.util.Locale.ROOT));
         } catch (Exception e) {
             log.warning("Не удалось прочитать шейдеры из jar " + plugin.getName() + ": " + e);
             return Report.skipped(dir, "ошибка: " + e.getMessage());
@@ -465,7 +465,7 @@ final class ShaderHooks {
         }
         for (String f : r.conflict()) {
             log.severe("Общий шейдер " + f + " той же версии " + VERSION + ", но другой сборки - оставлен как есть. "
-                    + "Обновите textshader, tabshader, nameshader и chatshader до одной сборки.");
+                    + "Обновите textshader, tabshader, nameshader, chatshader и aurahud до одной сборки.");
         }
         if (!r.backups().isEmpty()) {
             log.warning("Замененные файлы пака сохранены в " + r.backupDir() + ": " + String.join(", ",

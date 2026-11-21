@@ -2,13 +2,14 @@
 
 #moj_import <minecraft:dynamictransforms.glsl>
 
-#define SHADERHOOKS_VERSION 1
-#define SHADERHOOKS_HASH h0df9785db1dc3e1c
+#define SHADERHOOKS_VERSION 2
+#define SHADERHOOKS_HASH hd70c9091d7707e35
 
 #moj_import <textshader:ts_hook_gui_fragment.glsl>
 #moj_import <tabshader:th_hook_gui_fragment.glsl>
 #moj_import <nameshader:ns_hook_gui_fragment.glsl>
 #moj_import <chatshader:cs_hook_gui_fragment.glsl>
+#moj_import <aurahud:ah_hook_gui_fragment.glsl>
 
 in vec4 vertexColor;
 
@@ -20,6 +21,7 @@ void main() {
     color = th_hook_gui_fragment(color, vertexColor);
     color = ns_hook_gui_fragment(color, vertexColor);
     color = cs_hook_gui_fragment(color, vertexColor);
+    color = ah_hook_gui_fragment(color, vertexColor);
     if (color.a == 0.0) {
         discard;
     }

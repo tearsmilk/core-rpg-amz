@@ -139,14 +139,15 @@ test:
 
 ## Общие core-шейдеры: схема хуков (shaderhooks)
 
-textshader, tabshader, nameshader и chatshader меняют одни и те же core-шейдеры. Чтобы каждый плагин работал один
+textshader, tabshader, nameshader, chatshader и aurahud меняют одни и те же core-шейдеры. Чтобы каждый плагин работал один
 и в любом сочетании, а порядок установки не играл роли, используется одна схема во всех проектах:
 
 - `gui.vsh/.fsh`, `position_tex_color.vsh/.fsh`, `rendertype_text.vsh/.fsh` - канонические файлы, побайтно
-  одинаковые во всех плагинах (`#define SHADERHOOKS_VERSION 1`). Они вызывают фиксированный список хуков, по
+  одинаковые во всех плагинах (`#define SHADERHOOKS_VERSION 2`). Они вызывают фиксированный список хуков, по
   одному include на плагин и стадию: `<плагин>:<префикс>_hook_<программа>_<стадия>.glsl`, префиксы `ts`, `th`,
-  `ns`, `cs`, порядок вызова всегда ts, th, ns, cs.
-- Настоящие хуки плагина - в `pack/assets/<плагин>/shaders/include/`, заглушки всех четырех - в `pack/stubs/`. Путь
+  `ns`, `cs`, `ah` (aurahud), порядок вызова всегда ts, th, ns, cs, ah. С версии 2 `position_tex_color.vsh`
+  объявляет `uniform sampler2D Sampler0`; сигнатуры хуков с версии 1 не менялись.
+- Настоящие хуки плагина - в `pack/assets/<плагин>/shaders/include/`, заглушки всех пяти - в `pack/stubs/`. Путь
   один и тот же, поэтому пак руками не копируется: класс `ShaderHooks` (генерируется из
   `tools/shaderhooks/ShaderHooks.java.in`) при старте и `/csh reload` пишет в `plugins/Nexo/pack/assets` общие файлы
   программ, где у плагина есть настоящий хук (у chatshader - `gui` и `rendertype_text`), свои include и заглушки
@@ -159,7 +160,8 @@ textshader, tabshader, nameshader и chatshader меняют одни и те ж
 - chatshader пишет еще сгенерированный `chatshader/shaders/include/cs_config.glsl` (перегрузка
   `ShaderHooks.run(..., generated)`); остальные плагины его не касаются.
 - `tools/shaderhooks/` одинаковый во всех проектах; `python3 -I tools/shaderhooks/shaderhooks.py --write` из любого
-  проекта обновляет остальные. `combos` проверяет все 15 наборов из 4 плагинов во всех порядках установки.
+  проекта обновляет остальные. `combos` проверяет все 31 набор из 5 плагинов во всех порядках установки. Новые jar
+  ставить все пять сразу: старый jar (версия 1) оставляет файлы версии 2 и пишет в лог предупреждение "обновите".
 
 ## Сборка и проверки
 
