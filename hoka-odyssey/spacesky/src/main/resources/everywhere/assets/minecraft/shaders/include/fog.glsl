@@ -1,8 +1,8 @@
 #version 330
 
-// spacesky: ванильный fog.glsl 1.21.11, изменена только apply_fog (см. ниже).
-// Цвет космоса у горизонта — общий для неба (sky.fsh) и тумана дальности.
-#define SPACESKY_BASE vec3(0.006, 0.007, 0.018)
+// spacesky (только режим everywhere: true): ванильный fog.glsl 1.21.11, изменена только apply_fog (см. ниже).
+// Цвет космоса у горизонта SPACESKY_BASE — общий для неба (sky.fsh) и тумана дальности — в spacesky:mode.glsl.
+#moj_import <spacesky:mode.glsl>
 
 layout(std140) uniform Fog {
     vec4 FogColor;

@@ -3,10 +3,13 @@
 // spacesky: космос вместо неба. Всегда (дёшево) — тёмный фон и редкие звёзды. В областях из config.yml (ssZone из
 // sky.vsh) — Млечный путь, туманности, густые звёзды; вне областей эта работа не делается вовсе (ветка одна на кадр).
 // Цвет неба от времени суток и биома (ColorModulator) не используется — космос одинаковый днём и ночью.
+// Режим (spacesky:mode.glsl): SPACESKY_EVERYWHERE 0 — космос только в мире hoka:space (МЕТКА в FogColor или в
+// ColorModulator — то же условие, что в sky.vsh), иначе — ванильный sky.fsh.
 
 #moj_import <minecraft:fog.glsl>
 #moj_import <minecraft:dynamictransforms.glsl>
 #moj_import <minecraft:globals.glsl>
+#moj_import <spacesky:mode.glsl>
 
 in float sphericalVertexDistance;
 in float cylindricalVertexDistance;
@@ -90,7 +93,20 @@ vec3 ss_space(vec3 d, float t) {
     return col;
 }
 
+bool ss_space() {
+#if SPACESKY_EVERYWHERE
+    return true;
+#else
+    return spacesky_marked(FogColor.rgb) || spacesky_marked(ColorModulator.rgb);
+#endif
+}
+
 void main() {
+    if (!ss_space()) {
+        // ванильный sky.fsh
+        fragColor = apply_fog(ColorModulator, sphericalVertexDistance, cylindricalVertexDistance, 0.0, FogSkyEnd, FogSkyEnd, FogSkyEnd, FogColor);
+        return;
+    }
     vec3 d = normalize(spaceDir);
     float t = GameTime * 1200.0;                                       // секунды, цикл — игровые сутки
     fragColor = vec4(ss_space(d, t), 1.0);

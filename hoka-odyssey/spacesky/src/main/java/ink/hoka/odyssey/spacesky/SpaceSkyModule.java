@@ -20,19 +20,23 @@ import java.util.stream.Stream;
 
 /**
  * Космическое небо: в общий ресурспак (модуль respack) кладётся шейдер неба {@code minecraft:shaders/core/sky.*}
- * — космос со всех сторон, — и (по настройкам) прозрачные текстуры солнца, луны и облаков. Общий план (тёмный фон,
- * редкие звёзды) виден всегда; Млечный путь, туманности и скопления — только в областях из config.yml (zones), их
- * шейдер получает файлом spacesky:zones.glsl. Сервер в игре ничего не считает — модуль только отдаёт файлы в пак.
+ * — космос со всех сторон. Общий план (тёмный фон, редкие звёзды) виден всегда; Млечный путь, туманности и
+ * скопления — только в областях из config.yml (zones), их шейдер получает файлом spacesky:zones.glsl.
+ *
+ * <p>Режим ({@code everywhere}, файл spacesky:mode.glsl, см. {@link SkyMode}): космос во всех мирах или только в мирах
+ * типа «hoka:space» ({@link SpaceDimension}; модуль регистрирует его до старта сервера, карта выбирает ключом
+ * {@code dimension} в map.yml — /hosky world). Сервер в игре ничего не считает — модуль только отдаёт файлы в пак.
  */
 public final class SpaceSkyModule extends OdysseyModule {
-    /** Части пака внутри jar: всегда — pack/, по настройкам — hide/sun, hide/moon, hide/clouds. */
-    static final String ALWAYS = "pack";
-    static final Map<String, String> OPTIONAL = Map.of("hide-sun", "hide/sun", "hide-moon", "hide/moon",
-        "hide-clouds", "hide/clouds");
-
     private FileSystem jarFs;
     private Path root;
     private volatile List<Zones.Zone> zones = List.of();
+
+    @Override
+    protected void onLoad() {
+        // реестры Minestom — только до MinecraftServer.start; при горячей загрузке — предупреждение в лог
+        SpaceDimension.register(logger());
+    }
 
     @Override
     protected void onEnable() {
@@ -76,9 +80,12 @@ public final class SpaceSkyModule extends OdysseyModule {
             logger().warn("zones: {}", e);
         }
         zones = List.copyOf(zs);
-        List<String> parts = parts(config().getBoolean("hide-sun", true), config().getBoolean("hide-moon", true),
-            config().getBoolean("hide-clouds", true));
+        boolean everywhere = config().getBoolean("everywhere", true);
+        boolean sun = config().getBoolean("hide-sun", true);
+        boolean moon = config().getBoolean("hide-moon", true);
+        List<String> parts = SkyMode.parts(everywhere, sun, moon, config().getBoolean("hide-clouds", true));
         byte[] zonesGlsl = Zones.glsl(zs).getBytes(StandardCharsets.UTF_8);
+        byte[] modeGlsl = SkyMode.glsl(everywhere, sun, moon).getBytes(StandardCharsets.UTF_8);
         Path r = root;
         CompletableFuture<List<String>> done = new CompletableFuture<>();
         scheduler().async(() -> {
@@ -93,12 +100,14 @@ public final class SpaceSkyModule extends OdysseyModule {
                 return;
             }
             files.put(Zones.PATH, zonesGlsl);
+            files.put(SkyMode.PATH, modeGlsl);
             scheduler().run(() -> {
                 try {
                     ResourcePackApi pack = services().require(ResourcePackApi.class);
                     pack.clear(id());
                     files.forEach((path, data) -> pack.put(id(), path, data));
-                    logger().info("космическое небо: файлов в паке {}, областей {}", files.size(), zs.size());
+                    logger().info("космическое небо: {}, файлов в паке {}, областей {}",
+                        everywhere ? "во всех мирах" : "только в мирах " + SpaceDimension.KEY, files.size(), zs.size());
                     pack.rebuild().whenComplete((v, err) -> {
                         if (err != null) {
                             done.completeExceptionally(err);
@@ -113,21 +122,6 @@ public final class SpaceSkyModule extends OdysseyModule {
             });
         });
         return done;
-    }
-
-    static List<String> parts(boolean sun, boolean moon, boolean clouds) {
-        List<String> out = new ArrayList<>();
-        out.add(ALWAYS);
-        if (sun) {
-            out.add(OPTIONAL.get("hide-sun"));
-        }
-        if (moon) {
-            out.add(OPTIONAL.get("hide-moon"));
-        }
-        if (clouds) {
-            out.add(OPTIONAL.get("hide-clouds"));
-        }
-        return out;
     }
 
     /** Корень jar модуля как файловая система (или папка ресурсов при запуске из IDE). */

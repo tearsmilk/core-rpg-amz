@@ -1,11 +1,16 @@
 package ink.hoka.odyssey.spacesky;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
+import net.minestom.server.MinecraftServer;
 import net.minestom.server.command.CommandSender;
 import net.minestom.server.command.builder.Command;
 import net.minestom.server.command.builder.arguments.ArgumentStringArray;
@@ -13,15 +18,20 @@ import net.minestom.server.command.builder.arguments.ArgumentType;
 import net.minestom.server.command.builder.suggestion.SuggestionEntry;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Player;
+import net.minestom.server.instance.Instance;
 
 /**
  * /hosky — области космоса (только OP и консоль):
  * без аргументов — список (и в каких ты сейчас); add &lt;имя&gt; &lt;milky_way|nebula|stars&gt; &lt;радиус&gt; [#цвет] —
  * область с центром там, где стоишь; remove &lt;имя&gt;; reload — перечитать config.yml.
  * Любое изменение пересобирает пак — у игроков он перезагрузится (пара секунд).
+ * world — карты и их тип мира (dimension в maps/&lt;карта&gt;/map.yml); world on|off &lt;карта&gt; — записать/убрать
+ * dimension: "hoka:space" (применится при следующей загрузке карты).
  */
 final class HoSkyCommand extends Command {
-    private static final List<String> SUBS = List.of("add", "remove", "reload", "list");
+    /** Папка карт ядра (Maps: Path.of("maps") от рабочей папки сервера). */
+    private static final Path MAPS = Path.of("maps");
+    private static final List<String> SUBS = List.of("add", "remove", "reload", "list", "world");
 
     private final SpaceSkyModule m;
 
@@ -61,6 +71,12 @@ final class HoSkyCommand extends Command {
             } else if (a.length == 5 && Zones.Kind.parse(a[2]) == Zones.Kind.NEBULA) {
                 out.addAll(List.of("#B060FF", "#40A0FF", "#FF6080", "#60FFB0"));
             }
+        } else if (a[0].equalsIgnoreCase("world")) {
+            if (a.length == 2) {
+                out.addAll(List.of("on", "off"));
+            } else if (a.length == 3) {
+                out.addAll(m.server().mapNames());
+            }
         } else if (a[0].equalsIgnoreCase("remove") && a.length == 2) {
             for (Zones.Zone z : m.zones()) {
                 out.add(z.id());
@@ -78,6 +94,7 @@ final class HoSkyCommand extends Command {
         switch (sub) {
             case "add" -> add(s, a);
             case "remove", "del", "delete" -> remove(s, a);
+            case "world", "map" -> world(s, a);
             case "reload" -> {
                 msg(s, "Перечитываю config.yml и пересобираю пак…", NamedTextColor.GRAY);
                 apply(s, "Небо обновлено.");
@@ -105,6 +122,7 @@ final class HoSkyCommand extends Command {
         }
         msg(s, "/hosky add <имя> <milky_way|nebula|stars> <радиус> [#цвет] — область там, где стоишь", NamedTextColor.DARK_AQUA);
         msg(s, "/hosky remove <имя>, /hosky reload", NamedTextColor.DARK_AQUA);
+        msg(s, "/hosky world [on|off <карта>] — тип мира карт (" + SpaceDimension.KEY + " — космос)", NamedTextColor.DARK_AQUA);
     }
 
     private void add(CommandSender s, String[] a) {
@@ -161,6 +179,114 @@ final class HoSkyCommand extends Command {
         m.config().save();
         msg(s, "Область " + id + " убрана. Пересобираю пак…", NamedTextColor.YELLOW);
         apply(s, "Готово: пак отправлен игрокам.");
+    }
+
+    /** Карты, которые сейчас загружены: имя → тип мира, с которым загружена (в тике). */
+    private Map<String, String> loadedMaps() {
+        Map<String, String> out = new TreeMap<>();
+        for (Instance i : MinecraftServer.getInstanceManager().getInstances()) {
+            m.server().mapName(i).ifPresent(n -> out.put(n, i.getDimensionType().key().asString()));
+        }
+        return out;
+    }
+
+    private void world(CommandSender s, String[] a) {
+        if (a.length == 1) {
+            worldList(s);
+            return;
+        }
+        String op = a[1].toLowerCase(Locale.ROOT);
+        if (a.length < 3 || !(op.equals("on") || op.equals("off"))) {
+            msg(s, "/hosky world — список карт; /hosky world on|off <карта>", NamedTextColor.RED);
+            return;
+        }
+        boolean on = op.equals("on");
+        String map = a[2].toLowerCase(Locale.ROOT);
+        Map<String, String> loaded = loadedMaps();
+        boolean registered = MinecraftServer.getDimensionTypeRegistry().get(Key.key(SpaceDimension.KEY)) != null;
+        m.scheduler().async(() -> {
+            String prev;
+            String err = null;
+            try {
+                prev = MapDimensions.write(MAPS, map, on);
+            } catch (RuntimeException e) {
+                prev = null;
+                err = e.getMessage();
+            }
+            String p = prev;
+            String e = err;
+            runInTick(() -> {
+                if (e != null) {
+                    msg(s, "Не вышло: " + e + ". Карты: " + String.join(", ", m.server().mapNames()), NamedTextColor.RED);
+                    return;
+                }
+                boolean wasSpace = SpaceDimension.KEY.equals(p);
+                if (on) {
+                    msg(s, wasSpace ? "У карты «" + map + "» уже dimension: \"" + SpaceDimension.KEY + "\"."
+                        : "Карта «" + map + "»: в map.yml записан dimension: \"" + SpaceDimension.KEY + "\""
+                        + (p != null ? " (был " + p + ")." : "."), NamedTextColor.GREEN);
+                } else if (wasSpace) {
+                    msg(s, "Карта «" + map + "»: dimension убран из map.yml — будет " + MapDimensions.DEFAULT + ".",
+                        NamedTextColor.YELLOW);
+                } else {
+                    msg(s, "У карты «" + map + "» нет dimension: \"" + SpaceDimension.KEY + "\""
+                        + (p != null ? " (там " + p + " — не трогаю)." : " — ничего не изменено."), NamedTextColor.YELLOW);
+                    return;
+                }
+                msg(s, "Применится при следующей загрузке карты (перезапуск сервера или выгрузка пустой карты); "
+                    + "нужен патч ядра (docs/core-dimension.md).", NamedTextColor.GRAY);
+                if (loaded.containsKey(map)) {
+                    msg(s, "Карта сейчас загружена (тип мира " + loaded.get(map) + "). До её перезагрузки не меняйте "
+                        + "точку появления (/homap setspawn): ядро перепишет map.yml своей копией, без этого ключа.",
+                        NamedTextColor.GOLD);
+                }
+                if (on && map.equals("world")) {
+                    msg(s, "Основная карта «world» загружается до модулей — пока ядро это не изменит, для неё "
+                        + SpaceDimension.KEY + " не сработает (будет overworld).", NamedTextColor.GOLD);
+                }
+                if (on && !registered) {
+                    msg(s, "Тип мира " + SpaceDimension.KEY + " не зарегистрирован (модуль включён после старта) — "
+                        + "нужен перезапуск сервера.", NamedTextColor.GOLD);
+                }
+            });
+        });
+    }
+
+    private void worldList(CommandSender s) {
+        Map<String, String> loaded = loadedMaps();
+        boolean registered = MinecraftServer.getDimensionTypeRegistry().get(Key.key(SpaceDimension.KEY)) != null;
+        boolean everywhere = m.config().getBoolean("everywhere", true);
+        m.scheduler().async(() -> {
+            Map<String, String> dims = MapDimensions.read(MAPS, m.server().mapNames());
+            runInTick(() -> {
+                msg(s, "Карты и тип мира (dimension в map.yml). Космос: "
+                    + (everywhere ? "во всех мирах (everywhere: true)" : "только " + SpaceDimension.KEY + " (everywhere: false)")
+                    + (registered ? "" : "; " + SpaceDimension.KEY + " не зарегистрирован — нужен перезапуск"),
+                    NamedTextColor.AQUA);
+                for (Map.Entry<String, String> e : dims.entrySet()) {
+                    String now = loaded.get(e.getKey());
+                    boolean space = SpaceDimension.KEY.equals(e.getValue());
+                    Component line = Component.text(" " + e.getKey() + " — ", NamedTextColor.GRAY)
+                        .append(Component.text(e.getValue(), space ? NamedTextColor.LIGHT_PURPLE : NamedTextColor.WHITE));
+                    if (now != null) {
+                        line = line.append(Component.text(now.equals(e.getValue()) ? "  (загружена)"
+                            : "  (загружена как " + now + ")", NamedTextColor.GREEN));
+                    }
+                    s.sendMessage(line);
+                }
+                msg(s, "/hosky world on|off <карта> — записать/убрать dimension: \"" + SpaceDimension.KEY + "\"",
+                    NamedTextColor.DARK_AQUA);
+            });
+        });
+    }
+
+    /** Обратно в тик; если модуль уже выключен — молча. */
+    private void runInTick(Runnable r) {
+        try {
+            m.scheduler().run(r);
+        } catch (IllegalStateException off) {
+            // модуль выключен
+        }
     }
 
     private void apply(CommandSender s, String ok) {

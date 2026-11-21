@@ -10,11 +10,15 @@
 //    (до ~20 при FOV 150° на 32:9) — видна, только если смотреть вниз в пустоту.
 // 3) Области (spacesky:zones.glsl, их пишет модуль из config.yml): по позиции камеры — насколько игрок внутри
 //    области каждого вида. Считается здесь, на 18 вершинах, а не на каждом пикселе; во фрагментный — flat.
+// 4) Режим (spacesky:mode.glsl): SPACESKY_EVERYWHERE 1 — космос всегда; 0 — только в мире hoka:space, его цвет
+//    тумана (FogColor, во всех проходах неба) или неба (ColorModulator верхнего диска) — МЕТКА. Иначе — ванильный
+//    код без изменений (и без опускания края веера).
 
 #moj_import <minecraft:fog.glsl>
 #moj_import <minecraft:dynamictransforms.glsl>
 #moj_import <minecraft:projection.glsl>
 #moj_import <minecraft:globals.glsl>
+#moj_import <spacesky:mode.glsl>
 #moj_import <spacesky:zones.glsl>
 
 in vec3 Position;
@@ -25,7 +29,26 @@ out vec3 spaceDir;
 flat out vec4 ssZone;      // x — Млечный путь, y — туманность, z — звёздное скопление (0..1), w — зерно рисунка
 flat out vec3 ssNebula;    // цвет туманности
 
+bool ss_space() {
+#if SPACESKY_EVERYWHERE
+    return true;
+#else
+    return spacesky_marked(FogColor.rgb) || spacesky_marked(ColorModulator.rgb);
+#endif
+}
+
 void main() {
+    sphericalVertexDistance = fog_spherical_distance(Position);
+    cylindricalVertexDistance = fog_cylindrical_distance(Position);
+    ssZone = vec4(0.0);
+    ssNebula = vec3(0.0);
+    spaceDir = Position;
+    if (!ss_space()) {
+        // ванильный sky.vsh
+        gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
+        return;
+    }
+
     vec3 pos = Position;
     float rim = length(pos.xz);
     if (pos.y > 0.0) {
@@ -44,9 +67,6 @@ void main() {
         }
     }
     gl_Position = ProjMat * ModelViewMat * vec4(pos, 1.0);
-
-    sphericalVertexDistance = fog_spherical_distance(Position);
-    cylindricalVertexDistance = fog_cylindrical_distance(Position);
     spaceDir = pos;
 
     vec4 zone = vec4(0.0);
