@@ -1,0 +1,9 @@
+# Описание модуля. Обязательны id и main.
+id: gravity
+name: Невесомость
+version: 0.1.0
+main: ink.hoka.odyssey.gravity.GravityModule
+authors: [tearsmilk]
+description: Вакуум на выбранных картах — игрок висит в воздухе, пробел/Shift — вверх/вниз, WASD с инерцией
+depends: []
+softdepends: []
