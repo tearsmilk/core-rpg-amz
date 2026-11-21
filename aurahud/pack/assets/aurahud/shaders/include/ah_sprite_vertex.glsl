@@ -42,7 +42,24 @@ bool ah_sprite_items(vec3 pos, vec2 c, vec2 s, inout int act, inout vec2 d) {
     return true;
 }
 
-bool ah_sprite_hotbar(vec3 pos, vec2 uv, vec2 c, vec2 s, inout int act, inout vec2 d) {
+bool ah_sprite_attack(vec3 pos, vec2 c, vec2 s, inout int act, inout vec2 d) {
+    float cx = floor(s.x * 0.5);
+    float h = s.y;
+    float ax = pos.x - c.x * 18.0;
+    bool right = ah_eq(ax, cx + 97.0);
+    if ((right || ah_eq(ax, cx - 113.0)) && (c.y > 0.5 ? ah_eq(pos.y, h - 2.0) : ah_in(pos.y, h - 20.0, h - 2.0))) {
+#if AH_HOTBAR == 2 || AH_HOTBAR_ATTACK == 0
+        act = AH_HIDDEN;
+#else
+        act = AH_HOTBAR;
+#endif
+        d = ah_edge_delta(right, s) + AH_HOTBAR_ATTACK_OFFSET;
+        return true;
+    }
+    return false;
+}
+
+bool ah_sprite_hotbar(vec3 pos, vec2 uv, vec2 c, vec2 s, bool items, inout int act, inout vec2 d) {
     float cx = floor(s.x * 0.5);
     float h = s.y;
     vec2 o = pos.xy - c * vec2(182.0, 22.0);
@@ -64,7 +81,7 @@ bool ah_sprite_hotbar(vec3 pos, vec2 uv, vec2 c, vec2 s, inout int act, inout ve
         return true;
     }
     o = pos.xy - c * vec2(24.0, 23.0);
-    if (ah_eq(o.y, h - 23.0)) {
+    if (!items && ah_eq(o.y, h - 23.0)) {
         int i = ah_index((o.x - (cx - 92.0)) / 20.0, 9);
         if (i >= 0) {
             act = ah_slot_act(i);
@@ -76,17 +93,6 @@ bool ah_sprite_hotbar(vec3 pos, vec2 uv, vec2 c, vec2 s, inout int act, inout ve
     if (ah_eq(o.y, h - 23.0) && (ah_eq(o.x, cx - 120.0) || ah_eq(o.x, cx + 91.0))) {
         act = AH_OFFHAND;
         d = ah_offhand_delta(ah_eq(o.x, cx - 120.0) ? 0 : 1, s);
-        return true;
-    }
-    float ax = pos.x - c.x * 18.0;
-    bool right = ah_eq(ax, cx + 97.0);
-    if ((right || ah_eq(ax, cx - 113.0)) && (c.y > 0.5 ? ah_eq(pos.y, h - 2.0) : ah_in(pos.y, h - 20.0, h - 2.0))) {
-#if AH_HOTBAR == 2 || AH_HOTBAR_ATTACK == 0
-        act = AH_HIDDEN;
-#else
-        act = AH_HOTBAR;
-#endif
-        d = ah_slot_delta(right ? 8 : 0, s) + AH_HOTBAR_ATTACK_OFFSET;
         return true;
     }
     return false;
@@ -135,6 +141,11 @@ void ah_sprite_marked(int fam, vec3 pos, vec2 c, vec2 s, inout int act, inout ve
             d = ah_tl(AH_AIR_ANCHOR, AH_AIR_BASE, s) + AH_AIR_POS[j] + vec2(0.0, jit) - rows * AH_AIR_ROW_STEP - o;
         }
 #endif
+    } else if (fam == AH_FAMILY_LOCATOR) {
+#if AH_XP != 0
+        act = AH_XP;
+        d = ah_xp_place(pos.xy, s) - pos.xy;
+#endif
     } else if (fam == AH_FAMILY_MOUNT) {
 #if AH_MOUNT != 0
         int j = ah_index((cx + 82.0 - o.x) / 8.0, 10);
@@ -147,22 +158,24 @@ void ah_sprite_marked(int fam, vec3 pos, vec2 c, vec2 s, inout int act, inout ve
     }
 }
 
+bool ah_gui_texture() {
+    ivec2 size = textureSize(Sampler0, 0);
+    return max(size.x, size.y) >= 512 && (size.x & (size.x - 1)) == 0 && (size.y & (size.y - 1)) == 0;
+}
+
 bool ah_xp_member(vec3 pos, vec2 c, bool white, vec2 s) {
     float cx = floor(s.x * 0.5);
     float h = s.y;
-    if (white && ah_in(pos.x, cx - 91.0, cx + 91.0) && (ah_eq(pos.y, h - 29.0) || ah_eq(pos.y, h - 24.0))) {
+    if (white && ah_in(pos.x, cx - 91.0, cx + 91.0) && ah_eq(pos.y, c.y < 0.5 ? h - 29.0 : h - 24.0)) {
         return true;
     }
     if (!ah_in(pos.x, cx - 100.0, cx + 100.0)) {
         return false;
     }
-    if (c.y < 0.5 ? ah_eq(pos.y, h - 31.0) : ah_eq(pos.y, h - 22.0)) {
-        return true;
-    }
     return c.y < 0.5 ? (ah_eq(pos.y, h - 35.0) || ah_eq(pos.y, h - 23.0)) : (ah_eq(pos.y, h - 30.0) || ah_eq(pos.y, h - 18.0));
 }
 
-void ah_sprite_vertex(vec3 pos, vec2 uv, vec4 color, int vertexId) {
+void ah_sprite_vertex(vec3 pos, vec2 uv, vec4 color, int vertexId, inout vec4 outColor) {
 #if AH_HOTBAR_SLICE
     ahSlice = 0;
     ahLocal = vec2(0.0);
@@ -178,17 +191,18 @@ void ah_sprite_vertex(vec3 pos, vec2 uv, vec4 color, int vertexId) {
     bool white = ivec4(round(color * 255.0)) == ivec4(255);
     int act = AH_VANILLA;
     vec2 d = vec2(0.0);
-    if (!(white && ah_items_atlas(uv) && ah_sprite_items(pos, c, s, act, d))) {
-        int fam = ah_family(uv, c);
-        if (fam > 0) {
-            ah_sprite_marked(fam, pos, c, s, act, d);
-        } else if (!(white && ah_sprite_hotbar(pos, uv, c, s, act, d)) && ah_xp_member(pos, c, white, s)) {
+    bool done = white && ah_sprite_attack(pos, c, s, act, d);
+    bool items = !done && white && ah_items_atlas(uv);
+    done = done || (items && ah_sprite_items(pos, c, s, act, d));
+    int fam = done || items ? 0 : ah_family(uv, c);
+    if (fam > 0) {
+        ah_sprite_marked(fam, pos, c, s, act, d);
+    } else if (!done && !(white && ah_sprite_hotbar(pos, uv, c, s, items, act, d)) && !items && ah_gui_texture() && ah_xp_member(pos, c, white, s)) {
 #if AH_XP != 0
-            act = AH_XP;
-            d = ah_xp_place(pos.xy, s) - pos.xy;
+        act = AH_XP;
+        d = ah_xp_place(pos.xy, s) - pos.xy;
 #endif
-        }
     }
-    ah_apply(act, d);
+    ah_apply(act, d, outColor);
 #endif
 }

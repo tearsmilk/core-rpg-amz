@@ -10,6 +10,11 @@ in vec4 ahUvC;
 #endif
 
 vec4 ah_sprite_fragment(vec4 color, vec4 vertexColor) {
+#if AH_ACTIVE
+    if (vertexColor == vec4(0.0)) {
+        return vec4(0.0);
+    }
+#endif
 #if AH_HOTBAR_SLICE
     if (ahSlice == 1) {
         vec2 a = ahUvA.xy / max(ahUvA.w, 0.000001);

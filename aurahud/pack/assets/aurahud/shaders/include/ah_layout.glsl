@@ -50,9 +50,9 @@ vec2 ah_tl(vec2 anchor, vec2 base, vec2 s) {
     return ah_anchor(anchor, s) + base;
 }
 
-void ah_apply(int act, vec2 d) {
+void ah_apply(int act, vec2 d, inout vec4 outColor) {
     if (act == AH_HIDDEN) {
-        gl_Position = vec4(-4.0, -4.0, 0.0, 1.0);
+        outColor = vec4(0.0);
     } else if (act == AH_MOVED && (d.x != 0.0 || d.y != 0.0)) {
         gl_Position += ProjMat * ModelViewMat * vec4(d, 0.0, 0.0);
     }
@@ -64,6 +64,10 @@ vec2 ah_slot_origin(int i, vec2 s) {
 
 vec2 ah_slot_delta(int i, vec2 s) {
     return ah_tl(AH_HOTBAR_ANCHOR, AH_HOTBAR_BASE, s) + AH_HOTBAR_POS[i] - ah_slot_origin(i, s);
+}
+
+vec2 ah_edge_delta(bool right, vec2 s) {
+    return ah_tl(AH_HOTBAR_ANCHOR, AH_HOTBAR_BASE, s) + AH_HOTBAR_POS[right ? AH_HOTBAR_EDGE_R : AH_HOTBAR_EDGE_L] - ah_slot_origin(right ? 8 : 0, s);
 }
 
 int ah_slot_act(int i) {
@@ -78,7 +82,7 @@ int ah_slot_act(int i) {
 
 vec2 ah_offhand_delta(int side, vec2 s) {
 #if AH_OFFHAND_FOLLOW
-    return ah_slot_delta(side == 0 ? 0 : 8, s);
+    return ah_edge_delta(side != 0, s) + AH_OFFHAND_FOLLOW_OFFSET;
 #else
     float cx = floor(s.x * 0.5);
     return ah_tl(AH_OFFHAND_ANCHOR, AH_OFFHAND_BASE, s) - vec2(side == 0 ? cx - 120.0 : cx + 91.0, s.y - 23.0);
@@ -126,6 +130,18 @@ vec2 ah_xp_place(vec2 p, vec2 s) {
 vec2 ah_xp_level_delta(vec2 s) {
     vec2 now = ah_tl(AH_XP_ANCHOR, AH_XP_BASE, s) + floor(AH_XP_SIZE * 0.5);
     return now - vec2(floor(s.x * 0.5), s.y - 27.0) + AH_XP_LEVEL_OFFSET;
+}
+
+bool ah_name_edge(float y, float cy, vec2 s) {
+    for (int i = 0; i < AH_NAME_GLYPH_COUNT; i++) {
+        float e = AH_NAME_GLYPHS[i].x + cy * AH_NAME_GLYPHS[i].y;
+        float a = y - (s.y - 59.0) - e;
+        float b = y - (s.y - 45.0) - e;
+        if (ah_eq(a, 0.0) || ah_eq(a, 1.0) || ah_eq(b, 0.0) || ah_eq(b, 1.0)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 vec2 ah_name_delta(vec2 s) {

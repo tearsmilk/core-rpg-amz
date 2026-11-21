@@ -33,8 +33,8 @@ public final class LayoutEngine {
         if (!s.enabled()) {
             mode = Mode.HIDDEN;
         } else if (e == Element.OFFHAND && s.follow()) {
-            mode = hotbar == null || sameGeometry(hotbar.geometry(), geometry(ElementSettings.defaults(Element.HOTBAR)))
-                    ? Mode.VANILLA : Mode.MOVED;
+            mode = (hotbar == null || sameGeometry(hotbar.geometry(), geometry(ElementSettings.defaults(Element.HOTBAR))))
+                    && g.base().equals(v.base()) ? Mode.VANILLA : Mode.MOVED;
         } else if (e == Element.OFFHAND) {
             mode = Mode.MOVED;
         } else if (e == Element.HOTBAR && g.hiddenMask() == (1 << ElementSettings.SLOTS) - 1) {
@@ -43,6 +43,24 @@ public final class LayoutEngine {
             mode = g.equals(v) ? Mode.VANILLA : Mode.MOVED;
         }
         return new Placement(e, mode, g);
+    }
+
+    public static int edgeSlot(Geometry hotbar, boolean right) {
+        int best = -1;
+        for (int i = 0; i < hotbar.positions().size(); i++) {
+            if ((hotbar.hiddenMask() >> i & 1) != 0) {
+                continue;
+            }
+            int x = hotbar.positions().get(i).x();
+            if (best < 0 || (right ? x >= hotbar.positions().get(best).x() : x < hotbar.positions().get(best).x())) {
+                best = i;
+            }
+        }
+        return best < 0 ? (right ? ElementSettings.SLOTS - 1 : 0) : best;
+    }
+
+    public static Point followOffset(Placement offhand) {
+        return offhand.geometry().base().minus(geometry(ElementSettings.defaults(Element.OFFHAND)).base());
     }
 
     private static boolean sameGeometry(Geometry a, Geometry b) {

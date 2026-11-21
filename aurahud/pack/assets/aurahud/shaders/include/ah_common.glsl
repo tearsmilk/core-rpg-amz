@@ -13,3 +13,5 @@
 #define AH_FAMILY_FOOD 3
 #define AH_FAMILY_AIR 4
 #define AH_FAMILY_MOUNT 5
+#define AH_FAMILY_LOCATOR 6
+#define AH_FAMILY_KEEP 7

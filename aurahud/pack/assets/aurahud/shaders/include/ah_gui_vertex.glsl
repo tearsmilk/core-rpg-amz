@@ -2,7 +2,7 @@
 
 #moj_import <aurahud:ah_layout.glsl>
 
-void ah_gui_vertex(vec3 pos, vec4 color, int vertexId) {
+void ah_gui_vertex(vec3 pos, vec4 color, int vertexId, inout vec4 outColor) {
 #if AH_ACTIVE
     if (ah_skip(pos)) {
         return;
@@ -27,12 +27,12 @@ void ah_gui_vertex(vec3 pos, vec4 color, int vertexId) {
     }
     if (slot >= 0) {
         ah_slot_move(slot, s, act, d);
-    } else if (ah_eq(pos.y, c.y < 0.5 ? h - 61.0 : h - 48.0) || ah_eq(pos.y, c.y < 0.5 ? h - 47.0 : h - 34.0)) {
+    } else if (col.rgb == ivec3(0) && col.a > 0 && col.a < 255 && (ah_eq(pos.y, c.y < 0.5 ? h - 61.0 : h - 48.0) || ah_eq(pos.y, c.y < 0.5 ? h - 47.0 : h - 34.0))) {
 #if AH_NAME != 0
         act = AH_NAME;
         d = ah_name_delta(s);
 #endif
     }
-    ah_apply(act, d);
+    ah_apply(act, d, outColor);
 #endif
 }

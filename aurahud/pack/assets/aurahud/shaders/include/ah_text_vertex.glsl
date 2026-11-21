@@ -2,7 +2,7 @@
 
 #moj_import <aurahud:ah_layout.glsl>
 
-void ah_text_vertex(vec3 pos, vec4 color, int vertexId) {
+void ah_text_vertex(vec3 pos, vec4 color, int vertexId, inout vec4 outColor) {
 #if AH_ACTIVE
     if (ah_skip(pos)) {
         return;
@@ -29,12 +29,12 @@ void ah_text_vertex(vec3 pos, vec4 color, int vertexId) {
 #endif
         d = ah_xp_level_delta(s);
 #endif
-    } else if (ah_eq(top, h - 59.0) || ah_eq(top, h - 58.0) || ah_eq(top, h - 45.0) || ah_eq(top, h - 44.0)) {
+    } else if (ah_name_edge(pos.y, c.y, s)) {
 #if AH_NAME != 0
         act = AH_NAME;
         d = ah_name_delta(s);
 #endif
     }
-    ah_apply(act, d);
+    ah_apply(act, d, outColor);
 #endif
 }

@@ -9,7 +9,7 @@ final class VanillaHud {
         SPRITE, GUI, TEXT
     }
 
-    record Quad(String tag, Kind kind, double[][] v, boolean white, boolean atlas, int family, int argb) {
+    record Quad(String tag, Kind kind, double[][] v, boolean white, int tex, int family, int argb) {
 
         int r() {
             return argb >> 16 & 255;
@@ -65,7 +65,7 @@ final class VanillaHud {
         VanillaHud v = new VanillaHud(w, h);
         v.blit("screen:item", w / 2 - 80, h / 2 + 59, 16, 16, true, true, 0);
         v.blit("screen:item", w / 2 - 80, h / 2 + 87, 16, 16, true, true, 0);
-        v.blit("screen:container", w / 2 - 88, h / 2 - 83, 176, 166, true, false, 0);
+        v.blit("screen:container", w / 2 - 88, h / 2 - 83, 176, 166, true, ShaderMirror.TEX_256, 0);
         v.blit("screen:bossbar", w / 2 - 91, 12, 182, 5, true, false, 0);
         v.blit("screen:crosshair", (w - 15) / 2, (h - 15) / 2, 15, 15, true, false, 0);
         v.blit("screen:vignette", 0, 0, w, h, false, false, 0);
@@ -83,16 +83,99 @@ final class VanillaHud {
         return v;
     }
 
+    static VanillaHud container(int w, int h, int rows, int hover) {
+        VanillaHud v = new VanillaHud(w, h);
+        int ih = rows < 0 ? 166 : 114 + rows * 18;
+        int left = (w - 176) / 2;
+        int top = (h - ih) / 2;
+        v.fill("screen:dim", 0, 0, w, h, 0xC0101010);
+        List<int[]> slots = new ArrayList<>();
+        if (rows < 0) {
+            v.blit("screen:bg", left, top, 176, 166, true, ShaderMirror.TEX_256, 0);
+            for (int i = 0; i < 4; i++) {
+                slots.add(new int[]{8, 8 + 18 * i});
+            }
+            slots.add(new int[]{77, 62});
+            for (int i = 0; i < 4; i++) {
+                slots.add(new int[]{98 + 18 * (i % 2), 18 + 18 * (i / 2)});
+            }
+            slots.add(new int[]{154, 28});
+            for (int r = 0; r < 3; r++) {
+                for (int c = 0; c < 9; c++) {
+                    slots.add(new int[]{8 + 18 * c, 84 + 18 * r});
+                }
+            }
+            for (int c = 0; c < 9; c++) {
+                slots.add(new int[]{8 + 18 * c, 142});
+            }
+            v.blit("screen:recipe", left + 104, h / 2 - 22, 20, 18, true, ShaderMirror.TEX_GUI, 0);
+            v.text("screen:label", left + 97, top + 6, "Crafting", 0xFF404040, false);
+        } else {
+            v.blit("screen:bg", left, top, 176, rows * 18 + 17, true, ShaderMirror.TEX_256, 0);
+            v.blit("screen:bg", left, top + rows * 18 + 17, 176, 96, true, ShaderMirror.TEX_256, 0);
+            int off = (rows - 4) * 18;
+            for (int r = 0; r < rows; r++) {
+                for (int c = 0; c < 9; c++) {
+                    slots.add(new int[]{8 + 18 * c, 18 + 18 * r});
+                }
+            }
+            for (int r = 0; r < 3; r++) {
+                for (int c = 0; c < 9; c++) {
+                    slots.add(new int[]{8 + 18 * c, 103 + off + 18 * r});
+                }
+            }
+            for (int c = 0; c < 9; c++) {
+                slots.add(new int[]{8 + 18 * c, 161 + off});
+            }
+            v.text("screen:label", left + 8, top + 6, "Chest", 0xFF404040, false);
+            v.text("screen:label", left + 8, top + ih - 94, "Inventory", 0xFF404040, false);
+        }
+        for (int i = 0; i < slots.size(); i++) {
+            int x = left + slots.get(i)[0];
+            int y = top + slots.get(i)[1];
+            if (i == hover) {
+                v.blit("screen:highlight", x - 4, y - 4, 24, 24, true, ShaderMirror.TEX_GUI, 7);
+            }
+            v.blit("screen:item", x, y, 16, 16, true, ShaderMirror.TEX_ITEMS, 0);
+            v.fill("screen:bar", x + 2, y + 13, x + 15, y + 15, 0xFF000000);
+            v.fill("screen:bar", x + 2, y + 13, x + 2 + 7, y + 14, 0xFF33CC22);
+            v.fill("screen:cooldown", x, y + 4, x + 16, y + 16, 0x7FFFFFFF);
+            if (i == hover) {
+                v.fill("screen:hover", x, y, x + 16, y + 16, 0x80FFFFFF);
+            }
+        }
+        return v;
+    }
+
+    static VanillaHud counts(int w, int h, int rows) {
+        VanillaHud v = new VanillaHud(w, h);
+        int ih = rows < 0 ? 166 : 114 + rows * 18;
+        int left = (w - 176) / 2;
+        int top = (h - ih) / 2;
+        int[] ys = rows < 0 ? new int[]{84, 102, 120, 142} : new int[]{18, 18 + 18 * (rows - 1), 103 + (rows - 4) * 18, 161 + (rows - 4) * 18};
+        for (int sy : ys) {
+            for (int c = 0; c < 9; c++) {
+                int x = left + 8 + 18 * c;
+                v.text("screen:count", x + 17 - 12, top + sy + 9, "64", 0xFFFFFFFF, true);
+            }
+        }
+        return v;
+    }
+
     void blit(String tag, double x, double y, double bw, double bh, boolean white, boolean atlas, int family) {
-        quads.add(new Quad(tag, Kind.SPRITE, new double[][]{{x, y}, {x, y + bh}, {x + bw, y + bh}, {x + bw, y}}, white, atlas, family, white ? -1 : 0xFF8040C0));
+        blit(tag, x, y, bw, bh, white, atlas ? ShaderMirror.TEX_ITEMS : ShaderMirror.TEX_GUI, family);
+    }
+
+    void blit(String tag, double x, double y, double bw, double bh, boolean white, int tex, int family) {
+        quads.add(new Quad(tag, Kind.SPRITE, new double[][]{{x, y}, {x, y + bh}, {x + bw, y + bh}, {x + bw, y}}, white, tex, family, white ? -1 : 0xFF8040C0));
     }
 
     void fill(String tag, double x0, double y0, double x1, double y1, int argb) {
-        quads.add(new Quad(tag, Kind.GUI, new double[][]{{x1, y1}, {x1, y0}, {x0, y0}, {x0, y1}}, false, false, 0, argb));
+        quads.add(new Quad(tag, Kind.GUI, new double[][]{{x1, y1}, {x1, y0}, {x0, y0}, {x0, y1}}, false, ShaderMirror.TEX_OTHER, 0, argb));
     }
 
     void glyph(String tag, double x, double y, int argb) {
-        quads.add(new Quad(tag, Kind.TEXT, new double[][]{{x, y}, {x, y + 8}, {x + 8, y + 8}, {x + 8, y}}, false, false, 0, argb));
+        quads.add(new Quad(tag, Kind.TEXT, new double[][]{{x, y}, {x, y + 8}, {x + 8, y + 8}, {x + 8, y}}, false, ShaderMirror.TEX_OTHER, 0, argb));
     }
 
     void text(String tag, double x, double y, String s, int argb, boolean shadow) {
@@ -115,7 +198,7 @@ final class VanillaHud {
         for (int k = 0; k < 4; k++) {
             v[k] = new double[]{x + 8 + (16 * c[k][0] - 8) / f, y + 12 + (16 * c[k][1] - 12) * (f + 1) / 2};
         }
-        quads.add(new Quad(tag, Kind.SPRITE, v, true, true, 0, -1));
+        quads.add(new Quad(tag, Kind.SPRITE, v, true, ShaderMirror.TEX_ITEMS, 0, -1));
     }
 
     private void decorations(String tag, int sx, boolean bar, double cool, String count) {
@@ -195,9 +278,9 @@ final class VanillaHud {
         }
         blit("xp", cx - 91, h - 29, 182, 5, true, false, 0);
         blit("xp", cx - 91, h - 29, 77, 5, true, false, 0);
-        blit("xp", cx - 4 + 31, h - 31, 9, 9, false, false, 0);
+        blit("xp", cx - 4 + 31, h - 31, 9, 9, false, false, 6);
         blit("xp", cx - 4 + 31 + 1, h - 35, 7, 5, true, false, 0);
-        blit("xp", cx - 4 - 50, h - 31, 9, 9, false, false, 0);
+        blit("xp", cx - 4 - 50, h - 31, 9, 9, false, false, 6);
         blit("xp", cx - 4 - 50 + 1, h - 23, 7, 5, true, false, 0);
         int lw = 12;
         int lx = (w - lw) / 2;

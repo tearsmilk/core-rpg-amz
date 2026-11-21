@@ -3,6 +3,7 @@ package dev.tearsmilk.aurahud.layout;
 import dev.tearsmilk.aurahud.layout.Placement.Geometry;
 import dev.tearsmilk.aurahud.layout.Placement.Point;
 
+import java.util.List;
 import java.util.Map;
 
 final class ShaderMirror {
@@ -23,14 +24,25 @@ final class ShaderMirror {
         }
     }
 
+    static final int TEX_GUI = 0;
+    static final int TEX_ITEMS = 1;
+    static final int TEX_256 = 2;
+    static final int TEX_OTHER = 3;
+
     private final Map<Element, Placement> p;
+    private final List<Point> glyphs;
     private final boolean active;
     private final double w;
     private final double h;
     private final double cx;
 
     ShaderMirror(Map<Element, Placement> placements, int w, int h) {
+        this(placements, w, h, NameGlyphs.DEFAULT);
+    }
+
+    ShaderMirror(Map<Element, Placement> placements, int w, int h, List<Point> glyphs) {
         this.p = placements;
+        this.glyphs = glyphs;
         this.active = GlslConfig.active(placements);
         this.w = w;
         this.h = h;
@@ -99,9 +111,20 @@ final class ShaderMirror {
         return VANILLA;
     }
 
+    int edge(boolean right) {
+        return LayoutEngine.edgeSlot(g(Element.HOTBAR), right);
+    }
+
+    double[] edgeDelta(boolean right) {
+        double[] t = pos(Element.HOTBAR, edge(right));
+        return new double[]{t[0] - (cx - 91 + (right ? 160 : 0)), t[1] - (h - 22)};
+    }
+
     double[] offhandDelta(int side) {
         if (g(Element.OFFHAND).follow()) {
-            return slotDelta(side == 0 ? 0 : 8);
+            double[] d = edgeDelta(side != 0);
+            Point o = LayoutEngine.followOffset(p.get(Element.OFFHAND));
+            return new double[]{d[0] + o.x(), d[1] + o.y()};
         }
         double[] t = tl(Element.OFFHAND);
         return new double[]{t[0] - (side == 0 ? cx - 120 : cx + 91), t[1] - (h - 23)};
@@ -156,12 +179,19 @@ final class ShaderMirror {
         return new double[]{t[0] - cx, t[1] - (h - 59)};
     }
 
-    Move sprite(double x, double y, int k, boolean white, boolean atlas, int family) {
+    Move sprite(double x, double y, int k, boolean white, int tex, int family) {
         if (!active) {
             return Move.NONE;
         }
         double[] c = blitCorner(k);
-        if (white && atlas) {
+        if (white) {
+            Move m = attack(x, y, c);
+            if (m != null) {
+                return m;
+            }
+        }
+        boolean items = white && tex == TEX_ITEMS;
+        if (items) {
             double ry = y - (h - 19);
             boolean yok = c[1] < 0.5 ? in(ry, -6, 0) : in(ry, 16, 18);
             if (yok) {
@@ -171,23 +201,36 @@ final class ShaderMirror {
                 }
             }
         }
-        if (family > 0) {
+        if (!items && family > 0) {
             return marked(family, x, y, c);
         }
         if (white) {
-            Move m = hotbar(x, y, c);
+            Move m = hotbar(x, y, c, items);
             if (m != null) {
                 return m;
             }
         }
-        if (xpMember(x, y, c, white) && mode(Element.XP) != 0) {
+        boolean guiTex = tex == TEX_GUI || (tex == TEX_ITEMS && !white);
+        if (!items && guiTex && xpMember(x, y, c, white) && mode(Element.XP) != 0) {
             double[] n = xpPlace(x, y);
             return new Move(mode(Element.XP), n[0] - x, n[1] - y);
         }
         return Move.NONE;
     }
 
-    private Move hotbar(double x, double y, double[] c) {
+    private Move attack(double x, double y, double[] c) {
+        double ax = x - c[0] * 18;
+        boolean right = eq(ax, cx + 97);
+        if ((right || eq(ax, cx - 113)) && (c[1] > 0.5 ? eq(y, h - 2) : in(y, h - 20, h - 2))) {
+            Geometry hb = g(Element.HOTBAR);
+            int act = mode(Element.HOTBAR) == HIDDEN || !hb.attack() ? HIDDEN : mode(Element.HOTBAR);
+            double[] d = edgeDelta(right);
+            return new Move(act, d[0] + hb.attackOffset().x(), d[1] + hb.attackOffset().y());
+        }
+        return null;
+    }
+
+    private Move hotbar(double x, double y, double[] c, boolean items) {
         double ox = x - c[0] * 182;
         double oy = y - c[1] * 22;
         if (eq(ox, cx - 91) && eq(oy, h - 22)) {
@@ -203,7 +246,7 @@ final class ShaderMirror {
         }
         ox = x - c[0] * 24;
         oy = y - c[1] * 23;
-        if (eq(oy, h - 23)) {
+        if (!items && eq(oy, h - 23)) {
             int i = index((ox - (cx - 92)) / 20.0, 9);
             if (i >= 0) {
                 double[] d = slotDelta(i);
@@ -215,14 +258,6 @@ final class ShaderMirror {
         if (eq(oy, h - 23) && (eq(ox, cx - 120) || eq(ox, cx + 91))) {
             double[] d = offhandDelta(eq(ox, cx - 120) ? 0 : 1);
             return new Move(mode(Element.OFFHAND), d[0], d[1]);
-        }
-        double ax = x - c[0] * 18;
-        boolean right = eq(ax, cx + 97);
-        if ((right || eq(ax, cx - 113)) && (c[1] > 0.5 ? eq(y, h - 2) : in(y, h - 20, h - 2))) {
-            Geometry hb = g(Element.HOTBAR);
-            int act = mode(Element.HOTBAR) == HIDDEN || !hb.attack() ? HIDDEN : mode(Element.HOTBAR);
-            double[] d = slotDelta(right ? 8 : 0);
-            return new Move(act, d[0] + hb.attackOffset().x(), d[1] + hb.attackOffset().y());
         }
         return null;
     }
@@ -291,6 +326,13 @@ final class ShaderMirror {
                     return new Move(mode(Element.MOUNT), t[0] - ox, t[1] - oy);
                 }
             }
+            case 6 -> {
+                if (mode(Element.XP) == 0) {
+                    return Move.NONE;
+                }
+                double[] n = xpPlace(x, y);
+                return new Move(mode(Element.XP), n[0] - x, n[1] - y);
+            }
             default -> {
             }
         }
@@ -298,14 +340,11 @@ final class ShaderMirror {
     }
 
     private boolean xpMember(double x, double y, double[] c, boolean white) {
-        if (white && in(x, cx - 91, cx + 91) && (eq(y, h - 29) || eq(y, h - 24))) {
+        if (white && in(x, cx - 91, cx + 91) && eq(y, c[1] < 0.5 ? h - 29 : h - 24)) {
             return true;
         }
         if (!in(x, cx - 100, cx + 100)) {
             return false;
-        }
-        if (c[1] < 0.5 ? eq(y, h - 31) : eq(y, h - 22)) {
-            return true;
         }
         return c[1] < 0.5 ? (eq(y, h - 35) || eq(y, h - 23)) : (eq(y, h - 30) || eq(y, h - 18));
     }
@@ -330,11 +369,24 @@ final class ShaderMirror {
         if (slot >= 0) {
             return slotMove(slot);
         }
-        if ((eq(y, c[1] < 0.5 ? h - 61 : h - 48) || eq(y, c[1] < 0.5 ? h - 47 : h - 34)) && mode(Element.ITEM_NAME) != 0) {
+        if (r == 0 && gr == 0 && b == 0 && a > 0 && a < 255 && (eq(y, c[1] < 0.5 ? h - 61 : h - 48) || eq(y, c[1] < 0.5 ? h - 47 : h - 34))
+                && mode(Element.ITEM_NAME) != 0) {
             double[] d = nameDelta();
             return new Move(mode(Element.ITEM_NAME), d[0], d[1]);
         }
         return Move.NONE;
+    }
+
+    boolean nameEdge(double y, double cy) {
+        for (Point g : glyphs) {
+            double e = g.x() + cy * g.y();
+            double a = y - (h - 59) - e;
+            double b = y - (h - 45) - e;
+            if (eq(a, 0) || eq(a, 1) || eq(b, 0) || eq(b, 1)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     Move text(double x, double y, int k, int argb) {
@@ -354,7 +406,7 @@ final class ShaderMirror {
             double[] d = levelDelta();
             return new Move(g(Element.XP).level() ? mode(Element.XP) : HIDDEN, d[0], d[1]);
         }
-        if (eq(top, h - 59) || eq(top, h - 58) || eq(top, h - 45) || eq(top, h - 44)) {
+        if (nameEdge(y, c[1])) {
             if (mode(Element.ITEM_NAME) == 0) {
                 return Move.NONE;
             }

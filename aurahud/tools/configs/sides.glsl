@@ -6,6 +6,8 @@
 #define AH_HOTBAR_SLICE 0
 #define AH_HOTBAR_HIDDEN 0
 #define AH_HOTBAR_ATTACK 1
+#define AH_HOTBAR_EDGE_L 0
+#define AH_HOTBAR_EDGE_R 8
 const vec2 AH_HOTBAR_ANCHOR = vec2(0.5, 1.0);
 const vec2 AH_HOTBAR_BASE = vec2(-91.0, -22.0);
 const vec2 AH_HOTBAR_BOX = vec2(0.0, 0.0);
@@ -20,6 +22,7 @@ const vec2 AH_HOTBAR_POS[9] = vec2[9](
 #define AH_OFFHAND_FOLLOW 1
 const vec2 AH_OFFHAND_ANCHOR = vec2(0.5, 1.0);
 const vec2 AH_OFFHAND_BASE = vec2(-120.0, -23.0);
+const vec2 AH_OFFHAND_FOLLOW_OFFSET = vec2(0.0, 0.0);
 
 #define AH_HEARTS 1
 const vec2 AH_HEARTS_ANCHOR = vec2(0.0, 1.0);
@@ -82,5 +85,9 @@ const vec2 AH_XP_SIZE = vec2(5.0, 182.0);
 const vec2 AH_XP_LEVEL_OFFSET = vec2(4.0, -92.0);
 
 #define AH_NAME 0
+#define AH_NAME_GLYPH_COUNT 1
 const vec2 AH_NAME_ANCHOR = vec2(0.5, 1.0);
 const vec2 AH_NAME_BASE = vec2(0.0, -59.0);
+const vec2 AH_NAME_GLYPHS[1] = vec2[1](
+    vec2(0.0, 8.0)
+);

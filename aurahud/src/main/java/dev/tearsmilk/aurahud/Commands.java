@@ -10,6 +10,7 @@ import dev.tearsmilk.aurahud.sprites.SpriteMarker;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -23,7 +24,7 @@ import java.util.regex.Pattern;
 public final class Commands implements TabExecutor {
 
     private static final List<String> SUB = List.of("help", "status", "reload", "preset", "set", "hide", "show", "reset");
-    private static final Pattern SLOT = Pattern.compile("slot\\.([1-9])\\.(x|y|hidden)");
+    private static final Pattern SLOT = Pattern.compile("slots?\\.([1-9])\\.(x|y|hidden)");
 
     private final AuraHudPlugin plugin;
 
@@ -77,7 +78,8 @@ public final class Commands implements TabExecutor {
                 case HIDDEN -> t.send(sender, "status-element-hidden", "element", e.id());
                 case MOVED -> t.send(sender, "status-element-moved", "element", e.id(), "anchor",
                         e == Element.OFFHAND && s.follow() ? "hotbar" : s.anchor().key(),
-                        "x", String.valueOf(s.x()), "y", String.valueOf(s.y()),
+                        "x", String.valueOf(e == Element.OFFHAND && s.follow() ? s.x() - e.vanillaX() : s.x()),
+                        "y", String.valueOf(e == Element.OFFHAND && s.follow() ? s.y() - e.vanillaY() : s.y()),
                         "layout", e.shape() == Element.Shape.ICONS ? s.layout().key() + " " + s.direction().key() + "/" + s.wrap().key()
                                 + " x" + s.perLine() : e == Element.XP ? "rotate " + s.rotate() : "-");
             }
@@ -169,7 +171,21 @@ public final class Commands implements TabExecutor {
             t.send(sender, "bad-value", "key", s.key(), "value", value, "hint", String.join(", ", s.suggestions()));
             return;
         }
+        ConfigurationSection sec = c.getConfigurationSection("hud." + e.id());
+        if (sec != null) {
+            for (String k : sec.getKeys(false)) {
+                if (!k.equals(s.key()) && Setting.parse(k) == s) {
+                    sec.set(k, null);
+                }
+            }
+        }
         c.set(base + s.key(), v);
+        if (s == Setting.FOLLOW && "hotbar".equals(v)) {
+            c.set(base + "anchor", null);
+            c.set(base + "x", null);
+            c.set(base + "y", null);
+            t.send(sender, "follow-reset");
+        }
         if (s == Setting.ANCHOR) {
             c.set(base + "x", 0);
             c.set(base + "y", 0);

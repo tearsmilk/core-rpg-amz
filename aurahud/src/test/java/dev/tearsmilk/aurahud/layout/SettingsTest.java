@@ -32,6 +32,66 @@ class SettingsTest {
     }
 
     @Test
+    void aliasKeysAreReadLikeTheirCanonicalNames() {
+        HudSettings s = read("hud:\n  hearts:\n    layout: grid\n    columns: 2\n    line_gap: 5\n  hotbar:\n    attack: false\n    per_line: 3\n"
+                + "  xp:\n    level_x: 4\n");
+        assertEquals(List.of(), s.warnings());
+        assertEquals(2, s.get(Element.HEARTS).perLine());
+        assertEquals(5, s.get(Element.HEARTS).lineGap());
+        assertFalse(s.get(Element.HOTBAR).attack());
+        assertEquals(3, s.get(Element.HOTBAR).perLine());
+        assertEquals(4, s.get(Element.XP).levelX());
+        HudSettings both = read("hud:\n  hearts:\n    per-line: 4\n    columns: 2\n");
+        assertEquals(4, both.get(Element.HEARTS).perLine());
+        assertEquals(1, both.warnings().size());
+    }
+
+    @Test
+    void offhandFollowsTheOuterSlotOfAReversedHotbar() {
+        int w = 427;
+        int h = 240;
+        var p = LayoutEngine.place(read("hud:\n  hotbar:\n    reverse: true\n"));
+        Placement.Geometry hb = p.get(Element.HOTBAR).geometry();
+        assertEquals(8, LayoutEngine.edgeSlot(hb, false));
+        assertEquals(0, LayoutEngine.edgeSlot(hb, true));
+        var grid = LayoutEngine.place(read("hud:\n  hotbar:\n    layout: grid\n    per-line: 3\n    slots:\n      '1':\n        hidden: true\n"));
+        assertEquals(3, LayoutEngine.edgeSlot(grid.get(Element.HOTBAR).geometry(), false));
+        assertEquals(8, LayoutEngine.edgeSlot(grid.get(Element.HOTBAR).geometry(), true));
+        ShaderMirror m = new ShaderMirror(p, w, h);
+        assertEquals(0.0, m.offhandDelta(0)[0], 1e-9);
+        assertEquals(0.0, m.offhandDelta(1)[0], 1e-9);
+        var col = LayoutEngine.place(read("hud:\n  hotbar:\n    layout: column\n    direction: up\n    anchor: center-left\n    x: 40\n"));
+        ShaderMirror c = new ShaderMirror(col, w, h);
+        double[] slot = c.slotDelta(0);
+        double[] off = c.offhandDelta(0);
+        assertEquals(slot[0], off[0], 1e-9);
+        assertEquals(slot[1], off[1], 1e-9);
+    }
+
+    @Test
+    void offhandOffsetWorksTogetherWithFollow() {
+        HudSettings s = read("hud:\n  offhand:\n    follow: hotbar\n    x: 3\n    y: -2\n");
+        assertEquals(List.of(), s.warnings());
+        var p = LayoutEngine.place(s);
+        assertEquals(Placement.Mode.MOVED, p.get(Element.OFFHAND).mode());
+        assertEquals(new Placement.Point(3, -2), LayoutEngine.followOffset(p.get(Element.OFFHAND)));
+        HudSettings anchored = read("hud:\n  offhand:\n    follow: hotbar\n    anchor: top-left\n");
+        assertEquals(1, anchored.warnings().size());
+        assertEquals(Placement.Mode.VANILLA, LayoutEngine.place(anchored).get(Element.OFFHAND).mode());
+    }
+
+    @Test
+    void nameGlyphsSkipActionbarCollisionsAndKeepVanillaFirst() {
+        List<Placement.Point> g = NameGlyphs.select(new java.util.LinkedHashSet<>(List.of(new Placement.Point(-8, 20), new Placement.Point(0, 8),
+                new Placement.Point(-13, 30), new Placement.Point(4, 5))));
+        assertEquals(NameGlyphs.VANILLA, g.get(0));
+        assertTrue(g.contains(new Placement.Point(-8, 20)));
+        assertTrue(g.contains(new Placement.Point(4, 5)));
+        assertFalse(g.contains(new Placement.Point(-13, 30)));
+        assertEquals(3, g.size());
+    }
+
+    @Test
     void vanillaGeometryMatchesTheClient() {
         int w = 427;
         int h = 240;

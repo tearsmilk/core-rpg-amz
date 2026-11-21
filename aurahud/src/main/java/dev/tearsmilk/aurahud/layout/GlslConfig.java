@@ -23,6 +23,10 @@ public final class GlslConfig {
     }
 
     public static String generate(Map<Element, Placement> placements) {
+        return generate(placements, NameGlyphs.DEFAULT);
+    }
+
+    public static String generate(Map<Element, Placement> placements, List<Point> glyphs) {
         StringBuilder b = new StringBuilder("#version 330\n\n");
         b.append("#define AH_ACTIVE ").append(active(placements) ? 1 : 0).append('\n');
         for (Element e : Element.values()) {
@@ -36,8 +40,11 @@ public final class GlslConfig {
                     define(b, n + "_SLICE", g.slice() ? 1 : 0);
                     define(b, n + "_HIDDEN", g.hiddenMask());
                     define(b, n + "_ATTACK", g.attack() ? 1 : 0);
+                    define(b, n + "_EDGE_L", LayoutEngine.edgeSlot(g, false));
+                    define(b, n + "_EDGE_R", LayoutEngine.edgeSlot(g, true));
                 }
                 case OFFHAND -> define(b, n + "_FOLLOW", g.follow() ? 1 : 0);
+                case ITEM_NAME -> define(b, n + "_GLYPH_COUNT", glyphs.size());
                 case XP -> {
                     define(b, n + "_ROTATE", g.rotate() / 90);
                     define(b, n + "_LEVEL", g.level() ? 1 : 0);
@@ -60,6 +67,8 @@ public final class GlslConfig {
                     vec(b, n + "_SIZE", new Point(g.width(), g.height()));
                     vec(b, n + "_LEVEL_OFFSET", g.levelOffset());
                 }
+                case OFFHAND -> vec(b, n + "_FOLLOW_OFFSET", g.follow() ? LayoutEngine.followOffset(p) : new Point(0, 0));
+                case ITEM_NAME -> array(b, n + "_GLYPHS", glyphs);
                 default -> {
                 }
             }

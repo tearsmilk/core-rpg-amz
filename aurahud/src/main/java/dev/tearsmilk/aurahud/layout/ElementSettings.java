@@ -41,23 +41,48 @@ public record ElementSettings(Element element, boolean enabled, Anchor anchor, i
             }
             if (s == null || !s.appliesTo(e)) {
                 warnings.add(where + key + ": неизвестный ключ, пропущен");
+            } else if (!key.equals(s.key()) && sec.contains(s.key())) {
+                warnings.add(where + key + ": повтор ключа " + s.key() + ", пропущен");
             }
         }
         boolean enabled = bool(sec, Setting.ENABLED, true, where, warnings);
+        boolean follow = true;
+        if (e == Element.OFFHAND) {
+            boolean placed = sec.contains(key(sec, Setting.ANCHOR)) || sec.contains(key(sec, Setting.X)) || sec.contains(key(sec, Setting.Y));
+            String fk = key(sec, Setting.FOLLOW);
+            String f = sec.getString(fk, placed ? "none" : "hotbar");
+            Object v = Setting.FOLLOW.value(f);
+            if (v == null) {
+                warnings.add(where + "follow: \"" + f + "\" - можно hotbar или none");
+                v = placed ? "none" : "hotbar";
+            }
+            follow = v.equals("hotbar");
+        }
         Anchor anchor = d.anchor();
-        boolean anchored = sec.contains("anchor");
-        if (anchored) {
-            Anchor a = Anchor.parse(sec.getString("anchor"));
+        String ak = key(sec, Setting.ANCHOR);
+        boolean anchored = sec.contains(ak);
+        if (anchored && follow && e == Element.OFFHAND) {
+            warnings.add(where + "anchor: не действует при follow: hotbar, x и y - сдвиг от места у хотбара");
+            anchored = false;
+        } else if (anchored) {
+            Anchor a = Anchor.parse(sec.getString(ak));
             if (a == null) {
-                warnings.add(where + "anchor: \"" + sec.getString("anchor") + "\" - не якорь, взят bottom-center");
+                warnings.add(where + "anchor: \"" + sec.getString(ak) + "\" - не якорь, взят bottom-center");
                 anchored = false;
             } else {
                 anchor = a;
             }
         }
         boolean moved = anchored && anchor != Anchor.BOTTOM_CENTER;
-        int x = integer(sec, Setting.X, moved ? 0 : d.x(), where, warnings);
-        int y = integer(sec, Setting.Y, moved ? 0 : d.y(), where, warnings);
+        int x;
+        int y;
+        if (e == Element.OFFHAND && follow) {
+            x = d.x() + integer(sec, Setting.X, 0, where, warnings);
+            y = d.y() + integer(sec, Setting.Y, 0, where, warnings);
+        } else {
+            x = integer(sec, Setting.X, moved ? 0 : d.x(), where, warnings);
+            y = integer(sec, Setting.Y, moved ? 0 : d.y(), where, warnings);
+        }
         Arrangement layout = Arrangement.ROW;
         int perLine = d.perLine();
         int gap = 0;
@@ -67,10 +92,11 @@ public record ElementSettings(Element element, boolean enabled, Anchor anchor, i
         Map<Integer, Slot> slots = new TreeMap<>();
         Element.Icons ic = e.icons();
         if (ic != null) {
-            if (sec.contains("layout")) {
-                Arrangement a = Arrangement.parse(sec.getString("layout"));
+            String lk = key(sec, Setting.LAYOUT);
+            if (sec.contains(lk)) {
+                Arrangement a = Arrangement.parse(sec.getString(lk));
                 if (a == null) {
-                    warnings.add(where + "layout: \"" + sec.getString("layout") + "\" - можно row, column, grid; взят row");
+                    warnings.add(where + "layout: \"" + sec.getString(lk) + "\" - можно row, column, grid; взят row");
                 } else {
                     layout = a;
                 }
@@ -101,23 +127,12 @@ public record ElementSettings(Element element, boolean enabled, Anchor anchor, i
         boolean attack = e != Element.HOTBAR || bool(sec, Setting.ATTACK, true, where, warnings);
         int attackX = e == Element.HOTBAR ? integer(sec, Setting.ATTACK_X, 0, where, warnings) : 0;
         int attackY = e == Element.HOTBAR ? integer(sec, Setting.ATTACK_Y, 0, where, warnings) : 0;
-        boolean follow = true;
-        if (e == Element.OFFHAND) {
-            boolean placed = sec.contains("anchor") || sec.contains("x") || sec.contains("y");
-            String f = sec.getString("follow", placed ? "none" : "hotbar");
-            Object v = Setting.FOLLOW.value(f);
-            if (v == null) {
-                warnings.add(where + "follow: \"" + f + "\" - можно hotbar или none");
-                v = placed ? "none" : "hotbar";
-            }
-            follow = v.equals("hotbar");
-        }
         int rotate = 0;
         boolean level = true;
         int levelX = 0;
         int levelY = 0;
         if (e == Element.XP) {
-            String rk = Setting.ROTATE.key();
+            String rk = key(sec, Setting.ROTATE);
             if (sec.contains(rk)) {
                 Object r = Setting.ROTATE.value(String.valueOf(sec.get(rk)));
                 if (r == null) {
@@ -161,8 +176,20 @@ public record ElementSettings(Element element, boolean enabled, Anchor anchor, i
         return out;
     }
 
+    static String key(ConfigurationSection sec, Setting s) {
+        if (sec.contains(s.key())) {
+            return s.key();
+        }
+        for (String k : sec.getKeys(false)) {
+            if (Setting.parse(k) == s) {
+                return k;
+            }
+        }
+        return s.key();
+    }
+
     private static boolean bool(ConfigurationSection sec, Setting s, boolean def, String where, List<String> warnings) {
-        return bool(sec, s.key(), def, where, warnings);
+        return bool(sec, key(sec, s), def, where, warnings);
     }
 
     private static boolean bool(ConfigurationSection sec, String key, boolean def, String where, List<String> warnings) {
@@ -178,24 +205,26 @@ public record ElementSettings(Element element, boolean enabled, Anchor anchor, i
     }
 
     private static int integer(ConfigurationSection sec, Setting s, int def, String where, List<String> warnings) {
-        if (!sec.contains(s.key())) {
+        String k = key(sec, s);
+        if (!sec.contains(k)) {
             return def;
         }
-        Object v = s.value(String.valueOf(sec.get(s.key())));
+        Object v = s.value(String.valueOf(sec.get(k)));
         if (v == null) {
-            warnings.add(where + s.key() + ": \"" + sec.get(s.key()) + "\" - нужно целое число в допустимых пределах");
+            warnings.add(where + k + ": \"" + sec.get(k) + "\" - нужно целое число в допустимых пределах");
             return def;
         }
         return (Integer) v;
     }
 
     private static Direction direction(ConfigurationSection sec, Setting s, Direction def, String where, List<String> warnings) {
-        if (!sec.contains(s.key())) {
+        String k = key(sec, s);
+        if (!sec.contains(k)) {
             return def;
         }
-        Direction d = Direction.parse(sec.getString(s.key()));
+        Direction d = Direction.parse(sec.getString(k));
         if (d == null) {
-            warnings.add(where + s.key() + ": \"" + sec.getString(s.key()) + "\" - можно right, left, up, down");
+            warnings.add(where + k + ": \"" + sec.getString(k) + "\" - можно right, left, up, down");
             return def;
         }
         return d;

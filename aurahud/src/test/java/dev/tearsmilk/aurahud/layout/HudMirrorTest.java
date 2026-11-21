@@ -39,7 +39,7 @@ class HudMirrorTest {
     private static ShaderMirror.Move move(ShaderMirror m, VanillaHud.Quad q, int k) {
         double[] v = q.v()[k];
         return switch (q.kind()) {
-            case SPRITE -> m.sprite(v[0], v[1], k, q.white(), q.atlas(), q.family());
+            case SPRITE -> m.sprite(v[0], v[1], k, q.white(), q.tex(), q.family());
             case GUI -> m.gui(v[0], v[1], k, q.r(), q.g(), q.b(), q.a());
             case TEXT -> m.text(v[0], v[1], k, q.argb());
         };
@@ -192,6 +192,13 @@ class HudMirrorTest {
         return new double[]{tl.x() + pos.x() - (hud.cx - 91 + 20 * i), tl.y() + pos.y() - (hud.h - 22)};
     }
 
+    private static double[] edgeDelta(Map<Element, Placement> p, VanillaHud hud, boolean right) {
+        Placement hb = p.get(Element.HOTBAR);
+        Point tl = hb.topLeft(hud.w, hud.h);
+        Point pos = hb.geometry().positions().get(LayoutEngine.edgeSlot(hb.geometry(), right));
+        return new double[]{tl.x() + pos.x() - (hud.cx - 91 + (right ? 160 : 0)), tl.y() + pos.y() - (hud.h - 22)};
+    }
+
     private static double[] iconDelta(Map<Element, Placement> p, VanillaHud hud, Element e, int idx, double ox, double oy, double ex, double ey) {
         Placement pe = p.get(e);
         Point tl = pe.topLeft(hud.w, hud.h);
@@ -210,14 +217,16 @@ class HudMirrorTest {
             }
             case "attack" -> {
                 Placement hb = p.get(Element.HOTBAR);
-                double[] d = slotDelta(p, hud, ox < cx ? 0 : 8);
+                double[] d = edgeDelta(p, hud, ox >= cx);
                 return new double[]{d[0] + hb.geometry().attackOffset().x(), d[1] + hb.geometry().attackOffset().y()};
             }
             case "offhand" -> {
                 boolean right = ox > cx;
                 Placement off = p.get(Element.OFFHAND);
                 if (off.geometry().follow()) {
-                    return slotDelta(p, hud, right ? 8 : 0);
+                    double[] d = edgeDelta(p, hud, right);
+                    Point o = LayoutEngine.followOffset(off);
+                    return new double[]{d[0] + o.x(), d[1] + o.y()};
                 }
                 Point tl = off.topLeft(hud.w, hud.h);
                 return new double[]{tl.x() - (right ? cx + 91 : cx - 120), tl.y() - (h - 23)};
@@ -253,6 +262,67 @@ class HudMirrorTest {
             }
             default -> throw new IllegalArgumentException(t[0]);
         }
+    }
+
+    @Test
+    void openContainersStayInPlace() {
+        List<String> bad = new ArrayList<>();
+        for (String n : Presets.BUILT_IN) {
+            Map<Element, Placement> p = preset(n);
+            for (int w : new int[]{320, 427, 481}) {
+                for (int h = 200; h <= 520; h++) {
+                    for (int rows : new int[]{-1, 3, 6}) {
+                        int slots = rows < 0 ? 46 : rows * 9 + 36;
+                        for (int hover : new int[]{-1, slots - 9, slots - 5, slots - 1, 0}) {
+                            ShaderMirror m = new ShaderMirror(p, w, h);
+                            for (VanillaHud.Quad q : VanillaHud.container(w, h, rows, hover).quads) {
+                                if (overHotbar(q, h)) {
+                                    continue;
+                                }
+                                for (int k = 0; k < 4; k++) {
+                                    if (!ShaderMirror.Move.NONE.equals(move(m, q, k))) {
+                                        bad.add(n + " " + w + "x" + h + " rows " + rows + " hover " + hover + " " + q.tag() + " k" + k);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        assertEquals(List.of(), bad.subList(0, Math.min(20, bad.size())), bad.size() + " moved");
+    }
+
+    private static boolean overHotbar(VanillaHud.Quad q, int h) {
+        double lo = Double.MAX_VALUE;
+        double hi = -Double.MAX_VALUE;
+        for (double[] v : q.v()) {
+            lo = Math.min(lo, v[1]);
+            hi = Math.max(hi, v[1]);
+        }
+        return hi - lo <= 16 && hi > h - 25;
+    }
+
+    @Test
+    void containerCountsMoveOnlyWithAMovedItemName() {
+        assertEquals(List.of("-1@251", "3@251", "-1@252", "3@252", "-1@253", "3@253", "-1@254", "3@254", "-1@255", "3@255", "-1@256", "3@256",
+                "6@277", "6@278", "6@279", "6@280", "6@281", "6@282", "6@305", "6@306", "6@307", "6@308", "6@309", "6@310"), countHits(preset("left-column")));
+        assertEquals(List.of(), countHits(yaml("hud:\n  hotbar:\n    layout: column\n    anchor: center-left\n  hearts:\n    anchor: top-left\n")));
+    }
+
+    private static List<String> countHits(Map<Element, Placement> p) {
+        List<String> bad = new ArrayList<>();
+        for (int h = 240; h <= 520; h++) {
+            for (int rows : new int[]{-1, 3, 6}) {
+                ShaderMirror m = new ShaderMirror(p, 427, h);
+                for (VanillaHud.Quad q : VanillaHud.counts(427, h, rows).quads) {
+                    if (!ShaderMirror.Move.NONE.equals(move(m, q, 0)) && !bad.contains(rows + "@" + h)) {
+                        bad.add(rows + "@" + h);
+                    }
+                }
+            }
+        }
+        return bad;
     }
 
     @Test

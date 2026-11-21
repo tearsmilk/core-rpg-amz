@@ -13,8 +13,10 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -52,12 +54,13 @@ public final class LayoutModule implements HudModule {
     @Override
     public Map<String, byte[]> packFiles(PackTarget target) {
         Map<String, byte[]> out = new LinkedHashMap<>();
-        out.put(GlslConfig.PATH, GlslConfig.generate(placements).getBytes(StandardCharsets.UTF_8));
+        out.put(GlslConfig.PATH, GlslConfig.generate(placements, glyphs(target)).getBytes(StandardCharsets.UTF_8));
         markers = null;
         if (target.installing() && GlslConfig.active(placements)) {
             Path backup = target.work() == null ? null : target.work().resolve("pack-backup")
                     .resolve(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSS")) + "-sprites");
-            SpriteMarker.Result r = SpriteMarker.prepare(target.assets(), backup, externalPacks(target.assets()));
+            Path ledger = target.work() == null ? null : target.work().resolve(SpriteMarker.LEDGER);
+            SpriteMarker.Result r = SpriteMarker.prepare(target.assets(), backup, externalPacks(target.assets()), ledger);
             markers = r;
             out.putAll(r.files());
             if (!r.unmarkable().isEmpty() && target.log() != null) {
@@ -68,6 +71,19 @@ public final class LayoutModule implements HudModule {
             }
         }
         return out;
+    }
+
+    private List<Placement.Point> glyphs(PackTarget target) {
+        if (!target.installing() || !GlslConfig.active(placements)) {
+            return NameGlyphs.DEFAULT;
+        }
+        Set<Placement.Point> found = new LinkedHashSet<>(NameGlyphs.scan(target.assets()));
+        for (Path p : externalPacks(target.assets())) {
+            if (Files.isDirectory(p)) {
+                found.addAll(NameGlyphs.scan(p.resolve("assets")));
+            }
+        }
+        return NameGlyphs.select(found);
     }
 
     static List<Path> externalPacks(Path assets) {

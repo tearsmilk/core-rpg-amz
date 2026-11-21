@@ -16,6 +16,7 @@ public final class AuraHudPlugin extends JavaPlugin {
     private Presets presets;
     private volatile ShaderHooks.Report pack;
     private volatile boolean installing;
+    private boolean queued;
 
     @Override
     public void onEnable() {
@@ -52,6 +53,10 @@ public final class AuraHudPlugin extends JavaPlugin {
     }
 
     private void installPack(boolean sync) {
+        if (!sync && installing) {
+            queued = true;
+            return;
+        }
         PackTarget target = target();
         Map<String, byte[]> files = modules.packFiles(target);
         if (sync) {
@@ -62,6 +67,10 @@ public final class AuraHudPlugin extends JavaPlugin {
         ShaderHooks.runAsync(this, packInstall(), packDir(), reloadNexo(), files, r -> {
             pack = r;
             installing = false;
+            if (queued && isEnabled()) {
+                queued = false;
+                installPack(false);
+            }
         });
     }
 

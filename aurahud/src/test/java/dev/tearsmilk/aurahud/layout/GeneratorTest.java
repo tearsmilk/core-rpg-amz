@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -58,7 +59,8 @@ class GeneratorTest {
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
-        golden(root().resolve("tools/configs/stress.glsl"), GlslConfig.generate(LayoutEngine.place(HudSettings.read(y.getConfigurationSection("hud")))));
+        golden(root().resolve("tools/configs/stress.glsl"), GlslConfig.generate(LayoutEngine.place(HudSettings.read(y.getConfigurationSection("hud"))),
+                NameGlyphs.select(new LinkedHashSet<>(List.of(new Placement.Point(4, 5), new Placement.Point(-8, 20), new Placement.Point(-1, 9))))));
     }
 
     @Test

@@ -18,19 +18,25 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public final class SpriteMarker {
 
-    public static final String DIR = "minecraft/textures/gui/sprites/hud/";
+    public static final String ROOT = "minecraft/textures/gui/sprites/";
+    public static final String DIR = ROOT + "hud/";
     public static final String JAR = "aurasprites/";
     public static final int MARK_R = 167;
     public static final int MARK_B = 90;
@@ -39,10 +45,11 @@ public final class SpriteMarker {
     private static final String WIDTH = "width";
     private static final String HEIGHT = "height";
     private static final String STRATEGY = "mipmap_strategy";
+    public static final String LEDGER = "marked-sprites.txt";
     public static final String MCMETA = "{\n  \"texture\": {\n    \"mipmap_strategy\": \"mean\"\n  }\n}\n";
 
     public enum Family {
-        HEART(1), ARMOR(2), FOOD(3), AIR(4), MOUNT(5);
+        HEART(1), ARMOR(2), FOOD(3), AIR(4), MOUNT(5), LOCATOR(6), KEEP(7);
 
         private final int code;
 
@@ -59,7 +66,8 @@ public final class SpriteMarker {
         }
     }
 
-    public record Result(Map<String, byte[]> files, List<String> unmarkable, List<String> backups, int sprites, int changed) {
+    public record Result(Map<String, byte[]> files, List<String> unmarkable, List<String> backups, int sprites, int changed,
+                         Set<String> copied) {
     }
 
     private SpriteMarker() {
@@ -68,42 +76,92 @@ public final class SpriteMarker {
     public static Map<String, Family> sprites() {
         Map<String, Family> out = new LinkedHashMap<>();
         for (String c : List.of("container", "container_blinking", "container_hardcore", "container_hardcore_blinking")) {
-            out.put("heart/" + c, Family.HEART);
+            out.put("hud/heart/" + c, Family.HEART);
         }
         for (String type : List.of("", "poisoned_", "withered_", "absorbing_", "frozen_")) {
             for (String hc : List.of("", "hardcore_")) {
                 for (String fill : List.of("full", "half")) {
                     for (String blink : List.of("", "_blinking")) {
-                        out.put("heart/" + type + hc + fill + blink, Family.HEART);
+                        out.put("hud/heart/" + type + hc + fill + blink, Family.HEART);
                     }
                 }
             }
         }
         for (String v : List.of("vehicle_container", "vehicle_full", "vehicle_half")) {
-            out.put("heart/" + v, Family.MOUNT);
+            out.put("hud/heart/" + v, Family.MOUNT);
         }
         for (String v : List.of("armor_empty", "armor_half", "armor_full")) {
-            out.put(v, Family.ARMOR);
+            out.put("hud/" + v, Family.ARMOR);
         }
         for (String v : List.of("food_empty", "food_half", "food_full", "food_empty_hunger", "food_half_hunger", "food_full_hunger")) {
-            out.put(v, Family.FOOD);
+            out.put("hud/" + v, Family.FOOD);
         }
         for (String v : List.of("air", "air_bursting", "air_empty")) {
-            out.put(v, Family.AIR);
+            out.put("hud/" + v, Family.AIR);
+        }
+        for (String v : List.of("bowtie", "default_0", "default_1", "default_2", "default_3")) {
+            out.put("hud/locator_bar_dot/" + v, Family.LOCATOR);
+        }
+        for (String v : List.of("slot_highlight_back", "slot_highlight_front")) {
+            out.put("container/" + v, Family.KEEP);
         }
         return out;
     }
 
     public static byte[] vanilla(String name) {
-        try (InputStream in = SpriteMarker.class.getClassLoader().getResourceAsStream(JAR + DIR + name + ".png")) {
+        return resource(JAR + ROOT + name + ".png");
+    }
+
+    public static byte[] vanillaMeta(String name) {
+        return resource(JAR + ROOT + name + ".png.mcmeta");
+    }
+
+    private static byte[] resource(String path) {
+        try (InputStream in = SpriteMarker.class.getClassLoader().getResourceAsStream(path)) {
             return in == null ? null : in.readAllBytes();
         } catch (IOException e) {
             return null;
         }
     }
 
-    public static Result prepare(Path assets, Path backupDir, List<Path> external) {
-        return prepare(assets, backupDir, SpriteMarker::vanilla, external);
+    public static Result prepare(Path assets, Path backupDir, List<Path> external, Path ledger) {
+        Set<String> known = new LinkedHashSet<>();
+        if (ledger != null && Files.isRegularFile(ledger)) {
+            try {
+                for (String line : Files.readAllLines(ledger, StandardCharsets.UTF_8)) {
+                    if (!line.isBlank()) {
+                        known.add(line.trim());
+                    }
+                }
+            } catch (IOException ignored) {
+                known.clear();
+            }
+        }
+        Result r = prepare(assets, backupDir, SpriteMarker::vanilla, external, known);
+        if (ledger != null && !known.containsAll(r.copied())) {
+            known.addAll(r.copied());
+            save(ledger, known);
+        }
+        return r;
+    }
+
+    static boolean save(Path ledger, Set<String> lines) {
+        try {
+            Files.createDirectories(ledger.getParent());
+            Files.write(ledger, (String.join("\n", lines) + "\n").getBytes(StandardCharsets.UTF_8));
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    static Set<String> wanted() {
+        Set<String> out = new LinkedHashSet<>();
+        for (String k : sprites().keySet()) {
+            out.add(ROOT + k + ".png");
+            out.add(ROOT + k + ".png.mcmeta");
+        }
+        return out;
     }
 
     public static Map<String, byte[]> external(List<Path> sources) {
@@ -114,12 +172,11 @@ public final class SpriteMarker {
         for (Path src : sources) {
             try {
                 if (Files.isDirectory(src)) {
-                    Path base = src.resolve("assets").resolve(DIR);
-                    if (Files.isDirectory(base)) {
-                        try (var walk = Files.walk(base)) {
-                            for (Path p : walk.filter(Files::isRegularFile).toList()) {
-                                out.putIfAbsent(DIR + base.relativize(p).toString().replace('\\', '/'), Files.readAllBytes(p));
-                            }
+                    Path base = src.resolve("assets");
+                    for (String rel : wanted()) {
+                        Path p = base.resolve(rel);
+                        if (Files.isRegularFile(p)) {
+                            out.putIfAbsent(rel, Files.readAllBytes(p));
                         }
                     }
                 } else if (Files.isRegularFile(src) && src.getFileName().toString().endsWith(".zip")) {
@@ -127,7 +184,7 @@ public final class SpriteMarker {
                         Enumeration<? extends ZipEntry> en = zip.entries();
                         while (en.hasMoreElements()) {
                             ZipEntry e = en.nextElement();
-                            if (!e.isDirectory() && e.getName().startsWith("assets/" + DIR)) {
+                            if (!e.isDirectory() && e.getName().startsWith("assets/") && wanted().contains(e.getName().substring("assets/".length()))) {
                                 try (InputStream in = zip.getInputStream(e)) {
                                     out.putIfAbsent(e.getName().substring("assets/".length()), in.readAllBytes());
                                 }
@@ -144,20 +201,27 @@ public final class SpriteMarker {
     }
 
     public static Result prepare(Path assets, Path backupDir, Function<String, byte[]> vanilla, List<Path> externalSources) {
+        return prepare(assets, backupDir, vanilla, externalSources, Set.of());
+    }
+
+    public static Result prepare(Path assets, Path backupDir, Function<String, byte[]> vanilla, List<Path> externalSources, Set<String> known) {
         Map<String, byte[]> ext = external(externalSources);
+        Set<String> copied = new LinkedHashSet<>();
         Map<String, byte[]> files = new LinkedHashMap<>();
         List<String> unmarkable = new ArrayList<>();
         List<String> backups = new ArrayList<>();
         int changed = 0;
         for (Map.Entry<String, Family> e : sprites().entrySet()) {
-            String rel = DIR + e.getKey() + ".png";
+            String rel = ROOT + e.getKey() + ".png";
             String metaRel = rel + ".mcmeta";
             try {
                 byte[] existing = read(assets, rel);
                 byte[] metaBytes = read(assets, metaRel);
                 byte[] van = vanilla.apply(e.getKey());
                 byte[] src = existing;
-                if (ext.containsKey(rel) && (existing == null || sameAsMarked(existing, van, e.getValue()))) {
+                boolean fromExt = ext.containsKey(rel) && (existing == null || sameAsMarked(existing, van, e.getValue())
+                        || sameAsMarked(existing, ext.get(rel), e.getValue()) || known.contains(entry(rel, existing)));
+                if (fromExt) {
                     src = ext.get(rel);
                     if (metaBytes == null || new String(metaBytes, StandardCharsets.UTF_8).equals(MCMETA)) {
                         byte[] em = ext.get(metaRel);
@@ -166,6 +230,9 @@ public final class SpriteMarker {
                 }
                 if (src == null) {
                     src = van;
+                    if (metaBytes == null) {
+                        metaBytes = vanillaMeta(e.getKey());
+                    }
                 }
                 if (src == null) {
                     unmarkable.add(rel + " (нет исходной текстуры)");
@@ -199,6 +266,9 @@ public final class SpriteMarker {
                         img.setRGB(c[0], c[1], mark);
                     }
                     byte[] out = png(img);
+                    if (fromExt) {
+                        copied.add(entry(rel, out));
+                    }
                     if (existing == null || !Arrays.equals(existing, out)) {
                         files.put(rel, out);
                         changed++;
@@ -226,7 +296,15 @@ public final class SpriteMarker {
                 unmarkable.add(rel + " (" + ex.getClass().getSimpleName() + ": " + ex.getMessage() + ")");
             }
         }
-        return new Result(files, unmarkable, backups, sprites().size(), changed);
+        return new Result(files, unmarkable, backups, sprites().size(), changed, copied);
+    }
+
+    static String entry(String rel, byte[] data) {
+        try {
+            return rel + " " + HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(data));
+        } catch (NoSuchAlgorithmException e) {
+            return rel + " " + Arrays.hashCode(data);
+        }
     }
 
     static boolean sameAsMarked(byte[] existing, byte[] vanilla, Family family) {

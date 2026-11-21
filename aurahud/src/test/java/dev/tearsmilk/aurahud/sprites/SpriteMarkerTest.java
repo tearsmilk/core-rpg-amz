@@ -28,7 +28,7 @@ class SpriteMarkerTest {
 
     private static byte[] vanilla(String name) {
         try {
-            return Files.readAllBytes(vanillaDir().resolve(SpriteMarker.DIR + name + ".png"));
+            return Files.readAllBytes(vanillaDir().resolve(SpriteMarker.ROOT + name + ".png"));
         } catch (IOException e) {
             return null;
         }
@@ -51,7 +51,7 @@ class SpriteMarkerTest {
         for (String name : SpriteMarker.sprites().keySet()) {
             assertNotNull(vanilla(name), name);
         }
-        assertEquals(47 + 3 + 6 + 3, SpriteMarker.sprites().size());
+        assertEquals(47 + 3 + 6 + 3 + 5 + 2, SpriteMarker.sprites().size());
     }
 
     @Test
@@ -61,7 +61,7 @@ class SpriteMarkerTest {
         assertEquals(r.sprites(), r.changed());
         assertEquals(2 * r.sprites(), r.files().size());
         for (Map.Entry<String, SpriteMarker.Family> e : SpriteMarker.sprites().entrySet()) {
-            String rel = SpriteMarker.DIR + e.getKey() + ".png";
+            String rel = SpriteMarker.ROOT + e.getKey() + ".png";
             BufferedImage marked = SpriteMarker.argb(image(r.files().get(rel)));
             BufferedImage orig = SpriteMarker.argb(image(vanilla(e.getKey())));
             int w = orig.getWidth();
@@ -79,7 +79,9 @@ class SpriteMarkerTest {
                     }
                 }
             }
-            assertEquals(SpriteMarker.MCMETA, new String(r.files().get(rel + ".mcmeta"), StandardCharsets.UTF_8));
+            if (SpriteMarker.vanillaMeta(e.getKey()) == null) {
+                assertEquals(SpriteMarker.MCMETA, new String(r.files().get(rel + ".mcmeta"), StandardCharsets.UTF_8));
+            }
         }
         write(assets, r.files());
         SpriteMarker.Result again = SpriteMarker.prepare(assets, null, SpriteMarkerTest::vanilla, List.of());
@@ -148,15 +150,47 @@ class SpriteMarkerTest {
     }
 
     @Test
+    void updatedExternalSkinReplacesTheOldMarkedCopy(@TempDir Path tmp) throws IOException {
+        Path assets = tmp.resolve("pack/assets");
+        Path dir = tmp.resolve("pack/external_packs/skin");
+        Path ledger = tmp.resolve("work/" + SpriteMarker.LEDGER);
+        String rel = SpriteMarker.DIR + "food_full.png";
+        Files.createDirectories(dir.resolve("assets").resolve(rel).getParent());
+        Files.createDirectories(assets);
+        int[] colors = {0xFF123456, 0xFF654321, 0xFF00AA00};
+        for (int color : colors) {
+            BufferedImage skin = new BufferedImage(9, 9, BufferedImage.TYPE_INT_ARGB);
+            skin.setRGB(4, 4, color);
+            Files.write(dir.resolve("assets").resolve(rel), SpriteMarker.png(skin));
+            SpriteMarker.Result r = SpriteMarker.prepare(assets, null, List.of(dir), ledger);
+            write(assets, r.files());
+            assertEquals(color, image(Files.readAllBytes(assets.resolve(rel))).getRGB(4, 4));
+        }
+        BufferedImage own = new BufferedImage(9, 9, BufferedImage.TYPE_INT_ARGB);
+        own.setRGB(4, 4, 0xFFABCDEF);
+        Files.write(assets.resolve(rel), SpriteMarker.png(own));
+        write(assets, SpriteMarker.prepare(assets, null, List.of(dir), ledger).files());
+        assertEquals(0xFFABCDEF, image(Files.readAllBytes(assets.resolve(rel))).getRGB(4, 4));
+    }
+
+    @Test
+    void containerHighlightKeepsItsNineSliceMeta() {
+        SpriteMarker.Result r = SpriteMarker.prepare(null, null, SpriteMarkerTest::vanilla, List.of());
+        String meta = new String(r.files().get(SpriteMarker.ROOT + "container/slot_highlight_back.png.mcmeta"), StandardCharsets.UTF_8);
+        assertTrue(meta.contains("nine_slice"), meta);
+        assertTrue(meta.contains("\"mipmap_strategy\": \"mean\""), meta);
+    }
+
+    @Test
     void grayscalePngsKeepTheirExactValues() throws IOException {
         Map<String, int[]> known = Map.of(
-                "armor_empty", new int[]{1, 1, 0xFF3D3D3D},
-                "heart/container", new int[]{2, 1, 0xFF282828},
-                "food_empty", new int[]{2, 1, 0xFF282828});
+                "hud/armor_empty", new int[]{1, 1, 0xFF3D3D3D},
+                "hud/heart/container", new int[]{2, 1, 0xFF282828},
+                "hud/food_empty", new int[]{2, 1, 0xFF282828});
         SpriteMarker.Result r = SpriteMarker.prepare(null, null, SpriteMarkerTest::vanilla, List.of());
         for (Map.Entry<String, int[]> e : known.entrySet()) {
             int[] k = e.getValue();
-            BufferedImage marked = image(r.files().get(SpriteMarker.DIR + e.getKey() + ".png"));
+            BufferedImage marked = image(r.files().get(SpriteMarker.ROOT + e.getKey() + ".png"));
             assertEquals(k[2], marked.getRGB(k[0], k[1]), e.getKey());
             assertEquals(k[2], SpriteMarker.argb(image(vanilla(e.getKey()))).getRGB(k[0], k[1]), e.getKey());
         }
