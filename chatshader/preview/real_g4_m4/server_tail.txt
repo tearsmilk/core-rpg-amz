@@ -1,0 +1,32 @@
+[21:39:33 WARN]: java.util.concurrent.CompletionException: java.lang.RuntimeException: Skin URL is null
+[21:39:33 WARN]: Caused by: java.lang.RuntimeException: Skin URL is null
+[21:39:54 INFO]: [chatshader] Шейдеры в /home/user/core-rpg-amz/chatshader/preview/real_g4_m4/nexo/assets: записано файлов 1: chatshader/shaders/include/cs_config.glsl
+[21:39:54 INFO]: [chatshader] Чат: позиция bottom-left, отступ 4, метка сообщений включена.
+[21:39:54 INFO]: [91mchatshader:[0m [97mконфиг перечитан, позиция bottom-left, отступ 4. Новый пак игроки получат после перезагрузки пака Nexo.[0m
+[21:40:11 INFO]: [91mПозиция:[0m [97mв конфиге bottom-left, отступ 4; в шейдере bottom-left, отступ 4.[0m
+[21:40:11 INFO]: [91mМетка сообщений:[0m [97mвкл, помечено 8, ошибка: -.[0m
+[21:40:11 INFO]: [91mШейдеры в паке:[0m [97mзаписано файлов: 1 (/home/user/core-rpg-amz/chatshader/preview/real_g4_m4/nexo/assets)[0m
+[21:40:13 INFO]: [91mchatshader:[0m [97mотправлено строк: 6 игроку TestBot.[0m
+[21:40:49 INFO]: [91mchatshader:[0m [97mотправлено строк: 6 игроку TestBot.[0m
+[21:41:02 INFO]: [chatshader] Шейдеры в /home/user/core-rpg-amz/chatshader/preview/real_g4_m4/nexo/assets: записано файлов 1: chatshader/shaders/include/cs_config.glsl
+[21:41:02 INFO]: [chatshader] Чат: позиция top-left, отступ 4, метка сообщений включена.
+[21:41:02 INFO]: [91mchatshader:[0m [97mконфиг перечитан, позиция top-left, отступ 4. Новый пак игроки получат после перезагрузки пака Nexo.[0m
+[21:41:19 INFO]: [91mПозиция:[0m [97mв конфиге top-left, отступ 4; в шейдере top-left, отступ 4.[0m
+[21:41:19 INFO]: [91mМетка сообщений:[0m [97mвкл, помечено 20, ошибка: -.[0m
+[21:41:19 INFO]: [91mШейдеры в паке:[0m [97mзаписано файлов: 1 (/home/user/core-rpg-amz/chatshader/preview/real_g4_m4/nexo/assets)[0m
+[21:41:22 INFO]: [91mchatshader:[0m [97mотправлено строк: 6 игроку TestBot.[0m
+[21:41:58 INFO]: [91mchatshader:[0m [97mотправлено строк: 6 игроку TestBot.[0m
+[21:42:11 INFO]: [chatshader] Шейдеры в /home/user/core-rpg-amz/chatshader/preview/real_g4_m4/nexo/assets: записано файлов 1: chatshader/shaders/include/cs_config.glsl
+[21:42:11 INFO]: [chatshader] Чат: позиция top-right, отступ 4, метка сообщений включена.
+[21:42:11 INFO]: [91mchatshader:[0m [97mконфиг перечитан, позиция top-right, отступ 4. Новый пак игроки получат после перезагрузки пака Nexo.[0m
+[21:42:28 INFO]: [91mПозиция:[0m [97mв конфиге top-right, отступ 4; в шейдере top-right, отступ 4.[0m
+[21:42:28 INFO]: [91mМетка сообщений:[0m [97mвкл, помечено 32, ошибка: -.[0m
+[21:42:28 INFO]: [91mШейдеры в паке:[0m [97mзаписано файлов: 1 (/home/user/core-rpg-amz/chatshader/preview/real_g4_m4/nexo/assets)[0m
+[21:42:31 INFO]: [91mchatshader:[0m [97mотправлено строк: 6 игроку TestBot.[0m
+[21:42:55 INFO]: [chatshader] Шейдеры в /home/user/core-rpg-amz/chatshader/preview/real_g4_m4/nexo/assets: записано файлов 1: chatshader/shaders/include/cs_config.glsl
+[21:42:55 INFO]: [chatshader] Чат: позиция bottom-right, отступ 4, метка сообщений включена.
+[21:42:55 INFO]: [91mchatshader:[0m [97mконфиг перечитан, позиция bottom-right, отступ 4. Новый пак игроки получат после перезагрузки пака Nexo.[0m
+[21:43:12 INFO]: [91mПозиция:[0m [97mв конфиге bottom-right, отступ 4; в шейдере bottom-right, отступ 4.[0m
+[21:43:12 INFO]: [91mМетка сообщений:[0m [97mвкл, помечено 38, ошибка: -.[0m
+[21:43:12 INFO]: [91mШейдеры в паке:[0m [97mзаписано файлов: 1 (/home/user/core-rpg-amz/chatshader/preview/real_g4_m4/nexo/assets)[0m
+[21:43:15 INFO]: [91mchatshader:[0m [97mотправлено строк: 6 игроку TestBot.[0m

@@ -1,0 +1,72 @@
+client ready: 61 jars
+[realclient] build tabshader jar
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=36663 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+[realclient] build textshader jar
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=36663 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=36663 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+[realclient] start server
+started
+[22:38:31 INFO]: [textshader] Шейдеры в /home/user/core-rpg-amz/tabshader/preview/real_fix_g2/nexo/assets: записано файлов 34: minecraft/shaders/core/rendertype_text.vsh, minecraft/shaders/core/rendertype_text.fsh, minecraft/shaders/core/rendertype_text_intensity.vsh, minecraft/shaders/core/rendertype_text_intensity_see_through.vsh, minecraft/shaders/core/rendertype_text_see_through.vsh, textshader/shaders/include/ts_common.glsl, textshader/shaders/include/ts_effects.glsl, textshader/shaders/include/ts_fragment.glsl ...
+[22:38:31 INFO]: [nameshader] Шейдеры в /home/user/core-rpg-amz/tabshader/preview/real_fix_g2/nexo/assets: записано файлов 10: minecraft/shaders/core/rendertype_text_background.fsh, minecraft/shaders/core/rendertype_text_background.vsh, minecraft/shaders/core/rendertype_text_background_see_through.fsh, minecraft/shaders/core/rendertype_text_background_see_through.vsh, minecraft/shaders/core/rendertype_text_see_through.fsh, nameshader/shaders/include/ns_common.glsl, nameshader/shaders/include/ns_display_fragment.glsl, nameshader/shaders/include/ns_display_vertex.glsl ...
+[22:38:31 INFO]: [tabshader] Шейдеры в /home/user/core-rpg-amz/tabshader/preview/real_fix_g2/nexo/assets: записано файлов 46: minecraft/shaders/core/gui.vsh, minecraft/shaders/core/gui.fsh, minecraft/shaders/core/position_tex_color.vsh, minecraft/shaders/core/position_tex_color.fsh, minecraft/textures/gui/sprites/boss_bar/blue_background.png, minecraft/textures/gui/sprites/boss_bar/blue_progress.png, minecraft/textures/gui/sprites/boss_bar/green_background.png, minecraft/textures/gui/sprites/boss_bar/green_progress.png ...
+pack: /home/user/mc-client/game/resourcepacks/tabshader-test.zip files=83 sha1=3a6c353f6a56d5e7f2e462164e4f39f50b70e46c
+pack source: server /home/user/core-rpg-amz/tabshader/preview/real_fix_g2/nexo/assets
+textshader: written 34, foreign [], kept [], conflict []
+tabshader: written 46, foreign [], kept [], conflict []
+nameshader: written 10, foreign [], kept [], conflict []
+[realclient] parity: server pack == shaderhooks emulation
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Could not resolve keysym XF86CameraAccessEnable
+> Warning:          Could not resolve keysym XF86CameraAccessDisable
+> Warning:          Could not resolve keysym XF86CameraAccessToggle
+> Warning:          Could not resolve keysym XF86NextElement
+> Warning:          Could not resolve keysym XF86PreviousElement
+> Warning:          Could not resolve keysym XF86AutopilotEngageToggle
+> Warning:          Could not resolve keysym XF86MarkWaypoint
+> Warning:          Could not resolve keysym XF86Sos
+> Warning:          Could not resolve keysym XF86NavChart
+> Warning:          Could not resolve keysym XF86FishingChart
+> Warning:          Could not resolve keysym XF86SingleRangeRadar
+> Warning:          Could not resolve keysym XF86DualRangeRadar
+> Warning:          Could not resolve keysym XF86RadarOverlay
+> Warning:          Could not resolve keysym XF86TraditionalSonar
+> Warning:          Could not resolve keysym XF86ClearvuSonar
+> Warning:          Could not resolve keysym XF86SidevuSonar
+> Warning:          Could not resolve keysym XF86NavInfo
+Errors from xkbcomp are not fatal to the X server
+[realclient] start client 1280x800 gui=2 pack=tabshader-test.zip ref=worktree
+[realclient] joined
+[realclient] shot 01_hud
+[realclient] shot 02_tab
+[realclient] shot 03_title
+[realclient] shot 04_actionbar
+[realclient] shot 05_inventory
+[realclient] shot 06_chat
+[realclient] shot 07_pause
+[realclient] shot 08_tab_again
+[realclient] done: /home/user/core-rpg-amz/tabshader/preview/real_fix_g2
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Could not resolve keysym XF86CameraAccessEnable
+> Warning:          Could not resolve keysym XF86CameraAccessDisable
+> Warning:          Could not resolve keysym XF86CameraAccessToggle
+> Warning:          Could not resolve keysym XF86NextElement
+> Warning:          Could not resolve keysym XF86PreviousElement
+> Warning:          Could not resolve keysym XF86AutopilotEngageToggle
+> Warning:          Could not resolve keysym XF86MarkWaypoint
+> Warning:          Could not resolve keysym XF86Sos
+> Warning:          Could not resolve keysym XF86NavChart
+> Warning:          Could not resolve keysym XF86FishingChart
+> Warning:          Could not resolve keysym XF86SingleRangeRadar
+> Warning:          Could not resolve keysym XF86DualRangeRadar
+> Warning:          Could not resolve keysym XF86RadarOverlay
+> Warning:          Could not resolve keysym XF86TraditionalSonar
+> Warning:          Could not resolve keysym XF86ClearvuSonar
+> Warning:          Could not resolve keysym XF86SidevuSonar
+> Warning:          Could not resolve keysym XF86NavInfo
+Errors from xkbcomp are not fatal to the X server
+stopped
+[realclient] restored plugins/textshader/config.yml
+[realclient] restored plugins/tabshader/config.yml
+[realclient] removed /home/user/mc-skilltest/plugins/nameshader-1.0.0.jar
+[realclient] removed /home/user/mc-skilltest/plugins/nameshader
+[realclient] stopped

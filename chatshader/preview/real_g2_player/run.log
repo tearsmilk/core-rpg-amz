@@ -1,0 +1,79 @@
+client ready: 61 jars
+[realclient] build textshader jar
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=36663 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+[realclient] build tabshader jar
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=36663 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+[realclient] build chatshader jar
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=36663 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+[realclient] start server
+started
+[21:51:43 INFO]: [PluginRemapper] Remapping plugin 'plugins/chatshader-1.0.0.jar'...
+[21:51:44 INFO]: [PluginRemapper] Done remapping plugin 'plugins/chatshader-1.0.0.jar' in 553ms.
+ - MMOCore (1.13.1-SNAPSHOT), ModelEngine (R4.2.0), MythicLib (1.7.1-SNAPSHOT), PlaceholderAPI (2.12.3), chatshader (1.0.0), tabshader (1.0.0), textshader (1.0.0)
+[21:51:52 INFO]: [chatshader] Loading server plugin chatshader v1.0.0
+[21:51:54 INFO]: [tabshader] Шейдеры в /home/user/core-rpg-amz/chatshader/preview/real_g2_player/nexo/assets: записано файлов 66: minecraft/shaders/core/gui.vsh, minecraft/shaders/core/gui.fsh, minecraft/shaders/core/position_tex_color.vsh, minecraft/shaders/core/position_tex_color.fsh, minecraft/shaders/core/rendertype_text.vsh, minecraft/shaders/core/rendertype_text.fsh, minecraft/textures/gui/sprites/boss_bar/blue_background.png, minecraft/textures/gui/sprites/boss_bar/blue_progress.png ...
+[21:51:54 INFO]: [textshader] Шейдеры в /home/user/core-rpg-amz/chatshader/preview/real_g2_player/nexo/assets: записано файлов 10: minecraft/shaders/core/rendertype_text_intensity.vsh, minecraft/shaders/core/rendertype_text_intensity_see_through.vsh, minecraft/shaders/core/rendertype_text_see_through.vsh, textshader/shaders/include/ts_common.glsl, textshader/shaders/include/ts_effects.glsl, textshader/shaders/include/ts_fragment.glsl, textshader/shaders/include/ts_hook_text_fragment.glsl, textshader/shaders/include/ts_hook_text_vertex.glsl ...
+[21:51:55 INFO]: [chatshader] Enabling chatshader v1.0.0
+[21:51:55 INFO]: [chatshader] Шейдеры в /home/user/core-rpg-amz/chatshader/preview/real_g2_player/nexo/assets: записано файлов 9: chatshader/shaders/include/cs_common.glsl, chatshader/shaders/include/cs_config.glsl, chatshader/shaders/include/cs_gui_fragment.glsl, chatshader/shaders/include/cs_gui_vertex.glsl, chatshader/shaders/include/cs_hook_gui_fragment.glsl, chatshader/shaders/include/cs_hook_gui_vertex.glsl, chatshader/shaders/include/cs_hook_text_vertex.glsl, chatshader/shaders/include/cs_layout.glsl ...
+[21:51:55 INFO]: [chatshader] Чат: позиция top-right, отступ 0, метка сообщений включена.
+pack: /home/user/mc-client/game/resourcepacks/chatshader-test.zip files=80 sha1=2eee3f3a25183a0cba09d5f31363f0927935275f cs_config: #version 330  #define CS_POSITION 2 #define CS_MARGIN 0.0 
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Could not resolve keysym XF86CameraAccessEnable
+> Warning:          Could not resolve keysym XF86CameraAccessDisable
+> Warning:          Could not resolve keysym XF86CameraAccessToggle
+> Warning:          Could not resolve keysym XF86NextElement
+> Warning:          Could not resolve keysym XF86PreviousElement
+> Warning:          Could not resolve keysym XF86AutopilotEngageToggle
+> Warning:          Could not resolve keysym XF86MarkWaypoint
+> Warning:          Could not resolve keysym XF86Sos
+> Warning:          Could not resolve keysym XF86NavChart
+> Warning:          Could not resolve keysym XF86FishingChart
+> Warning:          Could not resolve keysym XF86SingleRangeRadar
+> Warning:          Could not resolve keysym XF86DualRangeRadar
+> Warning:          Could not resolve keysym XF86RadarOverlay
+> Warning:          Could not resolve keysym XF86TraditionalSonar
+> Warning:          Could not resolve keysym XF86ClearvuSonar
+> Warning:          Could not resolve keysym XF86SidevuSonar
+> Warning:          Could not resolve keysym XF86NavInfo
+Errors from xkbcomp are not fatal to the X server
+[realclient] start client 1280x800 gui=2
+[realclient] joined
+[realclient] shot top-right_m0_01_closed
+[realclient] shot top-right_m0_02_faded
+[realclient] shot top-right_m0_03_open
+[realclient] shot top-right_m0_04_suggest
+[realclient] shot top-right_m0_05_usage
+[realclient] shot top-right_m0_06_player
+pack: /home/user/mc-client/game/resourcepacks/chatshader-test.zip files=80 sha1=87ebfdaa78ac49ef450ca4cc893b021ed9e64f0b cs_config: #version 330  #define CS_POSITION 0 #define CS_MARGIN 0.0 
+[realclient] shot bottom-left_m0_01_closed
+[realclient] shot bottom-left_m0_02_faded
+[realclient] shot bottom-left_m0_03_open
+[realclient] shot bottom-left_m0_04_suggest
+[realclient] shot bottom-left_m0_05_usage
+[realclient] shot bottom-left_m0_06_player
+[realclient] done: /home/user/core-rpg-amz/chatshader/preview/real_g2_player
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Could not resolve keysym XF86CameraAccessEnable
+> Warning:          Could not resolve keysym XF86CameraAccessDisable
+> Warning:          Could not resolve keysym XF86CameraAccessToggle
+> Warning:          Could not resolve keysym XF86NextElement
+> Warning:          Could not resolve keysym XF86PreviousElement
+> Warning:          Could not resolve keysym XF86AutopilotEngageToggle
+> Warning:          Could not resolve keysym XF86MarkWaypoint
+> Warning:          Could not resolve keysym XF86Sos
+> Warning:          Could not resolve keysym XF86NavChart
+> Warning:          Could not resolve keysym XF86FishingChart
+> Warning:          Could not resolve keysym XF86SingleRangeRadar
+> Warning:          Could not resolve keysym XF86DualRangeRadar
+> Warning:          Could not resolve keysym XF86RadarOverlay
+> Warning:          Could not resolve keysym XF86TraditionalSonar
+> Warning:          Could not resolve keysym XF86ClearvuSonar
+> Warning:          Could not resolve keysym XF86SidevuSonar
+> Warning:          Could not resolve keysym XF86NavInfo
+Errors from xkbcomp are not fatal to the X server
+stopped
+[realclient] restored plugins/textshader/config.yml
+[realclient] restored plugins/tabshader/config.yml
+[realclient] removed /home/user/mc-skilltest/plugins/chatshader-1.0.0.jar
+[realclient] removed /home/user/mc-skilltest/plugins/chatshader
+[realclient] stopped

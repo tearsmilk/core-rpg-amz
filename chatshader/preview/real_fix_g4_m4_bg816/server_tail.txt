@@ -1,0 +1,33 @@
+[22:33:33 WARN]: java.util.concurrent.CompletionException: java.lang.RuntimeException: Skin URL is null
+[22:33:33 WARN]: Caused by: java.lang.RuntimeException: Skin URL is null
+[22:33:54 INFO]: [91mchatshader:[0m [97mконфиг перечитан, позиция bottom-left, отступ 4. Пак обновляется в фоне, игроки получат его после перезагрузки пака Nexo; итог - /csh status.[0m
+[22:33:54 INFO]: [chatshader] Шейдеры в /home/user/core-rpg-amz/chatshader/preview/real_fix_g4_m4_bg816/nexo/assets: записано файлов 1: chatshader/shaders/include/cs_config.glsl
+[22:33:54 INFO]: [chatshader] Чат: позиция bottom-left, отступ 4; в паке bottom-left, отступ 4; метка сообщений включена.
+[22:34:11 INFO]: [91mПозиция:[0m [97mв конфиге bottom-left, отступ 4; в шейдере bottom-left, отступ 4.[0m
+[22:34:11 INFO]: [91mМетка сообщений:[0m [97mвкл, помечено 8, ошибка: -.[0m
+[22:34:11 INFO]: [91mШейдеры в паке:[0m [97mзаписано файлов: 1 (/home/user/core-rpg-amz/chatshader/preview/real_fix_g4_m4_bg816/nexo/assets)[0m
+[22:34:14 INFO]: [91mchatshader:[0m [97mотправлено строк: 6 игроку TestBot.[0m
+[22:34:40 INFO]: [91mchatshader:[0m [97mконфиг перечитан, позиция top-left, отступ 4. Пак обновляется в фоне, игроки получат его после перезагрузки пака Nexo; итог - /csh status.[0m
+[22:34:40 INFO]: [chatshader] Шейдеры в /home/user/core-rpg-amz/chatshader/preview/real_fix_g4_m4_bg816/nexo/assets: записано файлов 1: chatshader/shaders/include/cs_config.glsl
+[22:34:40 INFO]: [chatshader] Чат: позиция top-left, отступ 4; в паке top-left, отступ 4; метка сообщений включена.
+[22:34:57 INFO]: [91mПозиция:[0m [97mв конфиге top-left, отступ 4; в шейдере top-left, отступ 4.[0m
+[22:34:57 INFO]: [91mМетка сообщений:[0m [97mвкл, помечено 16, ошибка: -.[0m
+[22:34:57 INFO]: [91mШейдеры в паке:[0m [97mзаписано файлов: 1 (/home/user/core-rpg-amz/chatshader/preview/real_fix_g4_m4_bg816/nexo/assets)[0m
+[22:35:00 INFO]: [91mchatshader:[0m [97mотправлено строк: 6 игроку TestBot.[0m
+[22:35:39 INFO]: [91mchatshader:[0m [97mотправлено строк: 6 игроку TestBot.[0m
+[22:36:10 WARN]: [chatshader] Чат (top-right) и табло tabshader (board.position: right) стоят с одной стороны экрана и перекрываются. Поменяйте chat.position или board.position.
+[22:36:10 INFO]: [91mchatshader:[0m [97mконфиг перечитан, позиция top-right, отступ 4. Пак обновляется в фоне, игроки получат его после перезагрузки пака Nexo; итог - /csh status.[0m
+[22:36:10 INFO]: [chatshader] Шейдеры в /home/user/core-rpg-amz/chatshader/preview/real_fix_g4_m4_bg816/nexo/assets: записано файлов 1: chatshader/shaders/include/cs_config.glsl
+[22:36:10 INFO]: [chatshader] Чат: позиция top-right, отступ 4; в паке top-right, отступ 4; метка сообщений включена.
+[22:36:28 INFO]: [91mПозиция:[0m [97mв конфиге top-right, отступ 4; в шейдере top-right, отступ 4.[0m
+[22:36:28 INFO]: [91mМетка сообщений:[0m [97mвкл, помечено 31, ошибка: -.[0m
+[22:36:28 INFO]: [91mШейдеры в паке:[0m [97mзаписано файлов: 1 (/home/user/core-rpg-amz/chatshader/preview/real_fix_g4_m4_bg816/nexo/assets)[0m
+[22:36:30 INFO]: [91mchatshader:[0m [97mотправлено строк: 6 игроку TestBot.[0m
+[22:36:57 WARN]: [chatshader] Чат (bottom-right) и табло tabshader (board.position: right) стоят с одной стороны экрана и перекрываются. Поменяйте chat.position или board.position.
+[22:36:57 INFO]: [91mchatshader:[0m [97mконфиг перечитан, позиция bottom-right, отступ 4. Пак обновляется в фоне, игроки получат его после перезагрузки пака Nexo; итог - /csh status.[0m
+[22:36:57 INFO]: [chatshader] Шейдеры в /home/user/core-rpg-amz/chatshader/preview/real_fix_g4_m4_bg816/nexo/assets: записано файлов 1: chatshader/shaders/include/cs_config.glsl
+[22:36:57 INFO]: [chatshader] Чат: позиция bottom-right, отступ 4; в паке bottom-right, отступ 4; метка сообщений включена.
+[22:37:14 INFO]: [91mПозиция:[0m [97mв конфиге bottom-right, отступ 4; в шейдере bottom-right, отступ 4.[0m
+[22:37:14 INFO]: [91mМетка сообщений:[0m [97mвкл, помечено 39, ошибка: -.[0m
+[22:37:14 INFO]: [91mШейдеры в паке:[0m [97mзаписано файлов: 1 (/home/user/core-rpg-amz/chatshader/preview/real_fix_g4_m4_bg816/nexo/assets)[0m
+[22:37:17 INFO]: [91mchatshader:[0m [97mотправлено строк: 6 игроку TestBot.[0m
