@@ -27,6 +27,7 @@ class YamlListTest {
         assertEquals("maps:\n  - c\nx: 1\n", YamlList.replace("maps: [a, b]\nx: 1\n", "maps", List.of("c")));
         assertEquals("x: 1\nmaps:\n  - c\n", YamlList.replace("x: 1\n", "maps", List.of("c")));
         assertEquals("maps:\n  - \"a b\"\n", YamlList.replace("", "maps", List.of("a b")));
+        assertEquals("maps:\n  - \"2\"\n  - \"on\"\n  - galaxy1\n", YamlList.replace("", "maps", List.of("2", "on", "galaxy1")));
     }
 
     @Test

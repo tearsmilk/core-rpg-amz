@@ -81,27 +81,8 @@ record Settings(Set<String> maps, double vThrust, double vMax, double vKeep, dou
     }
 
     private static Space space(ModuleConfig c) {
-        BlackHole d = Space.DEFAULT_HOLE;
-        BlackHole defs = new BlackHole("", 0, 0, 0,
-            positive(c.getDouble("hole-defaults.horizon", d.horizon())),
-            positive(c.getDouble("hole-defaults.reach", d.reach())),
-            positive(c.getDouble("hole-defaults.pull", d.pull())),
-            positive(c.getDouble("hole-defaults.max-speed", d.maxSpeed())));
-        Map<String, List<BlackHole>> holes = new LinkedHashMap<>();
-        for (String map : c.keys("black-holes")) {
-            List<BlackHole> list = new ArrayList<>();
-            for (String name : c.keys("black-holes." + map)) {
-                String p = "black-holes." + map + "." + name + ".";
-                list.add(new BlackHole(name, c.getDouble(p + "x", 0), c.getDouble(p + "y", 0), c.getDouble(p + "z", 0),
-                    positive(c.getDouble(p + "horizon", defs.horizon())),
-                    positive(c.getDouble(p + "reach", defs.reach())),
-                    positive(c.getDouble(p + "pull", defs.pull())),
-                    positive(c.getDouble(p + "max-speed", defs.maxSpeed()))));
-            }
-            if (!list.isEmpty()) {
-                holes.put(map, List.copyOf(list));
-            }
-        }
+        BlackHole defs = holeDefaults(c);
+        Map<String, List<BlackHole>> holes = holes(c, defs);
         double[] dir = Gravitation.unit(c.getDouble("drift.direction.x", 0), c.getDouble("drift.direction.y", 0),
             c.getDouble("drift.direction.z", -1));
         String onHorizon = c.getString("player-on-horizon", "none").trim().toLowerCase();
@@ -119,6 +100,49 @@ record Settings(Set<String> maps, double vThrust, double vMax, double vKeep, dou
             itemKeep(c.getDouble("items.drag-half-life", 30)),
             Math.max(1, Math.min(20, c.getInt("items.update-ticks", 2))),
             c.getBoolean("items.absorb-effect", true));
+    }
+
+    /** Значения для /hograv hole add и пропущенных полей дыр (hole-defaults). */
+    static BlackHole holeDefaults(ModuleConfig c) {
+        BlackHole d = Space.DEFAULT_HOLE;
+        return new BlackHole("", 0, 0, 0,
+            positive(c.getDouble("hole-defaults.horizon", d.horizon())),
+            positive(c.getDouble("hole-defaults.reach", d.reach())),
+            positive(c.getDouble("hole-defaults.pull", d.pull())),
+            positive(c.getDouble("hole-defaults.max-speed", d.maxSpeed())));
+    }
+
+    /**
+     * Раздел black-holes. Ключи берём как есть (Object → строка), а не через ModuleConfig.keys/getDouble: YAML читает
+     * ключ без кавычек {@code 1:} как число, {@code on:} — как true, и путь через точку их не находит.
+     */
+    static Map<String, List<BlackHole>> holes(ModuleConfig c, BlackHole defs) {
+        Map<String, List<BlackHole>> holes = new LinkedHashMap<>();
+        if (!(c.get(HoleYaml.KEY) instanceof Map<?, ?> byMap)) {
+            return holes;
+        }
+        for (var me : byMap.entrySet()) {
+            if (!(me.getValue() instanceof Map<?, ?> byName)) {
+                continue;
+            }
+            List<BlackHole> list = new ArrayList<>();
+            for (var he : byName.entrySet()) {
+                Map<?, ?> h = he.getValue() instanceof Map<?, ?> m ? m : Map.of();
+                list.add(new BlackHole(String.valueOf(he.getKey()), num(h, "x", 0), num(h, "y", 0), num(h, "z", 0),
+                    positive(num(h, "horizon", defs.horizon())),
+                    positive(num(h, "reach", defs.reach())),
+                    positive(num(h, "pull", defs.pull())),
+                    positive(num(h, "max-speed", defs.maxSpeed()))));
+            }
+            if (!list.isEmpty()) {
+                holes.put(String.valueOf(me.getKey()), List.copyOf(list));
+            }
+        }
+        return holes;
+    }
+
+    private static double num(Map<?, ?> m, String key, double def) {
+        return m.get(key) instanceof Number n ? n.doubleValue() : def;
     }
 
     /** Затухание предметов: 0 и меньше — без затухания совсем. */

@@ -12,6 +12,9 @@ import java.util.regex.Pattern;
  */
 final class YamlList {
     private static final Pattern PLAIN = Pattern.compile("[A-Za-z0-9_.\\-]+");
+    /** Без кавычек YAML прочтёт это как число, true/false или null. */
+    private static final Pattern AMBIGUOUS = Pattern.compile(
+        "[-+]?[0-9][0-9_.]*|(?i)(y|n|yes|no|on|off|true|false|null|[-+]?\\.inf|\\.nan)");
 
     private YamlList() {}
 
@@ -53,7 +56,7 @@ final class YamlList {
     }
 
     static String quote(String v) {
-        if (PLAIN.matcher(v).matches()) {
+        if (PLAIN.matcher(v).matches() && !AMBIGUOUS.matcher(v).matches()) {
             return v;
         }
         return '"' + v.replace("\\", "\\\\").replace("\"", "\\\"") + '"';

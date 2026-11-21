@@ -257,7 +257,7 @@ class GravitationTest {
     @Test
     void holeYamlAppendsWhenMissing() {
         String out = HoleYaml.replace("maps: []\n", Map.of("m", List.of(new BlackHole("a", 1, 2, 3, 4, 5, 6, 7))));
-        assertEquals("maps: []\nblack-holes:\n  m:\n    a: {x: 1, y: 2, z: 3, horizon: 4, reach: 5, pull: 6, max-speed: 7}\n", out);
+        assertEquals("maps: []\nblack-holes:\n  \"m\":\n    \"a\": {x: 1, y: 2, z: 3, horizon: 4, reach: 5, pull: 6, max-speed: 7}\n", out);
         assertEquals("0.13", HoleYaml.num(0.125));
         assertEquals("-600", HoleYaml.num(-600.0));
         assertEquals("0", HoleYaml.num(-0.001));

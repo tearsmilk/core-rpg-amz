@@ -64,14 +64,19 @@ final class HoleYaml {
             if (e.getValue().isEmpty()) {
                 continue;
             }
-            out.add("  " + YamlList.quote(e.getKey()) + ":");
+            out.add("  " + quoted(e.getKey()) + ":");
             for (BlackHole h : e.getValue()) {
-                out.add("    " + YamlList.quote(h.name()) + ": {x: " + num(h.x()) + ", y: " + num(h.y()) + ", z: " + num(h.z())
+                out.add("    " + quoted(h.name()) + ": {x: " + num(h.x()) + ", y: " + num(h.y()) + ", z: " + num(h.z())
                     + ", horizon: " + num(h.horizon()) + ", reach: " + num(h.reach()) + ", pull: " + num(h.pull())
                     + ", max-speed: " + num(h.maxSpeed()) + "}");
             }
         }
         return out;
+    }
+
+    /** Ключ всегда в кавычках: иначе YAML прочтёт {@code 1} как число, {@code on}/{@code no} — как true/false. */
+    static String quoted(String v) {
+        return '"' + v.replace("\\", "\\\\").replace("\"", "\\\"") + '"';
     }
 
     /** Число без лишних нулей, до сотых. */

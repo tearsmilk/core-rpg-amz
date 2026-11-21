@@ -37,6 +37,8 @@ function attrValue (a) {
   return v
 }
 let explosions = 0
+const syncs = {}   // id сущности -> сколько пакетов sync_entity_position пришло
+bot._client.on('sync_entity_position', p => { syncs[p.entityId] = (syncs[p.entityId] || 0) + 1 })
 bot._client.on('explosion', () => { explosions++ })
 bot._client.on('entity_update_attributes', p => {
   if (!bot.entity || p.entityId !== bot.entity.id) return
@@ -158,8 +160,11 @@ const item = async id => ((await items()) || []).find(i => i.id === id)
   const it1 = await spawnItem(0, 1, 4)            // в ~10 блоках от центра дыры
   await sleep(300)
   const i0 = await item(it1)
+  const s0 = syncs[it1] || 0
   await sleep(500)
   const i1 = await item(it1)
+  const sRate = ((syncs[it1] || 0) - s0) / 0.5
+  check('летящий предмет: позиция клиенту часто (≥ 6/с, без рывков раз в секунду)', sRate >= 6, sRate)
   log('предмет у дыры:', JSON.stringify(i0), '->', JSON.stringify(i1))
   check('galaxy1: предмет без гравитации', i0 && i0.ng === true)
   const hd = i => Math.hypot(i.x - HOLE.x, i.y + 0.125 - HOLE.y, i.z - HOLE.z)
@@ -181,6 +186,18 @@ const item = async id => ((await items()) || []).find(i => i.id === id)
   check('предмет висит (не падает)', j0 && j1 && Math.abs(j1.y - j0.y) < 0.05, j1 && (j1.y - j0.y).toFixed(3))
   check('плывёт по инерции почти без затухания', j0 && j1 && (j1.x - j0.x) > 1.6 && j1.vx > 0.9, j1 && `dx=${(j1.x - j0.x).toFixed(2)} vx=${j1.vx}`)
 
+  // без дыры у края загруженных чанков: гасим скорость, висит (а не «стоит» с ненулевой скоростью)
+  bot.chat('/hoitemtest clear')
+  const ie = await spawnItem(0, 2, 0, 40, 0, 0)  // 40 бл/с вдоль x — за ~6 с до края загруженного
+  await sleep(9000)
+  const e1 = await item(ie)
+  await sleep(1000)
+  const e2 = await item(ie)
+  log('у края мира:', JSON.stringify(e1), '->', JSON.stringify(e2))
+  check('без дыры у края загруженного: предмет остановлен и висит', e1 && e2 && e2.vx === 0 && Math.abs(e2.x - e1.x) < 0.01 &&
+    e2.x > 40, e2 && `x=${e2.x} vx=${e2.vx}`)
+  bot.chat('/hoitemtest clear')
+
   bot.chat('/hograv hole add near 4 50')
   check('/hograv hole add', !!(await waitMsg(/«near» создана на карте galaxy1/)))
   bot.msgs = []
@@ -188,8 +205,50 @@ const item = async id => ((await items()) || []).find(i => i.id === id)
   check('hole list — near есть, abyss нет', !!(await waitMsg(/^ ?near: .*горизонт 4, радиус 50/)) &&
     !bot.msgs.some(m => /abyss:/.test(m)))
   const cfg = fs.readFileSync(SRV + '/module/gravity/config.yml', 'utf8')
-  check('config.yml: near записана, abyss нет, комментарии целы', /^ {4}near: \{x: /m.test(cfg) && !/abyss/.test(cfg) &&
+  check('config.yml: near записана, abyss нет, комментарии целы', /^ {4}"near": \{x: /m.test(cfg) && !/abyss/.test(cfg) &&
     cfg.includes('# Значения для /hograv hole add'))
+
+  // имена, которые YAML без кавычек читает как число/true; две команды подряд — обе записаны
+  bot.msgs = []
+  bot.chat('/hograv hole add 1 4 50')
+  bot.chat('/hograv hole add on 4 50')
+  check('hole add 1 и on подряд — обе созданы', !!(await waitMsg(/«1» создана/)) && !!(await waitMsg(/«on» создана/)))
+  bot.msgs = []
+  bot.chat('/hograv reload')
+  check('/hograv reload после имён 1/on', !!(await waitMsg(/config\.yml перечитан/)))
+  bot.msgs = []
+  bot.chat('/hograv hole list galaxy1')
+  await waitMsg(/^ ?near: /)
+  await sleep(300)
+  check('hole list — near, 1 и on на месте', ['near', '1', 'on'].every(n => bot.msgs.some(m => m.trim().startsWith(n + ':'))),
+    bot.msgs.join(' / '))
+  bot.chat('/hograv hole remove 1')
+  bot.chat('/hograv hole remove on')
+  check('hole remove 1 и on подряд', !!(await waitMsg(/«1» на карте galaxy1 убрана/)) && !!(await waitMsg(/«on» на карте galaxy1 убрана/)))
+  await sleep(500)
+  const cfg2 = fs.readFileSync(SRV + '/module/gravity/config.yml', 'utf8')
+  check('config.yml: осталась только near', /"near"/.test(cfg2) && !/"1"|"on"/.test(cfg2))
+
+  // ── дыра далеко за загруженными чанками (как abyss по умолчанию): предмет у края — поглощён, а не висит стеной
+  const cfgFar = fs.readFileSync(SRV + '/module/gravity/config.yml', 'utf8')
+  fs.writeFileSync(SRV + '/module/gravity/config.yml', cfgFar.replace(/^black-holes:[\s\S]*?(?=^\S)/m,
+    'black-holes:\n  galaxy1:\n    far: {x: 0.5, y: 70, z: -3000, horizon: 6, reach: 5000, pull: 4, max-speed: 12}\n\n'))
+  bot.msgs = []
+  bot.chat('/hograv reload')
+  await waitMsg(/config\.yml перечитан/)
+  bot.chat('/hoitemtest clear')
+  const ifar = await spawnItem(0, 2, 0, 0, 0, -40)
+  let farGone = false
+  let farMax = 0
+  for (let k = 0; k < 30 && !farGone; k++) {
+    await sleep(500)
+    const f = await item(ifar)
+    if (!f) farGone = true; else farMax = Math.max(farMax, -f.z)
+  }
+  check('дыра за краем загруженного: предмет исчез у края (не копится)', farGone, `пролетел ${farMax.toFixed(0)} бл`)
+  fs.writeFileSync(SRV + '/module/gravity/config.yml', cfgFar)
+  bot.chat('/hograv reload')
+  await waitMsg(/config\.yml перечитан/)
 
   // ── выключили вакуум: предметы падают
   bot.chat('/hoitemtest clear')

@@ -15,7 +15,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
@@ -71,6 +75,8 @@ public final class GravityModule extends OdysseyModule {
     /** Высота «центра» игрока над ногами и предмета над его позицией — от них считаем расстояние до дыры. */
     private static final double PLAYER_CENTER = 0.9;
     private static final double ITEM_CENTER = 0.125;
+    /** На сколько тиков вперёд (сверх items.update-ticks) проверять, что чанк на пути предмета загружен. */
+    private static final int ITEM_LOOKAHEAD = 2;
 
     private volatile Settings settings;
     private final Map<UUID, Floater> floaters = new ConcurrentHashMap<>();
@@ -80,6 +86,9 @@ public final class GravityModule extends OdysseyModule {
     /** Точки появления карт (из maps/&lt;карта&gt;/map.yml) для player-on-horizon: spawn. */
     private final Map<String, Pos> mapSpawns = new ConcurrentHashMap<>();
     private volatile long ticks;
+    /** Очередь правок config.yml: пишем строго по одной и по порядку команд. */
+    private final Queue<ConfigWrite> writes = new ConcurrentLinkedQueue<>();
+    private final AtomicBoolean writing = new AtomicBoolean();
 
     @Override
     protected void onEnable() {
@@ -114,7 +123,7 @@ public final class GravityModule extends OdysseyModule {
         floaters.clear();
         spawnCooldown.clear();
         for (var e : items.entrySet()) {
-            restore(e.getKey(), e.getValue().original);
+            restore(e.getKey(), e.getValue());
         }
         items.clear();
     }
@@ -148,60 +157,91 @@ public final class GravityModule extends OdysseyModule {
     /**
      * Включить/выключить вакуум на карте: записать список карт в config.yml (с сохранением комментариев) в
      * отдельном потоке, затем в тике перечитать и применить к игрокам. done получает null или текст ошибки.
+     * Список берётся из файла в момент записи — правки руками и предыдущие команды не теряются.
      */
     void setMap(String map, boolean on, Consumer<String> done) {
-        Set<String> maps = new LinkedHashSet<>(settings.maps());
-        if (on) {
-            maps.add(map);
-        } else {
-            maps.remove(map);
-        }
-        writeConfig(text -> YamlList.replace(text, "maps", maps), done);
+        writeConfig((cur, text) -> {
+            Set<String> maps = new LinkedHashSet<>(cur.getStringList("maps"));
+            if (on) {
+                maps.add(map);
+            } else {
+                maps.remove(map);
+            }
+            return YamlList.replace(text, "maps", maps);
+        }, done);
     }
 
     /** Добавить/заменить (hole != null) или убрать (hole == null) дыру name на карте map. */
     void setHole(String map, String name, BlackHole hole, Consumer<String> done) {
-        Map<String, List<BlackHole>> all = new LinkedHashMap<>();
-        settings.space().holes().forEach((k, v) -> all.put(k, new ArrayList<>(v)));
-        List<BlackHole> list = all.computeIfAbsent(map, k -> new ArrayList<>());
-        int i = 0;
-        while (i < list.size() && !list.get(i).name().equals(name)) {
-            i++;
-        }
-        if (hole == null) {
-            if (i < list.size()) {
-                list.remove(i);
+        writeConfig((cur, text) -> {
+            Map<String, List<BlackHole>> all = new LinkedHashMap<>();
+            Settings.holes(cur, Settings.holeDefaults(cur)).forEach((k, v) -> all.put(k, new ArrayList<>(v)));
+            List<BlackHole> list = all.computeIfAbsent(map, k -> new ArrayList<>());
+            int i = 0;
+            while (i < list.size() && !list.get(i).name().equals(name)) {
+                i++;
             }
-        } else if (i < list.size()) {
-            list.set(i, hole);
-        } else {
-            list.add(hole);
-        }
-        writeConfig(text -> HoleYaml.replace(text, all), done);
+            if (hole == null) {
+                if (i < list.size()) {
+                    list.remove(i);
+                }
+            } else if (i < list.size()) {
+                list.set(i, hole);
+            } else {
+                list.add(hole);
+            }
+            return HoleYaml.replace(text, all);
+        }, done);
     }
 
-    /** Переписать config.yml в отдельном потоке, затем в тике перечитать. done получает null или текст ошибки. */
-    private void writeConfig(java.util.function.UnaryOperator<String> edit, Consumer<String> done) {
-        Path file = config().file();
-        scheduler().async(() -> {
-            String error = null;
-            try {
-                String text = Files.isRegularFile(file) ? Files.readString(file, StandardCharsets.UTF_8) : "";
-                Files.createDirectories(file.getParent());
-                Files.writeString(file, edit.apply(text), StandardCharsets.UTF_8);
-            } catch (IOException | RuntimeException e) {
-                error = e.toString();
-                logger().warn("не записать {}: {}", file, e.toString());
-            }
-            String err = error;
-            scheduler().run(() -> {
-                if (err == null) {
-                    reloadSettings();
-                }
-                done.accept(err);
-            });
-        });
+    /**
+     * Переписать config.yml в отдельном потоке, затем в тике перечитать. Правка получает текущее содержимое файла
+     * (разобранное и текстом). Правки идут по очереди: одна async-задача разбирает очередь, пока та не опустеет.
+     * done получает null или текст ошибки.
+     */
+    private void writeConfig(BiFunction<ModuleConfig, String, String> edit, Consumer<String> done) {
+        writes.add(new ConfigWrite(edit, done));
+        if (writing.compareAndSet(false, true)) {
+            scheduler().async(this::drainWrites);
+        }
     }
+
+    private void drainWrites() {
+        Path file = config().file();
+        do {
+            ConfigWrite w;
+            while ((w = writes.poll()) != null) {
+                String error = null;
+                try {
+                    String text = Files.isRegularFile(file) ? Files.readString(file, StandardCharsets.UTF_8) : "";
+                    String out = w.edit.apply(new ModuleConfig(file), text);
+                    Files.createDirectories(file.getParent());
+                    Files.writeString(file, out, StandardCharsets.UTF_8);
+                } catch (IOException | RuntimeException e) {
+                    error = e.toString();
+                    logger().warn("не записать {}: {}", file, e.toString());
+                }
+                String err = error;
+                Consumer<String> done = w.done;
+                scheduler().run(() -> {
+                    String result = err;
+                    if (result == null) {
+                        try {
+                            reloadSettings();
+                        } catch (RuntimeException e) {
+                            result = "записано, но не перечитать: " + e;
+                            logger().warn("не перечитать {}: {}", file, e.toString());
+                        }
+                    }
+                    done.accept(result);
+                });
+            }
+            writing.set(false);
+            // задача могла встать в очередь между poll() и set(false) — тогда разбираем дальше сами
+        } while (!writes.isEmpty() && writing.compareAndSet(false, true));
+    }
+
+    private record ConfigWrite(BiFunction<ModuleConfig, String, String> edit, Consumer<String> done) {}
 
     /** Прочитать точки появления карт с дырами (файлы — в отдельном потоке). */
     private void loadMapSpawns() {
@@ -359,7 +399,7 @@ public final class GravityModule extends OdysseyModule {
             if (item.isRemoved()) {
                 it.remove();
             } else if (!sp.items() || !inVacuum(item.getInstance())) {
-                restore(item, e.getValue().original);
+                restore(item, e.getValue());
                 it.remove();
             }
         }
@@ -372,6 +412,7 @@ public final class GravityModule extends OdysseyModule {
             }
             List<BlackHole> holes = sp.holes(mapOf(instance).orElse(""));
             List<ItemEntity> absorbed = new ArrayList<>();
+            List<ItemEntity> lost = new ArrayList<>();
             for (Entity en : instance.getEntities()) {
                 if (!(en instanceof ItemEntity item) || item.isRemoved()) {
                     continue;
@@ -392,6 +433,24 @@ public final class GravityModule extends OdysseyModule {
                 if (nv.length() < ITEM_REST) {
                     nv = Vec.ZERO;
                 }
+                // Minestom не двигает сущность в незагруженный чанк — предмет встал бы стеной на краю мира у игроков.
+                // Летит к дыре — считаем, что упал в неё (тихо: рядом никого); дыры нет — гасим скорость, висит.
+                if (!nv.isZero() && !instance.isChunkLoaded(pos.add(nv.mul(ITEM_LOOKAHEAD + sp.itemTicks())))) {
+                    if (h != null) {
+                        lost.add(item);
+                        continue;
+                    }
+                    nv = Vec.ZERO;
+                }
+                // предмет у клиента сам гасит скорость (×0.98 за тик), а позицию сервер шлёт раз в секунду —
+                // пока летит, синхронизируем часто, иначе он у игрока отстаёт и скачет рывками
+                long sync = nv.isZero() ? st.originalSync : sp.itemTicks();
+                if (item.getSynchronizationTicks() != sync) {
+                    item.setSynchronizationTicks(sync);
+                    if (sync < st.originalSync) {
+                        item.synchronizeNextTick();
+                    }
+                }
                 if (nv.samePoint(v)) {
                     st.updated = ticks;
                 } else if (nv.distance(v) >= ITEM_MIN_CHANGE || dt >= ITEM_MAX_SILENCE || nv.isZero()) {
@@ -401,6 +460,9 @@ public final class GravityModule extends OdysseyModule {
             }
             for (ItemEntity item : absorbed) {
                 absorb(item, sp.absorbEffect());
+            }
+            for (ItemEntity item : lost) {
+                absorb(item, false);
             }
         }
     }
@@ -412,7 +474,7 @@ public final class GravityModule extends OdysseyModule {
             it.setNoGravity(true);
             // затухание и притяжение считаем сами, сервер скорость между нашими пересчётами не меняет
             it.setAerodynamics(new Aerodynamics(a.gravity(), 1.0, a.verticalAirResistance()));
-            return new ItemState(a, ticks - settings.space().itemTicks());
+            return new ItemState(a, it.getSynchronizationTicks(), ticks - settings.space().itemTicks());
         });
     }
 
@@ -428,21 +490,25 @@ public final class GravityModule extends OdysseyModule {
         item.remove();
     }
 
-    private static void restore(ItemEntity item, Aerodynamics original) {
+    private static void restore(ItemEntity item, ItemState st) {
         if (item.isRemoved()) {
             return;
         }
-        item.setAerodynamics(original);
+        item.setAerodynamics(st.original);
+        item.setSynchronizationTicks(st.originalSync);
         item.setNoGravity(false);
     }
 
     /** Предмет в вакууме: прежняя аэродинамика и тик последнего пересчёта скорости. */
     private static final class ItemState {
         final Aerodynamics original;
+        /** Прежний интервал синхронизации позиции с клиентами. */
+        final long originalSync;
         volatile long updated;
 
-        ItemState(Aerodynamics original, long updated) {
+        ItemState(Aerodynamics original, long originalSync, long updated) {
             this.original = original;
+            this.originalSync = originalSync;
             this.updated = updated;
         }
     }
