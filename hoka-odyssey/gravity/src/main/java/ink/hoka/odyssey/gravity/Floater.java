@@ -13,6 +13,8 @@ final class Floater {
     static final double TELEPORT_DISTANCE = 8;
     /** Тиков после сброса, когда модель вертикали берётся из замеров позиции. */
     static final int SEED_TICKS = 3;
+    /** С какой скорости (блоков/тик) начинать дрейф: меньше 0,003 клиент обнуляет. */
+    static final double START_SPEED = 0.0035;
 
     /** Модель вертикальной скорости клиента, блоков/тик. */
     double vy;
@@ -26,13 +28,31 @@ final class Floater {
     private int stuck;
     /** Сколько тиков после сброса модель берёт скорость из замеров (вошёл в вакуум в падении — гасим и это падение). */
     private int seed = SEED_TICKS;
+    /**
+     * Модель горизонтальной скорости клиента при дрейфе (после его затухания за тик; без клавиш клиент её только гасит
+     * ×0.91 — она предсказуема, замерам с пингом не верим, иначе дрейф раскачивался бы). hModel — модель действует.
+     */
+    double hx;
+    double hz;
+    private boolean hModel;
+    private int hStuck;
 
     /** Импульс {x, y, z}, который надо добавить к скорости клиента; null — ничего не слать. */
     record Impulse(double x, double y, double z) {}
 
     /** Клавиши игрока. */
-    record Keys(boolean forward, boolean backward, boolean left, boolean right, boolean jump, boolean shift) {
-        static final Keys NONE = new Keys(false, false, false, false, false, false);
+    record Keys(boolean forward, boolean backward, boolean left, boolean right, boolean jump, boolean shift,
+                boolean sprint) {
+        static final Keys NONE = new Keys(false, false, false, false, false, false, false);
+
+        Keys(boolean forward, boolean backward, boolean left, boolean right, boolean jump, boolean shift) {
+            this(forward, backward, left, right, jump, shift, false);
+        }
+
+        /** Нажато хоть что-то (WASD, пробел, Shift, бег). */
+        boolean any() {
+            return forward || backward || left || right || jump || shift || sprint;
+        }
     }
 
     /** Забыть всё (телепорт, смена карты, включение). */
@@ -43,10 +63,24 @@ final class Floater {
         hasLast = false;
         stuck = 0;
         seed = SEED_TICKS;
+        hx = 0;
+        hz = 0;
+        hModel = false;
+        hStuck = 0;
     }
 
-    /** Один тик сервера. */
+    /** Один тик сервера без дрейфа. */
     Impulse tick(Settings s, double x, double y, double z, float yaw, Keys k, boolean onGround, boolean flying) {
+        return tick(s, x, y, z, yaw, k, onGround, flying, null);
+    }
+
+    /**
+     * Один тик сервера.
+     *
+     * @param drift куда сносит вакуум, если игрок ничего не нажимает (блоки/тик); null — никуда
+     */
+    Impulse tick(Settings s, double x, double y, double z, float yaw, Keys k, boolean onGround, boolean flying,
+                 Gravitation.Force drift) {
         double dx = 0;
         double dy = 0;
         double dz = 0;
@@ -74,6 +108,7 @@ final class Floater {
         if (flying) {                                   // креативный полёт — у клиента своя физика
             vy = 0;
             stuck = 0;
+            hModel = false;
             return null;
         }
         if (onGround && vy < 0) {
@@ -88,6 +123,11 @@ final class Floater {
             stuck = 0;
         }
 
+        if (drift != null && !onGround && !k.any()) {
+            return drift(s, dx, dz, drift);
+        }
+        hModel = false;
+
         int dir = k.jump() == k.shift() ? 0 : k.jump() ? 1 : -1;
         double iy = onGround && dir <= 0 ? 0 : Motion.verticalImpulse(vy, dir, s);
         vy = Motion.nextVertical(vy, iy);
@@ -99,5 +139,53 @@ final class Floater {
             return null;
         }
         return new Impulse(h[0], iy, h[1]);
+    }
+
+    /**
+     * Дрейф без клавиш. Клиент за тик сдвигается на (скорость + импульс) и только потом гасит скорость, поэтому
+     * {@link Gravitation#step} ведём по сдвигу за тик (настоящая скорость полёта — она и ограничена пределом),
+     * а импульс — разница между нужным сдвигом и текущей скоростью клиента.
+     */
+    private Impulse drift(Settings s, double dx, double dz, Gravitation.Force f) {
+        if (!hModel) {                                  // только что отпустил клавиши — с замеренной скорости
+            hx = mx * Motion.CLIENT_AIR_FRICTION;
+            hz = mz * Motion.CLIENT_AIR_FRICTION;
+            hModel = true;
+            hStuck = 0;
+        }
+        if (Math.hypot(dx, dz) < 1.0e-3 && Math.hypot(hx, hz) > 0.01) {
+            if (++hStuck >= STUCK_TICKS) {              // упёрся в стену, а модель всё ещё «летит»
+                hx = 0;
+                hz = 0;
+                hStuck = 0;
+            }
+        } else {
+            hStuck = 0;
+        }
+        double hk = s.hKeep() > 0 ? s.hKeep() : Motion.CLIENT_AIR_FRICTION;
+        double[] u = Gravitation.step(new double[] {hx / Motion.CLIENT_AIR_FRICTION, vy / Motion.CLIENT_VERTICAL_DRAG,
+            hz / Motion.CLIENT_AIR_FRICTION}, f, new double[] {hk, s.vKeep(), hk}, START_SPEED);
+
+        double iy = Motion.clamp(u[1] - vy, -s.vThrust(), s.vThrust());
+        if (Math.abs(iy) < Motion.MIN_IMPULSE) {
+            iy = 0;
+        }
+        double ix = u[0] - hx;
+        double iz = u[2] - hz;
+        double len = Math.hypot(ix, iz);
+        if (len > Motion.MAX_GLIDE_IMPULSE) {
+            ix *= Motion.MAX_GLIDE_IMPULSE / len;
+            iz *= Motion.MAX_GLIDE_IMPULSE / len;
+        } else if (len < Motion.MIN_IMPULSE) {
+            ix = 0;
+            iz = 0;
+        }
+        vy = Motion.nextVertical(vy, iy);
+        hx = Motion.next(hx, ix, Motion.CLIENT_AIR_FRICTION);
+        hz = Motion.next(hz, iz, Motion.CLIENT_AIR_FRICTION);
+        if (iy == 0 && ix == 0 && iz == 0) {
+            return null;
+        }
+        return new Impulse(ix, iy, iz);
     }
 }

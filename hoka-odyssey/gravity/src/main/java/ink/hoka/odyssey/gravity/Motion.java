@@ -47,11 +47,16 @@ final class Motion {
 
     /** Вертикальная скорость клиента через тик после импульса. */
     static double nextVertical(double v, double impulse) {
+        return next(v, impulse, CLIENT_VERTICAL_DRAG);
+    }
+
+    /** Составляющая скорости клиента через тик после импульса: обнуление мелочи, затем затухание drag. */
+    static double next(double v, double impulse, double drag) {
         double n = v + impulse;
         if (Math.abs(n) < CLIENT_NEGLIGIBLE) {
             return 0;
         }
-        return n * CLIENT_VERTICAL_DRAG;
+        return n * drag;
     }
 
     /**

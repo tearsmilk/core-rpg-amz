@@ -1,32 +1,44 @@
 package ink.hoka.odyssey.gravity;
 
+import ink.hoka.odyssey.api.ModuleConfig;
 import ink.hoka.odyssey.api.OdysseyModule;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.collision.Aerodynamics;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
+import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.GameMode;
+import net.minestom.server.entity.ItemEntity;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.attribute.Attribute;
 import net.minestom.server.entity.attribute.AttributeModifier;
 import net.minestom.server.entity.attribute.AttributeOperation;
 import net.minestom.server.entity.vehicle.PlayerInputs;
+import net.minestom.server.event.entity.EntitySpawnEvent;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.network.packet.server.play.ExplosionPacket;
+import net.minestom.server.network.packet.server.play.ParticlePacket;
 import net.minestom.server.particle.Particle;
 import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.utils.WeightedList;
@@ -37,6 +49,10 @@ import net.minestom.server.utils.WeightedList;
  * к скорости клиента пакетом взрыва с отдачей игроку: в отличие от setVelocity он не затирает скорость, которую
  * клиент набрал сам, а прибавляется к ней — управление остаётся плавным при любом пинге. Взрыв «пустой»: радиус 0,
  * звук intentionally_empty, частица далеко под игроком (клиент её не рисует).
+ * <p>
+ * Чёрные дыры (black-holes в config.yml): игрока без нажатых клавиш вакуум сносит к ближайшей дыре (или по
+ * drift.direction, если дыр рядом нет) теми же толчками. Предметы (ItemEntity) на картах с вакуумом — без
+ * гравитации и почти без затухания, плывут по инерции, падают в дыры и исчезают за горизонтом.
  */
 public final class GravityModule extends OdysseyModule {
     /** id модификаторов атрибутов модуля — по нему же снимаем. */
@@ -44,9 +60,26 @@ public final class GravityModule extends OdysseyModule {
     private static final AttributeModifier ZERO = new AttributeModifier(MODIFIER, -1, AttributeOperation.ADD_MULTIPLIED_TOTAL);
     /** Насколько ниже игрока «взрыв» (частица и звук за пределами слышимости и видимости). */
     private static final double FAR_BELOW = 4096;
+    /** Скорость предмета меньше этой (блоков/тик) — стоит, скорость не шлём. */
+    private static final double ITEM_REST = 1.0e-4;
+    /** Изменение скорости предмета меньше этого (блоков/тик) копим, а не шлём каждый раз. */
+    private static final double ITEM_MIN_CHANGE = 0.002;
+    /** Но не реже, чем раз в столько тиков. */
+    private static final int ITEM_MAX_SILENCE = 20;
+    /** Тиков после переноса на спавн, пока горизонт не проверяем (позиция клиента ещё старая). */
+    private static final int SPAWN_COOLDOWN = 40;
+    /** Высота «центра» игрока над ногами и предмета над его позицией — от них считаем расстояние до дыры. */
+    private static final double PLAYER_CENTER = 0.9;
+    private static final double ITEM_CENTER = 0.125;
 
     private volatile Settings settings;
     private final Map<UUID, Floater> floaters = new ConcurrentHashMap<>();
+    private final Map<UUID, Integer> spawnCooldown = new ConcurrentHashMap<>();
+    /** Предметы, которым модуль выключил гравитацию: прежняя аэродинамика (вернуть при выходе из вакуума). */
+    private final Map<ItemEntity, ItemState> items = new ConcurrentHashMap<>();   // Entity — без equals, по ссылке
+    /** Точки появления карт (из maps/&lt;карта&gt;/map.yml) для player-on-horizon: spawn. */
+    private final Map<String, Pos> mapSpawns = new ConcurrentHashMap<>();
+    private volatile long ticks;
 
     @Override
     protected void onEnable() {
@@ -54,10 +87,21 @@ public final class GravityModule extends OdysseyModule {
         registerCommand(new HoGravCommand(this));
         // PlayerSpawnEvent срабатывает и при входе, и при каждой смене карты (setInstance)
         events().addListener(PlayerSpawnEvent.class, e -> refresh(e.getPlayer(), e.getInstance(), true));
-        events().addListener(PlayerDisconnectEvent.class, e -> floaters.remove(e.getPlayer().getUuid()));
+        events().addListener(PlayerDisconnectEvent.class, e -> {
+            floaters.remove(e.getPlayer().getUuid());
+            spawnCooldown.remove(e.getPlayer().getUuid());
+        });
+        // предмет появился на карте с вакуумом — сразу без гравитации (до первого тика физики, иначе он успеет
+        // набрать скорость падения)
+        events().addListener(EntitySpawnEvent.class, e -> {
+            if (e.getEntity() instanceof ItemEntity item && settings.space().items() && inVacuum(e.getInstance())) {
+                capture(item);
+            }
+        });
         scheduler().repeat(this::tick, 1, 1);
         refreshAll();
-        logger().info("gravity: вакуум на картах {}, команда /hograv", settings.maps());
+        loadMapSpawns();
+        logger().info("gravity: вакуум на картах {}, чёрных дыр: {}, команда /hograv", settings.maps(), holeCount());
     }
 
     @Override
@@ -68,6 +112,11 @@ public final class GravityModule extends OdysseyModule {
             }
         }
         floaters.clear();
+        spawnCooldown.clear();
+        for (var e : items.entrySet()) {
+            restore(e.getKey(), e.getValue().original);
+        }
+        items.clear();
     }
 
     Settings settings() {
@@ -79,11 +128,21 @@ public final class GravityModule extends OdysseyModule {
         config().reload();
         settings = Settings.from(config());
         refreshAll();
+        loadMapSpawns();
     }
 
     /** Сколько игроков сейчас в вакууме. */
     int floating() {
         return floaters.size();
+    }
+
+    /** Сколько предметов сейчас в вакууме. */
+    int floatingItems() {
+        return items.size();
+    }
+
+    int holeCount() {
+        return settings.space().holes().values().stream().mapToInt(List::size).sum();
     }
 
     /**
@@ -97,13 +156,39 @@ public final class GravityModule extends OdysseyModule {
         } else {
             maps.remove(map);
         }
+        writeConfig(text -> YamlList.replace(text, "maps", maps), done);
+    }
+
+    /** Добавить/заменить (hole != null) или убрать (hole == null) дыру name на карте map. */
+    void setHole(String map, String name, BlackHole hole, Consumer<String> done) {
+        Map<String, List<BlackHole>> all = new LinkedHashMap<>();
+        settings.space().holes().forEach((k, v) -> all.put(k, new ArrayList<>(v)));
+        List<BlackHole> list = all.computeIfAbsent(map, k -> new ArrayList<>());
+        int i = 0;
+        while (i < list.size() && !list.get(i).name().equals(name)) {
+            i++;
+        }
+        if (hole == null) {
+            if (i < list.size()) {
+                list.remove(i);
+            }
+        } else if (i < list.size()) {
+            list.set(i, hole);
+        } else {
+            list.add(hole);
+        }
+        writeConfig(text -> HoleYaml.replace(text, all), done);
+    }
+
+    /** Переписать config.yml в отдельном потоке, затем в тике перечитать. done получает null или текст ошибки. */
+    private void writeConfig(java.util.function.UnaryOperator<String> edit, Consumer<String> done) {
         Path file = config().file();
         scheduler().async(() -> {
             String error = null;
             try {
                 String text = Files.isRegularFile(file) ? Files.readString(file, StandardCharsets.UTF_8) : "";
                 Files.createDirectories(file.getParent());
-                Files.writeString(file, YamlList.replace(text, "maps", maps), StandardCharsets.UTF_8);
+                Files.writeString(file, edit.apply(text), StandardCharsets.UTF_8);
             } catch (IOException | RuntimeException e) {
                 error = e.toString();
                 logger().warn("не записать {}: {}", file, e.toString());
@@ -118,6 +203,32 @@ public final class GravityModule extends OdysseyModule {
         });
     }
 
+    /** Прочитать точки появления карт с дырами (файлы — в отдельном потоке). */
+    private void loadMapSpawns() {
+        if (!settings.space().horizonSpawn()) {
+            return;
+        }
+        Set<String> maps = new LinkedHashSet<>(settings.space().holes().keySet());
+        scheduler().async(() -> {
+            for (String map : maps) {
+                Path f = Path.of("maps", map, "map.yml");
+                try {
+                    if (Files.isRegularFile(f)) {
+                        ModuleConfig m = new ModuleConfig(f);
+                        mapSpawns.put(map, new Pos(m.getDouble("spawn.x", 0.5), m.getDouble("spawn.y", 65),
+                            m.getDouble("spawn.z", 0.5), (float) m.getDouble("spawn.yaw", 0), (float) m.getDouble("spawn.pitch", 0)));
+                    }
+                } catch (RuntimeException e) {
+                    logger().warn("не прочитать {}: {}", f, e.toString());
+                }
+            }
+        });
+    }
+
+    Optional<String> mapOf(Instance instance) {
+        return instance == null ? Optional.empty() : server().mapName(instance);
+    }
+
     private void refreshAll() {
         for (Player p : MinecraftServer.getConnectionManager().getOnlinePlayers()) {
             refresh(p, p.getInstance(), false);
@@ -125,7 +236,7 @@ public final class GravityModule extends OdysseyModule {
     }
 
     private boolean inVacuum(Instance instance) {
-        return instance != null && server().mapName(instance).map(settings.maps()::contains).orElse(false);
+        return mapOf(instance).map(settings.maps()::contains).orElse(false);
     }
 
     /** Привести игрока в соответствие с картой: включить/выключить вакуум. reset — игрок только что появился. */
@@ -174,6 +285,7 @@ public final class GravityModule extends OdysseyModule {
 
     private void tick() {
         Settings s = settings;
+        ticks++;
         for (Player p : MinecraftServer.getConnectionManager().getOnlinePlayers()) {
             Instance instance = p.getInstance();
             boolean should = inVacuum(instance);
@@ -185,13 +297,153 @@ public final class GravityModule extends OdysseyModule {
                 continue;
             }
             Pos pos = p.getPosition();
-            PlayerInputs in = p.inputs();
-            Floater.Keys keys = new Floater.Keys(in.forward(), in.backward(), in.left(), in.right(), in.jump(), in.shift());
             boolean flying = p.isFlying() || p.getGameMode() == GameMode.SPECTATOR;
-            Floater.Impulse imp = f.tick(s, pos.x(), pos.y(), pos.z(), pos.yaw(), keys, p.isOnGround(), flying);
+            List<BlackHole> holes = s.space().holes(mapOf(instance).orElse(""));
+            if (!flying && horizon(p, f, holes, pos)) {
+                continue;
+            }
+            PlayerInputs in = p.inputs();
+            Floater.Keys keys = new Floater.Keys(in.forward(), in.backward(), in.left(), in.right(), in.jump(), in.shift(),
+                in.sprint());
+            Gravitation.Force drift = keys.any() ? null : playerDrift(s.space(), holes, pos);
+            Floater.Impulse imp = f.tick(s, pos.x(), pos.y(), pos.z(), pos.yaw(), keys, p.isOnGround(), flying, drift);
             if (imp != null) {
                 push(p, imp);
             }
+        }
+        if (ticks % s.space().itemTicks() == 0) {
+            tickItems(s);
+        }
+    }
+
+    private static Gravitation.Force playerDrift(Settings.Space sp, List<BlackHole> holes, Pos pos) {
+        return Gravitation.playerForce(holes, pos.x(), pos.y() + PLAYER_CENTER, pos.z(), sp.falloff(), sp.minPull(),
+            sp.playerScale(), sp.playerMaxDrift(), !sp.horizonSpawn(), sp.driftDir(), sp.driftSpeed(), sp.driftAccel());
+    }
+
+    /** Игрок за горизонтом при player-on-horizon: spawn — на спавн карты. true — перенесён (тик пропустить). */
+    private boolean horizon(Player p, Floater f, List<BlackHole> holes, Pos pos) {
+        Integer cd = spawnCooldown.get(p.getUuid());
+        if (cd != null) {
+            if (cd <= 1) {
+                spawnCooldown.remove(p.getUuid());
+            } else {
+                spawnCooldown.put(p.getUuid(), cd - 1);
+            }
+            return false;
+        }
+        if (!settings.space().horizonSpawn() || holes.isEmpty()) {
+            return false;
+        }
+        double cy = pos.y() + PLAYER_CENTER;
+        BlackHole h = Gravitation.nearest(holes, pos.x(), cy, pos.z());
+        if (h == null || h.distance(pos.x(), cy, pos.z()) > h.horizon()) {
+            return false;
+        }
+        String map = mapOf(p.getInstance()).orElse("");
+        Pos to = mapSpawns.getOrDefault(map, p.getRespawnPoint());
+        p.teleport(to, Vec.ZERO);
+        f.reset();
+        spawnCooldown.put(p.getUuid(), SPAWN_COOLDOWN);
+        p.sendActionBar(Component.text("Вас затянуло в чёрную дыру «" + h.name() + "» — выброшены на точку появления",
+            NamedTextColor.LIGHT_PURPLE));
+        return true;
+    }
+
+    /** Предметы: на картах с вакуумом — без гравитации, к дырам; вне вакуума — вернуть как было. */
+    private void tickItems(Settings s) {
+        Settings.Space sp = s.space();
+        for (Iterator<Map.Entry<ItemEntity, ItemState>> it = items.entrySet().iterator(); it.hasNext(); ) {
+            var e = it.next();
+            ItemEntity item = e.getKey();
+            if (item.isRemoved()) {
+                it.remove();
+            } else if (!sp.items() || !inVacuum(item.getInstance())) {
+                restore(item, e.getValue().original);
+                it.remove();
+            }
+        }
+        if (!sp.items()) {
+            return;
+        }
+        for (Instance instance : MinecraftServer.getInstanceManager().getInstances()) {
+            if (!inVacuum(instance)) {
+                continue;
+            }
+            List<BlackHole> holes = sp.holes(mapOf(instance).orElse(""));
+            List<ItemEntity> absorbed = new ArrayList<>();
+            for (Entity en : instance.getEntities()) {
+                if (!(en instanceof ItemEntity item) || item.isRemoved()) {
+                    continue;
+                }
+                ItemState st = capture(item);
+                Pos pos = item.getPosition();
+                double cy = pos.y() + ITEM_CENTER;
+                BlackHole h = Gravitation.nearest(holes, pos.x(), cy, pos.z());
+                if (h != null && h.distance(pos.x(), cy, pos.z()) <= h.horizon()) {
+                    absorbed.add(item);
+                    continue;
+                }
+                Vec v = item.getVelocity().div(Settings.TPS);
+                int dt = (int) Math.min(ITEM_MAX_SILENCE, Math.max(1, ticks - st.updated));
+                double[] next = Gravitation.itemVelocity(new double[] {v.x(), v.y(), v.z()}, h, pos.x(), cy, pos.z(),
+                    sp.falloff(), sp.minPull(), sp.itemKeep(), dt);
+                Vec nv = new Vec(next[0], next[1], next[2]);
+                if (nv.length() < ITEM_REST) {
+                    nv = Vec.ZERO;
+                }
+                if (nv.samePoint(v)) {
+                    st.updated = ticks;
+                } else if (nv.distance(v) >= ITEM_MIN_CHANGE || dt >= ITEM_MAX_SILENCE || nv.isZero()) {
+                    item.setVelocity(nv.mul(Settings.TPS));      // мелкие изменения копим — меньше пакетов
+                    st.updated = ticks;
+                }
+            }
+            for (ItemEntity item : absorbed) {
+                absorb(item, sp.absorbEffect());
+            }
+        }
+    }
+
+    /** Взять предмет в вакуум (повторно — ничего не меняет). */
+    private ItemState capture(ItemEntity item) {
+        return items.computeIfAbsent(item, it -> {
+            Aerodynamics a = it.getAerodynamics();
+            it.setNoGravity(true);
+            // затухание и притяжение считаем сами, сервер скорость между нашими пересчётами не меняет
+            it.setAerodynamics(new Aerodynamics(a.gravity(), 1.0, a.verticalAirResistance()));
+            return new ItemState(a, ticks - settings.space().itemTicks());
+        });
+    }
+
+    private void absorb(ItemEntity item, boolean effect) {
+        Pos pos = item.getPosition();
+        if (effect && item.getInstance() != null) {
+            item.sendPacketToViewers(new ParticlePacket(Particle.REVERSE_PORTAL, pos.add(0, ITEM_CENTER, 0),
+                new Vec(0.15, 0.15, 0.15), 0.05f, 12));
+            item.getInstance().playSound(Sound.sound(SoundEvent.ENTITY_ENDERMAN_TELEPORT, Sound.Source.NEUTRAL, 0.4f, 0.5f),
+                pos.x(), pos.y(), pos.z());
+        }
+        items.remove(item);
+        item.remove();
+    }
+
+    private static void restore(ItemEntity item, Aerodynamics original) {
+        if (item.isRemoved()) {
+            return;
+        }
+        item.setAerodynamics(original);
+        item.setNoGravity(false);
+    }
+
+    /** Предмет в вакууме: прежняя аэродинамика и тик последнего пересчёта скорости. */
+    private static final class ItemState {
+        final Aerodynamics original;
+        volatile long updated;
+
+        ItemState(Aerodynamics original, long updated) {
+            this.original = original;
+            this.updated = updated;
         }
     }
 
