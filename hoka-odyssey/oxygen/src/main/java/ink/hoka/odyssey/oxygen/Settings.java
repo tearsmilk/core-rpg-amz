@@ -30,7 +30,7 @@ record Settings(Set<String> maps, double drainPerTick, double refillPerTick, flo
         return new Settings(Collections.unmodifiableSet(maps),
             perTick(c.getDouble("air.supply-seconds", 15)),
             perTick(c.getDouble("air.refill-seconds", 3.75)),
-            (float) Math.max(0, c.getDouble("damage.amount", 2.0)),
+            (float) Math.max(0, c.getDouble("damage.amount", 4.0)),
             ticks(c.getDouble("damage.interval-seconds", 1.0)),
             c.getBoolean("creative-bubbles", false),
             c.getString("warning.text", ""),

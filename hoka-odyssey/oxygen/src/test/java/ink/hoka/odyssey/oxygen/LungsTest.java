@@ -121,7 +121,7 @@ class LungsTest {
         assertEquals(Set.of("galaxy1"), s.maps());
         assertEquals(1.0, s.drainPerTick(), 1e-9);
         assertEquals(4.0, s.refillPerTick(), 1e-9);
-        assertEquals(2f, s.damage());
+        assertEquals(4f, s.damage());
         assertEquals(20, s.damageInterval());
         assertEquals(20, s.warningInterval());
         assertFalse(s.creativeBubbles());
