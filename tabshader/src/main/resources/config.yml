@@ -15,6 +15,7 @@ pack:
 
 tab:
   enabled: true
+  visible: true
   header:
     - "<shadow:#5a0a26E6><gradient:#ffffff:#ffd6e2><b>{server}</b></gradient>"
     - "<shadow:#5a0a26E6><#ffe0ea>Онлайн: <white>{online}</white>   Пинг: <white>{ping} мс</white>"
@@ -62,13 +63,17 @@ title:
   fade-out: 15
 
 messages:
-  help: "<#ff8fbd>tabshader</#ff8fbd> <gray>- стиль таба, табло, боссбара, актионбара и тайтла</gray>\n<#ff7aaa>/tsh toggle <tab|board|bossbar|actionbar|title> [игрок]</#ff7aaa> <gray>- вкл/выкл</gray>\n<#ff7aaa>/tsh test-title [игрок|*]</#ff7aaa> <gray>- тестовый тайтл</gray>\n<#ff7aaa>/tsh test-actionbar [игрок|*]</#ff7aaa> <gray>- тестовый актионбар</gray>\n<#ff7aaa>/tsh title <игрок|*> <текст> [| подзаголовок]</#ff7aaa> <gray>- тайтл с подложкой</gray>\n<#ff7aaa>/tsh actionbar <игрок|*> <текст></#ff7aaa> <gray>- актионбар с подложкой</gray>\n<#ff7aaa>/tsh reload</#ff7aaa> <gray>- перечитать config.yml</gray>"
+  help: "<#ff8fbd>tabshader</#ff8fbd> <gray>- стиль таба, табло, боссбара, актионбара и тайтла</gray>\n<#ff7aaa>/tsh toggle <tab|board|bossbar|actionbar|title> [игрок]</#ff7aaa> <gray>- вкл/выкл</gray>\n<#ff7aaa>/tsh test-title [игрок|*]</#ff7aaa> <gray>- тестовый тайтл</gray>\n<#ff7aaa>/tsh test-actionbar [игрок|*]</#ff7aaa> <gray>- тестовый актионбар</gray>\n<#ff7aaa>/tsh title <игрок|*> <текст> [| подзаголовок]</#ff7aaa> <gray>- тайтл с подложкой</gray>\n<#ff7aaa>/tsh actionbar <игрок|*> <текст></#ff7aaa> <gray>- актионбар с подложкой</gray>\n<#ff7aaa>/tsh tab <on|off></#ff7aaa> <gray>- показать или полностью скрыть таб у всех (tab.visible)</gray>\n<#ff7aaa>/tsh reload</#ff7aaa> <gray>- перечитать config.yml</gray>"
   no-permission: "<#ff3d6e>Нет прав.</#ff3d6e>"
   only-players: "<#ff3d6e>Укажите игрока.</#ff3d6e>"
   player-not-found: "<#ff3d6e>Игрок <white><player></white> не найден.</#ff3d6e>"
   unknown-part: "<#ff3d6e>Неизвестная часть: <white><part></white>. Есть: tab, board, bossbar, actionbar, title.</#ff3d6e>"
   usage-toggle: "<#ff7aaa>/tsh toggle <tab|board|bossbar|actionbar|title> [игрок]</#ff7aaa>"
   usage-title: "<#ff7aaa>/tsh title <игрок|*> <текст> [| подзаголовок]</#ff7aaa>"
+  usage-tab: "<#ff7aaa>/tsh tab <on|off></#ff7aaa> <gray>- сейчас таб</gray> <white><state></white>"
+  tab-visible-on: "<#ff8fbd>tabshader:</#ff8fbd> <gray>таб</gray> <#7dffb0>показан</#7dffb0> <gray>у всех (tab.visible: true)</gray>"
+  tab-visible-off: "<#ff8fbd>tabshader:</#ff8fbd> <gray>таб</gray> <#ff3d6e>скрыт</#ff3d6e> <gray>у всех, по Tab не видно ничего (tab.visible: false)</gray>"
+  tab-save-failed: "<#ff3d6e>config.yml не сохранен: <white><error></white>. Таб переключен до перезапуска или /tsh reload.</#ff3d6e>"
   usage-actionbar: "<#ff7aaa>/tsh actionbar <игрок|*> <текст></#ff7aaa>"
   toggled-on: "<#ff8fbd><part></#ff8fbd> <gray>для</gray> <white><player></white><gray>:</gray> <#7dffb0>включено</#7dffb0>"
   toggled-off: "<#ff8fbd><part></#ff8fbd> <gray>для</gray> <white><player></white><gray>:</gray> <#ff3d6e>выключено</#ff3d6e>"
@@ -78,7 +83,10 @@ messages:
   status: "<#ff8fbd>tabshader:</#ff8fbd> <gray>игроков</gray> <white><players></white><gray>, обновлений</gray> <white><updates></white><gray>, ширин глифов</gray> <white><widths></white>"
   status-tab: "<gray>Таб: лимит</gray> <white><limit></white><gray>, скрыто</gray> <white><hidden></white><gray>, обрезано ников</gray> <white><cut></white><gray>, ширина</gray> <white><width></white><gray>, таб</gray> <white><tab></white><gray>, табло</gray> <white><board></white><gray>, обход таба</gray> <white><avoid></white><gray>, табло шире <max> px (стоит справа)</gray> <white><wide></white>"
   status-pack: "<gray>Шейдеры в паке Nexo:</gray> <white><state></white>"
+  status-visible: "<gray>Таб (tab.visible):</gray> <white><state></white><gray>, сейчас скрыт у</gray> <white><hidden></white><gray> из</gray> <white><players></white><gray> игроков</gray>"
   status-ping: "<gray>Полоски пинга (tab.ping-bars):</gray> <white><state></white><gray>, сейчас убраны у</gray> <white><hidden></white><gray> из</gray> <white><players></white><gray> игроков</gray>"
+  visible-on: "виден"
+  visible-off: "скрыт полностью"
   ping-on: "показаны"
   ping-off: "скрыты"
   tab-hidden: "<shadow:#5a0a26E6><#ffe0ea>И еще <white>+<count></white> в сети"

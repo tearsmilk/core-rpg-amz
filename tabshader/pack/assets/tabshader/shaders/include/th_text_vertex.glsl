@@ -61,7 +61,7 @@ void th_text_vertex(vec3 pos, vec4 color, vec2 uv, int vertexId, inout vec4 outC
         vec2 screen = th_screen();
         if (c.r == TH_MARK_R + 1) {
             int tab = th_tab_code(pos.y);
-            if (tab < 0) {
+            if (tab < 0 || th_tab_hidden(tab)) {
                 return;
             }
             vec2 shift = th_tab_shift(tab, screen);

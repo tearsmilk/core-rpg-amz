@@ -331,6 +331,10 @@ public final class TabLayout {
         return out;
     }
 
+    public static List<Component> hiddenHeader() {
+        return tabHeader(List.of(Component.text(" ")), PositionCode.hiddenPadLines());
+    }
+
     public static Component boardTitle(Component title, int titleWidth, int contentWidth, int code) {
         return boardTitle(title, titleWidth, contentWidth, code, 0);
     }

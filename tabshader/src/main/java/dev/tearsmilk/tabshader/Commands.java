@@ -19,7 +19,8 @@ public final class Commands implements TabExecutor {
     static final String TOGGLE = "tabshader.toggle";
     static final String TEST = "tabshader.test";
     static final List<String> SUBS = List.of("help", "toggle", "test-title", "test-actionbar", "title", "actionbar",
-            "reload", "status");
+            "tab", "reload", "status");
+    static final List<String> SWITCHES = List.of("on", "off");
 
     private final TabShaderPlugin plugin;
 
@@ -35,7 +36,7 @@ public final class Commands implements TabExecutor {
         return switch (sub) {
             case "toggle" -> TOGGLE;
             case "test-title", "test-actionbar" -> TEST;
-            case "title", "actionbar", "reload", "status" -> ADMIN;
+            case "title", "actionbar", "tab", "reload", "status" -> ADMIN;
             default -> null;
         };
     }
@@ -54,6 +55,7 @@ public final class Commands implements TabExecutor {
             case "test-actionbar" -> testActionbar(s, a);
             case "title" -> title(s, a);
             case "actionbar" -> actionbar(s, a);
+            case "tab" -> tab(s, a);
             case "reload" -> {
                 plugin.reload();
                 texts().send(s, "reloaded");
@@ -67,6 +69,8 @@ public final class Commands implements TabExecutor {
                         "tab", st.tabPosition().key(), "board", st.boardPosition().key(),
                         "avoid", st.boardAvoid().key(), "max", Hud.maxWidth(st),
                         "wide", plugin.hud().boardTooWide());
+                texts().send(s, "status-visible", "state", texts().get(st.tabVisible() ? "visible-on" : "visible-off"),
+                        "hidden", plugin.hud().tabHidden(), "players", plugin.hud().tracked());
                 texts().send(s, "status-ping", "state", texts().get(st.pingBars() ? "ping-on" : "ping-off"),
                         "hidden", plugin.hud().pingHidden(), "players", plugin.hud().tracked());
                 texts().send(s, "status-pack", "state", plugin.pack() == null ? "-" : plugin.pack().summary());
@@ -74,6 +78,30 @@ public final class Commands implements TabExecutor {
             default -> help(s);
         }
         return true;
+    }
+
+    static Boolean parseSwitch(String arg) {
+        if (arg == null) {
+            return null;
+        }
+        return switch (arg.trim().toLowerCase(Locale.ROOT)) {
+            case "on", "true", "show", "вкл" -> Boolean.TRUE;
+            case "off", "false", "hide", "выкл" -> Boolean.FALSE;
+            default -> null;
+        };
+    }
+
+    private void tab(CommandSender s, String[] a) {
+        Boolean visible = a.length < 2 ? null : parseSwitch(a[1]);
+        if (visible == null) {
+            texts().send(s, "usage-tab", "state", texts().get(plugin.settings().tabVisible() ? "visible-on" : "visible-off"));
+            return;
+        }
+        String error = plugin.setTabVisible(visible);
+        texts().send(s, visible ? "tab-visible-on" : "tab-visible-off");
+        if (error != null) {
+            texts().send(s, "tab-save-failed", "error", error);
+        }
     }
 
     private void help(CommandSender s) {
@@ -199,6 +227,14 @@ public final class Commands implements TabExecutor {
             for (Part p : Part.values()) {
                 if (p.key().startsWith(a[1].toLowerCase(Locale.ROOT))) {
                     out.add(p.key());
+                }
+            }
+            return out;
+        }
+        if (sub.equals("tab") && a.length == 2 && s.hasPermission(ADMIN)) {
+            for (String v : SWITCHES) {
+                if (v.startsWith(a[1].toLowerCase(Locale.ROOT))) {
+                    out.add(v);
                 }
             }
             return out;

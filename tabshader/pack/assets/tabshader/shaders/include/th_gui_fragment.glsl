@@ -67,7 +67,7 @@ vec4 th_gui_fragment(vec4 color) {
     float h = rect.w - rect.y;
     int band = th_tab_code(rect.w);
     if (band >= 0) {
-        if (thGuiKind != 1 || th_tab_code(rect.y) != band) {
+        if (th_tab_hidden(band) || thGuiKind != 1 || th_tab_code(rect.y) != band) {
             return vec4(0.0);
         }
         vec2 shift = th_tab_shift(band, screen);

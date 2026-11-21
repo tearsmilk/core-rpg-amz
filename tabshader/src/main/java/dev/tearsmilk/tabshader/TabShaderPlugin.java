@@ -10,6 +10,8 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
+
+import java.io.IOException;
 import java.util.Map;
 
 public final class TabShaderPlugin extends JavaPlugin implements Listener {
@@ -102,6 +104,19 @@ public final class TabShaderPlugin extends JavaPlugin implements Listener {
         tick();
     }
 
+    String setTabVisible(boolean visible) {
+        getConfig().set("tab.visible", visible);
+        settings = Settings.of(getConfig());
+        hud.tick();
+        try {
+            ConfigFile.saveBoolean(getDataFolder().toPath().resolve("config.yml"), getConfig(), "tab", "visible", visible);
+            return null;
+        } catch (IOException | RuntimeException e) {
+            getLogger().warning("Не удалось сохранить tab.visible в config.yml: " + e);
+            return String.valueOf(e.getMessage());
+        }
+    }
+
     private void retab() {
         if (settings.tab()) {
             limiter.reconcile(settings.tabLimit());
@@ -111,6 +126,9 @@ public final class TabShaderPlugin extends JavaPlugin implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent e) {
         Player p = e.getPlayer();
+        if (!settings.tabVisible()) {
+            hud.hideTab(p);
+        }
         if (settings.tab()) {
             names.update(p, settings.maxNameLength(), widths);
         }

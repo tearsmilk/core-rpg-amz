@@ -96,6 +96,13 @@ class LogicTest {
         assertEquals(Commands.TEST, Commands.permission("test-title"));
         assertEquals(Commands.ADMIN, Commands.permission("reload"));
         assertNull(Commands.permission("help"));
+        assertEquals(Commands.ADMIN, Commands.permission("tab"));
+        assertTrue(Commands.SUBS.contains("tab"));
+        assertEquals(Boolean.TRUE, Commands.parseSwitch("ON"));
+        assertEquals(Boolean.FALSE, Commands.parseSwitch("off"));
+        assertEquals(Boolean.FALSE, Commands.parseSwitch("hide"));
+        assertNull(Commands.parseSwitch("maybe"));
+        assertNull(Commands.parseSwitch(null));
         for (String sub : Commands.SUBS) {
             if (!sub.equals("help")) {
                 assertNotNull(Commands.permission(sub), sub);

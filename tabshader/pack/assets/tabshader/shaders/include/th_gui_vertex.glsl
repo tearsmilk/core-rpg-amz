@@ -69,6 +69,11 @@ void th_gui_vertex(vec3 pos, vec4 color, int vertexId) {
             gl_Position = ProjMat * ModelViewMat * vec4(thGuiPos, pos.z, 1.0);
             return;
         }
+        if (th_tab_hidden(tab)) {
+            thGuiPos = th_tab_gone();
+            gl_Position = ProjMat * ModelViewMat * vec4(thGuiPos, pos.z, 1.0);
+            return;
+        }
         vec2 moved = pos.xy + th_tab_shift(tab, screen);
         if (kind == 1) {
             thGuiKind = 1;

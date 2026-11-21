@@ -17,7 +17,8 @@ public final class PositionCode {
     public static final int TAB_CENTER = 64;
     public static final int TAB_CODES = 80;
     public static final int TAB_NOPING = TAB_CODES;
-    public static final int TAB_BANDS = 2 * TAB_CODES;
+    public static final int TAB_HIDDEN = 2 * TAB_CODES;
+    public static final int TAB_BANDS = TAB_HIDDEN + 1;
     public static final int MAX_BOSSBAR_ROWS = TAB_CODES - TAB_CENTER - 1;
     public static final int BOARD_CELL = 256;
     public static final int BOARD_BASE = 64;
@@ -155,7 +156,15 @@ public final class PositionCode {
     }
 
     public static int tabLayout(int band) {
-        return band < 0 ? -1 : band % TAB_CODES;
+        return band < 0 || tabHidden(band) ? -1 : band % TAB_CODES;
+    }
+
+    public static boolean tabHidden(int band) {
+        return band == TAB_HIDDEN;
+    }
+
+    public static int hiddenPadLines() {
+        return TAB_BAND * (TAB_HIDDEN + TAB_BASE) + 2;
     }
 
     public static boolean tabPingHidden(int band) {

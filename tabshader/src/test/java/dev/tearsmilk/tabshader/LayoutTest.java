@@ -726,9 +726,10 @@ class LayoutTest {
         assertEquals(229, Hud.maxWidth(Settings.of(c)));
         assertEquals(236, Hud.maxWidth(overlap));
         List<Component> wide = List.of(Component.text("x".repeat(60)));
-        assertTrue(Hud.boardTooWide(title, wide, overlap, W));
+        assertTrue(Hud.boardTooWide(title, wide, overlap, W, 5));
+        assertFalse(Hud.boardTooWide(title, wide, overlap, W, 0));
         c.loadFromString("tab:\n  position: top-left\nboard:\n  position: right\n");
-        assertFalse(Hud.boardTooWide(title, wide, Settings.of(c), W));
+        assertFalse(Hud.boardTooWide(title, wide, Settings.of(c), W, 5));
     }
 
     @Test
@@ -795,6 +796,7 @@ class LayoutTest {
         assertTrue(glsl.contains("#define TH_TAB_CENTER " + PositionCode.TAB_CENTER + "\n"));
         assertTrue(glsl.contains("#define TH_TAB_NOPING " + PositionCode.TAB_NOPING + "\n"));
         assertTrue(glsl.contains("#define TH_TAB_BANDS " + PositionCode.TAB_BANDS + "\n"));
+        assertTrue(glsl.contains("#define TH_TAB_HIDDEN " + PositionCode.TAB_HIDDEN + "\n"));
         assertTrue(glsl.contains("int code = band % TH_TAB_CODES;"));
         assertTrue(glsl.contains("max(TH_BOSSBAR_ROW * float(code - TH_TAB_CENTER) + 2.0, 9.0)"));
         assertTrue(glsl.contains("#define TH_TAB_BASE " + PositionCode.TAB_BASE + "\n"));
@@ -803,6 +805,134 @@ class LayoutTest {
         assertTrue(glsl.contains("#define TH_BOARD_CODES " + PositionCode.BOARD_CODES + "\n"));
         assertEquals(205, Settings.width("205"));
         assertEquals(PositionCode.TAB_WIDTH, TabLayout.defaultWidth(W, 12, 2));
+    }
+
+    @Test
+    void hiddenBandRoundTrip() {
+        int hidden = PositionCode.TAB_HIDDEN;
+        assertEquals(2 * PositionCode.TAB_CODES, hidden);
+        assertEquals(hidden + 1, PositionCode.TAB_BANDS);
+        assertTrue(PositionCode.tabHidden(hidden));
+        assertEquals(-1, PositionCode.tabLayout(hidden));
+        for (int band = -1; band < hidden; band++) {
+            assertFalse(PositionCode.tabHidden(band), "band " + band);
+        }
+        int b = PositionCode.TAB_BAND;
+        int start = 9 + 9 * b * (hidden + PositionCode.TAB_BASE);
+        int end = start + 9 * b;
+        assertEquals(hidden, PositionCode.tabCodeAt(start));
+        assertEquals(hidden, PositionCode.tabCodeAt(end - 1));
+        assertEquals(-1, PositionCode.tabCodeAt(end));
+        assertEquals(PositionCode.TAB_HIDDEN - 1, PositionCode.tabCodeAt(start - 1));
+        assertTrue(end < 100067);
+        PositionCode.Position[] all = {PositionCode.Position.TOP_LEFT, PositionCode.Position.TOP_RIGHT,
+                PositionCode.Position.BOTTOM_LEFT, PositionCode.Position.BOTTOM_RIGHT, PositionCode.Position.CENTER};
+        for (PositionCode.Position pos : all) {
+            for (boolean noPing : new boolean[]{false, true}) {
+                int band = PositionCode.tabBand(PositionCode.tabCode(pos, 99, 99, noPing), noPing);
+                assertTrue(band < hidden, pos + " " + noPing);
+                for (int lines = 1; lines <= PositionCode.TAB_MAX_LINES; lines++) {
+                    int pad = PositionCode.tabPadLines(pos, 99, lines, 99, noPing);
+                    assertTrue(pad < PositionCode.hiddenPadLines());
+                    assertFalse(PositionCode.tabHidden(PositionCode.tabCodeAt(12 + 9 * (pad + lines))));
+                }
+            }
+        }
+    }
+
+    private static void collectFonts(Component c, List<Component> out) {
+        if (c.style().font() != null || (c.color() != null && PositionCode.red(c.color().value()) == PositionCode.TAB_MARKER_R)) {
+            out.add(c);
+        }
+        for (Component child : c.children()) {
+            collectFonts(child, out);
+        }
+    }
+
+    @Test
+    void hiddenHeaderPushesWholeTabIntoHiddenBand() {
+        List<Component> lines = TabLayout.hiddenHeader();
+        int pad = PositionCode.hiddenPadLines();
+        assertEquals(PositionCode.TAB_BAND * (PositionCode.TAB_HIDDEN + PositionCode.TAB_BASE) + 2, pad);
+        assertEquals(pad + 1, lines.size());
+        for (int i = 0; i < pad; i++) {
+            assertEquals("", TabLayout.plain(lines.get(i)));
+        }
+        assertEquals(" ", TabLayout.plain(lines.getLast()));
+        String text = TabLayout.plain(Hud.HIDDEN_HEADER);
+        assertEquals(pad, text.chars().filter(ch -> ch == '\n').count());
+        assertEquals(pad + 1, text.length());
+        assertEquals("", TabLayout.plain(Hud.NONE));
+        List<Component> marked = new ArrayList<>();
+        collectFonts(Hud.HIDDEN_HEADER, marked);
+        assertTrue(marked.isEmpty(), marked.toString());
+        int h = lines.size();
+        int fillBottom = 10 + 9 * h;
+        assertEquals(1, fillBottom % 9);
+        assertEquals(-1, PositionCode.tabCodeAt(9));
+        assertEquals(PositionCode.TAB_HIDDEN, PositionCode.tabCodeAt(fillBottom));
+        assertEquals(PositionCode.TAB_HIDDEN, PositionCode.tabCodeAt(10 + 9 * (h - 1)));
+        for (int entries = 0; entries <= TabLayout.CLIENT_CAP; entries++) {
+            int rows = TabLayout.rows(entries);
+            int listTop = fillBottom + 1;
+            int listBottom = listTop + 9 * rows;
+            assertEquals(PositionCode.TAB_HIDDEN, PositionCode.tabCodeAt(listTop - 1));
+            assertEquals(PositionCode.TAB_HIDDEN, PositionCode.tabCodeAt(listBottom));
+            for (int footer = 0; footer <= 8; footer++) {
+                assertEquals(PositionCode.TAB_HIDDEN, PositionCode.tabCodeAt(listBottom + 1 + 9 * footer + 2), entries + " " + footer);
+            }
+        }
+    }
+
+    @Test
+    void tabVisibleSetting() throws Exception {
+        org.bukkit.configuration.file.YamlConfiguration empty = new org.bukkit.configuration.file.YamlConfiguration();
+        assertTrue(Settings.of(empty).tabVisible());
+        org.bukkit.configuration.file.YamlConfiguration off = new org.bukkit.configuration.file.YamlConfiguration();
+        off.loadFromString("position-markers: false\ntab:\n  enabled: false\n  visible: false\n");
+        Settings s = Settings.of(off);
+        assertFalse(s.tabVisible());
+        assertFalse(s.tab());
+        assertFalse(s.markers());
+        org.bukkit.configuration.file.YamlConfiguration bundled = new org.bukkit.configuration.file.YamlConfiguration();
+        bundled.loadFromString(java.nio.file.Files.readString(java.nio.file.Path.of("src/main/resources/config.yml")));
+        assertTrue(bundled.isBoolean("tab.visible"));
+        assertTrue(Settings.of(bundled).tabVisible());
+    }
+
+    @Test
+    void configFileKeepsEverythingButTheKey() throws Exception {
+        String bundled = java.nio.file.Files.readString(java.nio.file.Path.of("src/main/resources/config.yml"));
+        String off = ConfigFile.setBoolean(bundled, "tab", "visible", false);
+        assertEquals(bundled.replace("tab:\n  enabled: true\n  visible: true\n", "tab:\n  enabled: true\n  visible: false\n"), off);
+        assertEquals(bundled, ConfigFile.setBoolean(off, "tab", "visible", true));
+        org.bukkit.configuration.file.YamlConfiguration a = new org.bukkit.configuration.file.YamlConfiguration();
+        a.loadFromString(bundled);
+        org.bukkit.configuration.file.YamlConfiguration b = new org.bukkit.configuration.file.YamlConfiguration();
+        b.loadFromString(off);
+        assertFalse(b.getBoolean("tab.visible"));
+        for (String key : a.getKeys(true)) {
+            if (!key.equals("tab.visible") && !a.isConfigurationSection(key)) {
+                assertEquals(a.get(key), b.get(key), key);
+            }
+        }
+        String old = "# top\ntab:\n    enabled: true\n    header:\n      - \"visible: x\"\n    visible: true   # keep\nboard:\n  visible: true\n";
+        assertEquals("# top\ntab:\n    enabled: true\n    header:\n      - \"visible: x\"\n    visible: false   # keep\nboard:\n  visible: true\n",
+                ConfigFile.setBoolean(old, "tab", "visible", false));
+        String missing = "tab:\r\n  enabled: true\r\n  header:\r\n    - \"a\"\r\nboard:\r\n  enabled: true\r\n";
+        assertEquals("tab:\r\n  visible: false\r\n  enabled: true\r\n  header:\r\n    - \"a\"\r\nboard:\r\n  enabled: true\r\n",
+                ConfigFile.setBoolean(missing, "tab", "visible", false));
+        assertEquals("server-name: x\ntab:\n  visible: false\n", ConfigFile.setBoolean("server-name: x", "tab", "visible", false));
+        assertEquals("tab:\n  visible: true\nboard: {}\n", ConfigFile.setBoolean("tab:\nboard: {}\n", "tab", "visible", true));
+        assertNull(ConfigFile.setBoolean("tab: {enabled: true}\n", "tab", "visible", false));
+        java.nio.file.Path dir = java.nio.file.Files.createTempDirectory("tabshader-config");
+        java.nio.file.Path file = dir.resolve("config.yml");
+        java.nio.file.Files.writeString(file, bundled);
+        ConfigFile.saveBoolean(file, new org.bukkit.configuration.file.YamlConfiguration(), "tab", "visible", false);
+        assertEquals(off, java.nio.file.Files.readString(file));
+        assertFalse(java.nio.file.Files.exists(dir.resolve("config.yml.tmp")));
+        java.nio.file.Files.delete(file);
+        java.nio.file.Files.delete(dir);
     }
 
     @Test

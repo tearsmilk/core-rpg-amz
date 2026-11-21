@@ -18,6 +18,8 @@ import java.util.UUID;
 final class Hud {
 
     static final Component BLANK = Component.text(" ");
+    static final Component NONE = Component.empty();
+    static final Component HIDDEN_HEADER = join(TabLayout.hiddenHeader());
 
     static final class State {
         Component header;
@@ -27,6 +29,7 @@ final class Hud {
         boolean tabMoved;
         int tabLines;
         boolean pingHidden;
+        boolean tabHidden;
         boolean boardTooWide;
     }
 
@@ -69,7 +72,10 @@ final class Hud {
         Set<Part> off = plugin.toggles().off(p);
         Map<String, String> v = plugin.vars().of(p, global);
 
-        if (s.tab() && !off.contains(Part.TAB)) {
+        if (!s.tabVisible()) {
+            hideTab(p, st);
+        } else if (s.tab() && !off.contains(Part.TAB)) {
+            st.tabHidden = false;
             List<Component> headerLines = new ArrayList<>(t.render(p, s.header(), v));
             List<Component> footerLines = new ArrayList<>(t.render(p, s.footer(), v));
             int hidden = plugin.limiter().hidden(p);
@@ -92,6 +98,7 @@ final class Hud {
         } else if (s.tab()) {
             st.tabMoved = false;
             st.pingHidden = false;
+            st.tabHidden = false;
             if (st.header != BLANK || st.footer != BLANK) {
                 p.sendPlayerListHeaderAndFooter(BLANK, BLANK);
                 st.header = BLANK;
@@ -101,6 +108,7 @@ final class Hud {
         } else if (st.header != null || st.footer != null) {
             st.tabMoved = false;
             st.pingHidden = false;
+            st.tabHidden = false;
             p.sendPlayerListHeaderAndFooter(Component.empty(), Component.empty());
             st.header = null;
             st.footer = null;
@@ -116,13 +124,14 @@ final class Hud {
                 }
                 Component title = t.render(p, s.boardTitle(), v);
                 List<Component> lines = t.render(p, s.boardLines(), v);
-                boolean tooWide = boardTooWide(title, lines, s, plugin.widths());
+                int avoidLines = st.tabMoved ? st.tabLines : 0;
+                boolean tooWide = boardTooWide(title, lines, s, plugin.widths(), avoidLines);
                 if (tooWide && !st.boardTooWide) {
                     plugin.getLogger().warning("Табло для " + p.getName() + " шире " + maxWidth(s)
                             + " px: board.position не применяется, табло стоит справа как в ванили");
                 }
                 st.boardTooWide = tooWide;
-                title = boardTitle(title, lines, s, plugin.widths(), st.tabMoved ? st.tabLines : 0);
+                title = boardTitle(title, lines, s, plugin.widths(), avoidLines);
                 packets += st.board.update(title, lines);
                 st.board.show(p);
             }
@@ -160,6 +169,35 @@ final class Hud {
             st.bar = null;
             packets++;
         }
+    }
+
+    void hideTab(Player p) {
+        hideTab(p, states.computeIfAbsent(p.getUniqueId(), k -> new State()));
+    }
+
+    private void hideTab(Player p, State st) {
+        st.tabMoved = false;
+        st.tabLines = 0;
+        st.pingHidden = false;
+        st.tabHidden = true;
+        Component current = p.playerListHeader();
+        boolean foreign = current != null && !HIDDEN_HEADER.equals(current);
+        if (st.header != HIDDEN_HEADER || st.footer != NONE || foreign) {
+            p.sendPlayerListHeaderAndFooter(HIDDEN_HEADER, NONE);
+            st.header = HIDDEN_HEADER;
+            st.footer = NONE;
+            packets++;
+        }
+    }
+
+    int tabHidden() {
+        int n = 0;
+        for (State st : states.values()) {
+            if (st.tabHidden) {
+                n++;
+            }
+        }
+        return n;
     }
 
     int tabWidth(Settings s) {
@@ -250,9 +288,10 @@ final class Hud {
         return new TabDecor(band, lines);
     }
 
-    static boolean boardTooWide(Component title, List<Component> lines, Settings s, Widths w) {
+    static boolean boardTooWide(Component title, List<Component> lines, Settings s, Widths w, int tabLines) {
         PositionCode.Position pos = s.boardPosition();
-        if (!s.markers() || (pos == PositionCode.Position.RIGHT && !avoidsTab(s))) {
+        boolean avoid = avoidsTab(s) && PositionCode.avoids(pos, s.tabPosition(), tabLines);
+        if (!s.markers() || (pos == PositionCode.Position.RIGHT && !avoid)) {
             return false;
         }
         int n = Math.min(Board.MAX_LINES, lines.size());

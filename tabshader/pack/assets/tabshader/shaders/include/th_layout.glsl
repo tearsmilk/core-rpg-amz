@@ -8,7 +8,9 @@
 #define TH_TAB_CODES 80
 #define TH_TAB_CENTER 64
 #define TH_TAB_NOPING 80
-#define TH_TAB_BANDS 160
+#define TH_TAB_HIDDEN 160
+#define TH_TAB_BANDS 161
+#define TH_TAB_GONE -1024.0
 #define TH_BOSSBAR_ROW 19.0
 #define TH_HOTBAR_HALF 92.0
 #define TH_BOARD_CELL 256
@@ -49,6 +51,14 @@ int th_tab_code(float y) {
         return -1;
     }
     return int(c);
+}
+
+bool th_tab_hidden(int band) {
+    return band == TH_TAB_HIDDEN;
+}
+
+vec2 th_tab_gone() {
+    return vec2(TH_TAB_GONE);
 }
 
 float th_tab_origin(float y) {
@@ -201,6 +211,9 @@ vec3 th_layout_shift(vec3 pos) {
     vec2 screen = th_screen();
     int tab = th_tab_code(pos.y);
     if (tab >= 0) {
+        if (th_tab_hidden(tab)) {
+            return vec3(th_tab_gone(), pos.z);
+        }
         return vec3(pos.xy + th_tab_shift(tab, screen), pos.z);
     }
     int board = th_board_code(pos.x, screen.x);

@@ -19,7 +19,7 @@ permissions:
     description: test-title, test-actionbar for yourself
     default: op
   tabshader.admin:
-    description: reload, status, title, actionbar, other players and *
+    description: reload, status, tab on|off, title, actionbar, other players and *
     default: op
     children:
       tabshader.toggle: true
