@@ -40,3 +40,4 @@ include("respack-api")   // интерфейс ResourcePackApi модуля resp
 include("coreshaders")   // «окна в другой мир»: панорамы-шейдеры на ItemDisplay (depends: respack)
 include("spacesky")      // космическое небо: шейдер неба в ресурспаке (depends: respack)
 include("gravity")       // невесомость/вакуум на выбранных картах (/hograv)
+include("oxygen")        // нет воздуха на выбранных картах — нужен скафандр (/hosuit)
