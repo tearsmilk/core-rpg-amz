@@ -12,7 +12,7 @@ RPG-сервер Minecraft. Хост Pterodactyl: `88635a9b` (lobby, mgr.hosting
 ## Что где
 
 - `core-effects`, `core-mobs`, `core-npc`, `core-portals`, `core-rpg`, `core-skyrift`, `core-vault`, `core-weapons`, `core-world`, `rezusmenu` — исходники систем Amazake; `dist/` — собранные `.azs`. `core-npc` — свои NPC (манекены со скином, модели ModelEngine, диалоги как в LuxDialogues) вместо Citizens. `core-vault` — экономика (`/money`, `/mpay`, `/ceco`, провайдер Vault или поверх встроенной экономики Vault 2.x), свои уровни (`/level`) и монеты-подсолнухи, которые при подъёме сразу идут на баланс . `core-weapons` — эффекты кастомного оружия Nexo: частицы вокруг клинка, кадры замаха, дрожь земли при крите (первое — «Багровая коса»). `core-mechanics` *(ещё не на проде)* — рэгдоллы игроков на физдвижке Jolt (`/rd`) и куклы-статуи.
-- `hoka-odyssey/` — модули для сервера **Hoka Odyssey** (Minestom 1.21.11, ядро — `SakuraMesd/HokaOdyssey`, только читаем): `respack` (свой ресурспак: сборка, SHA-1, HTTP, установка при входе — вместо Nexo) и `coreshaders` (порт `coreshaders` на `ItemDisplay`, команды `/hocs`). См. `hoka-odyssey/README.md`.
+- `hoka-odyssey/` — модули для сервера **Hoka Odyssey** (Minestom 1.21.11, ядро — `SakuraMesd/HokaOdyssey`, только читаем): `coreshaders` (порт `coreshaders` на `ItemDisplay`, команды `/hocs`; ресурспак — через модуль `respack` с сервера, вместо Nexo). См. `hoka-odyssey/README.md`.
 - `server/` — снимок продакшена: Nexo (конфиги и пак, общие шейдеры), MMOCore, MythicLib, MythicHUD, конфиги систем. Обновить: `python3 ops/pull-prod.py`.
 - `ops/` — правки и бэкапы продакшена (навыки MMOCore и т.д.).
 

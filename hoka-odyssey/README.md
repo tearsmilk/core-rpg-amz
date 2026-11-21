@@ -6,8 +6,12 @@
 
 | Модуль | jar | Что делает |
 |---|---|---|
-| `respack` | `respack.jar` | Свой ресурспак вместо Nexo: собирает zip из файлов модулей (сервис `ResourcePackApi`), считает SHA-1, раздаёт встроенным HTTP и ставит игроку при входе. Отказ от пака — кик (настраивается) |
 | `coreshaders` | `coreshaders.jar` | Порт плагина `coreshaders` (Paper) — «окна в другой мир»: куб или плоскость с панорамой 360° на шейдере. Эффекты — `ItemDisplay`, команды `/hocs…`. `depends: [respack]` |
+
+Ресурспак собирает и раздаёт модуль **`respack`** (автор — Takuyamo, уже стоит на сервере, от него зависит и `ships`).
+Его исходников здесь нет: `respack-api/` — только интерфейс `ResourcePackApi`, снятый с `module/respack.jar`, чтобы
+`coreshaders` компилировался; в выкладку он не идёт (класс берётся из настоящего `respack.jar`). Если в respack
+поменяют интерфейс — обновить `respack-api/src/main/java/ink/hoka/odyssey/respack/ResourcePackApi.java`.
 
 ## Сборка
 
@@ -17,7 +21,7 @@
 ./gradlew build
 ```
 
-→ `respack/build/libs/respack.jar`, `coreshaders/build/libs/coreshaders.jar` (+ тесты).
+→ `coreshaders/build/libs/coreshaders.jar` (+ тесты).
 
 Ядро подключается как *included build*: при первой сборке `settings.gradle.kts` сам клонирует
 `SakuraMesd/HokaOdyssey` (ветка `main`) в `.hoka-core/` (в git не идёт), и модули компилируются против его `:api`.
@@ -27,37 +31,15 @@
 - другая ветка/тег: `-Phoka.core.ref=<ref>`.
 
 Локальный сервер с модулями: `./gradlew runServer` (папка `run/`, порт 25565, HTTP пака — 25574).
-После правок: `./gradlew deployModules`, в консоли сервера `homodule reload coreshaders` (или `respack`).
+После правок: `./gradlew deployModules`, в консоли сервера `homodule reload coreshaders`. Для `runServer` положите `respack.jar` (Takuyamo) в `run/module/`.
 
 ## Выкладка на сервер
 
-1. Положить `respack.jar` и `coreshaders.jar` в `module/` сервера.
-2. **Открыть порт HTTP пака** (по умолчанию `25574`) — в Pterodactyl: Network → добавить allocation этого порта.
-   Если порт другой — `module/respack/config.yml` → `http.port`.
-3. Адрес для клиентов: по умолчанию — адрес, по которому игрок зашёл на сервер, + порт HTTP
-   (`http://2.152.87.39:25574/...`). Если пак отдаётся с другого адреса — `http.public-url`.
-4. В консоли: `homodule load respack.jar`, затем `homodule load coreshaders.jar`
-   (или перезапуск сервера). Проверка: `/hopack` — собран ли пак, адрес, сколько файлов.
-
-## respack
-
-- Файлы пака: от модулей (`ResourcePackApi.putFile` / `putDirectory`) + своя папка администратора
-  `module/respack/pack/` — перекрывает всё (например, `pack.png` или свой `pack.mcmeta`).
-- `pack.mcmeta` собирается сам (формат 75 — Minecraft 1.21.11, берётся из Minestom).
-- Zip детерминированный: одинаковое содержимое → тот же SHA-1 → клиент берёт пак из кэша, а после
-  `homodule reload` пак не рассылается заново. Адрес `/pack/<sha1>.zip`; хранятся 2 последние версии.
-- Вход: пак отправляется в фазе конфигурации, ядро Minestom ждёт ответа клиента — игрок появляется в мире уже с паком.
-- После пересборки (новые картинки, `/hopack rebuild`) новый пак сразу уходит всем онлайн (`resend-on-rebuild`).
-- `/hopack` (OP и консоль): состояние; `rebuild`; `reload` (перечитать `config.yml`, перезапустить HTTP при смене порта);
-  `send [ник|all]`.
-
-```java
-// другой модуль, module.yml: depends: [respack]
-ResourcePackApi pack = services().require(ResourcePackApi.class);   // брать заново после перезагрузок
-pack.putDirectory(id(), dataFolder().resolve("pack"));                // папка = корень пака (assets/…)
-pack.rebuild();
-// onDisable: services().get(ResourcePackApi.class).ifPresent(p -> p.clear(id()));
-```
+1. На сервере должен стоять модуль `respack` (Takuyamo) — он раздаёт пак (порт `25574`, `module/respack/config.yml`).
+2. Положить `coreshaders.jar` в `module/` и в консоли: `homodule load coreshaders.jar`
+   (обновление — заменить jar и `homodule reload coreshaders`).
+3. `coreshaders` при включении отдаёт respack шейдер, модели и панорамы (`put`) и просит пересобрать пак;
+   respack рассылает его игрокам.
 
 ## coreshaders
 
@@ -82,8 +64,9 @@ pack.rebuild();
   модуля. Эффекты ставятся только на картах из `maps/` (у карты есть имя — есть куда сохранить).
 - Право на портал: вместо прав Bukkit — `/hocs cmd perm op` (только операторы) или `off` (все).
 - Сообщения — в `config.yml`, цвета через `&` (MiniMessage в сервере нет).
-- Встроенный пак (шейдер, модели, 12 панорам) лежит в jar (`src/main/resources/pack/`), respack читает его прямо
-  из jar. Свои картинки — `module/coreshaders/pack/`, исходники для `/hocs import` — `module/coreshaders/images/`.
+- Встроенный пак (шейдер, модели, 12 панорам) лежит в jar (`src/main/resources/pack/`); при включении и после
+  `/hocs import|upload|delete-image` модуль читает его и свои картинки (`module/coreshaders/pack/`) в async и отдаёт
+  в respack через `put`, затем `rebuild`. Исходники для `/hocs import` — `module/coreshaders/images/`.
 - Шейдер и номера картинок не менялись — старые свои картинки (`kinds`) совместимы.
 
 Инструменты (`coreshaders/tools/`): `panoramas.py` (генерация панорам и файлов пака), `glsl_check.py`, `preview.py` —
@@ -91,8 +74,9 @@ pack.rebuild();
 
 ## Проверка
 
-- `./gradlew build` — юнит-тесты (сборка zip и SHA-1, HTTP, хранение эффектов, геометрия, GIF, панорамы, скачивание).
-- `tools/e2e/run.sh` — живая проверка ботом (mineflayer) на настоящем ядре: вход с паком, жезл, куб и плоскость,
-  `/hocs info`, команда на эффекте и вход в него, сохранение, `homodule reload` обоих модулей без дублей,
-  `/hocs import` → новый пак онлайн-игроку, ЛКМ-удаление, кик при отказе от пака, `/hocs` недоступна не-OP.
-  Ядро для теста запускается с офлайн-входом (копия `OdysseyServer` с `Auth.Offline`, только в `tools/e2e/.harness/`).
+- `./gradlew build` — юнит-тесты (хранение эффектов, файлы пака, геометрия, GIF, панорамы, скачивание, луч).
+- `RESPACK_JAR=/путь/к/respack.jar tools/e2e/run.sh` — живая проверка ботом (mineflayer) на настоящем ядре с модулем
+  respack с сервера: пак с файлами coreshaders, жезл, куб и плоскость, `/hocs info`, команда на эффекте и вход в него,
+  сохранение, `homodule reload` coreshaders и respack без дублей, `/hocs import` → картинка в новом паке, ЛКМ-удаление,
+  `/hocs` недоступна не-OP. Ядро для теста запускается с офлайн-входом (копия `OdysseyServer` с `Auth.Offline`,
+  только в `tools/e2e/.harness/`).

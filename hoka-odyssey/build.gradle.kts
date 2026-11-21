@@ -31,7 +31,7 @@ val core = gradle.includedBuild("hoka-core")
 val deployModules by tasks.registering(Copy::class) {
     group = "odyssey"
     description = "Собрать модули и положить их в run/module/"
-    subprojects.forEach { m ->
+    subprojects.filter { it.name != "respack-api" }.forEach { m ->
         dependsOn("${m.path}:jar")
         from(m.layout.buildDirectory.dir("libs")) { include("*.jar") }
     }

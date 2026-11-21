@@ -1,7 +1,6 @@
 package ink.hoka.odyssey.coreshaders;
 
 import ink.hoka.odyssey.api.ModuleConfig;
-import ink.hoka.odyssey.respack.ResourcePackApi;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.DirectoryStream;
@@ -18,8 +17,8 @@ import net.minestom.server.command.CommandSender;
 
 /**
  * Свои картинки: /hocs upload (https), /hocs import (файл из module/coreshaders/images/), /hocs delete-image.
- * Файлы пака пишутся в module/coreshaders/pack/assets/coreshaders/… (эта папка отдана модулю respack), после чего
- * пак пересобирается и рассылается. Скачивание и обработка — в scheduler().async, всё остальное — в тике.
+ * Файлы пака пишутся в module/coreshaders/pack/assets/coreshaders/…, потом все файлы модуля заново отдаются
+ * модулю respack и пак пересобирается. Скачивание и обработка — в scheduler().async, всё остальное — в тике.
  */
 final class Images {
     static final List<String> EXTENSIONS = List.of(".png", ".jpg", ".jpeg", ".gif");
@@ -329,13 +328,10 @@ final class Images {
         rebuildPack(sender);
     }
 
-    /** Пересобрать пак модулем respack и сказать, чем кончилось. */
+    /** Отдать файлы в respack, пересобрать пак и сказать, чем кончилось. */
     void rebuildPack(CommandSender sender) {
-        ResourcePackApi pack = module.pack();
-        Settings s = module.settings();
-        String before = pack.current().map(ResourcePackApi.PackInfo::sha1).orElse("");
-        sender.sendMessage(s.msg("pack-rebuilding"));
-        pack.rebuild().whenComplete((info, err) -> {
+        sender.sendMessage(module.settings().msg("pack-rebuilding"));
+        module.syncPack().whenComplete((v, err) -> {
             try {
                 module.scheduler().run(() -> {
                     Settings st = module.settings();
@@ -343,7 +339,7 @@ final class Images {
                         Throwable c = err.getCause() != null ? err.getCause() : err;
                         sender.sendMessage(st.msg("pack-failed", "value", String.valueOf(c.getMessage())));
                     } else {
-                        sender.sendMessage(st.msg(info.sha1().equals(before) ? "pack-same" : "pack-ready"));
+                        sender.sendMessage(st.msg("pack-ready"));
                     }
                 });
             } catch (IllegalStateException off) {

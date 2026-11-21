@@ -61,7 +61,7 @@ commands:
   max-group: 1024
 
 # Свои картинки: /hocs upload <имя> <https-ссылка>, /hocs import <имя> (файл module/coreshaders/images/<имя>.png|jpg|gif).
-# Файлы пака пишутся в module/coreshaders/pack/, пак пересобирает и рассылает модуль respack.
+# Файлы пака пишутся в module/coreshaders/pack/ и передаются модулю respack, он пересобирает и рассылает пак.
 custom-images:
   # Сколько своих картинок можно добавить (картинка — спрайт 1024x512 в атласе, 2 МБ видеопамяти).
   max: 24
@@ -201,8 +201,7 @@ messages:
   image-not-custom: "&f{image}&c — не своя картинка (удалять можно только добавленные через upload/import)."
   image-deleted: "&eКартинка &f{image}&e удалена: файлов &f{files}&e, эффектов переключено на картинку по умолчанию &f{count}&e."
   pack-rebuilding: "&7Пересобираю ресурспак..."
-  pack-ready: "&aРесурспак обновлён и отправлен игрокам."
-  pack-same: "&eРесурспак не изменился."
+  pack-ready: "&aРесурспак пересобран (модуль respack разошлёт его игрокам)."
   pack-failed: "&cРесурспак не собран: &f{value}&c. Подробности в логе сервера."
   list-header: "&7Картинки: &f{images}&7. Формы: &fcube, plane&7. Цвета: &f{colors}&7."
   list-count: "&7Эффектов рядом (&f{radius}&7 блоков): &f{count}&7."

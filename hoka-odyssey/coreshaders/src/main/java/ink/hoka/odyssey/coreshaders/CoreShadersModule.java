@@ -11,6 +11,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.CodeSource;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.event.instance.InstanceChunkLoadEvent;
 import net.minestom.server.event.instance.InstanceChunkUnloadEvent;
@@ -31,6 +33,7 @@ public final class CoreShadersModule extends OdysseyModule {
     private Triggers triggers;
     private Images images;
     private FileSystem jarFs;
+    private Path builtin;
     private long tick;
 
     @Override
@@ -94,19 +97,56 @@ public final class CoreShadersModule extends OdysseyModule {
     }
 
     /**
-     * Встроенный пак (шейдер, модели, 12 панорам) — папка pack/ внутри jar модуля, открытая как zip-файловая система:
-     * respack читает её сам при сборке, без копирования. Свои картинки — module/coreshaders/pack/.
+     * Встроенный пак (шейдер, модели, 12 панорам) — папка pack/ внутри jar модуля; свои картинки —
+     * module/coreshaders/pack/. Файлы читаются в async, в общий пак (respack) кладутся в тике.
      */
     private void registerPack() {
-        ResourcePackApi pack = pack();
-        Path builtin = builtinPack();
-        if (builtin != null) {
-            pack.putDirectory(id(), builtin);
-        } else {
+        builtin = builtinPack();
+        if (builtin == null) {
             logger().error("встроенный пак не найден в jar модуля — шейдер и панорамы не попадут в ресурспак");
         }
-        pack.putDirectory(id(), images.packRoot());
-        pack.rebuild();
+        syncPack();
+    }
+
+    /**
+     * Заново отдать модулю respack все файлы coreshaders (встроенные + свои картинки) и пересобрать пак.
+     * Будущее — от rebuild() модуля respack (или с ошибкой, если файлы не прочитались).
+     */
+    CompletableFuture<Void> syncPack() {
+        CompletableFuture<Void> done = new CompletableFuture<>();
+        Path b = builtin;
+        Path custom = images.packRoot();
+        scheduler().async(() -> {
+            Map<String, byte[]> files;
+            try {
+                files = new TreeMap<>(PackFilesCollector.collect(b));
+                files.putAll(PackFilesCollector.collect(custom));
+            } catch (IOException | RuntimeException e) {
+                logger().error("файлы пака не прочитаны: {}", e.toString());
+                done.completeExceptionally(e);
+                return;
+            }
+            scheduler().run(() -> {
+                try {
+                    ResourcePackApi pack = pack();
+                    pack.clear(id());
+                    for (Map.Entry<String, byte[]> f : files.entrySet()) {
+                        pack.put(id(), f.getKey(), f.getValue());
+                    }
+                    pack.rebuild().whenComplete((v, err) -> {
+                        if (err != null) {
+                            done.completeExceptionally(err);
+                        } else {
+                            done.complete(null);
+                        }
+                    });
+                } catch (RuntimeException e) {
+                    logger().error("файлы не переданы в respack: {}", e.toString());
+                    done.completeExceptionally(e);
+                }
+            });
+        });
+        return done;
     }
 
     private Path builtinPack() {

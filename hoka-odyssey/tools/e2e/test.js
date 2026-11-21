@@ -1,4 +1,4 @@
-// Живая проверка respack + coreshaders на ядре HokaOdyssey (офлайн-вход только для теста).
+// Живая проверка coreshaders с модулем respack (Takuyamo) на ядре HokaOdyssey (офлайн-вход только для теста).
 const mineflayer = require('mineflayer')
 const fs = require('fs')
 const { Vec3 } = require('vec3')
@@ -40,6 +40,14 @@ const waitMsg = async (bot, re, ms = 4000) => {
   while (Date.now() - t < ms) { if (bot.msgs.some(m => re.test(m))) return true; await sleep(100) }
   return false
 }
+async function fetchZip (url) {
+  try {
+    const r = await fetch(url)
+    if (!r.ok) return null
+    const b = Buffer.from(await r.arrayBuffer())
+    return b.toString('latin1')   // имена файлов в zip — ASCII, ищем подстрокой
+  } catch (e) { log('не скачать', url, e.message); return null }
+}
 const lastMsg = (bot, re) => [...bot.msgs].reverse().find(m => re.test(m))
 
 ;(async () => {
@@ -47,10 +55,12 @@ const lastMsg = (bot, re) => [...bot.msgs].reverse().find(m => re.test(m))
   // статусы: 0 загружен, 1 отклонён, 2 ошибка загрузки, 3 принят, 4 скачан, 5 неверный адрес, 6 ошибка применения, 7 сброшен
   const bot = connect('csbot', (b, p) => respond(b, p, [3, 4, 0]))
   await new Promise(r => bot.once('spawn', r))
-  check('пак отправлен при входе', bot.packs.length === 1)
-  const p0 = bot.packs[0]
-  check('адрес пака — адрес входа + порт HTTP', p0 && /^http:\/\/127\.0\.0\.1:25574\/pack\/[0-9a-f]{40}\.zip$/.test(p0.url), p0 && p0.url)
-  check('пак обязательный', p0 && p0.forced === true)
+  for (let i = 0; i < 50 && bot.packs.length === 0; i++) await sleep(100)   // respack шлёт пак при появлении в мире
+  check('пак отправлен при входе', bot.packs.length >= 1)
+  const p0 = bot.packs[bot.packs.length - 1]
+  const zip0 = p0 ? await fetchZip(p0.url) : null
+  check('в паке шейдер и панорамы coreshaders', zip0 && zip0.includes('assets/minecraft/shaders/core/rendertype_item_entity_translucent_cull.fsh')
+    && zip0.includes('assets/coreshaders/items/cube_space.json'), p0 && p0.url)
   await sleep(1500)
 
   // 2. жезл
@@ -110,23 +120,23 @@ const lastMsg = (bot, re) => [...bot.msgs].reverse().find(m => re.test(m))
   check('после reload coreshaders — один дисплей', displays(bot).length === 1, 'дисплеев ' + displays(bot).length)
   check('после reload coreshaders — один хитбокс', interactions(bot).length === 1)
 
-  // 8. перезагрузка respack (и зависимых): пак тот же — не пересылается
-  const before = bot.packs.length
+  // 8. перезагрузка respack (и зависимых): эффект на месте, файлы coreshaders снова в паке
   consoleCmd('homodule reload respack')
-  await sleep(4000)
-  check('после reload respack пак не пересылается (тот же sha1)', bot.packs.length === before, 'паков ' + bot.packs.length)
+  await sleep(6000)
   check('после reload respack эффект на месте', displays(bot).length === 1 && interactions(bot).length === 1)
+  const before = bot.packs.length
 
   // 9. своя картинка: import → пак пересобран и разослан
   bot.msgs.length = 0
   bot.chat('/hocs import testpic')
   check('import: картинка готова', await waitMsg(bot, /Картинка testpic готова/, 8000))
-  check('import: пак обновлён', await waitMsg(bot, /Ресурспак обновлён/, 8000))
+  check('import: пак пересобран', await waitMsg(bot, /Ресурспак пересобран/, 15000))
   await sleep(500)
-  check('новый пак пришёл онлайн-игроку', bot.packs.length === before + 1, bot.packs.length && bot.packs[bot.packs.length - 1].hash)
+  await sleep(2000)
   const np = bot.packs[bot.packs.length - 1]
-  if (np) respond(bot, np, [3, 4, 0])
-  await sleep(500)
+  const zip1 = np ? await fetchZip(np.url) : null
+  check('в новом паке есть testpic', zip1 && zip1.includes('assets/coreshaders/items/cube_testpic.json')
+    && zip1.includes('assets/coreshaders/textures/item/panorama/testpic.png'), 'паков ' + bot.packs.length + ' (было ' + before + ')')
 
   // 10. сменить картинку эффекта на свою
 
@@ -159,11 +169,6 @@ const lastMsg = (bot, re) => [...bot.msgs].reverse().find(m => re.test(m))
   await sleep(600)
   const pd = displays(bot)[0]
   check('плоскость лежит у верхней грани травы', pd && Math.abs(pd.position.y - (g2.position.y + 1 + 0.015)) < 0.001, pd && pd.position)
-
-  // 13. отказ от пака — кик
-  const bad = connect('declinebot', (b, p) => respond(b, p, [1]))
-  await sleep(4000)
-  check('отказ от пака — кик с сообщением', !!bad.kickReason && bad.kickReason.includes('Без ресурспака'), bad.kickReason)
 
   // 14. не-OP: команда недоступна
   const guest = connect('guestbot', (b, p) => respond(b, p, [3, 4, 0]))

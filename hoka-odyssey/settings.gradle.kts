@@ -36,5 +36,5 @@ gradle.extensions.extraProperties["hokaCoreDir"] = coreDir   // для runServer
 // ink.hoka.odyssey:api в модулях заменяется проектом :api ядра
 includeBuild(coreDir) { name = "hoka-core" }
 
-include("respack")       // сборка и раздача ресурспака, сервис ResourcePackApi
+include("respack-api")   // интерфейс ResourcePackApi модуля respack (Takuyamo) — только для компиляции
 include("coreshaders")   // «окна в другой мир»: панорамы-шейдеры на ItemDisplay (depends: respack)

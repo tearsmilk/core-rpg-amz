@@ -1,9 +1,0 @@
-# Описание модуля. Обязательны id и main.
-id: respack
-name: Ресурспак
-version: 0.1.0
-main: ink.hoka.odyssey.respack.RespackModule
-authors: [tearsmilk]
-description: Сборка ресурспака из файлов модулей (zip + SHA-1), встроенный HTTP, установка игрокам при входе
-depends: []
-softdepends: []
