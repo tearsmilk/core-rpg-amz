@@ -1,0 +1,44 @@
+pack:
+  install: true
+  dir: ""
+  reload-nexo: true
+
+zone:
+  radius: 10
+  strength: 20
+  seconds: 60
+  max-seconds: 86400
+  view-range: 4.0
+  target-distance: 64
+
+messages:
+  help: "<#B48CFF>worldshader</#B48CFF> <gray>- зоны, которые затягивают мир в точку.</gray>\n<white>/wsh summon [радиус] [сила] [секунды] [мир] [x y z]</white> <gray>- зона там, куда смотришь (радиус 1-64, сила 1-31, 0 секунд - пока не уберут)</gray>\n<white>/wsh remove [nearest|all]</white> <gray>- убрать ближайшую или все зоны</gray>\n<white>/wsh list</white> <gray>- список зон</gray>\n<white>/wsh status</white> <gray>- состояние пака и настройки</gray>\n<white>/wsh reload</white> <gray>- перечитать config.yml и обновить пак</gray>"
+  no-permission: "<red>Нет прав."
+  reloaded: "<#B48CFF>worldshader:</#B48CFF> <white>конфиг перечитан. Пак обновляется в фоне, игроки получат его после перезагрузки пака Nexo; итог - /wsh status."
+  bad-number: "<red>Неверное значение <name>: <value> (можно от <min> до <max>)."
+  bad-coord: "<red>Неверная координата: <value>."
+  no-world: "<red>Нет мира <world>."
+  need-coords: "<red>Из консоли укажите мир и координаты: /wsh summon <радиус> <сила> <секунды> <мир> <x> <y> <z>."
+  need-player: "<red>Ближайшую зону можно убрать только игроком. Из консоли: /wsh remove all."
+  no-slot: "<red>В мире <world> уже <max> зон - больше шейдер не различает. Уберите одну: /wsh remove nearest."
+  spawn-failed: "<red>Маркер не появился: спавн запрещен другим плагином или регионом."
+  outside-world: "<red>Точка вне мира <world>: за границей мира или слишком высоко/низко."
+  summoned: "<#B48CFF>worldshader:</#B48CFF> <white>зона #<slot> в <world> <x> <y> <z>, радиус <radius>, сила <strength>, время <time>."
+  pack-inactive: "<yellow>Эффекта в паке нет (<state>): игроки зону не увидят."
+  removed: "<#B48CFF>worldshader:</#B48CFF> <white>убрана зона #<slot> в <world> <x> <y> <z> (в <distance> блоках)."
+  removed-all: "<#B48CFF>worldshader:</#B48CFF> <white>убрано зон: <count>."
+  none-here: "<gray>В этом мире зон нет."
+  list-empty: "<gray>Зон нет."
+  list-header: "<#B48CFF>Зоны (<count>):</#B48CFF>"
+  list-line: "<white>#<slot></white> <gray><world> <x> <y> <z>, радиус <radius>, сила <strength>, осталось <time>, <loaded>"
+  loaded: "загружена"
+  unloaded: "чанк не загружен"
+  status-pack: "<#B48CFF>Шейдеры в паке:</#B48CFF> <white><state>"
+  status-zones: "<#B48CFF>Зоны:</#B48CFF> <white><count> (до <max> на мир)"
+  status-defaults: "<#B48CFF>По умолчанию:</#B48CFF> <white>радиус <radius>, сила <strength>, время <time>, view-range <view>"
+  status-nexo: "<#B48CFF>Nexo:</#B48CFF> <white><state>"
+  "on": "вкл"
+  "off": "выкл"
+  sec: " с"
+  min: " мин"
+  forever: "бессрочно"

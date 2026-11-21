@@ -1,0 +1,17 @@
+name: worldshader
+version: '${version}'
+main: dev.tearsmilk.worldshader.WorldShaderPlugin
+api-version: '1.21'
+author: tearsmilk
+authors: [tearsmilk]
+description: Resource pack shader that pulls the world into a point inside a sphere
+softdepend: [Nexo]
+commands:
+  worldshader:
+    description: worldshader - zones that pull the world into a point
+    usage: /worldshader help
+    aliases: [wsh]
+permissions:
+  worldshader.admin:
+    description: /wsh summon, remove, list, status, reload
+    default: op

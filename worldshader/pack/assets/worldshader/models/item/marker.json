@@ -1,0 +1,54 @@
+{
+  "textures": {
+    "marker": "worldshader:item/marker",
+    "particle": "worldshader:item/marker"
+  },
+  "elements": [
+    {
+      "from": [
+        7.99,
+        7.99,
+        8
+      ],
+      "to": [
+        8.01,
+        8.01,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2,
+            4,
+            6,
+            12
+          ],
+          "texture": "#marker"
+        }
+      }
+    },
+    {
+      "from": [
+        7.99,
+        7.99,
+        8
+      ],
+      "to": [
+        8.01,
+        8.01,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10,
+            4,
+            14,
+            12
+          ],
+          "texture": "#marker"
+        }
+      }
+    }
+  ]
+}
