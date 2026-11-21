@@ -1,0 +1,8 @@
+{
+  "name": "hoka-odyssey-e2e",
+  "private": true,
+  "description": "Живая проверка respack + coreshaders ботом mineflayer на ядре HokaOdyssey",
+  "dependencies": {
+    "mineflayer": "4.39.0"
+  }
+}

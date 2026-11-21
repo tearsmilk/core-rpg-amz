@@ -1,0 +1,9 @@
+# Описание модуля. Обязательны id и main.
+id: coreshaders
+name: Шейдерные окна
+version: 0.1.0
+main: ink.hoka.odyssey.coreshaders.CoreShadersModule
+authors: [tearsmilk]
+description: Окна в другой мир — кубы и плоскости с панорамой 360° на шейдере (ItemDisplay)
+depends: [respack]                   # ресурспак: шейдер, модели и панорамы кладутся через ResourcePackApi
+softdepends: []

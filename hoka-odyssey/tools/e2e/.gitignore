@@ -1,0 +1,4 @@
+node_modules/
+srv/
+.harness/
+package-lock.json

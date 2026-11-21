@@ -1,0 +1,82 @@
+{
+ "textures": {
+  "p": "coreshaders:item/panorama/rain",
+  "g": "coreshaders:item/panorama/rain_glow",
+  "particle": "coreshaders:item/panorama/rain"
+ },
+ "elements": [
+  {
+   "from": [
+    -0.02,
+    -0.02,
+    8
+   ],
+   "to": [
+    16.02,
+    16.02,
+    8
+   ],
+   "shade": false,
+   "light_emission": 15,
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#p",
+     "tintindex": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#p",
+     "tintindex": 1
+    }
+   }
+  },
+  {
+   "from": [
+    -3,
+    -3,
+    8
+   ],
+   "to": [
+    19,
+    19,
+    8
+   ],
+   "shade": false,
+   "light_emission": 15,
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#g",
+     "tintindex": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#g",
+     "tintindex": 1
+    }
+   }
+  }
+ ],
+ "display": {}
+}
