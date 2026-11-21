@@ -14,7 +14,8 @@ class SpaceSkyFilesTest {
     @Test
     void skyShaderAlwaysInPack() throws Exception {
         Map<String, byte[]> m = SpaceSkyModule.collect(RES.resolve(SpaceSkyModule.ALWAYS));
-        assertEquals(List.of("assets/minecraft/shaders/core/sky.fsh", "assets/minecraft/shaders/core/sky.vsh",
+        assertEquals(List.of("assets/minecraft/shaders/core/position_color.vsh", "assets/minecraft/shaders/core/sky.fsh",
+            "assets/minecraft/shaders/core/sky.vsh",
             "assets/minecraft/shaders/core/stars.fsh", "assets/minecraft/shaders/include/fog.glsl",
             "assets/spacesky/shaders/include/zones.glsl"), List.copyOf(m.keySet()));
     }
