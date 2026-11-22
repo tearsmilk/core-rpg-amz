@@ -97,7 +97,7 @@ bool ss_space() {
 #if SPACESKY_EVERYWHERE
     return true;
 #else
-    return spacesky_marked(FogColor.rgb) || spacesky_marked(ColorModulator.rgb);
+    return spacesky_fog_marked(FogColor.rgb) || spacesky_marked(ColorModulator.rgb);
 #endif
 }
 

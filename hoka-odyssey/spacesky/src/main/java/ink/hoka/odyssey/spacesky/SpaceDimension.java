@@ -24,6 +24,7 @@ import org.slf4j.Logger;
  * <p>Небо и туман такого мира — МЕТКА: тёмный цвет {@link #MARK}, которого в ванили не бывает. По ней шейдеры
  * (режим {@code everywhere: false}) узнают космический мир. Таймлайн применяется клиентом поверх атрибутов измерения
  * и биома (биом plains задаёт свой sky_color — он перебил бы атрибут измерения), поэтому МЕТКА задана и там, и там.
+ * Под водой туман (и небо в нём) — цвета воды, поэтому у воды своя метка {@link #WATER_MARK}.
  * Облака, закатный веер и ванильные звёзды выключены атрибутами (альфа 0, яркость 0).
  *
  * <p>Реестры Minestom замораживаются после {@code MinecraftServer.start}: регистрировать можно только до старта
@@ -33,6 +34,12 @@ final class SpaceDimension {
     static final String KEY = "hoka:space";
     /** МЕТКА — цвет неба и тумана мира hoka:space (#020205); тот же цвет — SPACESKY_MARK в spacesky:mode.glsl. */
     static final int MARK = 0x020205;
+    /**
+     * МЕТКА ВОДЫ — цвет тумана под водой в мире hoka:space (#050634, почти ванильный #050533, но другого направления).
+     * Под водой клиент рисует небо (и солнце с луной) с туманом цвета воды, а не неба — без своей метки шейдер
+     * celestial не узнал бы космический мир. Тот же цвет — SPACESKY_WATER_MARK в spacesky:mode.glsl.
+     */
+    static final int WATER_MARK = 0x050634;
 
     enum Result {
         /** Тип мира и таймлайн зарегистрированы. */
@@ -46,11 +53,12 @@ final class SpaceDimension {
     private SpaceDimension() {
     }
 
-    /** Атрибуты космоса: МЕТКА в небе и тумане, без облаков, веера и ванильных звёзд. */
+    /** Атрибуты космоса: МЕТКА в небе и тумане, МЕТКА ВОДЫ в тумане под водой, без облаков, веера и ванильных звёзд. */
     static Map<EnvironmentAttribute<?>, Object> spaceAttributes() {
         Map<EnvironmentAttribute<?>, Object> m = new HashMap<>();
         m.put(EnvironmentAttribute.SKY_COLOR, new Color(MARK));
         m.put(EnvironmentAttribute.FOG_COLOR, new Color(MARK));
+        m.put(EnvironmentAttribute.WATER_FOG_COLOR, new Color(WATER_MARK));
         m.put(EnvironmentAttribute.CLOUD_COLOR, new AlphaColor(0, 0, 0, 0));
         m.put(EnvironmentAttribute.SUNRISE_SUNSET_COLOR, new AlphaColor(0, 0, 0, 0));
         m.put(EnvironmentAttribute.STAR_BRIGHTNESS, 0f);

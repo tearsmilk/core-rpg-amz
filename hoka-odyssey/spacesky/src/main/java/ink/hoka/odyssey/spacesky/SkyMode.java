@@ -57,9 +57,14 @@ final class SkyMode {
         return String.format(Locale.ROOT, "%.1f", v);
     }
 
+    private static String vec(int c) {
+        return "(vec3(" + f((c >> 16) & 255) + ", " + f((c >> 8) & 255) + ", " + f(c & 255) + ") / 255.0)";
+    }
+
     /** Текст spacesky:mode.glsl. */
     static String glsl(boolean everywhere, boolean hideSun, boolean hideMoon) {
         int m = SpaceDimension.MARK;
+        int w = SpaceDimension.WATER_MARK;
         return "// spacesky: режим неба — файл пишет модуль spacesky из config.yml, руками не менять.\n"
             + "#ifndef SPACESKY_MODE_GLSL\n"
             + "#define SPACESKY_MODE_GLSL\n"
@@ -69,17 +74,28 @@ final class SkyMode {
             + "#define SPACESKY_HIDE_SUN " + (hideSun ? 1 : 0) + "\n"
             + "#define SPACESKY_HIDE_MOON " + (hideMoon ? 1 : 0) + "\n"
             + "// МЕТКА — цвет неба и тумана мира hoka:space (" + Zones.hex(m) + "), в ванили такого нет\n"
-            + "#define SPACESKY_MARK (vec3(" + f((m >> 16) & 255) + ", " + f((m >> 8) & 255) + ", " + f(m & 255)
-            + ") / 255.0)\n"
+            + "#define SPACESKY_MARK " + vec(m) + "\n"
+            + "// МЕТКА ВОДЫ — цвет тумана под водой в мире hoka:space (" + Zones.hex(w) + ")\n"
+            + "#define SPACESKY_WATER_MARK " + vec(w) + "\n"
             + "// цвет космоса у горизонта — общий для неба (sky.fsh) и тумана дальности (fog.glsl режима 1)\n"
             + "#define SPACESKY_BASE vec3(0.006, 0.007, 0.018)\n"
             + "\n"
-            + "// Цвет — МЕТКА? Ровно (допуск 0,6/255: клиент передаёт цвет как байты /255) или МЕТКА, умноженная на\n"
+            + "// Цвет c — метка mark? Ровно (допуск 0,6/255: клиент передаёт цвет как байты /255) или метка, умноженная на\n"
             + "// число: так клиент затемняет туман у дна мира (пустота) и осветляет ночным зрением.\n"
-            + "bool spacesky_marked(vec3 c) {\n"
-            + "    if (all(lessThan(abs(c - SPACESKY_MARK), vec3(0.6 / 255.0)))) return true;\n"
+            + "bool spacesky_is(vec3 c, vec3 mark) {\n"
+            + "    if (all(lessThan(abs(c - mark), vec3(0.6 / 255.0)))) return true;\n"
             + "    float l = length(c);\n"
-            + "    return l > 1e-5 && distance(c / l, normalize(SPACESKY_MARK)) < 0.004;\n"
+            + "    return l > 1e-5 && distance(c / l, normalize(mark)) < 0.004;\n"
+            + "}\n"
+            + "\n"
+            + "// Цвет неба или тумана — МЕТКА мира hoka:space?\n"
+            + "bool spacesky_marked(vec3 c) {\n"
+            + "    return spacesky_is(c, SPACESKY_MARK);\n"
+            + "}\n"
+            + "\n"
+            + "// Цвет тумана (FogColor) — мира hoka:space? МЕТКА или, когда камера под водой, МЕТКА ВОДЫ.\n"
+            + "bool spacesky_fog_marked(vec3 c) {\n"
+            + "    return spacesky_marked(c) || spacesky_is(c, SPACESKY_WATER_MARK);\n"
             + "}\n"
             + "#endif\n";
     }

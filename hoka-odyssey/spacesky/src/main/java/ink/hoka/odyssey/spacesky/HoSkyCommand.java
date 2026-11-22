@@ -211,13 +211,14 @@ final class HoSkyCommand extends Command {
                 prev = MapDimensions.write(MAPS, map, on);
             } catch (RuntimeException e) {
                 prev = null;
-                err = e.getMessage();
+                // список карт — тоже здесь: это чтение папки maps/, ему не место в тике
+                err = e.getMessage() + ". Карты: " + String.join(", ", m.server().mapNames());
             }
             String p = prev;
             String e = err;
             runInTick(() -> {
                 if (e != null) {
-                    msg(s, "Не вышло: " + e + ". Карты: " + String.join(", ", m.server().mapNames()), NamedTextColor.RED);
+                    msg(s, "Не вышло: " + e, NamedTextColor.RED);
                     return;
                 }
                 boolean wasSpace = SpaceDimension.KEY.equals(p);
@@ -236,9 +237,10 @@ final class HoSkyCommand extends Command {
                 msg(s, "Применится при следующей загрузке карты (перезапуск сервера или выгрузка пустой карты); "
                     + "нужен патч ядра (docs/core-dimension.md).", NamedTextColor.GRAY);
                 if (loaded.containsKey(map)) {
-                    msg(s, "Карта сейчас загружена (тип мира " + loaded.get(map) + "). До её перезагрузки не меняйте "
-                        + "точку появления (/homap setspawn): ядро перепишет map.yml своей копией, без этого ключа.",
-                        NamedTextColor.GOLD);
+                    msg(s, "Карта сейчас загружена (тип мира " + loaded.get(map) + "). Если ядро без исправления "
+                        + "setspawn (docs/core-dimension.md), до её перезагрузки не меняйте точку появления "
+                        + "(/homap setspawn): ядро перепишет map.yml своей копией и вернёт прежний dimension"
+                        + (p != null ? " (" + p + ")." : " (без него)."), NamedTextColor.GOLD);
                 }
                 if (on && map.equals("world")) {
                     msg(s, "Основная карта «world» загружается до модулей — пока ядро это не изменит, для неё "

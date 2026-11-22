@@ -32,7 +32,7 @@ class SpaceDimensionTest {
     void timelineOverridesSkyFogCloudsSunriseStars() {
         Timeline t = SpaceDimension.timeline();
         assertNull(t.periodTicks());
-        assertEquals(5, t.tracks().size());
+        assertEquals(6, t.tracks().size());
         for (Map.Entry<EnvironmentAttribute<?>, Timeline.Track<?, ?>> e : t.tracks().entrySet()) {
             assertInstanceOf(EnvironmentAttribute.Modifier.Override.class, e.getValue().modifier(), e.getKey().key().asString());
             assertEquals(1, e.getValue().keyframes().size());
@@ -43,6 +43,7 @@ class SpaceDimensionTest {
             .getAsJsonObject().getAsJsonObject("tracks");
         assertEquals("#020205", value(tracks, "minecraft:visual/sky_color"));
         assertEquals("#020205", value(tracks, "minecraft:visual/fog_color"));
+        assertEquals("#050634", value(tracks, "minecraft:visual/water_fog_color"));
         assertEquals("#00000000", value(tracks, "minecraft:visual/cloud_color"));
         assertEquals("#00000000", value(tracks, "minecraft:visual/sunrise_sunset_color"));
         assertEquals(0.0, tracks.getAsJsonObject("minecraft:visual/star_brightness").getAsJsonArray("keyframes")
@@ -70,7 +71,9 @@ class SpaceDimensionTest {
             RGBLike c = (RGBLike) d.attributes().entries().get(a).argument();
             assertEquals(SpaceDimension.MARK, c.red() << 16 | c.green() << 8 | c.blue(), a.key().asString());
         }
-        assertEquals(5, d.attributes().entries().size());
+        RGBLike w = (RGBLike) d.attributes().entries().get(EnvironmentAttribute.WATER_FOG_COLOR).argument();
+        assertEquals(SpaceDimension.WATER_MARK, w.red() << 16 | w.green() << 8 | w.blue());
+        assertEquals(6, d.attributes().entries().size());
         assertTrue(d.timelines().contains(tl));
         assertEquals(1, d.timelines().size());
     }
@@ -93,6 +96,7 @@ class SpaceDimensionTest {
         // список из одного элемента кодируется строкой — так ванильный HolderSet тоже читается
         assertEquals("hoka:space", json.get("timelines").getAsString(), json.toString());
         assertEquals("#020205", json.getAsJsonObject("attributes").get("minecraft:visual/sky_color").getAsString(), json.toString());
+        assertEquals("#050634", json.getAsJsonObject("attributes").get("minecraft:visual/water_fog_color").getAsString(), json.toString());
         assertEquals(-64, json.get("min_y").getAsInt());
         // пакет реестров для клиента собирается (и таймлайн hoka:space в нём есть)
         MinecraftServer.getDimensionTypeRegistry().registryDataPacket(MinecraftServer.process(), true);

@@ -11,8 +11,8 @@
 // 3) Области (spacesky:zones.glsl, их пишет модуль из config.yml): по позиции камеры — насколько игрок внутри
 //    области каждого вида. Считается здесь, на 18 вершинах, а не на каждом пикселе; во фрагментный — flat.
 // 4) Режим (spacesky:mode.glsl): SPACESKY_EVERYWHERE 1 — космос всегда; 0 — только в мире hoka:space, его цвет
-//    тумана (FogColor, во всех проходах неба) или неба (ColorModulator верхнего диска) — МЕТКА. Иначе — ванильный
-//    код без изменений (и без опускания края веера).
+//    тумана (FogColor, во всех проходах неба; под водой — МЕТКА ВОДЫ) или неба (ColorModulator верхнего диска) —
+//    МЕТКА. Иначе — ванильный код без изменений (и без опускания края веера).
 
 #moj_import <minecraft:fog.glsl>
 #moj_import <minecraft:dynamictransforms.glsl>
@@ -33,7 +33,7 @@ bool ss_space() {
 #if SPACESKY_EVERYWHERE
     return true;
 #else
-    return spacesky_marked(FogColor.rgb) || spacesky_marked(ColorModulator.rgb);
+    return spacesky_fog_marked(FogColor.rgb) || spacesky_marked(ColorModulator.rgb);
 #endif
 }
 

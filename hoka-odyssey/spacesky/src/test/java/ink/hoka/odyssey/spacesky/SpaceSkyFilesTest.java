@@ -73,6 +73,8 @@ class SpaceSkyFilesTest {
         assertEquals(Files.readString(RES.resolve(SkyMode.ALWAYS).resolve(SkyMode.PATH), StandardCharsets.UTF_8), on);
         assertTrue(on.contains("#define SPACESKY_EVERYWHERE 1\n"), on);
         assertTrue(on.contains("#define SPACESKY_MARK (vec3(2.0, 2.0, 5.0) / 255.0)\n"), on);
+        assertTrue(on.contains("#define SPACESKY_WATER_MARK (vec3(5.0, 6.0, 52.0) / 255.0)\n"), on);
+        assertTrue(on.contains("bool spacesky_fog_marked(vec3 c)"), on);
         assertTrue(on.contains("#ifndef SPACESKY_MODE_GLSL\n"), on);
         String off = SkyMode.glsl(false, true, false);
         assertTrue(off.contains("#define SPACESKY_EVERYWHERE 0\n"), off);
