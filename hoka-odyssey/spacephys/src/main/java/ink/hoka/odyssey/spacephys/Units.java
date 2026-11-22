@@ -26,7 +26,7 @@ public final class Units {
     public static final double BODY_LENGTH = 1.8;
     /** Порог приливного урона, блоки/с². */
     public static final double TIDAL_DAMAGE_THRESHOLD = 5.0;
-    /** Порог урона от удара по нормальной составляющей Δv, блоки/с. */
+    /** Порог урона от удара по изменению нормальной скорости |Δv_n| = (1 + e)·|v_n|, блоки/с. */
     public static final double IMPACT_DAMAGE_THRESHOLD = 8.0;
     /** Коэффициент восстановления при отскоке от блока. */
     public static final double RESTITUTION = 0.2;

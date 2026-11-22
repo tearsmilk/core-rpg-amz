@@ -37,7 +37,8 @@ class IntegratorTest {
 
     @Test
     void verletKeepsOrbitShapeButLagsInPhase() {
-        // простой KDK: форма орбиты держится (радиус), а фаза за 100 оборотов отстаёт на ≈ (ω·dt)²/3·2π·100
+        // простой KDK: форма орбиты держится (радиус), а фаза за 100 оборотов отстаёт на ≈ (ω·dt)²/3·2π·100:
+        // (ω·dt)²/24 — собственная ошибка частоты KDK, 3/8·(ω·dt)² — от старта с точной √(μ/r) (см. Integrator)
         Field f = Field.of(PLANET);
         State s = new State(R, CY, 0, 0, 0, Orbit.circularSpeed(MU, R));
         double maxRadiusError = 0;
@@ -49,6 +50,13 @@ class IntegratorTest {
         double w = 2 * Math.PI / T * DT;
         assertEquals(2 * Math.PI * 100 * w * w / 3, closure, 0.0005);
         assertTrue(maxRadiusError < 1e-4, "радиус уплыл: " + maxRadiusError);
+        // старт с «круговой скоростью KDK» r·ω·cos(θ/2), θ = 2·asin(ω·dt/2): остаётся только (ω·dt)²/24
+        double th = 2 * Math.asin(w / 2);
+        State m = new State(R, CY, 0, 0, 0, R * (2 * Math.PI / T) * Math.cos(th / 2));
+        for (int i = 0; i < (int) Math.round(100 * T / DT); i++) {
+            assertNull(Integrator.VERLET.step(f, m, DT));
+        }
+        assertEquals(2 * Math.PI * 100 * w * w / 24, Math.sqrt((m.x - R) * (m.x - R) + m.z * m.z) / R, 0.0001);
     }
 
     @Test

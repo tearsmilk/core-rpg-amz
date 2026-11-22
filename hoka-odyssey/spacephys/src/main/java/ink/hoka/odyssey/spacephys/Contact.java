@@ -15,8 +15,11 @@ public final class Contact {
      * @param deltaVNormal изменение нормальной скорости (1 + e)·|v_n|, блоки/с
      */
     public record Result(Vec3d velocity, double impactSpeed, double deltaVNormal) {
-        /** Удар опасен: |v_n| больше порога (по умолчанию {@link Units#IMPACT_DAMAGE_THRESHOLD}). */
-        public boolean damaging(double threshold) { return impactSpeed > threshold; }
+        /**
+         * Удар опасен: изменение нормальной скорости |Δv_n| = (1 + e)·|v_n| больше порога (по умолчанию
+         * {@link Units#IMPACT_DAMAGE_THRESHOLD}), как в плане: «урон от |Δv_n| &gt; 8 б/с».
+         */
+        public boolean damaging(double threshold) { return deltaVNormal > threshold; }
 
         public boolean damaging() { return damaging(Units.IMPACT_DAMAGE_THRESHOLD); }
     }
@@ -48,8 +51,13 @@ public final class Contact {
         return collide(velocity, normal, Units.RESTITUTION, 0);
     }
 
-    /** Урон от удара: (|v_n| − порог)·perUnit, не меньше 0. */
-    public static double impactDamage(double impactSpeed, double threshold, double perUnit) {
-        return impactSpeed > threshold ? (impactSpeed - threshold) * perUnit : 0;
+    /** Урон от удара: (|Δv_n| − порог)·perUnit, не меньше 0; deltaV — обычно {@link Result#deltaVNormal()}. */
+    public static double impactDamage(double deltaV, double threshold, double perUnit) {
+        return deltaV > threshold ? (deltaV - threshold) * perUnit : 0;
+    }
+
+    /** Урон от удара по {@link Result#deltaVNormal()} и порогу {@link Units#IMPACT_DAMAGE_THRESHOLD}. */
+    public static double impactDamage(Result hit, double perUnit) {
+        return impactDamage(hit.deltaVNormal(), Units.IMPACT_DAMAGE_THRESHOLD, perUnit);
     }
 }

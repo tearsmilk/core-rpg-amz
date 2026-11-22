@@ -53,7 +53,11 @@ class QuatContactTest {
         assertEquals(12, r.deltaVNormal(), 1e-12);
         assertEquals(2, r.velocity().y(), 1e-12);              // e = 0,2
         assertEquals(3, r.velocity().x(), 1e-12);              // без трения касательная не меняется
-        assertTrue(r.damaging());                              // 10 > 8 б/с
+        assertTrue(r.damaging());                              // |Δv_n| = 12 > 8 б/с
+        Contact.Result soft = Contact.collide(new Vec3d(0, -7, 0), new Vec3d(0, 1, 0));
+        assertTrue(soft.damaging());                           // |v_n| = 7, но |Δv_n| = 8,4 > 8 (порог по Δv_n)
+        assertFalse(Contact.collide(new Vec3d(0, -6, 0), new Vec3d(0, 1, 0)).damaging()); // 7,2 < 8
+        assertEquals(0.4 * 2, Contact.impactDamage(soft, 2), 1e-12);
         assertEquals(4, Contact.impactDamage(10, 8, 2), 1e-12);
         assertEquals(0, Contact.impactDamage(5, 8, 2), 0);
     }
