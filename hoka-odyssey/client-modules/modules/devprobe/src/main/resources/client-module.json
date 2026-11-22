@@ -1,0 +1,7 @@
+{
+  "id": "devprobe",
+  "version": "0.1.0",
+  "main": "ink.hoka.odyssey.client.devprobe.DevProbeModule",
+  "authors": ["tearsmilk"],
+  "description": "Зонд стенда разработки: лог, HUD и скриптовый ввод (только для локальной проверки)"
+}

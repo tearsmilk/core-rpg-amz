@@ -46,6 +46,25 @@
 3. `coreshaders` при включении отдаёт respack шейдер, модели и панорамы (`put`) и просит пересобрать пак;
    respack рассылает его игрокам.
 
+## Клиентские модули (`client-modules/`)
+
+Мини-модули для мода Hoka Odyssey (jar с `client-module.json`; игрокам их раздаёт модуль `clientmods` ядра).
+Отдельная сборка на Loom, как `client/` в репозитории ядра; ядро-мод в jar модулей не попадает (`compileOnly`).
+
+```bash
+cd client-modules
+./gradlew build --max-workers=1 -Phoka.core.dir=/путь/к/HokaOdyssey   # или HOKA_CORE_DIR; без него — ../.hoka-core
+```
+
+→ `build/clientmods/<id>.jar` (выкладка: `module/clientmods/jars/` и `/hoclient reload`), `build/core/` — ядро-мод из
+той же папки ядра. Папка ядра может быть и патченой (`docs/core-client-hooks`): модули с файлом `requires-core-hooks`
+(например `hooks-demo`) собираются только против неё. Сейчас здесь только модули стенда: `devprobe` (зонд),
+`skyspike` (небо в `WorldRenderEvents.START_MAIN` без патча ядра), `hooks-demo` (хуки патча) — на боевой сервер их
+не класть.
+
+Стенд проверки — `tools/devclient/` (Fabric-клиент с dev-ядром под Xvfb + локальный сервер, dev-ключ подписи
+только в рабочей папке стенда): см. `tools/devclient/README.md`, вся проверка разом — `tools/devclient/smoke.sh`.
+
 ## coreshaders
 
 Всё, что было в плагине, кроме Nexo и прав Bukkit:
@@ -322,6 +341,8 @@
 
 ## Проверка
 
+- `HOKA_CORE_DIR=… tools/devclient/smoke.sh` — клиентские модули на настоящем Fabric-клиенте: сборка dev-ядра и
+  модулей, локальный сервер, вход, загрузка модулей (`hello` в логе клиента), ответ `hello`, снимки экрана.
 - `./gradlew build` — юнит-тесты (хранение эффектов, файлы пака, геометрия, GIF, панорамы, скачивание, луч).
 - `RESPACK_JAR=/путь/к/respack.jar tools/e2e/run.sh` — живая проверка ботом (mineflayer) на настоящем ядре с модулем
   respack с сервера: пак с файлами coreshaders, жезл, куб и плоскость, `/hocs info`, команда на эффекте и вход в него,
