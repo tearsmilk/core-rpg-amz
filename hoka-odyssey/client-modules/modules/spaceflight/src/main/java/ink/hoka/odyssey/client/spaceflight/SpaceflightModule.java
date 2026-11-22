@@ -17,6 +17,8 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
+import net.minecraft.client.player.ClientInput;
+import net.minecraft.client.player.KeyboardInput;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -279,9 +281,19 @@ public final class SpaceflightModule implements ClientModule {
         if (p != null) {
             p.setNoGravity(savedNoGravity);
             p.setDiscardFriction(savedDiscardFriction);
+            if (p.input instanceof MutedInput) p.input = new KeyboardInput(Minecraft.getInstance().options);
         }
         Minecraft mc = Minecraft.getInstance();
         if (mc.screen == null && mc.getWindow() != null) KeyMapping.setAll();   // вернуть зажатые клавиши ходьбе
+    }
+
+    /** Пустой ввод игрока: ни ходьбы, ни приседа, ни бега, ни прыжка. */
+    private static final class MutedInput extends ClientInput {}
+
+    private static void muteInput(LocalPlayer p) {
+        if (!(p.input instanceof MutedInput)) p.input = new MutedInput();   // и после респауна (игра создаёт новый)
+        if (p.isSprinting()) p.setSprinting(false);
+        if (p.isShiftKeyDown()) p.setShiftKeyDown(false);
     }
 
     private void physics(Minecraft mc, LocalPlayer p) {
@@ -296,11 +308,11 @@ public final class SpaceflightModule implements ClientModule {
             shift = down(mc, o.keyShift);
             proneDown = physical(mc, proneKey);
             vert = (jump ? 1 : 0) - (shift ? 1 : 0);
-            // ходьбу, прыжок и присед vanilla не видит — движением управляет модуль; бег пропускаем как есть
-            for (KeyMapping k : new KeyMapping[] {o.keyUp, o.keyDown, o.keyLeft, o.keyRight, o.keyJump, o.keyShift}) {
-                k.setDown(false);
-            }
         }
+        // ввод vanilla — пустой: ходьбу, прыжок, присед и бег игра не видит, движением управляет модуль (клавиши
+        // он читает сам). Раньше клавиши «отпускались» в конце тика, но автоповтор клавиши успевал зажать их снова
+        // к следующему тику — присед и бег мигали, и камера дёргалась (высота глаз, угол обзора бега).
+        muteInput(p);
         if (proneDown && !sprintHeld) {                            // R — лечь / встать
             prone = !prone;
             p.displayClientMessage(Component.literal(prone ? "Лёжа: тело вдоль взгляда (R — встать)"
