@@ -1,5 +1,6 @@
 package ink.hoka.odyssey.gravity;
 
+import net.minestom.server.entity.ItemEntity;
 import net.minestom.server.entity.Player;
 import net.minestom.server.instance.Instance;
 
@@ -55,6 +56,13 @@ public interface VacuumService {
     interface ZoneProvider {
         /** Зоны карты instance; null — на этой карте зон нет (везде решает карта). */
         ZoneLookup zones(Instance instance);
+
+        /**
+         * gravity только что отпустил предмет (вернул гравитацию), потому что тот залетел в зону NORMAL. Тут владелец
+         * зон ставит предмету гравитацию зоны сразу, в том же тике, — иначе предмет несколько тиков падает с обычной.
+         */
+        default void released(ItemEntity item) {
+        }
     }
 
     /** Режим в точке карты: MAP — решает карта, NORMAL — обычная гравитация зоны, VACUUM — вакуумная зона. */

@@ -444,6 +444,7 @@ public final class GravityModule extends OdysseyModule {
                     ItemState was = items.remove(item);       // залетел в зону с обычной гравитацией — отпустить
                     if (was != null) {
                         restore(item, was);
+                        overrides.released(item);             // гравитация зоны — в этом же тике
                     }
                     continue;
                 }

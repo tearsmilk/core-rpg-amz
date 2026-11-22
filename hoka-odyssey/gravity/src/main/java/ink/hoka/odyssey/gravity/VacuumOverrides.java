@@ -5,6 +5,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
+import net.minestom.server.entity.ItemEntity;
 import net.minestom.server.entity.Player;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.network.packet.server.play.ExplosionPacket;
@@ -75,6 +76,14 @@ final class VacuumOverrides implements VacuumService {
     ZoneLookup zones(Instance instance) {
         ZoneProvider zp = zoneProvider;
         return zp == null || instance == null ? null : zp.zones(instance);
+    }
+
+    /** Сообщить источнику зон, что предмет отпущен в зоне NORMAL. */
+    void released(ItemEntity item) {
+        ZoneProvider zp = zoneProvider;
+        if (zp != null) {
+            zp.released(item);
+        }
     }
 
     /** Режим зоны в точке (MAP, если зон нет). */

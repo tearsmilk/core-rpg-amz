@@ -57,7 +57,17 @@ public final class GravZonesModule extends OdysseyModule {
     private final Map<UUID, Selection> selections = new HashMap<>();
     private AxeListener axe;
     /** Источник зон для предметов, который отдаём gravity (один объект на включение модуля). */
-    private final VacuumService.ZoneProvider zoneProvider = this::itemZones;
+    private final VacuumService.ZoneProvider zoneProvider = new VacuumService.ZoneProvider() {
+        @Override
+        public VacuumService.ZoneLookup zones(Instance instance) {
+            return itemZones(instance);
+        }
+
+        @Override
+        public void released(ItemEntity item) {
+            itemReleased(item);
+        }
+    };
     /** Сервис gravity, в котором сейчас стоит zoneProvider (после перезагрузки gravity — другой объект). */
     private VacuumService zoneService;
 
@@ -95,23 +105,24 @@ public final class GravZonesModule extends OdysseyModule {
                 applyItem(item, map == null ? null : zones.at(map, pos.x(), pos.y(), pos.z()));
             }
         });
+        // zones.json читаем сразу, до регистрации источника зон: пока зон нет, gravity счёл бы «зон нет» и в первых
+        // тиках после включения (в т.ч. после homodule reload) захватил/поглотил бы предметы в зонах 0.1…10.
+        // Файл маленький, чтение в onEnable не тормозит тик заметно.
+        List<Zone> list;
+        try {
+            list = store.load(w -> logger().warn("{}: {}", store.file(), w));
+        } catch (Exception e) {
+            logger().error("не прочитать {}: {}", store.file(), e.toString());
+            list = List.of();
+        }
+        zones.replaceAll(list);
+        loaded = true;
+        if (settings.items()) {
+            itemsTick();                                // после перезагрузки — гравитация зон предметам сразу
+        }
         registerZoneProvider(vacuum());
         scheduler().repeat(this::tick, 1, 1);
-        scheduler().async(() -> {
-            List<Zone> list;
-            try {
-                list = store.load(w -> logger().warn("{}: {}", store.file(), w));
-            } catch (Exception e) {
-                logger().error("не прочитать {}: {}", store.file(), e.toString());
-                list = List.of();
-            }
-            List<Zone> got = list;
-            scheduler().run(() -> {
-                zones.replaceAll(got);
-                loaded = true;
-                logger().info("gravzones: зон {}, команда /hozone", zones.size());
-            });
-        });
+        logger().info("gravzones: зон {}, команда /hozone", zones.size());
     }
 
     @Override
@@ -165,6 +176,16 @@ public final class GravZonesModule extends OdysseyModule {
         String map = server().mapName(inst).orElse(null);
         List<Zone> list = map == null ? List.of() : zones.on(map);
         return list.isEmpty() ? null : (x, y, z) -> itemMode(Zones.at(list, x, y, z));
+    }
+
+    /** gravity отпустил предмет в зоне NORMAL — гравитация зоны сейчас, а не в ближайшем itemsTick. */
+    private void itemReleased(ItemEntity item) {
+        if (!loaded || !settings.items() || item.isRemoved()) {
+            return;
+        }
+        String map = server().mapName(item.getInstance()).orElse(null);
+        Pos pos = item.getPosition();
+        applyItem(item, map == null ? null : zones.at(map, pos.x(), pos.y(), pos.z()));
     }
 
     /** Режим для предмета в зоне z (null — вне зон). */

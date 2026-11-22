@@ -58,6 +58,32 @@ class ZoneProviderTest {
     }
 
     @Test
+    void releaseForwardedToCurrentProvider() {
+        VacuumOverrides o = new VacuumOverrides(new ConcurrentHashMap<>());
+        o.released(null);                                              // источника нет — ничего
+        int[] calls = {0};
+        ZoneProvider p = new ZoneProvider() {
+            @Override
+            public ZoneLookup zones(net.minestom.server.instance.Instance instance) {
+                return null;
+            }
+
+            @Override
+            public void released(net.minestom.server.entity.ItemEntity item) {
+                calls[0]++;
+            }
+        };
+        o.zoneProvider(inst -> null);
+        o.released(null);                                              // по умолчанию released — пустой
+        o.zoneProvider(p);
+        o.released(null);
+        assertEquals(1, calls[0]);
+        o.removeZoneProvider(p);
+        o.released(null);
+        assertEquals(1, calls[0]);
+    }
+
+    @Test
     void releasedKeepsCurrentGravityAndOriginalDrag() {
         Aerodynamics original = new Aerodynamics(0.04, 0.98, 0.98);
         Aerodynamics captured = new Aerodynamics(0.04 * 3, 1.0, 0.98);  // gravzones поменял гравитацию, пока висел
