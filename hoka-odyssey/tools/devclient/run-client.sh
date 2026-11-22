@@ -28,7 +28,10 @@ while read -r url rel; do
     f="$FAB/libs/$rel"
     if [[ ! -s "$f" ]]; then
         mkdir -p "$(dirname "$f")"
-        curl -fsSL --retry 3 -o "$f.tmp" "$url" && mv "$f.tmp" "$f"
+        # «a && b» внутри цикла set -e не останавливает: без явной проверки недокачанная библиотека молча выпадала
+        # из classpath, и клиент падал потом с непонятной ошибкой
+        curl -fsSL --retry 3 -o "$f.tmp" "$url" || { echo "не скачалась библиотека Fabric: $url" >&2; exit 1; }
+        mv "$f.tmp" "$f"
     fi
     FABRIC_CP="$FABRIC_CP$f:"
 done < <(python3 -I - "$PROFILE" <<'PY'
@@ -73,12 +76,18 @@ EOF
 fi
 
 # --- Xvfb ---
+# Дисплей жив, если есть сокет и жив процесс из lock-файла X-сервера. Проверять через xdotool нельзя: без xdotool
+# (он необязателен) проверка всегда «не жив», и скрипт удалял сокет и lock работающего Xvfb.
 DISP_N="${HOKA_DISPLAY#:}"
-if ! [[ -S /tmp/.X11-unix/X$DISP_N ]] || ! DISPLAY="$HOKA_DISPLAY" xdotool getdisplaygeometry >/dev/null 2>&1; then
-    rm -f "/tmp/.X$DISP_N-lock" "/tmp/.X11-unix/X$DISP_N"
-    Xvfb "$HOKA_DISPLAY" -screen 0 "${HOKA_WIDTH}x${HOKA_HEIGHT}x24" -nolisten tcp > "$HOKA_DEV_DIR/xvfb.log" 2>&1 &
+x_alive() {
+    [[ -S /tmp/.X11-unix/X$DISP_N && -f /tmp/.X$DISP_N-lock ]] && kill -0 "$(tr -dc 0-9 < "/tmp/.X$DISP_N-lock")" 2>/dev/null
+}
+if ! x_alive; then
+    rm -f "/tmp/.X$DISP_N-lock" "/tmp/.X11-unix/X$DISP_N"           # остатки упавшего X-сервера
+    Xvfb "$HOKA_DISPLAY" -screen 0 "${HOKA_WIDTH}x${HOKA_HEIGHT}x24" -nolisten tcp > "$HOKA_DEV_DIR/xvfb${DISP_N}.log" 2>&1 &
     echo $! > "$XVFB_PID"
-    for _ in $(seq 1 20); do [[ -S /tmp/.X11-unix/X$DISP_N ]] && break; sleep 0.25; done
+    for _ in $(seq 1 40); do x_alive && break; sleep 0.25; done
+    x_alive || { echo "Xvfb $HOKA_DISPLAY не поднялся — лог $HOKA_DEV_DIR/xvfb${DISP_N}.log" >&2; exit 1; }
 fi
 
 "$DEVCLIENT_DIR/stop.sh" client >/dev/null 2>&1 || true

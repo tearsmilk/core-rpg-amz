@@ -25,8 +25,10 @@ tools/devclient/fetch-client.sh                   # ванильный клие�
 tools/devclient/smoke.sh --keep                   # сборка, сервер, клиент, вход, модули, снимки
 ```
 
-`smoke.sh` завершится с кодом 0, если клиент зашёл и загрузил модуль `hello` (строка
-`Hoka Odyssey: модуль hello … загружен` в `$HOKA_DEV_DIR/client.log`). Снимки — в `$HOKA_DEV_DIR/shots`.
+`smoke.sh` завершится с кодом 0, только если всё дошло: клиент зашёл и загрузил модули (строка
+`Hoka Odyssey: модуль hello … загружен` в `$HOKA_DEV_DIR/client.log`), `skyspike` нарисовал кадр (если он раздан),
+`hello` показал текст по `/hoclient hello` (строка `показал` в логе сервера), `devprobe` выполнил скрипт и сделал
+снимок. Иначе — код 1 и строка `ПРОВАЛ: …`. Снимки — в `$HOKA_DEV_DIR/shots` и `$HOKA_DEV_DIR/game/screenshots`.
 
 ## Скрипты
 
@@ -61,6 +63,8 @@ tools/devclient/run-server.sh --sync-only         # клиент перезаг�
 - `devprobe` — строка в логе при загрузке, строка на HUD, скриптовый ввод (файл
   `$HOKA_DEV_DIR/game/hoka_odyssey/data/devprobe/script.txt`, команды — в javadoc `DevProbeModule`).
 - `skyspike` — спайк неба без патча ядра: полноэкранный проход своим шейдером в `WorldRenderEvents.START_MAIN`.
+  Кэш шейдеров игры — по id шейдера, поэтому id содержит хэш GLSL: правка шейдера доходит и через `--sync-only`,
+  без F3+T.
 - `hooks-demo` — проверка хуков патча ядра (onSky, onFog, onAvatarRotations); собирается только против патченого ядра.
 
 Игрокам эти модули не раздаются: их jar кладёт только `run-server.sh` стенда.

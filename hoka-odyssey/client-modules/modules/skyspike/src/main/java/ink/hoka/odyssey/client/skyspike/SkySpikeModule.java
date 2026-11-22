@@ -92,9 +92,13 @@ public final class SkySpikeModule implements ClientModule {
             }
             """;
 
-    private static final Identifier SHADER = Identifier.fromNamespaceAndPath("hoka_odyssey", "skyspike/sky");
+    // Кэш шейдеров игры (GlDevice.shaderCache) — по id шейдера, а не по тексту, и чистится только F3+T/сменой пака.
+    // С постоянным id после горячей перезагрузки модуля с изменённым GLSL игра молча берёт старый шейдер, поэтому в id —
+    // хэш исходников: новый текст — новый id. Цена — старая программа остаётся в кэше до F3+T (единицы КБ на перезагрузку).
+    private static final String SRC_HASH = Integer.toHexString((VSH + FSH).hashCode());
+    private static final Identifier SHADER = Identifier.fromNamespaceAndPath("hoka_odyssey", "skyspike/sky_" + SRC_HASH);
     private static final RenderPipeline PIPELINE = RenderPipeline.builder()
-            .withLocation(Identifier.fromNamespaceAndPath("hoka_odyssey", "pipeline/skyspike"))
+            .withLocation(Identifier.fromNamespaceAndPath("hoka_odyssey", "pipeline/skyspike_" + SRC_HASH))
             .withVertexShader(SHADER)
             .withFragmentShader(SHADER)
             .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)

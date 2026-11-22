@@ -151,12 +151,12 @@ public final class DevProbeModule implements ClientModule {
             case "look" -> {
                 if (mc.player == null) return;
                 mc.player.setYRot(Float.parseFloat(w[0]));
-                mc.player.setXRot(Float.parseFloat(w[1]));
+                mc.player.setXRot(pitch(Float.parseFloat(w[1])));
             }
             case "turn" -> {
                 if (mc.player == null) return;
                 mc.player.setYRot(mc.player.getYRot() + Float.parseFloat(w[0]));
-                mc.player.setXRot(mc.player.getXRot() + Float.parseFloat(w[1]));
+                mc.player.setXRot(pitch(mc.player.getXRot() + Float.parseFloat(w[1])));
             }
             case "chat" -> {
                 if (mc.player == null) return;
@@ -174,6 +174,11 @@ public final class DevProbeModule implements ClientModule {
             case "log" -> ctx.logger().info("devprobe: {}", arg);
             default -> ctx.logger().warn("devprobe: неизвестная команда «{}»", a[0]);
         }
+    }
+
+    /** Наклон как у ванильного поворота мышью: не дальше ±90° (иначе камера «переворачивается»). */
+    private static float pitch(float deg) {
+        return Math.max(-90f, Math.min(90f, deg));
     }
 
     private static KeyMapping key(String name) {
