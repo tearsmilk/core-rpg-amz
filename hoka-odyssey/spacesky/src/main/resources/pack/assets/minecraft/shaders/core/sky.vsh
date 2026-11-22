@@ -176,7 +176,7 @@ void main() {
     if (bi >= 0 && zone.y > 0.0 && L > 0.0) {
         ivec2 c = SS_ZONE_IPOS[bi];
         ssNebOff = (vec3(float(CameraBlockPos.x - c.x), float(CameraBlockPos.y) - 64.0, float(CameraBlockPos.z - c.y))
-            + CameraOffset) * (1.7 / L);
+            - CameraOffset) * (1.7 / L);
     }
 #endif
     ssZone = zone;

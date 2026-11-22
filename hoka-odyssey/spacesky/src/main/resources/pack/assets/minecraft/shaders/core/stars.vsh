@@ -12,7 +12,7 @@
 //   (|смещение| <= T/2 по каждой оси). Перенос на другую копию — ровно на грани, а там частица уже погашена
 //   (гаснет с 0,4 T) — ничего не выскакивает. Номер копии (плитки) входит в хэш: в соседних плитках частицы разные
 //   (~10% пустые, другая яркость и цвет) — раскладка не повторяется на глаз. Позиция камеры в плитке — целыми из
-//   CameraBlockPos (точно и на 30 млн блоков от 0) плюс CameraOffset.
+//   CameraBlockPos (точно и на 30 млн блоков от 0) минус CameraOffset (в 1.21.11 это блок - камера).
 // - Поворот: модель-вид прохода звёзд = поворот камеры · rotY(−90°) · rotX(угол звёзд); тип мира галактики задаёт угол 0,
 //   поэтому мировое смещение w переводится в координаты буфера как (w.z, w.y, −w.x). Покачивание камеры и тряска от
 //   урона — в ProjMat: частицы качаются ровно как мир.
@@ -57,7 +57,7 @@ float ss_u(uint v) {
 float ss_cluster(int prof) {
     float c = 0.0;
 #if SS_ZONES > 0
-    vec2 cam = vec2(CameraBlockPos.xz) + CameraOffset.xz;
+    vec2 cam = vec2(CameraBlockPos.xz) - CameraOffset.xz;          // CameraOffset = блок - камера (см. sky.fsh)
     for (int i = 0; i < SS_ZONES; i++) {
         int kp = int(SS_ZONE_KIND[i].x + 0.5);
         int zp = kp / 4 - 1;
@@ -75,7 +75,7 @@ void ss_lens(inout vec3 rel, inout float lum, int prof) {
     for (int h = 0; h < SS_HOLES; h++) {
         if (SS_HOLE_PROF[h] != prof) continue;
         // центр дыры от камеры: целые части — в int (вдали от 0 у float шаг до 2 блоков)
-        vec3 O = vec3(SS_HOLE_IPOS[h] - CameraBlockPos) + (SS_HOLE_FRAC[h] - CameraOffset);
+        vec3 O = vec3(SS_HOLE_IPOS[h] - CameraBlockPos) + (SS_HOLE_FRAC[h] + CameraOffset);
         float hr = SS_HOLE_POS[h].w;
         float Dl = length(O);
         if (Dl <= hr) {                                                // камера внутри горизонта — всё чёрное
@@ -150,7 +150,7 @@ void main() {
     // позиция в плитке: камера — целыми (сдвиг на кратное T делает число положительным: % от отрицательных не определён)
     float Tf = float(T);
     ivec3 a = (CameraBlockPos + ivec3(T * (33554432 / T))) % T;
-    vec3 cm = vec3(a) + CameraOffset;
+    vec3 cm = vec3(a) - CameraOffset;
     vec3 P = vec3(ss_u(ui + 1u), ss_u(ui + 2u), ss_u(ui + 3u)) * Tf;
     vec3 sh = P - cm + 0.5 * Tf;
     vec3 k = floor(sh / Tf);
