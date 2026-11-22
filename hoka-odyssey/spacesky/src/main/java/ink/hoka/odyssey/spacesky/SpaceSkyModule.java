@@ -52,6 +52,8 @@ public final class SpaceSkyModule extends OdysseyModule {
     private volatile SortedSet<String> mapNames = new TreeSet<>();
     /** Тип мира карт (dimension из map.yml) — тоже из async, для /hosky profiles и профилей дыр. */
     private volatile Map<String, String> mapDims = Map.of();
+    /** Тип мира карт для дыр — какой на деле у их миров (см. {@link #effectiveDims}). */
+    private volatile Map<String, String> mapDimsEffective = Map.of();
     private volatile List<Holes.Hole> holes = List.of();
     /** Текст spacesky:holes.glsl последней сборки — пересобирать пак, только если он изменился. */
     private volatile String holesGlsl;
@@ -109,9 +111,11 @@ public final class SpaceSkyModule extends OdysseyModule {
             try {
                 SortedSet<String> names = new TreeSet<>(server().mapNames());
                 Map<String, String> dims = MapDimensions.read(MapDimensions.MAPS, names);
-                boolean changed = !dims.equals(mapDims);
+                Map<String, String> eff = effectiveDims(dims);
+                boolean changed = !eff.equals(mapDimsEffective);
                 mapNames = names;
                 mapDims = Map.copyOf(dims);
+                mapDimsEffective = Map.copyOf(eff);
                 if (changed && !holes.isEmpty()) {
                     scheduler().run(this::holesChanged);               // профиль дыры — по типу мира её карты
                 }
@@ -168,15 +172,57 @@ public final class SpaceSkyModule extends OdysseyModule {
         }, 40);
     }
 
-    /** Тип мира карт дыр — с диска (вызывать из async). */
-    private static Map<String, String> holeMapDims(List<Holes.Hole> hs) {
+    /** Тип мира карт дыр — с диска, с поправкой на то, что применило ядро (вызывать из async). */
+    private Map<String, String> holeMapDims(List<Holes.Hole> hs) {
         Set<String> maps = new TreeSet<>();
         for (Holes.Hole h : hs) {
             if (h.map() != null) {
                 maps.add(h.map());
             }
         }
-        return MapDimensions.read(MapDimensions.MAPS, maps);
+        return effectiveDims(MapDimensions.read(MapDimensions.MAPS, maps));
+    }
+
+    /**
+     * Тип мира карт, как его увидит клиент. Ядро без патча docs/core-dimension.md ключ dimension не читает — тогда все
+     * карты overworld и дыры уходят в профиль space (иначе на боевом сервере с everywhere: true дыра карты с
+     * dimension: hoka:… пропала бы с неба). Ядро с патчем (видно по Maps.dimensionKeys или по миру в типе мира
+     * профиля): у загруженной карты — тип мира её инстанса (map.yml мог измениться после загрузки), у остальных — map.yml.
+     */
+    private Map<String, String> effectiveDims(Map<String, String> file) {
+        Map<String, String> out = new LinkedHashMap<>(file);
+        boolean patched = coreAppliesDimension();
+        Map<String, String> loaded = new LinkedHashMap<>();
+        for (Instance in : MinecraftServer.getInstanceManager().getInstances()) {
+            String real = in.getDimensionType().key().asString();
+            if (Profiles.profileOf(real) != null) {
+                patched = true;
+            }
+            server().mapName(in).filter(file::containsKey).ifPresent(n -> loaded.put(n, real));
+        }
+        if (!patched) {
+            out.replaceAll((k, v) -> MapDimensions.DEFAULT);
+        } else {
+            out.putAll(loaded);
+        }
+        return out;
+    }
+
+    private static volatile Boolean coreDimension;
+
+    /** Ядро с патчем docs/core-dimension.md (в нём у карт ядра появился Maps.dimensionKeys())? */
+    private static boolean coreAppliesDimension() {
+        Boolean b = coreDimension;
+        if (b == null) {
+            try {
+                Class.forName("ink.hoka.odyssey.server.maps.Maps").getDeclaredMethod("dimensionKeys");
+                b = true;
+            } catch (ReflectiveOperationException | LinkageError | RuntimeException e) {
+                b = false;
+            }
+            coreDimension = b;
+        }
+        return b;
     }
 
     /** Дыры gravity (пусто, если модуля нет). */

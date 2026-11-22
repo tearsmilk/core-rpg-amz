@@ -126,7 +126,7 @@ vec3 ss_planet(vec3 d, float t, float pix) {
     float h = 1.0 - clamp(y, 0.0, 1.0);
     vec3 col = mix(ssA.rgb, ssB.rgb, 1.0 - h * h * h);                // от горизонта к зениту — плавно
     if (y < 0.0) {
-        col *= mix(1.0, 0.55, min(-y * 2.5, 1.0));                    // ниже горизонта (пустота) — темнее
+        col *= mix(1.0, 0.55, smoothstep(0.0, 1.0, -y));              // ниже горизонта (пустота) — темнее до надира, без круга
     }
     // звёзды ночью: небо вращается вместе с солнцем (вокруг оси z), у горизонта гаснут в дымке
     if (ssB.w > 0.003) {
@@ -149,6 +149,10 @@ vec3 ss_planet(vec3 d, float t, float pix) {
         float r = ssD.w;
         float disk = smoothstep(r + pix, r - pix, ang);
         float glow = exp(-ang / (r * 2.2)) * 0.35 + exp(-ang / (r * 9.0)) * 0.12;
+        // ниже горизонта солнце закрыто планетой: диск срезается по горизонту, ореол гаснет чуть ниже
+        // (иначе в полночь при взгляде вниз из пустоты в надире — яркий диск)
+        disk *= smoothstep(-pix, pix, y);
+        glow *= smoothstep(-0.12, 0.0, y);
         col += ssE.rgb * (disk * 2.5 + glow);
     }
     // луна/соседняя планета: шар, освещённый солнцем профиля (фаза — от положения солнца); днём сквозь атмосферу
@@ -158,7 +162,7 @@ vec3 ss_planet(vec3 d, float t, float pix) {
         if (c > 0.0 && 1.0 - c * c < sr * sr * 1.1) {
             vec3 q = (d - ssG.xyz * c) / sr;                           // смещение по диску, |q| <= 1
             float q2 = dot(q, q);
-            float mask = smoothstep(1.0 + pix / sr, 1.0 - pix / sr, sqrt(q2));
+            float mask = smoothstep(1.0 + pix / sr, 1.0 - pix / sr, sqrt(q2)) * smoothstep(-pix, pix, y);  // за горизонтом не видна
             vec3 n = q - ssG.xyz * sqrt(max(1.0 - q2, 0.0));            // нормаль поверхности (к камере)
             float lit = smoothstep(-0.05, 0.15, dot(n, ssD.xyz));
             vec3 moon = ssH.rgb * (lit * (0.35 + 0.65 * max(dot(n, ssD.xyz), 0.0)) + 0.03);
