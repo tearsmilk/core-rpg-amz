@@ -1,6 +1,6 @@
 #version 330
 
-// spacesky: ванильный fog.glsl 1.21.11, изменена только apply_fog (см. ниже).
+// spacesky: ванильный fog.glsl 1.21.11, изменена apply_fog и добавлены spacesky_fog_rgb/spacesky_fog_color (см. ниже).
 // Миры профилей неба (spacesky:profiles.glsl) узнаются по МЕТКЕ в цвете тумана: метка — служебный цвет, поэтому
 // туман там рисуется цветом профиля (у планеты — по времени суток, со своей дымкой; под водой — вода профиля).
 // Остальные миры: режим everywhere: true — туман дальности уходит в цвет космоса (профиль space), туман окружения
@@ -32,14 +32,33 @@ float total_fog_value(float sphericalVertexDistance, float cylindricalVertexDist
     return max(linear_fog_value(sphericalVertexDistance, environmentalStart, environmantalEnd), linear_fog_value(cylindricalVertexDistance, renderDistanceStart, renderDistanceEnd));
 }
 
+// spacesky: цвет тумана мира профиля p (code — код метки; es/ee — туман окружения, у планеты заменяются её дымкой):
+// цвет профиля, затемнённый так же, как клиент затемнил метку (слепота, тьма, у дна мира).
+vec3 spacesky_fog_rgb(int prof, int code, vec3 fogColor, inout float es, inout float ee) {
+    return spacesky_profile_fog(prof, code >= 16, es, ee) * spacesky_mark_level(fogColor);
+}
+
+// spacesky: FogColor для смешений мимо apply_fog (проявление чанков в terrain.fsh): в мире профиля — цвет его тумана,
+// иначе FogColor как есть.
+vec4 spacesky_fog_color(vec4 fogColor, float environmentalStart, float environmantalEnd) {
+    int code = spacesky_code(fogColor.rgb);
+    int prof = spacesky_code_profile(code);
+    if (prof < 0) {
+        return fogColor;
+    }
+    float es = environmentalStart;
+    float ee = environmantalEnd;
+    return vec4(spacesky_fog_rgb(prof, code, fogColor.rgb, es, ee), fogColor.a);
+}
+
 vec4 apply_fog(vec4 inColor, float sphericalVertexDistance, float cylindricalVertexDistance, float environmentalStart, float environmantalEnd, float renderDistanceStart, float renderDistanceEnd, vec4 fogColor) {
     int code = spacesky_code(fogColor.rgb);
     int prof = spacesky_code_profile(code);
     if (prof >= 0) {
-        // мир профиля: цвет и дымка — из профиля (метка — не цвет, а номер)
+        // мир профиля: цвет и дымка — из профиля (метка — не цвет, а номер; её яркость — затемнение клиента)
         float es = environmentalStart;
         float ee = environmantalEnd;
-        vec3 c = spacesky_profile_fog(prof, code >= 16, es, ee);
+        vec3 c = spacesky_fog_rgb(prof, code, fogColor.rgb, es, ee);
         float v = total_fog_value(sphericalVertexDistance, cylindricalVertexDistance, es, ee, renderDistanceStart, renderDistanceEnd);
         return vec4(mix(inColor.rgb, c, v * fogColor.a), inColor.a);
     }

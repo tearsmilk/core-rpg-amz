@@ -34,8 +34,8 @@ class SpaceSkyFilesTest {
     @Test
     void skyShaderAlwaysInPack() throws Exception {
         Map<String, byte[]> m = SpaceSkyModule.collect(RES.resolve(SkyMode.ALWAYS));
-        assertEquals(List.of(CORE + "position_tex.vsh", CORE + "sky.fsh", CORE + "sky.vsh", FOG, Holes.PATH, SkyMode.PATH,
-            Profiles.PATH, Zones.PATH), List.copyOf(m.keySet()));
+        assertEquals(List.of(CORE + "position_tex.vsh", CORE + "sky.fsh", CORE + "sky.vsh", CORE + "terrain.fsh", FOG,
+            Holes.PATH, SkyMode.PATH, Profiles.PATH, Zones.PATH), List.copyOf(m.keySet()));
     }
 
     @Test
@@ -55,16 +55,16 @@ class SpaceSkyFilesTest {
     @Test
     void everywherePackFiles() throws Exception {
         assertEquals(Set.of(CORE + "sky.vsh", CORE + "sky.fsh", CORE + "stars.fsh", CORE + "position_color.vsh",
-            CORE + "position_tex.vsh", FOG, Zones.PATH, SkyMode.PATH, Holes.PATH, Profiles.PATH),
+            CORE + "position_tex.vsh", CORE + "terrain.fsh", FOG, Zones.PATH, SkyMode.PATH, Holes.PATH, Profiles.PATH),
             packFiles(true, false, false, false));
         Set<String> all = packFiles(true, true, true, true);
-        assertEquals(10 + 1 + 8 + 1, all.size(), all.toString());
+        assertEquals(11 + 1 + 8 + 1, all.size(), all.toString());
         assertTrue(all.contains("assets/minecraft/textures/environment/clouds.png"));
     }
 
     @Test
     void markedPackFiles() throws Exception {
-        Set<String> expected = Set.of(CORE + "sky.vsh", CORE + "sky.fsh", CORE + "position_tex.vsh", FOG, Zones.PATH,
+        Set<String> expected = Set.of(CORE + "sky.vsh", CORE + "sky.fsh", CORE + "position_tex.vsh", CORE + "terrain.fsh", FOG, Zones.PATH,
             SkyMode.PATH, Holes.PATH, Profiles.PATH);
         assertEquals(expected, packFiles(false, true, true, true));
         assertEquals(expected, packFiles(false, false, false, false));
@@ -94,5 +94,39 @@ class SpaceSkyFilesTest {
             assertFalse(s.contains("SPACESKY_MARK"), f + ": старая метка");
         }
         assertFalse(Files.readString(RES.resolve("pack/" + FOG), StandardCharsets.UTF_8).contains("#define SPACESKY_BASE"));
+    }
+
+    @Test
+    void fogKeepsClientDarkening() throws Exception {
+        String fog = Files.readString(RES.resolve("pack/" + FOG), StandardCharsets.UTF_8);
+        // туман профиля затемняется, как клиент затемнил метку (слепота, тьма, у дна мира)
+        assertTrue(fog.contains("spacesky_mark_level(fogColor)"), fog);
+        String p = Profiles.glsl(List.of(Profiles.defaults("space", Profiles.Kind.GALAXY).withIndex(0),
+            Profiles.defaults("mars", Profiles.Kind.PLANET).withIndex(1)));
+        assertTrue(p.contains("float spacesky_mark_level(vec3 c)"), p);
+        // слепота/тьма подменили начало тумана — фазу не считать, дальности эффекта не трогать
+        int guard = p.indexOf("if (es < 29999.0 || es > 31001.0) return");
+        assertTrue(guard > 0 && guard < p.indexOf("es = 0.0; ee ="), p);
+    }
+
+    @Test
+    void terrainFadesFromProfileFog() throws Exception {
+        String t = Files.readString(RES.resolve("pack/" + CORE + "terrain.fsh"), StandardCharsets.UTF_8);
+        assertTrue(t.contains("#moj_import <minecraft:fog.glsl>"), t);
+        assertTrue(t.contains("spacesky_fog_color(FogColor, FogEnvironmentalStart, FogEnvironmentalEnd)"), t);
+        assertFalse(t.contains("mix(FogColor *"), "чанк не должен проявляться из метки");
+    }
+
+    @Test
+    void skyShadersAvoidPowOfNegative() throws Exception {
+        // pow(x < 0, y) в GLSL не определён: у заката и Млечного пути — квадрат
+        for (String f : List.of(CORE + "sky.vsh", CORE + "sky.fsh")) {
+            String s = Files.readString(RES.resolve("pack/" + f), StandardCharsets.UTF_8);
+            assertFalse(s.contains("pow((sun.y"), f);
+            assertFalse(s.contains("pow(dot(d, axis)"), f);
+        }
+        String fsh = Files.readString(RES.resolve("pack/" + CORE + "sky.fsh"), StandardCharsets.UTF_8);
+        int main = fsh.indexOf("void main()");
+        assertTrue(fsh.indexOf("fwidth(") > main, "fwidth — только в main (однородное управление)");
     }
 }

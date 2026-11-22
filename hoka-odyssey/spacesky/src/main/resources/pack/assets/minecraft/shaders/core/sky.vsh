@@ -105,14 +105,18 @@ void main() {
         vec4 p4 = SS_PROF_4[prof];
         vec3 sun = spacesky_sun_dir(spacesky_phase(FogEnvironmentalStart, water));
         float day = spacesky_daylight(sun.y);
+        // звёзды — только когда солнце ниже ~3° (гражданские сумерки), а не на светлом небе восхода
+        float night = 1.0 - smoothstep(-0.20, -0.05, sun.y);
         ssA = vec4(mix(p3.rgb, p0.rgb, day), p1.w);                    // горизонт
-        ssB = vec4(mix(p4.rgb, p1.rgb, day), p2.w * (1.0 - day));      // зенит; звёзды — ночью
-        ssC.rgb *= 1.0 - day;
+        ssB = vec4(mix(p4.rgb, p1.rgb, day), p2.w * night);            // зенит; звёзды — ночью
+        ssC.rgb *= night;
         // закат: солнце у горизонта (чуть выше и ниже); у заката и солнце окрашено в цвет заката
-        float dusk = exp(-pow((sun.y + 0.02) / 0.22, 2.0));
+        // (квадрат, а не pow: pow(x < 0, y) по спецификации не определён — ночью было бы NaN на всё небо)
+        float ds = (sun.y + 0.02) / 0.22;
+        float dusk = exp(-ds * ds);
         vec3 sunset = SS_PROF_5[prof].rgb;
         ssD = vec4(sun, p3.w);
-        ssE = vec4(mix(SS_PROF_6[prof].rgb, sunset, 0.45 * dusk), day);
+        ssE = vec4(mix(SS_PROF_6[prof].rgb, sunset, 0.8 * dusk), day);
         ssF = vec4(sunset, dusk);
         ssG = vec4(SS_PROF_7[prof].xyz, p4.w);
         ssH = vec4(SS_PROF_8[prof].rgb, 0.0);

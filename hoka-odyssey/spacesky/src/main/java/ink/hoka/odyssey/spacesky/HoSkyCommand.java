@@ -185,12 +185,9 @@ final class HoSkyCommand extends Command {
             msg(s, "Уже " + Zones.MAX + " областей — больше нельзя.", NamedTextColor.RED);
         } else {
             Pos pos = p.getPosition();
-            Zones.write(m.config(), new Zones.Zone(id, kind, Math.round(pos.x()), Math.round(pos.z()), radius, 0.3, color,
-                profile));
-            m.config().save();
-            msg(s, "Область " + id + " (" + kind.title + ") — центр здесь, радиус " + (long) radius + ". Пересобираю пак…",
-                NamedTextColor.GREEN);
-            apply(s, "Готово: пак отправлен игрокам.");
+            Zones.Zone zone = new Zones.Zone(id, kind, Math.round(pos.x()), Math.round(pos.z()), radius, 0.3, color, profile);
+            saveZones(s, c -> Zones.write(c, zone), "Область " + id + " (" + kind.title + ") — центр здесь, радиус "
+                + (long) radius + ". Пересобираю пак…", NamedTextColor.GREEN);
         }
     }
 
@@ -205,10 +202,34 @@ final class HoSkyCommand extends Command {
                 NamedTextColor.RED);
             return;
         }
-        m.config().set("zones." + id, null);
-        m.config().save();
-        msg(s, "Область " + id + " убрана. Пересобираю пак…", NamedTextColor.YELLOW);
-        apply(s, "Готово: пак отправлен игрокам.");
+        saveZones(s, c -> c.set("zones." + id, null), "Область " + id + " убрана. Пересобираю пак…",
+            NamedTextColor.YELLOW);
+    }
+
+    /**
+     * Записать раздел zones в config.yml (в async, остальной текст и комментарии файла целы — {@link Zones#saveYaml}),
+     * затем в тике — сообщение и пересборка пака (config.yml перечитывается).
+     */
+    private void saveZones(CommandSender s, java.util.function.Consumer<ink.hoka.odyssey.api.ModuleConfig> change,
+                           String ok, NamedTextColor color) {
+        Path file = m.config().file();
+        m.scheduler().async(() -> {
+            String err = null;
+            try {
+                Zones.saveYaml(file, change);
+            } catch (RuntimeException e) {
+                err = e.getMessage();
+            }
+            String e = err;
+            runInTick(() -> {
+                if (e != null) {
+                    msg(s, "config.yml не записан: " + e, NamedTextColor.RED);
+                    return;
+                }
+                msg(s, ok, color);
+                apply(s, "Готово: пак отправлен игрокам.");
+            });
+        });
     }
 
     /** Карты, которые сейчас загружены: имя → тип мира, с которым загружена (в тике). */
@@ -344,7 +365,9 @@ final class HoSkyCommand extends Command {
     }
 
     private void profiles(CommandSender s) {
-        Map<String, String> dims = m.cachedMapDims();
+        // карты профиля — по типу мира, который на деле у мира карты (ядро без патча dimension не читает)
+        Map<String, String> raw = m.cachedMapDims();
+        Map<String, String> dims = m.cachedMapDimsEffective();
         msg(s, "Профили неба: " + m.profiles().size() + " (не больше " + Profiles.MAX + "). Карта выбирает профиль: "
             + "/hosky world <карта> <профиль>", NamedTextColor.AQUA);
         for (Profiles.Profile p : m.profiles()) {
@@ -362,6 +385,17 @@ final class HoSkyCommand extends Command {
             }
             s.sendMessage(line);
         }
+        boolean patched = SpaceSkyModule.coreAppliesDimension()
+            || dims.values().stream().anyMatch(d -> Profiles.profileOf(d) != null);
+        raw.forEach((map, d) -> {
+            String now = dims.getOrDefault(map, d);
+            if (Profiles.profileOf(d) != null && !d.equals(now)) {
+                msg(s, " карта " + map + ": в map.yml " + d + ", но её мир — " + now + (patched
+                    ? " (применится при следующей загрузке карты)"
+                    : " — ядро без патча docs/core-dimension.md: dimension карт не применяется, все карты overworld (небо "
+                        + Profiles.DEFAULT_ID + ")"), NamedTextColor.GOLD);
+            }
+        });
         for (String id : m.pendingProfiles()) {
             msg(s, " " + id + " — есть в config.yml, тип мира hoka:" + id + " появится после перезапуска сервера",
                 NamedTextColor.GOLD);
@@ -372,8 +406,8 @@ final class HoSkyCommand extends Command {
                     + " профилей" : "старая метка, нужен перезапуск") + ")", NamedTextColor.RED);
             }
         });
-        msg(s, "Профили — в config.yml (раздел profiles); /hosky reload применяет цвета, новые профили — после "
-            + "перезапуска сервера.", NamedTextColor.DARK_AQUA);
+        msg(s, "Профили — в config.yml (раздел profiles); /hosky reload применяет цвета (кроме облаков); "
+            + "новые профили, type, clouds и cloud-color — после перезапуска сервера.", NamedTextColor.DARK_AQUA);
     }
 
     /** Обратно в тик; если модуль уже выключен — молча. */

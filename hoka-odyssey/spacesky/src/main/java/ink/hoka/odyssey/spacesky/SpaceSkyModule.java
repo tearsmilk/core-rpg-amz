@@ -60,6 +60,10 @@ public final class SpaceSkyModule extends OdysseyModule {
     /** Отписка от изменений дыр gravity (null — gravity нет). */
     private Runnable holesUnsubscribe;
     private boolean holesPending;
+    /** Идёт сборка пака (syncPack ещё не дошёл до respack) — в тике. */
+    private boolean syncing;
+    /** Пока шла сборка, дыры или типы миров могли измениться — проверить ещё раз после неё (в тике). */
+    private boolean holesAgain;
     /** Профили, зарегистрированные при загрузке (номера зашиты в метки типов миров); параметры — из config.yml. */
     private volatile SpaceDimension.Registration registration = new SpaceDimension.Registration(List.of(), Map.of());
     private volatile List<Profiles.Profile> profiles = List.of();
@@ -106,6 +110,11 @@ public final class SpaceSkyModule extends OdysseyModule {
         return mapDims;
     }
 
+    /** Тип мира карт, как его на деле видит клиент (с поправкой на ядро без патча и загруженные карты). */
+    Map<String, String> cachedMapDimsEffective() {
+        return mapDimsEffective;
+    }
+
     void refreshMapNames() {
         scheduler().async(() -> {
             try {
@@ -150,24 +159,40 @@ public final class SpaceSkyModule extends OdysseyModule {
         }
     }
 
-    /** Дыры gravity или типы миров карт могли измениться (вызов в тике): через 2 с пересобрать пак, если дыры другие. */
+    /**
+     * Дыры gravity или типы миров карт могли измениться (вызов в тике): через 2 с пересобрать пак, если дыры другие.
+     * Пока идёт сборка пака — проверка откладывается до её конца (сравнивать не с чем, и пак собрался бы дважды).
+     * Пересборка ради дыр config.yml не перечитывает: недоделанная правка конфига не попадёт в небо раньше /hosky reload.
+     */
     private void holesChanged() {
+        if (syncing) {
+            holesAgain = true;
+            return;
+        }
         if (holesPending) {
             return;
         }
         holesPending = true;
         scheduler().later(() -> {
             holesPending = false;
+            if (syncing) {
+                holesAgain = true;
+                return;
+            }
             List<Holes.Hole> raw = readHoles();
             Map<String, Integer> idx = Profiles.indexes(profiles);
             scheduler().async(() -> {
                 String text = Holes.glsl(Holes.withProfiles(raw, holeMapDims(raw), idx));
-                if (!text.equals(holesGlsl)) {
-                    scheduler().run(() -> syncPack().exceptionally(e -> {
-                        logger().warn("небо с новыми чёрными дырами не собрано: {}", e.toString());
-                        return List.of();
-                    }));
-                }
+                scheduler().run(() -> {
+                    if (syncing) {
+                        holesAgain = true;
+                    } else if (!text.equals(holesGlsl)) {
+                        syncPack(false).exceptionally(e -> {
+                            logger().warn("небо с новыми чёрными дырами не собрано: {}", e.toString());
+                            return List.of();
+                        });
+                    }
+                });
             });
         }, 40);
     }
@@ -190,39 +215,63 @@ public final class SpaceSkyModule extends OdysseyModule {
      * профиля): у загруженной карты — тип мира её инстанса (map.yml мог измениться после загрузки), у остальных — map.yml.
      */
     private Map<String, String> effectiveDims(Map<String, String> file) {
-        Map<String, String> out = new LinkedHashMap<>(file);
-        boolean patched = coreAppliesDimension();
         Map<String, String> loaded = new LinkedHashMap<>();
         for (Instance in : MinecraftServer.getInstanceManager().getInstances()) {
             String real = in.getDimensionType().key().asString();
-            if (Profiles.profileOf(real) != null) {
-                patched = true;
-            }
-            server().mapName(in).filter(file::containsKey).ifPresent(n -> loaded.put(n, real));
+            server().mapName(in).ifPresent(n -> loaded.put(n, real));
         }
+        return effectiveDims(file, coreAppliesDimension(), loaded);
+    }
+
+    /**
+     * Чистая часть {@link #effectiveDims(Map)}: file — карта → dimension из map.yml, coreApplies — ядро с патчем (по
+     * {@link #coreAppliesDimension()}), loaded — загруженные карты → тип мира их инстанса. Патч виден и по миру,
+     * загруженному с типом мира профиля. Без патча — все карты {@link MapDimensions#DEFAULT}.
+     */
+    static Map<String, String> effectiveDims(Map<String, String> file, boolean coreApplies, Map<String, String> loaded) {
+        Map<String, String> out = new LinkedHashMap<>(file);
+        boolean patched = coreApplies || loaded.values().stream().anyMatch(d -> Profiles.profileOf(d) != null);
         if (!patched) {
             out.replaceAll((k, v) -> MapDimensions.DEFAULT);
-        } else {
-            out.putAll(loaded);
+            return out;
         }
+        loaded.forEach((map, real) -> {
+            if (file.containsKey(map)) {
+                out.put(map, real);
+            }
+        });
         return out;
     }
+
+    /** Класс и метод, которые добавляет патч ядра docs/core-dimension.patch (по ним модуль узнаёт патч). */
+    static final String CORE_MAPS_CLASS = "ink.hoka.odyssey.server.maps.Maps";
+    static final String CORE_MAPS_METHOD = "dimensionKeys";
 
     private static volatile Boolean coreDimension;
 
     /** Ядро с патчем docs/core-dimension.md (в нём у карт ядра появился Maps.dimensionKeys())? */
-    private static boolean coreAppliesDimension() {
+    static boolean coreAppliesDimension() {
         Boolean b = coreDimension;
         if (b == null) {
-            try {
-                Class.forName("ink.hoka.odyssey.server.maps.Maps").getDeclaredMethod("dimensionKeys");
-                b = true;
-            } catch (ReflectiveOperationException | LinkageError | RuntimeException e) {
-                b = false;
-            }
+            b = hasMethod(CORE_MAPS_CLASS, CORE_MAPS_METHOD);
             coreDimension = b;
         }
         return b;
+    }
+
+    /** Есть ли в классе cls (загрузчиком модуля) объявленный метод method. */
+    static boolean hasMethod(String cls, String method) {
+        try {
+            for (java.lang.reflect.Method m : Class.forName(cls, false, SpaceSkyModule.class.getClassLoader())
+                .getDeclaredMethods()) {
+                if (m.getName().equals(method)) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException e) {
+            return false;
+        }
     }
 
     /** Дыры gravity (пусто, если модуля нет). */
@@ -283,6 +332,11 @@ public final class SpaceSkyModule extends OdysseyModule {
                 errors.add("profiles." + r.id() + ": вид " + c.kind().id + " — после перезапуска сервера (сейчас " + r.kind().id + ")");
                 c = c.withKind(r.kind());
             }
+            // облака планеты — в типе мира и таймлайне (реестр после старта не меняется, шейдер их цвет не трогает)
+            if (r.planet() && (c.clouds() != r.clouds() || !c.cloudColor().equals(r.cloudColor()))) {
+                errors.add("profiles." + r.id() + ": clouds/cloud-color — после перезапуска сервера (сейчас clouds: "
+                    + r.clouds() + ", cloud-color: " + r.cloudColor().hex() + ")");
+            }
             out.add(c.withIndex(r.index()));
         }
         for (String id : cfg.keySet()) {
@@ -292,12 +346,50 @@ public final class SpaceSkyModule extends OdysseyModule {
         return out;
     }
 
-    /**
-     * Перечитать config.yml, отдать respack файлы неба, профили, области и дыры, пересобрать пак. Будущее — с ошибками
-     * конфига (пусто — всё хорошо); завершается, когда respack пересобрал пак.
-     */
+    /** {@link #syncPack(boolean)} с перечитыванием config.yml (запуск, /hosky reload|add|remove). */
     CompletableFuture<List<String>> syncPack() {
-        config().reload();
+        return syncPack(true);
+    }
+
+    /**
+     * Отдать respack файлы неба, профили, области и дыры, пересобрать пак (вызов в тике). reload — сначала перечитать
+     * config.yml (иначе — как при прошлой сборке: так пересобирается пак ради дыр). Будущее — с ошибками конфига
+     * (пусто — всё хорошо); завершается, когда respack пересобрал пак; битый config.yml — будущее с ошибкой.
+     */
+    CompletableFuture<List<String>> syncPack(boolean reload) {
+        if (reload) {
+            try {
+                config().reload();
+            } catch (RuntimeException e) {
+                logger().warn("config.yml не прочитан — небо не пересобрано: {}", e.getMessage());
+                return CompletableFuture.failedFuture(e);
+            }
+        }
+        syncing = true;
+        CompletableFuture<List<String>> out;
+        try {
+            out = buildPack();
+        } catch (RuntimeException e) {
+            logger().warn("небо не пересобрано: {}", e.toString());
+            out = CompletableFuture.failedFuture(e);
+        }
+        out.whenComplete((v, err) -> {
+            try {
+                scheduler().run(() -> {
+                    syncing = false;
+                    if (holesAgain) {
+                        holesAgain = false;
+                        holesChanged();
+                    }
+                });
+            } catch (IllegalStateException off) {
+                // модуль выключен
+            }
+        });
+        return out;
+    }
+
+    private CompletableFuture<List<String>> buildPack() {
         List<String> errors = new ArrayList<>();
         List<String> pending = new ArrayList<>();
         List<Profiles.Profile> ps = current(registration, Profiles.read(config(), errors), pending, errors);

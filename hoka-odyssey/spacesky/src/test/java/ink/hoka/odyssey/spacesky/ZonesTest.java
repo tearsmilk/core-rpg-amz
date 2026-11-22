@@ -23,11 +23,13 @@ class ZonesTest {
         List<String> errors = new ArrayList<>();
         List<Zones.Zone> z = Zones.read(new ModuleConfig(f), errors);
         assertTrue(errors.isEmpty(), errors.toString());
-        assertEquals(4, z.size());
+        assertEquals(5, z.size());
         assertEquals(Zones.Kind.NEBULA, z.get(1).kind());
         assertEquals(0xB060FF, z.get(1).color());
         assertNull(z.get(1).profile(), "без profile — во всех галактиках");
         assertEquals("andromeda", z.get(3).profile());
+        assertEquals("galaxy1", z.get(4).profile(), "у galaxy1 своя туманность — иначе он не отличался бы от space");
+        assertEquals(-1, z.get(4).color(), "без color — цвет nebula профиля");
         // все профили областей из примера есть в профилях примера
         List<Profiles.Profile> ps = Profiles.read(new ModuleConfig(f), errors);
         for (Zones.Zone zone : z) {

@@ -91,6 +91,11 @@ final class Holes {
         return Double.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : def;
     }
 
+    /** Целая часть координаты (вниз), в пределах int шейдера. */
+    static int ip(double v) {
+        return (int) Math.max(-(1 << 30), Math.min(1 << 30, Math.floor(v)));
+    }
+
     private static String f(double v) {
         return String.format(Locale.ROOT, "%.4f", v);
     }
@@ -102,6 +107,8 @@ final class Holes {
         b.append("// spacesky: чёрные дыры — файл пишет модуль spacesky по дырам модуля gravity, руками не менять.\n");
         b.append("// SS_HOLE_POS = (x, y, z, горизонт), SS_HOLE_DISK = (нормаль диска, внешний радиус в горизонтах),\n");
         b.append("// SS_HOLE_LOOK = (вращение, яркость, температура, зерно), SS_HOLE_PROF — номер профиля неба\n");
+        b.append("// SS_HOLE_IPOS + SS_HOLE_FRAC — тот же центр целой и дробной частью: шейдер вычитает целые из\n");
+        b.append("// CameraBlockPos точно (в float вдали от 0 шаг — до 2 блоков), SS_HOLE_POS.xyz — только для чтения\n");
         b.append("#define SS_HOLES ").append(holes.size()).append('\n');
         if (holes.isEmpty()) {
             return b.toString();
@@ -112,6 +119,20 @@ final class Holes {
             b.append("    vec4(").append(f(h.x())).append(", ").append(f(h.y())).append(", ").append(f(h.z())).append(", ")
                 .append(f(h.horizon())).append(i + 1 < holes.size() ? "),  // " : ")   // ")
                 .append(comment(h.map())).append(':').append(comment(h.name())).append('\n');
+        }
+        b.append(");\n");
+        b.append("const ivec3 SS_HOLE_IPOS[SS_HOLES] = ivec3[SS_HOLES](\n");
+        for (int i = 0; i < holes.size(); i++) {
+            Hole h = holes.get(i);
+            b.append("    ivec3(").append(ip(h.x())).append(", ").append(ip(h.y())).append(", ").append(ip(h.z()))
+                .append(i + 1 < holes.size() ? ")," : ")").append('\n');
+        }
+        b.append(");\n");
+        b.append("const vec3 SS_HOLE_FRAC[SS_HOLES] = vec3[SS_HOLES](\n");
+        for (int i = 0; i < holes.size(); i++) {
+            Hole h = holes.get(i);
+            b.append("    vec3(").append(f(h.x() - ip(h.x()))).append(", ").append(f(h.y() - ip(h.y()))).append(", ")
+                .append(f(h.z() - ip(h.z()))).append(i + 1 < holes.size() ? ")," : ")").append('\n');
         }
         b.append(");\n");
         b.append("const vec4 SS_HOLE_DISK[SS_HOLES] = vec4[SS_HOLES](\n");

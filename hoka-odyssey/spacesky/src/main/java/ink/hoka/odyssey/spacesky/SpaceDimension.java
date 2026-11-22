@@ -35,7 +35,8 @@ import org.slf4j.Logger;
  *   <li>Галактика: таймлайн без периода — всё постоянно, облаков нет, свет неба всегда дневной.</li>
  *   <li>Планета: таймлайн суток (24000 тиков): фаза — в начале тумана окружения (см. {@link Profiles}), свет неба
  *       днём/ночью — как у ванильных суток, облака — цвет профиля днём, темнее ночью (или выключены), ванильные
- *       солнце и луна ходят как в ванили (их прячет шейдер, солнце профиля рисует sky.fsh).</li>
+ *       солнце и луна ходят как в ванили — по кривой суток minecraft:day, той же, что у солнца профиля в шейдере
+ *       (ванильные прячет шейдер, солнце профиля рисует sky.fsh).</li>
  * </ul>
  *
  * <p>Реестры Minestom замораживаются после {@code MinecraftServer.start}: регистрировать можно только до старта
@@ -118,11 +119,12 @@ final class SpaceDimension {
         track(b, EnvironmentAttribute.WATER_FOG_START_DISTANCE, List.of(
             new Timeline.Keyframe<>(0, Profiles.WATER_START - 1f),
             new Timeline.Keyframe<>(0, Profiles.WATER_START)), EaseFunction.LINEAR);
-        // ванильные солнце и луна (их прячет шейдер) — равномерно, в полдень (6000) солнце в зените
+        // ванильные солнце и луна (их прячет шейдер) — как в ванильных сутках minecraft:day: в полдень (6000) солнце
+        // в зените, ход — по той же кривой (cubic_bezier), что и у солнца профиля в шейдере (spacesky_sun_dir)
         track(b, EnvironmentAttribute.SUN_ANGLE, List.of(new Timeline.Keyframe<>(6000, 360f),
-            new Timeline.Keyframe<>(6000, 0f)), EaseFunction.LINEAR);
+            new Timeline.Keyframe<>(6000, 0f)), vanillaSunEase());
         track(b, EnvironmentAttribute.MOON_ANGLE, List.of(new Timeline.Keyframe<>(6000, 540f),
-            new Timeline.Keyframe<>(6000, 180f)), EaseFunction.LINEAR);
+            new Timeline.Keyframe<>(6000, 180f)), vanillaSunEase());
         // свет неба днём/ночью — точки ванильных суток (minecraft:day), значения — для неба overworld
         track(b, EnvironmentAttribute.SKY_LIGHT_FACTOR, List.of(new Timeline.Keyframe<>(730, 1f),
             new Timeline.Keyframe<>(11270, 1f), new Timeline.Keyframe<>(13140, 0.24f),
@@ -143,6 +145,11 @@ final class SpaceDimension {
                 new Timeline.Keyframe<>(22330, cn)), EaseFunction.LINEAR);
         }
         return b.build();
+    }
+
+    /** Кривая хода солнца и луны ванильных суток (data/minecraft/timeline/day.json 1.21.11: sun_angle, moon_angle). */
+    static EaseFunction vanillaSunEase() {
+        return new EaseFunction.CubicBezier(new float[] {0.362f, 0.241f, 0.638f, 0.759f});
     }
 
     @SuppressWarnings("unchecked")

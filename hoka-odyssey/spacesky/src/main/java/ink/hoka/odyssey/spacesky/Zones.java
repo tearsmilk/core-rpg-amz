@@ -113,6 +113,74 @@ final class Zones {
         c.set(p + "profile", z.profile());
     }
 
+    /**
+     * Изменить раздел zones файла config.yml, сохранив остальной текст и комментарии (ModuleConfig.save() их стирает):
+     * файл читается заново (битый YAML — исключение, файл не трогается), change правит разделы, раздел zones
+     * записывается текстом на место старого. Работа с диском — вызывать из async.
+     */
+    static void saveYaml(java.nio.file.Path file, java.util.function.Consumer<ModuleConfig> change) {
+        ModuleConfig fresh = new ModuleConfig(file);
+        change.accept(fresh);
+        Object zs = fresh.get("zones");
+        try {
+            String text = java.nio.file.Files.exists(file)
+                ? java.nio.file.Files.readString(file, java.nio.charset.StandardCharsets.UTF_8) : "";
+            java.nio.file.Files.writeString(file, replaceYaml(text, zs instanceof java.util.Map<?, ?> m ? m : java.util.Map.of()),
+                java.nio.charset.StandardCharsets.UTF_8);
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException("не записать " + file + ": " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Текст config.yml с новым разделом zones (как HoleYaml в gravity): раздел — от строки {@code zones:} до следующей
+     * строки с начала (ключ или комментарий в колонке 0), пустые строки перед ней остаются. Каждая область — одной
+     * строкой {@code "имя": {поля}}; комментарии внутри раздела не сохраняются (описание полей — над {@code zones:}).
+     */
+    static String replaceYaml(String text, java.util.Map<?, ?> zones) {
+        List<String> lines = new ArrayList<>(java.util.Arrays.asList(text.split("\r?\n", -1)));
+        List<String> block = new ArrayList<>();
+        if (zones.isEmpty()) {
+            block.add("zones: {}");
+        } else {
+            org.yaml.snakeyaml.DumperOptions o = new org.yaml.snakeyaml.DumperOptions();
+            o.setDefaultFlowStyle(org.yaml.snakeyaml.DumperOptions.FlowStyle.FLOW);
+            o.setAllowUnicode(true);
+            o.setWidth(1 << 16);
+            org.yaml.snakeyaml.Yaml y = new org.yaml.snakeyaml.Yaml(o);
+            block.add("zones:");
+            zones.forEach((k, v) -> block.add("  \"" + String.valueOf(k).replace("\\", "\\\\").replace("\"", "\\\"")
+                + "\": " + y.dump(v).strip()));
+        }
+        int at = -1;
+        for (int i = 0; i < lines.size(); i++) {
+            if (lines.get(i).startsWith("zones:")) {
+                at = i;
+                break;
+            }
+        }
+        if (at < 0) {
+            int end = lines.size();
+            while (end > 0 && lines.get(end - 1).isEmpty()) {
+                end--;
+            }
+            lines.addAll(end, block);
+            String out = String.join("\n", lines);
+            return out.endsWith("\n") ? out : out + "\n";
+        }
+        int end = at + 1;
+        while (end < lines.size() && (lines.get(end).isEmpty() || Character.isWhitespace(lines.get(end).charAt(0)))) {
+            end++;
+        }
+        while (end > at + 1 && lines.get(end - 1).isBlank()) {
+            end--;
+        }
+        lines.subList(at, end).clear();
+        lines.addAll(at, block);
+        String out = String.join("\n", lines);
+        return out.endsWith("\n") ? out : out + "\n";
+    }
+
     private static Object round(double v) {
         return v == Math.rint(v) && Math.abs(v) < 1e9 ? (Object) (long) v : (Object) v;
     }

@@ -21,6 +21,27 @@ class HolesTest {
     }
 
     @Test
+    void farHoleSplitsIntegerPart() {
+        Holes.Hole h = Holes.of("m", "far", 25_000_000.75, -3.25, -16_777_217.5, 4, 12, 0, 6, 1, 1, 1);
+        String g = Holes.glsl(List.of(h));
+        // целая часть — в int (точное вычитание из CameraBlockPos), дробная — отдельно
+        assertTrue(g.contains("const ivec3 SS_HOLE_IPOS[SS_HOLES] = ivec3[SS_HOLES](\n    ivec3(25000000, -4, -16777218)\n);\n"), g);
+        assertTrue(g.contains("const vec3 SS_HOLE_FRAC[SS_HOLES] = vec3[SS_HOLES](\n    vec3(0.7500, 0.7500, 0.5000)\n);\n"), g);
+        String fsh = assertDoesNotThrowRead();
+        assertTrue(fsh.contains("vec3(camBlock - SS_HOLE_IPOS[i])"), "вычитание целых — в int");
+        assertFalse(fsh.contains("vec3(camBlock) - hp.xyz"), "старое вычитание в float");
+        assertFalse(fsh.contains("drawn == 4"), "без предела 4 дыр на пиксель");
+    }
+
+    private static String assertDoesNotThrowRead() {
+        try {
+            return Files.readString(RES.resolve("pack/assets/minecraft/shaders/core/sky.fsh"), StandardCharsets.UTF_8);
+        } catch (java.io.IOException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    @Test
     void noHolesDefinesZero() {
         String g = Holes.glsl(List.of());
         assertTrue(g.contains("#define SS_HOLES 0\n"), g);

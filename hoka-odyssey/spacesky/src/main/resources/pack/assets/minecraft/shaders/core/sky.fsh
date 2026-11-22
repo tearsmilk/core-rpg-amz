@@ -55,6 +55,12 @@ float ss_fbm3(vec3 p) {
     return 0.5 * ss_noise(p) + 0.25 * ss_noise(p * 2.03 + 1.7) + 0.125 * ss_noise(p * 4.1 + 9.2);
 }
 
+// Яркость звёзд фона: у дыры линза растягивает фон (ssStarDim = масштаб до линзы / после, считает main) — там звёзды
+// гаснут, а не рисуются длинными штрихами. Без дыр — 1.
+float ssStarDim = 1.0;
+// Угловой размер пикселя по направлению фона (после линзы), считает main — fwidth только там, вне ветвлений.
+float ssPix = 0.001;
+
 // Слой звёзд: ячейки 3D-сетки на сфере радиуса scale, в ячейке не больше одной звезды. Плотность проверяется
 // первым хэшем — пустые ячейки (большинство) стоят один хэш.
 vec3 ss_stars(vec3 d, float scale, float density, float size, float t) {
@@ -66,13 +72,13 @@ vec3 ss_stars(vec3 d, float scale, float density, float size, float t) {
     }
     float h2 = ss_hash(cell + 19.19);
     vec3 star = cell + 0.25 + 0.5 * vec3(ss_hash(cell + 31.7), h2, ss_hash(cell + 5.53));
-    float r = max(size, length(fwidth(p)) * 0.6);                    // не меньше пикселя — без мерцания на краю
+    float r = min(max(size, ssPix * scale * 0.6), 0.35);              // не меньше пикселя — без мерцания на краю
     float dist = length(p - star);
     float lum = smoothstep(r, 0.0, dist) + 0.35 * smoothstep(r * 3.0, 0.0, dist);
     float u = h / density;                                             // 0..1 внутри «занятых» ячеек
     float twinkle = 0.75 + 0.25 * sin(t * (1.5 + 3.0 * h2) + 6.2832 * u);
     vec3 tint = mix(vec3(0.65, 0.78, 1.0), vec3(1.0, 0.86, 0.68), h2);
-    return tint * lum * mix(0.45, 1.6, u * u) * twinkle;
+    return tint * lum * mix(0.45, 1.6, u * u) * twinkle * ssStarDim;
 }
 
 // Звёзды галактик: SS_STARS_PLAIN (у всех галактик звёзды по умолчанию) — константы, как до профилей; иначе —
@@ -103,12 +109,19 @@ vec3 ss_space(vec3 d, float t) {
     // Млечный путь: полоса вдоль большого круга (наклон — от области); шум — только в полосе
     if (ssZone.x > 0.0) {
         vec3 axis = normalize(vec3(sin(seed), 2.2, cos(seed * 1.3)));
-        float band = exp(-pow(dot(d, axis) / 0.16, 2.0));
+        float across = dot(d, axis);
+        float qb = across / 0.16;
+        float band = exp(-qb * qb);                                    // квадрат, не pow: pow(x < 0) не определён
         if (band > 0.02) {
             float clumps = ss_fbm3(d * 9.0);
-            float dust = smoothstep(0.45, 0.75, ss_noise(d * 14.0 + 5.0));
-            col += band * (0.10 + 0.18 * clumps) * (1.0 - 0.7 * dust) * vec3(0.78, 0.80, 1.0) * ssZone.x;
-            col += ss_stars(d, 420.0, 0.25 * band * ssZone.x, 0.07, t) * 0.45 SS_GAL_TINT;
+            // пыль — волокна вдоль полосы: шум растянут вдоль (частота 6) и сжат поперёк (30), мягкий край
+            vec3 along = d - axis * across;
+            float dust = smoothstep(0.5, 0.8, ss_fbm3(along * 6.0 + axis * (across * 30.0) + 5.0));
+            float clear = 1.0 - 0.55 * dust;
+            col += band * (0.10 + 0.18 * clumps) * clear * vec3(0.78, 0.80, 1.0) * ssZone.x;
+            // свечение неразрешённых звёзд — гладко, вместо «соли»; редкие звёзды — в прожилках пыли гаснут
+            col += band * band * 0.05 * vec3(0.85, 0.85, 1.0) * (1.0 - 0.6 * dust) * ssZone.x;
+            col += ss_stars(d, 420.0, 0.10 * band * ssZone.x * (1.0 - 0.8 * dust), 0.07, t) * 0.35 SS_GAL_TINT;
         }
     }
     // звёздное скопление: густые мелкие и средние звёзды
@@ -125,9 +138,9 @@ vec3 ss_planet(vec3 d, float t, float pix) {
     float y = d.y;
     float h = 1.0 - clamp(y, 0.0, 1.0);
     vec3 col = mix(ssA.rgb, ssB.rgb, 1.0 - h * h * h);                // от горизонта к зениту — плавно
-    if (y < 0.0) {
-        col *= mix(1.0, 0.55, smoothstep(0.0, 1.0, -y));              // ниже горизонта (пустота) — темнее до надира, без круга
-    }
+    // ниже горизонта (пустота) — темнее до надира, без круга; спад начинается сразу с наклоном (у smoothstep наклон 0 —
+    // над горизонтом градиент есть, под ним плато, и на горизонте видна светлая черта)
+    col *= 1.0 - 0.45 * (1.0 - exp(-2.5 * max(-y, 0.0)));
     // звёзды ночью: небо вращается вместе с солнцем (вокруг оси z), у горизонта гаснут в дымке
     if (ssB.w > 0.003) {
         vec3 ds = vec3(dot(d.xy, ssD.xy), d.y * ssD.x - d.x * ssD.y, d.z);
@@ -140,7 +153,14 @@ vec3 ss_planet(vec3 d, float t, float pix) {
     if (ssF.w > 0.004) {
         float m = max(mu, 0.0);
         float m2 = m * m;
-        float g = (0.8 * m2 * m2 + 0.35 * m2 + 0.12) * exp(-abs(y) * 3.5);
+        float m8 = m2 * m2;
+        m8 *= m8;
+        float m64 = m8 * m8;
+        m64 *= m64;
+        m64 *= m64;
+        // ореол вокруг солнца (рассеяние вперёд, ~10–15°) и слабая полоса у горизонта; над горизонтом спадает
+        // медленно, под ним — быстро (не симметричный эллипс)
+        float g = (2.0 * m64 + 0.6 * m8 + 0.12 * m2) * exp(-max(y, 0.0) * 2.0) * exp(min(y, 0.0) * 8.0);
         col = mix(col, ssF.rgb, clamp(g * ssF.w, 0.0, 0.85));
     }
     // солнце: диск со сглаженным краем и ореол (угол — без acos: у малых углов sqrt(2(1 - cos)))
@@ -151,9 +171,13 @@ vec3 ss_planet(vec3 d, float t, float pix) {
         float glow = exp(-ang / (r * 2.2)) * 0.35 + exp(-ang / (r * 9.0)) * 0.12;
         // ниже горизонта солнце закрыто планетой: диск срезается по горизонту, ореол гаснет чуть ниже
         // (иначе в полночь при взгляде вниз из пустоты в надире — яркий диск)
-        disk *= smoothstep(-pix, pix, y);
+        disk *= smoothstep(-2.0 * pix, 3.0 * pix, y);
         glow *= smoothstep(-0.12, 0.0, y);
-        col += ssE.rgb * (disk * 2.5 + glow);
+        // яркость диска — с сохранением оттенка: свет не выше 1 по самому яркому каналу (иначе все каналы упираются в 1
+        // и солнце любого цвета — белое)
+        float k = disk * 1.6 + glow;
+        vec3 sl = ssE.rgb * k;
+        col += sl / max(1.0, max(sl.r, max(sl.g, sl.b))) * min(1.0, k);
     }
     // луна/соседняя планета: шар, освещённый солнцем профиля (фаза — от положения солнца); днём сквозь атмосферу
     if (ssG.w > 0.0) {
@@ -163,10 +187,14 @@ vec3 ss_planet(vec3 d, float t, float pix) {
             vec3 q = (d - ssG.xyz * c) / sr;                           // смещение по диску, |q| <= 1
             float q2 = dot(q, q);
             float mask = smoothstep(1.0 + pix / sr, 1.0 - pix / sr, sqrt(q2)) * smoothstep(-pix, pix, y);  // за горизонтом не видна
-            vec3 n = q - ssG.xyz * sqrt(max(1.0 - q2, 0.0));            // нормаль поверхности (к камере)
-            float lit = smoothstep(-0.05, 0.15, dot(n, ssD.xyz));
+            float mz = sqrt(max(1.0 - q2, 0.0));
+            vec3 n = q - ssG.xyz * mz;                                   // нормаль поверхности (к камере)
+            float lit = smoothstep(-0.12, 0.25, dot(n, ssD.xyz));       // мягкий терминатор
             vec3 moon = ssH.rgb * (lit * (0.35 + 0.65 * max(dot(n, ssD.xyz), 0.0)) + 0.03);
-            col = mix(col, col * mix(0.12, 0.8, ssE.w) + moon, mask);  // тёмная сторона днём — почти цвет неба
+            moon *= mix(0.55, 1.0, mz);                                  // потемнение к краю диска
+            moon *= 0.85 + 0.3 * ss_noise(q * 5.0 + 3.1);               // рельеф: пятна «морей»
+            // днём сквозь атмосферу: небо поверх слабее, своя яркость чуть ниже — без пересвета, цвет тот же, что ночью
+            col = mix(col, col * mix(0.12, 0.45, ssE.w) + moon * mix(1.0, 0.8, ssE.w), mask);
         }
     }
     return col;
@@ -240,7 +268,8 @@ vec4 ssbh_disk(vec3 h, vec3 rd, vec3 N, float rout, vec4 look, float t) {
 
     // профиль: резкий яркий внутренний край, мягкий внешний
     float prof = smoothstep(1.0, 1.06, R) * smoothstep(rout, rout * 0.55, R);
-    float dens = prof * (0.2 + 3.2 * n * n * n) * (0.55 + 0.9 * x);
+    // базовая плотность не слишком мала: иначе сквозь ближний диск на средних радиусах просвечивает край шара («чаша»)
+    float dens = prof * (0.45 + 3.0 * n * n * n) * (0.55 + 0.9 * x);
     // Доплер + гравитационное красное смещение
     vec3 v = cross(N, h) / R * sign(look.x);
     float beta = 0.42 * sqrt(x);
@@ -274,6 +303,9 @@ vec3 ssbh_one(inout vec3 d, vec3 O, vec4 disk, vec4 look, float pix, float t, in
     float aBg = alpha * W * min(1.0, 8.0 * ts);
     bool hitH = t0 > 0.0 && bl < 1.0;
     float aa = pix * sqrt(max(D * D - 1.0, 0.0)) * 0.7 + 1e-4;
+    // луч почти по касательной к горизонту (bl в последних ~2 пикселях под краем тени): переход «в шар» → «мимо»
+    // плавный — иначе у края тени точка входа скачет (бесконечная производная sqrt) и там пунктир чёрных пикселей
+    float graze = hitH ? smoothstep(1.0 - 2.0 * aa, 1.0, bl) : 1.0;
     float shadow = t0 > 0.0 ? smoothstep(1.0 - aa, 1.0 + aa, bl) : 1.0;
 
     vec3 col = vec3(0.0);
@@ -283,7 +315,7 @@ vec3 ssbh_one(inout vec3 d, vec3 O, vec4 disk, vec4 look, float pix, float t, in
     vec4 B = vec4(0.0);
     if (disk.w > 0.0) {
         // отрезок 1: камера -> P (или -> вход в горизонт)
-        float tEnd = hitH ? t0 - sqrt(1.0 - bl * bl) : max(t0, 0.0);
+        float tEnd = hitH ? mix(t0 - sqrt(max(1.0 - bl * bl, 0.0)), t0, graze) : max(t0, 0.0);
         float dn = dot(d, N);
         float th = -dot(O, N) / (abs(dn) < 1e-6 ? 1e-6 : dn);
         if (th > 0.0 && th < tEnd) {
@@ -301,8 +333,9 @@ vec3 ssbh_one(inout vec3 d, vec3 O, vec4 disk, vec4 look, float pix, float t, in
             }
         }
         // отрезок 2: от P по отклонённому направлению (дальняя часть диска над/под шаром)
-        if (!hitH && F.a < 0.995) {
-            float aD = min(alpha * W, 0.72);    // меньше настоящего у самой тени: дальняя часть диска (дуга) прижимается к шару
+        if (graze > 0.0 && F.a < 0.995) {
+            // меньше настоящего у самой тени: дальняя часть диска (дуга) прижимается к шару; предел — мягкий (без складки)
+            float aD = 0.72 * tanh(alpha * W / 0.72);
             vec3 d2 = d * cos(aD) - n * sin(aD);
             vec3 P = O + d * max(t0, 0.0);
             float th2 = -dot(P, N) / dot(d2, N);
@@ -310,7 +343,7 @@ vec3 ssbh_one(inout vec3 d, vec3 O, vec4 disk, vec4 look, float pix, float t, in
                 vec3 h2 = P + d2 * th2;
                 float R2 = length(h2);
                 // попадание внутрь горизонта при грубом изломе — берём внутренний край (горячая кромка вокруг шара)
-                B = ssbh_disk(R2 < 1.07 ? h2 * (1.07 / max(R2, 1e-4)) : h2, d2, N, disk.w, look, t);
+                B = ssbh_disk(R2 < 1.07 ? h2 * (1.07 / max(R2, 1e-4)) : h2, d2, N, disk.w, look, t) * graze;
             }
         }
     }
@@ -325,7 +358,7 @@ vec3 ssbh_one(inout vec3 d, vec3 O, vec4 disk, vec4 look, float pix, float t, in
     E = F.rgb + (1.0 - F.a) * E;
     E = vec3(1.0) - exp(-E * 1.6);                               // мягкое насыщение ярких мест
     // у самой тени фон — небо, сжатое линзой в тонкое кольцо: приглушить, чтобы не было «каши» из звёзд
-    float near = t0 > 0.0 ? mix(0.2, 1.0, smoothstep(1.0, 1.9, bl)) : 1.0;
+    float near = t0 > 0.0 ? mix(0.15, 1.0, smoothstep(1.0, 3.0, bl)) : 1.0;
     tr *= (1.0 - F.a) * (1.0 - B.a) * shadow * near;
     // отклонение фона
     vec3 dB = d * cos(aBg) - n * sin(aBg);
@@ -337,8 +370,11 @@ vec3 ssbh_one(inout vec3 d, vec3 O, vec4 disk, vec4 look, float pix, float t, in
 // Отбор: может ли дыра задеть этот пиксель. Вне радиуса влияния — только эти скаляры (без корней и тригонометрии):
 // издалека угол от центра в радиусах тени почти равен прицельному параметру луча (в горизонтах) — пропуск, если он
 // больше U. inside — камера внутри горизонта.
-bool ssbh_near(vec4 hp, float outer, ivec3 camBlock, vec3 camOff, vec3 d, inout bool inside) {
-    vec3 O = ((vec3(camBlock) - hp.xyz) + camOff) / hp.w;       // сначала целые — без потери точности вдали от 0
+// Камера относительно центра дыры i, в горизонтах: целые части вычитаются в int (точно на любом удалении от 0 — в float
+// шаг вдали от 0 до 2 блоков, дыра дрожала бы), остаток мал и точен в float.
+#define SSBH_O(i) ((vec3(camBlock - SS_HOLE_IPOS[i]) + (camOff - SS_HOLE_FRAC[i])) / SS_HOLE_POS[i].w)
+
+bool ssbh_near(vec3 O, float outer, vec3 d, inout bool inside) {
     float D2 = dot(O, O);
     inside = inside || D2 <= 1.0;
     float U = max(SSBH_U, outer * 1.6);
@@ -349,12 +385,13 @@ bool ssbh_near(vec4 hp, float outer, ivec3 camBlock, vec3 camOff, vec3 d, inout 
 // Шаг отбора на КОНСТАНТНОМ индексе (развёрнуто макросами, без цикла по массивам): компилятор сворачивает
 // координаты дыры в константы. Найденные — биты mask (без локальных массивов: они дороги). Дыра другого профиля
 // (номер — константа, профиль — flat) пропускается одним сравнением.
-#define SSBH_CULL(i) if (SS_HOLE_PROF[i] == prof && ssbh_near(SS_HOLE_POS[i], SS_HOLE_DISK[i].w, camBlock, camOff, d, inside)) mask |= 1 << i;
+#define SSBH_CULL(i) if (SS_HOLE_PROF[i] == prof && ssbh_near(SSBH_O(i), SS_HOLE_DISK[i].w, d, inside)) mask |= 1 << i;
 #endif
 
 // Все дыры профиля prof: d — направление взгляда (меняется на направление для фона ss_space), camBlock/camOff —
 // позиция камеры (CameraBlockPos, CameraOffset), pix — угловой размер пикселя. Возвращает emission поверх фона,
-// tr — сколько фона видно (0 — шар или плотный диск: ss_space можно не считать). Не больше 4 дыр на пиксель.
+// tr — сколько фона видно (0 — шар или плотный диск: ss_space можно не считать). Рисуются все отобранные дыры
+// (их не больше SS_HOLES = 16, дальние отсеяны отбором).
 vec3 ss_holes(inout vec3 d, ivec3 camBlock, vec3 camOff, float pix, float t, int prof, out float tr) {
     tr = 1.0;
     vec3 E = vec3(0.0);
@@ -411,18 +448,12 @@ vec3 ss_holes(inout vec3 d, ivec3 camBlock, vec3 camOff, float pix, float t, int
         tr = 0.0;
         return vec3(0.0);
     }
-    int drawn = 0;
     for (int i = 0; i < SS_HOLES && mask != 0; i++) {
         if ((mask & (1 << i)) == 0) {
             continue;
         }
         mask &= ~(1 << i);
-        if (drawn == 4) {
-            break;
-        }
-        drawn++;
-        vec4 hp = SS_HOLE_POS[i];
-        vec3 O = ((vec3(camBlock) - hp.xyz) + camOff) / hp.w;
+        vec3 O = SSBH_O(i);
         float tri = 1.0;
         vec3 e = ssbh_one(d, O, SS_HOLE_DISK[i], SS_HOLE_LOOK[i], pix, t, tri);
         E += tr * e;
@@ -433,11 +464,11 @@ vec3 ss_holes(inout vec3 d, ivec3 camBlock, vec3 camOff, float pix, float t, int
 }
 
 // Небо профиля без дыр: ветка по виду профиля (ssC.w — flat, одна на кадр; без планет в профилях её нет вовсе).
-// pix < 0 — посчитать здесь (только планете: галактике он не нужен, без дыр там всё как до профилей).
+// pix — угловой размер пикселя (сглаживание краёв дисков планеты).
 vec3 ss_sky(vec3 d, float t, float pix) {
 #if SS_PLANETS > 0
     if (ssC.w > 0.5) {
-        return ss_planet(d, t, pix < 0.0 ? length(fwidth(d)) : pix);
+        return ss_planet(d, t, pix);
     }
 #endif
     return ss_space(d, t);
@@ -453,15 +484,21 @@ void main() {
 #endif
     vec3 d = normalize(spaceDir);
     float t = GameTime * 1200.0;                                       // секунды, цикл — игровые сутки
+    // угловой размер пикселя — здесь, в однородном управлении (производные внутри ветвлений не определены)
+    float pix = length(fwidth(d));
+    ssPix = pix;
 #if SS_HOLES > 0
-    float pix = length(fwidth(d));                                     // угловой размер пикселя (до ветвлений)
     float tr;
     vec3 col = ss_holes(d, CameraBlockPos, CameraOffset, pix, t, ssProf, tr);  // d -> отклонённое направление (линза)
+    // масштаб фона после линзы: где она растягивает фон, звёзды гаснут (и не шире ячейки), а не тянутся штрихами
+    float pixB = length(fwidth(d));
+    ssPix = max(pix, pixB);
+    ssStarDim = clamp(pix / max(pixB, 1e-6), 0.0, 1.0);
     if (tr > 0.002) {
         col += tr * ss_sky(d, t, pix);
     }
     fragColor = vec4(col, 1.0);
 #else
-    fragColor = vec4(ss_sky(d, t, -1.0), 1.0);
+    fragColor = vec4(ss_sky(d, t, pix), 1.0);
 #endif
 }
