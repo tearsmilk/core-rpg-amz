@@ -26,6 +26,7 @@ flat in vec3 ssRow1;
 flat in vec3 ssRow3;
 flat in vec4 ssZone;
 flat in vec3 ssNebula;
+flat in vec3 ssNebOff;
 flat in int ssProf;
 flat in vec4 ssA;
 flat in vec4 ssB;
@@ -101,11 +102,12 @@ vec3 ss_space(vec3 d, float t) {
         SS_GAL_TINT;
 
     float seed = ssZone.w;
-    // туманность: маска одним шумом; цветной шум — только внутри маски
+    // туманность: маска одним шумом; цветной шум — только внутри маски. Шум — в мировом поле: сфера радиуса
+    // nebula-distance вокруг камеры (ssNebOff из sky.vsh), при полёте туманность сдвигается (параллакс)
     if (ssZone.y > 0.0) {
-        float mask = smoothstep(0.35, 0.7, ss_noise(d * 1.7 + seed));
+        float mask = smoothstep(0.35, 0.7, ss_noise(d * 1.7 + seed + ssNebOff));
         if (mask > 0.0) {
-            float n = ss_fbm3(d * 3.2 + seed * 2.0);
+            float n = ss_fbm3(d * 3.2 + seed * 2.0 + ssNebOff * (3.2 / 1.7));
             col += mask * n * n * ssNebula * 0.42 * ssZone.y;
         }
     }

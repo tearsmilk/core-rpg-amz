@@ -28,8 +28,8 @@ import org.slf4j.Logger;
  *
  * <p>Небо и туман такого мира — МЕТКА профиля ({@link Profiles#skyMark}), туман под водой — МЕТКА ВОДЫ
  * ({@link Profiles#waterMark}). Таймлайн применяется клиентом поверх атрибутов измерения и биома (биом plains задаёт
- * свой sky_color — он перебил бы атрибут измерения), поэтому метки заданы и там, и там. Закатный веер и ванильные
- * звёзды выключены (альфа 0, яркость 0).
+ * свой sky_color — он перебил бы атрибут измерения), поэтому метки заданы и там, и там. Закатный веер выключен
+ * (альфа 0); проход звёзд у галактики — яркость 1, угол 0 (в нём частицы параллакса, stars.vsh), у планеты — 0.
  *
  * <ul>
  *   <li>Галактика: таймлайн без периода — всё постоянно, облаков нет, свет неба всегда дневной.</li>
@@ -80,7 +80,14 @@ final class SpaceDimension {
         m.put(EnvironmentAttribute.FOG_COLOR, new Color(Profiles.skyMark(p.index())));
         m.put(EnvironmentAttribute.WATER_FOG_COLOR, new Color(Profiles.waterMark(p.index())));
         m.put(EnvironmentAttribute.SUNRISE_SUNSET_COLOR, new AlphaColor(0, 0, 0, 0));
-        m.put(EnvironmentAttribute.STAR_BRIGHTNESS, 0f);
+        // Проход звёзд у галактики рисуется всегда (яркость 1): в нём шейдер stars.vsh рисует частицы параллакса —
+        // ближние звёзды и пыль (ванильных звёзд там нет; parallax 0 или near-stars и dust 0 — вершины схлопываются,
+        // поэтому /hosky reload включает и выключает частицы без перезапуска). Угол звёзд — 0: шейдер снимает известный
+        // поворот прохода звёзд с модель-вида. У планеты проход не рисуется (её звёзды ночью — в sky.fsh).
+        m.put(EnvironmentAttribute.STAR_BRIGHTNESS, p.planet() ? 0f : 1f);
+        if (!p.planet()) {
+            m.put(EnvironmentAttribute.STAR_ANGLE, 0f);
+        }
         if (p.planet()) {
             m.put(EnvironmentAttribute.CLOUD_COLOR, cloud(p, false));
             m.put(EnvironmentAttribute.FOG_START_DISTANCE, Profiles.PHASE_BASE);

@@ -93,5 +93,7 @@ class ZonesTest {
         assertTrue(g.contains("vec4(1.000, 2.000, 3.000, 0.500),  // a"), g);
         assertTrue(g.contains("vec4(-1.500, 0.000, 100.000, 0.300)   // b"), g);
         assertTrue(g.contains("vec4(1.0, 1.000, 0.502, 0.000)"), g);
+        // целый центр — для параллакса туманности (вычитание в int)
+        assertTrue(g.contains("const ivec2 SS_ZONE_IPOS[SS_ZONES] = ivec2[SS_ZONES](\n    ivec2(1, 2),\n    ivec2(-1, 0)\n);"), g);
     }
 }

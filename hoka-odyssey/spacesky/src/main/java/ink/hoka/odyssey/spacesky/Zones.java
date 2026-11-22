@@ -250,7 +250,20 @@ final class Zones {
                 .append(i + 1 < zones.size() ? ")," : ")").append('\n');
         }
         b.append(");\n");
+        // целый центр: смещение камеры от центра (параллакс туманности) шейдер считает в int — точно на любом удалении
+        b.append("const ivec2 SS_ZONE_IPOS[SS_ZONES] = ivec2[SS_ZONES](\n");
+        for (int i = 0; i < zones.size(); i++) {
+            Zone z = zones.get(i);
+            b.append("    ivec2(").append(iround(z.x())).append(", ").append(iround(z.z()))
+                .append(i + 1 < zones.size() ? ")," : ")").append('\n');
+        }
+        b.append(");\n");
         return b.toString();
+    }
+
+    /** Округление координаты центра до целого блока (в пределах int). */
+    static long iround(double v) {
+        return Math.max(-(1L << 30), Math.min(1L << 30, Math.round(v)));
     }
 
     /** Без профилей (все области — во всех галактиках). */

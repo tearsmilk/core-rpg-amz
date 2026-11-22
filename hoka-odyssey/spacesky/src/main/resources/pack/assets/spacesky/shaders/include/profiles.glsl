@@ -98,6 +98,14 @@ const vec4 SS_PROF_7[SS_PROFILES] = vec4[SS_PROFILES](
 const vec4 SS_PROF_8[SS_PROFILES] = vec4[SS_PROFILES](
     vec4(0.00000, 0.00000, 0.00000, 0.00000)
 );
+// SS_PROF_9 параллакс (stars.vsh): доля ближних звёзд, пыль, плитка звёзд, плитка пыли (блоки; 0 — частиц нет)
+const vec4 SS_PROF_9[SS_PROFILES] = vec4[SS_PROFILES](
+    vec4(1.00000, 1.00000, 256.0, 24.0)
+);
+// SS_PROF_10 x — даль туманностей областей, блоки (0 — на бесконечности), yzw — 0
+const vec4 SS_PROF_10[SS_PROFILES] = vec4[SS_PROFILES](
+    vec4(3000.00000, 0.0, 0.0, 0.0)
+);
 
 // Туман мира профиля p (fog.glsl): цвет (у планеты — по времени суток) и дымка окружения планеты.
 // water — камера под водой (МЕТКА ВОДЫ); es/ee — начало и конец тумана окружения (из Fog).

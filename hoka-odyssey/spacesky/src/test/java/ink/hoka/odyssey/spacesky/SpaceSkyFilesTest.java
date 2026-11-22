@@ -34,8 +34,9 @@ class SpaceSkyFilesTest {
     @Test
     void skyShaderAlwaysInPack() throws Exception {
         Map<String, byte[]> m = SpaceSkyModule.collect(RES.resolve(SkyMode.ALWAYS));
-        assertEquals(List.of(CORE + "position_tex.vsh", CORE + "sky.fsh", CORE + "sky.vsh", CORE + "terrain.fsh", FOG,
-            Holes.PATH, SkyMode.PATH, Profiles.PATH, Zones.PATH), List.copyOf(m.keySet()));
+        assertEquals(List.of(CORE + "position_tex.vsh", CORE + "sky.fsh", CORE + "sky.vsh", CORE + "stars.fsh",
+            CORE + "stars.vsh", CORE + "terrain.fsh", FOG, Holes.PATH, SkyMode.PATH, Profiles.PATH, Zones.PATH),
+            List.copyOf(m.keySet()));
     }
 
     @Test
@@ -54,18 +55,20 @@ class SpaceSkyFilesTest {
 
     @Test
     void everywherePackFiles() throws Exception {
-        assertEquals(Set.of(CORE + "sky.vsh", CORE + "sky.fsh", CORE + "stars.fsh", CORE + "position_color.vsh",
-            CORE + "position_tex.vsh", CORE + "terrain.fsh", FOG, Zones.PATH, SkyMode.PATH, Holes.PATH, Profiles.PATH),
+        assertEquals(Set.of(CORE + "sky.vsh", CORE + "sky.fsh", CORE + "stars.vsh", CORE + "stars.fsh",
+            CORE + "position_color.vsh", CORE + "position_tex.vsh", CORE + "terrain.fsh", FOG, Zones.PATH, SkyMode.PATH,
+            Holes.PATH, Profiles.PATH),
             packFiles(true, false, false, false));
         Set<String> all = packFiles(true, true, true, true);
-        assertEquals(11 + 1 + 8 + 1, all.size(), all.toString());
+        assertEquals(12 + 1 + 8 + 1, all.size(), all.toString());
         assertTrue(all.contains("assets/minecraft/textures/environment/clouds.png"));
     }
 
     @Test
     void markedPackFiles() throws Exception {
-        Set<String> expected = Set.of(CORE + "sky.vsh", CORE + "sky.fsh", CORE + "position_tex.vsh", CORE + "terrain.fsh", FOG, Zones.PATH,
-            SkyMode.PATH, Holes.PATH, Profiles.PATH);
+        // проход звёзд (частицы параллакса; без метки — ванильная звезда) — в обоих режимах
+        Set<String> expected = Set.of(CORE + "sky.vsh", CORE + "sky.fsh", CORE + "stars.vsh", CORE + "stars.fsh",
+            CORE + "position_tex.vsh", CORE + "terrain.fsh", FOG, Zones.PATH, SkyMode.PATH, Holes.PATH, Profiles.PATH);
         assertEquals(expected, packFiles(false, true, true, true));
         assertEquals(expected, packFiles(false, false, false, false));
     }

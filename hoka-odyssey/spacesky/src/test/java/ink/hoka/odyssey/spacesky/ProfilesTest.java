@@ -188,6 +188,59 @@ class ProfilesTest {
     }
 
     @Test
+    void parallaxFields() {
+        ModuleConfig c = new ModuleConfig(tmp.resolve("par.yml"));
+        c.set("profiles.fast.type", "galaxy");
+        c.set("profiles.fast.parallax", 2);
+        c.set("profiles.fast.near-stars", 5);
+        c.set("profiles.fast.dust", 0.5);
+        c.set("profiles.fast.nebula-distance", 0);
+        c.set("profiles.tiny.type", "galaxy");
+        c.set("profiles.tiny.parallax", 0.01);
+        c.set("profiles.off.type", "galaxy");
+        c.set("profiles.off.parallax", 0);
+        c.set("profiles.bad.type", "galaxy");
+        c.set("profiles.bad.dust", "много");
+        c.set("profiles.mars.type", "planet");
+        c.set("profiles.mars.parallax", 3);
+        c.set("profiles.mars.dust", 2);
+        List<String> errors = new ArrayList<>();
+        List<Profiles.Profile> ps = Profiles.read(c, errors);
+        assertEquals(List.of("profiles.bad.dust: число"), errors);
+        // по умолчанию у галактики — включено: плитки 256 / 24 блока, туманность на 3000 блоков
+        Profiles.Profile space = ps.getFirst();
+        assertTrue(space.particles());
+        assertEquals(256, space.nearTile());
+        assertEquals(24, space.dustTile());
+        assertEquals(3000, space.nebulaDistance());
+        Profiles.Profile fast = Profiles.byId(ps, "fast");
+        assertEquals(128, fast.nearTile());
+        assertEquals(12, fast.dustTile());
+        assertEquals(2, fast.nearStars(), "подрезано до 2");
+        assertEquals(0.5, fast.dust());
+        assertEquals(0, fast.nebulaDistance());
+        assertEquals(1024, Profiles.byId(ps, "tiny").nearTile(), "parallax не меньше 0,25");
+        assertFalse(Profiles.byId(ps, "off").particles());
+        assertEquals(1, Profiles.byId(ps, "bad").dust());
+        Profiles.Profile mars = Profiles.byId(ps, "mars");
+        assertFalse(mars.particles(), "у планеты параллакса нет");
+        assertEquals(0, mars.parallax());
+        // в шейдер: SS_PROF_9 = (доля звёзд, пыль, плитка звёзд, плитка пыли), SS_PROF_10.x — даль туманностей
+        List<Profiles.Profile> idx = new ArrayList<>();
+        for (int i = 0; i < ps.size(); i++) {
+            idx.add(ps.get(i).withIndex(i));
+        }
+        String g = Profiles.glsl(idx);
+        assertTrue(g.contains("const vec4 SS_PROF_9[SS_PROFILES] = vec4[SS_PROFILES](\n"
+            + "    vec4(1.00000, 1.00000, 256.0, 24.0),\n"
+            + "    vec4(2.00000, 0.50000, 128.0, 12.0),\n"), g);
+        assertTrue(g.contains("    vec4(0.00000, 0.00000, 0.0, 0.0),\n"), "off: частиц нет");
+        assertTrue(g.contains("const vec4 SS_PROF_10[SS_PROFILES] = vec4[SS_PROFILES](\n"
+            + "    vec4(3000.00000, 0.0, 0.0, 0.0),\n"
+            + "    vec4(0.00000, 0.0, 0.0, 0.0),\n"), g);
+    }
+
+    @Test
     void atMostMaxProfiles() {
         ModuleConfig c = new ModuleConfig(tmp.resolve("many.yml"));
         for (int i = 0; i < Profiles.MAX + 3; i++) {
@@ -222,7 +275,7 @@ class ProfilesTest {
         assertTrue(g.contains("#define SS_PLANETS 1\n"), g);
         assertTrue(g.contains("#define SS_STARS_PLAIN 1\n"), g);
         assertTrue(g.contains("// профили: 0=space(galaxy) 1=mars(planet) 2=_2(galaxy) 3=far(galaxy)\n"), g);
-        for (int k = 0; k <= 8; k++) {
+        for (int k = 0; k <= 10; k++) {
             assertTrue(g.contains("const vec4 SS_PROF_" + k + "[SS_PROFILES] = vec4[SS_PROFILES](\n"), "массив " + k);
         }
         // вид — SS_PROF_0.w: планета 1
@@ -240,7 +293,7 @@ class ProfilesTest {
             far.nebula(), far.milkyWay(), 2.0, far.starBrightness(), far.starTint(), far.zenith(), far.horizon(),
             far.zenithNight(), far.horizonNight(), far.sunset(), far.sun(), far.sunSize(), far.clouds(), far.cloudColor(),
             far.fog(), far.fogNight(), far.haze(), far.moonSize(), far.moonColor(), far.moonYaw(), far.moonPitch(),
-            far.waterFog()));
+            far.waterFog(), far.parallax(), far.nearStars(), far.dust(), far.nebulaDistance()));
         assertTrue(Profiles.glsl(custom).contains("#define SS_STARS_PLAIN 0\n"));
     }
 

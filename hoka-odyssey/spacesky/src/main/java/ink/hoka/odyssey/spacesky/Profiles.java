@@ -106,7 +106,9 @@ final class Profiles {
                    boolean clouds, Rgb cloudColor, Rgb fog, Rgb fogNight, double haze,
                    double moonSize, Rgb moonColor, double moonYaw, double moonPitch,
                    // вода (оба вида)
-                   Rgb waterFog) {
+                   Rgb waterFog,
+                   // параллакс галактики (у планеты — 0): размер плиток, доля ближних звёзд, пыль, даль туманностей
+                   double parallax, double nearStars, double dust, double nebulaDistance) {
 
         String key() {
             return PREFIX + id;
@@ -119,13 +121,32 @@ final class Profiles {
         Profile withIndex(int i) {
             return new Profile(id, i, kind, background, backgroundTop, nebula, milkyWay, stars, starBrightness, starTint,
                 zenith, horizon, zenithNight, horizonNight, sunset, sun, sunSize, clouds, cloudColor, fog, fogNight, haze,
-                moonSize, moonColor, moonYaw, moonPitch, waterFog);
+                moonSize, moonColor, moonYaw, moonPitch, waterFog, parallax, nearStars, dust, nebulaDistance);
         }
 
         Profile withKind(Kind k) {
             return new Profile(id, index, k, background, backgroundTop, nebula, milkyWay, stars, starBrightness, starTint,
                 zenith, horizon, zenithNight, horizonNight, sunset, sun, sunSize, clouds, cloudColor, fog, fogNight, haze,
-                moonSize, moonColor, moonYaw, moonPitch, waterFog);
+                moonSize, moonColor, moonYaw, moonPitch, waterFog, parallax, nearStars, dust, nebulaDistance);
+        }
+
+        /** Есть ли частицы параллакса (ближние звёзды или пыль) — у галактики с parallax &gt; 0. */
+        boolean particles() {
+            return !planet() && parallax > 0 && (nearStars > 0 || dust > 0);
+        }
+
+        /** Размер плитки ближних звёзд, блоки (повторяется вокруг камеры; больше parallax — ближе звёзды). */
+        int nearTile() {
+            return tile(NEAR_TILE);
+        }
+
+        /** Размер плитки космической пыли, блоки. */
+        int dustTile() {
+            return tile(DUST_TILE);
+        }
+
+        private int tile(double base) {
+            return parallax > 0 ? (int) Math.max(1, Math.round(base / parallax)) : 0;
         }
 
         /** Цвет тумана днём: у галактики — фон, у планеты — fog. */
@@ -139,6 +160,12 @@ final class Profiles {
     static final Rgb SPACE_BG_TOP = new Rgb(0.012, 0.011, 0.034);
     static final Rgb WHITE = new Rgb(1, 1, 1);
     static final Rgb VANILLA_WATER = Rgb.of(0x050533);
+    /** Плитки параллакса при parallax 1, блоки: ближние звёзды и пыль (размер = база / parallax). */
+    static final double NEAR_TILE = 256;
+    static final double DUST_TILE = 24;
+    /** Пределы parallax (кроме 0 — выключено): плитки от 64/6 до 1024/96 блоков. */
+    static final double PARALLAX_MIN = 0.25;
+    static final double PARALLAX_MAX = 4;
 
     private Profiles() {
     }
@@ -149,7 +176,9 @@ final class Profiles {
         Rgb horizonNight = Rgb.of(0x0B1020);
         return new Profile(id, -1, kind, SPACE_BG, SPACE_BG_TOP, Rgb.of(0xB060FF), true, 1.0, 1.0, WHITE,
             Rgb.of(0x4A7FD8), horizon, Rgb.of(0x02030A), horizonNight, Rgb.of(0xFF8A40), Rgb.of(0xFFF4D6), 3.0,
-            true, WHITE, horizon, horizonNight, 1024, 0, Rgb.of(0xC8C8D0), 200, 30, VANILLA_WATER);
+            true, WHITE, horizon, horizonNight, 1024, 0, Rgb.of(0xC8C8D0), 200, 30, VANILLA_WATER,
+            kind == Kind.GALAXY ? 1 : 0, kind == Kind.GALAXY ? 1 : 0, kind == Kind.GALAXY ? 1 : 0,
+            kind == Kind.GALAXY ? 3000 : 0);
     }
 
     /**
@@ -199,6 +228,11 @@ final class Profiles {
         Reader r = new Reader(c, p, errors);
         Rgb horizon = r.color("horizon", d.horizon());
         Rgb horizonNight = r.color("horizon-night", d.horizonNight());
+        boolean gal = d.kind() == Kind.GALAXY;                         // у планеты параллакса нет — поля не читаются
+        double parallax = gal ? r.num("parallax", d.parallax(), 0, PARALLAX_MAX) : 0;
+        if (parallax > 0 && parallax < PARALLAX_MIN) {
+            parallax = PARALLAX_MIN;
+        }
         return new Profile(d.id(), -1, d.kind(),
             r.color("background", d.background()), r.color("background-top", d.backgroundTop()),
             r.color("nebula", d.nebula()), r.bool("milky-way", d.milkyWay()),
@@ -210,7 +244,9 @@ final class Profiles {
             r.color("fog", horizon), r.color("fog-night", horizonNight), r.num("haze", d.haze(), 0, 100000),
             r.num("moon.size", d.moonSize(), 0, 60), r.color("moon.color", d.moonColor()),
             r.num("moon.yaw", d.moonYaw(), -360, 360), r.num("moon.pitch", d.moonPitch(), -90, 90),
-            r.color("water-fog", d.waterFog()));
+            r.color("water-fog", d.waterFog()),
+            parallax, gal ? r.num("near-stars", d.nearStars(), 0, 2) : 0, gal ? r.num("dust", d.dust(), 0, 2) : 0,
+            gal ? r.num("nebula-distance", d.nebulaDistance(), 0, 1e6) : 0);
     }
 
     /** Чтение полей одного профиля с проверкой (неверное — по умолчанию и ошибка в список). */
@@ -340,7 +376,9 @@ final class Profiles {
             "2 оттенок звёзд, w — яркость звёзд",
             "3 (цвет туманностей | горизонт ночью), w — (Млечный путь 0/1 | угловой радиус солнца, рад)",
             "4 (- | зенит ночью), w — угловой радиус луны, рад (0 — нет)",
-            "5 цвет заката, w — 0", "6 цвет солнца, w — 0", "7 направление на луну, w — 0", "8 цвет луны, w — 0"};
+            "5 цвет заката, w — 0", "6 цвет солнца, w — 0", "7 направление на луну, w — 0", "8 цвет луны, w — 0",
+            "9 параллакс (stars.vsh): доля ближних звёзд, пыль, плитка звёзд, плитка пыли (блоки; 0 — частиц нет)",
+            "10 x — даль туманностей областей, блоки (0 — на бесконечности), yzw — 0"};
         for (int k = 0; k < names.length; k++) {
             b.append("// SS_PROF_").append(names[k]).append('\n');
             b.append("const vec4 SS_PROF_").append(k).append("[SS_PROFILES] = vec4[SS_PROFILES](\n");
@@ -394,7 +432,13 @@ final class Profiles {
                 double[] d = pl ? moonDir(p) : new double[3];
                 yield "vec4(" + f(d[0]) + ", " + f(d[1]) + ", " + f(d[2]) + ", 0.0)";
             }
-            default -> vec4(pl ? p.moonColor() : z, 0);
+            case 8 -> vec4(pl ? p.moonColor() : z, 0);
+            case 9 -> {
+                boolean on = p.particles();
+                yield "vec4(" + f(on ? p.nearStars() : 0) + ", " + f(on ? p.dust() : 0) + ", " + (on ? p.nearTile() : 0)
+                    + ".0, " + (on ? p.dustTile() : 0) + ".0)";
+            }
+            default -> "vec4(" + f(pl ? 0 : p.nebulaDistance()) + ", 0.0, 0.0, 0.0)";
         };
     }
 

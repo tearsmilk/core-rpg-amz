@@ -40,7 +40,7 @@ class SpaceDimensionTest {
     void galaxyTimelineConstantMarks() {
         Timeline t = SpaceDimension.timeline(space());
         assertNull(t.periodTicks());
-        assertEquals(6, t.tracks().size());
+        assertEquals(7, t.tracks().size());
         for (Map.Entry<EnvironmentAttribute<?>, Timeline.Track<?, ?>> e : t.tracks().entrySet()) {
             assertInstanceOf(EnvironmentAttribute.Modifier.Override.class, e.getValue().modifier(), e.getKey().key().asString());
             assertEquals(1, e.getValue().keyframes().size());
@@ -54,7 +54,10 @@ class SpaceDimensionTest {
         assertEquals("#001810", value(tracks, "minecraft:visual/water_fog_color"));
         assertEquals("#00000000", value(tracks, "minecraft:visual/cloud_color"));
         assertEquals("#00000000", value(tracks, "minecraft:visual/sunrise_sunset_color"));
-        assertEquals(0.0, tracks.getAsJsonObject("minecraft:visual/star_brightness").getAsJsonArray("keyframes")
+        // проход звёзд у галактики рисуется всегда (частицы параллакса, stars.vsh), угол звёзд — 0 (известный поворот)
+        assertEquals(1.0, tracks.getAsJsonObject("minecraft:visual/star_brightness").getAsJsonArray("keyframes")
+            .get(0).getAsJsonObject().get("value").getAsDouble());
+        assertEquals(0.0, tracks.getAsJsonObject("minecraft:visual/star_angle").getAsJsonArray("keyframes")
             .get(0).getAsJsonObject().get("value").getAsDouble());
     }
 
@@ -92,7 +95,8 @@ class SpaceDimensionTest {
         Profiles.Profile noClouds = new Profiles.Profile(m.id(), m.index(), m.kind(), m.background(), m.backgroundTop(),
             m.nebula(), m.milkyWay(), m.stars(), m.starBrightness(), m.starTint(), m.zenith(), m.horizon(), m.zenithNight(),
             m.horizonNight(), m.sunset(), m.sun(), m.sunSize(), false, m.cloudColor(), m.fog(), m.fogNight(), m.haze(),
-            m.moonSize(), m.moonColor(), m.moonYaw(), m.moonPitch(), m.waterFog());
+            m.moonSize(), m.moonColor(), m.moonYaw(), m.moonPitch(), m.waterFog(), m.parallax(), m.nearStars(), m.dust(),
+            m.nebulaDistance());
         JsonObject t2 = Timeline.REGISTRY_CODEC.encode(Transcoder.JSON, SpaceDimension.timeline(noClouds)).orElseThrow()
             .getAsJsonObject().getAsJsonObject("tracks");
         assertEquals("#00000000", value(t2, "minecraft:visual/cloud_color"));
@@ -121,7 +125,7 @@ class SpaceDimensionTest {
         }
         RGBLike w = (RGBLike) d.attributes().entries().get(EnvironmentAttribute.WATER_FOG_COLOR).argument();
         assertEquals(SpaceDimension.WATER_MARK, w.red() << 16 | w.green() << 8 | w.blue());
-        assertEquals(6, d.attributes().entries().size());
+        assertEquals(7, d.attributes().entries().size());
         assertTrue(d.timelines().contains(tl));
         assertEquals(1, d.timelines().size());
         assertEquals(0, SpaceDimension.indexOf(d));

@@ -16,6 +16,11 @@
 //    края веера). Номер и параметры профиля (константные массивы, индекс один на кадр) берутся здесь, на вершинах,
 //    и идут во фрагментный шейдер flat — там нет ни разбора метки, ни массивов. У планеты здесь же — время суток
 //    (из начала тумана, см. profiles.glsl), направление солнца, цвета неба по времени суток, яркость заката.
+// 5) Параллакс галактики: туманность области — не на бесконечности, а сфера радиуса nebula-distance вокруг камеры в
+//    привязанном к миру шуме (ssNebOff — смещение камеры от центра области; шум непрерывный — ничего не выскакивает).
+//    Фон, звёзды фона и Млечный путь остаются на бесконечности. Ближние звёзды и пыль — частицы прохода звёзд
+//    (stars.vsh). Нижний «тёмный» диск клиент рисует ПОСЛЕ звёзд (камера ниже горизонта) — он закрасил бы частицы,
+//    поэтому у галактики с частицами он схлопывается: верхний веер и так закрывает всё небо, кроме точки в надире.
 
 #moj_import <minecraft:fog.glsl>
 #moj_import <minecraft:dynamictransforms.glsl>
@@ -39,6 +44,7 @@ flat out vec3 ssRow1;
 flat out vec3 ssRow3;
 flat out vec4 ssZone;      // x — Млечный путь, y — туманность, z — звёздное скопление (0..1), w — зерно рисунка
 flat out vec3 ssNebula;    // цвет туманности
+flat out vec3 ssNebOff;    // смещение шума туманности: (камера − центр лучшей области) × 1,7 / nebula-distance
 flat out int ssProf;       // номер профиля (-1 — ванильное небо)
 // параметры профиля (см. sky.fsh): галактика — фон, звёзды; планета — небо по времени суток, солнце, закат, луна
 flat out vec4 ssA;         // (фон у горизонта | горизонт), w — плотность звёзд
@@ -71,6 +77,7 @@ void main() {
     cylindricalVertexDistance = fog_cylindrical_distance(Position);
     ssZone = vec4(0.0);
     ssNebula = vec3(0.0);
+    ssNebOff = vec3(0.0);
     spaceDir = Position;
     ssRow0 = ssRow1 = ssRow3 = vec3(0.0);
     ssA = ssB = ssC = ssD = ssE = ssF = ssG = ssH = vec4(0.0);
@@ -138,10 +145,15 @@ void main() {
     }
     ssA = vec4(p0.rgb, p1.w);
     ssB = vec4(p1.rgb, p2.w);
+    vec4 p9 = SS_PROF_9[prof];
+    if (Position.y < 0.0 && (p9.x > 0.0 || p9.y > 0.0)) {
+        gl_Position = vec4(2.0, 2.0, 2.0, 1.0);                        // нижний диск — поверх частиц, не рисуем
+    }
 
     vec4 zone = vec4(0.0);
     vec3 neb = vec3(0.0);
     float best = 0.0;
+    int bi = -1;
 #if SS_ZONES > 0
     vec2 cam = vec2(CameraBlockPos.xz) + CameraOffset.xz;
     for (int i = 0; i < SS_ZONES; i++) {
@@ -157,7 +169,14 @@ void main() {
         if (kind == 0) zone.x = max(zone.x, w);
         else if (kind == 1) { neb += (k.y < 0.0 ? p3.rgb : k.yzw) * w; zone.y = max(zone.y, w); }
         else zone.z = max(zone.z, w);
-        if (w > best) { best = w; zone.w = float(i) * 7.31 + 1.7; }
+        if (w > best) { best = w; bi = i; zone.w = float(i) * 7.31 + 1.7; }
+    }
+    // параллакс туманности: целые части вычитаются в int (вдали от 0 у float шаг до 2 блоков — рисунок дрожал бы)
+    float L = SS_PROF_10[prof].x;
+    if (bi >= 0 && zone.y > 0.0 && L > 0.0) {
+        ivec2 c = SS_ZONE_IPOS[bi];
+        ssNebOff = (vec3(float(CameraBlockPos.x - c.x), float(CameraBlockPos.y) - 64.0, float(CameraBlockPos.z - c.y))
+            + CameraOffset) * (1.7 / L);
     }
 #endif
     ssZone = zone;
