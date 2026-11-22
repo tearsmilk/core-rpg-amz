@@ -723,7 +723,10 @@ public final class GravityModule extends OdysseyModule {
         if (!sp.observe(pos.x(), pos.y() + PLAYER_CENTER, pos.z())) {
             st.setVelocity(0, 0, 0);                        // телепорт — с нуля
         }
-        if (spaceflightReady.remove(p.getUuid()) || (ticks + p.getEntityId()) % 20 == 0) {
+        if (spaceflightReady.remove(p.getUuid())) {
+            sp.modded = link.ready(p);
+            sp.clientOn = false;                           // модуль (пере)загрузился у клиента — тела и «вкл.» заново
+        } else if ((ticks + p.getEntityId()) % 20 == 0) {
             sp.modded = link.ready(p);
         }
         boolean flying = p.isFlying() || p.getGameMode() == GameMode.SPECTATOR;

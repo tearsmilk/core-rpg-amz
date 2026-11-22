@@ -60,6 +60,11 @@ final class VacuumOverrides implements VacuumService {
             sp.push(vx, vy, vz);                        // уйдёт клиенту в ближайшем тике вместе со скоростью
             return;
         }
+        if (sp != null) {                               // мод spaceflight: толчок придёт взрывом — допустить его в проверке
+            double dv = Math.sqrt(vx * vx + vy * vy + vz * vz);  // блоков/тик
+            sp.guard.speed += dv * Settings.TPS;
+            sp.guard.credit += dv * Inertia.MoveGuard.BURST;
+        }
         Floater f = floaters.get(p.getUuid());
         if (f != null) {
             f.vy += vy;                                 // модель вертикали знает про толчок и дальше гасит его сама
