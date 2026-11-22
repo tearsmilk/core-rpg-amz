@@ -21,6 +21,9 @@
 in float sphericalVertexDistance;
 in float cylindricalVertexDistance;
 in vec3 spaceDir;
+flat in vec3 ssRow0;
+flat in vec3 ssRow1;
+flat in vec3 ssRow3;
 flat in vec4 ssZone;
 flat in vec3 ssNebula;
 flat in int ssProf;
@@ -487,7 +490,11 @@ void main() {
         return;
     }
 #endif
-    vec3 d = normalize(spaceDir);
+    // направление взгляда через этот пиксель — точка на бесконечности, без сдвига камеры (см. sky.vsh, ssRow*)
+    vec2 ndc = gl_FragCoord.xy / ScreenSize * 2.0 - 1.0;
+    vec3 d = cross(ssRow0 - ndc.x * ssRow3, ssRow1 - ndc.y * ssRow3);
+    if (dot(d, ssRow3) < 0.0) d = -d;
+    d = normalize(d);
     float t = GameTime * 1200.0;                                       // секунды, цикл — игровые сутки
     // угловой размер пикселя — здесь, в однородном управлении (производные внутри ветвлений не определены)
     float pix = length(fwidth(d));

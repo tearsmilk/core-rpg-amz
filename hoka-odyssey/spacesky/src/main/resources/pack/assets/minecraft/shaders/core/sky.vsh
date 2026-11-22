@@ -30,6 +30,13 @@ in vec3 Position;
 out float sphericalVertexDistance;
 out float cylindricalVertexDistance;
 out vec3 spaceDir;
+// Строки xyz матрицы ProjMat * ModelViewMat (0, 1 и 3): по ним sky.fsh считает направление взгляда для каждого пикселя.
+// Геометрия веера проходит в десятых долях блока от глаза, а покачивание камеры и тряска от урона сдвигают проекцию —
+// направление, интерполированное по такой близкой геометрии, «плывёт» и трясёт рисунок неба. Направление по пикселю
+// (точка на бесконечности) от сдвига не зависит — небо качается ровно как мир, как в ванили.
+flat out vec3 ssRow0;
+flat out vec3 ssRow1;
+flat out vec3 ssRow3;
 flat out vec4 ssZone;      // x — Млечный путь, y — туманность, z — звёздное скопление (0..1), w — зерно рисунка
 flat out vec3 ssNebula;    // цвет туманности
 flat out int ssProf;       // номер профиля (-1 — ванильное небо)
@@ -65,6 +72,7 @@ void main() {
     ssZone = vec4(0.0);
     ssNebula = vec3(0.0);
     spaceDir = Position;
+    ssRow0 = ssRow1 = ssRow3 = vec3(0.0);
     ssA = ssB = ssC = ssD = ssE = ssF = ssG = ssH = vec4(0.0);
     bool water;
     int prof = ss_profile(water);
@@ -75,6 +83,11 @@ void main() {
         return;
     }
 
+    mat4 pm = ProjMat * ModelViewMat;
+    ssRow0 = vec3(pm[0][0], pm[1][0], pm[2][0]);
+    ssRow1 = vec3(pm[0][1], pm[1][1], pm[2][1]);
+    ssRow3 = vec3(pm[0][3], pm[1][3], pm[2][3]);
+
     vec3 pos = Position;
     float rim = length(pos.xz);
     if (pos.y > 0.0) {
@@ -84,7 +97,8 @@ void main() {
             // удалён на c). Иначе при широком FOV (спринт, 110°+, широкий монитор) по краям экрана — полосы неба.
             float n = ProjMat[3][2] / (ProjMat[2][2] - 1.0);
             float c = n * sqrt(1.0 + 1.0 / (ProjMat[0][0] * ProjMat[0][0]) + 1.0 / (ProjMat[1][1] * ProjMat[1][1]));
-            float eps = clamp(2.5 * c / 4.13, 0.005, 5.0);
+            // + 0,25 блока запаса: покачивание камеры сдвигает проекцию до ~0,1 блока — веер не должен задеть ближнюю плоскость
+            float eps = clamp((2.5 * c + 0.25) / 4.13, 0.005, 5.0);
             float A = radians(-90.0 + eps);
             pos = vec3(pos.xz / rim * cos(A), sin(A)).xzy * rim;
         } else {
