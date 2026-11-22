@@ -21,8 +21,17 @@ final class VacuumOverrides implements VacuumService {
     /** Источник зон для предметов (gravzones) или null. */
     private volatile ZoneProvider zoneProvider;
 
+    /** Игроки с настоящей физикой: толчок — к их настоящей скорости (сервер шлёт её клиенту сам). */
+    private final Map<UUID, Spacer> spacers;
+
+    /** Без игроков с настоящей физикой (для тестов). */
     VacuumOverrides(Map<UUID, Floater> floaters) {
+        this(floaters, new ConcurrentHashMap<>());
+    }
+
+    VacuumOverrides(Map<UUID, Floater> floaters, Map<UUID, Spacer> spacers) {
         this.floaters = floaters;
+        this.spacers = spacers;
     }
 
     @Override
@@ -46,6 +55,11 @@ final class VacuumOverrides implements VacuumService {
 
     @Override
     public void push(Player p, double vx, double vy, double vz) {
+        Spacer sp = spacers.get(p.getUuid());
+        if (sp != null && !sp.modded) {
+            sp.push(vx, vy, vz);                        // уйдёт клиенту в ближайшем тике вместе со скоростью
+            return;
+        }
         Floater f = floaters.get(p.getUuid());
         if (f != null) {
             f.vy += vy;                                 // модель вертикали знает про толчок и дальше гасит его сама

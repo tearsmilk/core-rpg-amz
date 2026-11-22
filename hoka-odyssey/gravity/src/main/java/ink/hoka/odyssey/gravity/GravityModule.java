@@ -2,6 +2,14 @@ package ink.hoka.odyssey.gravity;
 
 import ink.hoka.odyssey.api.ModuleConfig;
 import ink.hoka.odyssey.api.OdysseyModule;
+import ink.hoka.odyssey.spacephys.Contact;
+import ink.hoka.odyssey.spacephys.Field;
+import ink.hoka.odyssey.spacephys.Integrator;
+import ink.hoka.odyssey.spacephys.Quat;
+import ink.hoka.odyssey.spacephys.State;
+import ink.hoka.odyssey.spacephys.Thrust;
+import ink.hoka.odyssey.spacephys.Units;
+import ink.hoka.odyssey.spacephys.Vec3d;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -27,6 +35,8 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.collision.Aerodynamics;
+import net.minestom.server.collision.CollisionUtils;
+import net.minestom.server.collision.PhysicsResult;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
@@ -36,11 +46,14 @@ import net.minestom.server.entity.Player;
 import net.minestom.server.entity.attribute.Attribute;
 import net.minestom.server.entity.attribute.AttributeModifier;
 import net.minestom.server.entity.attribute.AttributeOperation;
+import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.entity.vehicle.PlayerInputs;
 import net.minestom.server.event.entity.EntitySpawnEvent;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
+import net.minestom.server.event.player.PlayerMoveEvent;
 import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.instance.Instance;
+import net.minestom.server.network.packet.server.play.EntityVelocityPacket;
 import net.minestom.server.network.packet.server.play.ExplosionPacket;
 import net.minestom.server.network.packet.server.play.ParticlePacket;
 import net.minestom.server.particle.Particle;
@@ -59,6 +72,13 @@ import net.minestom.server.utils.WeightedList;
  * гравитации и почти без затухания, плывут по инерции, падают в дыры и исчезают за горизонтом. Кроме предметов в
  * зонах с обычной гравитацией (источник зон — {@link VacuumService.ZoneProvider}, его ставит gravzones): их gravity
  * отпускает, дыры их не тянут и не поглощают, а гравитацию зоны ставит владелец зон.
+ * <p>
+ * Настоящая физика вакуума (по умолчанию на всех картах из maps, кроме physics.legacy-maps): инерция без
+ * затухания и пределов скорости, притяжение тел карты (bodies) и дыр по закону 1/r² (spacephys), слабый толчок
+ * от блоков, урон от сильного удара, ранец WASD/пробел/Shift. Сервер ведёт настоящую скорость игрока и каждый тик
+ * шлёт её клиенту пакетом EntityVelocity (с поправкой на затухание и ввод клиента, см. {@link Inertia}); на земле
+ * (планета) двигается клиент сам — ему ставится гравитация, равная полю под ногами. Игроку с клиентским модулем
+ * spaceflight сервер импульсов не шлёт, только тела карты ({@link SpaceflightLink}), и лишь проверяет скорость.
  */
 public final class GravityModule extends OdysseyModule {
     /** id модификаторов атрибутов модуля — по нему же снимаем. */
@@ -75,10 +95,20 @@ public final class GravityModule extends OdysseyModule {
     /** Тиков после переноса на спавн, пока горизонт не проверяем (позиция клиента ещё старая). */
     private static final int SPAWN_COOLDOWN = 40;
     /** Высота «центра» игрока над ногами и предмета над его позицией — от них считаем расстояние до дыры. */
-    private static final double PLAYER_CENTER = 0.9;
+    static final double PLAYER_CENTER = 0.9;
     private static final double ITEM_CENTER = 0.125;
     /** На сколько тиков вперёд (сверх items.update-ticks) проверять, что чанк на пути предмета загружен. */
     private static final int ITEM_LOOKAHEAD = 2;
+    /** Шаг пробы «есть ли рядом блок» для толчка, блоков. */
+    private static final double PROBE = 0.15;
+    /** Удары чаще, чем раз в столько тиков, — одно столкновение (урон один раз). */
+    private static final int IMPACT_COOLDOWN = 10;
+    /** Скорость в action bar — раз в столько тиков. */
+    private static final int READOUT_TICKS = 10;
+    /** Гравитация игрока по умолчанию в Minecraft, блоков/тик². */
+    private static final double VANILLA_GRAVITY = 0.08;
+    /** Мировой «верх» — для пробела/Shift у ранца и толчка с земли. */
+    private static final Vec3d UP = new Vec3d(0, 1, 0);
 
     private volatile Settings settings;
     private final Map<UUID, Floater> floaters = new ConcurrentHashMap<>();
@@ -92,13 +122,22 @@ public final class GravityModule extends OdysseyModule {
     private final Queue<ConfigWrite> writes = new ConcurrentLinkedQueue<>();
     private final AtomicBoolean writing = new AtomicBoolean();
     /** Вакуум отдельным игрокам поверх карт — сервис {@link VacuumService} для других модулей (gravzones). */
-    private final VacuumOverrides overrides = new VacuumOverrides(floaters);
+    private volatile RealPhysics physics;
+    /** Игроки на картах с настоящей физикой. */
+    private final Map<UUID, Spacer> spacers = new ConcurrentHashMap<>();
+    /** У кого только что загрузился клиентский модуль spaceflight (проверить в ближайшем тике). */
+    private final Set<UUID> spaceflightReady = ConcurrentHashMap.newKeySet();
+    private SpaceflightLink link;
+    private final VacuumOverrides overrides = new VacuumOverrides(floaters, spacers);
     /** Чёрные дыры для других модулей (spacesky рисует их в небе) — сервис {@link BlackHoles}. */
     private final BlackHolesService blackHoles = new BlackHolesService(() -> settings, w -> logger().warn(w));
 
     @Override
     protected void onEnable() {
         settings = Settings.from(config());
+        physics = loadPhysics();
+        link = new SpaceflightLink(this, logger());
+        link.resolve(p -> spaceflightReady.add(p.getUuid()));
         services().register(VacuumService.class, overrides);
         services().register(BlackHoles.class, blackHoles);
         registerCommand(new HoGravCommand(this));
@@ -106,6 +145,8 @@ public final class GravityModule extends OdysseyModule {
         events().addListener(PlayerSpawnEvent.class, e -> refresh(e.getPlayer(), e.getInstance(), true));
         events().addListener(PlayerDisconnectEvent.class, e -> {
             floaters.remove(e.getPlayer().getUuid());
+            spacers.remove(e.getPlayer().getUuid());
+            spaceflightReady.remove(e.getPlayer().getUuid());
             spawnCooldown.remove(e.getPlayer().getUuid());
             overrides.forget(e.getPlayer().getUuid());
         });
@@ -116,14 +157,17 @@ public final class GravityModule extends OdysseyModule {
                 Pos pos = item.getPosition();
                 if (VacuumService.itemInVacuum(true,
                     VacuumOverrides.modeAt(overrides.zones(e.getInstance()), pos.x(), pos.y(), pos.z()))) {
-                    capture(item);
+                    capture(item, physics.real(mapOf(e.getInstance()).orElse("")));
                 }
             }
         });
+        // игрок с модом spaceflight считает физику сам — проверяем только, что быстрее физики он не летает
+        events().addListener(PlayerMoveEvent.class, this::checkMove);
         scheduler().repeat(this::tick, 1, 1);
         refreshAll();
         loadMapSpawns();
-        logger().info("gravity: вакуум на картах {}, чёрных дыр: {}, команда /hograv", settings.maps(), holeCount());
+        logger().info("gravity: вакуум на картах {}, чёрных дыр: {}, тел: {}, старая физика на {}, команда /hograv",
+            settings.maps(), holeCount(), bodyCount(), physics.legacyMaps());
     }
 
     @Override
@@ -133,6 +177,17 @@ public final class GravityModule extends OdysseyModule {
                 clearAttributes(p);
             }
         }
+        for (Player p : MinecraftServer.getConnectionManager().getOnlinePlayers()) {
+            Spacer sp = spacers.get(p.getUuid());
+            if (sp != null && sp.clientOn) {
+                link.sendPhysics(p, false);                // клиентский модуль перестаёт считать вакуум
+            }
+        }
+        if (link != null) {
+            link.close();
+        }
+        spacers.clear();
+        spaceflightReady.clear();
         floaters.clear();
         spawnCooldown.clear();
         for (var e : items.entrySet()) {
@@ -151,9 +206,41 @@ public final class GravityModule extends OdysseyModule {
     void reloadSettings() {
         config().reload();
         settings = Settings.from(config());
+        physics = loadPhysics();
+        for (Spacer sp : spacers.values()) {
+            sp.clientOn = false;                           // тела могли поменяться — разослать заново в тике
+            sp.pack = new Thrust(thrustSpec(physics));
+        }
         refreshAll();
         loadMapSpawns();
         blackHoles.changed();
+    }
+
+    private RealPhysics loadPhysics() {
+        RealPhysics rp = RealPhysics.from(config(), settings.space().holes());
+        for (String w : rp.warnings()) {
+            logger().warn("gravity: {}", w);
+        }
+        return rp;
+    }
+
+    RealPhysics physics() {
+        return physics;
+    }
+
+    int bodyCount() {
+        return physics.bodies().values().stream().mapToInt(List::size).sum();
+    }
+
+    /** Сервис другого модуля по классу, найденному рефлексией (null — нет). */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    Object service(Class<?> type) {
+        return services().get((Class) type).orElse(null);
+    }
+
+    /** Выполнить в тике сервера. */
+    void runInTick(Runnable r) {
+        scheduler().run(r);
     }
 
     /** Сколько игроков сейчас в вакууме. */
@@ -314,9 +401,15 @@ public final class GravityModule extends OdysseyModule {
             } else if (reset) {
                 f.reset();
             }
+            Spacer sp = spacers.get(p.getUuid());
+            if (sp != null && reset) {
+                sp.reset();
+                sp.clientOn = false;                       // новая карта — новые тела (и «физика вкл.»)
+            }
             applyAttributes(p);
         } else if (f != null) {
             floaters.remove(p.getUuid());
+            dropSpacer(p);
             clearAttributes(p);
         }
     }
@@ -347,7 +440,11 @@ public final class GravityModule extends OdysseyModule {
 
     private void tick() {
         Settings s = settings;
+        RealPhysics rp = physics;
         ticks++;
+        if (ticks % 100 == 0) {
+            link.resolve(p -> spaceflightReady.add(p.getUuid()));   // clientmods могли перезагрузить
+        }
         for (Player p : MinecraftServer.getConnectionManager().getOnlinePlayers()) {
             Instance instance = p.getInstance();
             boolean should = inVacuum(p, instance);
@@ -360,10 +457,20 @@ public final class GravityModule extends OdysseyModule {
             }
             Pos pos = p.getPosition();
             boolean flying = p.isFlying() || p.getGameMode() == GameMode.SPECTATOR;
-            List<BlackHole> holes = s.space().holes(mapOf(instance).orElse(""));
+            String map = mapOf(instance).orElse("");
+            List<BlackHole> holes = s.space().holes(map);
             if (!flying && horizon(p, f, holes, pos)) {
+                Spacer sp = spacers.get(p.getUuid());
+                if (sp != null) {
+                    sp.reset();
+                }
                 continue;
             }
+            if (rp.real(map)) {
+                tickReal(p, instance, map, s, rp);
+                continue;
+            }
+            dropSpacer(p);                                  // карта со старой физикой
             PlayerInputs in = p.inputs();
             Floater.Keys keys = new Floater.Keys(in.forward(), in.backward(), in.left(), in.right(), in.jump(), in.shift(),
                 in.sprint());
@@ -435,7 +542,10 @@ public final class GravityModule extends OdysseyModule {
             if (!inVacuum(instance)) {
                 continue;
             }
-            List<BlackHole> holes = sp.holes(mapOf(instance).orElse(""));
+            String map = mapOf(instance).orElse("");
+            List<BlackHole> holes = sp.holes(map);
+            boolean real = physics.real(map);
+            Field field = physics.field(map);
             VacuumService.ZoneLookup zones = overrides.zones(instance);   // раз на карту, не на предмет
             List<ItemEntity> absorbed = new ArrayList<>();
             List<ItemEntity> lost = new ArrayList<>();
@@ -453,7 +563,7 @@ public final class GravityModule extends OdysseyModule {
                     }
                     continue;
                 }
-                ItemState st = capture(item);
+                ItemState st = capture(item, real);
                 double cy = pos.y() + ITEM_CENTER;
                 BlackHole h = Gravitation.nearest(holes, pos.x(), cy, pos.z());
                 if (h != null && h.distance(pos.x(), cy, pos.z()) <= h.horizon()) {
@@ -462,9 +572,22 @@ public final class GravityModule extends OdysseyModule {
                 }
                 Vec v = item.getVelocity().div(Settings.TPS);
                 int dt = (int) Math.min(ITEM_MAX_SILENCE, Math.max(1, ticks - st.updated));
-                double[] next = Gravitation.itemVelocity(new double[] {v.x(), v.y(), v.z()}, h, pos.x(), cy, pos.z(),
-                    sp.falloff(), sp.minPull(), sp.itemKeep(), dt);
-                Vec nv = new Vec(next[0], next[1], next[2]);
+                Vec nv;
+                if (real) {
+                    // настоящая физика: без затухания, притяжение всех тел и дыр карты (spacephys)
+                    Aerodynamics ad = item.getAerodynamics();
+                    if (ad.horizontalAirResistance() != 1.0 || ad.verticalAirResistance() != 1.0) {
+                        item.setAerodynamics(new Aerodynamics(ad.gravity(), 1.0, 1.0));
+                    }
+                    State is = new State(pos.x(), cy, pos.z(), v.x() * Settings.TPS, v.y() * Settings.TPS,
+                        v.z() * Settings.TPS);
+                    Integrator.DEFAULT.kick(field, is, dt * Units.TICK);
+                    nv = finite(is) ? new Vec(is.vx, is.vy, is.vz).div(Settings.TPS) : Vec.ZERO;
+                } else {
+                    double[] next = Gravitation.itemVelocity(new double[] {v.x(), v.y(), v.z()}, h, pos.x(), cy,
+                        pos.z(), sp.falloff(), sp.minPull(), sp.itemKeep(), dt);
+                    nv = new Vec(next[0], next[1], next[2]);
+                }
                 if (nv.length() < ITEM_REST) {
                     nv = Vec.ZERO;
                 }
@@ -502,13 +625,13 @@ public final class GravityModule extends OdysseyModule {
         }
     }
 
-    /** Взять предмет в вакуум (повторно — ничего не меняет). */
-    private ItemState capture(ItemEntity item) {
+    /** Взять предмет в вакуум (повторно — ничего не меняет). real — настоящая физика: без затухания совсем. */
+    private ItemState capture(ItemEntity item, boolean real) {
         return items.computeIfAbsent(item, it -> {
             Aerodynamics a = it.getAerodynamics();
             it.setNoGravity(true);
             // затухание и притяжение считаем сами, сервер скорость между нашими пересчётами не меняет
-            it.setAerodynamics(new Aerodynamics(a.gravity(), 1.0, a.verticalAirResistance()));
+            it.setAerodynamics(new Aerodynamics(a.gravity(), 1.0, real ? 1.0 : a.verticalAirResistance()));
             return new ItemState(a, it.getSynchronizationTicks(), ticks - settings.space().itemTicks());
         });
     }
@@ -556,6 +679,340 @@ public final class GravityModule extends OdysseyModule {
             this.updated = updated;
         }
     }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // Настоящая физика вакуума (игроки)
+    // ---------------------------------------------------------------------------------------------------------------
+
+    private static Thrust.Spec thrustSpec(RealPhysics rp) {
+        return rp.deltaV() == Double.POSITIVE_INFINITY ? Thrust.Spec.unlimited(rp.thrust())
+            : new Thrust.Spec(rp.thrust(), rp.deltaV());
+    }
+
+    /** Убрать игрока из настоящей физики (ушёл из вакуума или на карту со старой): мод выключить, гравитация 0. */
+    private void dropSpacer(Player p) {
+        Spacer sp = spacers.remove(p.getUuid());
+        if (sp == null) {
+            return;
+        }
+        if (sp.clientOn) {
+            link.sendPhysics(p, false);
+        }
+        if (!Double.isNaN(sp.gravityAttr)) {
+            var inst = p.getAttribute(Attribute.GRAVITY);
+            inst.removeModifier(MODIFIER);
+            if (floaters.containsKey(p.getUuid())) {
+                inst.addModifier(ZERO);                    // остаётся в вакууме (старая физика) — гравитация 0
+            }
+        }
+    }
+
+    /**
+     * Один тик игрока на карте с настоящей физикой. Без мода: сервер ведёт настоящую скорость и шлёт её клиенту;
+     * на земле двигается клиент (гравитация = поле под ногами). С модом spaceflight — только проверка.
+     */
+    private void tickReal(Player p, Instance instance, String map, Settings s, RealPhysics rp) {
+        Spacer sp = spacers.computeIfAbsent(p.getUuid(), k -> {
+            Spacer n = new Spacer(thrustSpec(rp));
+            n.reset();
+            return n;
+        });
+        Field field = rp.field(map);
+        Pos pos = p.getPosition();
+        State st = sp.state;
+        if (!sp.observe(pos.x(), pos.y() + PLAYER_CENTER, pos.z())) {
+            st.setVelocity(0, 0, 0);                        // телепорт — с нуля
+        }
+        if (spaceflightReady.remove(p.getUuid()) || (ticks + p.getEntityId()) % 20 == 0) {
+            sp.modded = link.ready(p);
+        }
+        boolean flying = p.isFlying() || p.getGameMode() == GameMode.SPECTATOR;
+        double[] m = sp.measured();
+        if (sp.modded) {
+            tickModded(p, sp, field, rp, m);
+            return;
+        }
+        sp.clientOn = false;
+        Vec3d a = field.acceleration(st.x, st.y, st.z);
+        setGravity(p, sp, flying ? 0 : Math.max(0, -a.y()));
+        PlayerInputs in = p.inputs();
+        boolean jumpEdge = in.jump() && !sp.wasJump;
+        sp.wasJump = in.jump();
+        if (flying) {                                       // креативный полёт — у клиента своя физика
+            st.setVelocity(m[0], m[1], m[2]);
+            sp.grounded = false;
+            return;
+        }
+        boolean onGround = p.isOnGround() && sp.pushGrace == 0;
+        if (sp.pushGrace > 0) {
+            sp.pushGrace--;
+        }
+        if (onGround) {
+            // на земле (планета): ходит клиент сам, у него гравитация = поле под ногами; скорость — по замерам
+            if (!sp.grounded) {
+                landing(p, sp, rp);
+            }
+            sp.grounded = true;
+            st.setVelocity(m[0], m[1], m[2]);
+            sp.pack.refill();
+            sp.sentZero = false;
+            if (jumpEdge && rp.pushOff() > 0) {
+                Vec3d dir = Inertia.pushDirection(UP, look(pos));
+                st.setVelocity(st.vx + dir.x() * rp.pushOff(), Math.max(0, st.vy) + dir.y() * rp.pushOff(),
+                    st.vz + dir.z() * rp.pushOff());
+                sp.grounded = false;
+                sp.pushGrace = Spacer.PUSH_GRACE;
+                sendVelocity(p, sp, null);
+            }
+            readout(p, sp, rp);
+            return;
+        }
+        if (sp.grounded) {                                  // сошёл с края или подпрыгнул — с той же скоростью
+            st.setVelocity(m[0], m[1], m[2]);
+            sp.grounded = false;
+        }
+        int fwd = (in.forward() ? 1 : 0) - (in.backward() ? 1 : 0);
+        int strafe = (in.left() ? 1 : 0) - (in.right() ? 1 : 0);
+        int up = (in.jump() ? 1 : 0) - (in.shift() ? 1 : 0);
+        Quat q = Quat.fromYawPitchRoll(pos.yaw(), pos.pitch(), 0);
+        if (jumpEdge && rp.pushOff() > 0) {                 // пробел у стены/потолка — толчок от блока
+            Vec3d n = contactNormal(instance, p, pos);
+            if (n.lengthSquared() > 0) {
+                Vec3d dir = Inertia.pushDirection(n, q.forward());
+                st.setVelocity(st.vx + dir.x() * rp.pushOff(), st.vy + dir.y() * rp.pushOff(),
+                    st.vz + dir.z() * rp.pushOff());
+                sp.pushGrace = Spacer.PUSH_GRACE;
+                up = 0;
+            }
+        }
+        Vec3d thrust = Vec3d.ZERO;
+        if (rp.thrust() > 0) {
+            if (fwd != 0 || strafe != 0 || up != 0) {
+                thrust = sp.pack.accelerate(fwd, -strafe, up, q.forward(), q.right(), UP, Units.TICK);
+            } else if (in.sprint()) {
+                thrust = sp.pack.stabilize(st.velocity(), Units.TICK);   // бег без клавиш — гасить скорость
+            }
+        }
+        Integrator.DEFAULT.kick(field, st, Units.TICK, thrust.x(), thrust.y(), thrust.z());
+        if (!s.space().horizonSpawn()) {
+            holdAtHorizon(st, s.space().holes(map));
+        }
+        collide(p, sp, instance, pos, rp);
+        if (!finite(st)) {
+            st.setVelocity(0, 0, 0);
+        }
+        sendVelocity(p, sp, Inertia.airInput(pos.yaw(), fwd, strafe, in.sprint()));
+        readout(p, sp, rp);
+    }
+
+    /** Игрок с модом spaceflight: тела карты и «физика вкл.» — один раз, дальше только проверка скорости. */
+    private void tickModded(Player p, Spacer sp, Field field, RealPhysics rp, double[] m) {
+        if (!sp.clientOn) {
+            link.sendBodies(p, field.bodies());
+            link.sendPhysics(p, true);
+            sp.clientOn = true;
+            double v = Math.sqrt(m[0] * m[0] + m[1] * m[1] + m[2] * m[2]);
+            sp.guard.reset(v);
+            sp.guard.credit = (v + Inertia.MoveGuard.SLACK) * Inertia.MoveGuard.BURST / Settings.TPS;
+        }
+        setGravity(p, sp, 0);                              // vanilla-гравитацию клиента не включаем — считает мод
+        sp.state.setVelocity(m[0], m[1], m[2]);
+        sp.guard.measured(sp.lastStep() * Settings.TPS);
+        sp.guard.tick(field.acceleration(sp.state.x, sp.state.y, sp.state.z).length() + rp.thrust(), rp.pushOff());
+        readout(p, sp, rp);
+    }
+
+    /**
+     * Пакет движения игрока с модом: путь за пакет не больше, чем позволяет физика (иначе — назад), и урон от
+     * удара, если скорость резко упала у блока.
+     */
+    private void checkMove(PlayerMoveEvent e) {
+        Player p = e.getPlayer();
+        Spacer sp = spacers.get(p.getUuid());
+        RealPhysics rp = physics;
+        if (sp == null || !sp.modded || !sp.clientOn || p.isFlying() || p.getGameMode() == GameMode.SPECTATOR
+            || p.getGameMode() == GameMode.CREATIVE) {
+            return;
+        }
+        Pos from = p.getPosition();
+        Pos to = e.getNewPosition();
+        double d = from.distance(to);
+        if (rp.antiCheat() && !sp.guard.accept(d)) {
+            e.setCancelled(true);
+            p.teleport(from, Vec.ZERO);
+            sp.guard.reset(sp.guard.speed);
+            sp.lastMoveSpeed = 0;
+            return;
+        }
+        double v = d * Settings.TPS;                       // пакет — один тик клиента
+        double drop = sp.lastMoveSpeed - v;
+        sp.lastMoveSpeed = v;
+        if (drop > rp.impactThreshold() && rp.impactDamage() > 0 && p.getInstance() != null
+            && contactNormal(p.getInstance(), p, to).lengthSquared() > 0) {
+            impact(p, sp, drop, rp);
+        }
+    }
+
+    /** Приземлился (клиент сказал «на земле»): удар по вертикальной скорости, если его ещё не посчитали. */
+    private void landing(Player p, Spacer sp, RealPhysics rp) {
+        double vn = -sp.state.vy;
+        if (vn > 0 && ticks - sp.lastImpact > IMPACT_COOLDOWN) {
+            impact(p, sp, (1 + rp.restitution()) * vn, rp);
+        }
+    }
+
+    /** Урон от удара с изменением нормальной скорости dvn (блоки/с). */
+    private void impact(Player p, Spacer sp, double dvn, RealPhysics rp) {
+        if (dvn <= rp.impactThreshold() || ticks - sp.lastImpact <= IMPACT_COOLDOWN) {
+            return;
+        }
+        sp.lastImpact = ticks;
+        double dmg = Contact.impactDamage(dvn, rp.impactThreshold(), rp.impactDamage());
+        if (dmg > 0 && (p.getGameMode() == GameMode.SURVIVAL || p.getGameMode() == GameMode.ADVENTURE)) {
+            p.damage(DamageType.FLY_INTO_WALL, (float) dmg);
+        }
+    }
+
+    /**
+     * Удар о блок за этот тик: сдвинуть рамку игрока на скорость за тик; по каждой оси, где упёрлась, —
+     * {@link Contact#collide} (отскок, трение) и урон по |Δv по нормали|.
+     */
+    private void collide(Player p, Spacer sp, Instance instance, Pos pos, RealPhysics rp) {
+        State st = sp.state;
+        Vec delta = new Vec(st.vx, st.vy, st.vz).div(Settings.TPS);
+        if (delta.isZero()) {
+            return;
+        }
+        PhysicsResult r = sweep(instance, p, pos, delta);
+        if (r == null || !r.hasCollision()) {
+            return;
+        }
+        double dvn = 0;
+        Vec3d v = st.velocity();
+        if (r.collisionX()) {
+            Contact.Result c = Contact.collide(v, new Vec3d(-Math.signum(delta.x()), 0, 0), rp.restitution(),
+                rp.friction());
+            v = c.velocity();
+            dvn = Math.max(dvn, c.deltaVNormal());
+        }
+        if (r.collisionY()) {
+            Contact.Result c = Contact.collide(v, new Vec3d(0, -Math.signum(delta.y()), 0), rp.restitution(),
+                rp.friction());
+            v = c.velocity();
+            dvn = Math.max(dvn, c.deltaVNormal());
+        }
+        if (r.collisionZ()) {
+            Contact.Result c = Contact.collide(v, new Vec3d(0, 0, -Math.signum(delta.z())), rp.restitution(),
+                rp.friction());
+            v = c.velocity();
+            dvn = Math.max(dvn, c.deltaVNormal());
+        }
+        st.setVelocity(v.x(), v.y(), v.z());
+        impact(p, sp, dvn, rp);
+    }
+
+    /** Нормаль от блоков, которых игрок касается (сумма по шести сторонам); ZERO — рядом блоков нет. */
+    private static Vec3d contactNormal(Instance instance, Player p, Pos pos) {
+        double nx = 0;
+        double ny = 0;
+        double nz = 0;
+        for (int axis = 0; axis < 3; axis++) {
+            for (int sign = -1; sign <= 1; sign += 2) {
+                Vec d = new Vec(axis == 0 ? sign * PROBE : 0, axis == 1 ? sign * PROBE : 0, axis == 2 ? sign * PROBE : 0);
+                PhysicsResult r = sweep(instance, p, pos, d);
+                if (r == null) {
+                    continue;
+                }
+                boolean hit = axis == 0 ? r.collisionX() : axis == 1 ? r.collisionY() : r.collisionZ();
+                if (hit) {
+                    if (axis == 0) {
+                        nx -= sign;
+                    } else if (axis == 1) {
+                        ny -= sign;
+                    } else {
+                        nz -= sign;
+                    }
+                }
+            }
+        }
+        return new Vec3d(nx, ny, nz).normalize();
+    }
+
+    /** Сдвиг рамки игрока по блокам (null — чанк не загружен или ошибка). */
+    private static PhysicsResult sweep(Instance instance, Player p, Pos pos, Vec delta) {
+        try {
+            return CollisionUtils.handlePhysics(instance, p.getBoundingBox(), pos, delta, null, false);
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
+    /** player-on-horizon: none — у горизонта дыры внутрь не затягивает: радиальная скорость внутрь гасится. */
+    private static void holdAtHorizon(State st, List<BlackHole> holes) {
+        BlackHole h = Gravitation.nearest(holes, st.x, st.y, st.z);
+        if (h == null) {
+            return;
+        }
+        double r = h.distance(st.x, st.y, st.z);
+        if (r > h.horizon() * 1.5 || r == 0) {
+            return;
+        }
+        double ux = (st.x - h.x()) / r;
+        double uy = (st.y - h.y()) / r;
+        double uz = (st.z - h.z()) / r;
+        double vr = st.vx * ux + st.vy * uy + st.vz * uz;
+        if (vr < 0) {
+            st.setVelocity(st.vx - ux * vr, st.vy - uy * vr, st.vz - uz * vr);
+        }
+    }
+
+    /** Послать клиенту настоящую скорость (абсолютную, блоков/тик) с поправкой на его затухание и ввод WASD. */
+    private static void sendVelocity(Player p, Spacer sp, double[] input) {
+        State st = sp.state;
+        Vec3d v = Inertia.toClient(st.vx, st.vy, st.vz, input, 1);
+        boolean zero = v.lengthSquared() < 1.0e-12;
+        if (zero && sp.sentZero) {
+            return;                                         // клиент и так стоит
+        }
+        sp.sentZero = zero;
+        p.sendPacket(new EntityVelocityPacket(p.getEntityId(), new Vec(v.x(), v.y(), v.z())));
+    }
+
+    /**
+     * Гравитация клиента (атрибут) = g блоков/с² вниз: на земле планеты клиент ходит и падает сам. В воздухе её
+     * перекрывает наша скорость каждый тик. Меняем атрибут, только когда g заметно сдвинулось.
+     */
+    private static void setGravity(Player p, Spacer sp, double g) {
+        double perTick2 = Units.accelToPerTick(Math.min(g, 400));
+        double cur = sp.gravityAttr;
+        if (!Double.isNaN(cur) && Math.abs(perTick2 - cur) <= Math.max(2.5e-4, cur * 0.03)
+            && (perTick2 == 0) == (cur == 0)) {
+            return;
+        }
+        var inst = p.getAttribute(Attribute.GRAVITY);
+        double base = inst.getBaseValue() > 0 ? inst.getBaseValue() : VANILLA_GRAVITY;
+        inst.removeModifier(MODIFIER);
+        inst.addModifier(perTick2 <= 0 ? ZERO
+            : new AttributeModifier(MODIFIER, perTick2 / base - 1, AttributeOperation.ADD_MULTIPLIED_TOTAL));
+        sp.gravityAttr = perTick2;
+    }
+
+    /** physics.speed-readout: скорость в action bar. */
+    private void readout(Player p, Spacer sp, RealPhysics rp) {
+        if (rp.speedReadout() && (ticks + p.getEntityId()) % READOUT_TICKS == 0) {
+            p.sendActionBar(Component.text(String.format(java.util.Locale.ROOT, "%.1f б/с", sp.state.speed()),
+                NamedTextColor.GRAY));
+        }
+    }
+
+    private static Vec3d look(Pos pos) {
+        return Quat.fromYawPitchRoll(pos.yaw(), pos.pitch(), 0).forward();
+    }
+
+    private static boolean finite(State s) {
+        return Double.isFinite(s.vx) && Double.isFinite(s.vy) && Double.isFinite(s.vz);
+    }
+
 
     /** Прибавить импульс к скорости клиента (отдача «пустого» взрыва). */
     private static void push(Player p, Floater.Impulse imp) {
