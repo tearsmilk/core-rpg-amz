@@ -126,8 +126,11 @@ final class HoGravCommand extends Command {
             s.sendMessage(Component.text("Радиус действия меньше горизонта", NamedTextColor.RED));
             return;
         }
-        boolean replaced = m.settings().space().holes(map).stream().anyMatch(h -> h.name().equals(name));
-        BlackHole h = new BlackHole(name, round(pos.x()), round(pos.y() + 0.9), round(pos.z()), hz, r, d.pull(), d.maxSpeed());
+        BlackHole prev = m.settings().space().holes(map).stream().filter(h -> h.name().equals(name)).findFirst().orElse(null);
+        boolean replaced = prev != null;
+        // перенос — вид в небе (disk-*) прежний
+        BlackHole h = new BlackHole(name, round(pos.x()), round(pos.y() + 0.9), round(pos.z()), hz, r, d.pull(), d.maxSpeed(),
+            prev != null ? prev.disk() : HoleDisk.DEFAULT);
         m.setHole(map, name, h, err -> {
             if (err != null) {
                 s.sendMessage(Component.text("Не удалось сохранить config.yml: " + err, NamedTextColor.RED));

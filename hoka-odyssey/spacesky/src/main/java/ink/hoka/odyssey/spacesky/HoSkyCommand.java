@@ -120,6 +120,14 @@ final class HoSkyCommand extends Command {
             }
             s.sendMessage(line.append(Component.text(where, NamedTextColor.GREEN)));
         }
+        List<Holes.Hole> hs = m.holes();
+        if (!hs.isEmpty()) {
+            msg(s, "Чёрные дыры в небе (из gravity, /hograv hole): " + hs.size(), NamedTextColor.AQUA);
+            for (Holes.Hole h : hs) {
+                msg(s, String.format(Locale.ROOT, " %s (карта %s) — %.0f %.0f %.0f, горизонт %.1f", h.name(), h.map(),
+                    h.x(), h.y(), h.z(), h.horizon()), NamedTextColor.GRAY);
+            }
+        }
         msg(s, "/hosky add <имя> <milky_way|nebula|stars> <радиус> [#цвет] — область там, где стоишь", NamedTextColor.DARK_AQUA);
         msg(s, "/hosky remove <имя>, /hosky reload", NamedTextColor.DARK_AQUA);
         msg(s, "/hosky world [on|off <карта>] — тип мира карт (" + SpaceDimension.KEY + " — космос)", NamedTextColor.DARK_AQUA);

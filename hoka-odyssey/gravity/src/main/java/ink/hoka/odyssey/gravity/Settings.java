@@ -132,7 +132,8 @@ record Settings(Set<String> maps, double vThrust, double vMax, double vKeep, dou
                     positive(num(h, "horizon", defs.horizon())),
                     positive(num(h, "reach", defs.reach())),
                     positive(num(h, "pull", defs.pull())),
-                    positive(num(h, "max-speed", defs.maxSpeed()))));
+                    positive(num(h, "max-speed", defs.maxSpeed())),
+                    HoleDisk.read(h)));
             }
             if (!list.isEmpty()) {
                 holes.put(String.valueOf(me.getKey()), List.copyOf(list));

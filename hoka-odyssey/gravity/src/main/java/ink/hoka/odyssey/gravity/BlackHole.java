@@ -11,8 +11,19 @@ package ink.hoka.odyssey.gravity;
  * @param reach    радиус действия, блоков: дальше дыра не притягивает
  * @param pull     ускорение притяжения у края горизонта, блоков/с²
  * @param maxSpeed предел скорости падения в дыру, блоков/с
+ * @param disk     вид в небе (рисует spacesky; на физику не влияет)
  */
-record BlackHole(String name, double x, double y, double z, double horizon, double reach, double pull, double maxSpeed) {
+record BlackHole(String name, double x, double y, double z, double horizon, double reach, double pull, double maxSpeed,
+                 HoleDisk disk) {
+
+    BlackHole {
+        disk = disk == null ? HoleDisk.DEFAULT : disk;
+    }
+
+    /** Вид в небе — по умолчанию. */
+    BlackHole(String name, double x, double y, double z, double horizon, double reach, double pull, double maxSpeed) {
+        this(name, x, y, z, horizon, reach, pull, maxSpeed, HoleDisk.DEFAULT);
+    }
 
     /** Расстояние от точки до центра. */
     double distance(double px, double py, double pz) {

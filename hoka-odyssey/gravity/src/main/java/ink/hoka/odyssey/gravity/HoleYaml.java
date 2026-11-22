@@ -68,7 +68,7 @@ final class HoleYaml {
             for (BlackHole h : e.getValue()) {
                 out.add("    " + quoted(h.name()) + ": {x: " + num(h.x()) + ", y: " + num(h.y()) + ", z: " + num(h.z())
                     + ", horizon: " + num(h.horizon()) + ", reach: " + num(h.reach()) + ", pull: " + num(h.pull())
-                    + ", max-speed: " + num(h.maxSpeed()) + "}");
+                    + ", max-speed: " + num(h.maxSpeed()) + h.disk().yaml() + "}");
             }
         }
         return out;

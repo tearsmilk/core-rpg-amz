@@ -25,13 +25,14 @@ class SpaceSkyFilesTest {
         }
         files.put(Zones.PATH, new byte[0]);
         files.put(SkyMode.PATH, new byte[0]);
+        files.put(Holes.PATH, new byte[0]);
         return files.keySet();
     }
 
     @Test
     void skyShaderAlwaysInPack() throws Exception {
         Map<String, byte[]> m = SpaceSkyModule.collect(RES.resolve(SkyMode.ALWAYS));
-        assertEquals(List.of(CORE + "sky.fsh", CORE + "sky.vsh", SkyMode.PATH, Zones.PATH), List.copyOf(m.keySet()));
+        assertEquals(List.of(CORE + "sky.fsh", CORE + "sky.vsh", Holes.PATH, SkyMode.PATH, Zones.PATH), List.copyOf(m.keySet()));
     }
 
     @Test
@@ -51,9 +52,9 @@ class SpaceSkyFilesTest {
     @Test
     void everywherePackFiles() throws Exception {
         assertEquals(Set.of(CORE + "sky.vsh", CORE + "sky.fsh", CORE + "stars.fsh", CORE + "position_color.vsh",
-            "assets/minecraft/shaders/include/fog.glsl", Zones.PATH, SkyMode.PATH), packFiles(true, false, false, false));
+            "assets/minecraft/shaders/include/fog.glsl", Zones.PATH, SkyMode.PATH, Holes.PATH), packFiles(true, false, false, false));
         Set<String> all = packFiles(true, true, true, true);
-        assertEquals(7 + 1 + 8 + 1, all.size(), all.toString());
+        assertEquals(8 + 1 + 8 + 1, all.size(), all.toString());
         assertTrue(all.contains("assets/minecraft/textures/environment/clouds.png"));
         assertFalse(all.contains(CORE + "position_tex.vsh"));
     }
@@ -61,7 +62,7 @@ class SpaceSkyFilesTest {
     @Test
     void markedPackFiles() throws Exception {
         Set<String> expected = Set.of(CORE + "sky.vsh", CORE + "sky.fsh", CORE + "position_tex.vsh", Zones.PATH,
-            SkyMode.PATH);
+            SkyMode.PATH, Holes.PATH);
         assertEquals(expected, packFiles(false, true, true, true));
         assertEquals(expected, packFiles(false, false, false, false));
     }

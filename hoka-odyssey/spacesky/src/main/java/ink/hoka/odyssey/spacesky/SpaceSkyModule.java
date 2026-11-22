@@ -32,6 +32,9 @@ import net.minestom.server.instance.Weather;
  * <p>Режим ({@code everywhere}, файл spacesky:mode.glsl, см. {@link SkyMode}): космос во всех мирах или только в мирах
  * типа «hoka:space» ({@link SpaceDimension}; модуль регистрирует его до старта сервера, карта выбирает ключом
  * {@code dimension} в map.yml — /hosky world). Сервер в игре ничего не считает — модуль только отдаёт файлы в пак.
+ *
+ * <p>Чёрные дыры ({@link Holes}) — из модуля gravity (softdepends, сервис BlackHoles): файл spacesky:holes.glsl.
+ * После /hograv hole add|remove|reload пак пересобирается сам (с задержкой, и только если дыры изменились).
  */
 public final class SpaceSkyModule extends OdysseyModule {
     private FileSystem jarFs;
@@ -39,6 +42,12 @@ public final class SpaceSkyModule extends OdysseyModule {
     private volatile List<Zones.Zone> zones = List.of();
     /** Имена карт для подсказок /hosky world — читаются с диска в async, не в тике и не при разборе пакета. */
     private volatile SortedSet<String> mapNames = new TreeSet<>();
+    private volatile List<Holes.Hole> holes = List.of();
+    /** Текст spacesky:holes.glsl последней сборки — пересобирать пак, только если он изменился. */
+    private volatile String holesGlsl;
+    /** Отписка от изменений дыр gravity (null — gravity нет). */
+    private Runnable holesUnsubscribe;
+    private boolean holesPending;
 
     @Override
     protected void onLoad() {
@@ -53,6 +62,11 @@ public final class SpaceSkyModule extends OdysseyModule {
             throw new IllegalStateException("не открыть jar модуля — шейдер неба не попадёт в пак");
         }
         registerCommand(new HoSkyCommand(this));
+        try {
+            holesUnsubscribe = GravityHoles.subscribe(services(), this::holesChanged);
+        } catch (LinkageError e) {
+            logger().debug("модуля gravity нет — чёрных дыр в небе не будет");
+        }
         syncPack();
         refreshMapNames();
         // в мирах hoka:space дождь и гроза перекрашивают небо и туман поверх таймлайна — метка теряется,
@@ -84,8 +98,42 @@ public final class SpaceSkyModule extends OdysseyModule {
         }
     }
 
+    /** Дыры gravity могли измениться (вызов в тике): через 2 с перечитать и пересобрать пак, если они другие. */
+    private void holesChanged() {
+        if (holesPending) {
+            return;
+        }
+        holesPending = true;
+        scheduler().later(() -> {
+            holesPending = false;
+            if (!Holes.glsl(readHoles()).equals(holesGlsl)) {
+                syncPack().exceptionally(e -> {
+                    logger().warn("небо с новыми чёрными дырами не собрано: {}", e.toString());
+                    return List.of();
+                });
+            }
+        }, 40);
+    }
+
+    /** Дыры gravity (пусто, если модуля нет). */
+    private List<Holes.Hole> readHoles() {
+        try {
+            return GravityHoles.read(services());
+        } catch (LinkageError | RuntimeException e) {
+            return List.of();
+        }
+    }
+
+    List<Holes.Hole> holes() {
+        return holes;
+    }
+
     @Override
     protected void onDisable() {
+        if (holesUnsubscribe != null) {
+            holesUnsubscribe.run();
+            holesUnsubscribe = null;
+        }
         services().get(ResourcePackApi.class).ifPresent(p -> {
             p.clear(id());
             p.rebuild();
@@ -116,6 +164,14 @@ public final class SpaceSkyModule extends OdysseyModule {
             logger().warn("zones: {}", e);
         }
         zones = List.copyOf(zs);
+        List<Holes.Hole> hs = readHoles();
+        if (hs.size() > Holes.MAX) {
+            logger().warn("чёрных дыр {} — в небе только первые {}", hs.size(), Holes.MAX);
+        }
+        holes = List.copyOf(hs.subList(0, Math.min(hs.size(), Holes.MAX)));
+        String holesText = Holes.glsl(hs);
+        holesGlsl = holesText;
+        byte[] holesBytes = holesText.getBytes(StandardCharsets.UTF_8);
         boolean everywhere = config().getBoolean("everywhere", true);
         boolean sun = config().getBoolean("hide-sun", true);
         boolean moon = config().getBoolean("hide-moon", true);
@@ -137,13 +193,15 @@ public final class SpaceSkyModule extends OdysseyModule {
             }
             files.put(Zones.PATH, zonesGlsl);
             files.put(SkyMode.PATH, modeGlsl);
+            files.put(Holes.PATH, holesBytes);
             scheduler().run(() -> {
                 try {
                     ResourcePackApi pack = services().require(ResourcePackApi.class);
                     pack.clear(id());
                     files.forEach((path, data) -> pack.put(id(), path, data));
-                    logger().info("космическое небо: {}, файлов в паке {}, областей {}",
-                        everywhere ? "во всех мирах" : "только в мирах " + SpaceDimension.KEY, files.size(), zs.size());
+                    logger().info("космическое небо: {}, файлов в паке {}, областей {}, чёрных дыр {}",
+                        everywhere ? "во всех мирах" : "только в мирах " + SpaceDimension.KEY, files.size(), zs.size(),
+                        holes.size());
                     pack.rebuild().whenComplete((v, err) -> {
                         if (err != null) {
                             done.completeExceptionally(err);

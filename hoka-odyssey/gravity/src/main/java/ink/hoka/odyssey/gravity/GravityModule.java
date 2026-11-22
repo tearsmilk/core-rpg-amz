@@ -93,11 +93,14 @@ public final class GravityModule extends OdysseyModule {
     private final AtomicBoolean writing = new AtomicBoolean();
     /** Вакуум отдельным игрокам поверх карт — сервис {@link VacuumService} для других модулей (gravzones). */
     private final VacuumOverrides overrides = new VacuumOverrides(floaters);
+    /** Чёрные дыры для других модулей (spacesky рисует их в небе) — сервис {@link BlackHoles}. */
+    private final BlackHolesService blackHoles = new BlackHolesService(() -> settings, w -> logger().warn(w));
 
     @Override
     protected void onEnable() {
         settings = Settings.from(config());
         services().register(VacuumService.class, overrides);
+        services().register(BlackHoles.class, blackHoles);
         registerCommand(new HoGravCommand(this));
         // PlayerSpawnEvent срабатывает и при входе, и при каждой смене карты (setInstance)
         events().addListener(PlayerSpawnEvent.class, e -> refresh(e.getPlayer(), e.getInstance(), true));
@@ -137,6 +140,7 @@ public final class GravityModule extends OdysseyModule {
         }
         items.clear();
         overrides.clear();
+        blackHoles.clear();
     }
 
     Settings settings() {
@@ -149,6 +153,7 @@ public final class GravityModule extends OdysseyModule {
         settings = Settings.from(config());
         refreshAll();
         loadMapSpawns();
+        blackHoles.changed();
     }
 
     /** Сколько игроков сейчас в вакууме. */
