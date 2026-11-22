@@ -1,7 +1,7 @@
 # Описание модуля. Обязательны id и main.
 id: gravity
 name: Невесомость
-version: 0.2.0
+version: 0.2.1
 main: ink.hoka.odyssey.gravity.GravityModule
 authors: [tearsmilk]
 description: Вакуум на выбранных картах — невесомость, тяга пробел/Shift/WASD с инерцией, дрейф без клавиш, предметы и чёрные дыры

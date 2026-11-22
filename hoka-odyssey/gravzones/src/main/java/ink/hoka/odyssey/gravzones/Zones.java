@@ -19,9 +19,11 @@ final class Zones {
     /** Зона, которая действует в точке: из содержащих её — меньшая по объёму, при равенстве — созданная позже. */
     Zone at(String map, double x, double y, double z) {
         List<Zone> list = byMap.get(map);
-        if (list == null) {
-            return null;
-        }
+        return list == null ? null : at(list, x, y, z);
+    }
+
+    /** То же по списку зон одной карты (снимок из {@link #on(String)} — неизменяемый, его можно держать). */
+    static Zone at(List<Zone> list, double x, double y, double z) {
         Zone best = null;
         for (Zone zn : list) {
             if (zn.contains(x, y, z) && (best == null || zn.beats(best))) {

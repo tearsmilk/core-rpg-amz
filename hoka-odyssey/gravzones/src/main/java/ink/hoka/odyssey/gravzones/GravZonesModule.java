@@ -18,6 +18,7 @@ import net.minestom.server.entity.Player;
 import net.minestom.server.entity.attribute.Attribute;
 import net.minestom.server.entity.attribute.AttributeModifier;
 import net.minestom.server.entity.attribute.AttributeOperation;
+import net.minestom.server.event.entity.EntitySpawnEvent;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.tag.Tag;
@@ -28,6 +29,10 @@ import net.minestom.server.tag.Tag;
  * вакуумной карты). В зоне больше 10 gravity включает игроку вакуум через {@link VacuumService}, а этот модуль
  * подбрасывает его вверх; невесомость держится, пока игрок в зоне, и ещё linger-seconds после выхода.
  * Пересекающиеся зоны: действует меньшая по объёму, при равном объёме — созданная позже.
+ * <p>
+ * Предметы: в зоне 0.1…10 модуль ставит им гравитацию зоны, а модулю gravity через {@link VacuumService.ZoneProvider}
+ * говорит «здесь NORMAL» — на вакуумной карте gravity такой предмет не держит в невесомости, дыры его не тянут и не
+ * поглощают. Вылетел из зоны в вакуум — снова решает gravity.
  */
 public final class GravZonesModule extends OdysseyModule {
     /** id модификаторов атрибутов модуля (свои, не пересекаются с hoka:gravity_vacuum модуля gravity). */
@@ -51,6 +56,10 @@ public final class GravZonesModule extends OdysseyModule {
     private final Map<UUID, PState> states = new HashMap<>();
     private final Map<UUID, Selection> selections = new HashMap<>();
     private AxeListener axe;
+    /** Источник зон для предметов, который отдаём gravity (один объект на включение модуля). */
+    private final VacuumService.ZoneProvider zoneProvider = this::itemZones;
+    /** Сервис gravity, в котором сейчас стоит zoneProvider (после перезагрузки gravity — другой объект). */
+    private VacuumService zoneService;
 
     /** Что модуль сейчас сделал с игроком. */
     static final class PState {
@@ -78,6 +87,15 @@ public final class GravZonesModule extends OdysseyModule {
             states.remove(e.getPlayer().getUuid());
             selections.remove(e.getPlayer().getUuid());
         });
+        // предмет появился в зоне — сразу гравитация зоны (до первого тика физики)
+        events().addListener(EntitySpawnEvent.class, e -> {
+            if (e.getEntity() instanceof ItemEntity item && loaded && settings.items()) {
+                String map = server().mapName(e.getInstance()).orElse(null);
+                Pos pos = item.getPosition();
+                applyItem(item, map == null ? null : zones.at(map, pos.x(), pos.y(), pos.z()));
+            }
+        });
+        registerZoneProvider(vacuum());
         scheduler().repeat(this::tick, 1, 1);
         scheduler().async(() -> {
             List<Zone> list;
@@ -99,6 +117,10 @@ public final class GravZonesModule extends OdysseyModule {
     @Override
     protected void onDisable() {
         VacuumService vs = vacuum();
+        if (zoneService != null) {
+            zoneService.removeZoneProvider(zoneProvider);
+            zoneService = null;
+        }
         for (Player p : MinecraftServer.getConnectionManager().getOnlinePlayers()) {
             PState st = states.get(p.getUuid());
             if (st == null) {
@@ -111,6 +133,10 @@ public final class GravZonesModule extends OdysseyModule {
         }
         states.clear();
         selections.clear();
+        restoreAllItems();
+    }
+
+    private static void restoreAllItems() {
         for (Instance inst : MinecraftServer.getInstanceManager().getInstances()) {
             for (Entity e : inst.getEntities()) {
                 if (e instanceof ItemEntity && e.hasTag(ITEM_BASE)) {
@@ -118,6 +144,35 @@ public final class GravZonesModule extends OdysseyModule {
                 }
             }
         }
+    }
+
+    /** Поставить zoneProvider в сервис gravity, если он там ещё не стоит. */
+    private void registerZoneProvider(VacuumService vs) {
+        if (vs != null && vs != zoneService) {
+            vs.zoneProvider(zoneProvider);
+            zoneService = vs;
+        }
+    }
+
+    /**
+     * Зоны карты для gravity: null — зон нет (или предметы зонами не управляются, items: false). Лямбда — на карту
+     * за проход gravity, сам опрос точки без аллокаций.
+     */
+    private VacuumService.ZoneLookup itemZones(Instance inst) {
+        if (!loaded || !settings.items()) {
+            return null;
+        }
+        String map = server().mapName(inst).orElse(null);
+        List<Zone> list = map == null ? List.of() : zones.on(map);
+        return list.isEmpty() ? null : (x, y, z) -> itemMode(Zones.at(list, x, y, z));
+    }
+
+    /** Режим для предмета в зоне z (null — вне зон). */
+    static VacuumService.Mode itemMode(Zone z) {
+        if (z == null) {
+            return VacuumService.Mode.MAP;
+        }
+        return z.vacuum() ? VacuumService.Mode.VACUUM : VacuumService.Mode.NORMAL;
     }
 
     // ───────────────────────────── доступ для команд/топорика ─────────────────────────────
@@ -165,6 +220,9 @@ public final class GravZonesModule extends OdysseyModule {
         for (PState st : states.values()) {
             st.known = false;                           // пересчитать атрибуты с новыми настройками (без выброса)
         }
+        if (!settings.items()) {
+            restoreAllItems();                          // items: false — вернуть предметам их гравитацию
+        }
     }
 
     /** Сохранить все зоны в zones.json в отдельном потоке. done (в тике) получает null или текст ошибки. */
@@ -200,6 +258,7 @@ public final class GravZonesModule extends OdysseyModule {
         }
         Settings s = settings;
         VacuumService vs = vacuum();
+        registerZoneProvider(vs);                       // gravity перезагрузили отдельно — встать в новый сервис
         for (Player p : MinecraftServer.getConnectionManager().getOnlinePlayers()) {
             PState st = states.computeIfAbsent(p.getUuid(), k -> new PState());
             String map = mapOf(p);
@@ -336,21 +395,29 @@ public final class GravZonesModule extends OdysseyModule {
                     Pos pos = e.getPosition();
                     z = zones.at(map, pos.x(), pos.y(), pos.z());
                 }
-                if (z != null && !z.vacuum()) {
-                    Double base = e.getTag(ITEM_BASE);
-                    if (base == null) {
-                        base = e.getAerodynamics().gravity();
-                        e.setTag(ITEM_BASE, base);
-                    }
-                    double want = base * z.g();
-                    Aerodynamics a = e.getAerodynamics();
-                    if (a.gravity() != want) {
-                        e.setAerodynamics(withGravity(a, want));
-                    }
-                } else if (e.hasTag(ITEM_BASE)) {
-                    restoreItem(e);
-                }
+                applyItem(e, z);
             }
+        }
+    }
+
+    /**
+     * Предмет в зоне z (null — вне зон): в зоне 0.1…10 — гравитация зоны (исходная запоминается тегом), иначе вернуть
+     * исходную. Флаг noGravity не трогаем: им управляет gravity (в зоне NORMAL он его снимает сам).
+     */
+    private static void applyItem(Entity e, Zone z) {
+        if (z != null && !z.vacuum()) {
+            Double base = e.getTag(ITEM_BASE);
+            if (base == null) {
+                base = e.getAerodynamics().gravity();
+                e.setTag(ITEM_BASE, base);
+            }
+            double want = base * z.g();
+            Aerodynamics a = e.getAerodynamics();
+            if (a.gravity() != want) {
+                e.setAerodynamics(withGravity(a, want));
+            }
+        } else if (e.hasTag(ITEM_BASE)) {
+            restoreItem(e);
         }
     }
 

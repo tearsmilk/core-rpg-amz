@@ -56,7 +56,9 @@ import net.minestom.server.utils.WeightedList;
  * <p>
  * Чёрные дыры (black-holes в config.yml): игрока без нажатых клавиш вакуум сносит к ближайшей дыре (или по
  * drift.direction, если дыр рядом нет) теми же толчками. Предметы (ItemEntity) на картах с вакуумом — без
- * гравитации и почти без затухания, плывут по инерции, падают в дыры и исчезают за горизонтом.
+ * гравитации и почти без затухания, плывут по инерции, падают в дыры и исчезают за горизонтом. Кроме предметов в
+ * зонах с обычной гравитацией (источник зон — {@link VacuumService.ZoneProvider}, его ставит gravzones): их gravity
+ * отпускает, дыры их не тянут и не поглощают, а гравитацию зоны ставит владелец зон.
  */
 public final class GravityModule extends OdysseyModule {
     /** id модификаторов атрибутов модуля — по нему же снимаем. */
@@ -108,7 +110,11 @@ public final class GravityModule extends OdysseyModule {
         // набрать скорость падения)
         events().addListener(EntitySpawnEvent.class, e -> {
             if (e.getEntity() instanceof ItemEntity item && settings.space().items() && inVacuum(e.getInstance())) {
-                capture(item);
+                Pos pos = item.getPosition();
+                if (VacuumService.itemInVacuum(true,
+                    VacuumOverrides.modeAt(overrides.zones(e.getInstance()), pos.x(), pos.y(), pos.z()))) {
+                    capture(item);
+                }
             }
         });
         scheduler().repeat(this::tick, 1, 1);
@@ -401,7 +407,10 @@ public final class GravityModule extends OdysseyModule {
         return true;
     }
 
-    /** Предметы: на картах с вакуумом — без гравитации, к дырам; вне вакуума — вернуть как было. */
+    /**
+     * Предметы: на картах с вакуумом — без гравитации, к дырам; вне вакуума и в зонах с обычной гравитацией — вернуть
+     * как было (дыры их не тянут и не поглощают).
+     */
     private void tickItems(Settings s) {
         Settings.Space sp = s.space();
         for (Iterator<Map.Entry<ItemEntity, ItemState>> it = items.entrySet().iterator(); it.hasNext(); ) {
@@ -422,14 +431,23 @@ public final class GravityModule extends OdysseyModule {
                 continue;
             }
             List<BlackHole> holes = sp.holes(mapOf(instance).orElse(""));
+            VacuumService.ZoneLookup zones = overrides.zones(instance);   // раз на карту, не на предмет
             List<ItemEntity> absorbed = new ArrayList<>();
             List<ItemEntity> lost = new ArrayList<>();
             for (Entity en : instance.getEntities()) {
                 if (!(en instanceof ItemEntity item) || item.isRemoved()) {
                     continue;
                 }
-                ItemState st = capture(item);
                 Pos pos = item.getPosition();
+                if (zones != null && !VacuumService.itemInVacuum(true,
+                    VacuumOverrides.modeAt(zones, pos.x(), pos.y(), pos.z()))) {
+                    ItemState was = items.remove(item);       // залетел в зону с обычной гравитацией — отпустить
+                    if (was != null) {
+                        restore(item, was);
+                    }
+                    continue;
+                }
+                ItemState st = capture(item);
                 double cy = pos.y() + ITEM_CENTER;
                 BlackHole h = Gravitation.nearest(holes, pos.x(), cy, pos.z());
                 if (h != null && h.distance(pos.x(), cy, pos.z()) <= h.horizon()) {
@@ -505,9 +523,18 @@ public final class GravityModule extends OdysseyModule {
         if (item.isRemoved()) {
             return;
         }
-        item.setAerodynamics(st.original);
+        item.setAerodynamics(released(item.getAerodynamics(), st.original));
         item.setSynchronizationTicks(st.originalSync);
         item.setNoGravity(false);
+    }
+
+    /**
+     * Аэродинамика предмета, которого вакуум отпускает: прежнее затухание, но гравитация — текущая. Сам gravity её
+     * не меняет (выключает флагом noGravity), а gravzones мог поменять, пока предмет был в вакууме (вернуть исходную
+     * при вылете из зоны), — старое значение из момента захвата затёрло бы его правку.
+     */
+    static Aerodynamics released(Aerodynamics current, Aerodynamics original) {
+        return new Aerodynamics(current.gravity(), original.horizontalAirResistance(), original.verticalAirResistance());
     }
 
     /** Предмет в вакууме: прежняя аэродинамика и тик последнего пересчёта скорости. */

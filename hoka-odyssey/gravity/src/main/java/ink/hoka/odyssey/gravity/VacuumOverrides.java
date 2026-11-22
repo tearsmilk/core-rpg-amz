@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Player;
+import net.minestom.server.instance.Instance;
 import net.minestom.server.network.packet.server.play.ExplosionPacket;
 import net.minestom.server.particle.Particle;
 import net.minestom.server.sound.SoundEvent;
@@ -16,6 +17,8 @@ final class VacuumOverrides implements VacuumService {
     private final Map<UUID, Mode> modes = new ConcurrentHashMap<>();
     /** Игроки, которых gravity держит в вакууме (та же карта, что в GravityModule). */
     private final Map<UUID, Floater> floaters;
+    /** Источник зон для предметов (gravzones) или null. */
+    private volatile ZoneProvider zoneProvider;
 
     VacuumOverrides(Map<UUID, Floater> floaters) {
         this.floaters = floaters;
@@ -51,6 +54,38 @@ final class VacuumOverrides implements VacuumService {
             new Vec(vx, vy, vz), Particle.BUBBLE, SoundEvent.INTENTIONALLY_EMPTY, WeightedList.of()));
     }
 
+    @Override
+    public synchronized void zoneProvider(ZoneProvider provider) {
+        zoneProvider = provider;
+    }
+
+    @Override
+    public synchronized void removeZoneProvider(ZoneProvider provider) {
+        if (zoneProvider == provider) {
+            zoneProvider = null;
+        }
+    }
+
+    /** Текущий источник зон (null — нет). */
+    ZoneProvider zoneProvider() {
+        return zoneProvider;
+    }
+
+    /** Зоны карты для предметов; null — зон нет или источника нет. */
+    ZoneLookup zones(Instance instance) {
+        ZoneProvider zp = zoneProvider;
+        return zp == null || instance == null ? null : zp.zones(instance);
+    }
+
+    /** Режим зоны в точке (MAP, если зон нет). */
+    static Mode modeAt(ZoneLookup zones, double x, double y, double z) {
+        if (zones == null) {
+            return Mode.MAP;
+        }
+        Mode m = zones.modeAt(x, y, z);
+        return m == null ? Mode.MAP : m;
+    }
+
     /** Решение для игрока: true/false — задано сервисом, null — решает карта. */
     Boolean decide(Player p) {
         Mode m = modes.get(p.getUuid());
@@ -63,5 +98,6 @@ final class VacuumOverrides implements VacuumService {
 
     void clear() {
         modes.clear();
+        zoneProvider = null;
     }
 }
