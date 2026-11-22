@@ -21,21 +21,39 @@ import java.util.Set;
  * @param fields         поле карты: тела + дыры этой карты; карты без тел и дыр — {@link Field#EMPTY}
  * @param thrust         ускорение ранца, блоки/с² (0 — ранца нет)
  * @param deltaV         запас Δv ранца, блоки/с (бесконечность — без ограничения)
+ * @param maxSpeed       предел скорости игрока (сервер для обычного клиента; мод spaceflight получает его в op 2),
+ *                       блоки/с (0 — без предела)
+ * @param stabilizer     стабилизатор: без клавиш скорость гаснет с этим замедлением, блоки/с² (0 — выкл.)
+ * @param brake          тормоз (бег/Ctrl без клавиш у обычного клиента), блоки/с² (0 — выкл.)
  * @param pushOff        скорость толчка от блока (пробел у стены/пола), блоки/с (0 — нельзя)
  * @param restitution    упругость удара о блок (0 — не отскакивает, 1 — как мячик)
  * @param friction       трение в момент удара (доля «съеденной» касательной скорости на единицу Δv)
  * @param impactThreshold удар слабее этого |Δv по нормали| не ранит, блоки/с
  * @param impactDamage   урон за каждый блок/с сверх порога (0 — без урона)
  * @param antiCheat      проверка скорости игроков с модом spaceflight
+ * @param teleportFactor возврат назад, только если путь за пакет больше допустимого в столько раз (0 — никогда);
+ *                       меньшее превышение — запись в лог и ограничение скорости
  * @param surfaceWalk    запас проверки у поверхности (ходьба по стенам и потолку в «магнитных ботинках»), блоки/с
  * @param speedReadout   показывать скорость в action bar
  * @param warnings       ошибки в разделе bodies (для лога)
  */
 record RealPhysics(Set<String> legacyMaps, Map<String, List<Body>> bodies, Map<String, Field> fields, double thrust,
-                   double deltaV, double pushOff, double restitution, double friction, double impactThreshold,
-                   double impactDamage, boolean antiCheat, double surfaceWalk, boolean speedReadout, List<String> warnings) {
+                   double deltaV, double maxSpeed, double stabilizer, double brake, double pushOff, double restitution,
+                   double friction, double impactThreshold, double impactDamage, boolean antiCheat,
+                   double teleportFactor, double surfaceWalk, boolean speedReadout, List<String> warnings) {
 
     static final String KEY = "bodies";
+    /** Версия config.yml (ключ config-version): с версии 2 — новые значения ранца по умолчанию. */
+    static final int CONFIG_VERSION = 2;
+    /** Значения по умолчанию. */
+    static final double THRUST = 0.8;
+    static final double MAX_SPEED = 20;
+    static final double STABILIZER = 1.5;
+    static final double BRAKE = 3.0;
+    static final double TELEPORT_FACTOR = 3.0;
+    /** Прежние значения по умолчанию (config.yml без config-version): такие считаем «не менял» и берём новые. */
+    static final double OLD_THRUST = 2.0;
+    static final double OLD_DELTA_V = 60;
 
     /** Карта с настоящей физикой (а не старым поведением). */
     boolean real(String map) {
@@ -50,19 +68,37 @@ record RealPhysics(Set<String> legacyMaps, Map<String, List<Body>> bodies, Map<S
     static RealPhysics from(ModuleConfig c, Map<String, List<BlackHole>> holes) {
         List<String> warnings = new ArrayList<>();
         Map<String, List<Body>> bodies = bodies(c.get(KEY), warnings);
-        double dv = c.getDouble("physics.thrust.delta-v", 60);
+        double thrust = c.getDouble("physics.thrust.acceleration", THRUST);
+        double dv = c.getDouble("physics.thrust.delta-v", 0);
+        if (c.getInt("config-version", 1) < CONFIG_VERSION) {
+            // config.yml от старой версии: значения, совпадающие со старыми умолчаниями, — на новые
+            if (thrust == OLD_THRUST) {
+                thrust = THRUST;
+                warnings.add("старый config.yml: physics.thrust.acceleration 2.0 → " + THRUST
+                    + " (новое значение по умолчанию; допишите config-version: " + CONFIG_VERSION
+                    + ", чтобы оставить своё)");
+            }
+            if (dv == OLD_DELTA_V) {
+                dv = 0;
+                warnings.add("старый config.yml: physics.thrust.delta-v 60 → 0 (без ограничения)");
+            }
+        }
         return new RealPhysics(
             Collections.unmodifiableSet(new LinkedHashSet<>(c.getStringList("physics.legacy-maps"))),
             bodies,
             fields(bodies, holes),
-            positive(c.getDouble("physics.thrust.acceleration", 2.0)),
+            positive(thrust),
             dv > 0 && Double.isFinite(dv) ? dv : Double.POSITIVE_INFINITY,
+            positive(c.getDouble("physics.thrust.max-speed", MAX_SPEED)),
+            positive(c.getDouble("physics.thrust.stabilizer", STABILIZER)),
+            positive(c.getDouble("physics.thrust.brake", BRAKE)),
             positive(c.getDouble("physics.push-off", 2.5)),
             Math.min(1, positive(c.getDouble("physics.impact.restitution", 0.2))),
             positive(c.getDouble("physics.impact.friction", 0.3)),
             positive(c.getDouble("physics.impact.threshold", 8.0)),
             positive(c.getDouble("physics.impact.damage", 1.0)),
             c.getBoolean("physics.anti-cheat", true),
+            positive(c.getDouble("physics.anti-cheat-teleport", TELEPORT_FACTOR)),
             Math.min(50, positive(c.getDouble("physics.surface-walk", 8.0))),
             c.getBoolean("physics.speed-readout", false),
             List.copyOf(warnings));

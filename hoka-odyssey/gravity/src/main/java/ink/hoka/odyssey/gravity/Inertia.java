@@ -109,10 +109,25 @@ final class Inertia {
         /** Запас скорости на неточность и толчки, блоки/с. */
         static final double SLACK = 3.0;
 
+        /** Грубое нарушение — не меньше этого пути сверх допуска, блоки (чтобы не ловить мелочь). */
+        static final double GROSS_MIN = 1.0;
+
+        /** Что делать с пакетом движения. */
+        enum Verdict {
+            /** Допустимо. */
+            OK,
+            /** Быстрее физики, но не намного: пропустить, записать в лог и ограничить скорость. */
+            OVER,
+            /** Грубо быстрее (больше допуска в teleportFactor раз): вернуть назад. */
+            GROSS
+        }
+
         /** Наибольшая скорость, которую ещё допускаем, блоки/с. */
         double speed;
         /** Накопленный допустимый путь, блоки. */
         double credit;
+        /** Допустимая скорость прошлого тика (speed + запасы), блоки/с. */
+        double allowed;
 
         /**
          * Тик сервера.
@@ -121,7 +136,7 @@ final class Inertia {
          * @param push  скорость толчка от блока, блоки/с
          */
         void tick(double accel, double push) {
-            double allowed = speed + SLACK + push;
+            allowed = speed + SLACK + push;
             credit = Math.min(credit + allowed / Settings.TPS, allowed * BURST / Settings.TPS + 1);
             speed += accel / Settings.TPS;
         }
@@ -136,6 +151,21 @@ final class Inertia {
                 return true;
             }
             return false;
+        }
+
+        /**
+         * Пакет движения на dist блоков: OK (путь списан), OVER или GROSS. При превышении запас обнуляется, а
+         * пакет считается пропущенным (возврат назад — только при GROSS).
+         *
+         * @param teleportFactor во сколько раз путь должен превысить допустимый, чтобы вернуть назад (0 — никогда)
+         */
+        Verdict check(double dist, double teleportFactor) {
+            if (accept(dist)) {
+                return Verdict.OK;
+            }
+            double limit = Math.max(credit, allowed / Settings.TPS);
+            credit = 0;
+            return teleportFactor > 0 && dist > teleportFactor * limit + GROSS_MIN ? Verdict.GROSS : Verdict.OVER;
         }
 
         /** Замеренная скорость (блоки/с): допустимая подтягивается к ней (и вниз — медленно, чтобы не ловить лаги). */

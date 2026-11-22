@@ -24,7 +24,9 @@ import org.slf4j.Logger;
  * <ul>
  *   <li>op 1 — тела карты: u8 op, i32 count, затем на тело f64 x, f64 y, f64 z, f64 mu, f64 radius, f64 softening.
  *       radius &gt; 0 — шар (снаружи μ/r², внутри однородный шар), radius = 0 — Пламмер со смягчением softening;</li>
- *   <li>op 2 — физика игрока вкл/выкл: u8 op, u8 on (1 — клиент считает вакуум сам, 0 — не считает);</li>
+ *   <li>op 2 — физика игрока вкл/выкл: u8 op, u8 on (1 — клиент считает вакуум сам, 0 — не считает); при on = 1
+ *       дальше пределы сервера: f64 thrust (ускорение ранца, б/с²), f64 maxSpeed (предел скорости, б/с; 0 — нет).
+ *       Клиент берёт меньшее из своих настроек и этих; старый клиент лишние байты не читает;</li>
  *   <li>op 3 — поворот тела другого игрока: u8 op, i32 entityId, f32 w, x, y, z (кватернион взгляда в соглашении
  *       FreeLook/spacephys), u8 flags (бит 0 — лёжа, бит 1 — поворот действует);</li>
  *   <li>op 4 — поворот тела другого игрока больше не действует: u8 op, i32 entityId (вышел из вакуума, ушёл).</li>
@@ -34,7 +36,9 @@ import org.slf4j.Logger;
  *   <li>op 3 — свой поворот: u8 op, f32 w, x, y, z, u8 flags (как в S2C op 3, без entityId); ~10 раз в секунду
  *       и только при изменении;</li>
  *   <li>op 5 — возможности клиента: u8 op, u8 caps (бит 0 — умеет сам поворачивать тела игроков, тогда
- *       запасную позу «полёта» ему не шлём).</li>
+ *       запасную позу «полёта» ему не шлём);</li>
+ *   <li>op 6 — «модуль (пере)загружен»: u8 op. Сервер заново шлёт тела и «физика вкл.» (после /hoclient reload
+ *       новый экземпляр модуля ничего не знает, а сервер мог не заметить перезагрузки).</li>
  * </ul>
  * Скорость и позицию клиента — только по обычным пакетам движения.
  */
@@ -45,6 +49,7 @@ final class SpaceflightLink {
     static final int OP_ORIENT = 3;
     static final int OP_ORIENT_STOP = 4;
     static final int OP_CAPS = 5;
+    static final int OP_HELLO = 6;
     /** Флаги поворота: лёжа (тело вдоль взгляда) и «поворот действует». */
     static final int FLAG_PRONE = 1;
     static final int FLAG_ACTIVE = 2;
@@ -132,6 +137,25 @@ final class SpaceflightLink {
 
     void sendPhysics(Player p, boolean on) {
         send(p, new byte[] {OP_PHYSICS, (byte) (on ? 1 : 0)});
+    }
+
+    /** «Физика вкл.» с пределами сервера (ранец, скорость). */
+    void sendPhysicsOn(Player p, double thrust, double maxSpeed) {
+        send(p, physicsOn(thrust, maxSpeed));
+    }
+
+    /** Пакет op 2 «вкл.» с пределами: u8 op, u8 1, f64 thrust, f64 maxSpeed. */
+    static byte[] physicsOn(double thrust, double maxSpeed) {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream(18);
+        try (DataOutputStream out = new DataOutputStream(bytes)) {
+            out.writeByte(OP_PHYSICS);
+            out.writeByte(1);
+            out.writeDouble(thrust);
+            out.writeDouble(maxSpeed);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+        return bytes.toByteArray();
     }
 
     void sendOrientation(Player viewer, int entityId, Orientation o) {

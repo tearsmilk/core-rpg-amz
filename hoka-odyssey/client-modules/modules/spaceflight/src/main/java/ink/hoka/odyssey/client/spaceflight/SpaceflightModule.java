@@ -9,7 +9,9 @@ import ink.hoka.odyssey.spacephys.Field;
 import ink.hoka.odyssey.spacephys.Integrator;
 import ink.hoka.odyssey.spacephys.Quat;
 import ink.hoka.odyssey.spacephys.State;
+import ink.hoka.odyssey.spacephys.Thrust;
 import ink.hoka.odyssey.spacephys.Units;
+import ink.hoka.odyssey.spacephys.VanillaMotion;
 import ink.hoka.odyssey.spacephys.Vec3d;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.KeyMapping;
@@ -37,7 +39,8 @@ import java.util.List;
  *   <li>инерция: ни сопротивления, ни «ванильной» гравитации 0,08 — скорость меняют только тяготение тел (1/r²,
  *       общая библиотека spacephys), тяга ранца и удары о блоки;</li>
  *   <li>тяга: W/S, A/D, пробел/shift — вдоль осей взгляда (вперёд, вбок, вверх головы), без «горизонта»;
- *       стоя на блоке — шаг и прыжок с отталкиванием от поверхности;</li>
+ *       стоя на блоке — шаг и прыжок с отталкиванием от поверхности (только по новому нажатию пробела);</li>
+ *   <li>стабилизатор: без клавиш скорость плавно гаснет (stabilizer), X — тормоз (brake);</li>
  *   <li>свободная камера: ориентация — кватернион, мышь вращает в своих осях, крен — клавиши (Z/C по умолчанию),
  *       петля через верх проходит без упора в ±90°. Поворот игрока (прицел, ломание блоков) следует за взглядом;</li>
  *   <li>«магнитные ботинки»: Shift у любого блока (пол, стена, потолок) прижимает к нему — по нему можно ходить,
@@ -48,14 +51,21 @@ import java.util.List;
  * Вне вакуума камера плавно возвращается «в горизонт» и дальше не трогается; всё восстанавливается при выключении.
  *
  * <p>Протокол (big-endian). Сервер → клиент: op 1 — тела: u8 op, i32 count, на тело f64 x, y, z, mu, radius,
- * softening; op 2 — физика: u8 op, u8 on; op 3 — поворот тела другого игрока: u8 op, i32 entityId, f32 w, x, y, z,
+ * softening; op 2 — физика: u8 op, u8 on [, f64 thrust, f64 maxSpeed — пределы сервера]; op 3 — поворот тела другого игрока: u8 op, i32 entityId, f32 w, x, y, z,
  * u8 flags (бит 0 — лёжа, бит 1 — действует); op 4 — поворот больше не действует: u8 op, i32 entityId.
  * Клиент → сервер: op 3 — свой поворот: u8 op, f32 w, x, y, z (кватернион взгляда FreeLook), u8 flags;
- * op 5 — возможности: u8 op, u8 caps (бит 0 — умеем рисовать повёрнутые тела).
+ * op 5 — возможности: u8 op, u8 caps (бит 0 — умеем рисовать повёрнутые тела); op 6 — «модуль загружен»: u8 op
+ * (сервер заново шлёт тела и «физика вкл.» — после /hoclient reload).
+ *
+ * <p>Скорость модуль ведёт сам ({@link VanillaMotion#reconcile}): от vanilla берётся только удар о блок и толчки
+ * сервера. Иначе vanilla добавлял бы свой ввод WASD и обнулял слабую тягу (меньше 0,003 блока/тик).
  */
 public final class SpaceflightModule implements ClientModule {
     static final int OP_BODIES = 1;
     static final int OP_PHYSICS = 2;
+    static final int OP_HELLO = 6;
+    /** Сдвиг за тик больше ожидаемого на столько блоков — телепорт (сервер вернул назад, /tp): скорость — от vanilla. */
+    private static final double TELEPORT_JUMP = 1.0;
     static final int MAX_BODIES = 4096;
     private static final int BODY_BYTES = 6 * 8;
     /** Касание блока: зазор между рамкой игрока и блоком меньше этого, блоки. */
@@ -72,9 +82,15 @@ public final class SpaceflightModule implements ClientModule {
     private FlightConfig cfg;
     private InputConstants.Key rollLeftKey;
     private InputConstants.Key rollRightKey;
+    private InputConstants.Key brakeKey;
 
     private volatile Field field = Field.EMPTY;
     private volatile boolean serverOn;
+    /** Пределы сервера из op 2: тяга (б/с², &lt;0 — не прислал) и скорость (б/с, 0 — нет предела). */
+    private volatile double serverThrust = -1;
+    private volatile double serverMaxSpeed;
+    /** «Модуль загружен» серверу уже сказали (на этом подключении). */
+    private boolean helloSent;
 
     private final FreeLook look = new FreeLook();
     /** Камера под управлением модуля: в вакууме и пока она возвращается «в горизонт» после него. */
@@ -87,6 +103,9 @@ public final class SpaceflightModule implements ClientModule {
     private boolean savedDiscardFriction;
     private boolean jumpHeld;
     private final State state = new State();
+    /** Скорость, поставленная игроку в прошлый тик, блоки/тик, и позиция после неё (null — первый тик). */
+    private Vec3 lastSet;
+    private Vec3 lastPos;
 
     /** Нормаль поверхности, к которой сейчас прижимают ботинки (null — не прижимают). */
     private Vec3d gripNormal;
@@ -109,6 +128,7 @@ public final class SpaceflightModule implements ClientModule {
         cfg = FlightConfig.load(ctx.dataDir(), ctx.logger());
         rollLeftKey = key(cfg.rollLeft, "key.keyboard.z");
         rollRightKey = key(cfg.rollRight, "key.keyboard.c");
+        brakeKey = key(cfg.brakeKey, "key.keyboard.x");
         bodies = new BodyPoses(ctx, new BodyPoses.Self() {
             @Override public Quat look() { return active ? look.orientation() : null; }
 
@@ -119,7 +139,9 @@ public final class SpaceflightModule implements ClientModule {
         ctx.onMouse(this::onMouse);
         ctx.onCamera(this::onCamera);
         bodies.install();
-        ctx.logger().info("spaceflight: загружен (тяга {} б/с², крен {}/{})", cfg.thrust, cfg.rollLeft, cfg.rollRight);
+        ctx.logger().info("spaceflight: загружен (тяга {} б/с², предел {} б/с, стабилизатор {} б/с², тормоз {} — {}, "
+                + "крен {}/{})", cfg.thrust, cfg.maxSpeed, cfg.stabilizer, cfg.brake, cfg.brakeKey, cfg.rollLeft,
+                cfg.rollRight);
     }
 
     @Override
@@ -153,7 +175,16 @@ public final class SpaceflightModule implements ClientModule {
                 }
                 case OP_PHYSICS -> {
                     if (data.length < 2) return;
-                    serverOn = in.readUnsignedByte() != 0;
+                    boolean on = in.readUnsignedByte() != 0;
+                    if (on && data.length >= 18) {                 // пределы сервера (новая версия gravity)
+                        double t = in.readDouble(), m = in.readDouble();
+                        serverThrust = Double.isFinite(t) && t >= 0 ? t : -1;
+                        serverMaxSpeed = Double.isFinite(m) && m > 0 ? m : 0;
+                    } else if (on) {
+                        serverThrust = -1;                         // старый сервер — свои настройки
+                        serverMaxSpeed = 0;
+                    }
+                    serverOn = on;
                 }
                 case BodyPoses.OP_ORIENT -> bodies.readOrientation(in, data.length - 1);
                 case BodyPoses.OP_ORIENT_STOP -> bodies.readStop(in, data.length - 1);
@@ -197,6 +228,12 @@ public final class SpaceflightModule implements ClientModule {
             field = Field.EMPTY;
             bodies.clear();
             sentFlags = -1;
+            helloSent = false;
+        } else if (!helloSent && p != null) {
+            // модуль (пере)загрузился: пусть сервер заново пришлёт тела и «физика вкл.» (после /hoclient reload
+            // новый экземпляр модуля ничего не знает; старый сервер op 6 просто не читает)
+            helloSent = true;
+            send(new byte[] {OP_HELLO});
         }
         if (ticks % 20 == 0) bodies.prune();
         if (active && p != bound) deactivate();                    // смена мира / возрождение — новый объект игрока
@@ -225,6 +262,8 @@ public final class SpaceflightModule implements ClientModule {
         proneAmount = 0;
         gripNormal = null;
         gripCooldown = 0;
+        lastSet = null;                                            // первый тик — скорость как есть у vanilla
+        lastPos = null;
     }
 
     private void deactivate() {
@@ -267,10 +306,22 @@ public final class SpaceflightModule implements ClientModule {
         }
         sprintHeld = sprint;
 
-        // база — скорость после vanilla move: удары о блоки (обнулённые оси) и толчки сервера уже в ней
+        // база — своя скорость прошлого тика; от vanilla move берём только удар о блок (ось обнулилась) и толчки
+        // сервера (заметно больше ввода клавиш). Ввод WASD vanilla и обнуление мелочи (< 0,003 блока/тик) — нет:
+        // иначе ввод был бы «бесплатной» тягой до 10 б/с², а слабая тяга из покоя не разгоняла бы вовсе.
         Vec3 d = p.getDeltaMovement();
+        Vec3 pos = p.position();
+        Vec3d base;
+        if (lastSet == null || lastPos == null
+                || pos.subtract(lastPos).subtract(lastSet).length() > TELEPORT_JUMP) {
+            base = new Vec3d(d.x, d.y, d.z);                       // первый тик или телепорт — как есть
+        } else {
+            base = VanillaMotion.reconcile(new Vec3d(lastSet.x, lastSet.y, lastSet.z), new Vec3d(d.x, d.y, d.z),
+                    p.horizontalCollision, p.verticalCollision);
+        }
         state.set(p.getX(), p.getY() + p.getBbHeight() * 0.5, p.getZ(),
-                Units.fromPerTick(d.x), Units.fromPerTick(d.y), Units.fromPerTick(d.z));
+                Units.fromPerTick(base.x()), Units.fromPerTick(base.y()), Units.fromPerTick(base.z()));
+        boolean brake = input && physical(mc, brakeKey);
 
         Quat q = look.orientation();
         // магнитные ботинки: Shift у блока — прижаться к поверхности, «под ногами» у которой верх камеры
@@ -279,18 +330,30 @@ public final class SpaceflightModule implements ClientModule {
         boolean gripping = gripNormal != null;
         double ax = 0, ay = 0, az = 0;
         boolean grounded = p.onGround();
-        if (!gripping && !grounded && (fwd != 0 || side != 0 || vert != 0)) {
+        boolean keys = fwd != 0 || side != 0 || vert != 0;
+        if (!gripping && !grounded && brake) {
+            Vec3d a = Thrust.damp(state.velocity(), cfg.brake, Units.TICK);   // тормоз — поверх ранца
+            ax = a.x();
+            ay = a.y();
+            az = a.z();
+        } else if (!gripping && !grounded && keys) {
             Vec3d f = q.forward(), r = q.right(), u = q.up();
             double tx = f.x() * fwd + r.x() * side + u.x() * vert;
             double ty = f.y() * fwd + r.y() * side + u.y() * vert;
             double tz = f.z() * fwd + r.z() * side + u.z() * vert;
             double len = Math.sqrt(tx * tx + ty * ty + tz * tz);
             if (len > 1e-9) {
-                double k = cfg.thrust / Math.max(1, len);
+                double k = thrust() / Math.max(1, len);
                 ax = tx * k;
                 ay = ty * k;
                 az = tz * k;
             }
+        } else if (!gripping && !grounded) {
+            // без клавиш — стабилизатор: гасит скорость относительно тел (они неподвижны — просто скорость)
+            Vec3d a = Thrust.damp(state.velocity(), cfg.stabilizer, Units.TICK);
+            ax = a.x();
+            ay = a.y();
+            az = a.z();
         }
         Integrator.DEFAULT.kick(field, state, Units.TICK, ax, ay, az);
 
@@ -313,15 +376,23 @@ public final class SpaceflightModule implements ClientModule {
         }
         jumpHeld = jump;
 
-        double sp = state.speed();
-        if (sp > cfg.maxSpeed) {
-            double k = cfg.maxSpeed / sp;
-            state.vx *= k;
-            state.vy *= k;
-            state.vz *= k;
-        }
-        p.setDeltaMovement(Units.toPerTick(state.vx), Units.toPerTick(state.vy), Units.toPerTick(state.vz));
+        Vec3d capped = Thrust.capSpeed(state.velocity(), maxSpeed());
+        lastSet = new Vec3(Units.toPerTick(capped.x()), Units.toPerTick(capped.y()), Units.toPerTick(capped.z()));
+        lastPos = pos;
+        p.setDeltaMovement(lastSet);
         p.resetFallDistance();
+    }
+
+    /** Тяга ранца: своя настройка, но не больше серверной (если сервер прислал). */
+    private double thrust() {
+        double t = serverThrust;
+        return t >= 0 ? Math.min(cfg.thrust, t) : cfg.thrust;
+    }
+
+    /** Предел скорости: свой, но не больше серверного. */
+    private double maxSpeed() {
+        double m = serverMaxSpeed;
+        return m > 0 ? Math.min(cfg.maxSpeed, m) : cfg.maxSpeed;
     }
 
     /**

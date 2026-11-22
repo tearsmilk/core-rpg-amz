@@ -80,7 +80,10 @@ import net.minestom.server.utils.WeightedList;
  * (планета) двигается клиент сам — ему ставится гравитация, равная полю под ногами. Игроку с клиентским модулем
  * spaceflight сервер импульсов не шлёт, только тела карты ({@link SpaceflightLink}), и лишь проверяет скорость
  * (у блоков — с запасом physics.surface-walk: с модом можно ходить по стенам и потолку). Поворот тела такого
- * игрока сервер раздаёт другим игрокам ({@link BodyRelay}).
+ * игрока сервер раздаёт другим игрокам ({@link BodyRelay}). Скорость игрока никогда не ведут сервер и клиент
+ * одновременно: пропал модуль у клиента — сначала «физика выкл.», потом скорость от сервера.
+ * <p>
+ * /hogm ({@link HoGmCommand}) — выживание ↔ креатив для операторов; вакуум остаётся, урона в креативе нет.
  */
 public final class GravityModule extends OdysseyModule {
     /** id модификаторов атрибутов модуля — по нему же снимаем. */
@@ -106,7 +109,15 @@ public final class GravityModule extends OdysseyModule {
     /** Удары чаще, чем раз в столько тиков, — одно столкновение (урон один раз). */
     private static final int IMPACT_COOLDOWN = 10;
     /** Касание блоков у игроков с модом (запас проверки скорости) — раз в столько тиков. */
-    private static final int SURFACE_CHECK = 4;
+    private static final int SURFACE_CHECK = 2;
+    /** Проба касания для запаса проверки скорости, блоков: шире, чем у клиента (позиция сервера отстаёт). */
+    private static final double SURFACE_PROBE = 0.35;
+    /** Нарушения проверки скорости — в лог не чаще, чем раз в столько тиков на игрока. */
+    private static final int VIOLATION_LOG_TICKS = 100;
+    /** Ограничение скорости при нарушении — не чаще, чем раз в столько тиков (не «драться» с клиентом). */
+    private static final int CLAMP_TICKS = 10;
+    /** Удар медленнее этого (по нормали, блоки/с) — без отскока: иначе упор в стену дрожит отскоками. */
+    private static final double REST_SPEED = 1.0;
     /** Сколько тиков после касания ещё действует запас (оттолкнулся и отлетел). */
     private static final int SURFACE_HOLD = 20;
     /** Скорость в action bar — раз в столько тиков. */
@@ -146,10 +157,11 @@ public final class GravityModule extends OdysseyModule {
         physics = loadPhysics();
         link = new SpaceflightLink(this, logger());
         bodyRelay = new BodyRelay(link);
-        link.resolve(p -> spaceflightReady.add(p.getUuid()), bodyRelay::receive);
+        link.resolve(p -> spaceflightReady.add(p.getUuid()), this::clientMessage);
         services().register(VacuumService.class, overrides);
         services().register(BlackHoles.class, blackHoles);
         registerCommand(new HoGravCommand(this));
+        registerCommand(new HoGmCommand(this));
         // PlayerSpawnEvent срабатывает и при входе, и при каждой смене карты (setInstance)
         events().addListener(PlayerSpawnEvent.class, e -> refresh(e.getPlayer(), e.getInstance(), true));
         events().addListener(PlayerDisconnectEvent.class, e -> {
@@ -249,6 +261,37 @@ public final class GravityModule extends OdysseyModule {
     @SuppressWarnings({"unchecked", "rawtypes"})
     Object service(Class<?> type) {
         return services().get((Class) type).orElse(null);
+    }
+
+    /**
+     * Сообщение клиентского модуля spaceflight (поток clientmods: только разобрать и запомнить). op 6 — модуль у
+     * клиента (пере)загрузился: в ближайшем тике заново тела и «физика вкл.»; остальное — повороты тел.
+     */
+    private void clientMessage(Player p, byte[] data) {
+        if (p != null && data != null && data.length > 0 && (data[0] & 0xFF) == SpaceflightLink.OP_HELLO) {
+            spaceflightReady.add(p.getUuid());
+            return;
+        }
+        bodyRelay.receive(p, data);
+    }
+
+    /**
+     * Сменили режим игры (/hogm): скорость с нуля — иначе скорость креативного полёта (до ~11 б/с) осталась бы
+     * в вакууме и унесла бы игрока; клиенту с модом заново «физика вкл.» (проверка скорости — с чистого листа).
+     */
+    void resetMotion(Player p) {
+        Spacer sp = spacers.get(p.getUuid());
+        if (sp != null) {
+            sp.reset();
+            sp.clientOn = false;
+        }
+        Floater f = floaters.get(p.getUuid());
+        if (f != null) {
+            f.reset();
+        }
+        if (floaters.containsKey(p.getUuid())) {
+            p.sendPacket(new EntityVelocityPacket(p.getEntityId(), Vec.ZERO));
+        }
     }
 
     /** Выполнить в тике сервера. */
@@ -456,7 +499,7 @@ public final class GravityModule extends OdysseyModule {
         RealPhysics rp = physics;
         ticks++;
         if (ticks % 100 == 0) {
-            link.resolve(p -> spaceflightReady.add(p.getUuid()), bodyRelay::receive);   // clientmods могли перезагрузить
+            link.resolve(p -> spaceflightReady.add(p.getUuid()), this::clientMessage);   // clientmods могли перезагрузить
         }
         for (Player p : MinecraftServer.getConnectionManager().getOnlinePlayers()) {
             Instance instance = p.getInstance();
@@ -752,7 +795,13 @@ public final class GravityModule extends OdysseyModule {
             tickModded(p, sp, field, rp, m);
             return;
         }
-        sp.clientOn = false;
+        if (sp.clientOn) {
+            // модуль у клиента пропал (clientmods перезагрузили, /hoclient reload), а «физика вкл.» у него могла
+            // остаться: дальше скорость ведёт сервер — клиенту сначала «выкл.», иначе вели бы оба и игрока швыряло
+            link.sendPhysics(p, false);
+            sp.clientOn = false;
+            st.setVelocity(m[0], m[1], m[2]);
+        }
         Vec3d a = field.acceleration(st.x, st.y, st.z);
         setGravity(p, sp, flying ? 0 : Math.max(0, -a.y()));
         PlayerInputs in = p.inputs();
@@ -806,17 +855,22 @@ public final class GravityModule extends OdysseyModule {
             }
         }
         Vec3d thrust = Vec3d.ZERO;
-        if (rp.thrust() > 0) {
-            if (fwd != 0 || strafe != 0 || up != 0) {
+        if (fwd != 0 || strafe != 0 || up != 0) {
+            if (rp.thrust() > 0) {
                 thrust = sp.pack.accelerate(fwd, -strafe, up, q.forward(), q.right(), UP, Units.TICK);
-            } else if (in.sprint()) {
-                thrust = sp.pack.stabilize(st.velocity(), Units.TICK);   // бег без клавиш — гасить скорость
             }
+        } else {
+            // без клавиш: бег (Ctrl) — тормоз, иначе стабилизатор (тела карты неподвижны: относительно опорного
+            // тела — это просто скорость); топливо не тратят
+            thrust = Thrust.damp(st.velocity(), in.sprint() ? Math.max(rp.brake(), rp.stabilizer()) : rp.stabilizer(),
+                Units.TICK);
         }
         Integrator.DEFAULT.kick(field, st, Units.TICK, thrust.x(), thrust.y(), thrust.z());
         if (!s.space().horizonSpawn()) {
             holdAtHorizon(st, s.space().holes(map));
         }
+        Vec3d capped = Thrust.capSpeed(st.velocity(), rp.maxSpeed());
+        st.setVelocity(capped.x(), capped.y(), capped.z());
         collide(p, sp, instance, pos, rp);
         if (!finite(st)) {
             st.setVelocity(0, 0, 0);
@@ -829,7 +883,7 @@ public final class GravityModule extends OdysseyModule {
     private void tickModded(Player p, Spacer sp, Field field, RealPhysics rp, double[] m) {
         if (!sp.clientOn) {
             link.sendBodies(p, field.bodies());
-            link.sendPhysics(p, true);
+            link.sendPhysicsOn(p, rp.thrust(), rp.maxSpeed());
             sp.clientOn = true;
             double v = Math.sqrt(m[0] * m[0] + m[1] * m[1] + m[2] * m[2]);
             sp.guard.reset(v);
@@ -841,11 +895,10 @@ public final class GravityModule extends OdysseyModule {
         // у блока клиент может ходить по стене/потолку и отталкиваться — шаг и прыжок не ускорение ранца
         if ((ticks + p.getEntityId()) % SURFACE_CHECK == 0) {
             Instance instance = p.getInstance();
-            boolean touching = instance != null && contactNormal(instance, p, p.getPosition()).lengthSquared() > 0;
+            boolean touching = instance != null && touching(instance, p, p.getPosition());
             sp.surfaceTicks = touching ? SURFACE_HOLD : Math.max(0, sp.surfaceTicks - SURFACE_CHECK);
         }
-        double surface = sp.surfaceTicks > 0 ? rp.surfaceWalk() : 0;
-        sp.guard.tick(field.acceleration(sp.state.x, sp.state.y, sp.state.z).length() + rp.thrust(), rp.pushOff() + surface);
+        sp.guard.tick(field.acceleration(sp.state.x, sp.state.y, sp.state.z).length() + rp.thrust(), allowance(sp, rp));
         readout(p, sp, rp);
     }
 
@@ -864,12 +917,25 @@ public final class GravityModule extends OdysseyModule {
         Pos from = p.getPosition();
         Pos to = e.getNewPosition();
         double d = from.distance(to);
-        if (rp.antiCheat() && !sp.guard.accept(d)) {
-            e.setCancelled(true);
-            p.teleport(from, Vec.ZERO);
-            sp.guard.reset(sp.guard.speed);
-            sp.lastMoveSpeed = 0;
-            return;
+        if (rp.antiCheat() && d > sp.guard.credit && sp.surfaceTicks == 0 && p.getInstance() != null
+            && (touching(p.getInstance(), p, from) || touching(p.getInstance(), p, to))) {
+            // у блока (шаг по стене, прыжок от неё) — запас surface-walk сразу, а не с проверки раз в пару тиков
+            sp.surfaceTicks = SURFACE_HOLD;
+            sp.guard.credit += (rp.surfaceWalk() + rp.pushOff()) * Inertia.MoveGuard.BURST / Settings.TPS;
+            sp.guard.speed = Math.max(sp.guard.speed, d * Settings.TPS);
+        }
+        if (rp.antiCheat()) {
+            Inertia.MoveGuard.Verdict verdict = sp.guard.check(d, rp.teleportFactor());
+            if (verdict != Inertia.MoveGuard.Verdict.OK) {
+                violation(p, sp, rp, from, to, d, verdict);
+                if (verdict == Inertia.MoveGuard.Verdict.GROSS) {
+                    e.setCancelled(true);
+                    p.teleport(from, Vec.ZERO);
+                    sp.guard.reset(sp.guard.speed);
+                    sp.lastMoveSpeed = 0;
+                    return;
+                }
+            }
         }
         double v = d * Settings.TPS;                       // пакет — один тик клиента
         double drop = sp.lastMoveSpeed - v;
@@ -877,6 +943,44 @@ public final class GravityModule extends OdysseyModule {
         if (drop > rp.impactThreshold() && rp.impactDamage() > 0 && p.getInstance() != null
             && contactNormal(p.getInstance(), p, to).lengthSquared() > 0) {
             impact(p, sp, drop, rp);
+        }
+    }
+
+    /** Запас проверки скорости сверх физики сейчас: толчок от блока и (у блоков) ходьба по стенам, блоки/с. */
+    private static double allowance(Spacer sp, RealPhysics rp) {
+        return rp.pushOff() + (sp.surfaceTicks > 0 ? rp.surfaceWalk() : 0);
+    }
+
+    /** Касается ли игрок блоков (для запаса проверки скорости; проба шире, чем у толчка). */
+    private static boolean touching(Instance instance, Player p, Pos pos) {
+        return contactNormal(instance, p, pos, SURFACE_PROBE).lengthSquared() > 0;
+    }
+
+    /**
+     * Игрок с модом сдвинулся быстрее, чем позволяет физика. Мягко: запись в лог (не чаще раза в 5 с) и, при OVER,
+     * ограничение скорости до допустимой (не чаще раза в {@link #CLAMP_TICKS} тиков). Назад — только GROSS.
+     */
+    private void violation(Player p, Spacer sp, RealPhysics rp, Pos from, Pos to, double d,
+                           Inertia.MoveGuard.Verdict verdict) {
+        sp.violations++;
+        double allowed = sp.guard.allowed;
+        if (ticks - sp.lastViolationLog >= VIOLATION_LOG_TICKS) {
+            logger().info("gravity: {} движется быстрее физики ({}): {} блоков за пакет, допустимо ~{} б/с; "
+                    + "нарушений: {}", p.getUsername(), verdict == Inertia.MoveGuard.Verdict.GROSS ? "назад" : "лог",
+                String.format(java.util.Locale.ROOT, "%.2f", d), String.format(java.util.Locale.ROOT, "%.1f", allowed),
+                sp.violations);
+            sp.lastViolationLog = ticks;
+            sp.violations = 0;
+        }
+        if (verdict == Inertia.MoveGuard.Verdict.OVER && ticks - sp.lastClamp >= CLAMP_TICKS && d > 0) {
+            sp.lastClamp = ticks;
+            double speed = Math.min(d * Settings.TPS, allowed);       // блоки/с, по направлению сдвига
+            if (rp.maxSpeed() > 0) {
+                speed = Math.min(speed, rp.maxSpeed());
+            }
+            double k = speed / Settings.TPS / d;                     // → блоки/тик
+            p.sendPacket(new EntityVelocityPacket(p.getEntityId(),
+                new Vec((to.x() - from.x()) * k, (to.y() - from.y()) * k, (to.z() - from.z()) * k)));
         }
     }
 
@@ -917,20 +1021,17 @@ public final class GravityModule extends OdysseyModule {
         double dvn = 0;
         Vec3d v = st.velocity();
         if (r.collisionX()) {
-            Contact.Result c = Contact.collide(v, new Vec3d(-Math.signum(delta.x()), 0, 0), rp.restitution(),
-                rp.friction());
+            Contact.Result c = hit(v, new Vec3d(-Math.signum(delta.x()), 0, 0), rp);
             v = c.velocity();
             dvn = Math.max(dvn, c.deltaVNormal());
         }
         if (r.collisionY()) {
-            Contact.Result c = Contact.collide(v, new Vec3d(0, -Math.signum(delta.y()), 0), rp.restitution(),
-                rp.friction());
+            Contact.Result c = hit(v, new Vec3d(0, -Math.signum(delta.y()), 0), rp);
             v = c.velocity();
             dvn = Math.max(dvn, c.deltaVNormal());
         }
         if (r.collisionZ()) {
-            Contact.Result c = Contact.collide(v, new Vec3d(0, 0, -Math.signum(delta.z())), rp.restitution(),
-                rp.friction());
+            Contact.Result c = hit(v, new Vec3d(0, 0, -Math.signum(delta.z())), rp);
             v = c.velocity();
             dvn = Math.max(dvn, c.deltaVNormal());
         }
@@ -938,14 +1039,27 @@ public final class GravityModule extends OdysseyModule {
         impact(p, sp, dvn, rp);
     }
 
+    /**
+     * Удар по одной оси. Медленный удар (упор: ранец или притяжение давят в стену) — без отскока: иначе каждый тик
+     * маленький отскок, тяга обратно, снова отскок — игрока трясёт у стены и уводит вбок трением.
+     */
+    static Contact.Result hit(Vec3d v, Vec3d normal, RealPhysics rp) {
+        double vn = -v.dot(normal);
+        return Contact.collide(v, normal, vn < REST_SPEED ? 0 : rp.restitution(), rp.friction());
+    }
+
     /** Нормаль от блоков, которых игрок касается (сумма по шести сторонам); ZERO — рядом блоков нет. */
     private static Vec3d contactNormal(Instance instance, Player p, Pos pos) {
+        return contactNormal(instance, p, pos, PROBE);
+    }
+
+    private static Vec3d contactNormal(Instance instance, Player p, Pos pos, double probe) {
         double nx = 0;
         double ny = 0;
         double nz = 0;
         for (int axis = 0; axis < 3; axis++) {
             for (int sign = -1; sign <= 1; sign += 2) {
-                Vec d = new Vec(axis == 0 ? sign * PROBE : 0, axis == 1 ? sign * PROBE : 0, axis == 2 ? sign * PROBE : 0);
+                Vec d = new Vec(axis == 0 ? sign * probe : 0, axis == 1 ? sign * probe : 0, axis == 2 ? sign * probe : 0);
                 PhysicsResult r = sweep(instance, p, pos, d);
                 if (r == null) {
                     continue;

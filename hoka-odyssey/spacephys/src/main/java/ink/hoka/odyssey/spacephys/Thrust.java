@@ -128,6 +128,34 @@ public final class Thrust {
     }
 
     /**
+     * Стабилизатор/тормоз без расхода топлива: ускорение против скорости относительно опорного тела, не больше
+     * accel и не перелетая через ноль (за тик снимает не больше |v|).
+     *
+     * @param relativeVelocity скорость относительно тела (тела карты неподвижны — это просто скорость), блоки/с
+     * @param accel            наибольшее замедление, блоки/с² (0 — выключено)
+     * @return ускорение, блоки/с² (ZERO — стоим или accel ≤ 0)
+     */
+    public static Vec3d damp(Vec3d relativeVelocity, double accel, double dt) {
+        double v = relativeVelocity.length();
+        if (v == 0 || !(accel > 0) || !(dt > 0) || !Double.isFinite(v)) {
+            return Vec3d.ZERO;
+        }
+        double a = Math.min(accel, v / dt);
+        return relativeVelocity.scale(-a / v);
+    }
+
+    /**
+     * Ограничить скорость: длиннее max — укоротить до max (направление то же). max ≤ 0 или не число — без предела.
+     */
+    public static Vec3d capSpeed(Vec3d velocity, double max) {
+        double v = velocity.length();
+        if (!(max > 0) || !(v > max)) {
+            return velocity;
+        }
+        return velocity.scale(max / v);
+    }
+
+    /**
      * Обычное управление за тик: есть ввод — тяга по вводу; ввода нет и SAS включён — {@link #stabilize}.
      */
     public Vec3d control(double forward, double right, double up, Quat orientation,

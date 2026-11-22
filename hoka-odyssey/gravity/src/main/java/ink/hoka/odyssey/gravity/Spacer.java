@@ -39,6 +39,10 @@ final class Spacer {
     int surfaceTicks;
     /** Прошлая замеренная скорость по пакетам движения (для удара у игроков с модом), блоки/с. */
     double lastMoveSpeed;
+    /** Проверка скорости: нарушений с последней записи в лог, тик записи и тик последнего ограничения скорости. */
+    int violations;
+    long lastViolationLog = Long.MIN_VALUE / 2;
+    long lastClamp = Long.MIN_VALUE / 2;
 
     private double lastX;
     private double lastY;

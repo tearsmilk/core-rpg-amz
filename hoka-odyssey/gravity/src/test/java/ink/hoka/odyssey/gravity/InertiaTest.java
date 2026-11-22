@@ -155,4 +155,31 @@ class InertiaTest {
         g.tick(0, 0);
         assertFalse(g.accept(30), "прыжок на 30 блоков за тик — назад");
     }
+
+    @Test
+    void moveGuardIsLenient() {
+        Inertia.MoveGuard g = new Inertia.MoveGuard();
+        g.reset(5);
+        g.tick(0, 0);                                       // допустимо 5 + 3 = 8 б/с → 0,4 блока за тик
+        assertEquals(Inertia.MoveGuard.Verdict.OK, g.check(0.4, 3));
+        g.tick(0, 0);
+        // чуть быстрее (например, тяга клиента больше серверной) — только лог и ограничение скорости
+        assertEquals(Inertia.MoveGuard.Verdict.OVER, g.check(0.8, 3));
+        g.tick(0, 0);
+        // грубо: больше 3× допустимого и хотя бы на блок — назад
+        assertEquals(Inertia.MoveGuard.Verdict.GROSS, g.check(3 * 0.4 + 1.5, 3));
+        g.tick(0, 0);
+        assertEquals(Inertia.MoveGuard.Verdict.OVER, g.check(10, 0), "0 — никогда не возвращать");
+    }
+
+    @Test
+    void serverThrustUnitsForVanillaClient() {
+        // 0,8 б/с² за секунду (20 тиков) — 0,8 б/с, клиенту уходит 0,04 блока/тик
+        State st = new State();
+        for (int t = 0; t < Settings.TPS; t++) {
+            Integrator.DEFAULT.kick(Field.EMPTY, st, Units.TICK, 0.8, 0, 0);
+        }
+        assertEquals(0.8, st.vx, 1e-12);
+        assertEquals(0.04, Inertia.toClient(st.vx, 0, 0, null, 1).x(), 1e-12);
+    }
 }

@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ink.hoka.odyssey.api.ModuleConfig;
 import ink.hoka.odyssey.spacephys.Body;
 import ink.hoka.odyssey.spacephys.Field;
+import ink.hoka.odyssey.spacephys.Vec3d;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -124,12 +125,68 @@ class RealPhysicsTest {
         RealPhysics rp = load(dir, "maps: [galaxy1]\n");
         assertTrue(rp.bodies().isEmpty());
         assertTrue(rp.field("galaxy1").isEmpty());
-        assertEquals(2.0, rp.thrust());
-        assertEquals(60, rp.deltaV());
+        assertEquals(0.8, rp.thrust());
+        assertEquals(Double.POSITIVE_INFINITY, rp.deltaV());
+        assertEquals(20, rp.maxSpeed());
+        assertEquals(1.5, rp.stabilizer());
+        assertEquals(3.0, rp.brake());
         assertEquals(2.5, rp.pushOff());
         assertEquals(8.0, rp.impactThreshold());
         assertTrue(rp.antiCheat());
+        assertEquals(3.0, rp.teleportFactor());
         assertFalse(rp.speedReadout());
+    }
+
+    @Test
+    void oldConfigWithOldDefaultsGetsNewDefaults(@TempDir Path dir) throws IOException {
+        // config.yml от старой версии модуля (нет config-version): 2.0 и 60 — прежние умолчания → новые
+        RealPhysics rp = load(dir, """
+            physics:
+              thrust: {acceleration: 2.0, delta-v: 60}
+            """);
+        assertEquals(0.8, rp.thrust());
+        assertEquals(Double.POSITIVE_INFINITY, rp.deltaV());
+        assertEquals(20, rp.maxSpeed());
+        assertEquals(2, rp.warnings().size(), rp.warnings().toString());
+        // своё значение в старом файле — как есть
+        RealPhysics own = load(dir, """
+            physics:
+              thrust: {acceleration: 1.2, delta-v: 30}
+            """);
+        assertEquals(1.2, own.thrust());
+        assertEquals(30, own.deltaV());
+        // новая версия файла — как есть, даже 2.0
+        RealPhysics v2 = load(dir, """
+            config-version: 2
+            physics:
+              thrust: {acceleration: 2.0, delta-v: 60, max-speed: 0, stabilizer: 0}
+            """);
+        assertEquals(2.0, v2.thrust());
+        assertEquals(60, v2.deltaV());
+        assertEquals(0, v2.maxSpeed());
+        assertEquals(0, v2.stabilizer());
+        assertTrue(v2.warnings().isEmpty());
+    }
+
+    @Test
+    void physicsOnPacketCarriesLimits() throws IOException {
+        byte[] data = SpaceflightLink.physicsOn(0.8, 20);
+        assertEquals(18, data.length);
+        DataInputStream in = new DataInputStream(new ByteArrayInputStream(data));
+        assertEquals(SpaceflightLink.OP_PHYSICS, in.readUnsignedByte());
+        assertEquals(1, in.readUnsignedByte());
+        assertEquals(0.8, in.readDouble());
+        assertEquals(20, in.readDouble());
+    }
+
+    @Test
+    void slowContactDoesNotBounce(@TempDir Path dir) throws IOException {
+        RealPhysics rp = load(dir, "physics: {impact: {restitution: 0.5, friction: 0}}\n");
+        Vec3d wall = new Vec3d(-1, 0, 0);                                  // стена со стороны +x
+        Vec3d slow = GravityModule.hit(new Vec3d(0.5, 0, 0), wall, rp).velocity();
+        assertEquals(0, slow.x(), 1e-12, "упор ранцем в стену — без отскока");
+        Vec3d fast = GravityModule.hit(new Vec3d(10, 0, 0), wall, rp).velocity();
+        assertEquals(-5, fast.x(), 1e-12, "настоящий удар — отскок");
     }
 
     @Test
@@ -143,6 +200,12 @@ class RealPhysicsTest {
                 assertTrue(rp.warnings().isEmpty(), rp.warnings().toString());
                 assertTrue(rp.real("galaxy1"));
                 assertEquals(1, rp.field("galaxy1").bodies().size());          // только дыра abyss
+                assertEquals(0.8, rp.thrust());
+                assertEquals(Double.POSITIVE_INFINITY, rp.deltaV());
+                assertEquals(20, rp.maxSpeed());
+                assertEquals(1.5, rp.stabilizer());
+                assertEquals(3.0, rp.brake());
+                assertEquals(3.0, rp.teleportFactor());
             } finally {
                 Files.deleteIfExists(tmp);
             }
