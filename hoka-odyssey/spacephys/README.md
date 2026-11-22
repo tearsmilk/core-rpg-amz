@@ -70,7 +70,7 @@ tasks.jar { from(project(":spacephys").the<SourceSetContainer>()["main"].output)
 сами окажутся в jar модуля:
 
 ```kotlin
-sourceSets.main { java.srcDir("../../spacephys/src/main/java") }   // путь — от каталога модуля
+sourceSets.main { java.srcDir("../../../spacephys/src/main/java") }   // путь — от client-modules/modules/<id>
 ```
 
 При вшивании в несколько модулей одного процесса конфликтов нет: у каждого модуля свой класслоадер.
