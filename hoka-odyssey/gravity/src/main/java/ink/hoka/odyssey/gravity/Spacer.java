@@ -35,6 +35,8 @@ final class Spacer {
     /** Значение атрибута гравитации, которое сейчас стоит игроку, блоков/тик². */
     double gravityAttr = Double.NaN;
     final Inertia.MoveGuard guard = new Inertia.MoveGuard();
+    /** Тиков, пока действует запас проверки скорости у блоков (ходьба по стенам с модом). */
+    int surfaceTicks;
     /** Прошлая замеренная скорость по пакетам движения (для удара у игроков с модом), блоки/с. */
     double lastMoveSpeed;
 
@@ -62,6 +64,7 @@ final class Spacer {
         sentZero = false;
         guard.reset(0);
         lastMoveSpeed = 0;
+        surfaceTicks = 0;
         pack.refill();
     }
 

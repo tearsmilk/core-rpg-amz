@@ -66,6 +66,25 @@ final class FreeLook {
         roll = (float) Math.toDegrees(r);
     }
 
+    /**
+     * Выровнять крен по поверхности: повернуть вокруг оси взгляда так, чтобы верх камеры смотрел как можно ближе
+     * к нормали n (доля t ∈ [0; 1] от нужного угла). Тангаж не трогается — мышь по-прежнему двигает взгляд
+     * относительно экрана. Если смотришь почти прямо на поверхность или от неё, крен не определён — ничего.
+     */
+    void alignRoll(Vec3d n, double t) {
+        if (t <= 0) return;
+        Vec3d f = q.forward();
+        Vec3d u = q.up();
+        Vec3d np = n.sub(f.scale(f.dot(n)));
+        double len = np.length();
+        if (len < 0.2) return;
+        np = np.scale(1 / len);
+        double ang = Math.atan2(f.dot(u.cross(np)), clamp(u.dot(np), -1, 1));
+        if (Math.abs(ang) < 1e-5) return;
+        double k = t * Math.min(1, (len - 0.2) / 0.3);         // у вырожденного случая — мягко
+        q = Quat.axisAngle(f, ang * k).mul(q).normalize();
+    }
+
     /** Плавно повернуть к ориентации target: доля t ∈ [0; 1]. @return угол до цели после шага (радианы) */
     double approach(Quat target, double t) {
         q = slerp(q, target, t);

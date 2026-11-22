@@ -32,6 +32,16 @@ final class FlightConfig {
             max_speed = 120
             # Скорость возврата камеры «в горизонт» после выхода из вакуума, доля за секунду
             upright_rate = 4.0
+
+            # «Магнитные ботинки»: Shift у блока (пол, стена, потолок — любой) прижимает к нему, по нему можно ходить
+            # (W/A/S/D вдоль поверхности, пробел — оттолкнуться). Без Shift — обычная невесомость.
+            # Сила прижима, блоки/с²
+            grip_press = 20
+            # Отлетаешь от блока быстрее этого (блоки/с) — ботинки не удерживают
+            grip_break_speed = 4.0
+            # Как быстро камера выравнивается по поверхности (стена/потолок становится «полом»), доля за секунду;
+            # 0 — не выравнивать
+            surface_align_rate = 2.0
             """;
 
     double thrust = 2.0;
@@ -43,6 +53,9 @@ final class FlightConfig {
     double jumpSpeed = 5.0;
     double maxSpeed = 120;
     double uprightRate = 4.0;
+    double gripPress = 20;
+    double gripBreakSpeed = 4.0;
+    double surfaceAlignRate = 2.0;
 
     static FlightConfig load(Path dir, Logger log) {
         FlightConfig c = new FlightConfig();
@@ -65,6 +78,9 @@ final class FlightConfig {
             c.jumpSpeed = num(p, "jump_speed", c.jumpSpeed, 0, 30);
             c.maxSpeed = num(p, "max_speed", c.maxSpeed, 1, 1000);
             c.uprightRate = num(p, "upright_rate", c.uprightRate, 0.1, 50);
+            c.gripPress = num(p, "grip_press", c.gripPress, 0, 200);
+            c.gripBreakSpeed = num(p, "grip_break_speed", c.gripBreakSpeed, 0, 30);
+            c.surfaceAlignRate = num(p, "surface_align_rate", c.surfaceAlignRate, 0, 50);
         } catch (IOException | RuntimeException e) {
             log.warn("spaceflight: не удалось прочитать {} — значения по умолчанию ({})", file, e.toString());
         }

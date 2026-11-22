@@ -27,12 +27,13 @@ import java.util.Set;
  * @param impactThreshold удар слабее этого |Δv по нормали| не ранит, блоки/с
  * @param impactDamage   урон за каждый блок/с сверх порога (0 — без урона)
  * @param antiCheat      проверка скорости игроков с модом spaceflight
+ * @param surfaceWalk    запас проверки у поверхности (ходьба по стенам и потолку в «магнитных ботинках»), блоки/с
  * @param speedReadout   показывать скорость в action bar
  * @param warnings       ошибки в разделе bodies (для лога)
  */
 record RealPhysics(Set<String> legacyMaps, Map<String, List<Body>> bodies, Map<String, Field> fields, double thrust,
                    double deltaV, double pushOff, double restitution, double friction, double impactThreshold,
-                   double impactDamage, boolean antiCheat, boolean speedReadout, List<String> warnings) {
+                   double impactDamage, boolean antiCheat, double surfaceWalk, boolean speedReadout, List<String> warnings) {
 
     static final String KEY = "bodies";
 
@@ -62,6 +63,7 @@ record RealPhysics(Set<String> legacyMaps, Map<String, List<Body>> bodies, Map<S
             positive(c.getDouble("physics.impact.threshold", 8.0)),
             positive(c.getDouble("physics.impact.damage", 1.0)),
             c.getBoolean("physics.anti-cheat", true),
+            Math.min(50, positive(c.getDouble("physics.surface-walk", 8.0))),
             c.getBoolean("physics.speed-readout", false),
             List.copyOf(warnings));
     }

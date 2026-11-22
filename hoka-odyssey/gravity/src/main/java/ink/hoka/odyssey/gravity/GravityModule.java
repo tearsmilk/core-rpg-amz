@@ -78,7 +78,9 @@ import net.minestom.server.utils.WeightedList;
  * от блоков, урон от сильного удара, ранец WASD/пробел/Shift. Сервер ведёт настоящую скорость игрока и каждый тик
  * шлёт её клиенту пакетом EntityVelocity (с поправкой на затухание и ввод клиента, см. {@link Inertia}); на земле
  * (планета) двигается клиент сам — ему ставится гравитация, равная полю под ногами. Игроку с клиентским модулем
- * spaceflight сервер импульсов не шлёт, только тела карты ({@link SpaceflightLink}), и лишь проверяет скорость.
+ * spaceflight сервер импульсов не шлёт, только тела карты ({@link SpaceflightLink}), и лишь проверяет скорость
+ * (у блоков — с запасом physics.surface-walk: с модом можно ходить по стенам и потолку). Поворот тела такого
+ * игрока сервер раздаёт другим игрокам ({@link BodyRelay}).
  */
 public final class GravityModule extends OdysseyModule {
     /** id модификаторов атрибутов модуля — по нему же снимаем. */
@@ -103,6 +105,10 @@ public final class GravityModule extends OdysseyModule {
     private static final double PROBE = 0.15;
     /** Удары чаще, чем раз в столько тиков, — одно столкновение (урон один раз). */
     private static final int IMPACT_COOLDOWN = 10;
+    /** Касание блоков у игроков с модом (запас проверки скорости) — раз в столько тиков. */
+    private static final int SURFACE_CHECK = 4;
+    /** Сколько тиков после касания ещё действует запас (оттолкнулся и отлетел). */
+    private static final int SURFACE_HOLD = 20;
     /** Скорость в action bar — раз в столько тиков. */
     private static final int READOUT_TICKS = 10;
     /** Гравитация игрока по умолчанию в Minecraft, блоков/тик². */
@@ -128,6 +134,8 @@ public final class GravityModule extends OdysseyModule {
     /** У кого только что загрузился клиентский модуль spaceflight (проверить в ближайшем тике). */
     private final Set<UUID> spaceflightReady = ConcurrentHashMap.newKeySet();
     private SpaceflightLink link;
+    /** Повороты тел игроков с модом — другим игрокам ({@link BodyRelay}). */
+    private BodyRelay bodyRelay;
     private final VacuumOverrides overrides = new VacuumOverrides(floaters, spacers);
     /** Чёрные дыры для других модулей (spacesky рисует их в небе) — сервис {@link BlackHoles}. */
     private final BlackHolesService blackHoles = new BlackHolesService(() -> settings, w -> logger().warn(w));
@@ -137,7 +145,8 @@ public final class GravityModule extends OdysseyModule {
         settings = Settings.from(config());
         physics = loadPhysics();
         link = new SpaceflightLink(this, logger());
-        link.resolve(p -> spaceflightReady.add(p.getUuid()));
+        bodyRelay = new BodyRelay(link);
+        link.resolve(p -> spaceflightReady.add(p.getUuid()), bodyRelay::receive);
         services().register(VacuumService.class, overrides);
         services().register(BlackHoles.class, blackHoles);
         registerCommand(new HoGravCommand(this));
@@ -149,6 +158,7 @@ public final class GravityModule extends OdysseyModule {
             spaceflightReady.remove(e.getPlayer().getUuid());
             spawnCooldown.remove(e.getPlayer().getUuid());
             overrides.forget(e.getPlayer().getUuid());
+            bodyRelay.forget(e.getPlayer().getUuid());
         });
         // предмет появился на карте с вакуумом — сразу без гравитации (до первого тика физики, иначе он успеет
         // набрать скорость падения)
@@ -182,6 +192,9 @@ public final class GravityModule extends OdysseyModule {
             if (sp != null && sp.clientOn) {
                 link.sendPhysics(p, false);                // клиентский модуль перестаёт считать вакуум
             }
+        }
+        if (bodyRelay != null) {
+            bodyRelay.close();                             // зрителям — обычный вид игроков
         }
         if (link != null) {
             link.close();
@@ -443,7 +456,7 @@ public final class GravityModule extends OdysseyModule {
         RealPhysics rp = physics;
         ticks++;
         if (ticks % 100 == 0) {
-            link.resolve(p -> spaceflightReady.add(p.getUuid()));   // clientmods могли перезагрузить
+            link.resolve(p -> spaceflightReady.add(p.getUuid()), bodyRelay::receive);   // clientmods могли перезагрузить
         }
         for (Player p : MinecraftServer.getConnectionManager().getOnlinePlayers()) {
             Instance instance = p.getInstance();
@@ -483,6 +496,10 @@ public final class GravityModule extends OdysseyModule {
         if (ticks % s.space().itemTicks() == 0) {
             tickItems(s);
         }
+        bodyRelay.tick(p -> {
+            Spacer sp = spacers.get(p.getUuid());
+            return sp != null && sp.modded && sp.clientOn;
+        });
     }
 
     private static Gravitation.Force playerDrift(Settings.Space sp, List<BlackHole> holes, Pos pos) {
@@ -821,7 +838,14 @@ public final class GravityModule extends OdysseyModule {
         setGravity(p, sp, 0);                              // vanilla-гравитацию клиента не включаем — считает мод
         sp.state.setVelocity(m[0], m[1], m[2]);
         sp.guard.measured(sp.lastStep() * Settings.TPS);
-        sp.guard.tick(field.acceleration(sp.state.x, sp.state.y, sp.state.z).length() + rp.thrust(), rp.pushOff());
+        // у блока клиент может ходить по стене/потолку и отталкиваться — шаг и прыжок не ускорение ранца
+        if ((ticks + p.getEntityId()) % SURFACE_CHECK == 0) {
+            Instance instance = p.getInstance();
+            boolean touching = instance != null && contactNormal(instance, p, p.getPosition()).lengthSquared() > 0;
+            sp.surfaceTicks = touching ? SURFACE_HOLD : Math.max(0, sp.surfaceTicks - SURFACE_CHECK);
+        }
+        double surface = sp.surfaceTicks > 0 ? rp.surfaceWalk() : 0;
+        sp.guard.tick(field.acceleration(sp.state.x, sp.state.y, sp.state.z).length() + rp.thrust(), rp.pushOff() + surface);
         readout(p, sp, rp);
     }
 
