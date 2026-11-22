@@ -6,7 +6,9 @@
 // - Клиент рисует статический буфер ванильных звёзд: ~780 квадов по 4 вершины подряд (gl_VertexID / 4 — номер
 //   частицы, % 4 — угол квада). Ванильные позиции не нужны: каждый квад ставится заново.
 // - Профиль — по МЕТКЕ в цвете тумана (Fog и Globals — «общие» uniform клиента, их можно объявить в любом шейдере).
-//   Без метки: SPACESKY_EVERYWHERE 1 — ничего (звёзды уже в sky.fsh), 0 — ванильная звезда без изменений.
+//   Без метки: SPACESKY_EVERYWHERE 1 — профиль space (на ядре без патча все карты — overworld: модуль добавляет его
+//   типу мира таймлайн hoka:everywhere_stars — проход звёзд всегда, угол 0), 0 — ванильная звезда без изменений.
+//   Частицы — только при яркости прохода 1 (её даёт модуль; у ванильных суток — не больше 0,5, угол не 0).
 //   Планета — ничего (её проход звёзд выключен типом мира). Параметры — SS_PROF_9 (profiles.glsl).
 // - Частицы лежат в плитке T блоков, повторённой по всему миру; вокруг камеры — ближайшая копия каждой частицы
 //   (|смещение| <= T/2 по каждой оси). Перенос на другую копию — ровно на грани, а там частица уже погашена
@@ -112,7 +114,7 @@ void ss_lens(inout vec3 rel, inout float lum, int prof) {
             float t = dot(O, dk.xyz) / dn;
             if (t > 0.0 && t < Ds) {
                 float R = length(ns * t - O) / hr;
-                lum *= 1.0 - 0.9 * smoothstep(dk.w, dk.w * 0.85, R) * step(1.0, R);
+                lum *= 1.0 - 0.9 * (1.0 - smoothstep(dk.w * 0.85, dk.w, R)) * step(1.0, R);   // края по возрастанию (спецификация)
             }
         }
     }
@@ -125,12 +127,20 @@ void main() {
     ssVanilla = 0;
     gl_Position = vec4(2.0, 2.0, 2.0, 1.0);                            // схлопнуть: вне экрана, квад вырожден
     int prof = spacesky_code_profile(spacesky_code(FogColor.rgb));
+    // яркость прохода 1 — его включил модуль (тип мира галактики или overworld с таймлайном hoka:everywhere_stars:
+    // угол 0); у ванильного overworld яркость звёзд не больше 0,5 и угол идёт по времени суток — частиц там нет
+    bool ours = ColorModulator.a > 0.99;
     if (prof < 0) {
-#if !SPACESKY_EVERYWHERE
-        ssVanilla = 1;                                                 // ванильный stars.vsh
-        gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
+#if SPACESKY_EVERYWHERE
+        if (!ours) return;
+        prof = 0;                                                      // мир без метки — профиль space (как в sky.vsh)
+#else
+        if (!ours) {
+            ssVanilla = 1;                                             // ванильный stars.vsh
+            gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
+        }
+        return;                                                        // everywhere выключен без перезапуска — без звёзд
 #endif
-        return;
     }
     if (SS_PROF_0[prof].w > 0.5) return;                               // планета
     vec4 p9 = SS_PROF_9[prof];

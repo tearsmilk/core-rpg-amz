@@ -136,6 +136,34 @@ class SpaceDimensionTest {
     }
 
     @Test
+    void overworldStarsTimelineLast() {
+        MinecraftServer.init();
+        org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger("test");
+        DimensionType before = MinecraftServer.getDimensionTypeRegistry().get(DimensionType.OVERWORLD);
+        int n = before.timelines().size();
+        assertTrue(n > 0, "у ванильного overworld есть таймлайны (сутки)");
+        assertTrue(SpaceDimension.overworldStars(log));
+        assertTrue(SpaceDimension.overworldStars(log), "повторно (перезагрузка модуля) — без изменений");
+        DimensionType ow = MinecraftServer.getDimensionTypeRegistry().get(DimensionType.OVERWORLD);
+        List<String> tls = new java.util.ArrayList<>();
+        ow.timelines().forEach(k -> tls.add(k.key().asString()));
+        assertEquals(n + 1, tls.size(), tls.toString());
+        assertTrue(tls.contains("minecraft:day"), tls.toString());
+        assertEquals(SpaceDimension.STARS_KEY, tls.get(tls.size() - 1), "последним — перекрывает star_* суток");
+        assertEquals(before.minY(), ow.minY());
+        assertEquals(before.attributes(), ow.attributes(), "небо, туман, звуки overworld не тронуты");
+        JsonObject json = DimensionType.REGISTRY_CODEC.encode(new RegistryTranscoder<>(Transcoder.JSON, MinecraftServer.process()), ow)
+            .orElseThrow().getAsJsonObject();
+        assertTrue(json.get("timelines").toString().contains(SpaceDimension.STARS_KEY), json.toString());
+        Timeline t = MinecraftServer.getTimelineRegistry().get(Key.key(SpaceDimension.STARS_KEY));
+        JsonElement tj = Timeline.REGISTRY_CODEC.encode(Transcoder.JSON, t)
+            .orElseThrow();
+        assertTrue(tj.toString().contains("minecraft:visual/star_brightness"), tj.toString());
+        assertTrue(tj.toString().contains("minecraft:visual/star_angle"), tj.toString());
+        MinecraftServer.getDimensionTypeRegistry().registryDataPacket(MinecraftServer.process(), true);
+    }
+
+    @Test
     void registerOnceAndEncodeForClient() {
         MinecraftServer.init();
         org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger("test");

@@ -185,6 +185,70 @@ final class SpaceDimension {
         return new EnvironmentAttributeMap.Entry<>((T) value, new EnvironmentAttribute.Modifier.Override<>(attr.valueCodec()));
     }
 
+    /** Таймлайн прохода звёзд миров без метки (режим everywhere: true), см. {@link #overworldStars}. */
+    static final String STARS_KEY = "hoka:everywhere_stars";
+
+    /** Таймлайн: проход звёзд всегда (яркость 1) и без поворота (угол 0) — в нём частицы параллакса (stars.vsh). */
+    static Timeline starsTimeline() {
+        Timeline.Builder b = Timeline.builder();
+        track(b, EnvironmentAttribute.STAR_BRIGHTNESS, List.of(new Timeline.Keyframe<>(0, 1f)), EaseFunction.CONSTANT);
+        track(b, EnvironmentAttribute.STAR_ANGLE, List.of(new Timeline.Keyframe<>(0, 0f)), EaseFunction.CONSTANT);
+        return b.build();
+    }
+
+    /** Тот же тип мира, таймлайны — его + {@code extra} последним (его Override перекрывает minecraft:day). */
+    static DimensionType withTimeline(DimensionType base, RegistryKey<Timeline> extra) {
+        List<RegistryKey<Timeline>> tls = new ArrayList<>();
+        for (RegistryKey<Timeline> k : base.timelines()) {
+            if (!k.equals(extra)) {
+                tls.add(k);
+            }
+        }
+        tls.add(extra);
+        return DimensionType.create(base.hasFixedTime(), base.hasSkylight(), base.hasCeiling(), base.coordinateScale(),
+            base.minY(), base.height(), base.logicalHeight(), base.infiniburn(), base.ambientLight(),
+            base.monsterSpawnLightLevel(), base.monsterSpawnBlockLightLimit(), base.skybox(), base.cardinalLight(),
+            base.attributes(), RegistryTag.direct(tls));
+    }
+
+    /**
+     * Режим everywhere: true — частицы параллакса и в мирах без метки (все карты на ядре без патча
+     * docs/core-dimension.md — это minecraft:overworld). Ванильный проход звёзд overworld рисуется только ночью и
+     * повёрнут по времени суток (star_angle таймлайна minecraft:day), а шейдер не знает ни угла, ни поворота камеры
+     * отдельно — поэтому к таймлайнам типа мира minecraft:overworld добавляется последний {@link #STARS_KEY}: яркость
+     * 1, угол 0 (остальное — сутки, свет, луна — как в ванили). Ванильных звёзд в этом режиме и так нет. До старта
+     * сервера (реестры потом заморожены); тип перерегистрируется в пакете сервера — клиент получает его целиком.
+     *
+     * @return true — таймлайн подключён (или уже был)
+     */
+    static boolean overworldStars(Logger log) {
+        DynamicRegistry<Timeline> timelines = MinecraftServer.getTimelineRegistry();
+        DynamicRegistry<DimensionType> dims = MinecraftServer.getDimensionTypeRegistry();
+        DimensionType ow = dims.get(DimensionType.OVERWORLD);
+        if (ow == null || ow.timelines().size() == 0) {
+            log.warn("тип мира minecraft:overworld без таймлайнов — частиц параллакса в мирах без профиля не будет");
+            return false;
+        }
+        Key key = Key.key(STARS_KEY);
+        if (timelines.get(key) != null && ow.timelines().contains(timelines.getKey(key))) {
+            return true;                                                 // перезагрузка модуля — уже подключён
+        }
+        if (MinecraftServer.isStarted()) {
+            log.warn("частицы параллакса в мирах без профиля появятся после перезапуска сервера (реестры заморожены)");
+            return false;
+        }
+        try {
+            RegistryKey<Timeline> tl = timelines.get(key) != null ? timelines.getKey(key)
+                : timelines.register(key, starsTimeline());
+            dims.register(DimensionType.OVERWORLD.key(), withTimeline(ow, tl));
+        } catch (UnsupportedOperationException frozen) {
+            log.warn("частицы параллакса в мирах без профиля появятся после перезапуска сервера ({})",
+                frozen.getMessage());
+            return false;
+        }
+        return true;
+    }
+
     /** Номер профиля по зарегистрированному типу мира (метка в fog_color), -1 — не наш/старый. */
     static int indexOf(DimensionType d) {
         EnvironmentAttributeMap.Entry<?, ?> e = d.attributes().entries().get(EnvironmentAttribute.FOG_COLOR);

@@ -80,6 +80,11 @@ public final class SpaceSkyModule extends OdysseyModule {
         }
         registration = SpaceDimension.register(logger(), wanted);
         profiles = registration.profiles();
+        // everywhere: true — частицы параллакса и в мирах без метки (на ядре без патча все карты — overworld);
+        // смена everywhere после старта — проход звёзд overworld меняется только после перезапуска
+        if (config().getBoolean("everywhere", true)) {
+            SpaceDimension.overworldStars(logger());
+        }
     }
 
     @Override
