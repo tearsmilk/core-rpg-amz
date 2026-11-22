@@ -1,0 +1,1232 @@
+diff --git a/client/core/build.gradle.kts b/client/core/build.gradle.kts
+--- a/client/core/build.gradle.kts
++++ b/client/core/build.gradle.kts
+@@ -1,5 +1,5 @@
+ // Ядро-мод Hoka Odyssey: маленький, ставится один раз. Всё остальное приходит с сервера модулями.
+-version = "0.9.0"
++version = "0.10.0"
+ group = "ink.hoka"
+ 
+ val mc = "1.21.11"
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/HokaOdysseyClient.java b/client/core/src/main/java/ink/hoka/odyssey/client/HokaOdysseyClient.java
+--- a/client/core/src/main/java/ink/hoka/odyssey/client/HokaOdysseyClient.java
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/HokaOdysseyClient.java
+@@ -12,7 +12,8 @@
+ 
+ /**
+  * Ядро-мод Hoka Odyssey. Само ничего не рисует и не решает: здоровается с сервером, получает подписанный список
+- * клиентских модулей, докачивает недостающие, загружает их и даёт им крючки (тик, HUD, мышь, камера, сообщения).
++ * клиентских модулей, докачивает недостающие, загружает их и даёт им крючки (тик, HUD, мышь, камера, сообщения,
++ * небо, туман, этапы рендера мира, поворот тел игроков, поза и ввод своего игрока).
+  * Новые возможности добавляются модулями с сервера — переустанавливать мод не нужно.
+  */
+ public final class HokaOdysseyClient implements ClientModInitializer {
+@@ -55,6 +56,12 @@
+         ink.hoka.odyssey.client.ui.UiHud.register();
+         net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents.END_EXTRACTION.register(ink.hoka.odyssey.client.model.Models::extract);
+         net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents.AFTER_ENTITIES.register(ink.hoka.odyssey.client.model.Models::render);
++        // этапы рендера мира для модулей (onWorldPass): события Fabric не снимаются — регистрируем один раз здесь,
++        // а крючки модулей живут в Hooks и снимаются при выгрузке модуля
++        net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents.START_MAIN.register(c -> Hooks.worldPass(ink.hoka.odyssey.client.api.WorldStage.START_MAIN, c));
++        net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents.AFTER_ENTITIES.register(c -> Hooks.worldPass(ink.hoka.odyssey.client.api.WorldStage.AFTER_ENTITIES, c));
++        net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents.BEFORE_TRANSLUCENT.register(c -> Hooks.worldPass(ink.hoka.odyssey.client.api.WorldStage.BEFORE_TRANSLUCENT, c));
++        net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents.END_MAIN.register(c -> Hooks.worldPass(ink.hoka.odyssey.client.api.WorldStage.END_MAIN, c));
+         LOG.info("Hoka Odyssey {}: ждём сервер", ModuleManager.coreVersion());
+     }
+ }
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/Hooks.java b/client/core/src/main/java/ink/hoka/odyssey/client/Hooks.java
+--- a/client/core/src/main/java/ink/hoka/odyssey/client/Hooks.java
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/Hooks.java
+@@ -1,16 +1,36 @@
+ package ink.hoka.odyssey.client;
+ 
++import com.mojang.blaze3d.vertex.PoseStack;
+ import ink.hoka.odyssey.client.api.CameraState;
+ import ink.hoka.odyssey.client.api.ClientContext;
++import ink.hoka.odyssey.client.api.FogState;
++import ink.hoka.odyssey.client.api.InputState;
++import ink.hoka.odyssey.client.api.SkyFrame;
++import ink.hoka.odyssey.client.api.WorldStage;
++import net.fabricmc.fabric.api.client.rendering.v1.world.AbstractWorldRenderContext;
++import net.fabricmc.loader.api.FabricLoader;
++import net.minecraft.client.Camera;
+ import net.minecraft.client.DeltaTracker;
++import net.minecraft.client.Minecraft;
+ import net.minecraft.client.gui.GuiGraphics;
++import net.minecraft.client.multiplayer.ClientLevel;
++import net.minecraft.client.player.LocalPlayer;
++import net.minecraft.client.renderer.entity.state.AvatarRenderState;
++import net.minecraft.resources.Identifier;
++import net.minecraft.world.entity.Avatar;
++import net.minecraft.world.entity.Pose;
+ 
++import java.lang.reflect.Method;
+ import java.util.ArrayList;
++import java.util.EnumMap;
+ import java.util.List;
++import java.util.Map;
++import java.util.function.BooleanSupplier;
++import java.util.function.Consumer;
+ 
+ /**
+  * Крючки, которые модули вешают через {@link ClientContext}. Каждый помечен владельцем — при выгрузке модуля
+- * снимается всё его. Вызываются из клиентского потока (тик, HUD, миксины мыши и камеры).
++ * снимается всё его. Вызываются из клиентского потока (тик, HUD, миксины мыши, камеры, рендера мира).
+  */
+ public final class Hooks {
+ 
+@@ -22,15 +42,51 @@
+     static final List<Owned<ClientContext.HudLayer>> HUD = new ArrayList<>();
+     static final List<Owned<ClientContext.MouseHook>> MOUSE = new ArrayList<>();
+     static final List<Owned<ClientContext.CameraHook>> CAMERA = new ArrayList<>();
++    static final List<Owned<ClientContext.SkyHook>> SKY = new ArrayList<>();
++    static final List<Owned<ClientContext.FogHook>> FOG = new ArrayList<>();
++    static final List<Owned<BooleanSupplier>> CLOUDS = new ArrayList<>();
++    static final List<Owned<BooleanSupplier>> WEATHER = new ArrayList<>();
++    static final Map<WorldStage, List<Owned<ClientContext.WorldPassHook>>> WORLD_PASS = new EnumMap<>(WorldStage.class);
++    static final List<Owned<Consumer<Identifier>>> WORLD = new ArrayList<>();
++    static final List<Owned<ClientContext.AvatarRotHook>> AVATAR_ROT = new ArrayList<>();
++    static final List<Owned<ClientContext.AvatarStateHook>> AVATAR_STATE = new ArrayList<>();
++    static final List<Owned<Pose>> POSE = new ArrayList<>();                    // последний — действующий
++    static final List<Owned<ClientContext.InputHook>> INPUT = new ArrayList<>();
++    static final List<Owned<ClientContext.TravelHook>> TRAVEL = new ArrayList<>();
++    static final List<Owned<AutoCloseable>> RESOURCES = new ArrayList<>();
++
++    static {
++        for (WorldStage s : WorldStage.values()) WORLD_PASS.put(s, new ArrayList<>());
++    }
+ 
+     /** Крен текущего кадра, радианы (миксин камеры подставляет его в поворот). */
+     public static float roll;
+ 
++    /** Модуль забрал небо в этом кадре — ванильный SkyRenderer ничего не рисует (сбрасывается каждый кадр). */
++    public static boolean skyClaimed;
++
++    /** Мир, о котором последний раз сообщили крючкам onWorld (сравнение по объекту: Minestom пересоздаёт мир). */
++    private static ClientLevel lastLevel;
++
+     static void removeOwner(String owner) {
+         TICK.removeIf(o -> o.owner().equals(owner));
+         HUD.removeIf(o -> o.owner().equals(owner));
+         MOUSE.removeIf(o -> o.owner().equals(owner));
+         CAMERA.removeIf(o -> o.owner().equals(owner));
++        SKY.removeIf(o -> o.owner().equals(owner));
++        FOG.removeIf(o -> o.owner().equals(owner));
++        CLOUDS.removeIf(o -> o.owner().equals(owner));
++        WEATHER.removeIf(o -> o.owner().equals(owner));
++        for (var l : WORLD_PASS.values()) l.removeIf(o -> o.owner().equals(owner));
++        WORLD.removeIf(o -> o.owner().equals(owner));
++        AVATAR_ROT.removeIf(o -> o.owner().equals(owner));
++        AVATAR_STATE.removeIf(o -> o.owner().equals(owner));
++        POSE.removeIf(o -> o.owner().equals(owner));
++        INPUT.removeIf(o -> o.owner().equals(owner));
++        TRAVEL.removeIf(o -> o.owner().equals(owner));
++        for (var o : List.copyOf(RESOURCES)) if (o.owner().equals(owner)) close(o);
++        RESOURCES.removeIf(o -> o.owner().equals(owner));
++        Pipelines.removeOwner(owner);
+     }
+ 
+     static void clear() {
+@@ -38,10 +94,35 @@
+         HUD.clear();
+         MOUSE.clear();
+         CAMERA.clear();
++        SKY.clear();
++        FOG.clear();
++        CLOUDS.clear();
++        WEATHER.clear();
++        for (var l : WORLD_PASS.values()) l.clear();
++        WORLD.clear();
++        AVATAR_ROT.clear();
++        AVATAR_STATE.clear();
++        POSE.clear();
++        INPUT.clear();
++        TRAVEL.clear();
++        for (var o : List.copyOf(RESOURCES)) close(o);
++        RESOURCES.clear();
++        Pipelines.clear();
+         roll = 0;
++        skyClaimed = false;
++        lastLevel = null;
++    }
++
++    private static void close(Owned<AutoCloseable> o) {
++        try {
++            o.hook().close();
++        } catch (Throwable e) {
++            HokaOdysseyClient.LOG.warn("Модуль {}: ресурс не закрылся", o.owner(), e);
++        }
+     }
+ 
+     static void tick() {
++        world();
+         for (var o : List.copyOf(TICK)) safe(o.owner(), () -> o.hook().run());
+     }
+ 
+@@ -69,6 +150,137 @@
+         for (var o : List.copyOf(CAMERA)) safe(o.owner(), () -> o.hook().apply(state, partialTick));
+     }
+ 
++    // ───────────────────────── небо и туман ─────────────────────────
++
++    public static boolean hasSky() { return !SKY.isEmpty(); }
++
++    /** Крючки неба (в проходе кадра). true — кто-то из модулей забрал небо. */
++    public static boolean sky(SkyFrame frame) {
++        if (shaderPackActive()) return false;                                   // небо рисует шейдерпак Iris
++        boolean claimed = false;
++        for (var o : List.copyOf(SKY)) {
++            boolean[] r = {false};
++            safe(o.owner(), () -> r[0] = o.hook().render(frame));
++            claimed |= r[0];
++        }
++        return claimed;
++    }
++
++    public static boolean hasFog() { return !FOG.isEmpty(); }
++
++    public static void fog(FogState state, Camera camera, float partialTick) {
++        for (var o : List.copyOf(FOG)) safe(o.owner(), () -> o.hook().apply(state, camera, partialTick));
++    }
++
++    public static boolean hideClouds() { return any(CLOUDS); }
++
++    public static boolean hideWeather() { return any(WEATHER); }
++
++    private static boolean any(List<Owned<BooleanSupplier>> list) {
++        if (list.isEmpty()) return false;
++        boolean hide = false;
++        for (var o : List.copyOf(list)) {
++            boolean[] r = {false};
++            safe(o.owner(), () -> r[0] = o.hook().getAsBoolean());
++            hide |= r[0];
++        }
++        return hide;
++    }
++
++    static void worldPass(WorldStage stage, AbstractWorldRenderContext ctx) {
++        var list = WORLD_PASS.get(stage);
++        if (list.isEmpty()) return;
++        for (var o : List.copyOf(list)) safe(o.owner(), () -> o.hook().render(ctx));
++    }
++
++    // ───────────────────────── мир ─────────────────────────
++
++    /** Каждый тик: сменился объект мира — сообщить модулям. */
++    static void world() {
++        ClientLevel l = Minecraft.getInstance().level;
++        if (l == lastLevel) return;
++        lastLevel = l;
++        Identifier id = l == null ? null : l.dimension().identifier();
++        for (var o : List.copyOf(WORLD)) safe(o.owner(), () -> o.hook().accept(id));
++    }
++
++    /** Новый крючок onWorld: сразу сообщить текущий мир, если он есть. */
++    static void worldNow(Owned<Consumer<Identifier>> o) {
++        ClientLevel l = Minecraft.getInstance().level;
++        if (l != null) safe(o.owner(), () -> o.hook().accept(l.dimension().identifier()));
++    }
++
++    // ───────────────────────── игроки ─────────────────────────
++
++    public static boolean hasAvatarRot() { return !AVATAR_ROT.isEmpty(); }
++
++    /** true — ванильный поворот тела не делать. */
++    public static boolean avatarRotations(AvatarRenderState s, PoseStack pose, float bodyRot, float scale) {
++        boolean cancel = false;
++        for (var o : List.copyOf(AVATAR_ROT)) {
++            boolean[] r = {false};
++            safe(o.owner(), () -> r[0] = o.hook().apply(s.id, s, pose, bodyRot, scale));
++            cancel |= r[0];
++        }
++        return cancel;
++    }
++
++    public static boolean hasAvatarState() { return !AVATAR_STATE.isEmpty(); }
++
++    public static void avatarState(Avatar e, AvatarRenderState s, float partialTick) {
++        for (var o : List.copyOf(AVATAR_STATE)) safe(o.owner(), () -> o.hook().apply(e, s, partialTick));
++    }
++
++    /** Поза своего игрока, заданная модулями (последняя), или null. */
++    public static Pose forcedPose() {
++        return POSE.isEmpty() ? null : POSE.getLast().hook();
++    }
++
++    static void forcePose(String owner, Pose pose) {
++        POSE.removeIf(o -> o.owner().equals(owner));
++        if (pose != null) POSE.add(new Owned<>(owner, pose));
++    }
++
++    public static boolean hasInput() { return !INPUT.isEmpty(); }
++
++    public static void input(InputState s) {
++        for (var o : List.copyOf(INPUT)) safe(o.owner(), () -> o.hook().apply(s));
++    }
++
++    public static boolean hasTravel() { return !TRAVEL.isEmpty(); }
++
++    public static void travel(LocalPlayer p) {
++        for (var o : List.copyOf(TRAVEL)) safe(o.owner(), () -> o.hook().before(p));
++    }
++
++    // ───────────────────────── шейдерпаки ─────────────────────────
++
++    private static Method irisInUse;
++    private static Object irisApi;
++    private static boolean irisChecked;
++
++    /** Включён шейдерпак Iris (тогда небо модулей не рисуем: шейдерпак рисует своё). */
++    public static boolean shaderPackActive() {
++        if (!irisChecked) {
++            irisChecked = true;
++            if (FabricLoader.getInstance().isModLoaded("iris")) {
++                try {
++                    Class<?> c = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
++                    irisApi = c.getMethod("getInstance").invoke(null);
++                    irisInUse = c.getMethod("isShaderPackInUse");
++                } catch (Throwable e) {
++                    HokaOdysseyClient.LOG.warn("Hoka Odyssey: Iris найден, но его API не ответил — считаю, что шейдерпака нет", e);
++                }
++            }
++        }
++        if (irisInUse == null) return false;
++        try {
++            return (Boolean) irisInUse.invoke(irisApi);
++        } catch (Throwable e) {
++            return false;
++        }
++    }
++
+     /** Ошибка в модуле не должна ронять игру — пишем в лог и снимаем модуль. */
+     private static void safe(String owner, Runnable r) {
+         try {
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/ModuleManager.java b/client/core/src/main/java/ink/hoka/odyssey/client/ModuleManager.java
+--- a/client/core/src/main/java/ink/hoka/odyssey/client/ModuleManager.java
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/ModuleManager.java
+@@ -316,5 +316,32 @@
+         @Override public void onFile(String path, Consumer<byte[]> listener) { FileStore.listen(id, path, listener); }
+         @Override public net.minecraft.resources.Identifier texture(String path) { return FileStore.texture(path); }
+         @Override public ink.hoka.odyssey.client.api.ModelHandle model(String path) { return ink.hoka.odyssey.client.model.Models.create(id, path); }
++
++        // ───── мир и рендер ─────
++        @Override public void onSky(SkyHook hook) { Hooks.SKY.add(new Hooks.Owned<>(id, hook)); }
++        @Override public void onFog(FogHook hook) { Hooks.FOG.add(new Hooks.Owned<>(id, hook)); }
++        @Override public void onClouds(java.util.function.BooleanSupplier hide) { Hooks.CLOUDS.add(new Hooks.Owned<>(id, hide)); }
++        @Override public void onWeather(java.util.function.BooleanSupplier hide) { Hooks.WEATHER.add(new Hooks.Owned<>(id, hide)); }
++        @Override public void onWorldPass(ink.hoka.odyssey.client.api.WorldStage stage, WorldPassHook hook) {
++            Hooks.WORLD_PASS.get(stage).add(new Hooks.Owned<>(id, hook));
++        }
++        @Override public ink.hoka.odyssey.client.api.ModulePipeline pipeline(com.mojang.blaze3d.pipeline.RenderPipeline p,
++                                                                         com.mojang.blaze3d.shaders.ShaderSource src) {
++            return Pipelines.create(id, p, src);
++        }
++        @Override public <T extends AutoCloseable> T track(T resource) {
++            Hooks.RESOURCES.add(new Hooks.Owned<>(id, resource));
++            return resource;
++        }
++        @Override public void onWorld(Consumer<net.minecraft.resources.Identifier> handler) {
++            var o = new Hooks.Owned<>(id, handler);
++            Hooks.WORLD.add(o);
++            Hooks.worldNow(o);
++        }
++        @Override public void onAvatarRotations(AvatarRotHook hook) { Hooks.AVATAR_ROT.add(new Hooks.Owned<>(id, hook)); }
++        @Override public void onAvatarState(AvatarStateHook hook) { Hooks.AVATAR_STATE.add(new Hooks.Owned<>(id, hook)); }
++        @Override public void forceLocalPose(net.minecraft.world.entity.Pose pose) { Hooks.forcePose(id, pose); }
++        @Override public void onInput(InputHook hook) { Hooks.INPUT.add(new Hooks.Owned<>(id, hook)); }
++        @Override public void onLocalTravel(TravelHook hook) { Hooks.TRAVEL.add(new Hooks.Owned<>(id, hook)); }
+     }
+ }
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/Pipelines.java b/client/core/src/main/java/ink/hoka/odyssey/client/Pipelines.java
+new file mode 100644
+--- /dev/null
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/Pipelines.java
+@@ -0,0 +1,111 @@
++package ink.hoka.odyssey.client;
++
++import com.mojang.blaze3d.pipeline.CompiledRenderPipeline;
++import com.mojang.blaze3d.pipeline.RenderPipeline;
++import com.mojang.blaze3d.preprocessor.GlslPreprocessor;
++import com.mojang.blaze3d.shaders.ShaderSource;
++import com.mojang.blaze3d.shaders.ShaderType;
++import com.mojang.blaze3d.systems.RenderSystem;
++import ink.hoka.odyssey.client.api.ModulePipeline;
++import net.minecraft.client.Minecraft;
++import net.minecraft.resources.Identifier;
++
++import java.io.Reader;
++import java.util.ArrayList;
++import java.util.HashSet;
++import java.util.List;
++import java.util.Set;
++
++/**
++ * RenderPipeline модулей со своими шейдерами. Игра при каждой перезагрузке ресурсов (F3+T, смена пака) чистит кэш
++ * шейдеров и заново собирает только ванильные — поэтому модуль перед использованием зовёт {@link ModulePipeline#prepare()}:
++ * {@code precompilePipeline} — это computeIfAbsent, готовый pipeline берётся из кэша.
++ * Исходник модуля проходит через препроцессор игры: {@code #moj_import <ns:path>} берётся из ресурсов
++ * ({@code assets/<ns>/shaders/include/<path>}), как у ванильных шейдеров.
++ */
++final class Pipelines {
++
++    private Pipelines() {}
++
++    private static final List<Impl> ALL = new ArrayList<>();
++
++    static ModulePipeline create(String owner, RenderPipeline pipeline, ShaderSource source) {
++        Impl p = new Impl(owner, pipeline, withImports(source));
++        ALL.add(p);
++        return p;
++    }
++
++    static void removeOwner(String owner) {
++        for (Impl p : ALL) if (p.owner.equals(owner)) p.closed = true;
++        ALL.removeIf(p -> p.owner.equals(owner));
++    }
++
++    static void clear() {
++        for (Impl p : ALL) p.closed = true;
++        ALL.clear();
++    }
++
++    private static final class Impl implements ModulePipeline {
++        final String owner;
++        final RenderPipeline pipeline;
++        final ShaderSource source;
++        volatile boolean closed;
++        boolean valid;
++        boolean warned;
++
++        Impl(String owner, RenderPipeline pipeline, ShaderSource source) {
++            this.owner = owner;
++            this.pipeline = pipeline;
++            this.source = source;
++        }
++
++        @Override public RenderPipeline pipeline() { return pipeline; }
++
++        @Override public boolean prepare() {
++            if (closed) return valid = false;
++            CompiledRenderPipeline c = RenderSystem.getDevice().precompilePipeline(pipeline, source);
++            valid = c.isValid();
++            if (!valid && !warned) {
++                warned = true;
++                HokaOdysseyClient.LOG.error("Модуль {}: шейдеры {} не собрались (подробности — в логе выше)", owner, pipeline.getLocation());
++            }
++            if (valid) warned = false;
++            return valid;
++        }
++
++        @Override public boolean isValid() { return !closed && valid; }
++    }
++
++    /** Исходник модуля → через препроцессор игры (#moj_import из ресурсов, #version). */
++    private static ShaderSource withImports(ShaderSource src) {
++        return (Identifier id, ShaderType type) -> {
++            String s = src.get(id, type);
++            if (s == null || !s.contains("#moj_import")) return s;
++            Set<Identifier> seen = new HashSet<>();
++            GlslPreprocessor pre = new GlslPreprocessor() {
++                @Override
++                public String applyImport(boolean relative, String path) {
++                    if (relative) return "#error Hoka Odyssey: относительный #moj_import \"" + path + "\" в шейдере модуля не поддерживается\n";
++                    Identifier file;
++                    try {
++                        file = Identifier.parse(path).withPrefix("shaders/include/");
++                    } catch (Exception e) {
++                        return "#error " + e.getMessage() + "\n";
++                    }
++                    if (!seen.add(file)) return null;
++                    var res = Minecraft.getInstance().getResourceManager().getResource(file);
++                    if (res.isEmpty()) return "#error нет include " + file + "\n";
++                    try (Reader r = res.get().openAsReader()) {
++                        StringBuilder b = new StringBuilder();
++                        char[] buf = new char[4096];
++                        for (int n; (n = r.read(buf)) > 0; ) b.append(buf, 0, n);
++                        return b.toString();
++                    } catch (Exception e) {
++                        return "#error " + e.getMessage() + "\n";
++                    }
++                }
++            };
++            return String.join("", pre.process(s));
++        };
++    }
++}
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/api/CameraState.java b/client/core/src/main/java/ink/hoka/odyssey/client/api/CameraState.java
+--- a/client/core/src/main/java/ink/hoka/odyssey/client/api/CameraState.java
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/api/CameraState.java
+@@ -10,4 +10,10 @@
+     public float yaw, pitch, roll;
+     /** Камера от 3-го лица (F5) — модуль может решить, что делать. */
+     public boolean detached;
++    /**
++     * Полный поворот камеры кватернионом (как {@code Camera.rotation()}: камера смотрит вдоль rotation·(0,0,-1),
++     * верх — rotation·(0,1,0)). На входе null. Задан — берётся вместо yaw/pitch/roll (нет вырождения при наклоне
++     * ±90°, можно вверх ногами); yaw и pitch стоит заполнить тоже — по ним игра считает звук и пр.
++     */
++    public org.joml.@org.jspecify.annotations.Nullable Quaternionf rotation;
+ }
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/api/ClientContext.java b/client/core/src/main/java/ink/hoka/odyssey/client/api/ClientContext.java
+--- a/client/core/src/main/java/ink/hoka/odyssey/client/api/ClientContext.java
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/api/ClientContext.java
+@@ -45,10 +45,10 @@
+ 
+     // ───── крючки ─────
+ 
+-    /** Каждый тик клиента (20 раз в секунду). */
+     /** Модель .bbmodel из файлов сервера в мире (рисует ядро, обновляется вместе с файлом). */
+     ModelHandle model(String path);
+ 
++    /** Каждый тик клиента (20 раз в секунду). */
+     void onTick(Runnable r);
+ 
+     /** Рисовать поверх HUD каждый кадр. */
+@@ -63,9 +63,104 @@
+     /** Камера: после расчёта игрой — поменять курс, наклон, крен, положение. */
+     void onCamera(CameraHook hook);
+ 
++    // ───── мир и рендер (с версии ядра 0.10) ─────
++    // Модуль, которому нужно работать и на старом ядре, проверяет наличие метода рефлексией:
++    // ClientContext.class.getMethod("onSky", SkyHook.class) — NoSuchMethodException значит «ядро старое».
++
++    /**
++     * Своё небо. Крючок вызывается в отдельном проходе кадра ПЕРЕД ванильным небом (в основной буфер кадра, до
++     * террейна). Вернуть true — ванильное небо (диск, солнце, луна, звёзды, End) в этом кадре не рисовать.
++     * Вызывается и тогда, когда ваниль неба не рисует ({@link SkyFrame#vanillaSkip} != NONE) — модуль решает сам.
++     * При включённом шейдерпаке Iris крючок не вызывается (небо рисует шейдерпак).
++     */
++    void onSky(SkyHook hook);
++
++    /**
++     * Туман кадра: цвет (он же цвет очистки кадра) и расстояния — после расчёта игрой, перед записью в шейдеры.
++     * В космосе: чёрный цвет и далёкие расстояния.
++     */
++    void onFog(FogHook hook);
++
++    /** Спрятать облака, пока supplier возвращает true (опрашивается каждый кадр). */
++    void onClouds(java.util.function.BooleanSupplier hide);
++
++    /** Спрятать дождь и снег (частицы-полосы погоды; граница мира остаётся), пока supplier возвращает true. */
++    void onWeather(java.util.function.BooleanSupplier hide);
++
++    /**
++     * Этап рендера мира (обёртка над Fabric WorldRenderEvents: ядро регистрирует события один раз и снимает
++     * крючки модуля при выгрузке — слушатели Fabric не утекают). Для START_MAIN контекст —
++     * {@code WorldTerrainRenderContext}, для остальных — {@code WorldRenderContext} (можно привести тип).
++     */
++    void onWorldPass(WorldStage stage, WorldPassHook hook);
++
++    /**
++     * Свой RenderPipeline со своими шейдерами (исходники — строки от модуля, например из {@link #file}).
++     * {@code #moj_import <minecraft:fog.glsl>} и другие include из ресурсов игры работают. Перед каждым
++     * использованием вызывать {@link ModulePipeline#prepare()}: после F3+T и смены ресурспака игра сбрасывает
++     * кэш шейдеров — prepare соберёт заново. При выгрузке модуля pipeline становится недействительным.
++     * Кэш шейдеров игры — по (id, тип, defines): новая версия исходника — новый id шейдера.
++     */
++    ModulePipeline pipeline(com.mojang.blaze3d.pipeline.RenderPipeline pipeline, com.mojang.blaze3d.shaders.ShaderSource source);
++
++    /** Закрыть ресурс при выгрузке модуля (GpuBuffer, GpuTexture, GpuTextureView, что угодно AutoCloseable). */
++    <T extends AutoCloseable> T track(T resource);
++
++    /**
++     * Мир клиента: id измерения ({@code level.dimension().identifier()}; у Minestom свой у каждого мира) — сразу
++     * при регистрации, если игрок в мире, и при каждой смене мира (в том числе тот же id, если мир пересоздан);
++     * null — мира нет (выход, экран загрузки).
++     */
++    void onWorld(Consumer<net.minecraft.resources.Identifier> handler);
++
++    /**
++     * Поворот тела игрока при рисовании (другие игроки, сам игрок в F5, манекены): вызывается в начале
++     * {@code AvatarRenderer.setupRotations}. Вернуть true — ванильный поворот не делать (тогда модуль сам
++     * поворачивает {@code pose}, включая курс тела: ваниль делает {@code rotateY(180 - bodyRot)}).
++     * Вернуть false — модуль только добавил свои преобразования, ваниль применит свои после них.
++     */
++    void onAvatarRotations(AvatarRotHook hook);
++
++    /** Состояние для рисования игрока (поза, наклон, руки…) — после расчёта игрой, можно менять поля. */
++    void onAvatarState(AvatarStateHook hook);
++
++    /**
++     * Принудительная поза своего игрока (хитбокс, высота глаз, вид в F5): например {@code Pose.SWIMMING} —
++     * лёжа, хитбокс 0,6. null — снять. Если позу задали несколько модулей, действует последняя заданная.
++     * Сервер позу игрока не видит — для других игроков позу ставит серверный модуль.
++     */
++    void forceLocalPose(net.minecraft.world.entity.@org.jspecify.annotations.Nullable Pose pose);
++
++    /** Ввод с клавиатуры своего игрока — после чтения клавиш игрой, до того как его увидит движение. */
++    void onInput(InputHook hook);
++
++    /** Перед расчётом движения своего игрока (LivingEntity.travel), в тот же тик: тяга, гравитация. */
++    void onLocalTravel(TravelHook hook);
++
+     interface HudLayer { void render(GuiGraphics g, DeltaTracker delta); }
+ 
+     interface MouseHook { boolean onMouse(double yawDeg, double pitchDeg); }
+ 
+     interface CameraHook { void apply(CameraState cam, float partialTick); }
++
++    /** true — ванильное небо в этом кадре не рисовать. */
++    interface SkyHook { boolean render(SkyFrame frame); }
++
++    interface FogHook { void apply(FogState fog, net.minecraft.client.Camera camera, float partialTick); }
++
++    interface WorldPassHook { void render(net.fabricmc.fabric.api.client.rendering.v1.world.AbstractWorldRenderContext context); }
++
++    /** true — ванильный поворот тела не делать. entityId — id сущности на клиенте ({@code state.id}). */
++    interface AvatarRotHook {
++        boolean apply(int entityId, net.minecraft.client.renderer.entity.state.AvatarRenderState state,
++                      com.mojang.blaze3d.vertex.PoseStack pose, float bodyRot, float scale);
++    }
++
++    interface AvatarStateHook {
++        void apply(net.minecraft.world.entity.Avatar entity, net.minecraft.client.renderer.entity.state.AvatarRenderState state, float partialTick);
++    }
++
++    interface InputHook { void apply(InputState input); }
++
++    interface TravelHook { void before(net.minecraft.client.player.LocalPlayer player); }
+ }
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/api/FogState.java b/client/core/src/main/java/ink/hoka/odyssey/client/api/FogState.java
+new file mode 100644
+--- /dev/null
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/api/FogState.java
+@@ -0,0 +1,14 @@
++package ink.hoka.odyssey.client.api;
++
++/**
++ * Туман кадра для {@link ClientContext.FogHook}: как насчитала игра — можно менять любые поля. Цвет — 0..1;
++ * он же цвет очистки кадра (видно там, где не нарисовано небо). Расстояния — в блоках от камеры:
++ * env* — туман окружения (вода, слепота, атмосфера), rd* — край прорисовки, skyEnd — небо, cloudEnd — облака.
++ * Чтобы тумана не было: start и end — очень далеко (например {@code Float.MAX_VALUE}).
++ */
++public final class FogState {
++    public float r, g, b, a;
++    public float envStart, envEnd;
++    public float rdStart, rdEnd;
++    public float skyEnd, cloudEnd;
++}
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/api/InputState.java b/client/core/src/main/java/ink/hoka/odyssey/client/api/InputState.java
+new file mode 100644
+--- /dev/null
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/api/InputState.java
+@@ -0,0 +1,11 @@
++package ink.hoka.odyssey.client.api;
++
++/**
++ * Ввод своего игрока за тик для {@link ClientContext.InputHook}: клавиши (как их видит игра и как их получит
++ * сервер) и вектор движения. Можно менять любые поля. moveStrafe: +1 — влево; moveForward: +1 — вперёд.
++ * Если клавиши поменяли, а вектор нет — ядро пересчитает вектор из клавиш, как ваниль.
++ */
++public final class InputState {
++    public boolean forward, backward, left, right, jump, shift, sprint;
++    public float moveStrafe, moveForward;
++}
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/api/ModulePipeline.java b/client/core/src/main/java/ink/hoka/odyssey/client/api/ModulePipeline.java
+new file mode 100644
+--- /dev/null
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/api/ModulePipeline.java
+@@ -0,0 +1,24 @@
++package ink.hoka.odyssey.client.api;
++
++import com.mojang.blaze3d.pipeline.RenderPipeline;
++
++/**
++ * RenderPipeline модуля со своими шейдерами ({@link ClientContext#pipeline}). Использование:
++ * <pre>{@code
++ * if (p.prepare()) { pass.setPipeline(p.pipeline()); ... }
++ * }</pre>
++ */
++public interface ModulePipeline {
++
++    RenderPipeline pipeline();
++
++    /**
++     * Собрать шейдеры, если игра сбросила кэш (F3+T, смена ресурспака), — вызывать перед каждым использованием,
++     * это дёшево (готовый — просто берётся из кэша). false — шейдер не собрался (ошибка в логе) или модуль выгружен:
++     * не рисовать этим pipeline (иначе игра молча пропустит отрисовку).
++     */
++    boolean prepare();
++
++    /** Модуль ещё загружен и последняя сборка удалась. */
++    boolean isValid();
++}
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/api/SkyFrame.java b/client/core/src/main/java/ink/hoka/odyssey/client/api/SkyFrame.java
+new file mode 100644
+--- /dev/null
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/api/SkyFrame.java
+@@ -0,0 +1,77 @@
++package ink.hoka.odyssey.client.api;
++
++import com.mojang.blaze3d.buffers.GpuBufferSlice;
++import com.mojang.blaze3d.textures.GpuTextureView;
++import net.minecraft.client.renderer.SkyRenderer;
++import net.minecraft.client.renderer.state.SkyRenderState;
++import net.minecraft.resources.Identifier;
++import net.minecraft.world.level.dimension.DimensionType;
++import org.joml.Matrix4fc;
++import org.jspecify.annotations.Nullable;
++
++/**
++ * Кадр неба для {@link ClientContext.SkyHook}. Действителен только во время вызова крючка (не сохранять).
++ * Рисовать — в {@link #color} (и при желании с {@link #depth}), как ванильный SkyRenderer: свой RenderPass через
++ * {@code RenderSystem.getDevice().createCommandEncoder().createRenderPass(...)}. Глубина в этот момент — 1.0
++ * (очищена), террейн рисуется после неба. Uniform-блоки Projection, Fog и Globals уже привязаны игрой
++ * ({@code RenderSystem.bindDefaultUniforms(pass)}), Fog — туман этого кадра.
++ */
++public final class SkyFrame {
++
++    /** Почему ванильное небо в этом кадре НЕ рисовалось бы. */
++    public enum SkipReason {
++        /** Ваниль рисует небо. */
++        NONE,
++        /** Камера в лаве или порошковом снегу. */
++        FLUID,
++        /** Слепота или тьма. */
++        BLIND,
++        /** У типа мира skybox = none (или SkyRenderer ещё не создан). */
++        NO_SKYBOX,
++        /** Туман босса (визер, дракон): ваниль не делает проход неба вовсе. */
++        BOSS_FOG
++    }
++
++    /** Поворот камеры (вид, без переноса), крен уже учтён. Мир → камера. */
++    public final Matrix4fc modelView;
++    /** Проекция кадра (с покачиванием камеры при ходьбе). */
++    public final Matrix4fc projection;
++    /** Положение камеры в мире. */
++    public final double camX, camY, camZ;
++    public final float partialTick;
++    /** Игровое время мира (тики). */
++    public final long gameTime;
++    /** Мир: {@code level.dimension().identifier()} — у Minestom свой для каждого мира. */
++    public final Identifier dimension;
++    public final DimensionType type;
++    /** Ванильное небо этого кадра (углы солнца/луны/звёзд, цвета) — можно взять и смешать со своим. */
++    public final SkyRenderState vanilla;
++    /** Ванильный рендер неба: его публичные методы (renderSkyDisc, renderSunMoonAndStars…) можно звать из крючка. */
++    public final @Nullable SkyRenderer renderer;
++    /** UBO тумана кадра (уже выставлен через RenderSystem.setShaderFog). */
++    public final GpuBufferSlice fog;
++    /** Цвет и глубина основного буфера кадра. */
++    public final GpuTextureView color, depth;
++    public final SkipReason vanillaSkip;
++
++    public SkyFrame(Matrix4fc modelView, Matrix4fc projection, double camX, double camY, double camZ, float partialTick,
++                    long gameTime, Identifier dimension, DimensionType type, SkyRenderState vanilla,
++                    @Nullable SkyRenderer renderer, GpuBufferSlice fog, GpuTextureView color, GpuTextureView depth,
++                    SkipReason vanillaSkip) {
++        this.modelView = modelView;
++        this.projection = projection;
++        this.camX = camX;
++        this.camY = camY;
++        this.camZ = camZ;
++        this.partialTick = partialTick;
++        this.gameTime = gameTime;
++        this.dimension = dimension;
++        this.type = type;
++        this.vanilla = vanilla;
++        this.renderer = renderer;
++        this.fog = fog;
++        this.color = color;
++        this.depth = depth;
++        this.vanillaSkip = vanillaSkip;
++    }
++}
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/api/WorldStage.java b/client/core/src/main/java/ink/hoka/odyssey/client/api/WorldStage.java
+new file mode 100644
+--- /dev/null
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/api/WorldStage.java
+@@ -0,0 +1,13 @@
++package ink.hoka.odyssey.client.api;
++
++/** Этап рендера мира для {@link ClientContext#onWorldPass} (как в Fabric WorldRenderEvents). */
++public enum WorldStage {
++    /** Начало основного прохода: после неба, до террейна. */
++    START_MAIN,
++    /** После сущностей. */
++    AFTER_ENTITIES,
++    /** Перед полупрозрачным (вода, стекло). */
++    BEFORE_TRANSLUCENT,
++    /** Конец основного прохода. */
++    END_MAIN
++}
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/mixin/AvatarRendererMixin.java b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/AvatarRendererMixin.java
+new file mode 100644
+--- /dev/null
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/AvatarRendererMixin.java
+@@ -0,0 +1,32 @@
++package ink.hoka.odyssey.client.mixin;
++
++import com.mojang.blaze3d.vertex.PoseStack;
++import ink.hoka.odyssey.client.Hooks;
++import net.minecraft.client.renderer.entity.player.AvatarRenderer;
++import net.minecraft.client.renderer.entity.state.AvatarRenderState;
++import net.minecraft.world.entity.Avatar;
++import org.spongepowered.asm.mixin.Mixin;
++import org.spongepowered.asm.mixin.injection.At;
++import org.spongepowered.asm.mixin.injection.Inject;
++import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
++
++/**
++ * Тела игроков для модулей: состояние для рисования (после расчёта игрой) и поворот тела. Ванилла умеет только
++ * курс, наклон ±90 и «плашмя» — крен и «вверх ногами» другим игрокам показывает модуль через этот крючок.
++ * Дескрипторы указаны явно: у AvatarRenderer есть мосты (bridge) с типами родителей.
++ */
++@Mixin(AvatarRenderer.class)
++public abstract class AvatarRendererMixin {
++
++    @Inject(method = "setupRotations(Lnet/minecraft/client/renderer/entity/state/AvatarRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;FF)V",
++            at = @At("HEAD"), cancellable = true)
++    private void hokaOdyssey$rotations(AvatarRenderState state, PoseStack pose, float bodyRot, float scale, CallbackInfo ci) {
++        if (Hooks.hasAvatarRot() && Hooks.avatarRotations(state, pose, bodyRot, scale)) ci.cancel();
++    }
++
++    @Inject(method = "extractRenderState(Lnet/minecraft/world/entity/Avatar;Lnet/minecraft/client/renderer/entity/state/AvatarRenderState;F)V",
++            at = @At("TAIL"))
++    private void hokaOdyssey$state(Avatar entity, AvatarRenderState state, float partialTick, CallbackInfo ci) {
++        if (Hooks.hasAvatarState()) Hooks.avatarState(entity, state, partialTick);
++    }
++}
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/mixin/CameraMixin.java b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/CameraMixin.java
+--- a/client/core/src/main/java/ink/hoka/odyssey/client/mixin/CameraMixin.java
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/CameraMixin.java
+@@ -6,6 +6,9 @@
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.phys.Vec3;
++import org.joml.Quaternionf;
++import org.joml.Vector3f;
++import org.spongepowered.asm.mixin.Final;
+ import org.spongepowered.asm.mixin.Mixin;
+ import org.spongepowered.asm.mixin.Shadow;
+ import org.spongepowered.asm.mixin.injection.At;
+@@ -16,6 +19,7 @@
+ /**
+  * Камера для модулей: после расчёта игрой — курс, наклон, положение и КРЕН от модулей. Крен подставляется в сам
+  * поворот камеры (третий угол rotationYXZ), поэтому видимость (отсечение) и звук считаются уже с ним.
++ * Модуль может задать и полный поворот кватернионом ({@link CameraState#rotation}) — без вырождения при ±90°.
+  */
+ @Mixin(Camera.class)
+ public abstract class CameraMixin {
+@@ -25,6 +29,10 @@
+     @Shadow public abstract Vec3 position();
+     @Shadow public abstract float yRot();
+     @Shadow public abstract float xRot();
++    @Shadow @Final private Quaternionf rotation;
++    @Shadow @Final private Vector3f forwards;
++    @Shadow @Final private Vector3f up;
++    @Shadow @Final private Vector3f left;
+ 
+     @Inject(method = "setup", at = @At("TAIL"))
+     private void hokaOdyssey$setup(Level level, Entity entity, boolean detached, boolean mirror, float partialTick, CallbackInfo ci) {
+@@ -43,6 +51,12 @@
+         Hooks.camera(s, partialTick);
+         Hooks.roll = (float) Math.toRadians(s.roll);
+         setRotation(s.yaw, s.pitch);
++        if (s.rotation != null) {                           // полный поворот от модуля — вместо углов Эйлера
++            rotation.set(s.rotation).normalize();
++            new Vector3f(0, 0, -1).rotate(rotation, forwards);
++            new Vector3f(0, 1, 0).rotate(rotation, up);
++            new Vector3f(-1, 0, 0).rotate(rotation, left);
++        }
+         setPosition(s.x, s.y, s.z);
+     }
+ 
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/mixin/FogRendererMixin.java b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/FogRendererMixin.java
+new file mode 100644
+--- /dev/null
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/FogRendererMixin.java
+@@ -0,0 +1,66 @@
++package ink.hoka.odyssey.client.mixin;
++
++import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
++import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
++import ink.hoka.odyssey.client.Hooks;
++import ink.hoka.odyssey.client.api.FogState;
++import net.minecraft.client.Camera;
++import net.minecraft.client.DeltaTracker;
++import net.minecraft.client.multiplayer.ClientLevel;
++import net.minecraft.client.renderer.fog.FogRenderer;
++import org.joml.Vector4f;
++import org.spongepowered.asm.mixin.Mixin;
++import org.spongepowered.asm.mixin.Unique;
++import org.spongepowered.asm.mixin.injection.At;
++import org.spongepowered.asm.mixin.injection.Inject;
++import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
++
++import java.nio.ByteBuffer;
++
++/**
++ * Туман для модулей. {@code FogRenderer.setupFog} считает цвет и расстояния и пишет их в UBO тумана
++ * ({@code updateBuffer}); тот же объект цвета он возвращает — им игра очищает кадр. Оборачиваем запись в UBO:
++ * отдаём значения крючкам, пишем изменённые и правим объект цвета на месте — меняется и цвет очистки.
++ */
++@Mixin(FogRenderer.class)
++public abstract class FogRendererMixin {
++
++    @Unique private Camera hokaOdyssey$camera;
++    @Unique private float hokaOdyssey$pt;
++
++    @Inject(method = "setupFog", at = @At("HEAD"))
++    private void hokaOdyssey$begin(Camera camera, int renderDistance, DeltaTracker delta, float darken, ClientLevel level,
++                                   CallbackInfoReturnable<Vector4f> cir) {
++        hokaOdyssey$camera = camera;
++        hokaOdyssey$pt = delta.getGameTimeDeltaPartialTick(false);
++    }
++
++    @WrapOperation(method = "setupFog", at = @At(value = "INVOKE",
++            target = "Lnet/minecraft/client/renderer/fog/FogRenderer;updateBuffer(Ljava/nio/ByteBuffer;ILorg/joml/Vector4f;FFFFFF)V"))
++    private void hokaOdyssey$fog(FogRenderer self, ByteBuffer buf, int offset, Vector4f color, float envStart, float envEnd,
++                                 float rdStart, float rdEnd, float skyEnd, float cloudEnd, Operation<Void> original) {
++        if (Hooks.hasFog() && hokaOdyssey$camera != null) {
++            FogState s = new FogState();
++            s.r = color.x;
++            s.g = color.y;
++            s.b = color.z;
++            s.a = color.w;
++            s.envStart = envStart;
++            s.envEnd = envEnd;
++            s.rdStart = rdStart;
++            s.rdEnd = rdEnd;
++            s.skyEnd = skyEnd;
++            s.cloudEnd = cloudEnd;
++            Hooks.fog(s, hokaOdyssey$camera, hokaOdyssey$pt);
++            color.set(s.r, s.g, s.b, s.a);                     // тот же объект вернёт setupFog — цвет очистки кадра
++            envStart = s.envStart;
++            envEnd = s.envEnd;
++            rdStart = s.rdStart;
++            rdEnd = s.rdEnd;
++            skyEnd = s.skyEnd;
++            cloudEnd = s.cloudEnd;
++        }
++        hokaOdyssey$camera = null;
++        original.call(self, buf, offset, color, envStart, envEnd, rdStart, rdEnd, skyEnd, cloudEnd);
++    }
++}
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/mixin/KeyboardInputMixin.java b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/KeyboardInputMixin.java
+new file mode 100644
+--- /dev/null
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/KeyboardInputMixin.java
+@@ -0,0 +1,48 @@
++package ink.hoka.odyssey.client.mixin;
++
++import ink.hoka.odyssey.client.Hooks;
++import ink.hoka.odyssey.client.api.InputState;
++import net.minecraft.client.player.ClientInput;
++import net.minecraft.client.player.KeyboardInput;
++import net.minecraft.world.entity.player.Input;
++import net.minecraft.world.phys.Vec2;
++import org.spongepowered.asm.mixin.Mixin;
++import org.spongepowered.asm.mixin.injection.At;
++import org.spongepowered.asm.mixin.injection.Inject;
++import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
++
++/**
++ * Ввод своего игрока для модулей: после чтения клавиш игрой (KeyboardInput.tick), до движения и до отправки
++ * серверу (LocalPlayer шлёт keyPresses, когда они меняются). Наследуемся от ClientInput — так видно его поля.
++ */
++@Mixin(KeyboardInput.class)
++public abstract class KeyboardInputMixin extends ClientInput {
++
++    @Inject(method = "tick", at = @At("TAIL"))
++    private void hokaOdyssey$input(CallbackInfo ci) {
++        if (!Hooks.hasInput()) return;
++        Input k = keyPresses;
++        InputState s = new InputState();
++        s.forward = k.forward();
++        s.backward = k.backward();
++        s.left = k.left();
++        s.right = k.right();
++        s.jump = k.jump();
++        s.shift = k.shift();
++        s.sprint = k.sprint();
++        s.moveStrafe = moveVector.x;
++        s.moveForward = moveVector.y;
++        Hooks.input(s);
++        Input n = new Input(s.forward, s.backward, s.left, s.right, s.jump, s.shift, s.sprint);
++        boolean keysChanged = !n.equals(k);
++        boolean vectorChanged = s.moveStrafe != moveVector.x || s.moveForward != moveVector.y;
++        keyPresses = n;
++        if (vectorChanged) {
++            moveVector = new Vec2(s.moveStrafe, s.moveForward);
++        } else if (keysChanged) {                           // как в KeyboardInput.tick
++            float f = n.forward() == n.backward() ? 0 : n.forward() ? 1 : -1;
++            float l = n.left() == n.right() ? 0 : n.left() ? 1 : -1;
++            moveVector = new Vec2(l, f).normalized();
++        }
++    }
++}
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/mixin/LevelRendererSkyMixin.java b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/LevelRendererSkyMixin.java
+new file mode 100644
+--- /dev/null
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/LevelRendererSkyMixin.java
+@@ -0,0 +1,123 @@
++package ink.hoka.odyssey.client.mixin;
++
++import com.mojang.blaze3d.buffers.GpuBufferSlice;
++import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
++import com.mojang.blaze3d.framegraph.FramePass;
++import com.mojang.blaze3d.pipeline.RenderTarget;
++import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
++import com.mojang.blaze3d.systems.RenderSystem;
++import ink.hoka.odyssey.client.Hooks;
++import ink.hoka.odyssey.client.api.SkyFrame;
++import net.minecraft.client.Camera;
++import net.minecraft.client.CloudStatus;
++import net.minecraft.client.DeltaTracker;
++import net.minecraft.client.Minecraft;
++import net.minecraft.client.multiplayer.ClientLevel;
++import net.minecraft.client.renderer.LevelRenderer;
++import net.minecraft.client.renderer.LevelTargetBundle;
++import net.minecraft.client.renderer.SkyRenderer;
++import net.minecraft.client.renderer.culling.Frustum;
++import net.minecraft.client.renderer.state.LevelRenderState;
++import net.minecraft.util.profiling.ProfilerFiller;
++import net.minecraft.world.level.dimension.DimensionType;
++import net.minecraft.world.level.material.FogType;
++import net.minecraft.world.phys.Vec3;
++import org.joml.Matrix4f;
++import org.joml.Vector4f;
++import org.spongepowered.asm.mixin.Final;
++import org.spongepowered.asm.mixin.Mixin;
++import org.spongepowered.asm.mixin.Shadow;
++import org.spongepowered.asm.mixin.Unique;
++import org.spongepowered.asm.mixin.injection.At;
++import org.spongepowered.asm.mixin.injection.Inject;
++import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
++
++/**
++ * Небо, облака для модулей. Ваниль строит кадр графом проходов (FrameGraphBuilder): clear → sky → main → … .
++ * Если у модулей есть крючок неба, перед ванильным проходом «sky» добавляем свой «hoka_sky» (тот же основной буфер):
++ * в нём зовём крючки, и если кто-то вернул true — ванильный SkyRenderer в этом кадре ничего не рисует
++ * ({@link SkyRendererMixin}). Ванильный проход не трогаем — совместимо с модами, которые в него вмешиваются.
++ * Где ваниль неба не рисует (лава, слепота, skybox none, туман босса) — проход всё равно добавляем, с причиной.
++ */
++@Mixin(LevelRenderer.class)
++public abstract class LevelRendererSkyMixin {
++
++    @Shadow @Final private LevelTargetBundle targets;
++    @Shadow @Final private LevelRenderState levelRenderState;
++    @Shadow private ClientLevel level;
++    @Shadow private SkyRenderer skyRenderer;
++
++    @Shadow protected abstract boolean doesMobEffectBlockSky(Camera camera);
++
++    @Unique private Camera hokaOdyssey$camera;
++    @Unique private Matrix4f hokaOdyssey$view;
++    @Unique private Matrix4f hokaOdyssey$proj;
++    @Unique private GpuBufferSlice hokaOdyssey$fog;
++    @Unique private float hokaOdyssey$pt;
++    @Unique private boolean hokaOdyssey$skyAdded;
++
++    @Inject(method = "renderLevel", at = @At("HEAD"))
++    private void hokaOdyssey$frame(GraphicsResourceAllocator allocator, DeltaTracker delta, boolean renderOutline, Camera camera,
++                                   Matrix4f view, Matrix4f proj, Matrix4f cullProj, GpuBufferSlice fog, Vector4f fogColor,
++                                   boolean renderSky, CallbackInfo ci) {
++        Hooks.skyClaimed = false;
++        hokaOdyssey$skyAdded = false;
++        if (!Hooks.hasSky()) return;
++        hokaOdyssey$camera = camera;
++        hokaOdyssey$view = new Matrix4f(view);
++        hokaOdyssey$proj = new Matrix4f(proj);
++        hokaOdyssey$fog = fog;
++        hokaOdyssey$pt = delta.getGameTimeDeltaPartialTick(false);
++    }
++
++    /** Ванильный проход неба: свой проход перед ним (условия пропуска — как у ванили). */
++    @Inject(method = "addSkyPass", at = @At("HEAD"))
++    private void hokaOdyssey$sky(FrameGraphBuilder fg, Camera camera, GpuBufferSlice fog, CallbackInfo ci) {
++        if (!Hooks.hasSky() || hokaOdyssey$camera == null) return;
++        FogType fluid = camera.getFluidInCamera();
++        SkyFrame.SkipReason skip;
++        if (fluid == FogType.POWDER_SNOW || fluid == FogType.LAVA) skip = SkyFrame.SkipReason.FLUID;
++        else if (doesMobEffectBlockSky(camera)) skip = SkyFrame.SkipReason.BLIND;
++        else if (levelRenderState.skyRenderState.skybox == DimensionType.Skybox.NONE || skyRenderer == null) skip = SkyFrame.SkipReason.NO_SKYBOX;
++        else skip = SkyFrame.SkipReason.NONE;
++        hokaOdyssey$addPass(fg, skip);
++    }
++
++    /** Туман босса: ваниль не зовёт addSkyPass вовсе — добавляем свой проход перед основным. */
++    @Inject(method = "addMainPass", at = @At("HEAD"))
++    private void hokaOdyssey$bossFogSky(FrameGraphBuilder fg, Frustum frustum, Matrix4f view, GpuBufferSlice fog, boolean renderOutline,
++                                        LevelRenderState state, DeltaTracker delta, ProfilerFiller profiler, CallbackInfo ci) {
++        if (!hokaOdyssey$skyAdded && Hooks.hasSky() && hokaOdyssey$camera != null) hokaOdyssey$addPass(fg, SkyFrame.SkipReason.BOSS_FOG);
++    }
++
++    @Unique
++    private void hokaOdyssey$addPass(FrameGraphBuilder fg, SkyFrame.SkipReason skip) {
++        hokaOdyssey$skyAdded = true;
++        Camera camera = hokaOdyssey$camera;
++        Vec3 pos = camera.position();
++        GpuBufferSlice fog = hokaOdyssey$fog;
++        ClientLevel lvl = level;
++        SkyRenderer renderer = skyRenderer;
++        Matrix4f view = hokaOdyssey$view, proj = hokaOdyssey$proj;
++        float pt = hokaOdyssey$pt;
++        long gameTime = levelRenderState.gameTime;
++        hokaOdyssey$camera = null;                      // не держать камеру/мир до следующего кадра
++        if (lvl == null) return;
++        FramePass pass = fg.addPass("hoka_sky");
++        targets.main = pass.readsAndWrites(targets.main);
++        pass.executes(() -> {
++            RenderSystem.setShaderFog(fog);
++            RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
++            SkyFrame frame = new SkyFrame(view, proj, pos.x, pos.y, pos.z, pt, gameTime, lvl.dimension().identifier(),
++                    lvl.dimensionType(), levelRenderState.skyRenderState, renderer, fog,
++                    main.getColorTextureView(), main.getDepthTextureView(), skip);
++            Hooks.skyClaimed = Hooks.sky(frame);
++        });
++    }
++
++    @Inject(method = "addCloudsPass", at = @At("HEAD"), cancellable = true)
++    private void hokaOdyssey$clouds(FrameGraphBuilder fg, CloudStatus status, Vec3 cameraPos, long gameTime, float partialTick,
++                                    int color, float height, CallbackInfo ci) {
++        if (Hooks.hideClouds()) ci.cancel();
++    }
++}
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/mixin/LocalPlayerTravelMixin.java b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/LocalPlayerTravelMixin.java
+new file mode 100644
+--- /dev/null
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/LocalPlayerTravelMixin.java
+@@ -0,0 +1,23 @@
++package ink.hoka.odyssey.client.mixin;
++
++import ink.hoka.odyssey.client.Hooks;
++import net.minecraft.client.player.LocalPlayer;
++import net.minecraft.world.entity.LivingEntity;
++import net.minecraft.world.phys.Vec3;
++import org.spongepowered.asm.mixin.Mixin;
++import org.spongepowered.asm.mixin.injection.At;
++import org.spongepowered.asm.mixin.injection.Inject;
++import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
++
++/**
++ * Перед расчётом движения своего игрока ({@code LivingEntity.travel}) — модуль меняет скорость в тот же тик
++ * (тяга, гравитация), а не на тик позже, как из onTick (END_CLIENT_TICK — уже после движения).
++ */
++@Mixin(LivingEntity.class)
++public abstract class LocalPlayerTravelMixin {
++
++    @Inject(method = "travel", at = @At("HEAD"))
++    private void hokaOdyssey$travel(Vec3 input, CallbackInfo ci) {
++        if (Hooks.hasTravel() && (Object) this instanceof LocalPlayer p) Hooks.travel(p);
++    }
++}
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/mixin/PlayerPoseMixin.java b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/PlayerPoseMixin.java
+new file mode 100644
+--- /dev/null
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/PlayerPoseMixin.java
+@@ -0,0 +1,29 @@
++package ink.hoka.odyssey.client.mixin;
++
++import ink.hoka.odyssey.client.Hooks;
++import net.minecraft.client.player.LocalPlayer;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.entity.Pose;
++import net.minecraft.world.entity.player.Player;
++import org.spongepowered.asm.mixin.Mixin;
++import org.spongepowered.asm.mixin.injection.At;
++import org.spongepowered.asm.mixin.injection.Inject;
++import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
++
++/**
++ * Поза своего игрока от модуля ({@code forceLocalPose}). Клиент сам решает позу своего игрока каждый тик
++ * ({@code Player.updatePlayerPose} в конце {@code Player.tick}) — поза от сервера перетирается, а SWIMMING вне воды
++ * ваниль не даёт. Задана поза — ставим её вместо ванильного выбора (хитбокс и высота глаз — по ней).
++ */
++@Mixin(Player.class)
++public abstract class PlayerPoseMixin {
++
++    @Inject(method = "updatePlayerPose", at = @At("HEAD"), cancellable = true)
++    private void hokaOdyssey$pose(CallbackInfo ci) {
++        if (!((Object) this instanceof LocalPlayer)) return;
++        Pose forced = Hooks.forcedPose();
++        if (forced == null) return;
++        ((Entity) (Object) this).setPose(forced);
++        ci.cancel();
++    }
++}
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/mixin/SkyRendererMixin.java b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/SkyRendererMixin.java
+new file mode 100644
+--- /dev/null
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/SkyRendererMixin.java
+@@ -0,0 +1,28 @@
++package ink.hoka.odyssey.client.mixin;
++
++import ink.hoka.odyssey.client.Hooks;
++import net.minecraft.client.renderer.SkyRenderer;
++import org.spongepowered.asm.mixin.Mixin;
++import org.spongepowered.asm.mixin.injection.At;
++import org.spongepowered.asm.mixin.injection.Inject;
++import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
++
++/**
++ * Модуль забрал небо в этом кадре ({@link Hooks#skyClaimed}) — ванильные части неба не рисуются. Флаг ставится
++ * после крючков, поэтому сам модуль из крючка может звать эти методы (взять ванильные солнце и звёзды).
++ */
++@Mixin(SkyRenderer.class)
++public abstract class SkyRendererMixin {
++
++    @Inject(method = {
++            "renderSkyDisc(I)V",
++            "renderDarkDisc()V",
++            "renderSunMoonAndStars(Lcom/mojang/blaze3d/vertex/PoseStack;FFFLnet/minecraft/world/level/MoonPhase;FF)V",
++            "renderSunriseAndSunset(Lcom/mojang/blaze3d/vertex/PoseStack;FI)V",
++            "renderEndSky()V",
++            "renderEndFlash(Lcom/mojang/blaze3d/vertex/PoseStack;FFF)V"
++    }, at = @At("HEAD"), cancellable = true)
++    private void hokaOdyssey$claimed(CallbackInfo ci) {
++        if (Hooks.skyClaimed) ci.cancel();
++    }
++}
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/mixin/WeatherEffectRendererMixin.java b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/WeatherEffectRendererMixin.java
+new file mode 100644
+--- /dev/null
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/WeatherEffectRendererMixin.java
+@@ -0,0 +1,25 @@
++package ink.hoka.odyssey.client.mixin;
++
++import ink.hoka.odyssey.client.Hooks;
++import net.minecraft.client.renderer.MultiBufferSource;
++import net.minecraft.client.renderer.WeatherEffectRenderer;
++import net.minecraft.client.renderer.state.WeatherRenderState;
++import net.minecraft.world.phys.Vec3;
++import org.spongepowered.asm.mixin.Mixin;
++import org.spongepowered.asm.mixin.injection.At;
++import org.spongepowered.asm.mixin.injection.Inject;
++import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
++
++/**
++ * Погода для модулей: не рисовать полосы дождя и снега. Проход «weather» целиком не отменяем — в нём же рисуется
++ * граница мира. Брызги дождя и звук — отдельно (тик), их этот крючок не трогает.
++ */
++@Mixin(WeatherEffectRenderer.class)
++public abstract class WeatherEffectRendererMixin {
++
++    @Inject(method = "render(Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/client/renderer/state/WeatherRenderState;)V",
++            at = @At("HEAD"), cancellable = true)
++    private void hokaOdyssey$weather(MultiBufferSource buffers, Vec3 cameraPos, WeatherRenderState state, CallbackInfo ci) {
++        if (Hooks.hideWeather()) ci.cancel();
++    }
++}
+diff --git a/client/core/src/main/resources/hoka_odyssey.mixins.json b/client/core/src/main/resources/hoka_odyssey.mixins.json
+--- a/client/core/src/main/resources/hoka_odyssey.mixins.json
++++ b/client/core/src/main/resources/hoka_odyssey.mixins.json
+@@ -13,7 +13,15 @@
+     "SoundManagerMixin",
+     "SoundBufferLibraryMixin",
+     "BlockStateSoundMixin",
+-    "BlockItemMixin"
++    "BlockItemMixin",
++    "LevelRendererSkyMixin",
++    "SkyRendererMixin",
++    "FogRendererMixin",
++    "WeatherEffectRendererMixin",
++    "AvatarRendererMixin",
++    "PlayerPoseMixin",
++    "KeyboardInputMixin",
++    "LocalPlayerTravelMixin"
+   ],
+   "injectors": {
+     "defaultRequire": 1
