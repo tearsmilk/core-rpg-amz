@@ -1,0 +1,313 @@
+From ee075363d700d3cee5defd968570317dbe564797 Mon Sep 17 00:00:00 2001
+From: Hoka Odyssey contributor <noreply@anthropic.com>
+Date: Sat, 21 Nov 2026 23:46:54 +0000
+Subject: [PATCH] =?UTF-8?q?=D0=9A=D0=B0=D1=80=D1=82=D1=8B:=20=D1=82=D0=B8?=
+ =?UTF-8?q?=D0=BF=20=D0=BC=D0=B8=D1=80=D0=B0=20(dimension)=20=D0=B8=D0=B7?=
+ =?UTF-8?q?=20map.yml,=20/homap=20create=20[=D1=82=D0=B8=D0=BF=20=D0=BC?=
+ =?UTF-8?q?=D0=B8=D1=80=D0=B0],=20tp=20=D0=BD=D0=B0=20=D1=82=D1=83=20?=
+ =?UTF-8?q?=D0=B6=D0=B5=20=D0=BA=D0=B0=D1=80=D1=82=D1=83?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- Maps.load читает ключ dimension из maps/<карта>/map.yml и создаёт инстанс с этим
+  DimensionType (реестр MinecraftServer.getDimensionTypeRegistry()); нет ключа —
+  minecraft:overworld, неизвестный ключ — предупреждение в лог и overworld.
+- /homap create <имя> [flat|void] [тип мира] пишет dimension в map.yml (подсказки —
+  ключи реестра); /homap list показывает тип мира, если он не overworld.
+- /homap tp на карту, где игрок уже стоит, больше не падает с IllegalArgumentException
+  (Player.setInstance) — просто телепорт на спавн карты.
+- Тест MapsTest.dimensionFromMapYml, заметка в DEVELOPER.md.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01LEqCpNAfKTKPXaeQ5ZVhft
+---
+ DEVELOPER.md                                  |  8 ++-
+ .../odyssey/server/maps/HoMapCommand.java     | 27 +++++---
+ .../ink/hoka/odyssey/server/maps/Maps.java    | 67 +++++++++++++++++--
+ .../hoka/odyssey/server/maps/MapsTest.java    | 23 +++++++
+ 4 files changed, 108 insertions(+), 17 deletions(-)
+
+diff --git a/DEVELOPER.md b/DEVELOPER.md
+index 5a61a68..bc42ff9 100644
+--- a/DEVELOPER.md
++++ b/DEVELOPER.md
+@@ -138,6 +138,12 @@ SpaceApi space = services().require(SpaceApi.class);   // брать занов
+ 
+ - **Карты** (`maps/<имя>/` в формате Anvil + `map.yml`): загрузка по требованию, автосохранение раз в 5 мин и
+   при остановке, пустые выгружаются через 10 мин. Генерация `flat` (трава на y=40) или `void` (площадка на y=64).
++  Тип мира — ключ `dimension` в `map.yml` (например `dimension: "hoka:space"`; нет ключа — `minecraft:overworld`,
++  неизвестный — предупреждение в лог и overworld). Свой тип мира модуль регистрирует в `onLoad`/`onEnable` через
++  `MinecraftServer.getDimensionTypeRegistry().register(…)` — только до старта сервера (потом реестр заморожен).
++  Anvil не хранит тип мира: у карты с постройками меняйте его только на тип с тем же диапазоном высот —
++  чанки вне `minY..maxY` нового типа при загрузке отбрасываются и теряются при следующем сохранении.
++  Основная карта `maps/world` пока загружается до включения модулей — для неё годятся только ванильные типы мира.
+ - **Операторы** (`ops.json`), уровень прав 4 у OP.
+ - **Установка блоков как в ванили**: ступеньки (с углами), сундуки (соединение, Shift — не соединять), бочки/
+   раздатчики/поршни по взгляду, печи и т.п. лицом к игроку, брёвна по оси, плиты (двойные), факелы/таблички/
+@@ -150,7 +156,7 @@ SpaceApi space = services().require(SpaceApi.class);   // брать занов
+ 
+ | Команда | |
+ |---|---|
+-| `/homap list` / `tp <карта> [игрок]` / `create <имя> [flat\|void]` / `delete <карта> confirm` / `setspawn` | карты |
++| `/homap list` / `tp <карта> [игрок]` / `create <имя> [flat\|void] [тип мира]` / `delete <карта> confirm` / `setspawn` | карты |
+ | `/hoop <ник>` / `/hoop` | дать/забрать OP / список |
+ | `/homodule list` / `info <id>` / `reload <id>` / `unload <id>` / `load <файл.jar>` | модули |
+ | `stop` (консоль) | остановка: модули выключаются, карты сохраняются |
+diff --git a/server/src/main/java/ink/hoka/odyssey/server/maps/HoMapCommand.java b/server/src/main/java/ink/hoka/odyssey/server/maps/HoMapCommand.java
+index fb4a43e..2fd686a 100644
+--- a/server/src/main/java/ink/hoka/odyssey/server/maps/HoMapCommand.java
++++ b/server/src/main/java/ink/hoka/odyssey/server/maps/HoMapCommand.java
+@@ -15,7 +15,7 @@ import net.minestom.server.entity.Player;
+  * /homap — карты (только OP и консоль):
+  *   /homap list                         — все карты (загруженные отмечены, с числом игроков)
+  *   /homap tp &lt;карта&gt; [игрок]          — перейти на карту (на её точку появления)
+- *   /homap create &lt;имя&gt; [flat|void]     — новая карта
++ *   /homap create &lt;имя&gt; [flat|void] [тип мира] — новая карта (тип мира — ключ DimensionType, например hoka:space)
+  *   /homap delete &lt;карта&gt; confirm      — удалить карту с диска (игроки уйдут на основную)
+  *   /homap setspawn                     — точка появления карты = где вы стоите
+  */
+@@ -34,6 +34,10 @@ public final class HoMapCommand extends Command {
+         });
+         var nameArg = ArgumentType.Word("имя");
+         var genArg = ArgumentType.Word("генерация").from("flat", "void");
++        // ключ вида hoka:space (без пространства имён — minecraft:); подсказки — все зарегистрированные типы мира
++        var dimArg = ArgumentType.ResourceLocation("тип мира").setSuggestionCallback((sender, ctx, sug) -> {
++            for (String k : Maps.dimensionKeys()) sug.addEntry(new SuggestionEntry(k));
++        });
+         var playerArg = ArgumentType.Word("игрок").setSuggestionCallback((sender, ctx, sug) -> {
+             for (Player p : MinecraftServer.getConnectionManager().getOnlinePlayers()) sug.addEntry(new SuggestionEntry(p.getUsername()));
+         });
+@@ -48,8 +52,9 @@ public final class HoMapCommand extends Command {
+             if (p == null) { err(s, "игрок «" + c.get(playerArg) + "» не в сети"); return; }
+             tp(s, p, c.get(mapArg));
+         }, ArgumentType.Literal("tp"), mapArg, playerArg);
+-        addSyntax((s, c) -> create(s, c.get(nameArg), "flat"), ArgumentType.Literal("create"), nameArg);
+-        addSyntax((s, c) -> create(s, c.get(nameArg), c.get(genArg)), ArgumentType.Literal("create"), nameArg, genArg);
++        addSyntax((s, c) -> create(s, c.get(nameArg), "flat", null), ArgumentType.Literal("create"), nameArg);
++        addSyntax((s, c) -> create(s, c.get(nameArg), c.get(genArg), null), ArgumentType.Literal("create"), nameArg, genArg);
++        addSyntax((s, c) -> create(s, c.get(nameArg), c.get(genArg), c.get(dimArg).asString()), ArgumentType.Literal("create"), nameArg, genArg, dimArg);
+         addSyntax((s, c) -> err(s, "удаление стирает карту с диска. Подтвердите: /homap delete " + c.get(mapArg) + " confirm"),
+                 ArgumentType.Literal("delete"), mapArg);
+         addSyntax((s, c) -> delete(s, c.get(mapArg)), ArgumentType.Literal("delete"), mapArg, ArgumentType.Literal("confirm"));
+@@ -59,7 +64,7 @@ public final class HoMapCommand extends Command {
+     private void help(CommandSender s) {
+         info(s, "/homap list — карты");
+         info(s, "/homap tp <карта> [игрок] — перейти на карту");
+-        info(s, "/homap create <имя> [flat|void] — новая карта");
++        info(s, "/homap create <имя> [flat|void] [тип мира] — новая карта");
+         info(s, "/homap delete <карта> confirm — удалить карту");
+         info(s, "/homap setspawn — точка появления карты здесь");
+     }
+@@ -69,7 +74,8 @@ public final class HoMapCommand extends Command {
+         info(s, "Карты (" + names.size() + "):");
+         for (String n : names) {
+             var m = maps.loadedMap(n);
+-            String st = m.map(g -> "загружена, игроков: " + g.instance.getPlayers().size()).orElse("не загружена");
++            String st = m.map(g -> "загружена, игроков: " + g.instance.getPlayers().size()
++                    + (Maps.isOverworld(g.dimension()) ? "" : ", тип мира: " + g.dimension().key().asString())).orElse("не загружена");
+             s.sendMessage(Component.text("  " + n + (Maps.DEFAULT.equals(n) ? " (основная)" : "") + " — " + st, NamedTextColor.GRAY));
+         }
+     }
+@@ -78,19 +84,22 @@ public final class HoMapCommand extends Command {
+         Maps.GameMap m = maps.load(name);
+         if (m == null) { err(s, "карты «" + name + "» нет. Список: /homap list"); return; }
+         maps.touch(m);
+-        target.setInstance(m.instance, m.spawn()).thenRun(() -> {
++        // уже на этой карте — setInstance бросил бы IllegalArgumentException («Instance should be different…»)
++        var move = target.getInstance() == m.instance ? target.teleport(m.spawn()) : target.setInstance(m.instance, m.spawn());
++        move.thenRun(() -> {
+             target.setRespawnPoint(m.spawn());
+             ok(target, "Вы на карте «" + name + "»");
+             if (s != target) ok(s, target.getUsername() + " → «" + name + "»");
+         });
+     }
+ 
+-    private void create(CommandSender s, String name, String gen) {
++    private void create(CommandSender s, String name, String gen, String dimension) {
+         Maps.Generator g = Maps.Generator.of(gen);
+         if (g == null) { err(s, "генерация: flat или void"); return; }
+         try {
+-            maps.create(name.toLowerCase(), g);
+-            ok(s, "Карта «" + name.toLowerCase() + "» создана (" + g.desc + "). Перейти: /homap tp " + name.toLowerCase());
++            Maps.GameMap m = maps.create(name.toLowerCase(), g, dimension);
++            String dim = Maps.isOverworld(m.dimension()) ? "" : ", тип мира " + m.dimension().key().asString();
++            ok(s, "Карта «" + name.toLowerCase() + "» создана (" + g.desc + dim + "). Перейти: /homap tp " + name.toLowerCase());
+         } catch (RuntimeException e) {
+             err(s, e.getMessage());
+         }
+diff --git a/server/src/main/java/ink/hoka/odyssey/server/maps/Maps.java b/server/src/main/java/ink/hoka/odyssey/server/maps/Maps.java
+index cf4ecb2..54d5312 100644
+--- a/server/src/main/java/ink/hoka/odyssey/server/maps/Maps.java
++++ b/server/src/main/java/ink/hoka/odyssey/server/maps/Maps.java
+@@ -1,6 +1,8 @@
+ package ink.hoka.odyssey.server.maps;
+ 
+ import ink.hoka.odyssey.api.ModuleConfig;
++import net.kyori.adventure.key.InvalidKeyException;
++import net.kyori.adventure.key.Key;
+ import net.minestom.server.MinecraftServer;
+ import net.minestom.server.coordinate.Pos;
+ import net.minestom.server.entity.Player;
+@@ -8,6 +10,8 @@ import net.minestom.server.instance.InstanceContainer;
+ import net.minestom.server.instance.LightingChunk;
+ import net.minestom.server.instance.anvil.AnvilLoader;
+ import net.minestom.server.instance.block.Block;
++import net.minestom.server.registry.RegistryKey;
++import net.minestom.server.world.DimensionType;
+ import net.minestom.server.timer.TaskSchedule;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+@@ -23,7 +27,9 @@ import java.util.stream.Stream;
+ 
+ /**
+  * Карты (миры) — папки в maps/: maps/&lt;имя&gt;/region/*.mca (формат Anvil, как у ванильного мира) + map.yml
+- * (генерация, точка появления). Основная карта — «world», в неё попадают при входе.
++ * (генерация, точка появления, тип мира). Основная карта — «world», в неё попадают при входе.
++ * Тип мира (DimensionType: высота, небо, свет) — ключ {@code dimension} в map.yml, например {@code dimension: "hoka:space"};
++ * нет ключа — minecraft:overworld. Свой тип регистрирует модуль в onLoad/onEnable (до старта сервера — потом реестр заморожен).
+  * Карта загружается при первом обращении, пустая (без игроков) выгружается через 10 минут.
+  * Сохранение: раз в 5 минут, при выгрузке и при остановке сервера.
+  */
+@@ -52,9 +58,10 @@ public final class Maps {
+         final Path dir;
+         final ModuleConfig meta;
+         volatile long emptySince = System.currentTimeMillis();
++        final RegistryKey<DimensionType> dimension;
+ 
+-        GameMap(String name, InstanceContainer instance, Path dir, ModuleConfig meta) {
+-            this.name = name; this.instance = instance; this.dir = dir; this.meta = meta;
++        GameMap(String name, InstanceContainer instance, Path dir, ModuleConfig meta, RegistryKey<DimensionType> dimension) {
++            this.name = name; this.instance = instance; this.dir = dir; this.meta = meta; this.dimension = dimension;
+         }
+ 
+         public Pos spawn() {
+@@ -69,6 +76,9 @@ public final class Maps {
+         }
+ 
+         public String generator() { return meta.getString("generator", "flat"); }
++
++        /** Тип мира, с которым карта загружена (ключ реестра DimensionType, например minecraft:overworld). */
++        public RegistryKey<DimensionType> dimension() { return dimension; }
+     }
+ 
+     private final Path dir;
+@@ -109,15 +119,45 @@ public final class Maps {
+         if (!NAME.matcher(name).matches() || !Files.isDirectory(d)) return null;
+         ModuleConfig meta = new ModuleConfig(d.resolve("map.yml"));
+         Generator gen = Optional.ofNullable(Generator.of(meta.getString("generator", "flat"))).orElse(Generator.FLAT);
+-        InstanceContainer inst = MinecraftServer.getInstanceManager().createInstanceContainer(new AnvilLoader(d));
++        RegistryKey<DimensionType> dim = dimension(name, meta.getString("dimension", null));
++        InstanceContainer inst = MinecraftServer.getInstanceManager().createInstanceContainer(dim, new AnvilLoader(d));
+         inst.setChunkSupplier(LightingChunk::new);
+         inst.setGenerator(generator(gen));
+-        m = new GameMap(name, inst, d, meta);
++        m = new GameMap(name, inst, d, meta, dim);
+         loaded.put(name, m);
+-        LOG.info("карта «{}» загружена ({})", name, gen.key());
++        LOG.info("карта «{}» загружена ({}{})", name, gen.key(), isOverworld(dim) ? "" : ", " + dim.key().asString());
+         return m;
+     }
+ 
++    /**
++     * Тип мира по ключу из map.yml. Пусто — overworld; неизвестный ключ (модуль с типом не установлен,
++     * опечатка) — предупреждение и overworld, чтобы карта всё равно открылась.
++     * Важно: Anvil не хранит тип мира — секции чанков вне minY..maxY нового типа при загрузке
++     * пропускаются и при следующем сохранении теряются. Менять dimension у карты с постройками
++     * можно только на тип с тем же (или более широким) диапазоном высот.
++     */
++    static RegistryKey<DimensionType> dimension(String map, String id) {
++        if (id == null || id.isBlank()) return DimensionType.OVERWORLD;
++        RegistryKey<DimensionType> key = null;
++        try { key = MinecraftServer.getDimensionTypeRegistry().getKey(Key.key(id.trim())); }
++        catch (InvalidKeyException e) { /* ниже — как неизвестный */ }
++        if (key == null) {
++            LOG.warn("карта «{}»: тип мира «{}» не найден в реестре — загружаю как minecraft:overworld", map, id);
++            return DimensionType.OVERWORLD;
++        }
++        return key;
++    }
++
++    /** Ключи всех зарегистрированных типов мира (для подсказок /homap create). */
++    public static List<String> dimensionKeys() {
++        List<String> out = new ArrayList<>();
++        for (RegistryKey<DimensionType> k : MinecraftServer.getDimensionTypeRegistry().keys()) out.add(k.key().asString());
++        Collections.sort(out);
++        return out;
++    }
++
++    public static boolean isOverworld(RegistryKey<DimensionType> k) { return k.key().equals(DimensionType.OVERWORLD.key()); }
++
+     private static net.minestom.server.instance.generator.Generator generator(Generator g) {
+         return switch (g) {
+             case FLAT -> unit -> {
+@@ -133,13 +173,26 @@ public final class Maps {
+     // ───────────────────────────── создать / удалить ─────────────────────────────
+ 
+     /** Новая карта. Исключение — если имя занято или неверное. */
+-    public synchronized GameMap create(String name, Generator gen) {
++    public synchronized GameMap create(String name, Generator gen) { return create(name, gen, null); }
++
++    /**
++     * Новая карта с типом мира (ключ реестра DimensionType, null — overworld, в map.yml не пишется).
++     * Исключение — если имя занято или неверное, или такого типа мира нет.
++     */
++    public synchronized GameMap create(String name, Generator gen, String dimension) {
+         if (!NAME.matcher(name).matches()) throw new IllegalArgumentException("имя карты: a-z 0-9 _ - (до 32 символов)");
+         Path d = dir.resolve(name);
+         if (Files.exists(d)) throw new IllegalArgumentException("карта «" + name + "» уже есть");
++        if (dimension != null) {
++            try { dimension = Key.key(dimension.trim()).asString(); }                // the_nether → minecraft:the_nether
++            catch (InvalidKeyException e) { throw new IllegalArgumentException("тип мира: ключ вида hoka:space"); }
++        }
++        if (dimension != null && !dimensionKeys().contains(dimension))
++            throw new IllegalArgumentException("типа мира «" + dimension + "» нет. Есть: " + String.join(", ", dimensionKeys()));
+         try { Files.createDirectories(d); } catch (IOException e) { throw new IllegalStateException("не создать " + d + ": " + e.getMessage()); }
+         ModuleConfig meta = new ModuleConfig(d.resolve("map.yml"));
+         meta.set("generator", gen.key());
++        if (dimension != null) meta.set("dimension", dimension);
+         meta.set("created", new java.util.Date().toString());
+         double y = gen == Generator.VOID ? 65 : 41;
+         meta.set("spawn.x", 0.5); meta.set("spawn.y", y); meta.set("spawn.z", 0.5);
+diff --git a/server/src/test/java/ink/hoka/odyssey/server/maps/MapsTest.java b/server/src/test/java/ink/hoka/odyssey/server/maps/MapsTest.java
+index 24382ee..b9a2537 100644
+--- a/server/src/test/java/ink/hoka/odyssey/server/maps/MapsTest.java
++++ b/server/src/test/java/ink/hoka/odyssey/server/maps/MapsTest.java
+@@ -2,6 +2,7 @@ package ink.hoka.odyssey.server.maps;
+ 
+ import net.minestom.server.MinecraftServer;
+ import net.minestom.server.instance.block.Block;
++import net.minestom.server.world.DimensionType;
+ import org.junit.jupiter.api.BeforeAll;
+ import org.junit.jupiter.api.Test;
+ import org.junit.jupiter.api.io.TempDir;
+@@ -55,4 +56,26 @@ class MapsTest {
+         assertFalse(a.names().contains("one"));
+         assertFalse(Files.exists(tmp.resolve("one")));
+     }
++
++    @Test
++    void dimensionFromMapYml() throws Exception {
++        Maps a = new Maps(tmp);
++        Maps.GameMap n = a.create("nether", Maps.Generator.VOID, "the_nether");    // без minecraft: — дополнится
++        assertEquals("minecraft:the_nether", new ink.hoka.odyssey.api.ModuleConfig(tmp.resolve("nether/map.yml")).getString("dimension", null));
++        assertEquals(DimensionType.THE_NETHER.key(), n.instance.getDimensionType().key());
++        assertEquals(DimensionType.THE_NETHER.key(), n.dimension().key());
++        assertThrows(IllegalArgumentException.class, () -> a.create("bad", Maps.Generator.VOID, "hoka:nope"));
++        assertFalse(Files.exists(tmp.resolve("bad")), "карта с неизвестным типом не создана");
++
++        Maps.GameMap plain = a.create("plain", Maps.Generator.FLAT);
++        assertFalse(plain.meta.contains("dimension"), "overworld в map.yml не пишется");
++        assertEquals(DimensionType.OVERWORLD.key(), plain.instance.getDimensionType().key());
++
++        // неизвестный ключ в map.yml (модуль не установлен, опечатка) — карта открывается как overworld
++        Files.createDirectories(tmp.resolve("odd"));
++        Files.writeString(tmp.resolve("odd/map.yml"), "generator: void\ndimension: \"hoka:missing\"\n");
++        Maps.GameMap odd = a.load("odd");
++        assertEquals(DimensionType.OVERWORLD.key(), odd.instance.getDimensionType().key());
++        for (var m : a.loadedMaps()) MinecraftServer.getInstanceManager().unregisterInstance(m.instance);
++    }
+ }
+-- 
+2.43.0
+
