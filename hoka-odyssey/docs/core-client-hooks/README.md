@@ -37,9 +37,9 @@
 | `onClouds(BooleanSupplier)` | Спрятать облака, пока supplier — `true`. |
 | `onWeather(BooleanSupplier)` | Спрятать полосы дождя и снега (граница мира остаётся). |
 | `onWorldPass(WorldStage, WorldPassHook)` | `START_MAIN`, `AFTER_ENTITIES`, `BEFORE_TRANSLUCENT`, `END_MAIN` — обёртка над `WorldRenderEvents`. Ядро регистрирует события Fabric один раз, модули — через свои списки (события Fabric не снимаются, и модуль, вешающий их сам, после выгрузки оставляет слушатель с закрытым ClassLoader). |
-| `pipeline(RenderPipeline, ShaderSource)` → `ModulePipeline` | Свой pipeline со своими шейдерами-строками. `prepare()` перед каждым использованием: игра при F3+T/смене пака чистит кэш шейдеров и пересобирает только ванильные, `prepare()` соберёт заново (это `computeIfAbsent`, дёшево). `#moj_import <minecraft:…>` работает (препроцессор игры, include из ресурсов). После выгрузки модуля `prepare()` = false. |
+| `pipeline(RenderPipeline, ShaderSource)` → `ModulePipeline` | Свой pipeline со своими шейдерами-строками. `prepare()` перед каждым использованием: игра при F3+T/смене пака чистит кэш шейдеров и пересобирает только ванильные, `prepare()` соберёт заново (это `computeIfAbsent`, дёшево). `#moj_import <minecraft:…>` работает (препроцессор игры, include из ресурсов). После выгрузки модуля `prepare()` = false, программа и шейдеры модуля убраны из кэша игры и освобождены. |
 | `track(AutoCloseable)` | Закрыть ресурс (GpuBuffer, GpuTexture…) при выгрузке модуля. |
-| `onWorld(Consumer<Identifier>)` | Сразу (если в мире) и при каждой смене объекта мира: id измерения; `null` — мира нет. |
+| `onWorld(Consumer<Identifier>)` | Сразу (если в мире) и при каждой смене объекта мира: id измерения; `null` — мира не стало, а модуль ещё загружен (при отключении от сервера модули выгружаются раньше). |
 | `onAvatarRotations(AvatarRotHook)` | `boolean apply(int entityId, AvatarRenderState s, PoseStack pose, float bodyRot, float scale)` в начале `AvatarRenderer.setupRotations`: другие игроки, сам игрок в F5, манекены. `true` — ванильный поворот не делать (модуль сам поворачивает, включая курс тела `rotateY(180 - bodyRot)`); `false` — ваниль применит свои повороты после модульных. |
 | `onAvatarState(AvatarStateHook)` | `apply(Avatar e, AvatarRenderState s, float pt)` в конце `extractRenderState` — править поля состояния (поза, swimAmount, наклон, руки). |
 | `forceLocalPose(Pose)` | Поза своего игрока вместо ванильного выбора (`SWIMMING` — лёжа, хитбокс 0,6, высота глаз 0,4); `null` — снять. Несколько модулей — действует последняя. |
@@ -70,6 +70,7 @@
 | `PlayerPoseMixin` | `Player.updatePlayerPose()V` HEAD, cancellable (`method_7318`), только `LocalPlayer` | `forceLocalPose` |
 | `KeyboardInputMixin` | `KeyboardInput.tick()V` TAIL (`method_3129`) | `onInput`; миксин наследуется от `ClientInput`, чтобы видеть `keyPresses` и `moveVector` |
 | `LocalPlayerTravelMixin` | `LivingEntity.travel(Vec3)V` HEAD (`method_6091`), только `LocalPlayer` | `onLocalTravel` |
+| `GlDeviceAccessor` | `GlDevice.pipelineCache`, `shaderCache` (`@Accessor`) | при выгрузке модуля убрать его pipeline и шейдеры из кэша игры (иначе обновлённый модуль с тем же id шейдера получил бы старый шейдер до F3+T) |
 | `CameraMixin` (правка) | `Camera.setup` TAIL — как было | плюс `CameraState.rotation`: кладёт кватернион в `Camera.rotation` и пересчитывает `forwards/up/left` |
 
 Новые классы ядра: `Pipelines` (pipeline модулей + препроцессор include), в `Hooks` — списки и вызовы новых
@@ -79,12 +80,14 @@
 ## Совместимость
 
 - **Старые модули** (под 0.9.0) работают без изменений: интерфейс только расширен.
-- **Новый модуль на старом ядре**: при вызове нового метода будет `AbstractMethodError`. Модуль проверяет ядро сам:
+- **Новый модуль на старом ядре**: при вызове нового метода будет `AbstractMethodError` (ядро поймает его и
+  выгрузит модуль). Модуль проверяет ядро сам — **по имени метода**:
   ```java
-  try { ClientContext.class.getMethod("onSky", ClientContext.SkyHook.class); }
-  catch (NoSuchMethodException e) { /* старое ядро: обходной путь или ничего */ }
+  boolean newCore = Arrays.stream(ClientContext.class.getMethods()).anyMatch(m -> m.getName().equals("onSky"));
+  if (!newCore) { /* старое ядро: обходной путь или ничего */ }
   ```
-  (так делает `hooks-demo`).
+  (так делает `hooks-demo`). `ClientContext.class.getMethod("onSky", ClientContext.SkyHook.class)` не годится:
+  на старом ядре нет и класса `SkyHook`, и вместо `NoSuchMethodException` вылетит `NoClassDefFoundError`.
 - **Sodium**, по нашим данным, проход неба не трогает (не проверено в игре). **Iris с шейдерпаком** рисует небо сам — крючок неба тогда не вызывается
   (туман и тела игроков работают). Без шейдерпака Iris — как ваниль.
 - Fabric API 0.141.6 миксует в `LevelRenderer.renderLevel` и в лямбду main-прохода, но не в `addSkyPass`,
@@ -120,13 +123,23 @@ toolchain, байткод Java 21 — как в текущей сборке.)
    - в полёте клавиша бега переключает позу `SWIMMING` через `onInput` + `forceLocalPose` (`img/prone.png`);
    - `onWorld` («мир minecraft:overworld»), `onWorldPass(START_MAIN)`, `onLocalTravel` (счётчик в HUD) сработали.
 
+4. **Выгрузка и обновление модуля** (там же, через настоящие `ModuleManager.load/unload`): после выгрузки
+   `hooks-demo` все списки `Hooks` пусты, в кэше `GlDevice` не осталось ни его pipeline, ни шейдеров; затем
+   загружен «обновлённый» `hooks-demo` с тем же id шейдера и другим цветом — небо нового цвета. На ядре без
+   `GlDeviceAccessor` в той же проверке оставался старый шейдер (старый цвет) и копились pipeline в кэше.
+5. **Старое ядро 0.9.0**: `hooks-demo` пишет «ядро без крючков неба» и ничего не делает; проверка через
+   `getMethod("onSky", SkyHook.class)` на нём падала `NoClassDefFoundError`.
+
 Не проверено в игре: скрытие дождя (на тестовом сервере не было дождя), `CameraState.rotation`, проход
 `BOSS_FOG`, работа с Iris. Это проверит отдельный стенд с нашим сервером.
 
 ## Подводные камни для авторов модулей
 
-- **Кэш шейдеров игры — по (id шейдера, тип, defines).** Поменяли исходник на лету — дайте шейдеру новый id
-  (например, с версией или хэшем), иначе возьмётся старый скомпилированный.
+- **Кэш шейдеров игры — по (id шейдера, тип, defines).** При выгрузке модуля ядро убирает его pipeline и шейдеры
+  из кэша игры (`GlDeviceAccessor`), поэтому модуль, обновлённый с сервера, получает новый исходник и с тем же id.
+  Но если исходник меняется на лету, без перезагрузки модуля, — дайте шейдеру новый id (с версией или хэшем),
+  иначе возьмётся старый скомпилированный. id шейдеров — в своём пространстве имён, не `minecraft:` (кэш общий
+  с ванилью).
 - Свой исходник идёт мимо `ShaderManager`: `#moj_import` с относительным путём (`"…"`) не поддерживается, только
   `<ns:path>` из `assets/<ns>/shaders/include/`.
 - Небо рисуется **до** террейна: полноэкранный треугольник, без теста и записи глубины; направление взгляда —

@@ -1,5 +1,8 @@
 package ink.hoka.odyssey.client;
 
+import com.mojang.blaze3d.opengl.GlProgram;
+import com.mojang.blaze3d.opengl.GlRenderPipeline;
+import com.mojang.blaze3d.opengl.GlShaderModule;
 import com.mojang.blaze3d.pipeline.CompiledRenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.preprocessor.GlslPreprocessor;
@@ -7,6 +10,7 @@ import com.mojang.blaze3d.shaders.ShaderSource;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.systems.RenderSystem;
 import ink.hoka.odyssey.client.api.ModulePipeline;
+import ink.hoka.odyssey.client.mixin.GlDeviceAccessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 
@@ -36,13 +40,76 @@ final class Pipelines {
     }
 
     static void removeOwner(String owner) {
-        for (Impl p : ALL) if (p.owner.equals(owner)) p.closed = true;
-        ALL.removeIf(p -> p.owner.equals(owner));
+        List<Impl> gone = new ArrayList<>();
+        for (Impl p : ALL) if (p.owner.equals(owner)) gone.add(p);
+        ALL.removeAll(gone);
+        close(gone);
     }
 
     static void clear() {
-        for (Impl p : ALL) p.closed = true;
+        List<Impl> gone = List.copyOf(ALL);
         ALL.clear();
+        close(gone);
+    }
+
+    /**
+     * Pipeline выгруженного модуля — недействителен; его программу и шейдеры убрать из кэша игры (и освободить в GL).
+     * Кэш шейдеров игры — по (id, тип, defines): без этого модуль, обновлённый с сервера (тот же id шейдера, новый
+     * исходник), до F3+T получил бы старый скомпилированный шейдер, а шейдер, однажды не собравшийся, — так и
+     * остался бы несобранным. Шейдеры, которые ещё нужны pipeline других модулей, не трогаем.
+     */
+    private static void close(List<Impl> gone) {
+        if (gone.isEmpty()) return;
+        for (Impl p : gone) p.closed = true;
+        if (!(RenderSystem.tryGetDevice() instanceof GlDeviceAccessor dev)) return;
+        try {
+            Set<Identifier> live = new HashSet<>();
+            for (Impl p : ALL) {
+                live.add(p.pipeline.getVertexShader());
+                live.add(p.pipeline.getFragmentShader());
+            }
+            Set<Identifier> drop = new HashSet<>();
+            for (Impl p : gone) {
+                GlRenderPipeline c = dev.hokaOdyssey$pipelineCache().remove(p.pipeline);
+                if (c != null && c.program() != GlProgram.INVALID_PROGRAM) c.program().close();
+                for (Identifier id : List.of(p.pipeline.getVertexShader(), p.pipeline.getFragmentShader())) {
+                    if (!live.contains(id)) drop.add(id);
+                }
+            }
+            if (drop.isEmpty()) return;
+            dev.hokaOdyssey$shaderCache().entrySet().removeIf(e -> {
+                GlShaderModule s = e.getValue();
+                boolean invalid = s == GlShaderModule.INVALID_SHADER;
+                Identifier id = invalid ? keyId(e.getKey()) : s.getId();
+                if (id == null || !drop.contains(id)) return false;
+                if (!invalid) s.close();
+                return true;
+            });
+        } catch (Throwable e) {
+            HokaOdysseyClient.LOG.warn("Hoka Odyssey: шейдеры выгруженного модуля не убраны из кэша игры (уберёт F3+T)", e);
+        }
+    }
+
+    private static java.lang.reflect.Method keyIdMethod;
+
+    /** id шейдера из ключа кэша (record GlDevice.ShaderCompilationKey; имена в игре — intermediary, ищем по типу). */
+    private static Identifier keyId(Object key) {
+        try {
+            if (keyIdMethod == null || keyIdMethod.getDeclaringClass() != key.getClass()) {
+                keyIdMethod = null;
+                for (var m : key.getClass().getDeclaredMethods()) {
+                    if (m.getParameterCount() == 0 && m.getReturnType() == Identifier.class) {
+                        m.setAccessible(true);
+                        keyIdMethod = m;
+                        break;
+                    }
+                }
+                if (keyIdMethod == null) return null;
+            }
+            return (Identifier) keyIdMethod.invoke(key);
+        } catch (Throwable e) {
+            return null;
+        }
     }
 
     private static final class Impl implements ModulePipeline {

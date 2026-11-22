@@ -21,7 +21,8 @@
     "AvatarRendererMixin",
     "PlayerPoseMixin",
     "KeyboardInputMixin",
-    "LocalPlayerTravelMixin"
+    "LocalPlayerTravelMixin",
+    "GlDeviceAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -22,6 +22,7 @@ import net.minecraft.world.entity.Pose;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.OptionalInt;
 
 /**
@@ -67,9 +68,9 @@ public final class HooksDemoModule implements ClientModule {
     @Override
     public void enable(ClientContext ctx) {
         this.ctx = ctx;
-        try {
-            ClientContext.class.getMethod("onSky", ClientContext.SkyHook.class);
-        } catch (NoSuchMethodException e) {
+        // проверка по имени метода: getMethod("onSky", SkyHook.class) на старом ядре упал бы NoClassDefFoundError
+        // (класса SkyHook там нет), а не NoSuchMethodException
+        if (Arrays.stream(ClientContext.class.getMethods()).noneMatch(m -> m.getName().equals("onSky"))) {
             ctx.logger().warn("hooks-demo: ядро без крючков неба (нужно 0.10+) — ничего не делаю");
             return;
         }

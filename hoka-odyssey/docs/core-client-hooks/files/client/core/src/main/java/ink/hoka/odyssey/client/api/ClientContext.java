@@ -64,8 +64,9 @@ public interface ClientContext {
     void onCamera(CameraHook hook);
 
     // ───── мир и рендер (с версии ядра 0.10) ─────
-    // Модуль, которому нужно работать и на старом ядре, проверяет наличие метода рефлексией:
-    // ClientContext.class.getMethod("onSky", SkyHook.class) — NoSuchMethodException значит «ядро старое».
+    // Модуль, которому нужно работать и на старом ядре, проверяет наличие метода рефлексией ПО ИМЕНИ:
+    // Arrays.stream(ClientContext.class.getMethods()).anyMatch(m -> m.getName().equals("onSky")).
+    // Не getMethod("onSky", SkyHook.class): на старом ядре нет и класса SkyHook — будет NoClassDefFoundError.
 
     /**
      * Своё небо. Крючок вызывается в отдельном проходе кадра ПЕРЕД ванильным небом (в основной буфер кадра, до
@@ -99,7 +100,9 @@ public interface ClientContext {
      * {@code #moj_import <minecraft:fog.glsl>} и другие include из ресурсов игры работают. Перед каждым
      * использованием вызывать {@link ModulePipeline#prepare()}: после F3+T и смены ресурспака игра сбрасывает
      * кэш шейдеров — prepare соберёт заново. При выгрузке модуля pipeline становится недействительным.
-     * Кэш шейдеров игры — по (id, тип, defines): новая версия исходника — новый id шейдера.
+     * Кэш шейдеров игры — по (id, тип, defines): при выгрузке модуля ядро убирает из него шейдеры модуля, так что
+     * обновлённый модуль с тем же id получит новый исходник; но поменять исходник на лету, не выгружая модуль, —
+     * только с новым id шейдера. id шейдеров — в своём пространстве имён (не {@code minecraft:}).
      */
     ModulePipeline pipeline(com.mojang.blaze3d.pipeline.RenderPipeline pipeline, com.mojang.blaze3d.shaders.ShaderSource source);
 
@@ -109,7 +112,8 @@ public interface ClientContext {
     /**
      * Мир клиента: id измерения ({@code level.dimension().identifier()}; у Minestom свой у каждого мира) — сразу
      * при регистрации, если игрок в мире, и при каждой смене мира (в том числе тот же id, если мир пересоздан);
-     * null — мира нет (выход, экран загрузки).
+     * null — мира не стало, а модуль ещё загружен (при отключении от сервера модули выгружаются раньше —
+     * тогда вызывается только {@code disable}).
      */
     void onWorld(Consumer<net.minecraft.resources.Identifier> handler);
 

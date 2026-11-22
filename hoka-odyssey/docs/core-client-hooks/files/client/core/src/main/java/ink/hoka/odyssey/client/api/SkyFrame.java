@@ -13,8 +13,8 @@ import org.jspecify.annotations.Nullable;
  * Кадр неба для {@link ClientContext.SkyHook}. Действителен только во время вызова крючка (не сохранять).
  * Рисовать — в {@link #color} (и при желании с {@link #depth}), как ванильный SkyRenderer: свой RenderPass через
  * {@code RenderSystem.getDevice().createCommandEncoder().createRenderPass(...)}. Глубина в этот момент — 1.0
- * (очищена), террейн рисуется после неба. Uniform-блоки Projection, Fog и Globals уже привязаны игрой
- * ({@code RenderSystem.bindDefaultUniforms(pass)}), Fog — туман этого кадра.
+ * (очищена), террейн рисуется после неба. Projection, Fog (туман этого кадра) и Globals уже выставлены в
+ * RenderSystem — в своём RenderPass привязать их вызовом {@code RenderSystem.bindDefaultUniforms(pass)}.
  */
 public final class SkyFrame {
 
