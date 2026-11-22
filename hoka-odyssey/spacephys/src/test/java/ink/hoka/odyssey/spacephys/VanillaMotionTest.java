@@ -78,4 +78,16 @@ class VanillaMotionTest {
         assertEquals(20, Thrust.capSpeed(new Vec3d(0, 30, 0), 20).length(), 1e-12);
         assertEquals(10, Thrust.capSpeed(new Vec3d(0, 10, 0), 20).length(), 1e-12);
     }
+
+    @org.junit.jupiter.api.Test
+    void weakVerticalThrustStartsFromRest() {
+        // тяга 0,8 б/с² = 0,002 блока/тик за тик; vanilla стирает |v| < 0,003 — по вертикали допуск на ввод нулевой
+        double vy = 0;
+        for (int i = 0; i < 40; i++) {
+            double expected = vy + 0.002;
+            double observed = Math.abs(expected) < VanillaMotion.NEGLIGIBLE ? 0 : expected;
+            vy = VanillaMotion.reconcile(new Vec3d(0, expected, 0), new Vec3d(0, observed, 0), false, false).y();
+        }
+        org.junit.jupiter.api.Assertions.assertTrue(vy > 0.07, "вертикаль разгоняется: " + vy);
+    }
 }

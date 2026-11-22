@@ -48,6 +48,9 @@ public final class VanillaMotion {
         if (collided && observed == 0 && expected != 0) {
             return 0;                                          // упёрся в блок — ось обнулена
         }
+        if (observed == 0 && Math.abs(expected) < NEGLIGIBLE * 1.01) {
+            return expected;                                   // vanilla стёр мелочь (< 0,003 блока/тик): по
+        }                                                      // вертикали без этого слабая тяга не разгоняла с нуля
         if (Math.abs(observed - expected) <= tolerance) {
             return expected;                                   // ввод клавиш, «обнуление мелочи», округление
         }

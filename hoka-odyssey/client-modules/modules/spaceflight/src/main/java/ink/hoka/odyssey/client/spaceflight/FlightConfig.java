@@ -31,8 +31,10 @@ final class FlightConfig {
             stabilizer = 1.5
             # Тормоз: пока зажата клавиша brake_key, скорость гаснет с этим замедлением, блоки/с² (0 — выкл.)
             brake = 3.0
-            # Клавиша тормоза (бег/Ctrl занят: он переключает «лёжа/стоя»)
+            # Клавиша тормоза
             brake_key = key.keyboard.x
+            # Клавиша «лечь / встать» (тело вдоль взгляда). Бег (Ctrl) модуль больше не трогает
+            prone_key = key.keyboard.r
             # Скорость крена, градусы в секунду
             roll_speed = 60
             # Клавиши крена (имена Minecraft: key.keyboard.z, key.keyboard.q, key.mouse.4 …).
@@ -67,6 +69,7 @@ final class FlightConfig {
     double stabilizer = 1.5;
     double brake = 3.0;
     String brakeKey = "key.keyboard.x";
+    String proneKey = "key.keyboard.r";
     double rollSpeed = 60;
     String rollLeft = "key.keyboard.z";
     String rollRight = "key.keyboard.c";
@@ -100,6 +103,7 @@ final class FlightConfig {
             c.stabilizer = num(p, "stabilizer", c.stabilizer, 0, 50);
             c.brake = num(p, "brake", c.brake, 0, 50);
             c.brakeKey = p.getProperty("brake_key", c.brakeKey).trim();
+            c.proneKey = p.getProperty("prone_key", c.proneKey).trim();
             c.rollSpeed = num(p, "roll_speed", c.rollSpeed, 0, 720);
             c.rollLeft = p.getProperty("roll_left", c.rollLeft).trim();
             c.rollRight = p.getProperty("roll_right", c.rollRight).trim();

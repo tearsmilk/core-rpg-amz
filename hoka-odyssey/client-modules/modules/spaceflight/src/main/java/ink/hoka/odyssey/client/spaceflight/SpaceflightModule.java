@@ -45,7 +45,7 @@ import java.util.List;
  *       петля через верх проходит без упора в ±90°. Поворот игрока (прицел, ломание блоков) следует за взглядом;</li>
  *   <li>«магнитные ботинки»: Shift у любого блока (пол, стена, потолок) прижимает к нему — по нему можно ходить,
  *       пробел отталкивает, камера плавно выравнивается так, что поверхность становится «полом»;</li>
- *   <li>тело: свой поворот (и «лёжа» — бег переключает) уходит серверу, тот раздаёт его другим игрокам
+ *   <li>тело: свой поворот (и «лёжа» — переключает R) уходит серверу, тот раздаёт его другим игрокам
  *       ({@link BodyPoses}; рисовать повёрнутые тела мод начнёт с крючком onAvatarRotations).</li>
  * </ul>
  * Вне вакуума камера плавно возвращается «в горизонт» и дальше не трогается; всё восстанавливается при выключении.
@@ -83,6 +83,7 @@ public final class SpaceflightModule implements ClientModule {
     private InputConstants.Key rollLeftKey;
     private InputConstants.Key rollRightKey;
     private InputConstants.Key brakeKey;
+    private InputConstants.Key proneKey;
 
     private volatile Field field = Field.EMPTY;
     private volatile boolean serverOn;
@@ -110,7 +111,7 @@ public final class SpaceflightModule implements ClientModule {
     /** Нормаль поверхности, к которой сейчас прижимают ботинки (null — не прижимают). */
     private Vec3d gripNormal;
     private int gripCooldown;
-    /** Лёжа (тело вдоль взгляда) — переключается бегом в невесомости. */
+    /** Лёжа (тело вдоль взгляда) — переключается клавишей R в невесомости. */
     private boolean prone;
     private boolean sprintHeld;
     /** Плавная доля «лёжа» для своего тела в виде от третьего лица. */
@@ -129,6 +130,7 @@ public final class SpaceflightModule implements ClientModule {
         rollLeftKey = key(cfg.rollLeft, "key.keyboard.z");
         rollRightKey = key(cfg.rollRight, "key.keyboard.c");
         brakeKey = key(cfg.brakeKey, "key.keyboard.x");
+        proneKey = key(cfg.proneKey, "key.keyboard.r");
         bodies = new BodyPoses(ctx, new BodyPoses.Self() {
             @Override public Quat look() { return active ? look.orientation() : null; }
 
@@ -257,7 +259,7 @@ public final class SpaceflightModule implements ClientModule {
         if (!lookOwned) look.reset(p.getYRot(), p.getXRot());
         lookOwned = true;
         jumpHeld = true;                                           // не прыгать от пробела, зажатого до входа
-        sprintHeld = true;                                         // и не ложиться от бега, зажатого до входа
+        sprintHeld = true;                                         // и не ложиться от R, зажатой до входа
         prone = false;
         proneAmount = 0;
         gripNormal = null;
@@ -286,25 +288,25 @@ public final class SpaceflightModule implements ClientModule {
         Options o = mc.options;
         boolean input = mc.screen == null;
         int fwd = 0, side = 0, vert = 0;
-        boolean jump = false, shift = false, sprint = false;
+        boolean jump = false, shift = false, proneDown = false;
         if (input) {
             fwd = (down(mc, o.keyUp) ? 1 : 0) - (down(mc, o.keyDown) ? 1 : 0);
             side = (down(mc, o.keyRight) ? 1 : 0) - (down(mc, o.keyLeft) ? 1 : 0);
             jump = down(mc, o.keyJump);
             shift = down(mc, o.keyShift);
-            sprint = down(mc, o.keySprint);
+            proneDown = physical(mc, proneKey);
             vert = (jump ? 1 : 0) - (shift ? 1 : 0);
-            // ходьбу, прыжок, присед и бег vanilla не видит — движением управляет модуль
-            for (KeyMapping k : new KeyMapping[] {o.keyUp, o.keyDown, o.keyLeft, o.keyRight, o.keyJump, o.keyShift, o.keySprint}) {
+            // ходьбу, прыжок и присед vanilla не видит — движением управляет модуль; бег пропускаем как есть
+            for (KeyMapping k : new KeyMapping[] {o.keyUp, o.keyDown, o.keyLeft, o.keyRight, o.keyJump, o.keyShift}) {
                 k.setDown(false);
             }
         }
-        if (sprint && !sprintHeld) {                               // бег — лечь / встать
+        if (proneDown && !sprintHeld) {                            // R — лечь / встать
             prone = !prone;
-            p.displayClientMessage(Component.literal(prone ? "Лёжа: тело вдоль взгляда (бег — встать)"
-                    : "Стоя (бег — лечь)"), true);
+            p.displayClientMessage(Component.literal(prone ? "Лёжа: тело вдоль взгляда (R — встать)"
+                    : "Стоя (R — лечь)"), true);
         }
-        sprintHeld = sprint;
+        sprintHeld = proneDown;
 
         // база — своя скорость прошлого тика; от vanilla move берём только удар о блок (ось обнулилась) и толчки
         // сервера (заметно больше ввода клавиш). Ввод WASD vanilla и обнуление мелочи (< 0,003 блока/тик) — нет:
