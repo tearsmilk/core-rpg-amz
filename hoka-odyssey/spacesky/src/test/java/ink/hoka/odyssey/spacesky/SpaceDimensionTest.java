@@ -160,7 +160,23 @@ class SpaceDimensionTest {
             .orElseThrow();
         assertTrue(tj.toString().contains("minecraft:visual/star_brightness"), tj.toString());
         assertTrue(tj.toString().contains("minecraft:visual/star_angle"), tj.toString());
+        // яркость — метка для stars.vsh, а не 1: у игрока без пака ванильный проход звёзд днём не должен быть виден
+        double b = tj.getAsJsonObject().getAsJsonObject("tracks").getAsJsonObject("minecraft:visual/star_brightness")
+            .getAsJsonArray("keyframes").get(0).getAsJsonObject().get("value").getAsDouble();
+        assertEquals(SpaceDimension.STARS_BRIGHTNESS, b, 1e-9);
+        assertTrue(b < 0.01, "без пака звёзд днём не видно");
         MinecraftServer.getDimensionTypeRegistry().registryDataPacket(MinecraftServer.process(), true);
+    }
+
+    @Test
+    void overworldStarsBrightnessMatchesShader() throws Exception {
+        String vsh;
+        try (var in = SpaceDimensionTest.class.getResourceAsStream("/pack/assets/minecraft/shaders/core/stars.vsh")) {
+            vsh = new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        }
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("#define SS_OW_STARS ([0-9.]+)").matcher(vsh);
+        assertTrue(m.find(), "SS_OW_STARS в stars.vsh");
+        assertEquals(SpaceDimension.STARS_BRIGHTNESS, Float.parseFloat(m.group(1)), 0f);
     }
 
     @Test

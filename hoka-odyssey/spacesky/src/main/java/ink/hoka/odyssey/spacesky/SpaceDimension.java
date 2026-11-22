@@ -188,10 +188,20 @@ final class SpaceDimension {
     /** Таймлайн прохода звёзд миров без метки (режим everywhere: true), см. {@link #overworldStars}. */
     static final String STARS_KEY = "hoka:everywhere_stars";
 
-    /** Таймлайн: проход звёзд всегда (яркость 1) и без поворота (угол 0) — в нём частицы параллакса (stars.vsh). */
+    /**
+     * Яркость прохода звёзд миров без метки (таймлайн {@link #STARS_KEY}) — опознавательное значение для stars.vsh
+     * ({@code SS_OW_STARS}, должно совпадать). Не 1, как у галактик: этот тип мира у всех карт ядра без патча, а у
+     * игрока без пака (respack: required false, до загрузки пака, модуль выключен) проход рисует ванильный шейдер —
+     * при яркости 1 белые звёзды были бы и днём на голубом небе; при 1/256 (аддитивно, цвет × альфа ≈ 0,00002) их не
+     * видно. У ванильных суток эта яркость бывает лишь на пару тиков в сумерках (и тогда звёзд не видно).
+     */
+    static final float STARS_BRIGHTNESS = 1f / 256f;
+
+    /** Таймлайн: проход звёзд всегда (яркость {@link #STARS_BRIGHTNESS}) и без поворота (угол 0) — частицы stars.vsh. */
     static Timeline starsTimeline() {
         Timeline.Builder b = Timeline.builder();
-        track(b, EnvironmentAttribute.STAR_BRIGHTNESS, List.of(new Timeline.Keyframe<>(0, 1f)), EaseFunction.CONSTANT);
+        track(b, EnvironmentAttribute.STAR_BRIGHTNESS, List.of(new Timeline.Keyframe<>(0, STARS_BRIGHTNESS)),
+            EaseFunction.CONSTANT);
         track(b, EnvironmentAttribute.STAR_ANGLE, List.of(new Timeline.Keyframe<>(0, 0f)), EaseFunction.CONSTANT);
         return b.build();
     }
@@ -216,8 +226,9 @@ final class SpaceDimension {
      * docs/core-dimension.md — это minecraft:overworld). Ванильный проход звёзд overworld рисуется только ночью и
      * повёрнут по времени суток (star_angle таймлайна minecraft:day), а шейдер не знает ни угла, ни поворота камеры
      * отдельно — поэтому к таймлайнам типа мира minecraft:overworld добавляется последний {@link #STARS_KEY}: яркость
-     * 1, угол 0 (остальное — сутки, свет, луна — как в ванили). Ванильных звёзд в этом режиме и так нет. До старта
-     * сервера (реестры потом заморожены); тип перерегистрируется в пакете сервера — клиент получает его целиком.
+     * {@link #STARS_BRIGHTNESS} (метка для stars.vsh, без пака звёзд не видно), угол 0 (остальное — сутки, свет, луна
+     * — как в ванили). Ванильных звёзд в этом режиме и так нет. До старта сервера
+     * (реестры потом заморожены); тип перерегистрируется в пакете сервера — клиент получает его целиком.
      *
      * @return true — таймлайн подключён (или уже был)
      */

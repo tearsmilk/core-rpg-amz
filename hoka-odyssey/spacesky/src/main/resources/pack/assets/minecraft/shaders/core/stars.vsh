@@ -8,7 +8,8 @@
 // - Профиль — по МЕТКЕ в цвете тумана (Fog и Globals — «общие» uniform клиента, их можно объявить в любом шейдере).
 //   Без метки: SPACESKY_EVERYWHERE 1 — профиль space (на ядре без патча все карты — overworld: модуль добавляет его
 //   типу мира таймлайн hoka:everywhere_stars — проход звёзд всегда, угол 0), 0 — ванильная звезда без изменений.
-//   Частицы — только при яркости прохода 1 (её даёт модуль; у ванильных суток — не больше 0,5, угол не 0).
+//   Частицы — только в проходе модуля: яркость SS_OW_STARS (1/256: так у игрока без пака ванильных звёзд днём не
+//   видно; = SpaceDimension.STARS_BRIGHTNESS) или 1 (галактика); у ванильных суток — до 0,5, угол не 0.
 //   Планета — ничего (её проход звёзд выключен типом мира). Параметры — SS_PROF_9 (profiles.glsl).
 // - Частицы лежат в плитке T блоков, повторённой по всему миру; вокруг камеры — ближайшая копия каждой частицы
 //   (|смещение| <= T/2 по каждой оси). Перенос на другую копию — ровно на грани, а там частица уже погашена
@@ -36,10 +37,14 @@ in vec3 Position;
 out vec2 ssLoc;              // точка внутри квада, -1..1
 out vec3 ssCol;              // цвет × яркость частицы
 flat out int ssVanilla;      // 1 — ванильная звезда (мир без метки, режим everywhere: false)
+flat out float ssAlpha;      // альфа частицы (наложение SRC_ALPHA, ONE)
 
 #ifndef SS_HOLES
 #define SS_HOLES 0
 #endif
+
+// Яркость прохода звёзд overworld с таймлайном hoka:everywhere_stars (SpaceDimension.STARS_BRIGHTNESS).
+#define SS_OW_STARS 0.00390625
 
 // Первые SS_NEAR_N квадов — ближние звёзды, остальные (~340) — пыль.
 #define SS_NEAR_N 440
@@ -125,11 +130,15 @@ void main() {
     ssLoc = vec2(0.0);
     ssCol = vec3(0.0);
     ssVanilla = 0;
+    ssAlpha = 0.0;
     gl_Position = vec4(2.0, 2.0, 2.0, 1.0);                            // схлопнуть: вне экрана, квад вырожден
     int prof = spacesky_code_profile(spacesky_code(FogColor.rgb));
-    // яркость прохода 1 — его включил модуль (тип мира галактики или overworld с таймлайном hoka:everywhere_stars:
-    // угол 0); у ванильного overworld яркость звёзд не больше 0,5 и угол идёт по времени суток — частиц там нет
-    bool ours = ColorModulator.a > 0.99;
+    // проход включил модуль (угол 0): яркость 1 — тип мира галактики, SS_OW_STARS — overworld с таймлайном
+    // hoka:everywhere_stars (частицы — с альфой 1). У ванильного overworld яркость звёзд до 0,5 и угол идёт по времени
+    // суток — частиц там нет; дождь гасит яркость прохода — тогда частиц нет и в мирах без метки.
+    bool owStars = abs(ColorModulator.a - SS_OW_STARS) < SS_OW_STARS * 0.02;
+    bool ours = owStars || ColorModulator.a > 0.99;
+    ssAlpha = owStars ? 1.0 : ColorModulator.a;
     if (prof < 0) {
 #if SPACESKY_EVERYWHERE
         if (!ours) return;
