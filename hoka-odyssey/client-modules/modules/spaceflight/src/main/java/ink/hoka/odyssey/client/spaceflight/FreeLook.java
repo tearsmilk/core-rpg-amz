@@ -82,7 +82,11 @@ final class FreeLook {
         double ang = Math.atan2(f.dot(u.cross(np)), clamp(u.dot(np), -1, 1));
         if (Math.abs(ang) < 1e-5) return;
         double k = t * Math.min(1, (len - 0.2) / 0.3);         // у вырожденного случая — мягко
-        q = Quat.axisAngle(f, ang * k).mul(q).normalize();
+        Quat q1 = Quat.axisAngle(f, ang * k).mul(q).normalize();
+        Quat q2 = Quat.axisAngle(f, -ang * k).mul(q).normalize();
+        // берём поворот, который действительно приближает верх к нормали (иначе камеру раскручивало на 360°)
+        Quat best = q1.up().dot(np) >= q2.up().dot(np) ? q1 : q2;
+        if (best.up().dot(np) > u.dot(np)) q = best;
     }
 
     /** Плавно повернуть к ориентации target: доля t ∈ [0; 1]. @return угол до цели после шага (радианы) */
