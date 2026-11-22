@@ -559,6 +559,9 @@ public final class SpaceflightModule implements ClientModule {
             Vec3d n = gripNormal;
             if (n != null && cfg.surfaceAlignRate > 0) look.alignRoll(n, 1 - Math.exp(-cfg.surfaceAlignRate * dt));
             proneAmount += (float) (((prone ? 1 : 0) - proneAmount) * (1 - Math.exp(-8 * dt)));
+            // лёжа — на животе, как в воде: ванильная анимация плавания (видно в F5); другим игрокам сервер
+            // показывает позу полёта на элитрах
+            if (prone || proneAmount > 0.01f) SwimLook.apply(mc.player, proneAmount);
             look.decompose();
             syncPlayer(bound);
         } else {
