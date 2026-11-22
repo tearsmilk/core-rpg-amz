@@ -228,11 +228,11 @@ class GravitationTest {
         Settings s = Settings.from(new ModuleConfig(file));
         assertEquals(Set.of("galaxy1"), s.maps());
         List<BlackHole> holes = s.space().holes("galaxy1");
-        assertEquals(List.of(new BlackHole("abyss", 0.5, 65, -600, 6, 1500, 4, 12)), holes);
+        assertEquals(List.of(new BlackHole("abyss", 0.5, 65, -600, 3, 100, 0.5, 4)), holes);
         assertEquals(0.3, s.space().driftSpeed(), 1e-12);
         assertEquals(-1, s.space().driftDir()[2], 1e-12);
         assertEquals(0.5, s.space().playerScale(), 1e-12);
-        assertEquals(1.5, s.space().playerMaxDrift(), 1e-12);
+        assertEquals(0.6, s.space().playerMaxDrift(), 1e-12);
         assertTrue(!s.space().horizonSpawn());
         assertTrue(s.space().items());
 
@@ -247,7 +247,7 @@ class GravitationTest {
         assertTrue(out.contains("#   horizon    — радиус горизонта"), "комментарии перед разделом целы");
         assertEquals(text.split("\n").length + 1, out.split("\n").length, "добавилась ровно одна строка");
         assertEquals(s.maps(), s2.maps());
-        assertEquals(0.05, s2.space().minPull(), 1e-12);
+        assertEquals(0.03, s2.space().minPull(), 1e-12);
 
         String empty = HoleYaml.replace(out, Map.of());
         assertTrue(empty.contains("\nblack-holes: {}\n\n# Значения"), empty);
