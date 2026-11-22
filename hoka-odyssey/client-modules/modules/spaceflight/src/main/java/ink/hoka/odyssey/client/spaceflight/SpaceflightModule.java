@@ -301,7 +301,11 @@ public final class SpaceflightModule implements ClientModule {
         }
         cam.yaw = look.yaw;
         cam.pitch = look.pitch;
-        cam.roll = look.roll;
+        // Камера игры строит поворот как Ry(π−yaw)·Rx(−pitch)·Rz(roll) и смотрит вдоль −Z, а FreeLook —
+        // Ry(−yaw)·Rx(pitch)·Rz(roll) со взглядом вдоль +Z. Это одно и то же, только с поворотом на 180° вокруг Y,
+        // который меняет знак крена. Без минуса картинка крутилась в обратную сторону, и мышь «вниз» при крене
+        // уводила взгляд вбок.
+        cam.roll = -look.roll;
     }
 
     /** Поворот игрока — за взглядом (прицел, ломание блоков, то, что видят другие). pitch уже в [−90; 90]. */
