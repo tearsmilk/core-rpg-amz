@@ -1,0 +1,2 @@
+Этот модуль собирается только против ядра с патчем хуков (docs/core-client-hooks): нужны onSky, onFog,
+onAvatarRotations, onWorld в ClientContext. См. client-modules/settings.gradle.kts.
