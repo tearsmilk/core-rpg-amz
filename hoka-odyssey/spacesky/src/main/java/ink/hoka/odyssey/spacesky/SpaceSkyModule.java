@@ -13,10 +13,16 @@ import java.nio.file.Path;
 import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
+import net.kyori.adventure.key.Key;
+import net.minestom.server.MinecraftServer;
+import net.minestom.server.instance.Instance;
+import net.minestom.server.instance.Weather;
 
 /**
  * Космическое небо: в общий ресурспак (модуль respack) кладётся шейдер неба {@code minecraft:shaders/core/sky.*}
@@ -31,6 +37,8 @@ public final class SpaceSkyModule extends OdysseyModule {
     private FileSystem jarFs;
     private Path root;
     private volatile List<Zones.Zone> zones = List.of();
+    /** Имена карт для подсказок /hosky world — читаются с диска в async, не в тике и не при разборе пакета. */
+    private volatile SortedSet<String> mapNames = new TreeSet<>();
 
     @Override
     protected void onLoad() {
@@ -46,6 +54,34 @@ public final class SpaceSkyModule extends OdysseyModule {
         }
         registerCommand(new HoSkyCommand(this));
         syncPack();
+        refreshMapNames();
+        // в мирах hoka:space дождь и гроза перекрашивают небо и туман поверх таймлайна — метка теряется,
+        // космос пропадает, сквозь дождь видно солнце; поэтому погода там всегда ясная
+        scheduler().repeat(this::clearSpaceWeather, 20, 20);
+        scheduler().repeat(this::refreshMapNames, 200, 200);
+    }
+
+    SortedSet<String> cachedMapNames() {
+        return mapNames;
+    }
+
+    void refreshMapNames() {
+        scheduler().async(() -> {
+            try {
+                mapNames = new TreeSet<>(server().mapNames());
+            } catch (RuntimeException e) {
+                logger().debug("список карт не прочитан: {}", e.toString());
+            }
+        });
+    }
+
+    private void clearSpaceWeather() {
+        Key space = Key.key(SpaceDimension.KEY);
+        for (Instance i : MinecraftServer.getInstanceManager().getInstances()) {
+            if (space.equals(i.getDimensionType().key()) && i.getWeather().isRaining()) {
+                i.setWeather(Weather.CLEAR, 1);
+            }
+        }
     }
 
     @Override

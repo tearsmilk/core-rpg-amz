@@ -1,4 +1,4 @@
-From ee075363d700d3cee5defd968570317dbe564797 Mon Sep 17 00:00:00 2001
+From 58a2e9fa41fda7151862e599d270c4a24e46a6ea Mon Sep 17 00:00:00 2001
 From: Hoka Odyssey contributor <noreply@anthropic.com>
 Date: Sat, 21 Nov 2026 23:46:54 +0000
 Subject: [PATCH] =?UTF-8?q?=D0=9A=D0=B0=D1=80=D1=82=D1=8B:=20=D1=82=D0=B8?=
@@ -17,16 +17,19 @@ Content-Transfer-Encoding: 8bit
   ключи реестра); /homap list показывает тип мира, если он не overworld.
 - /homap tp на карту, где игрок уже стоит, больше не падает с IllegalArgumentException
   (Player.setInstance) — просто телепорт на спавн карты.
-- Тест MapsTest.dimensionFromMapYml, заметка в DEVELOPER.md.
+- GameMap.setSpawn перечитывает map.yml перед записью: save() пишет весь файл из копии
+  в памяти и иначе вернул бы ключи, изменённые после загрузки карты (например dimension,
+  убранный модулем).
+- Тесты MapsTest.dimensionFromMapYml и setSpawnKeepsFileChanges, заметка в DEVELOPER.md.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01LEqCpNAfKTKPXaeQ5ZVhft
 ---
  DEVELOPER.md                                  |  8 ++-
- .../odyssey/server/maps/HoMapCommand.java     | 27 +++++---
- .../ink/hoka/odyssey/server/maps/Maps.java    | 67 +++++++++++++++++--
- .../hoka/odyssey/server/maps/MapsTest.java    | 23 +++++++
- 4 files changed, 108 insertions(+), 17 deletions(-)
+ .../odyssey/server/maps/HoMapCommand.java     | 27 ++++---
+ .../ink/hoka/odyssey/server/maps/Maps.java    | 72 +++++++++++++++++--
+ .../hoka/odyssey/server/maps/MapsTest.java    | 38 ++++++++++
+ 4 files changed, 128 insertions(+), 17 deletions(-)
 
 diff --git a/DEVELOPER.md b/DEVELOPER.md
 index 5a61a68..bc42ff9 100644
@@ -137,7 +140,7 @@ index fb4a43e..2fd686a 100644
              err(s, e.getMessage());
          }
 diff --git a/server/src/main/java/ink/hoka/odyssey/server/maps/Maps.java b/server/src/main/java/ink/hoka/odyssey/server/maps/Maps.java
-index cf4ecb2..54d5312 100644
+index cf4ecb2..c34e194 100644
 --- a/server/src/main/java/ink/hoka/odyssey/server/maps/Maps.java
 +++ b/server/src/main/java/ink/hoka/odyssey/server/maps/Maps.java
 @@ -1,6 +1,8 @@
@@ -182,7 +185,19 @@ index cf4ecb2..54d5312 100644
          }
  
          public Pos spawn() {
-@@ -69,6 +76,9 @@ public final class Maps {
+@@ -62,13 +69,21 @@ public final class Maps {
+                     (float) meta.getDouble("spawn.yaw", 0), (float) meta.getDouble("spawn.pitch", 0));
+         }
+ 
++        /**
++         * Записать точку появления в map.yml. Файл сначала перечитывается: его могли изменить (модуль, админ руками)
++         * после загрузки карты — save() пишет весь файл из копии в памяти и иначе вернул бы старые ключи.
++         */
+         public void setSpawn(Pos p) {
++            meta.reload();
+             meta.set("spawn.x", p.x()); meta.set("spawn.y", p.y()); meta.set("spawn.z", p.z());
+             meta.set("spawn.yaw", (double) p.yaw()); meta.set("spawn.pitch", (double) p.pitch());
+             meta.save();
          }
  
          public String generator() { return meta.getString("generator", "flat"); }
@@ -192,7 +207,7 @@ index cf4ecb2..54d5312 100644
      }
  
      private final Path dir;
-@@ -109,15 +119,45 @@ public final class Maps {
+@@ -109,15 +124,45 @@ public final class Maps {
          if (!NAME.matcher(name).matches() || !Files.isDirectory(d)) return null;
          ModuleConfig meta = new ModuleConfig(d.resolve("map.yml"));
          Generator gen = Optional.ofNullable(Generator.of(meta.getString("generator", "flat"))).orElse(Generator.FLAT);
@@ -241,7 +256,7 @@ index cf4ecb2..54d5312 100644
      private static net.minestom.server.instance.generator.Generator generator(Generator g) {
          return switch (g) {
              case FLAT -> unit -> {
-@@ -133,13 +173,26 @@ public final class Maps {
+@@ -133,13 +178,26 @@ public final class Maps {
      // ───────────────────────────── создать / удалить ─────────────────────────────
  
      /** Новая карта. Исключение — если имя занято или неверное. */
@@ -270,7 +285,7 @@ index cf4ecb2..54d5312 100644
          double y = gen == Generator.VOID ? 65 : 41;
          meta.set("spawn.x", 0.5); meta.set("spawn.y", y); meta.set("spawn.z", 0.5);
 diff --git a/server/src/test/java/ink/hoka/odyssey/server/maps/MapsTest.java b/server/src/test/java/ink/hoka/odyssey/server/maps/MapsTest.java
-index 24382ee..b9a2537 100644
+index 24382ee..03acbe6 100644
 --- a/server/src/test/java/ink/hoka/odyssey/server/maps/MapsTest.java
 +++ b/server/src/test/java/ink/hoka/odyssey/server/maps/MapsTest.java
 @@ -2,6 +2,7 @@ package ink.hoka.odyssey.server.maps;
@@ -281,7 +296,7 @@ index 24382ee..b9a2537 100644
  import org.junit.jupiter.api.BeforeAll;
  import org.junit.jupiter.api.Test;
  import org.junit.jupiter.api.io.TempDir;
-@@ -55,4 +56,26 @@ class MapsTest {
+@@ -55,4 +56,41 @@ class MapsTest {
          assertFalse(a.names().contains("one"));
          assertFalse(Files.exists(tmp.resolve("one")));
      }
@@ -306,6 +321,21 @@ index 24382ee..b9a2537 100644
 +        Maps.GameMap odd = a.load("odd");
 +        assertEquals(DimensionType.OVERWORLD.key(), odd.instance.getDimensionType().key());
 +        for (var m : a.loadedMaps()) MinecraftServer.getInstanceManager().unregisterInstance(m.instance);
++    }
++
++    @Test
++    void setSpawnKeepsFileChanges() throws Exception {
++        Maps a = new Maps(tmp);
++        Maps.GameMap m = a.create("edited", Maps.Generator.VOID, "the_nether");
++        // после загрузки карты map.yml изменён снаружи (модуль убрал dimension, добавил свой ключ)
++        Files.writeString(tmp.resolve("edited/map.yml"), "generator: void\nnote: kept\n");
++        m.setSpawn(new net.minestom.server.coordinate.Pos(1.5, 70, 2.5, 90f, 0f));
++        var yml = new ink.hoka.odyssey.api.ModuleConfig(tmp.resolve("edited/map.yml"));
++        assertFalse(yml.contains("dimension"), "ключ, убранный из файла, не вернулся из копии ядра");
++        assertEquals("kept", yml.getString("note", null));
++        assertEquals(70.0, yml.getDouble("spawn.y", 0));
++        assertEquals(70.0, m.spawn().y());
++        MinecraftServer.getInstanceManager().unregisterInstance(m.instance);
 +    }
  }
 -- 

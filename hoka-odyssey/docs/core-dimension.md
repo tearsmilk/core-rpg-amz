@@ -25,7 +25,12 @@
 3. **Баг:** `/homap tp <карта> [ник]` на карту, где игрок уже стоит, падал с
    `IllegalArgumentException: Instance should be different than the current one` (`Player.setInstance`).
    Теперь в этом случае — просто `teleport` на спавн карты.
-4. Тест `MapsTest.dimensionFromMapYml` (запись/чтение `dimension`, неизвестный ключ → overworld) и абзац в DEVELOPER.md.
+4. **Баг:** `GameMap.setSpawn` (`/homap setspawn`) писал `map.yml` целиком из копии, прочитанной при загрузке карты,
+   и возвращал ключи, изменённые в файле после этого. Пример: `/hosky world off galaxy1` убирает
+   `dimension: "hoka:space"` из `map.yml` загруженной карты, затем `/homap setspawn` на ней — ключ снова в файле.
+   Теперь `setSpawn` сначала перечитывает файл (`meta.reload()`), потом пишет точку появления.
+5. Тесты `MapsTest.dimensionFromMapYml` (запись/чтение `dimension`, неизвестный ключ → overworld) и
+   `MapsTest.setSpawnKeepsFileChanges` (ключи, изменённые в файле после загрузки, не возвращаются), абзац в DEVELOPER.md.
 
 `OdysseyServer.java` патч **не трогает**.
 
@@ -59,7 +64,7 @@ git am /путь/к/core-dimension.patch
 
 ## Как проверить
 
-1. Тесты: `./gradlew :server:test` — `MapsTest` (3 теста, в т.ч. `dimensionFromMapYml`).
+1. Тесты: `./gradlew :server:test` — `MapsTest` (4 теста, в т.ч. `dimensionFromMapYml`, `setSpawnKeepsFileChanges`).
 2. Вживую (так проверено, офлайн-копия OdysseyServer, бот mineflayer 1.21.11):
    - `maps/neth/map.yml` со строкой `dimension: "minecraft:the_nether"` → `/homap tp neth <ник>`: клиент получает
      пакет respawn с типом `minecraft:the_nether`, в логе `карта «neth» загружена (flat, minecraft:the_nether)`;

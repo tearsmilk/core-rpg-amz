@@ -75,7 +75,7 @@ final class HoSkyCommand extends Command {
             if (a.length == 2) {
                 out.addAll(List.of("on", "off"));
             } else if (a.length == 3) {
-                out.addAll(m.server().mapNames());
+                out.addAll(m.cachedMapNames());
             }
         } else if (a[0].equalsIgnoreCase("remove") && a.length == 2) {
             for (Zones.Zone z : m.zones()) {
