@@ -143,7 +143,7 @@ void main() {
     vec3 neb = vec3(0.0);
     float best = 0.0;
 #if SS_ZONES > 0
-    vec2 cam = vec2(CameraBlockPos.xz) + CameraOffset.xz;
+    vec2 cam = vec2(CameraBlockPos.xz) - CameraOffset.xz;                 // CameraOffset = блок - камера (см. sky.fsh)
     for (int i = 0; i < SS_ZONES; i++) {
         vec4 z = SS_ZONE_POS[i];                                       // x, z, радиус, доля края с плавным входом
         vec4 k = SS_ZONE_KIND[i];                                      // вид + 4 * (профиль + 1), цвет rgb (-1 — профиля)
