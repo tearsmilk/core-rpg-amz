@@ -6,7 +6,8 @@
 //   1) -Phoka.core.dir=/путь/к/HokaOdyssey  или переменная окружения HOKA_CORE_DIR — корень клона
 //      (в нём client/core) или сразу его папка client/ (в ней core/). Так подключается и патченое ядро
 //      (docs/core-client-hooks), и обычное ядро из апстрима;
-//   2) иначе — общий клон ../.hoka-core (его делает сборка серверных модулей; если в нём нет client/ —
+//   2) -Phoka.core.jar=/путь/к/core.jar  или HOKA_CORE_JAR — готовый jar мода (см. ниже);
+//   3) иначе — общий клон ../.hoka-core (его делает сборка серверных модулей; если в нём нет client/ —
 //      обновить: в hoka-odyssey/ запустить gradle build -Phoka.core.update=true).
 // В папку ядра сборка ничего не пишет: build/ проектов ядра уезжает в client-modules/build/ext/<проект>.
 //
@@ -25,41 +26,69 @@ pluginManagement {
 
 rootProject.name = "hoka-odyssey-client-modules"
 
-val coreRoot: File = (providers.gradleProperty("hoka.core.dir").orNull ?: System.getenv("HOKA_CORE_DIR"))
-    ?.let { File(it).absoluteFile } ?: File(settingsDir, "../.hoka-core").canonicalFile
+// Вариант 2 (если задан — главнее варианта 1): готовый jar мода игроков (например 0.17.0 — его исходники не публикуются):
+//   -Phoka.core.jar=/путь/к/core.jar  или переменная окружения HOKA_CORE_JAR.
+// Модули компилируются против него через modCompileOnly(files(...)) (jar в intermediary — Loom ремапит сам).
+// Сам jar в репозиторий НЕ кладётся — только путь к нему.
+val coreJar: File? = (providers.gradleProperty("hoka.core.jar").orNull ?: System.getenv("HOKA_CORE_JAR"))
+    ?.takeIf { it.isNotBlank() }?.let { File(it).absoluteFile }
 
-// корень клона (client/core) или сама папка client (core/)
-val coreClient: File = listOf(File(coreRoot, "client"), coreRoot)
-    .firstOrNull { File(it, "core/build.gradle.kts").isFile }
-    ?: throw GradleException(
-        "в $coreRoot нет клиентского ядра Hoka Odyssey (client/core/build.gradle.kts). " +
-            "Укажите клон: -Phoka.core.dir=/путь/к/HokaOdyssey (или HOKA_CORE_DIR); общий клон .hoka-core обновляется " +
-            "сборкой серверных модулей: в hoka-odyssey/ — ./gradlew build -Phoka.core.update=true")
+fun jarHas(jar: File, entry: String): Boolean = java.util.zip.ZipFile(jar).use { it.getEntry(entry) != null }
 
-// Патч хуков ядра (WP0) наложен? Признак — onSky в API ClientContext.
-val contextJava = File(coreClient, "core/src/main/java/ink/hoka/odyssey/client/api/ClientContext.java")
-val coreHooks = contextJava.isFile && contextJava.readText().contains("onSky(")
-logger.lifecycle("Ядро Hoka Odyssey (клиент): $coreClient" + if (coreHooks) " — с хуками патча" else " — без патча хуков")
+var coreHooks = false
+var coreCamera = false
+if (coreJar != null) {
+    if (!coreJar.isFile) throw GradleException("hoka.core.jar: файл $coreJar не найден")
+    coreHooks = false                                                              // патч 0.9 → 0.10 к jar не относится
+    coreCamera = jarHas(coreJar, "ink/hoka/odyssey/client/api/CameraState.class")  // onMouse/onCamera (0.17+)
+    logger.lifecycle("Ядро Hoka Odyssey (клиент): jar $coreJar" + if (coreCamera) " — с хуками камеры" else "")
+    gradle.extensions.extraProperties["hokaCoreClient"] = null
+} else {
+    val coreRoot: File = (providers.gradleProperty("hoka.core.dir").orNull ?: System.getenv("HOKA_CORE_DIR"))
+        ?.let { File(it).absoluteFile } ?: File(settingsDir, "../.hoka-core").canonicalFile
 
-gradle.extensions.extraProperties["hokaCoreClient"] = coreClient
-gradle.extensions.extraProperties["hokaCoreHooks"] = coreHooks
+    // корень клона (client/core) или сама папка client (core/)
+    val coreClient: File = listOf(File(coreRoot, "client"), coreRoot)
+        .firstOrNull { File(it, "core/build.gradle.kts").isFile }
+        ?: throw GradleException(
+            "в $coreRoot нет клиентского ядра Hoka Odyssey (client/core/build.gradle.kts). " +
+                "Укажите клон: -Phoka.core.dir=/путь/к/HokaOdyssey (или HOKA_CORE_DIR), либо готовый jar мода: " +
+                "-Phoka.core.jar=/путь/к/core.jar (или HOKA_CORE_JAR); общий клон .hoka-core обновляется " +
+                "сборкой серверных модулей: в hoka-odyssey/ — ./gradlew build -Phoka.core.update=true")
 
-// ядро-мод: модули компилируются против него (compileOnly(project(":core")) — как в апстриме)
-include("core")
-project(":core").projectDir = File(coreClient, "core")
+    // Патч хуков ядра (WP0) наложен? Признак — onSky в API ClientContext. Хуки камеры — onCamera.
+    val contextJava = File(coreClient, "core/src/main/java/ink/hoka/odyssey/client/api/ClientContext.java")
+    val contextText = if (contextJava.isFile) contextJava.readText() else ""
+    coreHooks = contextText.contains("onSky(")
+    coreCamera = contextText.contains("onCamera(")
+    logger.lifecycle("Ядро Hoka Odyssey (клиент): $coreClient" + if (coreHooks) " — с хуками патча" else " — без патча хуков")
 
-// шаблонный модуль ядра hello — для проверки стенда (tools/devclient)
-val helloDir = File(coreClient, "modules/hello")
-if (providers.gradleProperty("hoka.core.hello").getOrElse("true") != "false" && File(helloDir, "build.gradle.kts").isFile) {
-    include("core-hello")
-    project(":core-hello").projectDir = helloDir
+    gradle.extensions.extraProperties["hokaCoreClient"] = coreClient
+
+    // ядро-мод: модули компилируются против него (compileOnly(project(":core")) — как в апстриме)
+    include("core")
+    project(":core").projectDir = File(coreClient, "core")
+
+    // шаблонный модуль ядра hello — для проверки стенда (tools/devclient)
+    val helloDir = File(coreClient, "modules/hello")
+    if (providers.gradleProperty("hoka.core.hello").getOrElse("true") != "false" && File(helloDir, "build.gradle.kts").isFile) {
+        include("core-hello")
+        project(":core-hello").projectDir = helloDir
+    }
 }
+gradle.extensions.extraProperties["hokaCoreJar"] = coreJar
+gradle.extensions.extraProperties["hokaCoreHooks"] = coreHooks
+gradle.extensions.extraProperties["hokaCoreCamera"] = coreCamera
 
 // наши модули: modules/<id>
 File(settingsDir, "modules").listFiles()?.sortedBy { it.name }?.forEach { dir ->
     if (!File(dir, "build.gradle.kts").isFile) return@forEach
     if (File(dir, "requires-core-hooks").isFile && !coreHooks) {
         logger.lifecycle("модуль ${dir.name} пропущен: нужен патч хуков ядра (docs/core-client-hooks)")
+        return@forEach
+    }
+    if (File(dir, "requires-camera-api").isFile && !coreCamera) {
+        logger.lifecycle("модуль ${dir.name} пропущен: нужно ядро с onMouse/onCamera (мод 0.17+, -Phoka.core.jar=...)")
         return@forEach
     }
     include("modules:${dir.name}")

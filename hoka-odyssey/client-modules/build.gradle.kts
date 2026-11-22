@@ -43,6 +43,15 @@ subprojects {
 
 val clientModules = subprojects.filter { it.path.startsWith(":modules:") || it.path == ":core-hello" }
 
+// API ядра для наших модулей (modules/<id>): исходники ядра (compileOnly(project(":core"))) или готовый jar мода
+// (-Phoka.core.jar=..., modCompileOnly(files(...)) — Loom ремапит его из intermediary). В jar модуля ядро НЕ попадает.
+val coreJar = gradle.extensions.extraProperties["hokaCoreJar"] as File?
+subprojects.filter { it.path.startsWith(":modules:") }.forEach { p ->
+    p.dependencies {
+        if (coreJar != null) "modCompileOnly"(files(coreJar)) else "compileOnly"(project(":core"))
+    }
+}
+
 // все клиентские модули — в build/clientmods (оттуда их берёт tools/devclient/run-server.sh)
 val collectClientModules by tasks.registering(Sync::class) {
     group = "hoka"
@@ -54,18 +63,20 @@ val collectClientModules by tasks.registering(Sync::class) {
     into(layout.buildDirectory.dir("clientmods"))
 }
 
-// ядро-мод из той же папки ядра — для dev-клиента (с dev-ключом его собирает tools/devclient/build-devcore.sh)
-val collectCore by tasks.registering(Sync::class) {
+// ядро-мод из той же папки ядра — для dev-клиента (с dev-ключом его собирает tools/devclient/build-devcore.sh).
+// При сборке против готового jar (-Phoka.core.jar) ядро не собирается.
+val collectCore = if (coreJar == null) tasks.register<Sync>("collectCore") {
     group = "hoka"
     description = "Положить jar ядра-мода в build/core"
     dependsOn(":core:remapJar")
     from(project(":core").tasks.named("remapJar"))
     into(layout.buildDirectory.dir("core"))
-}
+} else null
 
 tasks.register("build") {
     group = "build"
-    dependsOn(collectClientModules, collectCore)
+    dependsOn(collectClientModules)
+    if (collectCore != null) dependsOn(collectCore)
 }
 
 tasks.register<Delete>("clean") {

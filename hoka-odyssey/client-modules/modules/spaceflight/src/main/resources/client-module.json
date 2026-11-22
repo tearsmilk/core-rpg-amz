@@ -1,0 +1,7 @@
+{
+  "id": "spaceflight",
+  "version": "0.1.0",
+  "main": "ink.hoka.odyssey.client.spaceflight.SpaceflightModule",
+  "authors": ["tearsmilk"],
+  "description": "Живая невесомость в вакууме: инерция, тяготение тел, тяга и свободная камера с креном 360°"
+}
