@@ -7,8 +7,9 @@ import java.util.Locale;
  * Чёрные дыры в небе: шар-тень, фотонное кольцо, аккреционный диск и линза (рисует sky.fsh). Источник — модуль gravity
  * (сервис BlackHoles, см. {@link GravityHoles}); в шейдер попадают файлом spacesky:holes.glsl.
  *
- * <p>Шейдер не знает, какой это мир: при everywhere: true дыры всех карт видны в космосе во всех мирах, при
- * everywhere: false — только в мирах hoka:space (там, где вообще рисуется космос).
+ * <p>Дыра видна в небе профиля своей карты (dimension «hoka:&lt;профиль&gt;» в map.yml карты); карты без профиля
+ * (overworld и прочие) — профиль space. Миры без метки при everywhere: true — тоже space (как до профилей: там дыры
+ * карт без профиля видны во всех мирах), при everywhere: false — ванильное небо без дыр.
  */
 final class Holes {
     /** Не больше стольких дыр в файле: цикл в sky.fsh — на каждом пикселе неба (дальние пропускаются за пару умножений). */
@@ -32,9 +33,13 @@ final class Holes {
      * @param bright яркость
      * @param temp   «температура» цвета
      * @param seed   зерно рисунка диска — из имени
+     * @param profile номер профиля неба, в котором видна дыра (профиль карты; 0 — space)
      */
     record Hole(String map, String name, double x, double y, double z, double horizon, double nx, double ny, double nz,
-                double outer, double spin, double bright, double temp, double seed) {
+                double outer, double spin, double bright, double temp, double seed, int profile) {
+        Hole withProfile(int p) {
+            return new Hole(map, name, x, y, z, horizon, nx, ny, nz, outer, spin, bright, temp, seed, p);
+        }
     }
 
     private Holes() {
@@ -55,7 +60,22 @@ final class Holes {
         double s = Math.sin(t);
         double outer = Double.isFinite(size) && size > 0 ? clamp(size, 1.5, 12, 6) : 0;
         return new Hole(map, name, x, y, z, horizon, s * Math.cos(w), Math.cos(t), s * Math.sin(w), outer,
-            clamp(spin, -5, 5, 1), clamp(bright, 0, 5, 1), clamp(temp, 0.2, 3, 1), seed(name));
+            clamp(spin, -5, 5, 1), clamp(bright, 0, 5, 1), clamp(temp, 0.2, 3, 1), seed(name), 0);
+    }
+
+    /**
+     * Профиль каждой дыры — по типу мира её карты: mapDims — карта → dimension из map.yml, profiles — id → номер.
+     * Карта без профиля (или с профилем, которого нет) — 0 (space).
+     */
+    static List<Hole> withProfiles(List<Hole> holes, java.util.Map<String, String> mapDims,
+                                   java.util.Map<String, Integer> profiles) {
+        List<Hole> out = new java.util.ArrayList<>(holes.size());
+        for (Hole h : holes) {
+            String id = Profiles.profileOf(mapDims.get(h.map()));
+            Integer i = id == null ? null : profiles.get(id);
+            out.add(h.withProfile(i == null ? 0 : i));
+        }
+        return out;
     }
 
     /** Зерно рисунка диска из имени дыры: 0…64 с шагом 1/16 (в float точно; разные имена — разный рисунок). */
@@ -81,7 +101,7 @@ final class Holes {
         StringBuilder b = new StringBuilder();
         b.append("// spacesky: чёрные дыры — файл пишет модуль spacesky по дырам модуля gravity, руками не менять.\n");
         b.append("// SS_HOLE_POS = (x, y, z, горизонт), SS_HOLE_DISK = (нормаль диска, внешний радиус в горизонтах),\n");
-        b.append("// SS_HOLE_LOOK = (вращение, яркость, температура, зерно)\n");
+        b.append("// SS_HOLE_LOOK = (вращение, яркость, температура, зерно), SS_HOLE_PROF — номер профиля неба\n");
         b.append("#define SS_HOLES ").append(holes.size()).append('\n');
         if (holes.isEmpty()) {
             return b.toString();
@@ -106,6 +126,11 @@ final class Holes {
             Hole h = holes.get(i);
             b.append("    vec4(").append(f(h.spin())).append(", ").append(f(h.bright())).append(", ").append(f(h.temp()))
                 .append(", ").append(f(h.seed())).append(i + 1 < holes.size() ? ")," : ")").append('\n');
+        }
+        b.append(");\n");
+        b.append("const int SS_HOLE_PROF[SS_HOLES] = int[SS_HOLES](");
+        for (int i = 0; i < holes.size(); i++) {
+            b.append(i > 0 ? ", " : "").append(holes.get(i).profile());
         }
         b.append(");\n");
         return b.toString();

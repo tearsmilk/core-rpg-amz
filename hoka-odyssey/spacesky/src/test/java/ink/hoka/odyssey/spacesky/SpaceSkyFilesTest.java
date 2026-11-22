@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 class SpaceSkyFilesTest {
     private static final Path RES = Path.of("src/main/resources");
     private static final String CORE = "assets/minecraft/shaders/core/";
+    private static final String FOG = "assets/minecraft/shaders/include/fog.glsl";
 
     /** Все файлы пака в режиме — как их собирает syncPack (части + сгенерированные include). */
     private static Set<String> packFiles(boolean everywhere, boolean sun, boolean moon, boolean clouds) throws Exception {
@@ -26,13 +27,15 @@ class SpaceSkyFilesTest {
         files.put(Zones.PATH, new byte[0]);
         files.put(SkyMode.PATH, new byte[0]);
         files.put(Holes.PATH, new byte[0]);
+        files.put(Profiles.PATH, new byte[0]);
         return files.keySet();
     }
 
     @Test
     void skyShaderAlwaysInPack() throws Exception {
         Map<String, byte[]> m = SpaceSkyModule.collect(RES.resolve(SkyMode.ALWAYS));
-        assertEquals(List.of(CORE + "sky.fsh", CORE + "sky.vsh", Holes.PATH, SkyMode.PATH, Zones.PATH), List.copyOf(m.keySet()));
+        assertEquals(List.of(CORE + "position_tex.vsh", CORE + "sky.fsh", CORE + "sky.vsh", FOG, Holes.PATH, SkyMode.PATH,
+            Profiles.PATH, Zones.PATH), List.copyOf(m.keySet()));
     }
 
     @Test
@@ -40,9 +43,9 @@ class SpaceSkyFilesTest {
         assertEquals(List.of("pack", "everywhere"), SkyMode.parts(true, false, false, false));
         assertEquals(List.of("pack", "everywhere", "hide/sun", "hide/moon", "hide/clouds"),
             SkyMode.parts(true, true, true, true));
-        // режим «только hoka:space»: текстуры общие для всех миров — не трогаются при любых hide-*
-        assertEquals(List.of("pack", "marked"), SkyMode.parts(false, true, true, true));
-        assertEquals(List.of("pack", "marked"), SkyMode.parts(false, false, false, false));
+        // режим «только миры профилей»: текстуры общие для всех миров — не трогаются при любых hide-*
+        assertEquals(List.of("pack"), SkyMode.parts(false, true, true, true));
+        assertEquals(List.of("pack"), SkyMode.parts(false, false, false, false));
         assertEquals(List.of("assets/minecraft/textures/environment/celestial/sun.png"),
             List.copyOf(SpaceSkyModule.collect(RES.resolve("hide/sun")).keySet()));
         assertEquals(8, SpaceSkyModule.collect(RES.resolve("hide/moon")).size());
@@ -52,17 +55,17 @@ class SpaceSkyFilesTest {
     @Test
     void everywherePackFiles() throws Exception {
         assertEquals(Set.of(CORE + "sky.vsh", CORE + "sky.fsh", CORE + "stars.fsh", CORE + "position_color.vsh",
-            "assets/minecraft/shaders/include/fog.glsl", Zones.PATH, SkyMode.PATH, Holes.PATH), packFiles(true, false, false, false));
+            CORE + "position_tex.vsh", FOG, Zones.PATH, SkyMode.PATH, Holes.PATH, Profiles.PATH),
+            packFiles(true, false, false, false));
         Set<String> all = packFiles(true, true, true, true);
-        assertEquals(8 + 1 + 8 + 1, all.size(), all.toString());
+        assertEquals(10 + 1 + 8 + 1, all.size(), all.toString());
         assertTrue(all.contains("assets/minecraft/textures/environment/clouds.png"));
-        assertFalse(all.contains(CORE + "position_tex.vsh"));
     }
 
     @Test
     void markedPackFiles() throws Exception {
-        Set<String> expected = Set.of(CORE + "sky.vsh", CORE + "sky.fsh", CORE + "position_tex.vsh", Zones.PATH,
-            SkyMode.PATH, Holes.PATH);
+        Set<String> expected = Set.of(CORE + "sky.vsh", CORE + "sky.fsh", CORE + "position_tex.vsh", FOG, Zones.PATH,
+            SkyMode.PATH, Holes.PATH, Profiles.PATH);
         assertEquals(expected, packFiles(false, true, true, true));
         assertEquals(expected, packFiles(false, false, false, false));
     }
@@ -73,10 +76,8 @@ class SpaceSkyFilesTest {
         // запасной файл в jar совпадает с тем, что модуль пишет по умолчанию (everywhere: true)
         assertEquals(Files.readString(RES.resolve(SkyMode.ALWAYS).resolve(SkyMode.PATH), StandardCharsets.UTF_8), on);
         assertTrue(on.contains("#define SPACESKY_EVERYWHERE 1\n"), on);
-        assertTrue(on.contains("#define SPACESKY_MARK (vec3(2.0, 2.0, 5.0) / 255.0)\n"), on);
-        assertTrue(on.contains("#define SPACESKY_WATER_MARK (vec3(5.0, 6.0, 52.0) / 255.0)\n"), on);
-        assertTrue(on.contains("bool spacesky_fog_marked(vec3 c)"), on);
         assertTrue(on.contains("#ifndef SPACESKY_MODE_GLSL\n"), on);
+        assertFalse(on.contains("SPACESKY_MARK"), "метки — в profiles.glsl");
         String off = SkyMode.glsl(false, true, false);
         assertTrue(off.contains("#define SPACESKY_EVERYWHERE 0\n"), off);
         assertTrue(off.contains("#define SPACESKY_HIDE_SUN 1\n"), off);
@@ -85,13 +86,13 @@ class SpaceSkyFilesTest {
 
     @Test
     void shadersUseModeInclude() throws Exception {
-        for (String f : List.of("pack/" + CORE + "sky.vsh", "pack/" + CORE + "sky.fsh", "marked/" + CORE + "position_tex.vsh",
-            "everywhere/assets/minecraft/shaders/include/fog.glsl")) {
+        for (String f : List.of("pack/" + CORE + "sky.vsh", "pack/" + CORE + "sky.fsh", "pack/" + CORE + "position_tex.vsh",
+            "pack/" + FOG)) {
             String s = Files.readString(RES.resolve(f), StandardCharsets.UTF_8);
             assertTrue(s.contains("#moj_import <spacesky:mode.glsl>"), f);
+            assertTrue(s.contains("#moj_import <spacesky:profiles.glsl>"), f);
+            assertFalse(s.contains("SPACESKY_MARK"), f + ": старая метка");
         }
-        // SPACESKY_BASE теперь только в mode.glsl — иначе в режиме false (без своего fog.glsl) sky.fsh не собрался бы
-        assertFalse(Files.readString(RES.resolve("everywhere/assets/minecraft/shaders/include/fog.glsl"),
-            StandardCharsets.UTF_8).contains("#define SPACESKY_BASE"));
+        assertFalse(Files.readString(RES.resolve("pack/" + FOG), StandardCharsets.UTF_8).contains("#define SPACESKY_BASE"));
     }
 }

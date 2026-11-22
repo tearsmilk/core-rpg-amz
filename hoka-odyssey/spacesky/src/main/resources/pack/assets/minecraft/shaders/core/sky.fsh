@@ -1,18 +1,21 @@
 #version 330
 
-// spacesky: космос вместо неба. Всегда (дёшево) — тёмный фон и редкие звёзды. В областях из config.yml (ssZone из
-// sky.vsh) — Млечный путь, туманности, густые звёзды; вне областей эта работа не делается вовсе (ветка одна на кадр).
-// Цвет неба от времени суток и биома (ColorModulator) не используется — космос одинаковый днём и ночью.
-// Режим (spacesky:mode.glsl): SPACESKY_EVERYWHERE 0 — космос только в мире hoka:space (МЕТКА в FogColor или в
-// ColorModulator — то же условие, что в sky.vsh), иначе — ванильный sky.fsh.
-// Чёрные дыры (spacesky:holes.glsl): шар-тень, фотонное кольцо, диск и линза поверх космоса — в мировых координатах,
-// по позиции камеры (CameraBlockPos + CameraOffset). Шейдер не знает мира: дыры видны везде, где рисуется космос.
+// spacesky: небо профиля (spacesky:profiles.glsl) вместо ванильного. Номер и параметры профиля считает sky.vsh
+// (flat: ssProf, ssA..ssH — одно значение на кадр, ветвление по виду профиля одно на кадр):
+// - галактика: всегда (дёшево) — фон и редкие звёзды профиля; в областях из config.yml (ssZone из sky.vsh) —
+//   Млечный путь, туманности, густые звёзды; вне областей эта работа не делается вовсе;
+// - планета: атмосфера (горизонт → зенит, цвета по времени суток), закат у солнца, своё солнце (диск и ореол),
+//   ночью — звёзды профиля (вращаются вместе с солнцем), соседняя планета/луна с фазой (освещена солнцем профиля).
+// ssProf < 0 (режим everywhere: false, мир без метки) — ванильный sky.fsh.
+// Чёрные дыры (spacesky:holes.glsl): шар-тень, фотонное кольцо, диск и линза поверх неба — в мировых координатах,
+// по позиции камеры (CameraBlockPos + CameraOffset); каждая — только в небе своего профиля (профиль её карты).
 // Без дыр (SS_HOLES 0) main код дыр не вызывает — стоимость как без них.
 
 #moj_import <minecraft:fog.glsl>
 #moj_import <minecraft:dynamictransforms.glsl>
 #moj_import <minecraft:globals.glsl>
 #moj_import <spacesky:mode.glsl>
+#moj_import <spacesky:profiles.glsl>
 #moj_import <spacesky:holes.glsl>
 
 in float sphericalVertexDistance;
@@ -20,6 +23,15 @@ in float cylindricalVertexDistance;
 in vec3 spaceDir;
 flat in vec4 ssZone;
 flat in vec3 ssNebula;
+flat in int ssProf;
+flat in vec4 ssA;
+flat in vec4 ssB;
+flat in vec4 ssC;
+flat in vec4 ssD;
+flat in vec4 ssE;
+flat in vec4 ssF;
+flat in vec4 ssG;
+flat in vec4 ssH;
 
 out vec4 fragColor;
 
@@ -63,11 +75,21 @@ vec3 ss_stars(vec3 d, float scale, float density, float size, float t) {
     return tint * lum * mix(0.45, 1.6, u * u) * twinkle;
 }
 
+// Звёзды галактик: SS_STARS_PLAIN (у всех галактик звёзды по умолчанию) — константы, как до профилей; иначе —
+// плотность ssA.w и оттенок × яркость ssC.rgb профиля.
+#if SS_STARS_PLAIN
+#define SS_GAL_DENS 1.0
+#define SS_GAL_TINT
+#else
+#define SS_GAL_DENS ssA.w
+#define SS_GAL_TINT * ssC.rgb
+#endif
+
 vec3 ss_space(vec3 d, float t) {
-    // общий план — всегда
-    vec3 col = SPACESKY_BASE + vec3(0.006, 0.004, 0.016) * (0.5 + 0.5 * d.y);
-    col += ss_stars(d, 160.0, 0.022, 0.06, t) * 0.8;
-    col += ss_stars(d, 55.0, 0.02, 0.05, t) * 1.3;
+    // общий план — всегда: фон профиля (к зениту светлее) и редкие звёзды
+    vec3 col = mix(ssA.rgb, ssB.rgb, 0.5 + 0.5 * d.y);
+    col += (ss_stars(d, 160.0, 0.022 * SS_GAL_DENS, 0.06, t) * 0.8 + ss_stars(d, 55.0, 0.02 * SS_GAL_DENS, 0.05, t) * 1.3)
+        SS_GAL_TINT;
 
     float seed = ssZone.w;
     // туманность: маска одним шумом; цветной шум — только внутри маски
@@ -86,13 +108,62 @@ vec3 ss_space(vec3 d, float t) {
             float clumps = ss_fbm3(d * 9.0);
             float dust = smoothstep(0.45, 0.75, ss_noise(d * 14.0 + 5.0));
             col += band * (0.10 + 0.18 * clumps) * (1.0 - 0.7 * dust) * vec3(0.78, 0.80, 1.0) * ssZone.x;
-            col += ss_stars(d, 420.0, 0.25 * band * ssZone.x, 0.07, t) * 0.45;
+            col += ss_stars(d, 420.0, 0.25 * band * ssZone.x, 0.07, t) * 0.45 SS_GAL_TINT;
         }
     }
     // звёздное скопление: густые мелкие и средние звёзды
     if (ssZone.z > 0.0) {
-        col += ss_stars(d, 420.0, 0.06 * ssZone.z, 0.07, t) * 0.5;
-        col += ss_stars(d, 160.0, 0.05 * ssZone.z, 0.06, t) * 0.9;
+        col += (ss_stars(d, 420.0, 0.06 * ssZone.z, 0.07, t) * 0.5 + ss_stars(d, 160.0, 0.05 * ssZone.z, 0.06, t) * 0.9)
+            SS_GAL_TINT;
+    }
+    return col;
+}
+
+// Небо планеты: ssA — горизонт, ssB — зенит (уже по времени суток), ssD — солнце (направление, угловой радиус),
+// ssE — цвет солнца и день, ssF — цвет и сила заката, ssG/ssH — луна. pix — угловой размер пикселя (сглаживание краёв дисков).
+vec3 ss_planet(vec3 d, float t, float pix) {
+    float y = d.y;
+    float h = 1.0 - clamp(y, 0.0, 1.0);
+    vec3 col = mix(ssA.rgb, ssB.rgb, 1.0 - h * h * h);                // от горизонта к зениту — плавно
+    if (y < 0.0) {
+        col *= mix(1.0, 0.55, min(-y * 2.5, 1.0));                    // ниже горизонта (пустота) — темнее
+    }
+    // звёзды ночью: небо вращается вместе с солнцем (вокруг оси z), у горизонта гаснут в дымке
+    if (ssB.w > 0.003) {
+        vec3 ds = vec3(dot(d.xy, ssD.xy), d.y * ssD.x - d.x * ssD.y, d.z);
+        float fade = smoothstep(-0.05, 0.3, y);
+        col += (ss_stars(ds, 160.0, 0.022 * ssA.w, 0.06, t) * 0.8 + ss_stars(ds, 55.0, 0.02 * ssA.w, 0.05, t) * 1.3)
+            * ssC.rgb * fade;
+    }
+    float mu = dot(d, ssD.xyz);
+    // закат: у горизонта небо уходит в цвет заката — сильнее в сторону солнца
+    if (ssF.w > 0.004) {
+        float m = max(mu, 0.0);
+        float m2 = m * m;
+        float g = (0.8 * m2 * m2 + 0.35 * m2 + 0.12) * exp(-abs(y) * 3.5);
+        col = mix(col, ssF.rgb, clamp(g * ssF.w, 0.0, 0.85));
+    }
+    // солнце: диск со сглаженным краем и ореол (угол — без acos: у малых углов sqrt(2(1 - cos)))
+    if (ssD.w > 0.0) {
+        float ang = sqrt(max(2.0 - 2.0 * mu, 0.0));
+        float r = ssD.w;
+        float disk = smoothstep(r + pix, r - pix, ang);
+        float glow = exp(-ang / (r * 2.2)) * 0.35 + exp(-ang / (r * 9.0)) * 0.12;
+        col += ssE.rgb * (disk * 2.5 + glow);
+    }
+    // луна/соседняя планета: шар, освещённый солнцем профиля (фаза — от положения солнца); днём сквозь атмосферу
+    if (ssG.w > 0.0) {
+        float c = dot(d, ssG.xyz);
+        float sr = sin(ssG.w);
+        if (c > 0.0 && 1.0 - c * c < sr * sr * 1.1) {
+            vec3 q = (d - ssG.xyz * c) / sr;                           // смещение по диску, |q| <= 1
+            float q2 = dot(q, q);
+            float mask = smoothstep(1.0 + pix / sr, 1.0 - pix / sr, sqrt(q2));
+            vec3 n = q - ssG.xyz * sqrt(max(1.0 - q2, 0.0));            // нормаль поверхности (к камере)
+            float lit = smoothstep(-0.05, 0.15, dot(n, ssD.xyz));
+            vec3 moon = ssH.rgb * (lit * (0.35 + 0.65 * max(dot(n, ssD.xyz), 0.0)) + 0.03);
+            col = mix(col, col * mix(0.12, 0.8, ssE.w) + moon, mask);  // тёмная сторона днём — почти цвет неба
+        }
     }
     return col;
 }
@@ -272,14 +343,15 @@ bool ssbh_near(vec4 hp, float outer, ivec3 camBlock, vec3 camOff, vec3 d, inout 
 }
 
 // Шаг отбора на КОНСТАНТНОМ индексе (развёрнуто макросами, без цикла по массивам): компилятор сворачивает
-// координаты дыры в константы. Найденные — биты mask (без локальных массивов: они дороги).
-#define SSBH_CULL(i) if (ssbh_near(SS_HOLE_POS[i], SS_HOLE_DISK[i].w, camBlock, camOff, d, inside)) mask |= 1 << i;
+// координаты дыры в константы. Найденные — биты mask (без локальных массивов: они дороги). Дыра другого профиля
+// (номер — константа, профиль — flat) пропускается одним сравнением.
+#define SSBH_CULL(i) if (SS_HOLE_PROF[i] == prof && ssbh_near(SS_HOLE_POS[i], SS_HOLE_DISK[i].w, camBlock, camOff, d, inside)) mask |= 1 << i;
 #endif
 
-// Все дыры: d — направление взгляда (меняется на направление для фона ss_space), camBlock/camOff — позиция
-// камеры (CameraBlockPos, CameraOffset), pix — угловой размер пикселя. Возвращает emission поверх фона,
+// Все дыры профиля prof: d — направление взгляда (меняется на направление для фона ss_space), camBlock/camOff —
+// позиция камеры (CameraBlockPos, CameraOffset), pix — угловой размер пикселя. Возвращает emission поверх фона,
 // tr — сколько фона видно (0 — шар или плотный диск: ss_space можно не считать). Не больше 4 дыр на пиксель.
-vec3 ss_holes(inout vec3 d, ivec3 camBlock, vec3 camOff, float pix, float t, out float tr) {
+vec3 ss_holes(inout vec3 d, ivec3 camBlock, vec3 camOff, float pix, float t, int prof, out float tr) {
     tr = 1.0;
     vec3 E = vec3(0.0);
 #if SS_HOLES > 0
@@ -356,31 +428,36 @@ vec3 ss_holes(inout vec3 d, ivec3 camBlock, vec3 camOff, float pix, float t, out
     return E;
 }
 
-bool ss_space() {
-#if SPACESKY_EVERYWHERE
-    return true;
-#else
-    return spacesky_fog_marked(FogColor.rgb) || spacesky_marked(ColorModulator.rgb);
+// Небо профиля без дыр: ветка по виду профиля (ssC.w — flat, одна на кадр; без планет в профилях её нет вовсе).
+// pix < 0 — посчитать здесь (только планете: галактике он не нужен, без дыр там всё как до профилей).
+vec3 ss_sky(vec3 d, float t, float pix) {
+#if SS_PLANETS > 0
+    if (ssC.w > 0.5) {
+        return ss_planet(d, t, pix < 0.0 ? length(fwidth(d)) : pix);
+    }
 #endif
+    return ss_space(d, t);
 }
 
 void main() {
-    if (!ss_space()) {
-        // ванильный sky.fsh
+#if !SPACESKY_EVERYWHERE
+    if (ssProf < 0) {
+        // ванильный sky.fsh (в режиме everywhere: true такого нет — без метки профиль space)
         fragColor = apply_fog(ColorModulator, sphericalVertexDistance, cylindricalVertexDistance, 0.0, FogSkyEnd, FogSkyEnd, FogSkyEnd, FogColor);
         return;
     }
+#endif
     vec3 d = normalize(spaceDir);
     float t = GameTime * 1200.0;                                       // секунды, цикл — игровые сутки
 #if SS_HOLES > 0
     float pix = length(fwidth(d));                                     // угловой размер пикселя (до ветвлений)
     float tr;
-    vec3 col = ss_holes(d, CameraBlockPos, CameraOffset, pix, t, tr);  // d -> отклонённое направление (линза)
+    vec3 col = ss_holes(d, CameraBlockPos, CameraOffset, pix, t, ssProf, tr);  // d -> отклонённое направление (линза)
     if (tr > 0.002) {
-        col += tr * ss_space(d, t);
+        col += tr * ss_sky(d, t, pix);
     }
     fragColor = vec4(col, 1.0);
 #else
-    fragColor = vec4(ss_space(d, t), 1.0);
+    fragColor = vec4(ss_sky(d, t, -1.0), 1.0);
 #endif
 }

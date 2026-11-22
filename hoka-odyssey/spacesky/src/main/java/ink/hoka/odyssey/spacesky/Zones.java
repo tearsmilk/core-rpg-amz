@@ -48,8 +48,14 @@ final class Zones {
         }
     }
 
-    /** Область: центр x/z, радиус (блоки), доля края с плавным появлением (0..1), цвет (для туманности). */
-    record Zone(String id, Kind kind, double x, double z, double radius, double fade, int color) {
+    /**
+     * Область: центр x/z, радиус (блоки), доля края с плавным появлением (0..1), цвет туманности (-1 — цвет профиля,
+     * nebula), профиль неба (null — во всех галактиках).
+     */
+    record Zone(String id, Kind kind, double x, double z, double radius, double fade, int color, String profile) {
+        Zone(String id, Kind kind, double x, double z, double radius, double fade, int color) {
+            this(id, kind, x, z, radius, fade, color, null);
+        }
     }
 
     private Zones() {
@@ -74,9 +80,16 @@ final class Zones {
                 errors.add(id + ": radius должен быть больше 0");
                 continue;
             }
-            Integer color = parseColor(c.getString(p + "color", "#B060FF"));
+            Object co = c.get(p + "color");
+            Integer color = co == null ? Integer.valueOf(-1) : parseColor(String.valueOf(co));
             if (color == null) {
                 errors.add(id + ": color — #RRGGBB");
+                continue;
+            }
+            Object po = c.get(p + "profile");
+            String profile = po == null ? null : String.valueOf(po).trim().toLowerCase(Locale.ROOT);
+            if (profile != null && !Profiles.ID.matcher(profile).matches()) {
+                errors.add(id + ": profile — имя профиля из profiles");
                 continue;
             }
             if (out.size() >= MAX) {
@@ -84,7 +97,7 @@ final class Zones {
                 break;
             }
             double fade = Math.max(0.0, Math.min(1.0, c.getDouble(p + "fade", 0.3)));
-            out.add(new Zone(id, kind, c.getDouble(p + "x", 0), c.getDouble(p + "z", 0), r, fade, color));
+            out.add(new Zone(id, kind, c.getDouble(p + "x", 0), c.getDouble(p + "z", 0), r, fade, color, profile));
         }
         return out;
     }
@@ -96,9 +109,8 @@ final class Zones {
         c.set(p + "z", round(z.z()));
         c.set(p + "radius", round(z.radius()));
         c.set(p + "fade", z.fade());
-        if (z.kind() == Kind.NEBULA) {
-            c.set(p + "color", hex(z.color()));
-        }
+        c.set(p + "color", z.kind() == Kind.NEBULA && z.color() >= 0 ? hex(z.color()) : null);
+        c.set(p + "profile", z.profile());
     }
 
     private static Object round(double v) {
@@ -127,8 +139,25 @@ final class Zones {
         return String.format(Locale.ROOT, "%.3f", v);
     }
 
-    /** Текст spacesky:zones.glsl. */
-    static String glsl(List<Zone> zones) {
+    /**
+     * Текст spacesky:zones.glsl. profiles — номера профилей по id: область с профилем, которого нет, пропускается
+     * (ошибка в errors). SS_ZONE_KIND.x = вид + 4 * (номер профиля + 1) (0 — во всех галактиках), цвет -1 — цвет
+     * туманностей профиля.
+     */
+    static String glsl(List<Zone> all, java.util.Map<String, Integer> profiles, List<String> errors) {
+        List<Zone> zones = new ArrayList<>();
+        List<Integer> prof = new ArrayList<>();
+        for (Zone z : all) {
+            if (z.profile() == null) {
+                zones.add(z);
+                prof.add(-1);
+            } else if (profiles.containsKey(z.profile())) {
+                zones.add(z);
+                prof.add(profiles.get(z.profile()));
+            } else {
+                errors.add(z.id() + ": нет профиля неба «" + z.profile() + "» (или он появится после перезапуска) — область пропущена");
+            }
+        }
         StringBuilder b = new StringBuilder();
         b.append("// spacesky: области космоса — файл пишет модуль spacesky из config.yml, руками не менять.\n");
         b.append("#define SS_ZONES ").append(zones.size()).append('\n');
@@ -140,18 +169,24 @@ final class Zones {
             Zone z = zones.get(i);
             b.append("    vec4(").append(f(z.x())).append(", ").append(f(z.z())).append(", ").append(f(z.radius()))
                 .append(", ").append(f(z.fade())).append(i + 1 < zones.size() ? "),  // " : ")   // ").append(z.id())
-                .append('\n');
+                .append(z.profile() != null ? " (" + z.profile() + ")" : "").append('\n');
         }
         b.append(");\n");
         b.append("const vec4 SS_ZONE_KIND[SS_ZONES] = vec4[SS_ZONES](\n");
         for (int i = 0; i < zones.size(); i++) {
             Zone z = zones.get(i);
             int c = z.color();
-            b.append("    vec4(").append(z.kind().ordinal()).append(".0, ").append(f(((c >> 16) & 255) / 255.0))
-                .append(", ").append(f(((c >> 8) & 255) / 255.0)).append(", ").append(f((c & 255) / 255.0))
+            String rgb = c < 0 ? "-1.0, -1.0, -1.0" : f(((c >> 16) & 255) / 255.0) + ", " + f(((c >> 8) & 255) / 255.0)
+                + ", " + f((c & 255) / 255.0);
+            b.append("    vec4(").append(z.kind().ordinal() + 4 * (prof.get(i) + 1)).append(".0, ").append(rgb)
                 .append(i + 1 < zones.size() ? ")," : ")").append('\n');
         }
         b.append(");\n");
         return b.toString();
+    }
+
+    /** Без профилей (все области — во всех галактиках). */
+    static String glsl(List<Zone> zones) {
+        return glsl(zones, java.util.Map.of(), new ArrayList<>());
     }
 }

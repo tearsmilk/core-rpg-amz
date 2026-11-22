@@ -44,6 +44,20 @@ class HolesTest {
         assertTrue(g.contains("const vec4 SS_HOLE_DISK[SS_HOLES] = vec4[SS_HOLES](\n    vec4(0.2079, 0.9781, 0.0000, 6.0000)\n);\n"), g);
         assertTrue(g.contains("const vec4 SS_HOLE_LOOK[SS_HOLES] = vec4[SS_HOLES](\n    vec4(1.0000, 1.0000, 1.0000, "
             + String.format(java.util.Locale.ROOT, "%.4f", h.seed()) + ")\n);\n"), g);
+        assertTrue(g.contains("const int SS_HOLE_PROF[SS_HOLES] = int[SS_HOLES](0);\n"), g);
+    }
+
+    @Test
+    void profileOfHoleFromItsMap() {
+        List<Holes.Hole> hs = List.of(Holes.of("g1", "a", 0, 0, 0, 1, 0, 0, 6, 1, 1, 1),
+            Holes.of("mars1", "b", 0, 0, 0, 1, 0, 0, 6, 1, 1, 1), Holes.of("lobby", "c", 0, 0, 0, 1, 0, 0, 6, 1, 1, 1),
+            Holes.of("future", "d", 0, 0, 0, 1, 0, 0, 6, 1, 1, 1), Holes.of("gone", "e", 0, 0, 0, 1, 0, 0, 6, 1, 1, 1));
+        java.util.Map<String, String> dims = java.util.Map.of("g1", "hoka:galaxy1", "mars1", "hoka:mars",
+            "lobby", "minecraft:overworld", "future", "hoka:newone");
+        List<Holes.Hole> p = Holes.withProfiles(hs, dims, java.util.Map.of("space", 0, "galaxy1", 1, "mars", 3));
+        assertEquals(List.of(1, 3, 0, 0, 0), p.stream().map(Holes.Hole::profile).toList(),
+            "карта без профиля, с профилем, которого нет, без map.yml — space (0)");
+        assertTrue(Holes.glsl(p).contains("int[SS_HOLES](1, 3, 0, 0, 0);"));
     }
 
     @Test
@@ -106,6 +120,7 @@ class HolesTest {
         String s = Files.readString(RES.resolve("pack/assets/minecraft/shaders/core/sky.fsh"), StandardCharsets.UTF_8);
         assertTrue(s.contains("#moj_import <spacesky:holes.glsl>"));
         assertTrue(s.contains("vec3 ss_holes("));
+        assertTrue(s.contains("SS_HOLE_PROF[i] == prof"), "отбор дыр — только своего профиля");
         // по одному шагу отбора на каждую возможную дыру
         for (int i = 0; i < Holes.MAX; i++) {
             assertTrue(s.contains("SSBH_CULL(" + i + ")"), "шаг " + i);

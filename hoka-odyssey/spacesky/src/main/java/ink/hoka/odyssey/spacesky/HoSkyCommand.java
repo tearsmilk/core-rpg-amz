@@ -25,13 +25,13 @@ import net.minestom.server.instance.Instance;
  * без аргументов — список (и в каких ты сейчас); add &lt;имя&gt; &lt;milky_way|nebula|stars&gt; &lt;радиус&gt; [#цвет] —
  * область с центром там, где стоишь; remove &lt;имя&gt;; reload — перечитать config.yml.
  * Любое изменение пересобирает пак — у игроков он перезагрузится (пара секунд).
- * world — карты и их тип мира (dimension в maps/&lt;карта&gt;/map.yml); world on|off &lt;карта&gt; — записать/убрать
- * dimension: "hoka:space" (применится при следующей загрузке карты).
+ * world — карты и их тип мира (dimension в maps/&lt;карта&gt;/map.yml); world &lt;карта&gt; &lt;профиль|off&gt; — записать
+ * dimension: "hoka:&lt;профиль&gt;" (on = space) или убрать его (применится при следующей загрузке карты).
+ * profiles — профили неба (вид, номер, карты).
  */
 final class HoSkyCommand extends Command {
-    /** Папка карт ядра (Maps: Path.of("maps") от рабочей папки сервера). */
-    private static final Path MAPS = Path.of("maps");
-    private static final List<String> SUBS = List.of("add", "remove", "reload", "list", "world");
+    private static final Path MAPS = MapDimensions.MAPS;
+    private static final List<String> SUBS = List.of("add", "remove", "reload", "list", "world", "profiles");
 
     private final SpaceSkyModule m;
 
@@ -68,14 +68,22 @@ final class HoSkyCommand extends Command {
                 }
             } else if (a.length == 4) {
                 out.addAll(List.of("500", "1000", "2000", "5000"));
-            } else if (a.length == 5 && Zones.Kind.parse(a[2]) == Zones.Kind.NEBULA) {
-                out.addAll(List.of("#B060FF", "#40A0FF", "#FF6080", "#60FFB0"));
+            } else if (a.length >= 5) {
+                if (a.length == 5 && Zones.Kind.parse(a[2]) == Zones.Kind.NEBULA) {
+                    out.addAll(List.of("#B060FF", "#40A0FF", "#FF6080", "#60FFB0"));
+                }
+                for (Profiles.Profile p : m.profiles()) {
+                    if (!p.planet()) {
+                        out.add(p.id());
+                    }
+                }
             }
         } else if (a[0].equalsIgnoreCase("world")) {
             if (a.length == 2) {
-                out.addAll(List.of("on", "off"));
-            } else if (a.length == 3) {
                 out.addAll(m.cachedMapNames());
+            } else if (a.length == 3) {
+                out.addAll(profileIds());
+                out.add("off");
             }
         } else if (a[0].equalsIgnoreCase("remove") && a.length == 2) {
             for (Zones.Zone z : m.zones()) {
@@ -95,6 +103,7 @@ final class HoSkyCommand extends Command {
             case "add" -> add(s, a);
             case "remove", "del", "delete" -> remove(s, a);
             case "world", "map" -> world(s, a);
+            case "profiles", "profile" -> profiles(s);
             case "reload" -> {
                 msg(s, "Перечитываю config.yml и пересобираю пак…", NamedTextColor.GRAY);
                 apply(s, "Небо обновлено.");
@@ -113,9 +122,10 @@ final class HoSkyCommand extends Command {
                 double d = Math.hypot(at.x() - z.x(), at.z() - z.z());
                 where = d <= z.radius() ? "  ← ты здесь" : String.format(Locale.ROOT, "  (%.0f бл.)", d - z.radius());
             }
-            Component line = Component.text(String.format(Locale.ROOT, " %s — %s, центр %.0f %.0f, радиус %.0f",
-                z.id(), z.kind().title, z.x(), z.z(), z.radius()), NamedTextColor.GRAY);
-            if (z.kind() == Zones.Kind.NEBULA) {
+            Component line = Component.text(String.format(Locale.ROOT, " %s — %s, центр %.0f %.0f, радиус %.0f%s",
+                z.id(), z.kind().title, z.x(), z.z(), z.radius(),
+                z.profile() != null ? ", профиль " + z.profile() : ""), NamedTextColor.GRAY);
+            if (z.kind() == Zones.Kind.NEBULA && z.color() >= 0) {
                 line = line.append(Component.text(" ■", TextColor.color(z.color())));
             }
             s.sendMessage(line.append(Component.text(where, NamedTextColor.GREEN)));
@@ -124,13 +134,14 @@ final class HoSkyCommand extends Command {
         if (!hs.isEmpty()) {
             msg(s, "Чёрные дыры в небе (из gravity, /hograv hole): " + hs.size(), NamedTextColor.AQUA);
             for (Holes.Hole h : hs) {
-                msg(s, String.format(Locale.ROOT, " %s (карта %s) — %.0f %.0f %.0f, горизонт %.1f", h.name(), h.map(),
-                    h.x(), h.y(), h.z(), h.horizon()), NamedTextColor.GRAY);
+                msg(s, String.format(Locale.ROOT, " %s (карта %s, небо %s) — %.0f %.0f %.0f, горизонт %.1f", h.name(),
+                    h.map(), profileName(h.profile()), h.x(), h.y(), h.z(), h.horizon()), NamedTextColor.GRAY);
             }
         }
-        msg(s, "/hosky add <имя> <milky_way|nebula|stars> <радиус> [#цвет] — область там, где стоишь", NamedTextColor.DARK_AQUA);
-        msg(s, "/hosky remove <имя>, /hosky reload", NamedTextColor.DARK_AQUA);
-        msg(s, "/hosky world [on|off <карта>] — тип мира карт (" + SpaceDimension.KEY + " — космос)", NamedTextColor.DARK_AQUA);
+        msg(s, "/hosky add <имя> <milky_way|nebula|stars> <радиус> [#цвет] [профиль] — область там, где стоишь",
+            NamedTextColor.DARK_AQUA);
+        msg(s, "/hosky remove <имя>, /hosky reload, /hosky profiles — профили неба", NamedTextColor.DARK_AQUA);
+        msg(s, "/hosky world [<карта> <профиль|off>] — небо карт (тип мира hoka:<профиль>)", NamedTextColor.DARK_AQUA);
     }
 
     private void add(CommandSender s, String[] a) {
@@ -151,7 +162,15 @@ final class HoSkyCommand extends Command {
         } catch (NumberFormatException e) {
             radius = -1;
         }
-        Integer color = a.length >= 5 ? Zones.parseColor(a[4]) : Integer.valueOf(0xB060FF);
+        Integer color = -1;
+        String profile = null;
+        for (int i = 4; i < a.length; i++) {
+            if (a[i].startsWith("#")) {
+                color = Zones.parseColor(a[i]);
+            } else {
+                profile = a[i].toLowerCase(Locale.ROOT);
+            }
+        }
         if (!Zones.ID.matcher(id).matches()) {
             msg(s, "Имя — только a-z, 0-9, _ (до 32 символов).", NamedTextColor.RED);
         } else if (kind == null) {
@@ -160,11 +179,14 @@ final class HoSkyCommand extends Command {
             msg(s, "Радиус — число блоков больше 0.", NamedTextColor.RED);
         } else if (color == null) {
             msg(s, "Цвет — #RRGGBB.", NamedTextColor.RED);
+        } else if (profile != null && !profileIds().contains(profile)) {
+            msg(s, "Нет профиля неба «" + profile + "». Есть: " + String.join(", ", profileIds()), NamedTextColor.RED);
         } else if (m.zones().size() >= Zones.MAX && m.zones().stream().noneMatch(z -> z.id().equals(id))) {
             msg(s, "Уже " + Zones.MAX + " областей — больше нельзя.", NamedTextColor.RED);
         } else {
             Pos pos = p.getPosition();
-            Zones.write(m.config(), new Zones.Zone(id, kind, Math.round(pos.x()), Math.round(pos.z()), radius, 0.3, color));
+            Zones.write(m.config(), new Zones.Zone(id, kind, Math.round(pos.x()), Math.round(pos.z()), radius, 0.3, color,
+                profile));
             m.config().save();
             msg(s, "Область " + id + " (" + kind.title + ") — центр здесь, радиус " + (long) radius + ". Пересобираю пак…",
                 NamedTextColor.GREEN);
@@ -198,25 +220,55 @@ final class HoSkyCommand extends Command {
         return out;
     }
 
+    /** id профилей: зарегистрированные и из config.yml (новые — после перезапуска). */
+    private List<String> profileIds() {
+        List<String> out = new ArrayList<>();
+        for (Profiles.Profile p : m.profiles()) {
+            out.add(p.id());
+        }
+        for (String id : m.pendingProfiles()) {
+            if (!out.contains(id)) {
+                out.add(id);
+            }
+        }
+        return out;
+    }
+
+    private String profileName(int index) {
+        for (Profiles.Profile p : m.profiles()) {
+            if (p.index() == index) {
+                return p.id();
+            }
+        }
+        return "#" + index;
+    }
+
     private void world(CommandSender s, String[] a) {
         if (a.length == 1) {
             worldList(s);
             return;
         }
-        String op = a[1].toLowerCase(Locale.ROOT);
-        if (a.length < 3 || !(op.equals("on") || op.equals("off"))) {
-            msg(s, "/hosky world — список карт; /hosky world on|off <карта>", NamedTextColor.RED);
+        if (a.length < 3) {
+            msg(s, "/hosky world — список карт; /hosky world <карта> <профиль|off> (on = " + Profiles.DEFAULT_ID + ")",
+                NamedTextColor.RED);
             return;
         }
-        boolean on = op.equals("on");
-        String map = a[2].toLowerCase(Locale.ROOT);
+        String map = a[1].toLowerCase(Locale.ROOT);
+        String arg = a[2].toLowerCase(Locale.ROOT);
+        String profile = arg.equals("on") ? Profiles.DEFAULT_ID : arg.equals("off") ? null : arg;
+        if (profile != null && !profileIds().contains(profile)) {
+            msg(s, "Нет профиля неба «" + profile + "». Есть: " + String.join(", ", profileIds())
+                + " (новый — в config.yml, раздел profiles, и перезапуск сервера).", NamedTextColor.RED);
+            return;
+        }
+        String dim = profile == null ? null : Profiles.PREFIX + profile;
         Map<String, String> loaded = loadedMaps();
-        boolean registered = MinecraftServer.getDimensionTypeRegistry().get(Key.key(SpaceDimension.KEY)) != null;
+        boolean registered = dim == null || MinecraftServer.getDimensionTypeRegistry().get(Key.key(dim)) != null;
         m.scheduler().async(() -> {
             String prev;
             String err = null;
             try {
-                prev = MapDimensions.write(MAPS, map, on);
+                prev = MapDimensions.write(MAPS, map, dim);
             } catch (RuntimeException e) {
                 prev = null;
                 // список карт — тоже здесь: это чтение папки maps/, ему не место в тике
@@ -229,19 +281,22 @@ final class HoSkyCommand extends Command {
                     msg(s, "Не вышло: " + e, NamedTextColor.RED);
                     return;
                 }
-                boolean wasSpace = SpaceDimension.KEY.equals(p);
-                if (on) {
-                    msg(s, wasSpace ? "У карты «" + map + "» уже dimension: \"" + SpaceDimension.KEY + "\"."
-                        : "Карта «" + map + "»: в map.yml записан dimension: \"" + SpaceDimension.KEY + "\""
+                if (dim != null) {
+                    if (dim.equals(p)) {
+                        msg(s, "У карты «" + map + "» уже dimension: \"" + dim + "\".", NamedTextColor.GREEN);
+                        return;
+                    }
+                    msg(s, "Карта «" + map + "»: в map.yml записан dimension: \"" + dim + "\""
                         + (p != null ? " (был " + p + ")." : "."), NamedTextColor.GREEN);
-                } else if (wasSpace) {
-                    msg(s, "Карта «" + map + "»: dimension убран из map.yml — будет " + MapDimensions.DEFAULT + ".",
-                        NamedTextColor.YELLOW);
+                } else if (Profiles.profileOf(p) != null) {
+                    msg(s, "Карта «" + map + "»: dimension убран из map.yml (был " + p + ") — будет "
+                        + MapDimensions.DEFAULT + ".", NamedTextColor.YELLOW);
                 } else {
-                    msg(s, "У карты «" + map + "» нет dimension: \"" + SpaceDimension.KEY + "\""
+                    msg(s, "У карты «" + map + "» нет неба профиля"
                         + (p != null ? " (там " + p + " — не трогаю)." : " — ничего не изменено."), NamedTextColor.YELLOW);
                     return;
                 }
+                m.refreshMapNames();
                 msg(s, "Применится при следующей загрузке карты (перезапуск сервера или выгрузка пустой карты); "
                     + "нужен патч ядра (docs/core-dimension.md).", NamedTextColor.GRAY);
                 if (loaded.containsKey(map)) {
@@ -250,13 +305,13 @@ final class HoSkyCommand extends Command {
                         + "(/homap setspawn): ядро перепишет map.yml своей копией и вернёт прежний dimension"
                         + (p != null ? " (" + p + ")." : " (без него)."), NamedTextColor.GOLD);
                 }
-                if (on && map.equals("world")) {
+                if (dim != null && map.equals("world")) {
                     msg(s, "Основная карта «world» загружается до модулей — пока ядро это не изменит, для неё "
-                        + SpaceDimension.KEY + " не сработает (будет overworld).", NamedTextColor.GOLD);
+                        + dim + " не сработает (будет overworld).", NamedTextColor.GOLD);
                 }
-                if (on && !registered) {
-                    msg(s, "Тип мира " + SpaceDimension.KEY + " не зарегистрирован (модуль включён после старта) — "
-                        + "нужен перезапуск сервера.", NamedTextColor.GOLD);
+                if (!registered) {
+                    msg(s, "Тип мира " + dim + " ещё не зарегистрирован (новый профиль или модуль включён после "
+                        + "старта) — нужен перезапуск сервера.", NamedTextColor.GOLD);
                 }
             });
         });
@@ -264,30 +319,61 @@ final class HoSkyCommand extends Command {
 
     private void worldList(CommandSender s) {
         Map<String, String> loaded = loadedMaps();
-        boolean registered = MinecraftServer.getDimensionTypeRegistry().get(Key.key(SpaceDimension.KEY)) != null;
         boolean everywhere = m.config().getBoolean("everywhere", true);
         m.scheduler().async(() -> {
             Map<String, String> dims = MapDimensions.read(MAPS, m.server().mapNames());
             runInTick(() -> {
-                msg(s, "Карты и тип мира (dimension в map.yml). Космос: "
-                    + (everywhere ? "во всех мирах (everywhere: true)" : "только " + SpaceDimension.KEY + " (everywhere: false)")
-                    + (registered ? "" : "; " + SpaceDimension.KEY + " не зарегистрирован — нужен перезапуск"),
-                    NamedTextColor.AQUA);
+                msg(s, "Карты и тип мира (dimension в map.yml). Небо профилей: "
+                    + (everywhere ? "во всех мирах (everywhere: true; без профиля — " + Profiles.DEFAULT_ID + ")"
+                    : "только в мирах hoka:<профиль> (everywhere: false)"), NamedTextColor.AQUA);
                 for (Map.Entry<String, String> e : dims.entrySet()) {
                     String now = loaded.get(e.getKey());
-                    boolean space = SpaceDimension.KEY.equals(e.getValue());
+                    boolean prof = Profiles.profileOf(e.getValue()) != null;
                     Component line = Component.text(" " + e.getKey() + " — ", NamedTextColor.GRAY)
-                        .append(Component.text(e.getValue(), space ? NamedTextColor.LIGHT_PURPLE : NamedTextColor.WHITE));
+                        .append(Component.text(e.getValue(), prof ? NamedTextColor.LIGHT_PURPLE : NamedTextColor.WHITE));
                     if (now != null) {
                         line = line.append(Component.text(now.equals(e.getValue()) ? "  (загружена)"
                             : "  (загружена как " + now + ")", NamedTextColor.GREEN));
                     }
                     s.sendMessage(line);
                 }
-                msg(s, "/hosky world on|off <карта> — записать/убрать dimension: \"" + SpaceDimension.KEY + "\"",
-                    NamedTextColor.DARK_AQUA);
+                msg(s, "/hosky world <карта> <профиль|off> — небо карты (профили: " + String.join(", ", profileIds())
+                    + ")", NamedTextColor.DARK_AQUA);
             });
         });
+    }
+
+    private void profiles(CommandSender s) {
+        Map<String, String> dims = m.cachedMapDims();
+        msg(s, "Профили неба: " + m.profiles().size() + " (не больше " + Profiles.MAX + "). Карта выбирает профиль: "
+            + "/hosky world <карта> <профиль>", NamedTextColor.AQUA);
+        for (Profiles.Profile p : m.profiles()) {
+            List<String> maps = new ArrayList<>();
+            dims.forEach((map, d) -> {
+                if (p.key().equals(d)) {
+                    maps.add(map);
+                }
+            });
+            Component line = Component.text(String.format(Locale.ROOT, " %s — %s, тип мира %s, №%d, метка %s",
+                p.id(), p.kind().title, p.key(), p.index(), Zones.hex(Profiles.skyMark(p.index()))), NamedTextColor.GRAY)
+                .append(Component.text(" ■", TextColor.color(p.planet() ? p.zenith().rgb() : p.nebula().rgb())));
+            if (!maps.isEmpty()) {
+                line = line.append(Component.text("  карты: " + String.join(", ", maps), NamedTextColor.GREEN));
+            }
+            s.sendMessage(line);
+        }
+        for (String id : m.pendingProfiles()) {
+            msg(s, " " + id + " — есть в config.yml, тип мира hoka:" + id + " появится после перезапуска сервера",
+                NamedTextColor.GOLD);
+        }
+        m.registration().status().forEach((id, st) -> {
+            if (st == SpaceDimension.Status.STALE || st == SpaceDimension.Status.FULL) {
+                msg(s, " " + id + " — не доступен (" + (st == SpaceDimension.Status.FULL ? "больше " + Profiles.MAX
+                    + " профилей" : "старая метка, нужен перезапуск") + ")", NamedTextColor.RED);
+            }
+        });
+        msg(s, "Профили — в config.yml (раздел profiles); /hosky reload применяет цвета, новые профили — после "
+            + "перезапуска сервера.", NamedTextColor.DARK_AQUA);
     }
 
     /** Обратно в тик; если модуль уже выключен — молча. */
@@ -309,7 +395,7 @@ final class HoSkyCommand extends Command {
                         return;
                     }
                     for (String e : errors) {
-                        msg(s, "config.yml, zones: " + e, NamedTextColor.RED);
+                        msg(s, "config.yml: " + e, NamedTextColor.RED);
                     }
                     msg(s, ok + " Областей: " + m.zones().size() + ".", NamedTextColor.GREEN);
                 });

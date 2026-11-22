@@ -17,6 +17,8 @@ final class MapDimensions {
     static final String DEFAULT = "minecraft:overworld";
     /** Имя карты — как в ядре (Maps.NAME). */
     static final Pattern NAME = Pattern.compile("[a-z0-9_\\-]{1,32}");
+    /** Папка карт ядра (Maps: Path.of("maps") от рабочей папки сервера). */
+    static final Path MAPS = Path.of("maps");
 
     private MapDimensions() {
     }
@@ -44,22 +46,22 @@ final class MapDimensions {
     }
 
     /**
-     * Записать (on) или убрать (off) {@code dimension: "hoka:space"}; off убирает ключ, только если там hoka:space
-     * (чужой тип мира не трогает). Возвращает прежнее значение ключа (null — не было). Файл пишется, только если
-     * что-то меняется. Исключение — нет такой карты или файл не прочитать/записать.
+     * Записать тип мира {@code dimension} (например «hoka:mars») или, если dimension = null, убрать ключ — только когда
+     * там тип мира профиля неба («hoka:…», см. {@link Profiles#profileOf}): чужой тип мира не трогается. Возвращает
+     * прежнее значение ключа (null — не было). Файл пишется, только если что-то меняется. Исключение — нет такой
+     * карты или файл не прочитать/записать.
      */
-    static String write(Path mapsDir, String map, boolean on) {
+    static String write(Path mapsDir, String map, String dimension) {
         if (!NAME.matcher(map).matches() || !Files.isDirectory(mapsDir.resolve(map))) {
             throw new IllegalArgumentException("нет карты «" + map + "»");
         }
         ModuleConfig c = new ModuleConfig(file(mapsDir, map));
         Object o = c.get(KEY);
         String prev = o == null ? null : String.valueOf(o);
-        boolean space = SpaceDimension.KEY.equals(prev);
-        if (on && !space) {
-            c.set(KEY, SpaceDimension.KEY);
+        if (dimension != null && !dimension.equals(prev)) {
+            c.set(KEY, dimension);
             c.save();
-        } else if (!on && space) {
+        } else if (dimension == null && Profiles.profileOf(prev) != null) {
             c.set(KEY, null);
             c.save();
         }
