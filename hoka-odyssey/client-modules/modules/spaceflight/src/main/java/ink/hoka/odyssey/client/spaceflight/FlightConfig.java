@@ -14,12 +14,12 @@ import java.util.Properties;
 /** Настройки модуля: {@code <dataDir>/config.properties} (создаётся с комментариями при первом запуске). */
 final class FlightConfig {
     /** Версия файла настроек: без неё (файл от старой версии) прежние умолчания заменяются новыми. */
-    static final int VERSION = 3;
+    static final int VERSION = 4;
 
     private static final String DEFAULT = """
             # Hoka Odyssey — модуль spaceflight (невесомость в вакууме). Файл читается при загрузке модуля.
             # Версия файла (не меняйте): по ней модуль узнаёт файл от старой версии.
-            config_version = 3
+            config_version = 4
 
             # Тяга ранца, блоки/с² (W/S — вперёд/назад, A/D — вбок, пробел/shift — вверх/вниз по осям взгляда).
             # Сервер может ограничить её своей (physics.thrust.acceleration) — действует меньшая.
@@ -56,13 +56,13 @@ final class FlightConfig {
             grip_press = 20
             # Отлетаешь от блока быстрее этого (блоки/с) — ботинки не удерживают
             grip_break_speed = 4.0
-            # Как быстро камера выравнивается по поверхности (стена/потолок становится «полом»), доля за секунду;
-            # 0 — не выравнивать (по умолчанию: камеру крутишь только сам)
-            surface_align_rate = 0
+            # Стоишь на стене или потолке (Shift у блока) — камера плавно встаёт верхом от поверхности: она становится
+            # «полом», экран ровный. Скорость доворота, доля за секунду; 0 — не выравнивать
+            surface_align_rate = 3.0
             """;
 
     /** Прежние умолчания (файл без config_version): такие значения считаем «не менял» и берём новые. */
-    private static final Map<String, String> OLD_DEFAULTS = Map.of("thrust", "2.0", "roll_speed", "90", "max_speed", "120", "surface_align_rate", "2.0");
+    private static final Map<String, String> OLD_DEFAULTS = Map.of("thrust", "2.0", "roll_speed", "90", "max_speed", "120", "surface_align_rate", "0");
 
     double thrust = 0.8;
     double maxSpeed = 20;
@@ -79,7 +79,7 @@ final class FlightConfig {
     double uprightRate = 4.0;
     double gripPress = 20;
     double gripBreakSpeed = 4.0;
-    double surfaceAlignRate = 0;
+    double surfaceAlignRate = 3.0;
 
     static FlightConfig load(Path dir, Logger log) {
         FlightConfig c = new FlightConfig();

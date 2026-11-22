@@ -67,26 +67,23 @@ final class FreeLook {
     }
 
     /**
-     * Выровнять крен по поверхности: повернуть вокруг оси взгляда так, чтобы верх камеры смотрел как можно ближе
-     * к нормали n (доля t ∈ [0; 1] от нужного угла). Тангаж не трогается — мышь по-прежнему двигает взгляд
-     * относительно экрана. Если смотришь почти прямо на поверхность или от неё, крен не определён — ничего.
+     * Встать на поверхность: плавно довернуть ориентацию так, чтобы верх камеры смотрел по нормали n (стена или
+     * потолок становятся «полом», экран ровный). Поворот кратчайший — вокруг оси up×n, поэтому направление взгляда
+     * меняется как можно меньше и вырожденных случаев нет (кроме «вверх ногами» — тогда вокруг своей поперечной оси).
+     * t — доля за этот кадр ∈ [0; 1].
      */
-    void alignRoll(Vec3d n, double t) {
+    void alignUp(Vec3d n, double t) {
         if (t <= 0) return;
-        Vec3d f = q.forward();
         Vec3d u = q.up();
-        Vec3d np = n.sub(f.scale(f.dot(n)));
-        double len = np.length();
-        if (len < 0.2) return;
-        np = np.scale(1 / len);
-        double ang = Math.atan2(f.dot(u.cross(np)), clamp(u.dot(np), -1, 1));
-        if (Math.abs(ang) < 1e-5) return;
-        double k = t * Math.min(1, (len - 0.2) / 0.3);         // у вырожденного случая — мягко
-        Quat q1 = Quat.axisAngle(f, ang * k).mul(q).normalize();
-        Quat q2 = Quat.axisAngle(f, -ang * k).mul(q).normalize();
-        // берём поворот, который действительно приближает верх к нормали (иначе камеру раскручивало на 360°)
-        Quat best = q1.up().dot(np) >= q2.up().dot(np) ? q1 : q2;
-        if (best.up().dot(np) > u.dot(np)) q = best;
+        double c = clamp(u.dot(n), -1, 1);
+        double ang = Math.acos(c);
+        if (ang < 1e-4) return;
+        Vec3d axis = u.cross(n);
+        double len = axis.length();
+        axis = len < 1e-6 ? q.right() : axis.scale(1 / len);
+        Quat next = Quat.axisAngle(axis, ang * t).mul(q).normalize();
+        if (next.up().dot(n) < c) next = Quat.axisAngle(axis, -ang * t).mul(q).normalize();  // знак оси — наверняка
+        q = next;
     }
 
     /** Плавно повернуть к ориентации target: доля t ∈ [0; 1]. @return угол до цели после шага (радианы) */
