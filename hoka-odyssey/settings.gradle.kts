@@ -36,6 +36,7 @@ gradle.extensions.extraProperties["hokaCoreDir"] = coreDir   // для runServer
 // ink.hoka.odyssey:api в модулях заменяется проектом :api ядра
 includeBuild(coreDir) { name = "hoka-core" }
 
+include("spacephys")     // общая физика космоса (чистая Java, --release 21): сервер и клиентский мод
 include("respack-api")   // интерфейс ResourcePackApi модуля respack (Takuyamo) — только для компиляции
 include("coreshaders")   // «окна в другой мир»: панорамы-шейдеры на ItemDisplay (depends: respack)
 include("spacesky")      // космическое небо: шейдер неба в ресурспаке (depends: respack)

@@ -2,6 +2,9 @@
 // Локально с ядром: gradle runServer (папка run/, ядро — server.jar из клона HokaOdyssey, модули — run/module/).
 plugins { java }
 
+// Библиотеки — не модули сервера: им не нужен API ядра и они не идут в run/module/ (вшиваются в модули)
+val libraries = setOf("spacephys")
+
 subprojects {
     apply(plugin = "java")
     group = "ink.hoka.odyssey"
@@ -14,12 +17,14 @@ subprojects {
         options.compilerArgs.addAll(listOf("-Xlint:all,-processing,-serial,-this-escape", "-parameters"))
     }
     dependencies {
-        // API ядра и Minestom уже есть в server.jar — в jar модуля не кладём (из included build ядра)
-        "compileOnly"("ink.hoka.odyssey:api:0.1.0")
-        "testImplementation"("ink.hoka.odyssey:api:0.1.0")
         "testImplementation"(platform("org.junit:junit-bom:5.13.4"))
         "testImplementation"("org.junit.jupiter:junit-jupiter")
         "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
+    }
+    if (name !in libraries) dependencies {
+        // API ядра и Minestom уже есть в server.jar — в jar модуля не кладём (из included build ядра)
+        "compileOnly"("ink.hoka.odyssey:api:0.1.0")
+        "testImplementation"("ink.hoka.odyssey:api:0.1.0")
     }
     tasks.withType<Test> { useJUnitPlatform() }
 }
@@ -31,7 +36,7 @@ val core = gradle.includedBuild("hoka-core")
 val deployModules by tasks.registering(Copy::class) {
     group = "odyssey"
     description = "Собрать модули и положить их в run/module/"
-    subprojects.filter { it.name != "respack-api" }.forEach { m ->
+    subprojects.filter { it.name != "respack-api" && it.name !in libraries }.forEach { m ->
         dependsOn("${m.path}:jar")
         from(m.layout.buildDirectory.dir("libs")) { include("*.jar") }
     }
