@@ -44,3 +44,4 @@ include("gravity")       // невесомость/вакуум на выбра�
 include("oxygen")        // нет воздуха на выбранных картах — нужен скафандр (/hosuit)
 include("items")         // выбрасывание и подбор предметов как в ванили (ItemEntity)
 include("gravzones")     // зоны гравитации, выделяемые топориком (/hozone, depends: gravity)
+include("starmap")       // данные для карты-радара клиентского модуля starmap (корабли, игроки)

@@ -1,0 +1,9 @@
+# Описание модуля. Обязательны id и main.
+id: starmap
+name: Карта-радар
+version: 0.1.0
+main: ink.hoka.odyssey.starmap.StarmapModule
+authors: [tearsmilk]
+description: Данные для карты-радара (клавиша M в клиентском модуле starmap) — корабли и игроки рядом
+depends: []
+softdepends: [clientmods, ships]
