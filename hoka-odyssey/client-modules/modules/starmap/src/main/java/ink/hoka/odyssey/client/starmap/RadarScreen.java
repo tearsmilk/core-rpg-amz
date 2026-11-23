@@ -86,8 +86,10 @@ final class RadarScreen extends Screen {
             mod.sendOpen(true);
             mod.syncWaypoints(mc);
         }
-        int avH = height - 2 * PAD - HEADER - FOOTER - 2 * PAD;
-        int avW = width - 3 * PAD - SIDE - 2 * PAD;
+        // окно — по центру, примерно на 2/3 экрана (а не во весь экран)
+        int boxW = width * 2 / 3, boxH = height * 2 / 3;
+        int avH = boxH - HEADER - FOOTER - 2 * PAD;
+        int avW = boxW - 3 * PAD - SIDE;
         sqD = Math.max(90, Math.min(avH, avW));
         sqD -= sqD % 2;
         r = sqD / 2 - BEZEL;
