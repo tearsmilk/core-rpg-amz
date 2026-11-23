@@ -30,6 +30,8 @@ public final class StarmapClientModule implements ClientModule {
     final Terrain terrain = new Terrain();
     final Contacts contacts = new Contacts();
     Waypoints waypoints;
+    /** Шрифт радара (свой TTF из jar модуля). */
+    MonoFont font;
     InputConstants.Key openKey;
     InputConstants.Key recenterKey;
     /** Радиус обзора — запоминается между открытиями. */
@@ -53,6 +55,7 @@ public final class StarmapClientModule implements ClientModule {
         recenterKey = key(cfg.recenterKey, "key.keyboard.r");
         range = cfg.defaultRange;
         waypoints = new Waypoints(ctx.dataDir(), ctx.logger());
+        font = new MonoFont(ctx.logger(), cfg.monoDigits);
         enabled = true;
         ctx.onMessage(this::onMessage);
         ctx.onTick(this::tick);
@@ -69,6 +72,7 @@ public final class StarmapClientModule implements ClientModule {
         screen = null;
         if (waypoints != null) waypoints.save();
         terrain.close(mc);
+        if (font != null) font.close();
         contacts.clear();
     }
 

@@ -32,7 +32,7 @@ final class MapConfig {
             sweep_seconds = 4
             # Лёгкое мерцание люминофора (false — ровная картинка)
             flicker = true
-            # Моноширинный шрифт у цифр (false — обычный шрифт игры)
+            # Свой гладкий моноширинный шрифт радара, DejaVu Sans Mono (false — шрифт игры minecraft:uniform)
             mono_digits = true
             # Если сервер не прислал игроков (нет серверного модуля starmap) — показывать тех, кого видит сам клиент
             client_players = true

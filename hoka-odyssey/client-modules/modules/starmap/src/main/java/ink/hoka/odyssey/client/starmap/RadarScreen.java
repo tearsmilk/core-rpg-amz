@@ -1,9 +1,9 @@
 package ink.hoka.odyssey.client.starmap;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
@@ -12,46 +12,73 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.FontDescription;
-import net.minecraft.network.chat.Style;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.StringUtil;
 import net.minecraft.world.phys.Vec3;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 
 /**
  * Окно карты-радара. Своё окно (Screen), а не раскладка houi: живая развёртка, масштаб колёсиком, перетаскивание
- * и точки по щелчку требуют рисования каждый кадр по данным клиента — JSON-окно houi так не умеет. Внешний вид —
- * как у окон houi (затемнение без размытия, рамки box с пиксельными углами, пиксельный шрифт игры, появление
- * с «back»-упругостью), только в палитре радара.
+ * и точки по щелчку требуют рисования каждый кадр по данным клиента — JSON-окно houi так не умеет.
+ * <p>
+ * Рисуется в <b>настоящих пикселях</b> экрана (поза GUI уменьшена на масштаб интерфейса), чтобы линии были
+ * тонкими и ровными при любом «Масштабе интерфейса». Всё неподвижное — окно, кольца, сетка, риски, клин
+ * развёртки, значки — растеризуется со сглаживанием один раз ({@link Raster}) в текстуры при смене размера окна;
+ * за кадр — несколько текстур (клин — с поворотом), значки, текст своим шрифтом ({@link MonoFont}) и строки
+ * развёртки. Слой блоков — {@link TerrainView}.
  * <p>
  * Север — вверх (−Z), восток — вправо (+X). Масштаб — радиус обзора в блоках ({@link #MIN_RANGE}..{@link #MAX_RANGE}).
  */
 final class RadarScreen extends Screen {
     static final double MIN_RANGE = 32;
     static final double MAX_RANGE = 1024;
-    private static final int HEADER = 16;
-    private static final int FOOTER = 13;
-    private static final int SIDE = 124;
-    private static final int PAD = 5;
-    private static final int BEZEL = 13;
-    private static final int WAYPOINT = 0xFFFF8FD0;
-    private static final Style MONO = Style.EMPTY.withFont(new FontDescription.Resource(Minecraft.UNIFORM_FONT));
+
+    // палитра (как у макета): люминофор на почти чёрном
+    private static final int G = 0xFF5AFFAA;
+    private static final int CYAN = 0xFF50DCFF;
+    private static final int AMBER = 0xFFFFBE46;
+    private static final int LAV = 0xFFC8C8FF;
+    private static final int WP = 0xFFFF78C8;
+    private static final int WP_TXT = 0xFFFF8CD2;
+    private static final int LABEL = 0xFF72C49A;
+    private static final int HINT = 0xFF7CB89A;
+    private static final int RING_TXT = 0xFF5AC896;
+    private static final int TIP_TXT = 0xFFDCDCC8;
+    private static final int VALUE = 0xFF7CFFBE;
+    private static final int RED = 0xFFFF6A55;
+    private static final int SELF = 0xFFB4FFDC;
     private static final String[] BEARINGS = {"С", "В", "Ю", "З"};
 
     private final StarmapClientModule mod;
     private final Minecraft mc = Minecraft.getInstance();
     private long openedAt;
 
-    // раскладка (init)
-    private int px, py, pw, ph;            // окно
-    private int sqX, sqY, sqD;             // квадрат экрана радара
-    private int cx, cy, r;                 // центр и радиус круга
-    private int sideX, sideY, sideW, sideH;
+    // раскладка, настоящие пиксели
+    private int gs = 1;
+    private int fbW, fbH;
+    private int px, py, pw, ph, headH;
+    private float u;
+    private int fs, fm, fh, fl;                // размеры шрифта: мелкий, строки, заголовки разделов, заголовок окна
+    private int cx, cy, r, tick;
+    private int colX, colW, valR, distR;
+
+    // текстуры
+    private final GlTex panelTex = new GlTex("panel");
+    private final GlTex scopeTex = new GlTex("scope");
+    private final GlTex sweepTex = new GlTex("sweep");
+    private final GlTex spriteTex = new GlTex("sprites");
+    private final TerrainView terrainView = new TerrainView();
+    private boolean built;
+    private int scopeHalf, sweepPivot;
+
+    private record Spr(int u, int v, int size) {}
+
+    private Spr sDiaFill, sDiaLine, sWpLine, sWpFill, sDot, sDotS, sArrowFill, sArrowLine, sRing;
 
     // вид
     private double viewX, viewZ;
@@ -59,15 +86,23 @@ final class RadarScreen extends Screen {
     private boolean pressing, dragging;
     private double pressX, pressY;
     private Waypoints.Wp selected;
-    private EditBox nameBox;
+    private boolean editing;
+    private String editBuf = "";
+    private int fieldX, fieldY, fieldW, fieldH;
+    private Vec3 lastPos;
+    private double speed;
 
-    private record Hit(int x, int y, int rad, List<Component> tip, Waypoints.Wp wp) {}
+    private record Tip(String title, String kind, double dist, double dy, String owner, int col) {}
 
-    private record Btn(int x, int y, int w, int h, String label, Runnable action) {
+    private record Hit(int x, int y, int rad, Tip tip, Waypoints.Wp wp) {}
+
+    private record Btn(int x, int y, int w, int h, Runnable action) {
         boolean in(double mx, double my) {
             return mx >= x && mx < x + w && my >= y && my < y + h;
         }
     }
+
+    private record Target(String name, int col, double dist) {}
 
     private final List<Hit> hits = new ArrayList<>();
     private final List<Btn> buttons = new ArrayList<>();
@@ -86,36 +121,42 @@ final class RadarScreen extends Screen {
             mod.sendOpen(true);
             mod.syncWaypoints(mc);
         }
-        // окно — по центру, примерно на 2/3 экрана (а не во весь экран)
-        int boxW = width * 2 / 3, boxH = height * 2 / 3;
-        int avH = boxH - HEADER - FOOTER - 2 * PAD;
-        int avW = boxW - 3 * PAD - SIDE;
-        sqD = Math.max(90, Math.min(avH, avW));
-        sqD -= sqD % 2;
-        r = sqD / 2 - BEZEL;
-        pw = sqD + SIDE + 3 * PAD;
-        ph = sqD + HEADER + FOOTER + 2 * PAD;
-        px = (width - pw) / 2;
-        py = (height - ph) / 2;
-        sqX = px + PAD;
-        sqY = py + HEADER + PAD;
-        cx = sqX + sqD / 2;
-        cy = sqY + sqD / 2;
-        sideX = sqX + sqD + PAD;
-        sideY = sqY;
-        sideW = SIDE;
-        sideH = sqD;
+        layout();
+    }
 
-        nameBox = new EditBox(font, sideX + 4, sideY, sideW - 8, 12, Component.literal("Имя точки"));
-        nameBox.setMaxLength(Waypoints.MAX_NAME);
-        nameBox.setBordered(false);
-        nameBox.setTextColor(Radar.PHOS);
-        nameBox.setVisible(false);
-        if (selected != null) nameBox.setValue(selected.name);
-        nameBox.setResponder(s -> {
-            if (selected != null && !s.isBlank()) mod.waypoints.rename(selected, s);
-        });
-        addRenderableWidget(nameBox);
+    private void layout() {
+        Window win = mc.getWindow();
+        gs = Math.max(1, win.getGuiScale());
+        fbW = Math.max(320, win.getWidth());
+        fbH = Math.max(240, win.getHeight());
+        // окно — по центру, на 2/3 экрана
+        pw = fbW * 2 / 3;
+        ph = fbH * 2 / 3;
+        px = (fbW - pw) / 2;
+        py = (fbH - ph) / 2;
+        u = Math.min(pw / 1300f, ph / 860f);
+        fs = Math.max(12, Math.round(15 * u));
+        fm = Math.max(13, Math.round(18 * u));
+        fh = Math.max(15, Math.round(23 * u));
+        fl = Math.max(16, Math.round(25 * u));
+        headH = Math.max(Math.round(40 * u), mod.font.lineHeight(fl) + 10);
+        tick = Math.max(6, Math.round(14 * u));
+        int letter = mod.font.lineHeight(fl);
+        int marginV = tick + Math.round(8 * u) + letter + Math.round(6 * u);
+        int marginH = marginV + Math.round(30 * u);
+        int colGap = marginV + Math.round(50 * u);
+        int right = Math.round(30 * u);
+        int minCol = Math.round(mod.font.advance(fs) * 34);
+        r = (ph - headH - 2 * marginV) / 2;
+        r = Math.min(r, (pw - marginH - colGap - right - minCol) / 2);
+        r = Math.max(60, r);
+        cx = px + marginH + r;
+        cy = py + headH + (ph - headH) / 2;
+        colX = cx + r + colGap;
+        colW = Math.max(60, px + pw - right - colX);
+        valR = colX + Math.min(colW, Math.max(Math.round(290 * u), Math.round(mod.font.advance(fm) * 20)));
+        distR = colX + Math.min(colW, Math.max(Math.round(340 * u), Math.round(mod.font.advance(fs) * 30)));
+        built = false;
     }
 
     @Override
@@ -125,13 +166,27 @@ final class RadarScreen extends Screen {
 
     @Override
     public void tick() {
-        if (mc.player == null || mc.level == null) onClose();
+        if (mc.player == null || mc.level == null) {
+            onClose();
+            return;
+        }
+        Vec3 p = mc.player.position();
+        if (lastPos != null) {
+            double v = p.distanceTo(lastPos) * 20;                  // блоков в секунду (20 тиков)
+            speed = v > 200 ? speed : speed * 0.6 + v * 0.4;        // телепорт — не скорость
+        }
+        lastPos = p;
     }
 
     @Override
     public void removed() {
         mod.sendOpen(false);
         mod.waypoints.save();
+        panelTex.close();
+        scopeTex.close();
+        sweepTex.close();
+        spriteTex.close();
+        terrainView.close();
         super.removed();
     }
 
@@ -139,22 +194,180 @@ final class RadarScreen extends Screen {
         return r / mod.range;
     }
 
+    // ---------------------------------------------------------------- статичные текстуры
+
+    private void buildStatic() {
+        // окно: заливка, рамка, шапка
+        panelTex.ensure(pw, ph);
+        Raster pr = new Raster(pw, ph);
+        float rad = Math.max(4, 10 * u), bw = Math.max(1.2f, 2 * u);
+        pr.roundRect(0.5f, 0.5f, pw - 0.5f, ph - 0.5f, rad, 0x040C0A, 240 / 255f, 0, 0, 0);
+        pr.rectClipped(0, 0, pw, headH, 0x0A1E18, 1f, 0.5f, 0.5f, pw - 0.5f, ph - 0.5f, rad);
+        pr.roundRect(0.5f, 0.5f, pw - 0.5f, ph - 0.5f, rad, 0, 0, 0x28785A, bw, 1f);
+        pr.writeTo(panelTex.img(), 0, 0);
+        panelTex.upload();
+
+        // экран радара: сетка, оси, кольца, риски
+        scopeHalf = r + tick + 6;
+        int sz = scopeHalf * 2;
+        scopeTex.ensure(sz, sz);
+        Raster sr = new Raster(sz, sz);
+        float c = scopeHalf;
+        float step = r / 8f;
+        for (int k = -8; k <= 8; k++) {
+            if (k == 0) continue;
+            float o = c + k * step;
+            sr.seg(o, c - r, o, c + r, 1f, 0x28785A, 50 / 255f, 0, 0);
+            sr.seg(c - r, o, c + r, o, 1f, 0x28785A, 50 / 255f, 0, 0);
+        }
+        sr.seg(c - r, c, c + r, c, 1f, 0x46C88C, 80 / 255f, 0, 0);
+        sr.seg(c, c - r, c, c + r, 1f, 0x46C88C, 80 / 255f, 0, 0);
+        float glowR = Math.max(1.5f, 3 * u);
+        for (int k = 1; k <= 4; k++) {
+            boolean outer = k == 4;
+            sr.ring(c, c, r * k / 4f, outer ? Math.max(1.4f, 2 * u) : 1f, 0x46C88C, outer ? 0.75f : 0.45f,
+                    outer ? 0.16f : 0.08f, glowR);
+        }
+        float tw = Math.max(1.2f, 2 * u);
+        for (int deg = 0; deg < 360; deg += 10) {
+            double a = Math.toRadians(deg - 90);
+            float l = deg % 30 == 0 ? tick : tick / 2f;
+            float r0 = r + Math.max(1, u * 2);
+            sr.seg(c + (float) Math.cos(a) * r0, c + (float) Math.sin(a) * r0,
+                    c + (float) Math.cos(a) * (r0 + l), c + (float) Math.sin(a) * (r0 + l), tw, 0x5ADCA0, 0.9f, 0.10f, glowR);
+        }
+        sr.writeTo(scopeTex.img(), 0, 0);
+        scopeTex.upload();
+
+        // клин развёртки: передний край — по +x от центра, послесвечение позади (выше оси)
+        int L = r + 4;
+        sweepPivot = 2;
+        sweepTex.ensure(L, L);
+        Raster wr = new Raster(L, L);
+        float pxv = sweepPivot, pyv = r + 2;
+        double trail = Math.toRadians(84);
+        for (int y = 0; y < L; y++) {
+            for (int x = 0; x < L; x++) {
+                float lx = x + 0.5f - pxv, ly = y + 0.5f - pyv;
+                float rho = (float) Math.sqrt(lx * lx + ly * ly);
+                float edge = Math.max(0, Math.min(1, r - rho + 0.5f));
+                if (edge <= 0 || ly > 0.5f) continue;
+                double phi = -Math.atan2(ly, lx);
+                if (phi < 0 || phi > trail) continue;
+                float k = (float) (1 - phi / trail);
+                wr.over(x, y, 0x5AFFAA, 0.42f * k * k * edge);
+            }
+        }
+        wr.seg(pxv, pyv, pxv + r - 1, pyv, Math.max(1.5f, 2.6f * u), 0xAAFFD2, 1f, 0.22f, Math.max(2f, 4 * u));
+        wr.writeTo(sweepTex.img(), 0, 0);
+        sweepTex.upload();
+
+        buildSprites();
+        built = true;
+    }
+
+    private void buildSprites() {
+        float d = Math.max(5, 8 * u);
+        float bw = Math.max(1.3f, 1.8f * u);
+        float wh = Math.max(5, 7 * u), wv = Math.max(8, 12 * u);
+        float dot = Math.max(3.5f, 5 * u), dotS = Math.max(1.6f, 2.2f * u);
+        float ar = Math.max(0.7f, u);
+        float ring = Math.max(10, 16 * u);
+        int[] sizes = {
+                cell(d), cell(d), cell(wv), cell(wv), cell(dot), cell(dotS), cell(15 * ar), cell(15 * ar), cell(ring + 2)};
+        int W = 0, H = 0;
+        for (int s : sizes) {
+            W += s + 2;
+            H = Math.max(H, s);
+        }
+        spriteTex.ensure(W, H + 2);
+        Raster ra = new Raster(W, H + 2);
+        int x = 1;
+        Spr[] out = new Spr[sizes.length];
+        for (int i = 0; i < sizes.length; i++) {
+            int s = sizes[i];
+            float c0x = x + s / 2f, c0y = 1 + s / 2f;
+            switch (i) {
+                case 0 -> ra.poly(new float[]{c0x, c0x + d, c0x, c0x - d}, new float[]{c0y - d, c0y, c0y + d, c0y},
+                        0xFFFFFF, 1f, 0, 0, 0);
+                case 1 -> ra.poly(new float[]{c0x, c0x + d, c0x, c0x - d}, new float[]{c0y - d, c0y, c0y + d, c0y},
+                        0, 0, 0xFFFFFF, bw, 1f);
+                case 2 -> ra.poly(new float[]{c0x, c0x + wh, c0x, c0x - wh}, new float[]{c0y - wv, c0y, c0y + wv, c0y},
+                        0, 0, 0xFFFFFF, bw, 1f);
+                case 3 -> ra.poly(new float[]{c0x, c0x + wh, c0x, c0x - wh}, new float[]{c0y - wv, c0y, c0y + wv, c0y},
+                        0xFFFFFF, 1f, 0, 0, 0);
+                case 4 -> ra.disc(c0x, c0y, dot, 0xFFFFFF, 1f);
+                case 5 -> ra.disc(c0x, c0y, dotS, 0xFFFFFF, 1f);
+                case 6, 7 -> {
+                    // стрелка «ты»: нос вверх; вогнутая — из двух треугольников
+                    float[] lx = {c0x, c0x, c0x - 9 * ar}, ly = {c0y - 14 * ar, c0y + 4 * ar, c0y + 10 * ar};
+                    float[] rx = {c0x, c0x + 9 * ar, c0x}, ry = {c0y - 14 * ar, c0y + 10 * ar, c0y + 4 * ar};
+                    if (i == 6) {
+                        ra.poly(lx, ly, 0xFFFFFF, 1f, 0, 0, 0);
+                        ra.poly(rx, ry, 0xFFFFFF, 1f, 0, 0, 0);
+                    } else {
+                        float lw = Math.max(1f, 1.2f * u);
+                        ra.seg(c0x, c0y - 14 * ar, c0x + 9 * ar, c0y + 10 * ar, lw, 0xFFFFFF, 1f, 0, 0);
+                        ra.seg(c0x + 9 * ar, c0y + 10 * ar, c0x, c0y + 4 * ar, lw, 0xFFFFFF, 1f, 0, 0);
+                        ra.seg(c0x, c0y + 4 * ar, c0x - 9 * ar, c0y + 10 * ar, lw, 0xFFFFFF, 1f, 0, 0);
+                        ra.seg(c0x - 9 * ar, c0y + 10 * ar, c0x, c0y - 14 * ar, lw, 0xFFFFFF, 1f, 0, 0);
+                    }
+                }
+                default -> ra.ring(c0x, c0y, ring, Math.max(1.2f, 1.5f * u), 0xFFFFFF, 1f, 0, 0);
+            }
+            out[i] = new Spr(x, 1, s);
+            x += s + 2;
+        }
+        ra.writeTo(spriteTex.img(), 0, 0);
+        spriteTex.upload();
+        sDiaFill = out[0];
+        sDiaLine = out[1];
+        sWpLine = out[2];
+        sWpFill = out[3];
+        sDot = out[4];
+        sDotS = out[5];
+        sArrowFill = out[6];
+        sArrowLine = out[7];
+        sRing = out[8];
+    }
+
+    /** Чётный размер клетки значка «радиуса» ext (с запасом на сглаживание). */
+    private static int cell(float ext) {
+        int s = (int) Math.ceil(ext * 2 + 6);
+        return s + (s & 1);
+    }
+
+    /** Значок с центром в (x, y). */
+    private void sprite(GuiGraphics g, Spr s, int x, int y, int argb) {
+        g.blit(RenderPipelines.GUI_TEXTURED, spriteTex.id, x - s.size / 2, y - s.size / 2, (float) s.u, (float) s.v,
+                s.size, s.size, spriteTex.w, spriteTex.h, argb);
+    }
+
+    /** Значок, растянутый до размера size (кольцо «это ты»). */
+    private void spriteScaled(GuiGraphics g, Spr s, int x, int y, int size, int argb) {
+        g.blit(RenderPipelines.GUI_TEXTURED, spriteTex.id, x - size / 2, y - size / 2, (float) s.u, (float) s.v,
+                size, size, s.size, s.size, spriteTex.w, spriteTex.h, argb);
+    }
+
     // ---------------------------------------------------------------- рисование
 
     @Override
     public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partial) {
         float ap = Radar.easeOut((System.currentTimeMillis() - openedAt) / 250f);
-        g.fill(0, 0, width, height, Radar.a(0x88000000, ap));     // затемнить мир, без размытия (как houi)
+        g.fill(0, 0, width, height, Radar.a(0x99000000, ap));     // затемнить мир, без размытия (как houi)
     }
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partial) {
+        if (mc.player == null) return;
+        Window win = mc.getWindow();
+        if (win.getWidth() != fbW || win.getHeight() != fbH || win.getGuiScale() != gs) layout();
+        if (!built) buildStatic();
         long now = System.currentTimeMillis();
         float t = (now - openedAt) / 1000f;
-        float appear = Radar.easeOut(t / 0.3f);
+        float ap = Radar.easeOut(t / 0.3f);
         float pop = Radar.easeBack(t / 0.35f);
-        float fl = mod.cfg.flicker ? 0.94f + 0.06f * (float) (Math.sin(now * 0.031) * Math.sin(now * 0.0173 + 1.3)) : 1f;
-        if (mc.player == null) return;
+        float fl0 = mod.cfg.flicker ? 0.95f + 0.05f * (float) (Math.sin(now * 0.031) * Math.sin(now * 0.0173 + 1.3)) : 1f;
         if (mod.cfg.terrain) mod.terrain.step(mc, (long) (mod.cfg.scanBudgetMs * 1_000_000));
 
         Vec3 me = mc.player.getPosition(partial);
@@ -164,379 +377,492 @@ final class RadarScreen extends Screen {
             viewZ = me.z;
         }
         double s = scale();
+        int mx = mouseX * gs, my = mouseY * gs;
         hits.clear();
         buttons.clear();
 
         var pose = g.pose();
         pose.pushMatrix();
-        float sc = 0.94f + 0.06f * pop;
+        pose.scale(1f / gs, 1f / gs);                            // дальше — настоящие пиксели
+        float sc = 0.95f + 0.05f * pop;
         pose.translate(px + pw / 2f, py + ph / 2f);
         pose.scale(sc, sc);
         pose.translate(-(px + pw / 2f), -(py + ph / 2f));
 
-        // окно, шапка, подвал
-        Radar.box(g, px, py, pw, ph, Radar.a(Radar.PANEL, appear), Radar.a(Radar.BORDER, appear), 3);
-        g.fill(px + 1, py + HEADER, px + pw - 1, py + HEADER + 1, Radar.a(Radar.BORDER, appear));
-        g.fill(px + 1, py + ph - FOOTER - 1, px + pw - 1, py + ph - FOOTER, Radar.a(Radar.BORDER, appear * 0.7f));
-        boolean blink = (now / 500) % 2 == 0;
-        g.fill(px + 6, py + 6, px + 10, py + 10, Radar.a(blink ? Radar.PHOS : Radar.PHOS_DIM, appear));
-        g.drawString(font, "НАВИГАЦИОННЫЙ РАДАР", px + 14, py + 4, Radar.a(Radar.PHOS, appear * fl), false);
-        String map = mod.contacts.map.isEmpty() ? mc.level.dimension().identifier().getPath() : mod.contacts.map;
-        Component mapC = mono("СЕКТОР " + map.toUpperCase(Locale.ROOT));
-        g.drawString(font, mapC, px + pw - 8 - font.width(mapC), py + 4, Radar.a(Radar.PHOS_DIM, appear), false);
-        String hint = "ЛКМ точка · ПКМ удалить · колесо масштаб · тяни сдвиг · R к себе · M закрыть";
-        if (font.width(hint) > pw - 12) hint = "ЛКМ точка · ПКМ удалить · R к себе · M закрыть";
-        g.drawString(font, hint, px + 6, py + ph - FOOTER + 2, Radar.a(Radar.PHOS_DIM, appear), false);
+        int white = Radar.a(0xFFFFFFFF, ap);
+        g.blit(RenderPipelines.GUI_TEXTURED, panelTex.id, px, py, 0f, 0f, pw, ph, pw, ph, white);
+        drawHeader(g, mx, my, ap);
 
         // экран радара
-        Radar.box(g, sqX, sqY, sqD, sqD, Radar.a(Radar.PANEL2, appear), Radar.a(Radar.BORDER, appear), 2);
-        Radar.disc(g, cx, cy, r, Radar.a(Radar.SCOPE, appear));
-        g.nextStratum();
-        if (mod.cfg.terrain && mod.terrain.ready()) drawTerrain(g, s, appear * fl);
-        g.nextStratum();
-        Radar.mask(g, cx, cy, r, Radar.a(Radar.PANEL2, appear));
-        drawGrid(g, s, appear);
-        drawRings(g, appear);
-        drawChunkBlips(g, s, me, appear * fl, t);
-        drawWaypoints(g, s, me, appear, mouseX, mouseY);
-        drawContacts(g, s, me, appear * fl, t);
-        drawSelf(g, s, me, myYaw, appear, t);
-        drawSweep(g, t, appear);
-        drawScanlines(g, t, appear);
-        if (t < 0.55f) {                                         // «включение»: полоса развёртки сверху вниз
-            int bar = sqY + 2 + Math.round((sqD - 4) * Radar.easeOut(t / 0.55f));
-            g.fill(sqX + 2, bar, sqX + sqD - 2, sqY + sqD - 2, Radar.PANEL2);
-            g.fill(sqX + 2, bar - 1, sqX + sqD - 2, bar + 1, Radar.a(Radar.PHOS, 0.9f));
+        if (mod.cfg.terrain) {
+            terrainView.draw(g, mod.terrain, cx, cy, r, viewX, viewZ, s, mc.player.getBlockY(), Radar.a(0xFFFFFFFF, ap * fl0));
         }
-        Radar.brackets(g, sqX + 3, sqY + 3, sqD - 6, sqD - 6, 7, Radar.a(Radar.BORDER_HI, appear * 0.8f));
+        int sz = scopeHalf * 2;
+        g.blit(RenderPipelines.GUI_TEXTURED, scopeTex.id, cx - scopeHalf, cy - scopeHalf, 0f, 0f, sz, sz, sz, sz,
+                Radar.a(0xFFFFFFFF, ap * fl0));
+        drawSweep(g, t, ap);
+        drawScopeText(g, ap);
+        drawWaypoints(g, s, me, ap, t);
+        drawContacts(g, s, me, ap * fl0, t);
+        drawSelf(g, s, me, myYaw, ap, t);
+        drawScopeStatus(g, me, mx, my, ap, now);
 
-        // боковая панель
-        drawSide(g, me, myYaw, mouseX, mouseY, appear, fl, now);
+        // правая колонка
+        drawColumn(g, me, myYaw, mx, my, ap, now);
+
+        // строки развёртки — поверх всего окна
+        int scan = Radar.a(0x1E000000, ap);
+        for (int y = py + headH; y < py + ph - 2; y += 3) g.fill(px + 2, y, px + pw - 2, y + 1, scan);
+
+        // подсказка над контактом — поверх всего
+        Hit h = dragging ? null : hitAt(mx, my);
+        if (h != null) {
+            g.nextStratum();
+            drawTip(g, h.tip(), mx, my, ap);
+        }
         pose.popMatrix();
-
-        nameBox.setVisible(selected != null && t > 0.35f && nameBox.getY() >= sideY && nameBox.getY() + 12 < sideY + sideH);
-        super.render(g, mouseX, mouseY, partial);                // поле имени точки
-
-        // подсказка над контактом
-        Hit h = hitAt(mouseX, mouseY);
-        if (h != null && !dragging) g.setTooltipForNextFrame(font, h.tip(), Optional.empty(), mouseX, mouseY);
+        mod.font.flush();
     }
 
-    private void drawTerrain(GuiGraphics g, double s, float alpha) {
-        Terrain tr = mod.terrain;
-        double ox = tr.originCX * 16.0, oz = tr.originCZ * 16.0;
-        float sx0 = (float) (cx + (ox - viewX) * s), sy0 = (float) (cy + (oz - viewZ) * s);
-        g.enableScissor(cx - r, cy - r, cx + r, cy + r);
+    private void drawHeader(GuiGraphics g, int mx, int my, float ap) {
+        String map = mod.contacts.map.isEmpty() ? mc.level.dimension().identifier().getPath() : mod.contacts.map;
+        int ty = py + (headH - mod.font.lineHeight(fl)) / 2;
+        int x = px + Math.round(18 * u);
+        x += mod.font.draw(g, "НАВИГАЦИОННЫЙ РАДАР", x, ty, fl, Radar.a(G, ap));
+        String rest = "  ·  " + map;
+        int maxW = px + pw - Math.round(300 * u) - x;
+        while (mod.font.width(rest, fl) > maxW && rest.length() > 6) rest = rest.substring(0, rest.length() - 2) + "…";
+        mod.font.draw(g, rest, x, ty, fl, Radar.a(G, ap * 0.92f));
+        // справа — клавиши (по ним можно щёлкнуть)
+        int hy = py + (headH - mod.font.lineHeight(fs)) / 2;
+        String rc = "[" + keyName(mod.recenterKey) + "] центр";
+        String cl = "[" + keyName(mod.openKey) + "] закрыть";
+        int rx = px + pw - Math.round(24 * u) - mod.font.width(rc, fs);
+        textButton(g, rc, rx, hy, fs, HINT, this::recenter, mx, my, ap);
+        int gap = Math.round(mod.font.advance(fs) * 3);
+        textButton(g, cl, rx - gap - mod.font.width(cl, fs), hy, fs, HINT, this::onClose, mx, my, ap);
+    }
+
+    private static String keyName(InputConstants.Key k) {
+        String s = k == null ? "?" : k.getDisplayName().getString();
+        return s.length() > 8 ? s.substring(0, 8) : s.toUpperCase(Locale.ROOT);
+    }
+
+    private void textButton(GuiGraphics g, String s, int x, int y, int size, int col, Runnable action, int mx, int my, float ap) {
+        int w = mod.font.width(s, size), h = mod.font.lineHeight(size);
+        Btn b = new Btn(x - 3, y - 2, w + 6, h + 4, action);
+        boolean hover = b.in(mx, my);
+        if (hover) g.fill(b.x(), b.y(), b.x() + b.w(), b.y() + b.h(), Radar.a(0x3328785A, ap));
+        mod.font.draw(g, s, x, y, size, Radar.a(hover ? VALUE : col, ap));
+        buttons.add(b);
+    }
+
+    private void drawSweep(GuiGraphics g, float t, float ap) {
         var pose = g.pose();
         pose.pushMatrix();
-        pose.translate(sx0, sy0);
-        pose.scale((float) s, (float) s);
-        g.blit(RenderPipelines.GUI_TEXTURED, tr.id, 0, 0, 0f, 0f, Terrain.TEX, Terrain.TEX, Terrain.TEX, Terrain.TEX,
-                Radar.a(0xFFFFFFFF, alpha * 0.92f));
+        pose.translate(cx, cy);
+        pose.rotate((float) sweepAngle(t));
+        int L = r + 4;
+        g.blit(RenderPipelines.GUI_TEXTURED, sweepTex.id, -sweepPivot, -(r + 2), 0f, 0f, L, L, L, L, Radar.a(0xFFFFFFFF, ap));
         pose.popMatrix();
-        g.disableScissor();
     }
 
-    /** Шаг сетки: «круглое» число блоков, ~3–4 линии на радиус. */
-    private double gridStep() {
-        double want = mod.range / 3.5;
-        double step = 8;
-        while (step < want) step *= 2;
-        return step;
-    }
-
-    private void drawGrid(GuiGraphics g, double s, float appear) {
-        double step = gridStep();
-        int col = Radar.a(0x2A3FD48A, appear);
-        double x0 = Math.floor((viewX - mod.range) / step) * step;
-        for (double x = x0; x <= viewX + mod.range; x += step) {
-            int sx = (int) Math.round(cx + (x - viewX) * s);
-            int dx = sx - cx;
-            if (Math.abs(dx) >= r) continue;
-            int half = (int) Math.sqrt((double) r * r - (double) dx * dx);
-            g.fill(sx, cy - half, sx + 1, cy + half, col);
-        }
-        double z0 = Math.floor((viewZ - mod.range) / step) * step;
-        for (double z = z0; z <= viewZ + mod.range; z += step) {
-            int sy = (int) Math.round(cy + (z - viewZ) * s);
-            int dy = sy - cy;
-            if (Math.abs(dy) >= r) continue;
-            int half = (int) Math.sqrt((double) r * r - (double) dy * dy);
-            g.fill(cx - half, sy, cx + half, sy + 1, col);
-        }
-    }
-
-    private void drawRings(GuiGraphics g, float appear) {
+    /** Подписи колец (у оси «север») и буквы сторон света. */
+    private void drawScopeText(GuiGraphics g, float ap) {
+        int lx = cx + Math.round(6 * u);
         for (int k = 1; k <= 4; k++) {
-            float rr = r * k / 4f;
-            Radar.ring(g, cx, cy, rr, Radar.a(k == 4 ? Radar.PHOS_MID : 0x8837E08A, appear), k == 4 ? 0 : 2);
-            if (k < 4) {
-                Component lbl = mono(Radar.dist(mod.range * k / 4));
-                int lx = cx + Math.round(rr * 0.7071f) + 2, ly = cy - Math.round(rr * 0.7071f) - 8;
-                g.drawString(font, lbl, lx, ly, Radar.a(Radar.PHOS_DIM, appear), false);
-            }
+            int ry = cy - Math.round(r * k / 4f) + Math.round(4 * u);
+            mod.font.draw(g, ringLabel(mod.range * k / 4), lx, ry, fs, Radar.a(RING_TXT, ap));
         }
-        Radar.ring(g, cx, cy, r + 1, Radar.a(Radar.BORDER, appear), 0);
-        // риски курса: каждые 10°, длинные — каждые 30°, буквы сторон света
-        for (int b = 0; b < 360; b += 10) {
-            float th = (float) Math.toRadians(b - 90);
-            int len = b % 90 == 0 ? 7 : b % 30 == 0 ? 5 : 2;
-            float x = cx + (float) Math.cos(th) * (r - len), y = cy + (float) Math.sin(th) * (r - len);
-            Radar.line(g, x, y, th, len, 1, Radar.a(b % 30 == 0 ? Radar.PHOS_MID : Radar.PHOS_DIM, appear));
-            if (b % 90 == 0) {
-                String l = BEARINGS[b / 90];
-                int tx = cx + Math.round((float) Math.cos(th) * (r + 7)) - font.width(l) / 2;
-                int ty = cy + Math.round((float) Math.sin(th) * (r + 7)) - 4;
-                g.drawString(font, l, tx, ty, Radar.a(b == 0 ? Radar.PHOS : Radar.PHOS_MID, appear), false);
-            }
+        int lh = mod.font.lineHeight(fl);
+        float rr = r + tick + Math.round(8 * u) + lh / 2f;
+        for (int i = 0; i < 4; i++) {
+            double a = Math.toRadians(i * 90 - 90);
+            String l = BEARINGS[i];
+            int x = Math.round(cx + (float) Math.cos(a) * rr) - mod.font.width(l, fl) / 2;
+            int y = Math.round(cy + (float) Math.sin(a) * rr) - lh / 2;
+            mod.font.draw(g, l, x, y, fl, Radar.a(G, ap));
         }
-        // крестик в центре вида
-        g.fill(cx - 3, cy, cx + 4, cy + 1, Radar.a(0x553FD48A, appear));
-        g.fill(cx, cy - 3, cx + 1, cy + 4, Radar.a(0x553FD48A, appear));
     }
 
-    /** Угол точки от центра (радианы) и «свечение» после прохода развёртки (0.5..1). */
+    private static String ringLabel(double v) {
+        if (v < 1000) return String.valueOf(Math.round(v));
+        return String.format(Locale.ROOT, "%.1fk", v / 1000);
+    }
+
+    /** «Свечение» точки после прохода развёртки (0.72..1). */
     private float glow(int x, int y, float t) {
         double th = Math.atan2(y - cy, x - cx);
         double sweep = sweepAngle(t);
         double since = ((sweep - th) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) / (2 * Math.PI);
         double k = 1 - since;
-        return (float) (0.5 + 0.5 * k * k);
+        return (float) (0.72 + 0.28 * k * k);
     }
 
     private double sweepAngle(float t) {
         return t / mod.cfg.sweepSeconds * 2 * Math.PI - Math.PI / 2;
     }
 
-    /** Засветки астероидов/станций: при большом обзоре блоки мельче пикселя — рисуем чанки с блоками точками. */
-    private void drawChunkBlips(GuiGraphics g, double s, Vec3 me, float alpha, float t) {
-        if (!mod.cfg.terrain || !mod.terrain.ready() || s >= 1.0) return;
-        Terrain tr = mod.terrain;
-        for (int i = 0; i < tr.chunkCount.length; i++) {
-            int n = tr.chunkCount[i];
-            if (n <= 0) continue;
-            double wx = (tr.originCX + i % Terrain.CH) * 16 + 8, wz = (tr.originCZ + i / Terrain.CH) * 16 + 8;
-            int x = (int) Math.round(cx + (wx - viewX) * s), y = (int) Math.round(cy + (wz - viewZ) * s);
-            int dx = x - cx, dy = y - cy;
-            if (dx * dx + dy * dy > (r - 2) * (r - 2)) continue;
-            float k = 0.35f + 0.65f * Math.min(1f, n / 96f);
-            int col = tr.chunkTop[i] > me.y + 8 ? Radar.CYAN : Radar.PHOS_MID;
-            int a = Radar.a(col, alpha * k * glow(x, y, t));
-            g.fill(x - 1, y - 1, x + 1, y + 1, a);
+    /** Высота «ножки» в пикселях: значок поднят над своим местом, если цель выше тебя, опущен — если ниже. */
+    private int stem(double dy) {
+        if (Math.abs(dy) < 2) return 0;
+        double lim = 40 * Math.max(0.6f, u);
+        return (int) Math.round(Math.max(-lim, Math.min(lim, dy * 1.2 * Math.max(0.6f, u))));
+    }
+
+    private void drawStem(GuiGraphics g, int x, int y, int st, int col, float alpha) {
+        sprite(g, sDotS, x, y, Radar.a(col, alpha));
+        if (st == 0) return;
+        int lw = Math.max(1, Math.round(u));
+        if (st > 0) g.fill(x - lw / 2, y - st, x - lw / 2 + lw, y, Radar.a(col, alpha * 0.6f));
+        else g.fill(x - lw / 2, y, x - lw / 2 + lw, y - st, Radar.a(col, alpha * 0.6f));
+    }
+
+    /** Подпись у значка: имя и под ним разница высот со знаком. */
+    private void label(GuiGraphics g, int x, int y, String name, double dy, int col, float alpha) {
+        int lx = x + Math.round(12 * u);
+        int lh = mod.font.lineHeight(fs);
+        mod.font.draw(g, name, lx, y - lh + Math.round(3 * u), fs, Radar.a(col, alpha));
+        if (Math.abs(dy) >= 1.5) {
+            mod.font.draw(g, Radar.dy(dy), lx, y + Math.round(3 * u), fs, Radar.a(col, alpha * 0.8f));
         }
     }
 
-    /** Ножка высоты: значок поднят/опущен на столько пикселей (корень из разницы высот, не больше 12). */
-    private static int stem(double dy) {
-        int v = (int) Math.round(Math.signum(dy) * Math.min(12, Math.sqrt(Math.abs(dy)) * 1.3));
-        return Math.abs(dy) < 2 ? 0 : v;
-    }
-
-    private void drawStem(GuiGraphics g, int x, int y, int st, int col) {
-        if (st == 0) return;
-        g.fill(x - 1, y, x + 2, y + 1, col);
-        if (st > 0) g.fill(x, y - st, x + 1, y, col);
-        else g.fill(x, y + 1, x + 1, y - st + 1, col);
-    }
-
-    private void drawWaypoints(GuiGraphics g, double s, Vec3 me, float appear, int mx, int my) {
+    private void drawWaypoints(GuiGraphics g, double s, Vec3 me, float ap, float t) {
         for (Waypoints.Wp w : mod.waypoints.all()) {
             double wx = w.x + 0.5, wz = w.z + 0.5;
             float fx = (float) (cx + (wx - viewX) * s), fy = (float) (cy + (wz - viewZ) * s);
             double ddx = fx - cx, ddy = fy - cy, d = Math.sqrt(ddx * ddx + ddy * ddy);
             double dist = Math.sqrt(sq(wx - me.x) + sq(w.y - me.y) + sq(wz - me.z));
-            int col = Radar.a(WAYPOINT, appear);
-            if (d > r - 4) {                                     // за краем — ромбик на ободе
-                int x = cx + (int) Math.round(ddx / d * (r - 4)), y = cy + (int) Math.round(ddy / d * (r - 4));
-                Radar.diamond(g, x, y, 2, Radar.a(WAYPOINT, appear * 0.6f));
-                hits.add(new Hit(x, y, 4, tip(w.name, "точка за краем", dist, w.y - me.y, null), w));
+            Tip tip = new Tip(w.name, w == selected ? "точка · выбрана" : "точка", dist, w.y - me.y, null, WP);
+            if (d > r - 6) {                                     // за краем — ромбик на ободе
+                int x = cx + (int) Math.round(ddx / d * (r - 8)), y = cy + (int) Math.round(ddy / d * (r - 8));
+                sprite(g, sDiaFill, x, y, Radar.a(WP, ap * 0.55f));
+                hits.add(new Hit(x, y, Math.round(8 * Math.max(0.7f, u)), tip, w));
                 continue;
             }
             int x = Math.round(fx), y0 = Math.round(fy);
             int st = stem(w.y - me.y);
-            drawStem(g, x, y0, st, Radar.a(WAYPOINT, appear * 0.7f));
+            drawStem(g, x, y0, st, WP, ap * 0.8f);
             int y = y0 - st;
-            Radar.diamond(g, x, y, 3, col);
-            if (w == selected) {
-                Radar.diamondOutline(g, x, y, 6, Radar.a(Radar.WHITE, appear));
-            } else {
-                Radar.diamondOutline(g, x, y, 4, Radar.a(0xFF2A0A20, appear));
-            }
-            g.drawString(font, w.name, x + 6, y - 4, Radar.a(WAYPOINT, appear * 0.9f), false);
-            hits.add(new Hit(x, y, 5, tip(w.name, "своя точка · ПКМ — удалить", dist, w.y - me.y, null), w));
+            boolean sel = w == selected;
+            sprite(g, sWpFill, x, y, Radar.a(sel ? 0xFFFFFFFF : WP, ap * (sel ? 0.35f : 0.18f)));
+            sprite(g, sWpLine, x, y, Radar.a(sel ? 0xFFFFD6EE : WP, ap));
+            label(g, x, y, w.name, w.y - me.y, WP_TXT, ap);
+            hits.add(new Hit(x, y, Math.round(12 * Math.max(0.7f, u)), tip, w));
         }
     }
 
     private void drawContacts(GuiGraphics g, double s, Vec3 me, float alpha, float t) {
         Contacts c = mod.contacts;
-        boolean fresh = c.fresh();
-        if (fresh) {
+        if (c.fresh()) {
             for (Contacts.Ship sh : c.ships) {
-                int col = sh.mine() ? Radar.CYAN : Radar.AMBER;
+                int col = sh.mine() ? CYAN : AMBER;
+                String nm = sh.name().isEmpty() ? sh.owner() : sh.name();
+                String lbl = sh.mine() ? "Твой корабль «" + nm + "»" : "Корабль · " + nm;
                 String kind = (sh.mine() ? "твой корабль" : "корабль") + (sh.flying() ? " · в полёте" : " · стоит");
-                blip(g, s, me, sh.x(), sh.y(), sh.z(), sh.yaw(), col, 8, 3, sh.name(), kind, sh.owner(), alpha, t, true);
+                Tip tip = new Tip(nm, kind, dist(me, sh.x(), sh.y(), sh.z()), sh.y() - me.y,
+                        sh.mine() ? null : sh.owner(), col);
+                blip(g, s, me, sh.x(), sh.y(), sh.z(), sh.yaw(), col, true, lbl, tip, alpha, t);
             }
             for (Contacts.Player p : c.players) {
-                blip(g, s, me, p.x(), p.y(), p.z(), p.yaw(), Radar.PHOS, 6, 2, p.name(),
-                        p.pilot() ? "игрок · пилотирует" : "игрок", null, alpha, t, false);
+                Tip tip = new Tip(p.name(), p.pilot() ? "игрок · пилотирует" : "игрок", dist(me, p.x(), p.y(), p.z()),
+                        p.y() - me.y, null, LAV);
+                blip(g, s, me, p.x(), p.y(), p.z(), p.yaw(), LAV, false, "Игрок · " + p.name(), tip, alpha, t);
             }
         } else if (mod.cfg.clientPlayers && mc.level != null) {
             for (AbstractClientPlayer p : mc.level.players()) {
                 if (p == mc.player) continue;
-                blip(g, s, me, p.getX(), p.getY(), p.getZ(), p.getYRot(), Radar.PHOS, 6, 2,
-                        p.getName().getString(), "игрок (видит клиент)", null, alpha, t, false);
+                String n = p.getName().getString();
+                Tip tip = new Tip(n, "игрок (видит клиент)", dist(me, p.getX(), p.getY(), p.getZ()), p.getY() - me.y, null, LAV);
+                blip(g, s, me, p.getX(), p.getY(), p.getZ(), p.getYRot(), LAV, false, "Игрок · " + n, tip, alpha, t);
             }
         }
     }
 
-    private void blip(GuiGraphics g, double s, Vec3 me, double wx, double wy, double wz, float yaw, int col, int len,
-                      int wide, String name, String kind, String owner, float alpha, float t, boolean rim) {
+    private static double dist(Vec3 me, double x, double y, double z) {
+        return Math.sqrt(sq(x - me.x) + sq(y - me.y) + sq(z - me.z));
+    }
+
+    private void blip(GuiGraphics g, double s, Vec3 me, double wx, double wy, double wz, float yaw, int col, boolean ship,
+                      String lbl, Tip tip, float alpha, float t) {
         float fx = (float) (cx + (wx - viewX) * s), fy = (float) (cy + (wz - viewZ) * s);
         double ddx = fx - cx, ddy = fy - cy, d = Math.sqrt(ddx * ddx + ddy * ddy);
-        double dist = Math.sqrt(sq(wx - me.x) + sq(wy - me.y) + sq(wz - me.z));
-        if (d > r - 4) {
-            if (!rim) return;
-            int x = cx + (int) Math.round(ddx / d * (r - 3)), y = cy + (int) Math.round(ddy / d * (r - 3));
-            g.fill(x - 1, y - 1, x + 2, y + 2, Radar.a(col, alpha * 0.55f));
-            hits.add(new Hit(x, y, 4, tip(name, kind + " · за краем", dist, wy - me.y, owner), null));
+        if (d > r - 6) {
+            if (!ship) return;                                   // корабль за краем — ромбик на ободе
+            int x = cx + (int) Math.round(ddx / d * (r - 8)), y = cy + (int) Math.round(ddy / d * (r - 8));
+            sprite(g, sDiaFill, x, y, Radar.a(col, alpha * 0.5f));
+            hits.add(new Hit(x, y, Math.round(8 * Math.max(0.7f, u)), new Tip(tip.title(), tip.kind() + " · за краем",
+                    tip.dist(), tip.dy(), tip.owner(), col), null));
             return;
         }
         int x = Math.round(fx), y0 = Math.round(fy);
-        float gl = glow(x, y0, t);
+        float gl = alpha * glow(x, y0, t);
         int st = stem(wy - me.y);
-        drawStem(g, x, y0, st, Radar.a(col, alpha * gl * 0.7f));
+        drawStem(g, x, y0, st, col, gl);
         int y = y0 - st;
-        Radar.arrow(g, x, y, yaw, len, wide, Radar.a(col, alpha * gl));
-        if (Math.abs(wy - me.y) >= 3) {
-            g.drawString(font, mono(Radar.dy(wy - me.y)), x + 5, y + 1, Radar.a(col, alpha * gl * 0.75f), false);
+        if (ship) {
+            // курс корабля — короткая черта из ромба
+            float len = Math.max(8, 14 * u);
+            Radar.line(g, x, y, (float) Math.toRadians(yaw + 90), len, Math.max(1, Math.round(u)), Radar.a(col, gl * 0.7f));
+            sprite(g, sDiaFill, x, y, Radar.a(col, gl * 0.32f));
+            sprite(g, sDiaLine, x, y, Radar.a(col, gl));
+        } else {
+            sprite(g, sDot, x, y, Radar.a(col, gl));
         }
-        hits.add(new Hit(x, y, 5, tip(name, kind, dist, wy - me.y, owner), null));
+        label(g, x, y, lbl, wy - me.y, col, gl);
+        hits.add(new Hit(x, y, Math.round(10 * Math.max(0.7f, u)), tip, null));
     }
 
-    private void drawSelf(GuiGraphics g, double s, Vec3 me, float yaw, float appear, float t) {
+    private void drawSelf(GuiGraphics g, double s, Vec3 me, float yaw, float ap, float t) {
         int x = (int) Math.round(cx + (me.x - viewX) * s), y = (int) Math.round(cy + (me.z - viewZ) * s);
         int dx = x - cx, dy = y - cy;
-        if (dx * dx + dy * dy > (r - 4) * (r - 4)) {             // увёл вид далеко — стрелка «ты там» на ободе
+        var pose = g.pose();
+        if (dx * dx + dy * dy > (r - 8) * (r - 8)) {             // увёл вид далеко — стрелка «ты там» на ободе
             double d = Math.sqrt(dx * dx + dy * dy);
-            int rx = cx + (int) Math.round(dx / d * (r - 5)), ry = cy + (int) Math.round(dy / d * (r - 5));
-            float ang = (float) Math.toDegrees(Math.atan2(-dx, dy));
-            Radar.arrow(g, rx, ry, ang, 6, 3, Radar.a(Radar.WHITE, appear));
+            int rx = cx + (int) Math.round(dx / d * (r - 12)), ry = cy + (int) Math.round(dy / d * (r - 12));
+            pose.pushMatrix();
+            pose.translate(rx, ry);
+            pose.rotate((float) Math.atan2(dy, dx) + (float) Math.PI / 2);
+            pose.scale(0.7f, 0.7f);
+            sprite(g, sArrowFill, 0, 0, Radar.a(SELF, ap * 0.8f));
+            pose.popMatrix();
             return;
         }
-        float ping = (t % 1.6f) / 1.6f;                         // расходящееся кольцо «это ты»
-        Radar.ring(g, x, y, 3 + ping * 10, Radar.a(Radar.WHITE, appear * (1 - ping) * 0.6f), 0);
-        Radar.arrow(g, x, y, yaw, 10, 4, Radar.a(0xFF0A1A12, appear));
-        Radar.arrow(g, x, y, yaw, 8, 3, Radar.a(Radar.WHITE, appear));
-        hits.add(new Hit(x, y, 4, List.of(Component.literal("Ты").withStyle(s0 -> s0.withColor(Radar.WHITE & 0xFFFFFF))), null));
+        float ping = (t % 2.2f) / 2.2f;                          // расходящееся кольцо «это ты»
+        int ps = Math.round(sRing.size() * (0.4f + ping * 1.2f));
+        spriteScaled(g, sRing, x, y, ps, Radar.a(SELF, ap * (1 - ping) * 0.45f));
+        pose.pushMatrix();
+        pose.translate(x, y);
+        pose.rotate((float) Math.toRadians(yaw + 180));         // нос стрелки (−y) → курс взгляда
+        sprite(g, sArrowFill, 0, 0, Radar.a(SELF, ap));
+        sprite(g, sArrowLine, 0, 0, Radar.a(0xFFFFFFFF, ap));
+        pose.popMatrix();
+        hits.add(new Hit(x, y, Math.round(10 * Math.max(0.7f, u)), new Tip("Ты", "твоё место", 0, 0, null, SELF), null));
     }
 
-    private void drawSweep(GuiGraphics g, float t, float appear) {
-        float th = (float) sweepAngle(t);
-        for (int i = 22; i >= 1; i--) {                          // послесвечение позади луча
-            float k = 1 - i / 23f;
-            Radar.line(g, cx, cy, th - i * 0.03f, r - 1, 2, Radar.a(0x553FD48A, appear * k * k));
-        }
-        Radar.line(g, cx, cy, th, r - 1, 1, Radar.a(Radar.PHOS, appear * 0.85f));
-    }
-
-    private void drawScanlines(GuiGraphics g, float t, float appear) {
-        int col = Radar.a(0x22000000, appear);
-        for (int y = sqY + 2; y < sqY + sqD - 2; y += 3) g.fill(sqX + 2, y, sqX + sqD - 2, y + 1, col);
-        int band = sqY + 2 + (int) ((t * 37) % (sqD - 6));       // медленная полоса помехи
-        g.fill(sqX + 2, band, sqX + sqD - 2, band + 2, Radar.a(0x0E7CFFB6, appear));
-    }
-
-    // ---------------------------------------------------------------- боковая панель
-
-    private void drawSide(GuiGraphics g, Vec3 me, float yaw, int mx, int my, float appear, float fl, long now) {
-        Radar.box(g, sideX, sideY, sideW, sideH, Radar.a(Radar.PANEL2, appear), Radar.a(Radar.BORDER, appear), 2);
-        int x = sideX + 5, w = sideW - 10;
-        int bottom = sideY + sideH - 4;
-        int y = sideY + 5;
-
-        y = title(g, "ПОЗИЦИЯ", x, y, w, appear);
-        y = row(g, "X", String.valueOf(Math.round(me.x)), x, y, w, Radar.PHOS, appear * fl);
-        y = row(g, "Y", String.valueOf(Math.round(me.y)), x, y, w, Radar.PHOS, appear * fl);
-        y = row(g, "Z", String.valueOf(Math.round(me.z)), x, y, w, Radar.PHOS, appear * fl);
-        int hdg = (int) Math.round(((yaw + 180) % 360 + 360) % 360);  // курс: 0 — север, 90 — восток
-        y = row(g, "КУРС", String.format(Locale.ROOT, "%03d° %s", hdg, side(hdg)), x, y, w, Radar.PHOS, appear * fl);
-        y += 3;
-        y = title(g, "ОБЗОР", x, y, w, appear);
-        y = row(g, "РАДИУС", Radar.dist(mod.range), x, y, w, Radar.PHOS, appear);
-        y = row(g, "СЕТКА", Radar.dist(gridStep()), x, y, w, Radar.PHOS_MID, appear);
-        y = row(g, "ВИД", following ? "ЗА ТОБОЙ" : "СВОБОДНЫЙ", x, y, w, following ? Radar.PHOS_MID : Radar.AMBER, appear);
-
-        // кнопки
-        y += 3;
-        if (y + 13 < bottom) {
-            int bw = (w - 6) / 4;
-            button(g, x, y, bw * 2, 12, "К СЕБЕ", this::recenter, mx, my, appear);
-            button(g, x + bw * 2 + 3, y, bw, 12, "+", () -> zoom(1, false, 0, 0), mx, my, appear);
-            button(g, x + bw * 3 + 6, y, w - bw * 3 - 6, 12, "−", () -> zoom(-1, false, 0, 0), mx, my, appear);
-            y += 16;
-        }
-
-        // выбранная точка
-        if (selected != null && !mod.waypoints.all().contains(selected)) selected = null;
-        if (selected != null && y + 60 < bottom) {
-            y = title(g, "ТОЧКА", x, y, w, appear);
-            Radar.box(g, x - 1, y - 2, w + 2, 13, Radar.a(0xFF020604, appear),
-                    Radar.a(nameBox.isFocused() ? Radar.BORDER_HI : Radar.BORDER, appear), 1);
-            nameBox.setX(x + 2);
-            nameBox.setY(y);
-            nameBox.setWidth(w - 4);
-            y += 14;
-            y = row(g, "X Y Z", selected.x + " " + selected.y + " " + selected.z, x, y, w, WAYPOINT, appear);
-            double d = Math.sqrt(sq(selected.x + 0.5 - me.x) + sq(selected.y - me.y) + sq(selected.z + 0.5 - me.z));
-            y = row(g, "ДО НЕЁ", Radar.dist(d), x, y, w, WAYPOINT, appear);
-            Waypoints.Wp sel = selected;
-            button(g, x, y, w, 12, "УДАЛИТЬ ТОЧКУ", () -> deleteWaypoint(sel), mx, my, appear);
-            y += 16;
-        } else {
-            nameBox.setY(-100);
-        }
-
-        // курсор
-        if (inScope(mx, my) && y + 36 < bottom) {
+    /** Под экраном радара: слева — курсор (место и высота блока), справа — скан и связь. */
+    private void drawScopeStatus(GuiGraphics g, Vec3 me, int mx, int my, float ap, long now) {
+        int lh = mod.font.lineHeight(fs) + Math.round(3 * u);
+        int bottom = py + ph - Math.round(16 * u);
+        int lx = px + Math.round(18 * u);
+        int maxW = cx - mod.font.width("Ю", fl) - lx - Math.round(10 * u);
+        if (inScope(mx, my)) {
             double s = scale();
             double wx = viewX + (mx - cx) / s, wz = viewZ + (my - cy) / s;
-            y = title(g, "КУРСОР", x, y, w, appear);
-            int h = mod.terrain.heightAt((int) Math.floor(wx), (int) Math.floor(wz));
-            y = row(g, "X Z", Math.round(wx) + " " + Math.round(wz), x, y, w, Radar.PHOS_MID, appear);
-            String hs = h == Integer.MIN_VALUE ? "—" : h + " (" + Radar.dy(h - me.y) + ")";
-            y = row(g, "БЛОК Y", hs, x, y, w, Radar.PHOS_MID, appear);
-            y = row(g, "ДАЛЬН", Radar.dist(Math.sqrt(sq(wx - me.x) + sq(wz - me.z))), x, y, w, Radar.PHOS_MID, appear);
-            y += 3;
+            int hgt = mod.terrain.heightAt((int) Math.floor(wx), (int) Math.floor(wz));
+            String l1 = "курсор " + Math.round(wx) + ", " + Math.round(wz);
+            String l2 = (hgt == Integer.MIN_VALUE ? "блок —" : "блок y " + hgt + " (" + Radar.dy(hgt - me.y) + ")")
+                    + " · " + blocks(Math.sqrt(sq(wx - me.x) + sq(wz - me.z)));
+            mod.font.draw(g, fit(l1, maxW, fs), lx, bottom - 2 * lh, fs, Radar.a(HINT, ap));
+            mod.font.draw(g, fit(l2, maxW, fs), lx, bottom - lh, fs, Radar.a(HINT, ap));
+        }
+        boolean fresh = mod.contacts.fresh();
+        String scan = !mod.cfg.terrain ? "скан выкл" : "скан " + Math.round(mod.terrain.progress() * 100) + "%";
+        String link = fresh ? "связь есть" : "связи нет";
+        int rx = cx + mod.font.width("Ю", fl) + Math.round(14 * u);
+        int rw = colX - Math.round(20 * u) - rx;
+        int y2 = bottom - lh;
+        if (rw > mod.font.width("связи нет", fs)) {
+            mod.font.draw(g, scan, rx + rw - mod.font.width(scan, fs), y2 - lh, fs, Radar.a(HINT, ap));
+            boolean blinkOff = !fresh && (now / 500) % 2 == 0;
+            mod.font.draw(g, link, rx + rw - mod.font.width(link, fs), y2, fs,
+                    Radar.a(fresh ? HINT : (blinkOff ? LABEL : RED), ap));
+        }
+    }
+
+    private String fit(String s, int w, int size) {
+        if (mod.font.width(s, size) <= w) return s;
+        while (s.length() > 2 && mod.font.width(s + "…", size) > w) s = s.substring(0, s.length() - 1);
+        return s + "…";
+    }
+
+    // ---------------------------------------------------------------- правая колонка
+
+    private void drawColumn(GuiGraphics g, Vec3 me, float yaw, int mx, int my, float ap, long now) {
+        int rowH = Math.max(mod.font.lineHeight(fm) + 5, Math.round(30 * u));
+        int headStep = mod.font.lineHeight(fh) + Math.round(10 * u);
+        int smallH = Math.max(mod.font.lineHeight(fs) + 5, Math.round(24 * u));
+        int gap = Math.max(5, Math.round(14 * u));
+        int x = colX;
+        int y = py + headH + Math.round(26 * u);
+
+        // подсказки и условные знаки — прижаты к низу (место не зависит от содержимого — ничего не прыгает)
+        List<String> hints = wrap(List.of("ЛКМ — точка", "ПКМ по точке — удалить", "Колесо — масштаб",
+                "Перетаскивание — сдвиг", "Del — удалить выбранную"), colW, fs);
+        if (hints.size() > 2) {
+            hints = wrap(List.of("ЛКМ — точка", "ПКМ по точке — удалить", "Колесо — масштаб", "Перетаскивание — сдвиг"),
+                    colW, fs);
+        }
+        int hintH = mod.font.lineHeight(fs) + Math.round(6 * u);
+        int bottom = py + ph - Math.round(20 * u);
+        int hintsTop = bottom - hints.size() * hintH;
+        // высота блоков над целями — постоянная: тесно (малое окно) — без условных знаков, цвета видны в списке целей
+        int fixedTop = y + 3 * headStep + 11 * rowH + Math.round(4 * u) + 3 * gap;
+        boolean legend = (hintsTop - hintH - Math.round(6 * u) - Math.round(8 * u) - fixedTop - headStep) / smallH >= 3;
+        int legendY = legend ? hintsTop - hintH - Math.round(6 * u) : hintsTop;
+
+        y = heading(g, "ТЕЛЕМЕТРИЯ", x, y, ap);
+        y = row(g, "X", String.format(Locale.ROOT, "%.1f", me.x), x, y, rowH, VALUE, ap);
+        y = row(g, "Y", String.format(Locale.ROOT, "%.1f", me.y), x, y, rowH, VALUE, ap);
+        y = row(g, "Z", String.format(Locale.ROOT, "%.1f", me.z), x, y, rowH, VALUE, ap);
+        int hdg = (int) Math.round(((yaw + 180) % 360 + 360) % 360);  // курс: 0 — север, 90 — восток
+        y = row(g, "Курс", String.format(Locale.ROOT, "%03d° %s", hdg % 360, side(hdg)), x, y, rowH, VALUE, ap);
+        y = row(g, "Скорость", String.format(Locale.ROOT, "%.1f б/с", speed), x, y, rowH, VALUE, ap);
+        y += gap;
+
+        int hy = y;
+        y = heading(g, "ДИАПАЗОН", x, y, ap);
+        int bx = x + mod.font.width("ДИАПАЗОН", fh) + Math.round(mod.font.advance(fs) * 2);
+        int by = hy + (mod.font.lineHeight(fh) - mod.font.lineHeight(fs)) / 2;
+        textButton(g, "[−]", bx, by, fs, HINT, () -> zoom(-1, false, 0, 0), mx, my, ap);
+        textButton(g, "[+]", bx + mod.font.width("[−] ", fs) + 4, by, fs, HINT, () -> zoom(1, false, 0, 0), mx, my, ap);
+        Contacts c = mod.contacts;
+        List<Target> targets = targets(me);
+        y = row(g, "Масштаб", blocks(mod.range), x, y, rowH, VALUE, ap);
+        y = row(g, "Целей", String.valueOf(targets.size()), x, y, rowH, VALUE, ap);
+        y = row(g, "Точек", String.valueOf(mod.waypoints.all().size()), x, y, rowH, VALUE, ap);
+        y = row(g, "Вид", following ? "за тобой" : "свободный · " + keyName(mod.recenterKey), x, y, rowH,
+                following ? VALUE : AMBER, ap);
+        y += gap;
+
+        // выбранная точка — блок постоянной высоты
+        if (selected != null && !mod.waypoints.all().contains(selected)) select(null);
+        y = heading(g, "ТОЧКА", x, y, ap);
+        int boxW = Math.min(colW, distR - colX);
+        if (selected != null) {
+            fieldX = x;
+            fieldY = y - Math.round(3 * u);
+            fieldW = boxW;
+            fieldH = mod.font.lineHeight(fm) + Math.round(6 * u);
+            g.fill(fieldX, fieldY, fieldX + fieldW, fieldY + fieldH, Radar.a(0xCC020806, ap));
+            int bc = Radar.a(editing ? WP : 0xFF28785A, ap);
+            g.fill(fieldX, fieldY, fieldX + fieldW, fieldY + 1, bc);
+            g.fill(fieldX, fieldY + fieldH - 1, fieldX + fieldW, fieldY + fieldH, bc);
+            g.fill(fieldX, fieldY, fieldX + 1, fieldY + fieldH, bc);
+            g.fill(fieldX + fieldW - 1, fieldY, fieldX + fieldW, fieldY + fieldH, bc);
+            String nm = editing ? editBuf : selected.name;
+            int tx = fieldX + Math.round(6 * u), ty = fieldY + Math.round(3 * u);
+            int tw = mod.font.draw(g, fit(nm, fieldW - Math.round(30 * u), fm), tx, ty, fm, Radar.a(WP_TXT, ap));
+            if (editing && (now / 450) % 2 == 0) {
+                g.fill(tx + tw + 1, ty + 1, tx + tw + Math.max(2, Math.round(2 * u)), ty + mod.font.lineHeight(fm) - 1,
+                        Radar.a(WP_TXT, ap));
+            }
+            if (!editing && fieldW > mod.font.width(nm, fm) + mod.font.width("изменить", fs) + 20) {
+                String e = "изменить";
+                mod.font.draw(g, e, fieldX + fieldW - Math.round(6 * u) - mod.font.width(e, fs),
+                        ty + (mod.font.lineHeight(fm) - mod.font.lineHeight(fs)) / 2, fs, Radar.a(LABEL, ap * 0.8f));
+            }
+            y += rowH + Math.round(4 * u);
+            double d = Math.sqrt(sq(selected.x + 0.5 - me.x) + sq(selected.y - me.y) + sq(selected.z + 0.5 - me.z));
+            String info = selected.x + " " + selected.y + " " + selected.z + " · " + blocks(d);
+            String del = "[удалить]";
+            int dw = mod.font.width(del, fs);
+            mod.font.draw(g, fit(info, boxW - dw - 10, fs), x, y + (mod.font.lineHeight(fm) - mod.font.lineHeight(fs)) / 2,
+                    fs, Radar.a(WP_TXT, ap * 0.9f));
+            Waypoints.Wp sel = selected;
+            textButton(g, del, x + boxW - dw, y + (mod.font.lineHeight(fm) - mod.font.lineHeight(fs)) / 2, fs, WP_TXT,
+                    () -> deleteWaypoint(sel), mx, my, ap);
+            y += rowH;
+        } else {
+            fieldW = 0;
+            mod.font.draw(g, fit("щелчок по карте — поставить", colW, fs), x, y, fs, Radar.a(LABEL, ap));
+            y += rowH + Math.round(4 * u);
+            mod.font.draw(g, fit("щелчок по точке — выбрать", colW, fs), x, y, fs, Radar.a(LABEL, ap));
+            y += rowH;
+        }
+        y += gap;
+
+        // цели — сколько поместится
+        int listTop = y + headStep;
+        int fitRows = (legendY - Math.round(8 * u) - listTop) / smallH;
+        if (fitRows >= 1) {
+            y = heading(g, "ЦЕЛИ", x, y, ap);
+            if (targets.isEmpty()) {
+                mod.font.draw(g, c.fresh() ? "никого рядом" : "нет данных с сервера", x, y, fs, Radar.a(LABEL, ap));
+            }
+            int shown = targets.size() > fitRows ? fitRows - 1 : targets.size();
+            for (int i = 0; i < shown; i++) {
+                Target tg = targets.get(i);
+                String dv = blocks(tg.dist());
+                int dw = mod.font.width(dv, fs);
+                mod.font.draw(g, fit(tg.name(), distR - x - dw - 12, fs), x, y, fs, Radar.a(tg.col(), ap));
+                mod.font.draw(g, dv, distR - dw, y, fs, Radar.a(TIP_TXT, ap * 0.9f));
+                y += smallH;
+            }
+            if (shown < targets.size()) {
+                mod.font.draw(g, "… ещё " + (targets.size() - shown), x, y, fs, Radar.a(LABEL, ap));
+            }
         }
 
-        // контакты
-        if (y + 50 < bottom) {
-            Contacts c = mod.contacts;
-            boolean fresh = c.fresh();
-            y = title(g, "КОНТАКТЫ", x, y, w, appear);
-            y = row(g, "КОРАБЛИ", fresh ? String.valueOf(c.ships.size()) : "—", x, y, w, Radar.AMBER, appear);
-            int players = fresh ? c.players.size() : (mod.cfg.clientPlayers && mc.level != null ? mc.level.players().size() - 1 : 0);
-            y = row(g, "ИГРОКИ", String.valueOf(Math.max(0, players)), x, y, w, Radar.PHOS, appear);
-            y = row(g, "ТОЧКИ", String.valueOf(mod.waypoints.all().size()), x, y, w, WAYPOINT, appear);
-            String scan = !mod.cfg.terrain ? "ВЫКЛ" : Math.round(mod.terrain.progress() * 100) + "%";
-            y = row(g, "СКАН", scan, x, y, w, Radar.PHOS_MID, appear);
-            boolean blinkOff = !fresh && (now / 400) % 2 == 0;
-            y = row(g, "СВЯЗЬ", fresh ? "ЕСТЬ" : "НЕТ", x, y, w, fresh ? Radar.PHOS : (blinkOff ? Radar.PHOS_DIM : Radar.RED), appear);
-            y += 3;
+        // условные знаки (одной строкой, переносятся по словам) и подсказки
+        if (legend && legendY > y) drawLegend(g, x, legendY, hintH, ap);
+        for (int i = 0; i < hints.size(); i++) {
+            mod.font.draw(g, hints.get(i), x, hintsTop + i * hintH, fs, Radar.a(HINT, ap));
         }
+    }
 
-        // условные знаки
-        if (y + 34 < bottom) {
-            int ly = bottom - 32;
-            legend(g, x, ly, Radar.WHITE, "ТЫ", appear);
-            legend(g, x + w / 2, ly, Radar.CYAN, "ТВОЙ КОРАБЛЬ", appear);
-            legend(g, x, ly + 11, Radar.AMBER, "КОРАБЛЬ", appear);
-            legend(g, x + w / 2, ly + 11, Radar.PHOS, "ИГРОК", appear);
-            Radar.diamond(g, x + 3, ly + 25, 2, Radar.a(WAYPOINT, appear));
-            g.drawString(font, "ТОЧКА", x + 9, ly + 21, Radar.a(Radar.PHOS_DIM, appear), false);
-            g.fill(x + w / 2 + 2, ly + 24, x + w / 2 + 4, ly + 26, Radar.a(Radar.PHOS_MID, appear));
-            g.drawString(font, "БЛОКИ", x + w / 2 + 9, ly + 21, Radar.a(Radar.PHOS_DIM, appear), false);
+    private void drawLegend(GuiGraphics g, int x, int y, int lineH, float ap) {
+        int adv = Math.round(mod.font.advance(fs));
+        int cyL = y + mod.font.lineHeight(fs) / 2;
+        int end = colX + colW;
+        String[] names = {"твой", "корабль", "игрок", "точка"};
+        int[] cols = {CYAN, AMBER, LAV, WP};
+        int xx = x;
+        for (int i = 0; i < names.length; i++) {
+            int w = adv * 2 + mod.font.width(names[i], fs);
+            if (xx + w > end) break;
+            Spr sp = i < 2 ? sDiaLine : i == 2 ? sDot : sWpLine;
+            var pose = g.pose();
+            pose.pushMatrix();
+            pose.translate(xx + adv / 2f, cyL);
+            pose.scale(0.7f, 0.7f);
+            sprite(g, sp, 0, 0, Radar.a(cols[i], ap));
+            pose.popMatrix();
+            mod.font.draw(g, names[i], xx + Math.round(adv * 1.4f), y, fs, Radar.a(LABEL, ap));
+            xx += w + adv * 2;
         }
+    }
+
+    /** Слова-подсказки по строкам ширины w (между ними — три пробела). */
+    private List<String> wrap(List<String> parts, int w, int size) {
+        List<String> out = new ArrayList<>();
+        StringBuilder line = new StringBuilder();
+        for (String p : parts) {
+            String cand = line.isEmpty() ? p : line + "   " + p;
+            if (mod.font.width(cand, size) <= w || line.isEmpty()) {
+                line.setLength(0);
+                line.append(cand);
+            } else {
+                out.add(line.toString());
+                line.setLength(0);
+                line.append(p);
+            }
+        }
+        if (!line.isEmpty()) out.add(line.toString());
+        return out;
+    }
+
+    private List<Target> targets(Vec3 me) {
+        List<Target> l = new ArrayList<>();
+        Contacts c = mod.contacts;
+        if (c.fresh()) {
+            for (Contacts.Ship sh : c.ships) {
+                String nm = sh.name().isEmpty() ? sh.owner() : sh.name();
+                l.add(new Target(sh.mine() ? nm + " (твой)" : nm + " · корабль", sh.mine() ? CYAN : AMBER,
+                        dist(me, sh.x(), sh.y(), sh.z())));
+            }
+            for (Contacts.Player p : c.players) {
+                l.add(new Target(p.name() + " · игрок", LAV, dist(me, p.x(), p.y(), p.z())));
+            }
+        } else if (mod.cfg.clientPlayers && mc.level != null) {
+            for (AbstractClientPlayer p : mc.level.players()) {
+                if (p == mc.player) continue;
+                l.add(new Target(p.getName().getString() + " · игрок", LAV, dist(me, p.getX(), p.getY(), p.getZ())));
+            }
+        }
+        l.sort(Comparator.comparingDouble(Target::dist));
+        return l;
     }
 
     private static String side(int hdg) {
@@ -544,48 +870,50 @@ final class RadarScreen extends Screen {
         return n[Math.floorMod(Math.round(hdg / 45f), 8)];
     }
 
-    private int title(GuiGraphics g, String s, int x, int y, int w, float appear) {
-        g.drawString(font, s, x, y, Radar.a(Radar.PHOS_MID, appear), false);
-        int tw = font.width(s);
-        g.fill(x + tw + 3, y + 4, x + w, y + 5, Radar.a(Radar.BORDER, appear));
-        return y + 11;
+    private int heading(GuiGraphics g, String s, int x, int y, float ap) {
+        mod.font.draw(g, s, x, y, fh, Radar.a(G, ap));
+        return y + mod.font.lineHeight(fh) + Math.round(10 * u);
     }
 
-    private int row(GuiGraphics g, String label, String value, int x, int y, int w, int col, float alpha) {
-        g.drawString(font, label, x, y, Radar.a(Radar.PHOS_DIM, alpha), false);
-        Component v = mono(value);
-        g.drawString(font, v, x + w - font.width(v), y, Radar.a(col, alpha), false);
-        return y + 10;
+    private int row(GuiGraphics g, String label, String value, int x, int y, int rowH, int col, float ap) {
+        mod.font.draw(g, label, x, y, fm, Radar.a(LABEL, ap));
+        String v = fit(value, valR - x - mod.font.width(label, fm) - 10, fm);
+        mod.font.draw(g, v, valR - mod.font.width(v, fm), y, fm, Radar.a(col, ap));
+        return y + rowH;
     }
 
-    private void legend(GuiGraphics g, int x, int y, int col, String s, float appear) {
-        Radar.arrow(g, x + 3, y + 4, 180, 6, 2, Radar.a(col, appear));
-        g.drawString(font, s, x + 9, y, Radar.a(Radar.PHOS_DIM, appear), false);
+    private static String blocks(double d) {
+        return Math.round(d) + " б";
     }
 
-    private void button(GuiGraphics g, int x, int y, int w, int h, String label, Runnable action, int mx, int my, float appear) {
-        Btn b = new Btn(x, y, w, h, label, action);
-        boolean hover = b.in(mx, my);
-        Radar.box(g, x, y, w, h, Radar.a(hover ? 0xFF0E3A26 : 0xFF07180F, appear),
-                Radar.a(hover ? Radar.BORDER_HI : Radar.BORDER, appear), 1);
-        g.drawString(font, label, x + (w - font.width(label)) / 2, y + 2, Radar.a(hover ? Radar.WHITE : Radar.PHOS, appear), false);
-        buttons.add(b);
-    }
+    // ---------------------------------------------------------------- подсказка
 
-    private Component mono(String s) {
-        return mod.cfg.monoDigits ? Component.literal(s).withStyle(MONO) : Component.literal(s);
-    }
-
-    private List<Component> tip(String name, String kind, double dist, double dy, String owner) {
-        List<Component> l = new ArrayList<>();
-        l.add(Component.literal(name.isEmpty() ? "—" : name).withStyle(st -> st.withColor(Radar.PHOS & 0xFFFFFF)));
-        l.add(Component.literal(kind).withStyle(st -> st.withColor(Radar.PHOS_MID & 0xFFFFFF)));
-        if (owner != null && !owner.isEmpty()) {
-            l.add(Component.literal("владелец: " + owner).withStyle(st -> st.withColor(Radar.PHOS_MID & 0xFFFFFF)));
+    private void drawTip(GuiGraphics g, Tip tip, int mx, int my, float ap) {
+        List<String> lines = new ArrayList<>();
+        lines.add((tip.title().isEmpty() ? "—" : tip.title()) + " · " + tip.kind());
+        boolean self = tip.col() == SELF;
+        if (!self) {
+            lines.add("дистанция " + blocks(tip.dist()));
+            lines.add("высота " + Radar.dy(tip.dy()) + " б");
+            if (tip.owner() != null && !tip.owner().isEmpty()) lines.add("владелец " + tip.owner());
         }
-        l.add(Component.literal("дальность " + Radar.dist(dist) + " · высота " + Radar.dy(dy))
-                .withStyle(st -> st.withColor(Radar.AMBER & 0xFFFFFF)));
-        return l;
+        int pad = Math.max(6, Math.round(8 * u));
+        int lh = mod.font.lineHeight(fs) + Math.round(4 * u);
+        int w = 0;
+        for (String l : lines) w = Math.max(w, mod.font.width(l, fs));
+        int bw = w + 2 * pad, bh = lines.size() * lh + 2 * pad - Math.round(4 * u);
+        int x = mx + Math.round(16 * u), y = my + Math.round(16 * u);
+        if (x + bw > fbW - 4) x = mx - bw - Math.round(10 * u);
+        if (y + bh > fbH - 4) y = my - bh - Math.round(10 * u);
+        int border = Radar.a(tip.col(), ap);
+        g.fill(x, y, x + bw, y + bh, Radar.a(0xEB001410, ap));
+        g.fill(x, y, x + bw, y + 1, border);
+        g.fill(x, y + bh - 1, x + bw, y + bh, border);
+        g.fill(x, y, x + 1, y + bh, border);
+        g.fill(x + bw - 1, y, x + bw, y + bh, border);
+        for (int i = 0; i < lines.size(); i++) {
+            mod.font.draw(g, lines.get(i), x + pad, y + pad + i * lh, fs, Radar.a(i == 0 ? tip.col() : TIP_TXT, ap));
+        }
     }
 
     private static double sq(double v) {
@@ -618,7 +946,7 @@ final class RadarScreen extends Screen {
         for (Hit h : hits) {
             if (h.wp() == null) continue;
             double d = sq(h.x() - mx) + sq(h.y() - my);
-            if (d <= (h.rad() + 1) * (h.rad() + 1) && d < bd) {
+            if (d <= sq(h.rad() + 2) && d < bd) {
                 bd = d;
                 best = h.wp();
             }
@@ -650,11 +978,14 @@ final class RadarScreen extends Screen {
 
     private void select(Waypoints.Wp w) {
         selected = w;
-        if (nameBox != null) {
-            nameBox.setFocused(false);
-            setFocused(null);
-            nameBox.setValue(w == null ? "" : w.name);
-        }
+        editing = false;
+    }
+
+    /** Имя в поле поменялось: пустое не сохраняется (остаётся прежнее, пока не допечатают). */
+    private void setName(String v) {
+        if (v.length() > Waypoints.MAX_NAME) v = v.substring(0, Waypoints.MAX_NAME);
+        editBuf = v;
+        if (selected != null && !v.isBlank()) mod.waypoints.rename(selected, v);
     }
 
     private static void click() {
@@ -663,12 +994,13 @@ final class RadarScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent ev, boolean doubleClick) {
-        double mx = ev.x(), my = ev.y();
-        if (nameBox.visible && nameBox.isMouseOver(mx, my)) return super.mouseClicked(ev, doubleClick);
-        if (nameBox.isFocused()) {
-            nameBox.setFocused(false);
-            setFocused(null);
+        double mx = ev.x() * gs, my = ev.y() * gs;
+        if (selected != null && fieldW > 0 && mx >= fieldX && mx < fieldX + fieldW && my >= fieldY && my < fieldY + fieldH) {
+            if (!editing) editBuf = selected.name;               // поле имени точки
+            editing = true;
+            return true;
         }
+        editing = false;
         for (Btn b : buttons) {
             if (b.in(mx, my)) {
                 click();
@@ -699,14 +1031,15 @@ final class RadarScreen extends Screen {
     @Override
     public boolean mouseDragged(MouseButtonEvent ev, double dx, double dy) {
         if (pressing && ev.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            if (!dragging && sq(ev.x() - pressX) + sq(ev.y() - pressY) > 9) {
+            double mx = ev.x() * gs, my = ev.y() * gs;
+            if (!dragging && sq(mx - pressX) + sq(my - pressY) > sq(3 * gs)) {
                 dragging = true;
                 following = false;
             }
             if (dragging) {
                 double s = scale();
-                viewX -= dx / s;
-                viewZ -= dy / s;
+                viewX -= dx * gs / s;
+                viewZ -= dy * gs / s;
             }
             return true;
         }
@@ -717,13 +1050,14 @@ final class RadarScreen extends Screen {
     public boolean mouseReleased(MouseButtonEvent ev) {
         if (pressing && ev.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             pressing = false;
-            if (!dragging && inScope(ev.x(), ev.y())) {
-                Waypoints.Wp hit = waypointAt(ev.x(), ev.y());
+            double mx = ev.x() * gs, my = ev.y() * gs;
+            if (!dragging && inScope(mx, my)) {
+                Waypoints.Wp hit = waypointAt(mx, my);
                 if (hit != null) {
                     select(hit == selected ? null : hit);
                 } else {
                     double s = scale();
-                    int wx = (int) Math.floor(viewX + (ev.x() - cx) / s), wz = (int) Math.floor(viewZ + (ev.y() - cy) / s);
+                    int wx = (int) Math.floor(viewX + (mx - cx) / s), wz = (int) Math.floor(viewZ + (my - cy) / s);
                     int h = mod.terrain.heightAt(wx, wz);
                     int wy = h != Integer.MIN_VALUE ? h + 1 : (mc.player != null ? mc.player.getBlockY() : 64);
                     Waypoints.Wp w = mod.waypoints.add(wx, wy, wz);
@@ -740,7 +1074,8 @@ final class RadarScreen extends Screen {
     @Override
     public boolean mouseScrolled(double mx, double my, double sx, double sy) {
         if (sy != 0) {
-            zoom(sy, inScope(mx, my), mx, my);
+            double pmx = mx * gs, pmy = my * gs;
+            zoom(sy, inScope(pmx, pmy), pmx, pmy);
             return true;
         }
         return super.mouseScrolled(mx, my, sx, sy);
@@ -753,14 +1088,26 @@ final class RadarScreen extends Screen {
     @Override
     public boolean keyPressed(KeyEvent e) {
         int key = e.key();
-        if (nameBox.isFocused()) {                               // печатаем имя — клавиши карты не работают
+        if (editing && selected != null) {                       // печатаем имя — клавиши карты не работают
             if (key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER || key == GLFW.GLFW_KEY_ESCAPE) {
-                nameBox.setFocused(false);
-                setFocused(null);
-                if (selected != null) nameBox.setValue(selected.name);
+                editing = false;
                 return true;
             }
-            super.keyPressed(e);
+            if (key == GLFW.GLFW_KEY_BACKSPACE) {
+                String n = editBuf;
+                if (e.hasControlDown()) {
+                    int cut = n.stripTrailing().lastIndexOf(' ');
+                    n = cut <= 0 ? "" : n.substring(0, cut + 1);
+                } else if (!n.isEmpty()) {
+                    n = n.substring(0, n.offsetByCodePoints(n.length(), -1));
+                }
+                setName(n);
+                return true;
+            }
+            if (e.hasControlDown() && key == GLFW.GLFW_KEY_V) {
+                setName(editBuf + StringUtil.filterText(mc.keyboardHandler.getClipboard()));
+                return true;
+            }
             return true;
         }
         if (key == GLFW.GLFW_KEY_ESCAPE || matches(mod.openKey, e)) {
@@ -788,7 +1135,7 @@ final class RadarScreen extends Screen {
 
     @Override
     public boolean charTyped(CharacterEvent e) {
-        if (nameBox.isFocused()) return super.charTyped(e);
+        if (editing && selected != null && e.isAllowedChatCharacter()) setName(editBuf + e.codepointAsString());
         return true;                                             // буква «м» и т.п. не уходят никуда
     }
 }
