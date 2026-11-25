@@ -87,6 +87,8 @@ public final class SpaceflightModule implements ClientModule {
     private static final double CONTACT = 0.05;
     /** Ботинки сошли с грани (ребро): касание соседней грани ищем с таким зазором, блоки. */
     private static final double LOST_GAP = 0.35;
+    /** Шаг, которым новая рамка придвигается к грани при смене у ребра, блоки (меньше зазора касания 2·CONTACT). */
+    private static final double SNAP_STEP = 0.05;
     /** Поправка камеры после смены рамки гаснет с такой скоростью, 1/с. */
     private static final double EYE_SETTLE = 10;
     /** После прыжка от поверхности — столько тиков без прижима (иначе ботинки сразу вернут назад). */
@@ -610,11 +612,24 @@ public final class SpaceflightModule implements ClientModule {
         List<Vec3d> cands = SurfaceBox.candidates(new double[] {b.minX, b.minY, b.minZ, b.maxX, b.maxY, b.maxZ},
                 new Vec3d(pos.x, pos.y, pos.z), new Vec3d(eye0.x, eye0.y, eye0.z), target, contact, h, w,
                 d.eyeHeight());
-        for (Vec3d c : cands) {
-            double[] nb = SurfaceBox.box(next, c.x(), c.y(), c.z(), h, w);
-            AABB box = new AABB(nb[0], nb[1], nb[2], nb[3], nb[4], nb[5]);
-            if (!p.level().noCollision(p, box.deflate(1e-6))) continue;
-            if (contact && target >= 0 && !touching(p, box, target, CONTACT * 2)) continue;
+        Vec3d n = BodyFrame.normal(target);
+        boolean snap = contact && n != null;
+        for (Vec3d c0 : cands) {
+            // contact: сторона рамки к −n — на плоскости прежней рамки; но у ребра (сошёл с грани, LOST_GAP) прежняя
+            // рамка могла не доставать до новой грани — тогда придвинуть к ней (шагами, до LOST_GAP), пока не коснётся
+            Vec3d c = null;
+            for (double gap = 0; gap <= LOST_GAP + 1e-9; gap += SNAP_STEP) {
+                Vec3d ci = snap ? c0.sub(n.scale(gap)) : c0;
+                if (ci.distance(new Vec3d(pos.x, pos.y, pos.z)) > SurfaceBox.MAX_SHIFT + 1e-9) break;
+                double[] nb = SurfaceBox.box(next, ci.x(), ci.y(), ci.z(), h, w);
+                AABB box = new AABB(nb[0], nb[1], nb[2], nb[3], nb[4], nb[5]);
+                if (!p.level().noCollision(p, box.deflate(1e-6))) break;          // дальше — в блоке
+                if (!snap || touching(p, box, target, CONTACT * 2)) {
+                    c = ci;
+                    break;
+                }
+            }
+            if (c == null) continue;
             double dx = c.x() - pos.x, dy = c.y() - pos.y, dz = c.z() - pos.z;
             boxSurface = next;
             p.setPos(c.x(), c.y(), c.z());                         // рамку строит крючок ядра — уже новую
