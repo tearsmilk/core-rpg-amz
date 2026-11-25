@@ -156,7 +156,12 @@ public final class GravityModule extends OdysseyModule {
         settings = Settings.from(config());
         physics = loadPhysics();
         link = new SpaceflightLink(this, logger());
-        bodyRelay = new BodyRelay(link);
+        bodyRelay = new BodyRelay(link, p -> {
+            Spacer sp = spacers.get(p.getUuid());
+            if (sp != null) {
+                sp.boxShift = true;                        // смена рамки: следующий пакет движения — со сдвигом
+            }
+        });
         link.resolve(p -> spaceflightReady.add(p.getUuid()), this::clientMessage);
         services().register(VacuumService.class, overrides);
         services().register(BlackHoles.class, blackHoles);
@@ -917,6 +922,13 @@ public final class GravityModule extends OdysseyModule {
         Pos from = p.getPosition();
         Pos to = e.getNewPosition();
         double d = from.distance(to);
+        // клиент сменил рамку (встал на стену/потолок или сошёл): позиция сдвигается до PlayerBox.MAX_SHIFT за раз —
+        // разовый запас; это не скорость (ни удара, ни замера)
+        boolean shifted = sp.boxShift;
+        if (shifted) {
+            sp.boxShift = false;
+            sp.guard.credit += PlayerBox.SHIFT_CREDIT;
+        }
         if (rp.antiCheat() && d > sp.guard.credit && sp.surfaceTicks == 0 && p.getInstance() != null
             && (touching(p.getInstance(), p, from) || touching(p.getInstance(), p, to))) {
             // у блока (шаг по стене, прыжок от неё) — запас surface-walk сразу, а не с проверки раз в пару тиков
@@ -936,6 +948,11 @@ public final class GravityModule extends OdysseyModule {
                     return;
                 }
             }
+        }
+        if (shifted) {
+            sp.lastMoveSpeed = 0;
+            sp.rebase();
+            return;
         }
         double v = d * Settings.TPS;                       // пакет — один тик клиента
         double drop = sp.lastMoveSpeed - v;

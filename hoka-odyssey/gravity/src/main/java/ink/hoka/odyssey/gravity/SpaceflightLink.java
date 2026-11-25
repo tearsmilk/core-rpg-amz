@@ -30,7 +30,9 @@ import org.slf4j.Logger;
  *   <li>op 3 — поворот тела другого игрока: u8 op, i32 entityId, f32 w, x, y, z (кватернион тела без «лёжа» в
  *       соглашении FreeLook/spacephys: свободно — это взгляд, на поверхности — верх по её нормали, лицом по взгляду),
  *       u8 flags (бит 0 — лёжа, бит 1 — поворот действует, биты 2–4 — грань под ногами + 1: 1 +X, 2 −X, 3 +Y,
- *       4 −Y, 5 +Z, 6 −Z; 0 — свободно в пространстве);</li>
+ *       4 −Y, 5 +Z, 6 −Z; 0 — свободно в пространстве; бит 5 — рамка игрока повёрнута по этой грани: стоит на
+ *       стене или потолке, рамка 1.8 вдоль нормали грани и 0.6 поперёк, позиция — середина её нижней стороны, как
+ *       у любой рамки; см. {@link PlayerBox});</li>
  *   <li>op 4 — поворот тела другого игрока больше не действует: u8 op, i32 entityId (вышел из вакуума, ушёл).</li>
  * </ul>
  * Клиент → сервер:
@@ -59,6 +61,8 @@ final class SpaceflightLink {
     static final int SURFACE_SHIFT = 2;
     static final int SURFACE_MASK = 7 << SURFACE_SHIFT;
     static final int SURFACES = 6;
+    /** Бит 5 флагов: рамка повёрнута по грани под ногами (только стены и потолок — на полу она обычная). */
+    static final int FLAG_BOX = 1 << 5;
     /** Возможность клиента: сам рисует повёрнутые тела игроков. */
     static final int CAP_AVATAR_ROTATION = 1;
     private static final String API = "ink.hoka.odyssey.clientmods.ClientModsApi";
@@ -243,6 +247,12 @@ final class SpaceflightLink {
             return (flags & FLAG_ACTIVE) != 0;
         }
 
+        /** Грань, по которой повёрнута рамка игрока (стена/потолок), или −1 — рамка обычная. */
+        int boxSurface() {
+            int s = surface();
+            return (flags & FLAG_BOX) != 0 && PlayerBox.turned(s) ? s : -1;
+        }
+
         /** Куда смотрит «макушка» тела: лёжа — вдоль взгляда, стоя — верх камеры. */
         Vec3d bodyUp() {
             Quat q = new Quat(w, x, y, z);
@@ -290,12 +300,19 @@ final class SpaceflightLink {
         }
     }
 
-    /** Оставить только известные биты флагов; неверная грань под ногами (7) — «свободно». */
+    /**
+     * Оставить только известные биты флагов; неверная грань под ногами (7) — «свободно»; бит рамки — только вместе
+     * со стеной или потолком.
+     */
     static int sanitizeFlags(int raw) {
-        int flags = raw & (FLAG_PRONE | FLAG_ACTIVE | SURFACE_MASK);
+        int flags = raw & (FLAG_PRONE | FLAG_ACTIVE | SURFACE_MASK | FLAG_BOX);
         int surface = (flags & SURFACE_MASK) >>> SURFACE_SHIFT;
         if (surface > SURFACES) {
             flags &= ~SURFACE_MASK;
+            surface = 0;
+        }
+        if (!PlayerBox.turned(surface - 1)) {
+            flags &= ~FLAG_BOX;
         }
         return flags;
     }

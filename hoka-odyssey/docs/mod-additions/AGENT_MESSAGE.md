@@ -1,5 +1,7 @@
 # Задача для агента мода Hoka Odyssey: `EntityPose.offset`
 
+> Сделано в ядре 0.53.0 (`c224cc2`). Следующая добавка — [`AGENT_MESSAGE-entity-box.md`](AGENT_MESSAGE-entity-box.md).
+
 Нужно добавить в клиентское ядро мода (`client/core`, сейчас 0.52.0, коммит `45de1df` в `SakuraMesd/hokaodyssey`) одно необязательное поле.
 Модуль `spaceflight` (невесомость) с ним правильно поворачивает тела игроков.
 

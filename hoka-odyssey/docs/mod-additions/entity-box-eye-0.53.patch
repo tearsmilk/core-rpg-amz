@@ -1,0 +1,251 @@
+diff --git a/client/core/build.gradle.kts b/client/core/build.gradle.kts
+index d5a45e6..7bc1f00 100644
+--- a/client/core/build.gradle.kts
++++ b/client/core/build.gradle.kts
+@@ -1,5 +1,5 @@
+ // Ядро-мод Hoka Odyssey: маленький, ставится один раз. Всё остальное приходит с сервера модулями.
+-version = "0.53.0"
++version = "0.54.0"
+ group = "ink.hoka"
+ 
+ val mc = "1.21.11"
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/Hooks.java b/client/core/src/main/java/ink/hoka/odyssey/client/Hooks.java
+index e0aba9c..251c98d 100644
+--- a/client/core/src/main/java/ink/hoka/odyssey/client/Hooks.java
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/Hooks.java
+@@ -28,6 +28,8 @@ public final class Hooks {
+     static final List<Owned<ClientContext.TravelHook>> TICK_ENTER = new ArrayList<>();
+     static final List<Owned<ClientContext.EntityPoseHook>> POSE = new ArrayList<>();
+     static final List<Owned<ClientContext.PickHook>> PICK = new ArrayList<>();
++    static final List<Owned<ClientContext.EntityBoxHook>> BOX = new java.util.concurrent.CopyOnWriteArrayList<>();
++    static final List<Owned<ClientContext.EntityEyeHook>> EYE = new java.util.concurrent.CopyOnWriteArrayList<>();
+     static volatile Owned<ClientContext.YardResolver> yardResolver;
+     static volatile Owned<ClientContext.LocalViewHook> localView;
+     static final List<Owned<ClientContext.TravelHook>> TICK_EXIT = new ArrayList<>();
+@@ -68,6 +70,8 @@ public final class Hooks {
+         TICK_ENTER.removeIf(o -> o.owner().equals(owner));
+         POSE.removeIf(o -> o.owner().equals(owner));
+         PICK.removeIf(o -> o.owner().equals(owner));
++        BOX.removeIf(o -> o.owner().equals(owner));
++        EYE.removeIf(o -> o.owner().equals(owner));
+         if (yardResolver != null && yardResolver.owner().equals(owner)) yardResolver = null;
+         if (localView != null && localView.owner().equals(owner)) localView = null;
+         TICK_EXIT.removeIf(o -> o.owner().equals(owner));
+@@ -91,6 +95,8 @@ public final class Hooks {
+         TICK_ENTER.clear();
+         POSE.clear();
+         PICK.clear();
++        BOX.clear();
++        EYE.clear();
+         yardResolver = null;
+         localView = null;
+         TICK_EXIT.clear();
+@@ -196,6 +202,32 @@ public final class Hooks {
+         return null;
+     }
+ 
++    public static boolean hasBox() { return !BOX.isEmpty(); }
++
++    /** Рамка сущности от модулей (первая не-null) или null — как у игры (миксин Entity.makeBoundingBox). */
++    public static net.minecraft.world.phys.AABB box(net.minecraft.world.entity.Entity e, net.minecraft.world.phys.Vec3 pos) {
++        if (BOX.isEmpty() || e == null || pos == null) return null;
++        for (var o : BOX) {
++            net.minecraft.world.phys.AABB[] r = {null};
++            safe(o.owner(), () -> r[0] = o.hook().box(e, pos));
++            if (r[0] != null) return r[0];
++        }
++        return null;
++    }
++
++    public static boolean hasEye() { return !EYE.isEmpty(); }
++
++    /** Сдвиг позиция → глаза от модулей (первый не-null) или null — как у игры (миксин Entity.getEyePosition). */
++    public static net.minecraft.world.phys.Vec3 eye(net.minecraft.world.entity.Entity e) {
++        if (EYE.isEmpty() || e == null) return null;
++        for (var o : EYE) {
++            net.minecraft.world.phys.Vec3[] r = {null};
++            safe(o.owner(), () -> r[0] = o.hook().eye(e));
++            if (r[0] != null) return r[0];
++        }
++        return null;
++    }
++
+     /** Взгляд своего игрока в системе модуля {курс, наклон} или null. */
+     public static float[] localView(float pt) {
+         var h = localView;
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/ModuleManager.java b/client/core/src/main/java/ink/hoka/odyssey/client/ModuleManager.java
+index e8d95c4..6a0c3b4 100644
+--- a/client/core/src/main/java/ink/hoka/odyssey/client/ModuleManager.java
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/ModuleManager.java
+@@ -330,6 +330,8 @@ final class ModuleManager {
+         @Override public void onEntityTilt(EntityTiltHook hook) { Hooks.TILT.add(new Hooks.Owned<>(id, hook)); }
+         @Override public void onPick(PickHook hook) { Hooks.PICK.add(new Hooks.Owned<>(id, hook)); }
+         @Override public void onEntityPose(EntityPoseHook hook) { Hooks.POSE.add(new Hooks.Owned<>(id, hook)); }
++        @Override public void onEntityBox(EntityBoxHook hook) { Hooks.BOX.add(new Hooks.Owned<>(id, hook)); }
++        @Override public void onEntityEye(EntityEyeHook hook) { Hooks.EYE.add(new Hooks.Owned<>(id, hook)); }
+         @Override public void setLocalView(LocalViewHook h) { Hooks.localView = h == null ? null : new Hooks.Owned<>(id, h); }
+         @Override public void setYardResolver(YardResolver r) { Hooks.yardResolver = r == null ? null : new Hooks.Owned<>(id, r); }
+         @Override public void onClick(ClickHook hook) { Hooks.CLICK.add(new Hooks.Owned<>(id, hook)); }
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/api/ClientContext.java b/client/core/src/main/java/ink/hoka/odyssey/client/api/ClientContext.java
+index 506a08e..e71c663 100644
+--- a/client/core/src/main/java/ink/hoka/odyssey/client/api/ClientContext.java
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/api/ClientContext.java
+@@ -158,6 +158,24 @@ public interface ClientContext {
+      */
+     void onCollision(CollisionHook hook);
+ 
++    /**
++     * Своя рамка (AABB) сущности вместо {@code EntityDimensions.makeBoundingBox(pos)}: ядро спрашивает в
++     * {@code Entity.makeBoundingBox(Vec3)} — то есть при каждом setPos, движении, refreshDimensions. Только сущности
++     * клиентского мира. Вернуть null — как у игры. Позиция сущности остаётся её позицией (модуль сам решает, где она
++     * относительно рамки), столкновения с блоками игра считает по этой рамке как есть (рамка ровная по осям мира —
++     * например, игрок «стоит» на стене: 1.8 вдоль нормали стены, 0.6 поперёк). Пока модуль даёт рамку игроку,
++     * игра не выбирает ему позу по «влезает ли рамка стоя» (Player.updatePlayerPose) — иначе у стены он бы
++     * «присел» или «поплыл». Поменялось решение модуля — обновить рамку можно через {@code entity.setPos(entity.position())}.
++     */
++    default void onEntityBox(EntityBoxHook hook) {}
++
++    /**
++     * Глаза сущности: сдвиг от позиции сущности до глаз (мир, блоки) — для getEyePosition()/getEyePosition(pt)/
++     * getEyeY() (прицел, ломание и установка блоков, луч взгляда, свет модели). Только сущности клиентского мира.
++     * null — как у игры (0, eyeHeight, 0). Камеру ядро не двигает — её положение модуль ставит в onCamera.
++     */
++    default void onEntityEye(EntityEyeHook hook) {}
++
+     interface HudLayer { void render(GuiGraphics g, DeltaTracker delta); }
+ 
+     interface MouseHook { boolean onMouse(double yawDeg, double pitchDeg); }
+@@ -178,6 +196,10 @@ public interface ClientContext {
+                        net.minecraft.world.phys.Vec3 camera, float partialTick);
+     }
+ 
++    interface EntityBoxHook { net.minecraft.world.phys.AABB box(net.minecraft.world.entity.Entity entity, net.minecraft.world.phys.Vec3 pos); }
++
++    interface EntityEyeHook { net.minecraft.world.phys.Vec3 eye(net.minecraft.world.entity.Entity entity); }
++
+     interface EntityTiltHook { org.joml.Quaternionfc tilt(net.minecraft.world.entity.Entity entity, float partialTick); }
+ 
+     /**
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/mixin/EntityBoxMixin.java b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/EntityBoxMixin.java
+new file mode 100644
+index 0000000..fa03bbc
+--- /dev/null
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/EntityBoxMixin.java
+@@ -0,0 +1,74 @@
++package ink.hoka.odyssey.client.mixin;
++
++import ink.hoka.odyssey.client.Hooks;
++import net.minecraft.util.Mth;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.level.Level;
++import net.minecraft.world.phys.AABB;
++import net.minecraft.world.phys.Vec3;
++import org.spongepowered.asm.mixin.Mixin;
++import org.spongepowered.asm.mixin.Shadow;
++import org.spongepowered.asm.mixin.Unique;
++import org.spongepowered.asm.mixin.injection.At;
++import org.spongepowered.asm.mixin.injection.Inject;
++import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
++
++/**
++ * Рамка и глаза сущности от модулей (ClientContext.onEntityBox / onEntityEye), только в клиентском мире.
++ * <p>
++ * Рамка: {@code Entity.makeBoundingBox(Vec3)} — через него идут setPos (каждый шаг движения), reapplyPosition и
++ * refreshDimensions, так что рамка модуля держится сама. Глаза: getEyePosition(), getEyePosition(pt), getEyeY() —
++ * прицел (pick), луч взгляда, ломание/установка блоков, свет модели.
++ * Без крючков — сразу как у игры (один пустой список).
++ */
++@Mixin(Entity.class)
++public abstract class EntityBoxMixin {
++
++    @Shadow public abstract Level level();
++    @Shadow public abstract Vec3 position();
++    @Shadow public double xo;
++    @Shadow public double yo;
++    @Shadow public double zo;
++
++    @Inject(method = "makeBoundingBox(Lnet/minecraft/world/phys/Vec3;)Lnet/minecraft/world/phys/AABB;",
++            at = @At("HEAD"), cancellable = true)
++    private void hokaOdyssey$box(Vec3 pos, CallbackInfoReturnable<AABB> cir) {
++        if (!Hooks.hasBox() || !hokaOdyssey$client()) return;
++        AABB box = Hooks.box((Entity) (Object) this, pos);
++        if (box != null) cir.setReturnValue(box);
++    }
++
++    @Inject(method = "getEyePosition()Lnet/minecraft/world/phys/Vec3;", at = @At("HEAD"), cancellable = true)
++    private void hokaOdyssey$eye(CallbackInfoReturnable<Vec3> cir) {
++        Vec3 off = hokaOdyssey$eyeOffset();
++        if (off != null) cir.setReturnValue(position().add(off));
++    }
++
++    @Inject(method = "getEyePosition(F)Lnet/minecraft/world/phys/Vec3;", at = @At("HEAD"), cancellable = true)
++    private void hokaOdyssey$eyeAt(float pt, CallbackInfoReturnable<Vec3> cir) {
++        Vec3 off = hokaOdyssey$eyeOffset();
++        if (off == null) return;
++        Vec3 p = position();
++        cir.setReturnValue(new Vec3(Mth.lerp(pt, xo, p.x) + off.x, Mth.lerp(pt, yo, p.y) + off.y,
++                Mth.lerp(pt, zo, p.z) + off.z));
++    }
++
++    @Inject(method = "getEyeY()D", at = @At("HEAD"), cancellable = true)
++    private void hokaOdyssey$eyeY(CallbackInfoReturnable<Double> cir) {
++        Vec3 off = hokaOdyssey$eyeOffset();
++        if (off != null) cir.setReturnValue(position().y + off.y);
++    }
++
++    @Unique
++    private Vec3 hokaOdyssey$eyeOffset() {
++        if (!Hooks.hasEye() || !hokaOdyssey$client()) return null;
++        return Hooks.eye((Entity) (Object) this);
++    }
++
++    /** Сущность клиентского мира (в одиночной игре те же классы — и у встроенного сервера: его не трогаем). */
++    @Unique
++    private boolean hokaOdyssey$client() {
++        Level l = level();
++        return l != null && l.isClientSide();
++    }
++}
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/mixin/PlayerPoseMixin.java b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/PlayerPoseMixin.java
+new file mode 100644
+index 0000000..ccd7f57
+--- /dev/null
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/PlayerPoseMixin.java
+@@ -0,0 +1,24 @@
++package ink.hoka.odyssey.client.mixin;
++
++import ink.hoka.odyssey.client.Hooks;
++import net.minecraft.world.entity.player.Player;
++import org.spongepowered.asm.mixin.Mixin;
++import org.spongepowered.asm.mixin.injection.At;
++import org.spongepowered.asm.mixin.injection.Inject;
++import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
++
++/**
++ * Игрок со своей рамкой от модуля (ClientContext.onEntityBox): позу по «влезает ли рамка стоя / присев» игра не
++ * выбирает — она примеряет ровную рамку 0.6×1.8 от ног вверх, а у игрока, стоящего на стене, рамка лежит вдоль
++ * нормали стены: игра «посадила» бы его или «положила плыть». Поза остаётся какой была.
++ */
++@Mixin(Player.class)
++public abstract class PlayerPoseMixin {
++    @Inject(method = "updatePlayerPose", at = @At("HEAD"), cancellable = true)
++    private void hokaOdyssey$keepPose(CallbackInfo ci) {
++        if (!Hooks.hasBox()) return;
++        Player self = (Player) (Object) this;
++        if (self.level() == null || !self.level().isClientSide()) return;
++        if (Hooks.box(self, self.position()) != null) ci.cancel();
++    }
++}
+diff --git a/client/core/src/main/resources/hoka_odyssey.mixins.json b/client/core/src/main/resources/hoka_odyssey.mixins.json
+index cc0f2b4..ca26817 100644
+--- a/client/core/src/main/resources/hoka_odyssey.mixins.json
++++ b/client/core/src/main/resources/hoka_odyssey.mixins.json
+@@ -20,6 +20,8 @@
+     "KeyboardInputMixin",
+     "LocalTravelMixin",
+     "EntityTiltMixin",
++    "EntityBoxMixin",
++    "PlayerPoseMixin",
+     "BackOffMixin",
+     "HitboxTiltMixin",
+     "ClickMixin",

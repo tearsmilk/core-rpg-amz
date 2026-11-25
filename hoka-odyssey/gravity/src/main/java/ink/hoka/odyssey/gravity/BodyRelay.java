@@ -7,8 +7,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.collision.BoundingBox;
 import net.minestom.server.entity.EntityPose;
 import net.minestom.server.entity.Metadata;
 import net.minestom.server.entity.Player;
@@ -25,6 +27,10 @@ import net.minestom.server.network.packet.server.play.EntityMetaDataPacket;
  * а флаг полёта на элитрах клиент чужим игрокам не трогает. Флаг шлётся только зрителям (не самому игроку — иначе
  * его клиент включил бы физику элитр) и не меняет метаданные на сервере; Minestom при своих изменениях флагов
  * затирает его, поэтому повторяем раз в {@link #FALLBACK_REPEAT} тиков.
+ * <p>
+ * Рамка: пока клиент говорит «рамка повёрнута по грани» (бит рамки в op 3 — стоит на стене или потолке), игроку на
+ * сервере ставится такая же рамка ({@link PlayerBox}) — столкновения, установка блоков рядом, удары и касания
+ * считаются по ней. Флаг пропал, поворот не действует, игрок ушёл или модуль выключается — рамка обычная.
  */
 final class BodyRelay {
     /** Лежит, если тело наклонено сильнее (градусы); встаёт обратно — когда меньше {@link #STAND_TILT}. */
@@ -45,13 +51,20 @@ final class BodyRelay {
     private static final int POSE_INDEX = 6;
 
     private final SpaceflightLink link;
+    /** Игрок сменил рамку (поток clientmods, сразу при пакете): позиция прыгнет — проверке скорости дать запас. */
+    private final Consumer<Player> boxShifted;
     private final Map<UUID, Body> bodies = new ConcurrentHashMap<>();
     /** Игроки, чей клиент сам рисует повёрнутые тела (запасную позу им не шлём). */
     private final Set<UUID> rotating = ConcurrentHashMap.newKeySet();
     private volatile long ticks;
 
     BodyRelay(SpaceflightLink link) {
+        this(link, p -> { });
+    }
+
+    BodyRelay(SpaceflightLink link, Consumer<Player> boxShifted) {
         this.link = link;
+        this.boxShifted = boxShifted;
     }
 
     /** Состояние одного игрока. Поля пишет поток clientmods (receive) и тик — только простые значения. */
@@ -65,6 +78,11 @@ final class BodyRelay {
         boolean relayed;
         boolean lying;
         boolean fallbackOn;
+        /** Рамка, поставленная игроку на сервере (грань стены/потолка), −1 — обычная. */
+        int boxApplied = -1;
+        /** Рамка по последнему пакету (поток clientmods) и тик последнего запаса проверки скорости. */
+        int boxReceived = -1;
+        long lastCredit = Long.MIN_VALUE / 2;
     }
 
     /**
@@ -103,6 +121,14 @@ final class BodyRelay {
             }
             b.orientation = o;
             b.dirty = true;
+            int box = o.active() ? o.boxSurface() : -1;
+            if (box != b.boxReceived) {
+                b.boxReceived = box;
+                if (t - b.lastCredit >= PlayerBox.CREDIT_COOLDOWN) {
+                    b.lastCredit = t;
+                    boxShifted.accept(p);                    // до пакета движения со сдвигом позиции
+                }
+            }
         }
     }
 
@@ -126,6 +152,7 @@ final class BodyRelay {
                 it.remove();
                 continue;
             }
+            applyBox(p, b, o.boxSurface());
             b.lying = lying(o, b.lying);
             if ((b.dirty && t - b.lastRelay >= RELAY_MIN) || t - b.lastRelay >= RELAY_REPEAT) {
                 b.dirty = false;                             // сначала сбросить, потом взять последний поворот
@@ -148,6 +175,7 @@ final class BodyRelay {
 
     /** Игрок вышел из вакуума / с сервера / модуль выключается: зрителям — op 4 и обычная поза. */
     private void stop(Player p, Body b) {
+        applyBox(p, b, -1);
         if (b.relayed) {
             for (Player v : p.getViewers()) {
                 if (link.ready(v)) {
@@ -159,6 +187,21 @@ final class BodyRelay {
         if (b.fallbackOn) {
             sendFallback(p, false);
             b.fallbackOn = false;
+        }
+    }
+
+    /** Поставить игроку рамку грани surface (−1 — обычную), если она другая. */
+    private static void applyBox(Player p, Body b, int surface) {
+        int want = PlayerBox.turned(surface) ? surface : -1;
+        if (want == b.boxApplied) {
+            return;
+        }
+        b.boxApplied = want;
+        if (want < 0) {
+            p.setBoundingBox(p.getEntityType().registry().boundingBox());   // обычная рамка игрока
+        } else {
+            double[] sz = PlayerBox.size(want);
+            p.setBoundingBox(new BoundingBox(sz[0], sz[1], sz[2]));          // низ-середина — позиция, как у клиента
         }
     }
 

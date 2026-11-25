@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Quaternionfc;
@@ -39,6 +40,7 @@ final class BodyPoses {
     static final int OP_CAPS = 5;
     static final int FLAG_PRONE = BodyFrame.FLAG_PRONE;
     static final int FLAG_ACTIVE = BodyFrame.FLAG_ACTIVE;
+    static final int FLAG_BOX = BodyFrame.FLAG_BOX;
     static final int CAP_AVATAR_ROTATION = 1;
     /** За сколько доводить поворот до присланного (ожидаемый промежуток между пакетами), нс. */
     private static final long BLEND_NS = 110_000_000L;
@@ -81,6 +83,8 @@ final class BodyPoses {
     private final Self self;
     private final Map<Integer, Track> tracks = new ConcurrentHashMap<>();
     private final Map<Integer, Blend> blends = new ConcurrentHashMap<>();
+    /** Чужие игроки, у которых сменилась рамка (повёрнута / обычная): пересобрать её в тике (setPos). */
+    private final java.util.Set<Integer> boxChanged = ConcurrentHashMap.newKeySet();
     private volatile boolean hooked;
     private volatile boolean enabled = true;
 
@@ -124,6 +128,34 @@ final class BodyPoses {
     void clear() {
         tracks.clear();
         blends.clear();
+        boxChanged.clear();
+    }
+
+    /** Грань повёрнутой рамки чужого игрока (по флагам op 3) или −1 — рамка обычная. */
+    int boxSurface(int entityId) {
+        Track t = tracks.get(entityId);
+        return t == null ? -1 : BodyFrame.boxOf(t.flags());
+    }
+
+    /** Отдать (и забыть) тех, чью рамку пора пересобрать. */
+    void drainBoxChanges(java.util.function.IntConsumer action) {
+        for (var it = boxChanged.iterator(); it.hasNext(); ) {
+            int id = it.next();
+            it.remove();
+            action.accept(id);
+        }
+    }
+
+    /** Все, у кого рамка сейчас повёрнута (выгрузка модуля — вернуть им обычную). */
+    java.util.List<Integer> boxed() {
+        java.util.List<Integer> out = new java.util.ArrayList<>();
+        tracks.forEach((id, t) -> { if (BodyFrame.boxOf(t.flags()) >= 0) out.add(id); });
+        return out;
+    }
+
+    private void forget(int id) {
+        Track old = tracks.remove(id);
+        if (old != null && BodyFrame.boxOf(old.flags()) >= 0) boxChanged.add(id);
     }
 
     static int flags(boolean active, boolean prone, int surface) { return BodyFrame.flags(active, prone, surface); }
@@ -142,7 +174,7 @@ final class BodyPoses {
         double n = Math.sqrt(w * w + x * x + y * y + z * z);
         if (!(Double.isFinite(n) && n > 0.5 && n < 2)) return;
         if ((flags & FLAG_ACTIVE) == 0) {
-            tracks.remove(id);
+            forget(id);
             return;
         }
         Quat q = new Quat(w / n, x / n, y / n, z / n);
@@ -152,18 +184,21 @@ final class BodyPoses {
                 ? new Track(q, q, now, flags)                  // новый режим — переход сделает Blend
                 : new Track(old.base(now), q, now, flags);
         tracks.put(id, t);
+        if (BodyFrame.boxOf(flags) != (old == null ? -1 : BodyFrame.boxOf(old.flags()))) boxChanged.add(id);
     }
 
     /** S2C op 4: u8 op (уже прочитан), i32 entityId. */
     void readStop(DataInputStream in, int available) throws IOException {
         if (available < 4) throw new IOException("короткий op 4");
-        tracks.remove(in.readInt());
+        forget(in.readInt());
     }
 
     /** Раз в секунду: забыть тех, о ком сервер давно молчит (ушёл из виду), и давно не рисованные позы. */
     void prune() {
         long now = System.nanoTime();
-        tracks.values().removeIf(t -> now - t.t0() > STALE_NS);
+        for (var e : tracks.entrySet()) {
+            if (now - e.getValue().t0() > STALE_NS) forget(e.getKey());
+        }
         blends.values().removeIf(b -> now - b.used > STALE_NS);
     }
 
@@ -192,9 +227,16 @@ final class BodyPoses {
             blends.remove(id);
             return null;
         }
-        double h = e.getBbHeight(), w = e.getBbWidth();
+        double h = e.getBbHeight();
         Quat body = BodyFrame.body(base, prone ? 1 : 0);
-        Vec3d centre = BodyFrame.centre(surface, prone, h, w);
+        // середина модели — от настоящей рамки (на стене/потолке она повёрнута — SurfaceBox): ноги на поверхности
+        AABB bb = e.getBoundingBox();
+        Vec3 ep = e.position();
+        Vec3d mid = new Vec3d((bb.minX + bb.maxX) / 2 - ep.x, (bb.minY + bb.maxY) / 2 - ep.y, (bb.minZ + bb.maxZ) / 2 - ep.z);
+        Vec3d n = BodyFrame.normal(surface);
+        double halfN = n == null ? 0
+                : (Math.abs(n.x()) * bb.getXsize() + Math.abs(n.y()) * bb.getYsize() + Math.abs(n.z()) * bb.getZsize()) / 2;
+        Vec3d centre = BodyFrame.centre(surface, prone, mid, halfN, h);
         Blend b = blends.computeIfAbsent(id, k -> new Blend());
         int key = (surface + 1) * 2 + (prone ? 1 : 0);
         if (b.key == Integer.MIN_VALUE) {                      // только что начали — от обычной позы стоя

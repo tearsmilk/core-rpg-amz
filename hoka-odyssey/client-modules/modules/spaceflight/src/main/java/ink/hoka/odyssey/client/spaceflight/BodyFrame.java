@@ -28,18 +28,36 @@ final class BodyFrame {
         new Vec3d(0, -1, 0), new Vec3d(0, 0, 1), new Vec3d(0, 0, -1)};
     /** Лёжа на поверхности: середина тела над ней на столько блоков (полтолщины туловища с запасом). */
     static final double LIE_LIFT = 0.15;
-    /** Флаги поворота (op 3): бит 0 — лёжа, бит 1 — действует, биты 2–4 — грань под ногами + 1 (0 — свободно). */
+    /**
+     * Флаги поворота (op 3): бит 0 — лёжа, бит 1 — действует, биты 2–4 — грань под ногами + 1 (0 — свободно),
+     * бит 5 — рамка игрока повёрнута по этой грани ({@link SurfaceBox}: стоит на стене/потолке).
+     */
     static final int FLAG_PRONE = 1;
     static final int FLAG_ACTIVE = 2;
+    static final int FLAG_BOX = 1 << 5;
     static final int SURFACE_SHIFT = 2;
     static final int SURFACE_MASK = 7 << SURFACE_SHIFT;
 
     private BodyFrame() {}
 
     static int flags(boolean active, boolean prone, int surface) {
+        return flags(active, prone, surface, false);
+    }
+
+    /** box — рамка повёрнута по грани surface (только для стен и потолка; на полу рамка и так обычная). */
+    static int flags(boolean active, boolean prone, int surface, boolean box) {
         int f = (active ? FLAG_ACTIVE : 0) | (prone ? FLAG_PRONE : 0);
-        if (surface >= 0 && surface < NORMALS.length) f |= (surface + 1) << SURFACE_SHIFT;
+        if (surface >= 0 && surface < NORMALS.length) {
+            f |= (surface + 1) << SURFACE_SHIFT;
+            if (box && SurfaceBox.turned(surface)) f |= FLAG_BOX;
+        }
         return f;
+    }
+
+    /** Грань повёрнутой рамки из флагов: стена/потолок или −1 (рамка обычная). */
+    static int boxOf(int flags) {
+        int s = surfaceOf(flags);
+        return (flags & FLAG_BOX) != 0 && SurfaceBox.turned(s) ? s : -1;
     }
 
     /** Грань под ногами из флагов: 0..5 или −1 (свободно; и для неизвестных значений 7). */
@@ -142,11 +160,20 @@ final class BodyFrame {
      * полразмера рамки вдоль n); лёжа на поверхности — середина тела чуть над ней.
      */
     static Vec3d centre(int surface, boolean prone, double height, double width) {
-        Vec3d mid = new Vec3d(0, height / 2, 0);
+        Vec3d n = normal(surface);
+        double half = n == null ? 0 : Math.abs(n.y()) * height / 2 + (Math.abs(n.x()) + Math.abs(n.z())) * width / 2;
+        return centre(surface, prone, new Vec3d(0, height / 2, 0), half, height);
+    }
+
+    /**
+     * То же по настоящей рамке сущности (она может быть повёрнута — {@link SurfaceBox}): mid — сдвиг позиция →
+     * середина рамки, halfN — полразмера рамки вдоль нормали грани. Повёрнутая рамка стоит вдоль n — ноги модели
+     * на поверхности, середина модели = середина рамки.
+     */
+    static Vec3d centre(int surface, boolean prone, Vec3d mid, double halfN, double height) {
         Vec3d n = normal(surface);
         if (n == null) return mid;
-        double half = Math.abs(n.y()) * height / 2 + (Math.abs(n.x()) + Math.abs(n.z())) * width / 2;
-        Vec3d contact = mid.sub(n.scale(half));
+        Vec3d contact = mid.sub(n.scale(halfN));
         return contact.add(n.scale(prone ? LIE_LIFT : height / 2));
     }
 
