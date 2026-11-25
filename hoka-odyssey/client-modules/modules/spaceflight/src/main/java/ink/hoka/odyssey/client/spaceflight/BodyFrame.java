@@ -158,8 +158,9 @@ final class BodyFrame {
     /** Поворот головы в системе тела по взгляду в мире: {yaw, pitch} в градусах (как у Minecraft). */
     static float[] head(Quat body, Vec3d worldLook) {
         Vec3d l = body.conjugate().rotate(worldLook);
-        double yaw = Math.toDegrees(Math.atan2(-l.x(), l.z()));
         double len = l.length();
+        // взгляд почти вдоль верха тела: курс головы не определён — 0 (иначе шум округления крутит голову вокруг шеи)
+        double yaw = Math.hypot(l.x(), l.z()) < 1e-6 * len ? 0 : Math.toDegrees(Math.atan2(-l.x(), l.z()));
         double pitch = len < 1e-9 ? 0 : Math.toDegrees(Math.asin(FreeLook.clamp(-l.y() / len, -1, 1)));
         return new float[] {(float) yaw, (float) pitch};
     }
