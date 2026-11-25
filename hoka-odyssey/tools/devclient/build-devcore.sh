@@ -56,10 +56,12 @@ DIST="$HOKA_DEV_DIR/server-dist"
 rm -rf "$DIST"
 mkdir -p "$DIST/module"
 echo "== сервер ядра + clientmods + respack"
-gradle_retry "$SRC" :server:shadowJar :modules:clientmods:jar :modules:respack:jar
+# respack — отдельный модуль только у старых ядер (в 0.55 его нет)
+RESPACK=(); [[ -d "$SRC/modules/respack" ]] && RESPACK=(:modules:respack:jar)
+gradle_retry "$SRC" :server:shadowJar :modules:clientmods:jar "${RESPACK[@]}"
 cp "$SRC/server/build/libs/server.jar" "$DIST/"
 cp "$SRC"/modules/clientmods/build/libs/clientmods.jar "$DIST/module/"
-cp "$SRC"/modules/respack/build/libs/*.jar "$DIST/module/"
+[[ ${#RESPACK[@]} -gt 0 ]] && cp "$SRC"/modules/respack/build/libs/*.jar "$DIST/module/"
 
 if [[ $SKIP_OURS == 0 && -n "$HOKA_OUR_MODULES" ]]; then
     echo "== наши серверные модули: $HOKA_OUR_MODULES"

@@ -47,7 +47,7 @@ class SpaceflightLinkTest {
     @Test
     void surfaceBits() throws IOException {
         for (int s = 0; s < SpaceflightLink.SURFACES; s++) {
-            int raw = SpaceflightLink.FLAG_ACTIVE | ((s + 1) << SpaceflightLink.SURFACE_SHIFT) | 0xC0;
+            int raw = SpaceflightLink.FLAG_ACTIVE | ((s + 1) << SpaceflightLink.SURFACE_SHIFT) | 0x80;   // бит 7 — мусор
             Orientation o = SpaceflightLink.decodeOrientation(c2s(1, 0, 0, 0, raw));
             assertNotNull(o);
             assertEquals(s, o.surface());
@@ -60,6 +60,16 @@ class SpaceflightLinkTest {
         assertEquals(-1, SpaceflightLink.decodeOrientation(c2s(1, 0, 0, 0, 2)).surface());   // свободно
         assertEquals(SpaceflightLink.FLAG_ACTIVE, SpaceflightLink.sanitizeFlags(2 | (7 << 2)));
         assertEquals(SpaceflightLink.FLAG_PRONE | (6 << 2), SpaceflightLink.sanitizeFlags(1 | (6 << 2) | 0x80));
+    }
+
+    @Test
+    void gravityFlagNeedsSurface() throws IOException {
+        int g = SpaceflightLink.FLAG_GRAVITY;
+        int wall = 2 << SpaceflightLink.SURFACE_SHIFT;                                 // −X
+        assertEquals(SpaceflightLink.FLAG_ACTIVE | wall | g, SpaceflightLink.sanitizeFlags(2 | wall | g));
+        assertEquals(SpaceflightLink.FLAG_ACTIVE, SpaceflightLink.sanitizeFlags(2 | g));   // без грани — нет
+        assertTrue(SpaceflightLink.decodeOrientation(c2s(1, 0, 0, 0, 2 | wall | g)).gravity());
+        assertFalse(SpaceflightLink.decodeOrientation(c2s(1, 0, 0, 0, 2 | wall)).gravity());
     }
 
     @Test

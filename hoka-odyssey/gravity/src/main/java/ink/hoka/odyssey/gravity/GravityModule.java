@@ -898,7 +898,9 @@ public final class GravityModule extends OdysseyModule {
         sp.state.setVelocity(m[0], m[1], m[2]);
         sp.guard.measured(sp.lastStep() * Settings.TPS);
         // у блока клиент может ходить по стене/потолку и отталкиваться — шаг и прыжок не ускорение ранца
-        if ((ticks + p.getEntityId()) % SURFACE_CHECK == 0) {
+        if (bodyRelay.gravity(p.getUuid())) {
+            sp.surfaceTicks = SURFACE_HOLD;                // тяготение грани: прыжок и падение обратно — ходьба
+        } else if ((ticks + p.getEntityId()) % SURFACE_CHECK == 0) {
             Instance instance = p.getInstance();
             boolean touching = instance != null && touching(instance, p, p.getPosition());
             sp.surfaceTicks = touching ? SURFACE_HOLD : Math.max(0, sp.surfaceTicks - SURFACE_CHECK);

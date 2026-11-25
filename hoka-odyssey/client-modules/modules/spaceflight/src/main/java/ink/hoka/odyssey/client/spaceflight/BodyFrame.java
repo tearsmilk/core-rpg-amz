@@ -30,11 +30,13 @@ final class BodyFrame {
     static final double LIE_LIFT = 0.15;
     /**
      * Флаги поворота (op 3): бит 0 — лёжа, бит 1 — действует, биты 2–4 — грань под ногами + 1 (0 — свободно),
-     * бит 5 — рамка игрока повёрнута по этой грани ({@link SurfaceBox}: стоит на стене/потолке).
+     * бит 5 — рамка игрока повёрнута по этой грани ({@link SurfaceBox}: стоит на стене/потолке), бит 6 — тяготение
+     * грани ({@link SurfaceGravity}: ходит по ней, как по земле).
      */
     static final int FLAG_PRONE = 1;
     static final int FLAG_ACTIVE = 2;
     static final int FLAG_BOX = 1 << 5;
+    static final int FLAG_GRAVITY = 1 << 6;
     static final int SURFACE_SHIFT = 2;
     static final int SURFACE_MASK = 7 << SURFACE_SHIFT;
 

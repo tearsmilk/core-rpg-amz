@@ -32,7 +32,8 @@ import org.slf4j.Logger;
  *       u8 flags (бит 0 — лёжа, бит 1 — поворот действует, биты 2–4 — грань под ногами + 1: 1 +X, 2 −X, 3 +Y,
  *       4 −Y, 5 +Z, 6 −Z; 0 — свободно в пространстве; бит 5 — рамка игрока повёрнута по этой грани: стоит на
  *       стене или потолке, рамка 1.8 вдоль нормали грани и 0.6 поперёк, позиция — середина её нижней стороны, как
- *       у любой рамки; см. {@link PlayerBox});</li>
+ *       у любой рамки; см. {@link PlayerBox}; бит 6 — тяготение грани: ходит по ней, как по земле, — прыжки
+ *       и падение обратно к грани для проверки скорости — ходьба, а не ранец);</li>
  *   <li>op 4 — поворот тела другого игрока больше не действует: u8 op, i32 entityId (вышел из вакуума, ушёл).</li>
  * </ul>
  * Клиент → сервер:
@@ -63,6 +64,8 @@ final class SpaceflightLink {
     static final int SURFACES = 6;
     /** Бит 5 флагов: рамка повёрнута по грани под ногами (только стены и потолок — на полу она обычная). */
     static final int FLAG_BOX = 1 << 5;
+    /** Бит 6 флагов: тяготение грани — ходит по грани под ногами, как по земле (тяжесть 0,08 к ней, прыжки). */
+    static final int FLAG_GRAVITY = 1 << 6;
     /** Возможность клиента: сам рисует повёрнутые тела игроков. */
     static final int CAP_AVATAR_ROTATION = 1;
     private static final String API = "ink.hoka.odyssey.clientmods.ClientModsApi";
@@ -247,6 +250,11 @@ final class SpaceflightLink {
             return (flags & FLAG_ACTIVE) != 0;
         }
 
+        /** Тяготение грани: ходит по грани под ногами, как по земле. */
+        boolean gravity() {
+            return (flags & FLAG_GRAVITY) != 0 && surface() >= 0;
+        }
+
         /** Грань, по которой повёрнута рамка игрока (стена/потолок), или −1 — рамка обычная. */
         int boxSurface() {
             int s = surface();
@@ -305,7 +313,7 @@ final class SpaceflightLink {
      * со стеной или потолком.
      */
     static int sanitizeFlags(int raw) {
-        int flags = raw & (FLAG_PRONE | FLAG_ACTIVE | SURFACE_MASK | FLAG_BOX);
+        int flags = raw & (FLAG_PRONE | FLAG_ACTIVE | SURFACE_MASK | FLAG_BOX | FLAG_GRAVITY);
         int surface = (flags & SURFACE_MASK) >>> SURFACE_SHIFT;
         if (surface > SURFACES) {
             flags &= ~SURFACE_MASK;
@@ -313,6 +321,9 @@ final class SpaceflightLink {
         }
         if (!PlayerBox.turned(surface - 1)) {
             flags &= ~FLAG_BOX;
+        }
+        if (surface == 0) {
+            flags &= ~FLAG_GRAVITY;                           // тяготение — только с гранью под ногами
         }
         return flags;
     }

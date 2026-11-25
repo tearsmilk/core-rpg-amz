@@ -14,12 +14,12 @@ import java.util.Properties;
 /** Настройки модуля: {@code <dataDir>/config.properties} (создаётся с комментариями при первом запуске). */
 final class FlightConfig {
     /** Версия файла настроек: без неё (файл от старой версии) прежние умолчания заменяются новыми. */
-    static final int VERSION = 4;
+    static final int VERSION = 5;
 
     private static final String DEFAULT = """
             # Hoka Odyssey — модуль spaceflight (невесомость в вакууме). Файл читается при загрузке модуля.
             # Версия файла (не меняйте): по ней модуль узнаёт файл от старой версии.
-            config_version = 4
+            config_version = 5
 
             # Тяга ранца, блоки/с² (W/S — вперёд/назад, A/D — вбок, пробел/shift — вверх/вниз по осям взгляда).
             # Сервер может ограничить её своей (physics.thrust.acceleration) — действует меньшая.
@@ -50,19 +50,14 @@ final class FlightConfig {
             # Скорость возврата камеры «в горизонт» после выхода из вакуума, доля за секунду
             upright_rate = 4.0
 
-            # «Магнитные ботинки»: Shift у блока (пол, стена, потолок — любой) прижимает к нему, по нему можно ходить
-            # (W/A/S/D вдоль поверхности, пробел — оттолкнуться). Без Shift — обычная невесомость.
-            # Сила прижима, блоки/с²
-            grip_press = 20
-            # Отлетаешь от блока быстрее этого (блоки/с) — ботинки не удерживают
-            grip_break_speed = 4.0
-            # Стоишь на стене или потолке (Shift у блока) — камера плавно встаёт верхом от поверхности: она становится
-            # «полом», экран ровный. Скорость доворота, доля за секунду; 0 — не выравнивать
-            surface_align_rate = 3.0
+            # Тяготение грани: встал ногами на любую грань блока (пол, стену, потолок) — ходишь по ней, как по земле
+            # (шаг, бег, прыжок, падение обратно — как у обычной игры). Оттолкнуться и улететь — Shift+пробел или
+            # двойной пробел (второе нажатие в прыжке). Скорость толчка от грани, блоки/с
+            push_off = 5.0
             """;
 
     /** Прежние умолчания (файл без config_version): такие значения считаем «не менял» и берём новые. */
-    private static final Map<String, String> OLD_DEFAULTS = Map.of("thrust", "2.0", "roll_speed", "90", "max_speed", "120", "surface_align_rate", "0");
+    private static final Map<String, String> OLD_DEFAULTS = Map.of("thrust", "2.0", "roll_speed", "90", "max_speed", "120");
 
     double thrust = 0.8;
     double maxSpeed = 20;
@@ -77,9 +72,7 @@ final class FlightConfig {
     double walkSpeed = 4.3;
     double jumpSpeed = 5.0;
     double uprightRate = 4.0;
-    double gripPress = 20;
-    double gripBreakSpeed = 4.0;
-    double surfaceAlignRate = 3.0;
+    double pushOff = 5.0;
 
     static FlightConfig load(Path dir, Logger log) {
         FlightConfig c = new FlightConfig();
@@ -111,9 +104,7 @@ final class FlightConfig {
             c.walkSpeed = num(p, "walk_speed", c.walkSpeed, 0, 20);
             c.jumpSpeed = num(p, "jump_speed", c.jumpSpeed, 0, 30);
             c.uprightRate = num(p, "upright_rate", c.uprightRate, 0.1, 50);
-            c.gripPress = num(p, "grip_press", c.gripPress, 0, 200);
-            c.gripBreakSpeed = num(p, "grip_break_speed", c.gripBreakSpeed, 0, 30);
-            c.surfaceAlignRate = num(p, "surface_align_rate", c.surfaceAlignRate, 0, 50);
+            c.pushOff = num(p, "push_off", c.pushOff, 0, 30);
         } catch (IOException | RuntimeException e) {
             log.warn("spaceflight: не удалось прочитать {} — значения по умолчанию ({})", file, e.toString());
         }

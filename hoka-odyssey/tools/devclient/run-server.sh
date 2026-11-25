@@ -33,17 +33,19 @@ rm -f "$SRV_DIR/module/"*.jar
 cp "$DIST/module/"*.jar "$SRV_DIR/module/"
 sync_clientmods
 
-# respack: локальный HTTP-порт и адрес (по умолчанию в конфиге — адрес боевого сервера)
+# respack (только у старых ядер — отдельный модуль): локальный HTTP-порт и адрес (по умолчанию — адрес боевого сервера)
 RP="$SRV_DIR/module/respack/config.yml"
-if [[ ! -f "$RP" ]]; then
-    mkdir -p "$(dirname "$RP")"
-    unzip -p "$SRV_DIR/module/respack.jar" config.yml > "$RP"
+if [[ -f "$SRV_DIR/module/respack.jar" ]]; then
+    if [[ ! -f "$RP" ]]; then
+        mkdir -p "$(dirname "$RP")"
+        unzip -p "$SRV_DIR/module/respack.jar" config.yml > "$RP"
+    fi
+    sed -i -E "s#^(  port: ).*#\1$HOKA_RESPACK_PORT#; s#^(  public-url: ).*#\1\"http://127.0.0.1:$HOKA_RESPACK_PORT\"#" "$RP"
+    grep -q "127.0.0.1:$HOKA_RESPACK_PORT" "$RP" || { echo "не удалось выставить адрес respack в $RP" >&2; exit 1; }
+    # respack ждёт HELLO мода pack.join-delay-ticks (по умолчанию 30 тиков = 1,5 с) и только потом шлёт пак игрокам
+    # без мода. Клиент на llvmpipe здоровается позже — без запаса ему приходит окно «скачать ресурспак?». Ждём 10 с.
+    grep -q 'join-delay-ticks' "$RP" || sed -i -E 's#^pack:\s*$#pack:\n  join-delay-ticks: 200#' "$RP"
 fi
-sed -i -E "s#^(  port: ).*#\1$HOKA_RESPACK_PORT#; s#^(  public-url: ).*#\1\"http://127.0.0.1:$HOKA_RESPACK_PORT\"#" "$RP"
-grep -q "127.0.0.1:$HOKA_RESPACK_PORT" "$RP" || { echo "не удалось выставить адрес respack в $RP" >&2; exit 1; }
-# respack ждёт HELLO мода pack.join-delay-ticks (по умолчанию 30 тиков = 1,5 с) и только потом шлёт пак игрокам без мода.
-# Клиент на llvmpipe здоровается позже — без запаса ему приходит окно «скачать ресурспак?». На стенде ждём 10 с.
-grep -q 'join-delay-ticks' "$RP" || sed -i -E 's#^pack:\s*$#pack:\n  join-delay-ticks: 200#' "$RP"
 
 [[ -f "$SRV_DIR/ops.json" ]] || printf '[\n  {"uuid": "", "name": "%s"}\n]\n' "$HOKA_PLAYER" > "$SRV_DIR/ops.json"
 

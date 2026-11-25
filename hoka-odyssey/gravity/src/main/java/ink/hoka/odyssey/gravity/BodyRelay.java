@@ -205,6 +205,13 @@ final class BodyRelay {
         }
     }
 
+    /** Игрок ходит по грани в тяготении грани (по последнему повороту; запас проверки скорости — как у блоков). */
+    boolean gravity(UUID id) {
+        Body b = bodies.get(id);
+        Orientation o = b == null ? null : b.orientation;
+        return o != null && o.active() && o.gravity();
+    }
+
     /** Убрать игрока (вышел с сервера). */
     void forget(UUID id) {
         bodies.remove(id);

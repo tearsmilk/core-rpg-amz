@@ -137,6 +137,12 @@ final class BodyPoses {
         return t == null ? -1 : BodyFrame.boxOf(t.flags());
     }
 
+    /** Грань под ногами чужого игрока (по флагам op 3) или −1. */
+    int surface(int entityId) {
+        Track t = tracks.get(entityId);
+        return t == null ? -1 : surfaceOf(t.flags());
+    }
+
     /** Отдать (и забыть) тех, чью рамку пора пересобрать. */
     void drainBoxChanges(java.util.function.IntConsumer action) {
         for (var it = boxChanged.iterator(); it.hasNext(); ) {
