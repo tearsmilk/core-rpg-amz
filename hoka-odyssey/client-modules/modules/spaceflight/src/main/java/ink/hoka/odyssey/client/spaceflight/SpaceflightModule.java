@@ -18,12 +18,13 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 import net.minecraft.client.player.ClientInput;
-import net.minecraft.client.player.KeyboardInput;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
 import org.lwjgl.glfw.GLFW;
 
 import java.io.ByteArrayInputStream;
@@ -35,7 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Живая невесомость в вакууме (мод 0.17+). Включает и выключает её сервер (модуль gravity), он же присылает
+ * Живая невесомость в вакууме (мод 0.48+). Включает и выключает её сервер (модуль gravity), он же присылает
  * список тяготеющих тел. Пока включено:
  * <ul>
  *   <li>инерция: ни сопротивления, ни «ванильной» гравитации 0,08 — скорость меняют только тяготение тел (1/r²,
@@ -47,17 +48,20 @@ import java.util.List;
  *       петля через верх проходит без упора в ±90°. Поворот игрока (прицел, ломание блоков) следует за взглядом;</li>
  *   <li>«магнитные ботинки»: Shift у любого блока (пол, стена, потолок) прижимает к нему — по нему можно ходить,
  *       пробел отталкивает, камера плавно выравнивается так, что поверхность становится «полом»;</li>
- *   <li>тело: свой поворот (и «лёжа» — переключает R) уходит серверу, тот раздаёт его другим игрокам
- *       ({@link BodyPoses}; рисовать повёрнутые тела мод начнёт с крючком onAvatarRotations).</li>
+ *   <li>тело ({@link BodyFrame}, {@link BodyPoses}; крючок ядра onEntityPose): стоишь на поверхности (ботинки
+ *       держат или касаешься блока, который «под ногами» — его нормаль близка к верху камеры) — ноги на ней, лицом
+ *       по взгляду; свободно в пространстве — тело целиком повёрнуто к прицелу. «Лёжа» — переключает R. Поворот
+ *       тела уходит серверу, тот раздаёт его другим игрокам.</li>
  * </ul>
  * Вне вакуума камера плавно возвращается «в горизонт» и дальше не трогается; всё восстанавливается при выключении.
  *
  * <p>Протокол (big-endian). Сервер → клиент: op 1 — тела: u8 op, i32 count, на тело f64 x, y, z, mu, radius,
- * softening; op 2 — физика: u8 op, u8 on [, f64 thrust, f64 maxSpeed — пределы сервера]; op 3 — поворот тела другого игрока: u8 op, i32 entityId, f32 w, x, y, z,
- * u8 flags (бит 0 — лёжа, бит 1 — действует); op 4 — поворот больше не действует: u8 op, i32 entityId.
- * Клиент → сервер: op 3 — свой поворот: u8 op, f32 w, x, y, z (кватернион взгляда FreeLook), u8 flags;
- * op 5 — возможности: u8 op, u8 caps (бит 0 — умеем рисовать повёрнутые тела); op 6 — «модуль загружен»: u8 op
- * (сервер заново шлёт тела и «физика вкл.» — после /hoclient reload).
+ * softening; op 2 — физика: u8 op, u8 on [, f64 thrust, f64 maxSpeed — пределы сервера]; op 3 — поворот тела
+ * другого игрока: u8 op, i32 entityId, f32 w, x, y, z, u8 flags (бит 0 — лёжа, бит 1 — действует, биты 2–4 — грань
+ * под ногами + 1, 0 — свободно); op 4 — поворот больше не действует: u8 op, i32 entityId.
+ * Клиент → сервер: op 3 — свой поворот: u8 op, f32 w, x, y, z (кватернион ТЕЛА без «лёжа», соглашение FreeLook),
+ * u8 flags; op 5 — возможности: u8 op, u8 caps (бит 0 — рисуем повёрнутые тела сами); op 6 — «модуль загружен»:
+ * u8 op (сервер заново шлёт тела и «физика вкл.» — после /hoclient reload).
  *
  * <p>Скорость модуль ведёт сам ({@link VanillaMotion#reconcile}): от vanilla берётся только удар о блок и толчки
  * сервера. Иначе vanilla добавлял бы свой ввод WASD и обнулял слабую тягу (меньше 0,003 блока/тик).
@@ -79,6 +83,10 @@ public final class SpaceflightModule implements ClientModule {
     /** …и только если повернулся больше чем на столько градусов; без изменений — раз в столько тиков. */
     private static final double ORIENT_MIN_DEG = 1.0;
     private static final int ORIENT_KEEPALIVE = 40;
+    /** Касание считается «под ногами», если нормаль блока ближе к верху камеры, чем на 60°. */
+    private static final double FEET_DOT = 0.5;
+    /** Поверхность под ногами пропала — ещё столько тиков считать, что стоим (без дрожи на отскоках). */
+    private static final int STAND_HOLD = 4;
 
     private ClientContext ctx;
     private FlightConfig cfg;
@@ -116,12 +124,15 @@ public final class SpaceflightModule implements ClientModule {
     /** Лёжа (тело вдоль взгляда) — переключается клавишей R в невесомости. */
     private boolean prone;
     private boolean sprintHeld;
-    /** Плавная доля «лёжа» для своего тела в виде от третьего лица. */
+    /** Плавная доля «лёжа» — для запасной позы плавания (ядро без onEntityPose). */
     private float proneAmount;
+    /** Грань под ногами (0..5 — {@link BodyFrame#NORMALS}) или −1 — свободно в пространстве. */
+    private int standSurface = -1;
+    private int standLost;
 
     private BodyPoses bodies;
     private long ticks;
-    private Quat sentLook;
+    private Quat sentBody;
     private int sentFlags = -1;
     private long sentAt;
 
@@ -134,14 +145,17 @@ public final class SpaceflightModule implements ClientModule {
         brakeKey = key(cfg.brakeKey, "key.keyboard.x");
         proneKey = key(cfg.proneKey, "key.keyboard.r");
         bodies = new BodyPoses(ctx, new BodyPoses.Self() {
-            @Override public Quat look() { return active ? look.orientation() : null; }
+            @Override public Quat base() { return active ? BodyFrame.base(look.orientation(), standSurface) : null; }
 
-            @Override public float prone() { return proneAmount; }
+            @Override public int surface() { return standSurface; }
+
+            @Override public boolean prone() { return prone; }
         });
         ctx.onMessage(this::onMessage);
         ctx.onTick(this::tick);
         ctx.onMouse(this::onMouse);
         ctx.onCamera(this::onCamera);
+        ctx.onInput(this::onInput);
         bodies.install();
         ctx.logger().info("spaceflight: загружен (тяга {} б/с², предел {} б/с, стабилизатор {} б/с², тормоз {} — {}, "
                 + "крен {}/{})", cfg.thrust, cfg.maxSpeed, cfg.stabilizer, cfg.brake, cfg.brakeKey, cfg.rollLeft,
@@ -264,6 +278,8 @@ public final class SpaceflightModule implements ClientModule {
         sprintHeld = true;                                         // и не ложиться от R, зажатой до входа
         prone = false;
         proneAmount = 0;
+        standSurface = -1;
+        standLost = 0;
         gripNormal = null;
         gripCooldown = 0;
         lastSet = null;                                            // первый тик — скорость как есть у vanilla
@@ -277,23 +293,23 @@ public final class SpaceflightModule implements ClientModule {
         gripNormal = null;
         prone = false;
         proneAmount = 0;
+        standSurface = -1;
         bound = null;
         if (p != null) {
             p.setNoGravity(savedNoGravity);
             p.setDiscardFriction(savedDiscardFriction);
-            if (p.input instanceof MutedInput) p.input = new KeyboardInput(Minecraft.getInstance().options);
         }
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.screen == null && mc.getWindow() != null) KeyMapping.setAll();   // вернуть зажатые клавиши ходьбе
     }
 
-    /** Пустой ввод игрока: ни ходьбы, ни приседа, ни бега, ни прыжка. */
-    private static final class MutedInput extends ClientInput {}
-
-    private static void muteInput(LocalPlayer p) {
-        if (!(p.input instanceof MutedInput)) p.input = new MutedInput();   // и после респауна (игра создаёт новый)
-        if (p.isSprinting()) p.setSprinting(false);
-        if (p.isShiftKeyDown()) p.setShiftKeyDown(false);
+    /**
+     * Ввод vanilla (крючок ядра onInput, после того как игра прочла клавиши): в невесомости — пустой, ни ходьбы, ни
+     * приседа, ни бега, ни прыжка. Движением управляет модуль, клавиши он читает сам (с учётом переназначения).
+     * Вне невесомости — не трогаем: ввод снова обычный уже со следующего тика.
+     */
+    private void onInput(ClientInput input) {
+        if (!active || input == null) return;
+        input.keyPresses = Input.EMPTY;
+        ctx.setMove(input, 0, 0);
     }
 
     private void physics(Minecraft mc, LocalPlayer p) {
@@ -309,10 +325,10 @@ public final class SpaceflightModule implements ClientModule {
             proneDown = physical(mc, proneKey);
             vert = (jump ? 1 : 0) - (shift ? 1 : 0);
         }
-        // ввод vanilla — пустой: ходьбу, прыжок, присед и бег игра не видит, движением управляет модуль (клавиши
-        // он читает сам). Раньше клавиши «отпускались» в конце тика, но автоповтор клавиши успевал зажать их снова
-        // к следующему тику — присед и бег мигали, и камера дёргалась (высота глаз, угол обзора бега).
-        muteInput(p);
+        // ввод vanilla пустой (onInput): ходьбу, прыжок, присед и бег игра не видит, движением управляет модуль.
+        // Бег и присед, включённые до входа в вакуум, — снять.
+        if (p.isSprinting()) p.setSprinting(false);
+        if (p.isShiftKeyDown()) p.setShiftKeyDown(false);
         if (proneDown && !sprintHeld) {                            // R — лечь / встать
             prone = !prone;
             p.displayClientMessage(Component.literal(prone ? "Лёжа: тело вдоль взгляда (R — встать)"
@@ -338,10 +354,13 @@ public final class SpaceflightModule implements ClientModule {
         boolean brake = input && physical(mc, brakeKey);
 
         Quat q = look.orientation();
-        // магнитные ботинки: Shift у блока — прижаться к поверхности, «под ногами» у которой верх камеры
+        // касание блока: из граней рядом — та, чья нормаль ближе всего к верху камеры («на ней и стоим»)
+        Vec3d contact = surface(p, q.up());
+        // магнитные ботинки: Shift у блока — прижаться к этой поверхности
         if (gripCooldown > 0) gripCooldown--;
-        gripNormal = shift && gripCooldown == 0 ? surface(p, q.up()) : null;
+        gripNormal = shift && gripCooldown == 0 ? contact : null;
         boolean gripping = gripNormal != null;
+        updateStand(gripping ? gripNormal : (contact != null && contact.dot(q.up()) > FEET_DOT ? contact : null));
         double ax = 0, ay = 0, az = 0;
         boolean grounded = p.onGround();
         boolean keys = fwd != 0 || side != 0 || vert != 0;
@@ -395,6 +414,21 @@ public final class SpaceflightModule implements ClientModule {
         lastPos = pos;
         p.setDeltaMovement(lastSet);
         p.resetFallDistance();
+    }
+
+    /**
+     * Поверхность под ногами для позы тела: ботинки держат — их грань; касаемся грани «под ногами» — она; иначе
+     * свободно. Пропала — держим ещё {@link #STAND_HOLD} тиков (отскоки, зазор в доли блока не дёргают тело).
+     */
+    private void updateStand(Vec3d feet) {
+        int idx = BodyFrame.normalIndex(feet);
+        if (idx >= 0) {
+            standSurface = idx;
+            standLost = 0;
+        } else if (standSurface >= 0 && ++standLost > STAND_HOLD) {
+            standSurface = -1;
+            standLost = 0;
+        }
     }
 
     /** Тяга ранца: своя настройка, но не больше серверной (если сервер прислал). */
@@ -478,26 +512,27 @@ public final class SpaceflightModule implements ClientModule {
     // ---------------------------------------------------------------- поворот тела — серверу
 
     /**
-     * Свой поворот серверу (C2S op 3): не чаще ~10 раз в секунду и только при изменении больше чем на
+     * Свой поворот серверу (C2S op 3): кватернион ТЕЛА без «лёжа» ({@link BodyFrame#base}) и флаги (лёжа, грань под
+     * ногами) — зрители по ним строят ту же позу. Не чаще ~10 раз в секунду и только при изменении больше чем на
      * {@link #ORIENT_MIN_DEG}° или флагов; без изменений — изредка, чтобы сервер не забыл. stop — «больше не действует».
      */
     private void sendOrientation(boolean stop) {
         if (stop) {
             if (sentFlags > 0 && (sentFlags & BodyPoses.FLAG_ACTIVE) != 0) {
-                send(orientation(look.orientation(), 0));
+                send(orientation(sentBody != null ? sentBody : look.orientation(), 0));
             }
             sentFlags = -1;
-            sentLook = null;
+            sentBody = null;
             return;
         }
         if (ticks % ORIENT_EVERY != 0) return;
-        Quat q = look.orientation();
-        int flags = BodyPoses.FLAG_ACTIVE | (prone ? BodyPoses.FLAG_PRONE : 0);
-        boolean changed = flags != sentFlags || sentLook == null
-                || Math.toDegrees(FreeLook.angle(q, sentLook)) > ORIENT_MIN_DEG;
+        Quat q = BodyFrame.base(look.orientation(), standSurface);
+        int flags = BodyPoses.flags(true, prone, standSurface);
+        boolean changed = flags != sentFlags || sentBody == null
+                || Math.toDegrees(FreeLook.angle(q, sentBody)) > ORIENT_MIN_DEG;
         if (!changed && ticks - sentAt < ORIENT_KEEPALIVE) return;
         send(orientation(q, flags));
-        sentLook = q;
+        sentBody = q;
         sentFlags = flags;
         sentAt = ticks;
     }
@@ -571,9 +606,9 @@ public final class SpaceflightModule implements ClientModule {
             Vec3d n = gripNormal;
             if (n != null && cfg.surfaceAlignRate > 0) look.alignUp(n, 1 - Math.exp(-cfg.surfaceAlignRate * dt));
             proneAmount += (float) (((prone ? 1 : 0) - proneAmount) * (1 - Math.exp(-8 * dt)));
-            // лёжа — на животе, как в воде: ванильная анимация плавания (видно в F5); другим игрокам сервер
-            // показывает позу полёта на элитрах
-            if (prone || proneAmount > 0.01f) SwimLook.apply(mc.player, proneAmount);
+            // ядро без onEntityPose — лёжа показываем ванильной анимацией плавания (видно в F5); с крючком позу
+            // целиком задаёт BodyPoses (иначе плавание повернуло бы тело второй раз)
+            if (!bodies.hooked() && (prone || proneAmount > 0.01f)) SwimLook.apply(mc.player, proneAmount);
             look.decompose();
             syncPlayer(bound);
         } else {
@@ -591,13 +626,16 @@ public final class SpaceflightModule implements ClientModule {
             }
             look.decompose();
         }
-        cam.yaw = look.yaw;
-        cam.pitch = look.pitch;
         // Камера игры строит поворот как Ry(π−yaw)·Rx(−pitch)·Rz(roll) и смотрит вдоль −Z, а FreeLook —
-        // Ry(−yaw)·Rx(pitch)·Rz(roll) со взглядом вдоль +Z. Это одно и то же, только с поворотом на 180° вокруг Y,
-        // который меняет знак крена. Без минуса картинка крутилась в обратную сторону, и мышь «вниз» при крене
-        // уводила взгляд вбок.
-        cam.roll = -look.roll;
+        // Ry(−yaw)·Rx(pitch)·Rz(roll) со взглядом вдоль +Z: Qcam = Qlook·Ry(π) (крен меняет знак). Полный поворот —
+        // кватернионом (CameraState.rotation): без особых точек у «прямо вверх/вниз»; углы — тоже (звук и прочее).
+        // F5 «лицом к себе» (зеркальный вид): игра берёт yaw+180, −pitch — это Qcam·Ry(π) = Qlook.
+        boolean mirrored = cam.detached && mc.options.getCameraType().isMirrored();
+        Quat q = mirrored ? look.orientation() : BodyFrame.camera(look.orientation());
+        cam.rotation = new Quaternionf((float) q.x(), (float) q.y(), (float) q.z(), (float) q.w());
+        cam.yaw = mirrored ? look.yaw + 180 : look.yaw;
+        cam.pitch = mirrored ? -look.pitch : look.pitch;
+        cam.roll = mirrored ? look.roll : -look.roll;
     }
 
     /** Поворот игрока — за взглядом (прицел, ломание блоков, то, что видят другие). pitch уже в [−90; 90]. */

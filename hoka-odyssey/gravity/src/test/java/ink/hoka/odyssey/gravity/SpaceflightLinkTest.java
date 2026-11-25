@@ -37,10 +37,29 @@ class SpaceflightLinkTest {
         assertNotNull(o);
         assertEquals(1, o.w(), 1e-6);
         assertEquals(0, o.x(), 1e-6);
-        // неизвестные биты отброшены
+        // неизвестные биты отброшены, неверная грань под ногами (7) — «свободно»
         assertEquals(SpaceflightLink.FLAG_PRONE | SpaceflightLink.FLAG_ACTIVE, o.flags());
         assertTrue(o.prone());
         assertTrue(o.active());
+        assertEquals(-1, o.surface());
+    }
+
+    @Test
+    void surfaceBits() throws IOException {
+        for (int s = 0; s < SpaceflightLink.SURFACES; s++) {
+            int raw = SpaceflightLink.FLAG_ACTIVE | ((s + 1) << SpaceflightLink.SURFACE_SHIFT) | 0xE0;
+            Orientation o = SpaceflightLink.decodeOrientation(c2s(1, 0, 0, 0, raw));
+            assertNotNull(o);
+            assertEquals(s, o.surface());
+            assertFalse(o.prone());
+            assertTrue(o.active());
+            // зрителям уходит как есть (без старших мусорных битов)
+            byte[] out = SpaceflightLink.orientation(7, o);
+            assertEquals(SpaceflightLink.FLAG_ACTIVE | ((s + 1) << SpaceflightLink.SURFACE_SHIFT), out[21] & 0xFF);
+        }
+        assertEquals(-1, SpaceflightLink.decodeOrientation(c2s(1, 0, 0, 0, 2)).surface());   // свободно
+        assertEquals(SpaceflightLink.FLAG_ACTIVE, SpaceflightLink.sanitizeFlags(2 | (7 << 2)));
+        assertEquals(SpaceflightLink.FLAG_PRONE | (6 << 2), SpaceflightLink.sanitizeFlags(1 | (6 << 2) | 0x80));
     }
 
     @Test

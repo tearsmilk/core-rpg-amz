@@ -27,8 +27,10 @@ import org.slf4j.Logger;
  *   <li>op 2 — физика игрока вкл/выкл: u8 op, u8 on (1 — клиент считает вакуум сам, 0 — не считает); при on = 1
  *       дальше пределы сервера: f64 thrust (ускорение ранца, б/с²), f64 maxSpeed (предел скорости, б/с; 0 — нет).
  *       Клиент берёт меньшее из своих настроек и этих; старый клиент лишние байты не читает;</li>
- *   <li>op 3 — поворот тела другого игрока: u8 op, i32 entityId, f32 w, x, y, z (кватернион взгляда в соглашении
- *       FreeLook/spacephys), u8 flags (бит 0 — лёжа, бит 1 — поворот действует);</li>
+ *   <li>op 3 — поворот тела другого игрока: u8 op, i32 entityId, f32 w, x, y, z (кватернион тела без «лёжа» в
+ *       соглашении FreeLook/spacephys: свободно — это взгляд, на поверхности — верх по её нормали, лицом по взгляду),
+ *       u8 flags (бит 0 — лёжа, бит 1 — поворот действует, биты 2–4 — грань под ногами + 1: 1 +X, 2 −X, 3 +Y,
+ *       4 −Y, 5 +Z, 6 −Z; 0 — свободно в пространстве);</li>
  *   <li>op 4 — поворот тела другого игрока больше не действует: u8 op, i32 entityId (вышел из вакуума, ушёл).</li>
  * </ul>
  * Клиент → сервер:
@@ -53,6 +55,10 @@ final class SpaceflightLink {
     /** Флаги поворота: лёжа (тело вдоль взгляда) и «поворот действует». */
     static final int FLAG_PRONE = 1;
     static final int FLAG_ACTIVE = 2;
+    /** Биты 2–4 флагов: грань под ногами + 1 (1..6), 0 — свободно в пространстве; 7 — неверно (отбрасывается). */
+    static final int SURFACE_SHIFT = 2;
+    static final int SURFACE_MASK = 7 << SURFACE_SHIFT;
+    static final int SURFACES = 6;
     /** Возможность клиента: сам рисует повёрнутые тела игроков. */
     static final int CAP_AVATAR_ROTATION = 1;
     private static final String API = "ink.hoka.odyssey.clientmods.ClientModsApi";
@@ -220,11 +226,17 @@ final class SpaceflightLink {
     }
 
     /**
-     * Поворот взгляда игрока (кватернион spacephys/FreeLook: взгляд +Z, верх +Y) и флаги. Кватернион единичный.
+     * Поворот тела игрока без «лёжа» (кватернион spacephys/FreeLook: лицо +Z, верх +Y) и флаги. Кватернион единичный.
      */
     record Orientation(float w, float x, float y, float z, int flags) {
         boolean prone() {
             return (flags & FLAG_PRONE) != 0;
+        }
+
+        /** Грань под ногами: 0..5 (+X, −X, +Y, −Y, +Z, −Z) или −1 — свободно в пространстве. */
+        int surface() {
+            int v = (flags & SURFACE_MASK) >>> SURFACE_SHIFT;
+            return v >= 1 && v <= SURFACES ? v - 1 : -1;
         }
 
         boolean active() {
@@ -252,7 +264,8 @@ final class SpaceflightLink {
 
     /**
      * Разобрать C2S op 3 (свой поворот). null — не op 3, короткое, не числа или нулевой кватернион. Кватернион
-     * нормируется, неизвестные биты флагов отбрасываются. Лишние байты в конце допускаются (новая версия клиента).
+     * нормируется, неизвестные биты флагов отбрасываются (грань под ногами 7 — тоже: «свободно»). Лишние байты в
+     * конце допускаются (новая версия клиента).
      */
     static Orientation decodeOrientation(byte[] data) {
         if (data == null || data.length < 18 || (data[0] & 0xFF) != OP_ORIENT) {
@@ -263,7 +276,7 @@ final class SpaceflightLink {
             double x = in.readFloat();
             double y = in.readFloat();
             double z = in.readFloat();
-            int flags = in.readUnsignedByte() & (FLAG_PRONE | FLAG_ACTIVE);
+            int flags = sanitizeFlags(in.readUnsignedByte());
             if (!(Double.isFinite(w) && Double.isFinite(x) && Double.isFinite(y) && Double.isFinite(z))) {
                 return null;
             }
@@ -275,6 +288,16 @@ final class SpaceflightLink {
         } catch (IOException e) {
             return null;
         }
+    }
+
+    /** Оставить только известные биты флагов; неверная грань под ногами (7) — «свободно». */
+    static int sanitizeFlags(int raw) {
+        int flags = raw & (FLAG_PRONE | FLAG_ACTIVE | SURFACE_MASK);
+        int surface = (flags & SURFACE_MASK) >>> SURFACE_SHIFT;
+        if (surface > SURFACES) {
+            flags &= ~SURFACE_MASK;
+        }
+        return flags;
     }
 
     /** Разобрать C2S op 5 (возможности клиента); −1 — не op 5 или короткое. */

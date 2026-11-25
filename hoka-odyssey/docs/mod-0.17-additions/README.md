@@ -1,3 +1,8 @@
+> **Устарело (мод 0.48.0).** Почти всё отсюда уже есть в моде: `CameraState.rotation` (раздел 1), `onInput` +
+> `setMove`, `onLocalTravel`, поворот тел — `onEntityPose`/`onEntityTilt` (вместо `onAvatarRotations`). Модуль
+> `spaceflight` перешёл на них. Что ещё нужно добавить — только сдвиг модели в `EntityPose`:
+> [`docs/mod-additions/README.md`](../mod-additions/README.md). Ниже — исторический документ, не для реализации.
+
 # Что добавить в следующую версию мода (после 0.17.0)
 
 Здесь только то, что нужно для **живой невесомости и свободного полёта** (клиентский модуль `spaceflight`),

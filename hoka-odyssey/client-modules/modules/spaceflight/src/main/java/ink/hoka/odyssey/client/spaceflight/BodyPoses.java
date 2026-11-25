@@ -1,68 +1,86 @@
 package ink.hoka.odyssey.client.spaceflight;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import ink.hoka.odyssey.client.api.ClientContext;
 import ink.hoka.odyssey.spacephys.Quat;
 import ink.hoka.odyssey.spacephys.Vec3d;
-import net.minecraft.client.renderer.entity.state.AvatarRenderState;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
+import org.joml.Quaternionfc;
+import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Повёрнутые тела игроков (свои и чужие). Ориентации других игроков присылает сервер (op 3 — кватернион взгляда и
- * флаги, op 4 — «больше не действует»), между пакетами (~10 в секунду) поворот плавно доводится slerp.
+ * Повёрнутые тела игроков в невесомости — свой (вид от третьего лица) и чужие — через крючок ядра
+ * {@code onEntityPose} (мод 0.48+). Поворот других игроков присылает сервер (op 3 — кватернион ТЕЛА без «лёжа» и
+ * флаги, op 4 — «больше не действует»), между пакетами (~10 в секунду) он плавно доводится slerp, а смена режима
+ * (свободно / на поверхности / лёжа) — плавным переходом {@link #MODE_BLEND_NS}.
  * <p>
- * Рисовать тело повёрнутым в моде 0.17 нечем: нужен крючок {@code onAvatarRotations} (см.
- * docs/mod-0.17-additions). Он ищется рефлексией — появится в моде, и поворот заработает сам. Пока его нет,
- * лежащих игроков показывает сервер запасной позой (поза полёта на элитрах).
+ * Правило (см. {@link BodyFrame}): стоит на поверхности — ноги на ней, верх тела по её нормали, лицом по взгляду;
+ * свободно в пространстве — тело целиком повёрнуто к прицелу (верх — по верху камеры), вокруг середины тела.
  * <p>
- * Тело стоя — верх вдоль верха камеры, лицом по взгляду; лёжа («супермен») — макушка по взгляду, грудь к низу
- * камеры. Голова при этом не поворачивается отдельно от тела. Поворот — вокруг середины тела.
+ * Сдвиг модели (ноги на стене, поворот вокруг середины) ядро 0.48 не умеет — оно крутит модель только вокруг ног.
+ * Добавка в мод — {@code EntityPose.offset} (docs/mod-additions); есть ли она, ищется рефлексией один раз: есть —
+ * модель ставится точно, нет — поворот вокруг ног (как умеет ядро).
  */
 final class BodyPoses {
     static final int OP_ORIENT = 3;
     static final int OP_ORIENT_STOP = 4;
     static final int OP_CAPS = 5;
-    static final int FLAG_PRONE = 1;
-    static final int FLAG_ACTIVE = 2;
+    static final int FLAG_PRONE = BodyFrame.FLAG_PRONE;
+    static final int FLAG_ACTIVE = BodyFrame.FLAG_ACTIVE;
     static final int CAP_AVATAR_ROTATION = 1;
     /** За сколько доводить поворот до присланного (ожидаемый промежуток между пакетами), нс. */
     private static final long BLEND_NS = 110_000_000L;
+    /** Смена режима (свободно / поверхность / лёжа) — плавно за столько, нс. */
+    static final long MODE_BLEND_NS = 150_000_000L;
     /** Нет пакетов дольше — забыть игрока (сервер повторяет раз в секунду). */
     private static final long STALE_NS = 3_000_000_000L;
 
-    /** Лёжа: тело повёрнуто на +90° вокруг поперечной оси (макушка — вперёд по взгляду). */
-    private static final Quat PRONE = Quat.axisAngle(new Vec3d(1, 0, 0), Math.PI / 2);
-    /** Модель игрока в PoseStack смотрит вдоль −Z, а взгляд FreeLook — вдоль +Z: поворот на 180° вокруг Y. */
-    private static final Quat MODEL = Quat.axisAngle(Quat.UP, Math.PI);
+    /** Конструктор EntityPose с пятым полем offset (добавка в мод); null — ядро без неё. */
+    private static final MethodHandle POSE_WITH_OFFSET = findPoseWithOffset();
 
-    /** Чужое тело: от какого поворота к какому идём и когда начали. */
-    private record Track(Quat from, Quat to, float proneFrom, float proneTo, long t0) {
-        Quat look(long now) { return FreeLook.slerp(from, to, t(now)); }
+    /** Свой игрок. */
+    interface Self {
+        /** Основа тела (без «лёжа») прямо сейчас; null — свой игрок не в невесомости (рисовать как обычно). */
+        Quat base();
 
-        float prone(long now) { return (float) (proneFrom + (proneTo - proneFrom) * t(now)); }
+        /** Грань под ногами (0..5) или −1 — свободно. */
+        int surface();
 
-        double t(long now) { return FreeLook.clamp((now - t0) / (double) BLEND_NS, 0, 1); }
+        boolean prone();
     }
 
-    /** Свой игрок (вид от третьего лица): поворот взгляда прямо сейчас и доля «лёжа». */
-    interface Self {
-        /** null — свой игрок сейчас не в невесомости (рисовать как обычно). */
-        Quat look();
+    /** Чужое тело: от какого поворота к какому идём, когда начали, флаги последнего пакета. */
+    private record Track(Quat from, Quat to, long t0, int flags) {
+        Quat base(long now) { return FreeLook.slerp(from, to, FreeLook.clamp((now - t0) / (double) BLEND_NS, 0, 1)); }
+    }
 
-        float prone();
+    /** Показанная поза и переход между режимами (только поток отрисовки). */
+    private static final class Blend {
+        int key = Integer.MIN_VALUE;
+        Quat fromBody;
+        Vec3d fromCentre;
+        long t0;
+        Quat shownBody;
+        Vec3d shownCentre;
+        long used;
     }
 
     private final ClientContext ctx;
     private final Self self;
     private final Map<Integer, Track> tracks = new ConcurrentHashMap<>();
+    private final Map<Integer, Blend> blends = new ConcurrentHashMap<>();
     private volatile boolean hooked;
     private volatile boolean enabled = true;
 
@@ -71,50 +89,28 @@ final class BodyPoses {
         this.self = self;
     }
 
-    /** Есть ли в моде крючок поворота тел (тогда сервер не шлёт этому клиенту запасную позу). */
+    /** Есть ли в ядре крючок поворота тел (тогда сервер не шлёт этому клиенту запасную позу). */
     boolean hooked() { return hooked; }
 
-    /**
-     * Повесить крючок onAvatarRotations, если он есть в моде. Сигнатура (как в старом патче ядра):
-     * {@code void onAvatarRotations(AvatarRotHook)}, {@code boolean apply(int entityId, AvatarRenderState s,
-     * PoseStack pose, float bodyRot, float scale)}; true — ванильный поворот не делать.
-     */
+    /** Ставит ли ядро модель со сдвигом (добавка EntityPose.offset). */
+    static boolean offsetSupported() { return POSE_WITH_OFFSET != null; }
+
+    /** Повесить крючок onEntityPose (в ClientContext он default-метод: в старом ядре — пустой, крючка нет). */
     void install() {
-        Method reg = null;
-        for (Method m : ClientContext.class.getMethods()) {
-            if (m.getName().equals("onAvatarRotations") && m.getParameterCount() == 1
-                    && m.getParameterTypes()[0].isInterface()) {
-                reg = m;
-                break;
-            }
-        }
-        if (reg == null) {
-            ctx.logger().info("spaceflight: в моде нет крючка onAvatarRotations — повёрнутые тела других игроков "
-                    + "не рисуются, лежащих показывает сервер (поза полёта)");
-            return;
-        }
-        Class<?> hook = reg.getParameterTypes()[0];
-        InvocationHandler h = (proxy, method, args) -> {
-            switch (method.getName()) {
-                case "equals" -> { return args != null && args.length == 1 && proxy == args[0]; }
-                case "hashCode" -> { return System.identityHashCode(proxy); }
-                case "toString" -> { return "spaceflight:onAvatarRotations"; }
-                default -> { }
-            }
-            boolean r = false;
-            if (args != null && args.length == 5 && args[0] instanceof Integer id
-                    && args[1] instanceof AvatarRenderState s && args[2] instanceof PoseStack pose) {
-                r = apply(id, s, pose);
-            }
-            return method.getReturnType() == boolean.class ? (Object) r : null;
-        };
         try {
-            Object proxy = Proxy.newProxyInstance(hook.getClassLoader(), new Class<?>[] {hook}, h);
-            reg.invoke(ctx, proxy);
+            var m = ctx.getClass().getMethod("onEntityPose", ClientContext.EntityPoseHook.class);
+            if (m.getDeclaringClass().isInterface()) {
+                ctx.logger().info("spaceflight: в ядре нет onEntityPose — тела других игроков не поворачиваются, "
+                        + "лежащих показывает сервер (поза полёта)");
+                return;
+            }
+            ctx.onEntityPose(this::pose);
             hooked = true;
-            ctx.logger().info("spaceflight: крючок onAvatarRotations найден — тела игроков в невесомости поворачиваются");
+            ctx.logger().info("spaceflight: тела игроков в невесомости поворачиваются (onEntityPose){}",
+                    offsetSupported() ? ", со сдвигом модели (EntityPose.offset)"
+                            : "; ядро без EntityPose.offset — поворот вокруг ног (docs/mod-additions)");
         } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
-            ctx.logger().warn("spaceflight: крючок onAvatarRotations не подключился: {}", e.toString());
+            ctx.logger().warn("spaceflight: крючок onEntityPose не подключился: {}", e.toString());
         }
     }
 
@@ -122,9 +118,19 @@ final class BodyPoses {
     void disable() {
         enabled = false;
         tracks.clear();
+        blends.clear();
     }
 
-    void clear() { tracks.clear(); }
+    void clear() {
+        tracks.clear();
+        blends.clear();
+    }
+
+    static int flags(boolean active, boolean prone, int surface) { return BodyFrame.flags(active, prone, surface); }
+
+    static int surfaceOf(int flags) { return BodyFrame.surfaceOf(flags); }
+
+    // ---------------------------------------------------------------- сеть
 
     /** S2C op 3: u8 op (уже прочитан), i32 entityId, f32 w, x, y, z, u8 flags. */
     void readOrientation(DataInputStream in, int available) throws IOException {
@@ -140,12 +146,11 @@ final class BodyPoses {
             return;
         }
         Quat q = new Quat(w / n, x / n, y / n, z / n);
-        float prone = (flags & FLAG_PRONE) != 0 ? 1 : 0;
         long now = System.nanoTime();
         Track old = tracks.get(id);
-        Track t = old == null || now - old.t0() > STALE_NS
-                ? new Track(q, q, prone, prone, now)
-                : new Track(old.look(now), q, old.prone(now), prone, now);
+        Track t = old == null || now - old.t0() > STALE_NS || surfaceOf(old.flags()) != surfaceOf(flags)
+                ? new Track(q, q, now, flags)                  // новый режим — переход сделает Blend
+                : new Track(old.base(now), q, now, flags);
         tracks.put(id, t);
     }
 
@@ -155,44 +160,92 @@ final class BodyPoses {
         tracks.remove(in.readInt());
     }
 
-    /** Раз в секунду: забыть тех, о ком сервер давно молчит (ушёл из виду). */
+    /** Раз в секунду: забыть тех, о ком сервер давно молчит (ушёл из виду), и давно не рисованные позы. */
     void prune() {
         long now = System.nanoTime();
         tracks.values().removeIf(t -> now - t.t0() > STALE_NS);
+        blends.values().removeIf(b -> now - b.used > STALE_NS);
     }
 
-    /** Тело по взгляду и доле «лёжа» (0 — стоя, 1 — лёжа), соглашение FreeLook. */
-    static Quat body(Quat look, float prone) {
-        if (prone <= 0) return look;
-        Quat lying = look.mul(PRONE);
-        return prone >= 1 ? lying : FreeLook.slerp(look, lying, prone);
-    }
+    // ---------------------------------------------------------------- отрисовка
 
-    /** Крючок рисования: true — повернули сами, ванильный поворот не нужен. */
-    private boolean apply(int id, AvatarRenderState s, PoseStack pose) {
-        if (!enabled) return false;
-        Quat look;
-        float prone;
-        var me = net.minecraft.client.Minecraft.getInstance().player;
-        if (me != null && me.getId() == id) {
-            look = self.look();
+    private ClientContext.EntityPose pose(Entity e, float partialTick) {
+        if (!enabled || !(e instanceof Player)) return null;
+        int id = e.getId();
+        Quat base;
+        int surface;
+        boolean prone;
+        long now = System.nanoTime();
+        Minecraft mc = Minecraft.getInstance();
+        if (e == mc.player) {
+            base = self.base();
+            surface = self.surface();
             prone = self.prone();
         } else {
             Track t = tracks.get(id);
-            if (t == null) return false;
-            long now = System.nanoTime();
-            look = t.look(now);
-            prone = t.prone(now);
+            base = t == null ? null : t.base(now);
+            int f = t == null ? 0 : t.flags();
+            surface = surfaceOf(f);
+            prone = (f & FLAG_PRONE) != 0;
         }
-        if (look == null) return false;
-        Quat r = body(look, prone).mul(MODEL);
-        float half = s.boundingBoxHeight * 0.5f;
-        pose.translate(0, half, 0);
-        pose.mulPose(new Quaternionf((float) r.x(), (float) r.y(), (float) r.z(), (float) r.w()));
-        pose.translate(0, -half, 0);
-        // голова — вместе с телом: стоя прямо, лёжа запрокинута вперёд по взгляду
-        s.yRot = 0;
-        s.xRot = -90f * prone;
-        return true;
+        if (base == null) {
+            blends.remove(id);
+            return null;
+        }
+        double h = e.getBbHeight(), w = e.getBbWidth();
+        Quat body = BodyFrame.body(base, prone ? 1 : 0);
+        Vec3d centre = BodyFrame.centre(surface, prone, h, w);
+        Blend b = blends.computeIfAbsent(id, k -> new Blend());
+        int key = (surface + 1) * 2 + (prone ? 1 : 0);
+        if (b.key == Integer.MIN_VALUE) {                      // только что начали — от обычной позы стоя
+            float yaw = e instanceof LivingEntity le ? le.yBodyRot : e.getYRot();
+            b.fromBody = Quat.fromYawPitchRoll(yaw, 0, 0);
+            b.fromCentre = new Vec3d(0, h / 2, 0);
+            b.t0 = now;
+            b.key = key;
+        } else if (key != b.key) {
+            b.fromBody = b.shownBody;
+            b.fromCentre = b.shownCentre;
+            b.t0 = now;
+            b.key = key;
+        }
+        double s = FreeLook.clamp((now - b.t0) / (double) MODE_BLEND_NS, 0, 1);
+        if (s < 1) {
+            s = s * s * (3 - 2 * s);                           // мягкий старт и остановка
+            body = FreeLook.slerp(b.fromBody, body, s);
+            centre = BodyFrame.lerp(b.fromCentre, centre, s);
+        }
+        b.shownBody = body;
+        b.shownCentre = centre;
+        b.used = now;
+
+        Vec3 v = e.getViewVector(partialTick);
+        float[] head = BodyFrame.head(body, new Vec3d(v.x, v.y, v.z));
+        Quaternionf tilt = new Quaternionf((float) body.x(), (float) body.y(), (float) body.z(), (float) body.w());
+        Vec3d off = BodyFrame.offset(body, centre, h);
+        return make(tilt, head[0], head[1], new Vector3f((float) off.x(), (float) off.y(), (float) off.z()));
+    }
+
+    /** EntityPose: bodyYaw = 0 (поворот тела целиком в tilt), голова — в системе тела; offset — если ядро умеет. */
+    private static ClientContext.EntityPose make(Quaternionf tilt, float headYaw, float headPitch, Vector3fc offset) {
+        MethodHandle h = POSE_WITH_OFFSET;
+        if (h != null) {
+            try {
+                return (ClientContext.EntityPose) h.invoke((Quaternionfc) tilt, 0f, headYaw, headPitch, offset);
+            } catch (Throwable ignored) {
+                // не вышло — без сдвига
+            }
+        }
+        return new ClientContext.EntityPose(tilt, 0f, headYaw, headPitch);
+    }
+
+    private static MethodHandle findPoseWithOffset() {
+        try {
+            var c = ClientContext.EntityPose.class.getConstructor(Quaternionfc.class, float.class, float.class,
+                    float.class, Vector3fc.class);
+            return MethodHandles.publicLookup().unreflectConstructor(c);
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
+            return null;
+        }
     }
 }
