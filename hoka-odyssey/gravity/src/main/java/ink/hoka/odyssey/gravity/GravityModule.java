@@ -120,6 +120,11 @@ public final class GravityModule extends OdysseyModule {
     private static final double REST_SPEED = 1.0;
     /** Сколько тиков после касания ещё действует запас (оттолкнулся и отлетел). */
     private static final int SURFACE_HOLD = 20;
+    /**
+     * Тяготение грани: запас surface-walk, пока блок ближе этого (блоков) — прыжок vanilla поднимает на ~1,25 от
+     * грани, сервер отстаёт; дальше — обычная проверка касания (и SURFACE_HOLD после неё).
+     */
+    private static final double GRAVITY_PROBE = 2.0;
     /** Скорость в action bar — раз в столько тиков. */
     private static final int READOUT_TICKS = 10;
     /** Гравитация игрока по умолчанию в Minecraft, блоков/тик². */
@@ -898,8 +903,11 @@ public final class GravityModule extends OdysseyModule {
         sp.state.setVelocity(m[0], m[1], m[2]);
         sp.guard.measured(sp.lastStep() * Settings.TPS);
         // у блока клиент может ходить по стене/потолку и отталкиваться — шаг и прыжок не ускорение ранца
-        if (bodyRelay.gravity(p.getUuid())) {
-            sp.surfaceTicks = SURFACE_HOLD;                // тяготение грани: прыжок и падение обратно — ходьба
+        // тяготение грани (флаг клиента): прыжок и падение обратно — ходьба, но только рядом с блоками (флагу одному
+        // не верим: иначе запас surface-walk был бы и в открытом космосе)
+        Instance gi = bodyRelay.gravity(p.getUuid()) ? p.getInstance() : null;
+        if (gi != null && near(gi, p, p.getPosition(), GRAVITY_PROBE)) {
+            sp.surfaceTicks = SURFACE_HOLD;
         } else if ((ticks + p.getEntityId()) % SURFACE_CHECK == 0) {
             Instance instance = p.getInstance();
             boolean touching = instance != null && touching(instance, p, p.getPosition());
@@ -968,6 +976,20 @@ public final class GravityModule extends OdysseyModule {
     /** Запас проверки скорости сверх физики сейчас: толчок от блока и (у блоков) ходьба по стенам, блоки/с. */
     private static double allowance(Spacer sp, RealPhysics rp) {
         return rp.pushOff() + (sp.surfaceTicks > 0 ? rp.surfaceWalk() : 0);
+    }
+
+    /** Есть ли блок с любой из шести сторон рамки ближе probe (без взаимного гашения противоположных сторон). */
+    private static boolean near(Instance instance, Player p, Pos pos, double probe) {
+        for (int axis = 0; axis < 3; axis++) {
+            for (int sign = -1; sign <= 1; sign += 2) {
+                Vec d = new Vec(axis == 0 ? sign * probe : 0, axis == 1 ? sign * probe : 0, axis == 2 ? sign * probe : 0);
+                PhysicsResult r = sweep(instance, p, pos, d);
+                if (r != null && (axis == 0 ? r.collisionX() : axis == 1 ? r.collisionY() : r.collisionZ())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /** Касается ли игрок блоков (для запаса проверки скорости; проба шире, чем у толчка). */
