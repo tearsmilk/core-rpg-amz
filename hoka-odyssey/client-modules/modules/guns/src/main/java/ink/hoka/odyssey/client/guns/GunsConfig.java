@@ -39,6 +39,10 @@ final class GunsConfig {
             hud = true
             # Свой гладкий моноширинный шрифт HUD (false — шрифт игры)
             mono_digits = true
+            # Руки игрока (его скин) на оружии от первого лица, как в TACZ
+            arms = true
+            # Поза тела с оружием от третьего лица (свой в F5 и другие игроки): нужен крючок ядра onModelParts (0.56+)
+            third_person = true
             """;
 
     String reloadKey = "key.keyboard.r";
@@ -51,6 +55,8 @@ final class GunsConfig {
     float volume = 1f;
     boolean hud = true;
     boolean monoDigits = true;
+    boolean arms = true;
+    boolean thirdPerson = true;
 
     static GunsConfig load(Path dir, Logger log) {
         GunsConfig c = new GunsConfig();
@@ -74,6 +80,8 @@ final class GunsConfig {
             c.volume = (float) num(p, "volume", c.volume, 0, 1);
             c.hud = bool(p, "hud", c.hud);
             c.monoDigits = bool(p, "mono_digits", c.monoDigits);
+            c.arms = bool(p, "arms", c.arms);
+            c.thirdPerson = bool(p, "third_person", c.thirdPerson);
         } catch (IOException | RuntimeException e) {
             log.warn("guns: не удалось прочитать {} — значения по умолчанию ({})", file, e.toString());
         }

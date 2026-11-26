@@ -24,7 +24,8 @@
 | Файл здесь | Оригинал в паке (`assets/tacz/…`) | Что сделано |
 |---|---|---|
 | `models/ak47.bbmodel` | `geo_models/gun/ak47_geo.json`, `textures/gun/uv/ak47.png`, `animations/ak47.animation.json` | техническая конвертация формата Bedrock geo → Blockbench .bbmodel (CC 4.0 §2(a)(4)); текстура вложена как есть; кости, которые TACZ показывает только с обвесами (`mag_extended_1/2/3`, `mount`, `oem_stock_heavy`, `oem_stock_light`, `ar_stock_adapter`), не перенесены (часть материала, §2(a)(1)(A)); у костей `lefthand_pos`/`righthand_pos` убраны кубы-заглушки рук (это не арт оружия, TACZ их тоже не рисует) |
-| `models/ak47_lod.bbmodel` | `geo_models/gun/lod/ak47.json`, `textures/gun/lod/ak47.png` | та же конвертация формата; добавлен раздел `display` (положение в руке/на земле/в рамке для нашего движка — как отдельный `display/guns/ak47_display.json` у TACZ, сама модель не меняется) |
+| `models/ak47_lod.bbmodel` | `geo_models/gun/lod/ak47.json`, `textures/gun/lod/ak47.png` | та же конвертация формата; добавлен раздел `display` (положение в руке/на земле/в рамке для нашего движка — как отдельный `display/guns/ak47_display.json` у TACZ и его кость `thirdperson_hand`, сама модель не меняется; от третьего лица — как у TACZ: точка `thirdperson_hand` в руке, ствол вдоль руки, масштаб 0,6) |
+| `animations/rifle_default.player_animation.json` | `player_animator/rifle_default.player_animation.json` | без изменений (анимации тела игрока с винтовкой от третьего лица; читает их наш клиентский модуль) |
 | `textures/ak47.png`, `ak47_lod.png`, `ak47_slot.png`, `ak47_hud.png` | `textures/gun/uv/ak47.png`, `textures/gun/lod/ak47.png`, `textures/gun/slot/ak47.png`, `textures/gun/hud/ak47.png` | без изменений |
 | `textures/762x39.png` | `textures/ammo/slot/762x39.png` | без изменений |
 | `textures/common_muzzle_flash.png` | `textures/flash/common_muzzle_flash.png` | без изменений |

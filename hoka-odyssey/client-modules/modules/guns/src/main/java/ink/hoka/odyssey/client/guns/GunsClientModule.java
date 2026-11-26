@@ -73,6 +73,11 @@ public final class GunsClientModule implements ClientModule {
     private float vacVolume = 0.35f;
     private final Map<String, ViewModel> models = new HashMap<>();
     private final Set<String> watched = new HashSet<>();
+    /** Поза тела от третьего лица (своя в F5 и чужих) — через крючок ядра onModelParts, если он есть. */
+    private final ThirdPerson third = new ThirdPerson();
+    private boolean partsHook;
+    private final Map<String, String> playerAnimPaths = new HashMap<>();
+    private final Set<String> watchedAnims = new HashSet<>();
 
     // ---- что прислал сервер
     private String srvGun = "";
@@ -146,9 +151,11 @@ public final class GunsClientModule implements ClientModule {
         ctx.onCamera(this::camera);
         ctx.onClick(this::click);
         installCrosshairHook();
+        partsHook = installPartsHook();
         ctx.send(Proto.hello());
-        ctx.logger().info("guns: загружен (перезарядка — {}, режим огня — {}, размер оружия {})", cfg.reloadKey,
-                cfg.fireModeKey, cfg.viewmodelScale);
+        ctx.logger().info("guns: загружен (перезарядка — {}, режим огня — {}, размер оружия {}; поза тела от третьего"
+                + " лица — {})", cfg.reloadKey, cfg.fireModeKey, cfg.viewmodelScale,
+                partsHook ? "есть (onModelParts)" : "нет: ядро без onModelParts, поза игры");
     }
 
     @Override
@@ -168,6 +175,40 @@ public final class GunsClientModule implements ClientModule {
         fx.close();
         if (font != null) font.close();
         held = null;
+    }
+
+    /**
+     * Крючок ядра onModelParts (ядро 0.56+): ищем рефлексией — модуль собирается и работает и со старым ядром (тогда
+     * от третьего лица поза игры: рука с оружием, в прицеле — нет). Интерфейс крючка — прокси.
+     */
+    private boolean installPartsHook() {
+        if (!cfg.thirdPerson) return false;
+        try {
+            Class<?> hook = Class.forName("ink.hoka.odyssey.client.api.ClientContext$ModelPartsHook", false,
+                    ClientContext.class.getClassLoader());
+            // класс контекста ядра закрытый: проверяем по нему (переопределён ли default), а зовём метод интерфейса
+            if (ctx.getClass().getMethod("onModelParts", hook).getDeclaringClass().isInterface()) return false;
+            java.lang.reflect.Method m = ClientContext.class.getMethod("onModelParts", hook);
+            Object proxy = java.lang.reflect.Proxy.newProxyInstance(hook.getClassLoader(), new Class<?>[] {hook},
+                    (self, method, args) -> switch (method.getName()) {
+                        case "apply" -> {
+                            third.apply((Entity) args[0], (net.minecraft.client.model.HumanoidModel<?>) args[1],
+                                    (net.minecraft.client.renderer.entity.state.HumanoidRenderState) args[2]);
+                            yield null;
+                        }
+                        case "hashCode" -> System.identityHashCode(self);
+                        case "equals" -> self == args[0];
+                        case "toString" -> "guns.ModelPartsHook";
+                        default -> null;
+                    });
+            m.invoke(ctx, proxy);
+            return true;
+        } catch (ClassNotFoundException | NoSuchMethodException e) {
+            return false;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
+            ctx.logger().warn("guns: крючок onModelParts не поставлен: {}", e.toString());
+            return false;
+        }
     }
 
     private InputConstants.Key key(String name, String fallback) {
@@ -208,9 +249,12 @@ public final class GunsClientModule implements ClientModule {
             switch (op) {
                 case Proto.S_CONFIG -> {
                     float[] vv = {0.35f};
-                    specs = Proto.readConfig(in, vv);
+                    playerAnimPaths.clear();
+                    specs = Proto.readConfig(in, vv, playerAnimPaths);
                     vacVolume = vv[0];
                     for (Proto.Spec s : specs.values()) watch(s);
+                    third.clearAnims();
+                    for (var e : playerAnimPaths.entrySet()) watchAnim(e.getKey(), e.getValue());
                     ctx.logger().info("guns: оружие с сервера: {}", specs.keySet());
                 }
                 case Proto.S_STATE -> {
@@ -253,6 +297,24 @@ public final class GunsClientModule implements ClientModule {
                     rejects++;
                     if (reason == 5) ctx.logger().debug("guns: сервер отклонил выстрел (угол)");
                 }
+                case Proto.S_POSE -> {
+                    int id = in.readInt();
+                    int flags = in.readUnsignedByte();
+                    float since = in.readFloat();
+                    float len = in.readFloat();
+                    Minecraft mc = Minecraft.getInstance();
+                    if (mc.player != null && id == mc.player.getId()) break;
+                    ThirdPerson.Signals sg = third.signals(id);
+                    sg.aim = (flags & Proto.POSE_AIM) != 0;
+                    if ((flags & Proto.POSE_RELOAD) != 0 && len > 0) {
+                        long start = System.nanoTime() - (long) (since * 1e9);
+                        if (sg.reloadStartNs < 0 || Math.abs(start - sg.reloadStartNs) > 300_000_000L) sg.reloadStartNs = start;
+                        sg.reloadLen = len;
+                    } else {
+                        sg.reloadStartNs = -1;
+                    }
+                    if ((flags & Proto.POSE_HOLDING) == 0) third.forget(id);
+                }
                 case Proto.S_HIT -> {
                     hitKind = in.readUnsignedByte();
                     hitNs = System.nanoTime();
@@ -286,9 +348,31 @@ public final class GunsClientModule implements ClientModule {
         if (!s.flash().isEmpty() && flashTex == null) flashTex = ctx.texture(s.flash());
     }
 
+    /** Анимации тела для оружия gun — файл с сервера (обновится сам при смене). */
+    private void watchAnim(String gun, String path) {
+        Runnable apply = () -> {
+            byte[] b = ctx.file(path).orElse(null);
+            PlayerAnim a = null;
+            if (b != null) {
+                try {
+                    a = PlayerAnim.parse(b);
+                } catch (RuntimeException e) {
+                    ctx.logger().warn("guns: анимации тела {} не разобраны: {}", path, e.toString());
+                }
+            }
+            for (var e : playerAnimPaths.entrySet()) {
+                if (e.getValue().equals(path)) third.setAnim(e.getKey(), a);
+            }
+            if (a != null) ctx.logger().info("guns: анимации тела от третьего лица {} — {}", path, a.clips.keySet().size());
+        };
+        if (watchedAnims.add(path)) ctx.onFile(path, bytes -> apply.run());
+        else apply.run();
+    }
+
     private void otherShot(int shooterId, Vec3 eye, Vec3 v, float life, int color) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null && shooterId == mc.player.getId()) return;
+        third.signals(shooterId).shotNs = System.nanoTime();
         Vec3 o = eye;
         Entity e = mc.level == null ? null : mc.level.getEntity(shooterId);
         if (e != null) {                                           // ствол — справа-впереди-ниже глаз
@@ -341,6 +425,7 @@ public final class GunsClientModule implements ClientModule {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer p = mc.player;
         if (p == null) return;
+        third.cleanup();
         ItemStack stack = p.getMainHandItem();
         Proto.Spec now = specOf(specs, stack);
         int slot = p.getInventory().getSelectedSlot();
@@ -487,7 +572,9 @@ public final class GunsClientModule implements ClientModule {
      * без приближения).
      */
     private void zoom(LocalPlayer p) {
-        float z = held == null ? 1 : 1 + (held.zoom() - 1) * AdsBlend.easeInOutCubic(ads);
+        // от третьего лица (F5) не приближаем: прицел там — только поза тела
+        boolean fp = Minecraft.getInstance().options.getCameraType().isFirstPerson();
+        float z = held == null || !fp ? 1 : 1 + (held.zoom() - 1) * AdsBlend.easeInOutCubic(ads);
         double fx = Minecraft.getInstance().options.fovEffectScale().get();
         if (z <= 1.001f || fx < 0.05) {
             restoreZoom();
@@ -538,6 +625,11 @@ public final class GunsClientModule implements ClientModule {
         float rate = dt / Math.max(0.05f, held.aimTime());
         ads = target > ads ? Math.min(target, ads + rate) : Math.max(target, ads - rate * 1.2f);
         keys(mc);
+        ThirdPerson.Signals own = third.signals(p.getId());       // своя поза от третьего лица (F5)
+        own.aim = ads > 0.05f;
+        own.reloadStartNs = reloading() ? reloadStartNs : -1;
+        own.reloadLen = reloadLen;
+        own.shotNs = lastShotNs;
 
         // нажатия ЛКМ забираем сами, каждый кадр: в прицеле («использование» предмета) игра их молча выбрасывает,
         // и короткий щелчок между кадрами иначе потерялся бы
@@ -673,13 +765,14 @@ public final class GunsClientModule implements ClientModule {
         lastYaw = yaw;
         lastPitch = pitch;
 
+        vm.safety(mode == 0 && held.auto() ? "static_auto" : "static_semi");
         vm.update();
         Matrix4f m2c = vm.modelToCamera(cfg.viewmodelScale, ads);
         Matrix4f sway = new Matrix4f().rotateY((float) Math.toRadians(swayX)).rotateX((float) Math.toRadians(swayY));
         m2c = sway.mul(m2c);
         Matrix4f camToBuf = new Matrix4f(pose).rotate(q);
         Matrix4f base = new Matrix4f(camToBuf).mul(m2c);
-        vm.render(frame.buffers(), base, light(mc, frame.camera()), ammo);
+        vm.render(frame.buffers(), base, light(mc, frame.camera()), ammo, cfg.arms);
         Vector3f mz = vm.muzzle(m2c);
         if (mz != null) {
             Vector3f w = new Vector3f(mz).rotate(q);

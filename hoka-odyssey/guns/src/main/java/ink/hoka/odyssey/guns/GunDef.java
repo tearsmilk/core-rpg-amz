@@ -53,6 +53,7 @@ record GunDef(
         String model,
         String hud,
         String flash,
+        String playerAnimation,
         Map<String, String> sounds,
         Map<Double, String> reloadSoundsTactical,
         Map<Double, String> reloadSoundsEmpty) {
@@ -163,6 +164,7 @@ record GunDef(
                 c.str(b + "model", "guns/" + id + ".bbmodel"),
                 c.str(b + "hud", "guns/" + id + "_hud.png"),
                 c.str(b + "flash", "guns/common_muzzle_flash.png"),
+                c.str(b + "player-animation", "guns/rifle_default.player_animation.json"),
                 Map.copyOf(sounds),
                 timeline(c, b + "reload-sounds-3p.tactical"),
                 timeline(c, b + "reload-sounds-3p.empty"));

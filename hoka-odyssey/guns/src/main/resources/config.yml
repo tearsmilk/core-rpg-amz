@@ -109,10 +109,11 @@ guns:
     zoom: 1.33
     aim-speed: 0.8
     # Файлы для клиентского модуля (раздаёт этот модуль из jar, папка tacz/): модель в руке, силуэт для HUD,
-    # вспышка у ствола.
+    # вспышка у ствола, анимации тела от третьего лица (формат PlayerAnimator, как в TACZ).
     model: guns/ak47.bbmodel
     hud: guns/ak47_hud.png
     flash: guns/common_muzzle_flash.png
+    player-animation: guns/rifle_default.player_animation.json
     # Звуки (id в hosounds, в игре hoka:<id>). Ставит /hogun install.
     sounds:
       shoot: ak47_shoot            # свой выстрел (стерео, слышит только стрелок)

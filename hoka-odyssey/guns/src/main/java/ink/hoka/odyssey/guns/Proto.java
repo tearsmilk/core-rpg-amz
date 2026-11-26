@@ -34,7 +34,13 @@ import java.util.Map;
  *   <li>4 IMPACT: f64 x, y, z, f32 nx, ny, nz, u8 вид (0 — блок, 1 — тело, 2 — голова);</li>
  *   <li>5 RELOAD_START: u8 вид (1 — тактическая, 2 — пустой магазин), f32 секунд до готовности;</li>
  *   <li>6 REJECT: i32 seq, u8 причина ({@link FireValidator.Result#code});</li>
- *   <li>7 HIT: u8 вид (1 — попадание, 2 — в голову, 3 — убийство).</li>
+ *   <li>7 HIT: u8 вид (1 — попадание, 2 — в голову, 3 — убийство);</li>
+ *   <li>8 POSE: i32 id игрока, u8 флаги (1 — в руке оружие, 2 — прицел, 4 — перезарядка), f32 секунд с начала
+ *       перезарядки, f32 её длина — тем, кто его видит (поза тела от третьего лица; старые клиенты op не знают и
+ *       пропускают).</li>
+ * </ul>
+ * CONFIG после громкости вакуума — хвост: u16 оружий, на каждое UTF id и UTF файл анимаций тела от третьего лица
+ * (старые клиенты хвост не читают).
  * </ul>
  */
 final class Proto {
@@ -54,6 +60,11 @@ final class Proto {
     static final int S_RELOAD = 5;
     static final int S_REJECT = 6;
     static final int S_HIT = 7;
+    static final int S_POSE = 8;
+
+    static final int POSE_HOLDING = 1;
+    static final int POSE_AIM = 2;
+    static final int POSE_RELOAD = 4;
 
     static final int FLAG_RELOADING = 1;
     static final int FLAG_DRAWING = 2;
@@ -152,6 +163,11 @@ final class Proto {
                 }
             }
             o.writeFloat(vacuumVolume);
+            o.writeShort(guns.size());
+            for (GunDef g : guns) {
+                o.writeUTF(g.id());
+                o.writeUTF(g.playerAnimation() == null ? "" : g.playerAnimation());
+            }
         });
     }
 
@@ -163,6 +179,16 @@ final class Proto {
             o.writeFloat((float) k.min());
             o.writeFloat((float) k.max());
         }
+    }
+
+    static byte[] pose(int entityId, int flags, float reloadSince, float reloadLength) {
+        return write(o -> {
+            o.writeByte(S_POSE);
+            o.writeInt(entityId);
+            o.writeByte(flags);
+            o.writeFloat(reloadSince);
+            o.writeFloat(reloadLength);
+        });
     }
 
     static byte[] state(String gun, int ammo, int reserve, int mode, int flags, int ackSeq) {

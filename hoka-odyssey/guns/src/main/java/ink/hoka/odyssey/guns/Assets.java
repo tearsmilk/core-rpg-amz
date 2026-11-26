@@ -94,6 +94,7 @@ final class Assets {
         }
         String name = path.substring(path.lastIndexOf('/') + 1);
         byte[] b = resource("models/" + name);
+        if (b == null) b = resource("animations/" + name);
         return b != null ? b : resource("textures/" + name);
     }
 

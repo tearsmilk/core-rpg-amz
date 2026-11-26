@@ -322,7 +322,10 @@ public final class GunsModule extends OdysseyModule {
         links.clearFiles();
         int n = 0;
         for (GunDef g : guns.values()) {
-            for (String path : new String[] {g.model(), g.hud(), g.flash()}) {
+            for (String path : new String[] {g.model(), g.hud(), g.flash(), g.playerAnimation()}) {
+                if (path == null || path.isBlank()) {
+                    continue;
+                }
                 byte[] b = assets.read(path);
                 if (b != null) {
                     links.putFile(path, b);
@@ -356,6 +359,9 @@ public final class GunsModule extends OdysseyModule {
             if (st == null && !holding) {
                 continue;
             }
+            if (st != null && !holding) {
+                relayPose(p, st, now);                        // убрал оружие — остальным «без позы»
+            }
             if (st == null) {
                 st = state(p);
             }
@@ -375,6 +381,7 @@ public final class GunsModule extends OdysseyModule {
             syncHeld(p);
             if (st.gun == null) {
                 restoreFov(p, st);
+                relayPose(p, st, now);
                 continue;
             }
             st.vacuum = vacuum != null && vacuum.inVacuum(p);
@@ -392,8 +399,66 @@ public final class GunsModule extends OdysseyModule {
                 flushAmmo(p, st);
             }
             sendState(p, st, now);
+            relayPose(p, st, now);
+        }
+        if (ticks % 40 == 0) {
+            resendPoses(now);                                 // кто только что увидел стрелка (подошёл, зашёл)
         }
         stepBullets();
+    }
+
+    /** Флаги позы стрелка: оружие в руке, прицел, перезарядка. */
+    private static int poseFlags(ShooterState st) {
+        if (st.gun == null) {
+            return 0;
+        }
+        return Proto.POSE_HOLDING | (st.aimSince > 0 ? Proto.POSE_AIM : 0) | (st.reloadKind != 0 ? Proto.POSE_RELOAD : 0);
+    }
+
+    private byte[] poseMessage(Player p, ShooterState st, long now) {
+        int flags = poseFlags(st);
+        float len = 0;
+        float since = 0;
+        if ((flags & Proto.POSE_RELOAD) != 0) {
+            GunDef.Reload r = st.reloadKind == 1 ? st.gun.tactical() : st.gun.empty();
+            len = (float) r.total();
+            since = Math.max(0, (now - st.reloadStart) / 1000f);
+        }
+        return Proto.pose(p.getEntityId(), flags, since, len);
+    }
+
+    /**
+     * Разослать позу стрелка тем, у кого клиентский модуль (кроме него самого: свою позу клиент знает сам) — при
+     * смене: взял/убрал оружие, прицел, перезарядка.
+     */
+    private void relayPose(Player p, ShooterState st, long now) {
+        String key = poseFlags(st) + ":" + (st.reloadKind != 0 ? st.reloadStart : 0);
+        if (key.equals(st.poseKey)) {
+            return;
+        }
+        st.poseKey = key;
+        byte[] msg = poseMessage(p, st, now);
+        for (Player v : MinecraftServer.getConnectionManager().getOnlinePlayers()) {
+            if (v != p && modded(v) && v.getInstance() == p.getInstance()) {
+                links.send(v, msg);
+            }
+        }
+    }
+
+    /** Раз в 2 с — всем с модулем позы всех стрелков с оружием в руке (новые зрители, смена мира). */
+    private void resendPoses(long now) {
+        for (Player p : MinecraftServer.getConnectionManager().getOnlinePlayers()) {
+            ShooterState st = states.get(p.getUuid());
+            if (st == null || st.gun == null) {
+                continue;
+            }
+            byte[] msg = poseMessage(p, st, now);
+            for (Player v : MinecraftServer.getConnectionManager().getOnlinePlayers()) {
+                if (v != p && modded(v) && v.getInstance() == p.getInstance()) {
+                    links.send(v, msg);
+                }
+            }
+        }
     }
 
     /** Что в руке: взяли оружие — «достаёт», убрали — патроны в предмет. */

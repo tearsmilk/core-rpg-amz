@@ -61,4 +61,32 @@ class ProtoTest {
         assertEquals(3, in.readUnsignedByte());
         assertEquals(30, in.readInt());
     }
+
+    @Test
+    void configEndsWithPlayerAnimationTrailer() throws IOException {
+        GunDef g = TestGuns.ak();
+        byte[] b = Proto.config(List.of(g), 0.35f);
+        java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+        java.io.DataOutputStream o = new java.io.DataOutputStream(bo);
+        o.writeFloat(0.35f);
+        o.writeShort(1);
+        o.writeUTF("ak47");
+        o.writeUTF(g.playerAnimation());
+        byte[] tail = bo.toByteArray();
+        assertEquals("guns/rifle_default.player_animation.json", g.playerAnimation());
+        assertEquals(java.util.Arrays.toString(tail),
+                java.util.Arrays.toString(java.util.Arrays.copyOfRange(b, b.length - tail.length, b.length)));
+    }
+
+    @Test
+    void poseLayout() throws IOException {
+        DataInputStream in = new DataInputStream(new ByteArrayInputStream(
+                Proto.pose(17, Proto.POSE_HOLDING | Proto.POSE_RELOAD, 0.5f, 2.6f)));
+        assertEquals(Proto.S_POSE, in.readUnsignedByte());
+        assertEquals(17, in.readInt());
+        assertEquals(Proto.POSE_HOLDING | Proto.POSE_RELOAD, in.readUnsignedByte());
+        assertEquals(0.5f, in.readFloat());
+        assertEquals(2.6f, in.readFloat());
+        assertEquals(0, in.available());
+    }
 }
