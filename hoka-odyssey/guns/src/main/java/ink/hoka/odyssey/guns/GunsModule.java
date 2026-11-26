@@ -31,6 +31,7 @@ import net.minestom.server.entity.damage.Damage;
 import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.event.item.PlayerBeginItemUseEvent;
 import net.minestom.server.event.item.PlayerCancelItemUseEvent;
+import net.minestom.server.event.player.PlayerBlockBreakEvent;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerHandAnimationEvent;
 import net.minestom.server.event.player.PlayerSwapItemEvent;
@@ -122,6 +123,13 @@ public final class GunsModule extends OdysseyModule {
                 ShooterState st = state(p);
                 Vec d = p.getPosition().direction();
                 fireOne(p, st, d.x(), d.y(), d.z(), 0, System.currentTimeMillis());
+            }
+        });
+        // с оружием в руке блоки не ломаются (клиентский модуль забирает ЛКМ сам; это — для игроков без него и
+        // для чужих клиентов, которые прислали «сломал» в обход)
+        events().addListener(PlayerBlockBreakEvent.class, e -> {
+            if (GunItems.gunId(e.getPlayer().getItemInMainHand()) != null) {
+                e.setCancelled(true);
             }
         });
         events().addListener(PlayerSwapItemEvent.class, e -> {

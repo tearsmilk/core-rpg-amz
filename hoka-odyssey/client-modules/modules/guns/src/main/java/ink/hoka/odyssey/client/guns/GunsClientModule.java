@@ -87,6 +87,8 @@ public final class GunsClientModule implements ClientModule {
     private int heldSlot = -1;
     private int ammo;
     private int mode;
+    /** Когда режим переключили у себя (нс): до подтверждения сервером его STATE со старым режимом не применяем. */
+    private long modeSetNs;
     private int seq;
     /** Отправленные, но ещё не подтверждённые пачки: {seq, выстрелов}. */
     private final Deque<int[]> inflight = new ArrayDeque<>();
@@ -151,6 +153,14 @@ public final class GunsClientModule implements ClientModule {
 
     @Override
     public void disable() {
+        if (adsSent) {                                             // иначе сервер так и держит замедление прицела
+            adsSent = false;
+            try {
+                ctx.send(Proto.ads(false));
+            } catch (RuntimeException ignored) {
+                // соединения уже нет
+            }
+        }
         System.getProperties().remove(HIDE_CROSSHAIR);
         restoreZoom();
         for (ViewModel vm : models.values()) vm.close();
@@ -214,7 +224,7 @@ public final class GunsClientModule implements ClientModule {
                     int unacked = pending.size();
                     for (int[] f : inflight) unacked += f[1];
                     ammo = Math.max(0, srvAmmo - unacked);
-                    mode = srvMode;
+                    if (srvMode == mode || System.nanoTime() - modeSetNs > 1_000_000_000L) mode = srvMode;
                     gotState = true;
                     if ((srvFlags & Proto.FLAG_RELOADING) == 0 && reloadStartNs >= 0
                             && (System.nanoTime() - reloadStartNs) / 1e9 > Math.min(reloadLen, 0.5)) {
@@ -432,6 +442,7 @@ public final class GunsClientModule implements ClientModule {
     private void toggleMode() {
         if (held == null || !(held.auto() && held.semi())) return;
         mode = mode == 0 ? 1 : 0;
+        modeSetNs = System.nanoTime();
         ctx.send(Proto.fireMode(mode));
         Sfx.play(held.sound("fire_select"), 0.8f * cfg.volume, 1f);
         ViewModel vm = models.get(held.model());
