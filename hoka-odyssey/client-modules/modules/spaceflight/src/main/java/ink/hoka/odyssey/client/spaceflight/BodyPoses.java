@@ -25,7 +25,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * Повёрнутые тела игроков в невесомости — свой (вид от третьего лица) и чужие — через крючок ядра
  * {@code onEntityPose} (мод 0.48+). Поворот других игроков присылает сервер (op 3 — кватернион ТЕЛА без «лёжа» и
  * флаги, op 4 — «больше не действует»), между пакетами (~10 в секунду) он плавно доводится slerp, а смена режима
- * (свободно / на поверхности / лёжа) — плавным переходом {@link #MODE_BLEND_NS}.
+ * (лёжа / стоя) — плавным переходом {@link #MODE_BLEND_NS}, смена грани под ногами или рамки — дольше (настройка
+ * surface_turn_time, {@link #surfaceBlend}). Сдвиг позиции при смене рамки переход тоже сглаживает: середина модели
+ * едет от того места в мире, где её было видно.
  * <p>
  * Правило (см. {@link BodyFrame}): стоит на поверхности — ноги на ней, верх тела по её нормали, лицом по взгляду;
  * свободно в пространстве — тело целиком повёрнуто к прицелу (верх — по верху камеры), вокруг середины тела.
@@ -44,8 +46,10 @@ final class BodyPoses {
     static final int CAP_AVATAR_ROTATION = 1;
     /** За сколько доводить поворот до присланного (ожидаемый промежуток между пакетами), нс. */
     private static final long BLEND_NS = 110_000_000L;
-    /** Смена режима (свободно / поверхность / лёжа) — плавно за столько, нс. */
+    /** Смена «лёжа / стоя» — плавно за столько, нс. */
     static final long MODE_BLEND_NS = 150_000_000L;
+    /** Смена грани под ногами или рамки — по умолчанию за столько, нс (настройка surface_turn_time). */
+    static final long SURFACE_BLEND_NS = 550_000_000L;
     /** Нет пакетов дольше — забыть игрока (сервер повторяет раз в секунду). */
     private static final long STALE_NS = 3_000_000_000L;
 
@@ -61,6 +65,15 @@ final class BodyPoses {
         int surface();
 
         boolean prone();
+
+        /** Грань повёрнутой рамки или −1 — обычная. */
+        int box();
+
+        /** Счётчик переходов (вход на грань, смена грани, смена рамки): изменился — плавный переход позы. */
+        int transitions();
+
+        /** Поворот тела уже непрерывен (на грани он едет вместе с камерой) — не сглаживать его второй раз. */
+        boolean continuous();
     }
 
     /** Чужое тело: от какого поворота к какому идём, когда начали, флаги последнего пакета. */
@@ -71,11 +84,15 @@ final class BodyPoses {
     /** Показанная поза и переход между режимами (только поток отрисовки). */
     private static final class Blend {
         int key = Integer.MIN_VALUE;
+        int epoch;
         Quat fromBody;
         Vec3d fromCentre;
         long t0;
+        long dur = MODE_BLEND_NS;
         Quat shownBody;
         Vec3d shownCentre;
+        /** Позиция сущности в кадре, где показана shownCentre (мир). */
+        Vec3d shownPos;
         long used;
     }
 
@@ -87,11 +104,15 @@ final class BodyPoses {
     private final java.util.Set<Integer> boxChanged = ConcurrentHashMap.newKeySet();
     private volatile boolean hooked;
     private volatile boolean enabled = true;
+    private volatile long surfaceBlendNs = SURFACE_BLEND_NS;
 
     BodyPoses(ClientContext ctx, Self self) {
         this.ctx = ctx;
         this.self = self;
     }
+
+    /** Длительность перехода позы при смене грани или рамки, с. */
+    void surfaceBlend(double seconds) { surfaceBlendNs = Math.max(1, (long) (seconds * 1e9)); }
 
     /** Есть ли в ядре крючок поворота тел (тогда сервер не шлёт этому клиенту запасную позу). */
     boolean hooked() { return hooked; }
@@ -216,18 +237,25 @@ final class BodyPoses {
         Quat base;
         int surface;
         boolean prone;
+        int box;
+        int epoch = 0;
+        boolean continuous = false;
         long now = System.nanoTime();
         Minecraft mc = Minecraft.getInstance();
         if (e == mc.player) {
             base = self.base();
             surface = self.surface();
             prone = self.prone();
+            box = self.box();
+            epoch = self.transitions();
+            continuous = self.continuous();
         } else {
             Track t = tracks.get(id);
             base = t == null ? null : t.base(now);
             int f = t == null ? 0 : t.flags();
             surface = surfaceOf(f);
             prone = (f & FLAG_PRONE) != 0;
+            box = BodyFrame.boxOf(f);
         }
         if (base == null) {
             blends.remove(id);
@@ -243,28 +271,37 @@ final class BodyPoses {
         double halfN = n == null ? 0
                 : (Math.abs(n.x()) * bb.getXsize() + Math.abs(n.y()) * bb.getYsize() + Math.abs(n.z()) * bb.getZsize()) / 2;
         Vec3d centre = BodyFrame.centre(surface, prone, mid, halfN, h);
+        Vec3 rp = e.getPosition(partialTick);
+        Vec3d pos = new Vec3d(rp.x, rp.y, rp.z);
         Blend b = blends.computeIfAbsent(id, k -> new Blend());
-        int key = (surface + 1) * 2 + (prone ? 1 : 0);
+        int key = ((surface + 1) * 8 + box + 1) * 2 + (prone ? 1 : 0);
         if (b.key == Integer.MIN_VALUE) {                      // только что начали — от обычной позы стоя
             float yaw = e instanceof LivingEntity le ? le.yBodyRot : e.getYRot();
             b.fromBody = Quat.fromYawPitchRoll(yaw, 0, 0);
             b.fromCentre = new Vec3d(0, h / 2, 0);
             b.t0 = now;
+            b.dur = MODE_BLEND_NS;
             b.key = key;
-        } else if (key != b.key) {
+            b.epoch = epoch;
+        } else if (key != b.key || epoch != b.epoch) {
+            // грань или рамка сменились — дольше (вместе с камерой); только «лёжа / стоя» — быстро
+            b.dur = key / 2 != b.key / 2 || epoch != b.epoch ? surfaceBlendNs : MODE_BLEND_NS;
             b.fromBody = b.shownBody;
-            b.fromCentre = b.shownCentre;
+            // середина — от того места в мире, где её было видно: позиция при смене рамки сдвинулась скачком
+            b.fromCentre = b.shownPos == null ? b.shownCentre : b.shownPos.add(b.shownCentre).sub(pos);
             b.t0 = now;
             b.key = key;
+            b.epoch = epoch;
         }
-        double s = FreeLook.clamp((now - b.t0) / (double) MODE_BLEND_NS, 0, 1);
+        double s = FreeLook.clamp((now - b.t0) / (double) b.dur, 0, 1);
         if (s < 1) {
-            s = s * s * (3 - 2 * s);                           // мягкий старт и остановка
-            body = FreeLook.slerp(b.fromBody, body, s);
+            s = SurfaceGravity.ease(s);                        // мягкий старт и остановка
+            if (!continuous) body = FreeLook.slerp(b.fromBody, body, s);
             centre = BodyFrame.lerp(b.fromCentre, centre, s);
         }
         b.shownBody = body;
         b.shownCentre = centre;
+        b.shownPos = pos;
         b.used = now;
 
         Vec3 v = e.getViewVector(partialTick);

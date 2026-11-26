@@ -104,8 +104,6 @@ public final class SpaceflightModule implements ClientModule {
     private static final int REENTRY = 10;
     /** Шаг, которым новая рамка придвигается к грани при смене у ребра, блоки (меньше зазора касания 2·CONTACT). */
     private static final double SNAP_STEP = 0.05;
-    /** Поправка камеры после смены рамки гаснет с такой скоростью, 1/с. */
-    private static final double EYE_SETTLE = 10;
     /** Свой поворот серверу — не чаще чем раз в столько тиков (~10 раз в секунду)… */
     private static final int ORIENT_EVERY = 2;
     /** …и только если повернулся больше чем на столько градусов; без изменений — раз в столько тиков. */
@@ -164,6 +162,12 @@ public final class SpaceflightModule implements ClientModule {
     private volatile int boxSurface = -1;
     /** Поправка камеры после смены рамки (мир, блоки): плавно гаснет — глаза не прыгают вместе с рамкой. */
     private Vec3d eyeCorr = Vec3d.ZERO;
+    /** Переезд глаз после смены рамки (по дуге вокруг ребра при смене грани); null — не едем. */
+    private Glide eyeGlide;
+    /** Переходов на грань / между гранями / смен рамки — для плавного перехода позы тела ({@link BodyPoses}). */
+    private int transitions;
+    /** Последний переход — смена грани (тело едет вместе с камерой), а не вход на грань. */
+    private boolean transferred;
     /** Рамка сменилась — поворот и флаги серверу сразу (до пакета движения со сдвигом позиции). */
     private boolean orientNow;
     /** Лёжа (тело вдоль взгляда) — переключается клавишей R в невесомости. */
@@ -190,12 +194,23 @@ public final class SpaceflightModule implements ClientModule {
         brakeKey = key(cfg.brakeKey, "key.keyboard.x");
         proneKey = key(cfg.proneKey, "key.keyboard.r");
         bodies = new BodyPoses(ctx, new BodyPoses.Self() {
-            @Override public Quat base() { return active ? BodyFrame.base(look.orientation(), standSurface) : null; }
+            @Override public Quat base() {
+                if (!active) return null;
+                return grav.active() ? grav.body(System.nanoTime()) : BodyFrame.base(look.orientation(), standSurface);
+            }
 
             @Override public int surface() { return standSurface; }
 
             @Override public boolean prone() { return prone; }
+
+            @Override public int box() { return boxSurface; }
+
+            @Override public int transitions() { return transitions; }
+
+            @Override public boolean continuous() { return grav.active() && transferred && !prone; }
         });
+        bodies.surfaceBlend(cfg.surfaceTurnTime);
+        grav.turnSeconds(cfg.surfaceTurnTime);
         ctx.onMessage(this::onMessage);
         ctx.onTick(this::tick);
         ctx.onMouse(this::onMouse);
@@ -361,6 +376,7 @@ public final class SpaceflightModule implements ClientModule {
         reentry = 0;
         boxSurface = -1;
         eyeCorr = Vec3d.ZERO;
+        eyeGlide = null;
         jumpHeld = true;                                           // не прыгать от пробела, зажатого до входа
         sprintHeld = true;                                         // и не ложиться от R, зажатой до входа
         prone = false;
@@ -379,6 +395,7 @@ public final class SpaceflightModule implements ClientModule {
         }
         boxSurface = -1;
         eyeCorr = Vec3d.ZERO;
+        eyeGlide = null;
         grav.leave();
         sendOrientation(true);                                     // «поворот больше не действует»
         active = false;
@@ -536,6 +553,8 @@ public final class SpaceflightModule implements ClientModule {
     private boolean enterSurface(LocalPlayer p, int f) {
         if (!switchBox(p, f, true)) return false;
         grav.enter(f, look.orientation(), System.nanoTime());
+        transitions++;
+        transferred = false;
         standSurface = f;
         standLost = 0;
         airTicks = 0;
@@ -583,6 +602,8 @@ public final class SpaceflightModule implements ClientModule {
             int c = SurfaceGravity.innerCorner(face, wish, i -> touchingHigh(p, bb, i, n0));
             if (c >= 0 && switchBox(p, c, true)) {
                 grav.transfer(c, look.orientation(), now);
+                transitions++;
+                transferred = true;
                 face = c;
                 n = grav.normal();
                 wish = grav.wish(fwd, side);
@@ -597,6 +618,8 @@ public final class SpaceflightModule implements ClientModule {
                 if (e >= 0 && switchBox(p, e, true)) {
                     v = SurfaceGravity.carry(face, e, v);
                     grav.transfer(e, look.orientation(), now);
+                    transitions++;
+                    transferred = true;
                     face = e;
                     n = grav.normal();
                     wish = grav.wish(fwd, side);
@@ -761,7 +784,9 @@ public final class SpaceflightModule implements ClientModule {
         double h = d.height(), w = d.width();
         AABB b = p.getBoundingBox();
         Vec3 pos = p.position();
-        Vec3 eye0 = p.getEyePosition();
+        long now = System.nanoTime();
+        Vec3d shift = eyeGlide == null ? Vec3d.ZERO : eyeGlide.offset(now);
+        Vec3 eye0 = p.getEyePosition().add(shift.x(), shift.y(), shift.z());   // где глаза показаны сейчас
         List<Vec3d> cands = SurfaceBox.candidates(new double[] {b.minX, b.minY, b.minZ, b.maxX, b.maxY, b.maxZ},
                 new Vec3d(pos.x, pos.y, pos.z), new Vec3d(eye0.x, eye0.y, eye0.z), target, contact, h, w,
                 d.eyeHeight());
@@ -793,7 +818,14 @@ public final class SpaceflightModule implements ClientModule {
             p.yOld += dy;
             p.zOld += dz;
             Vec3 eye1 = p.getEyePosition();
-            eyeCorr = eyeCorr.add(eye0.x - eye1.x, eye0.y - eye1.y, eye0.z - eye1.z);
+            // камера доезжает от прежних глаз к новым за surface_move_time; при смене грани — по дуге вокруг ребра
+            // (тем же поворотом, что и камера: n → n')
+            Vec3d nFrom = grav.active() ? grav.normal() : null;
+            Quat turn = nFrom != null && n != null ? SurfaceGravity.between(nFrom, n) : Quat.IDENTITY;
+            eyeGlide = Glide.of(new Vec3d(eye0.x, eye0.y, eye0.z), new Vec3d(eye1.x, eye1.y, eye1.z), turn, now,
+                    cfg.surfaceMoveTime);
+            eyeCorr = eyeGlide.offset(now);
+            transitions++;
             if (next >= 0) {
                 standSurface = next;
                 standLost = 0;
@@ -1007,7 +1039,8 @@ public final class SpaceflightModule implements ClientModule {
     private void eyeAt(CameraState cam, float pt, double dt) {
         LocalPlayer p = bound;
         if (!boxApi || p == null) return;
-        eyeCorr = eyeCorr.lengthSquared() < 1e-8 ? Vec3d.ZERO : eyeCorr.scale(Math.exp(-EYE_SETTLE * dt));
+        if (eyeGlide != null && eyeGlide.done(System.nanoTime())) eyeGlide = null;
+        eyeCorr = eyeGlide == null ? Vec3d.ZERO : eyeGlide.offset(System.nanoTime());
         int s = boxSurface;
         if (s < 0 && eyeCorr == Vec3d.ZERO) return;
         EntityDimensions d = p.getDimensions(Pose.STANDING);

@@ -14,12 +14,12 @@ import java.util.Properties;
 /** Настройки модуля: {@code <dataDir>/config.properties} (создаётся с комментариями при первом запуске). */
 final class FlightConfig {
     /** Версия файла настроек: без неё (файл от старой версии) прежние умолчания заменяются новыми. */
-    static final int VERSION = 5;
+    static final int VERSION = 6;
 
     private static final String DEFAULT = """
             # Hoka Odyssey — модуль spaceflight (невесомость в вакууме). Файл читается при загрузке модуля.
             # Версия файла (не меняйте): по ней модуль узнаёт файл от старой версии.
-            config_version = 5
+            config_version = 6
 
             # Тяга ранца, блоки/с² (W/S — вперёд/назад, A/D — вбок, пробел/shift — вверх/вниз по осям взгляда).
             # Сервер может ограничить её своей (physics.thrust.acceleration) — действует меньшая.
@@ -54,6 +54,11 @@ final class FlightConfig {
             # (шаг, бег, прыжок, падение обратно — как у обычной игры). Оттолкнуться и улететь — Shift+пробел или
             # двойной пробел (второе нажатие в прыжке). Скорость толчка от грани, блоки/с
             push_off = 5.0
+            # Переход на другую грань (внутренний угол, ребро, приземление): камера и тело доворачиваются за столько
+            # секунд — с мягким стартом и остановкой (0.1–3)
+            surface_turn_time = 0.55
+            # …а камера переезжает от прежнего места глаз к новому (на ребре — по дуге вокруг него) за столько секунд
+            surface_move_time = 0.55
             """;
 
     /** Прежние умолчания (файл без config_version): такие значения считаем «не менял» и берём новые. */
@@ -73,6 +78,8 @@ final class FlightConfig {
     double jumpSpeed = 5.0;
     double uprightRate = 4.0;
     double pushOff = 5.0;
+    double surfaceTurnTime = SurfaceGravity.SNAP_SECONDS;
+    double surfaceMoveTime = SurfaceGravity.SNAP_SECONDS;
 
     static FlightConfig load(Path dir, Logger log) {
         FlightConfig c = new FlightConfig();
@@ -105,6 +112,8 @@ final class FlightConfig {
             c.jumpSpeed = num(p, "jump_speed", c.jumpSpeed, 0, 30);
             c.uprightRate = num(p, "upright_rate", c.uprightRate, 0.1, 50);
             c.pushOff = num(p, "push_off", c.pushOff, 0, 30);
+            c.surfaceTurnTime = num(p, "surface_turn_time", c.surfaceTurnTime, 0.1, 3);
+            c.surfaceMoveTime = num(p, "surface_move_time", c.surfaceMoveTime, 0.1, 3);
         } catch (IOException | RuntimeException e) {
             log.warn("spaceflight: не удалось прочитать {} — значения по умолчанию ({})", file, e.toString());
         }
@@ -129,7 +138,9 @@ final class FlightConfig {
             int eq = line.indexOf(" = ");
             String key = eq > 0 && !line.startsWith("#") ? line.substring(0, eq).trim() : null;
             String was = key == null || key.equals("config_version") ? null : old.getProperty(key);
-            if (was != null && !was.trim().equals(OLD_DEFAULTS.get(key)) && !same(was, OLD_DEFAULTS.get(key))) {
+            // прежние умолчания OLD_DEFAULTS — только у файла без версии (самой первой); с версией — всё своё
+            String oldDefault = old.getProperty("config_version") == null ? OLD_DEFAULTS.get(key) : null;
+            if (was != null && !was.trim().equals(oldDefault) && !same(was, oldDefault)) {
                 line = key + " = " + was.trim();
             }
             out.append(line).append('\n');

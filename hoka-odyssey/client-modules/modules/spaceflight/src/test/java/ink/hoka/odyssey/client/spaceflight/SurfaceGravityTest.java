@@ -144,4 +144,27 @@ class SurfaceGravityTest {
         // скорость «в пол» после смены — «в стену» (вниз к новой грани)
         near(new Vec3d(0.2, 0, 0), SurfaceGravity.carry(2, 1, new Vec3d(0, -0.2, 0)), 1e-9);
     }
+
+    /**
+     * Смена грани: камера и тело доворачиваются вместе и плавно — сразу после перехода видно прежние взгляд и тело,
+     * на полпути — поворот на половину угла, через surface_turn_time — новая грань.
+     */
+    @Test
+    void transferTurnsCameraAndBodyTogether() {
+        SurfaceGravity g = new SurfaceGravity();
+        g.turnSeconds(0.5);
+        g.enter(2, Quat.fromYawPitchRoll(90, 10, 0), 0);      // пол
+        long t = 10_000_000_000L;
+        Quat look0 = g.shown(t), body0 = g.body(t);
+        near(UP, body0.up(), 1e-9);
+        g.transfer(1, look0, t);                               // стена −X
+        near(look0.forward(), g.shown(t).forward(), 1e-9);
+        near(body0.up(), g.body(t).up(), 1e-9);
+        near(body0.forward(), g.body(t).forward(), 1e-9);
+        Vec3d half = g.body(t + 250_000_000L).up();
+        assertEquals(Math.sqrt(0.5), half.dot(UP), 1e-9);      // 45° из 90°
+        // камера на полпути повёрнута так же, как тело
+        assertEquals(45, Math.toDegrees(FreeLook.angle(look0, g.shown(t + 250_000_000L))), 1e-6);
+        near(new Vec3d(-1, 0, 0), g.body(t + 500_000_001L).up(), 1e-9);
+    }
 }

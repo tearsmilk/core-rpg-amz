@@ -52,8 +52,8 @@ final class SurfaceGravity {
     static final double LANDING_SPEED = 0.02;
     /** Внутренний угол: доля шага в соседнюю грань не меньше этой. */
     static final double INTO = 0.5;
-    /** Камера доворачивается к системе грани за столько секунд. */
-    static final double SNAP_SECONDS = 0.25;
+    /** Камера и тело доворачиваются к системе грани за столько секунд (по умолчанию; настройка surface_turn_time). */
+    static final double SNAP_SECONDS = 0.55;
 
     private int face = -1;
     private Quat frame = Quat.IDENTITY;
@@ -63,6 +63,11 @@ final class SurfaceGravity {
     /** Плавный доворот камеры: поворот (мир) от системы грани к тому, что было видно, и начало перехода. */
     private Quat blend;
     private long blendStart;
+    /** Длительность доворота, с (настройка). */
+    private double turnSeconds = SNAP_SECONDS;
+
+    /** Длительность доворота камеры и тела при входе и смене грани, с. */
+    void turnSeconds(double s) { turnSeconds = Math.max(0.01, s); }
 
     boolean active() { return face >= 0; }
 
@@ -121,14 +126,36 @@ final class SurfaceGravity {
     /** Взгляд, который видно сейчас: после входа и смены грани — плавно от прежнего, мышь — без задержки. */
     Quat shown(long now) {
         Quat t = target();
-        if (blend == null) return t;
-        double s = (now - blendStart) / (SNAP_SECONDS * 1e9);
+        Quat r = turning(now);
+        return r == null ? t : r.mul(t).normalize();
+    }
+
+    /**
+     * Тело на грани, которое видно сейчас: стоит на грани (верх по нормали, лицом по взгляду) и во время доворота
+     * повёрнуто тем же поворотом, что и камера, — тело и камера переезжают на новую грань вместе.
+     */
+    Quat body(long now) {
+        Quat b = BodyFrame.onSurface(target(), normal());
+        Quat r = turning(now);
+        return r == null ? b : r.mul(b).normalize();
+    }
+
+    /** Остаток доворота (мир): от показанного к целевому, плавно (smootherstep) к нулю; null — доворота нет. */
+    private Quat turning(long now) {
+        if (blend == null) return null;
+        double s = (now - blendStart) / (turnSeconds * 1e9);
         if (s >= 1 || s < 0) {
             blend = null;
-            return t;
+            return null;
         }
-        s = s * s * (3 - 2 * s);
-        return FreeLook.slerp(blend, Quat.IDENTITY, s).mul(t).normalize();
+        return FreeLook.slerp(blend, Quat.IDENTITY, ease(s));
+    }
+
+    /** Плавный ход 0..1 (smootherstep): нулевые скорость и ускорение в начале и в конце. */
+    static double ease(double s) {
+        if (s <= 0) return 0;
+        if (s >= 1) return 1;
+        return s * s * s * (s * (s * 6 - 15) + 10);
     }
 
     private void startBlend(Quat shown, long now) {
