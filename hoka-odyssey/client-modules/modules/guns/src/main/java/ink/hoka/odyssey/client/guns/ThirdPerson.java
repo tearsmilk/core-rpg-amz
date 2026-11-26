@@ -97,6 +97,8 @@ final class ThirdPerson {
     void cleanup() {
         long now = System.nanoTime();
         for (Iterator<Ent> it = ents.values().iterator(); it.hasNext(); ) if (now - it.next().seenNs > 10_000_000_000L) it.remove();
+        // сигналы чужих: сервер повторяет POSE раз в 2 с, пока оружие в руке; ушёл из мира / вышел — забыть
+        for (Iterator<Signals> it = signals.values().iterator(); it.hasNext(); ) if (now - it.next().seenNs > 10_000_000_000L) it.remove();
     }
 
     // ---------------------------------------------------------------- крючок
