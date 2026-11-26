@@ -199,6 +199,7 @@ public final class SpaceflightModule implements ClientModule {
         ctx.onMessage(this::onMessage);
         ctx.onTick(this::tick);
         ctx.onMouse(this::onMouse);
+        System.getProperties().put(LOOK_KICK, lookKick);
         ctx.onCamera(this::onCamera);
         ctx.onInput(this::onInput);
         bodies.install();
@@ -217,6 +218,7 @@ public final class SpaceflightModule implements ClientModule {
 
     @Override
     public void disable() {
+        System.getProperties().remove(LOOK_KICK, lookKick);
         if (active) deactivate();
         boxHooksOn = false;                                        // крючки ядро снимет после disable — уже сейчас null
         refreshRemoteBoxes(bodies == null ? List.of() : bodies.boxed());
@@ -224,6 +226,22 @@ public final class SpaceflightModule implements ClientModule {
         lookOwned = false;
         serverOn = false;
         field = Field.EMPTY;
+    }
+
+    /**
+     * Поворот взгляда от другого модуля (отдача оружия модуля guns): в невесомости взгляд держит spaceflight, и
+     * поворот игрока «снаружи» он бы затёр — поэтому guns поворачивает через нас. Тот же путь, что у мыши: true —
+     * повернули (взгляд наш), false — взгляд обычный, пусть поворачивает сам. Связь через System.getProperties —
+     * загрузчики классов модулей разные, BiFunction из JDK общий.
+     */
+    static final String LOOK_KICK = "hoka.spaceflight.lookKick";
+    private final java.util.function.BiFunction<Double, Double, Boolean> lookKick =
+            (yaw, pitch) -> yaw != null && pitch != null && onMouse(yaw, pitch);
+
+    /** В основной руке оружие модуля guns (метка hoka_gun в custom_data) — тогда R у него (перезарядка), не «лечь». */
+    static boolean holdingGun(LocalPlayer p) {
+        var cd = p.getMainHandItem().get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+        return cd != null && !cd.isEmpty() && !cd.copyTag().getStringOr("hoka_gun", "").isEmpty();
     }
 
     private InputConstants.Key key(String name, String fallback) {
@@ -395,7 +413,7 @@ public final class SpaceflightModule implements ClientModule {
             side = (down(mc, o.keyRight) ? 1 : 0) - (down(mc, o.keyLeft) ? 1 : 0);
             jump = down(mc, o.keyJump);
             shift = down(mc, o.keyShift);
-            proneDown = physical(mc, proneKey);
+            proneDown = physical(mc, proneKey) && !holdingGun(p);
             vert = (jump ? 1 : 0) - (shift ? 1 : 0);
         }
         // ввод vanilla пустой (onInput): ходьбу, прыжок, присед и бег игра не видит, движением управляет модуль.

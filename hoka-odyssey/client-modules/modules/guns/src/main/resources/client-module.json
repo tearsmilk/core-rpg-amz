@@ -1,0 +1,7 @@
+{
+  "id": "guns",
+  "version": "0.1.0",
+  "main": "ink.hoka.odyssey.client.guns.GunsClientModule",
+  "authors": ["tearsmilk"],
+  "description": "Огнестрел: ЛКМ — выстрел, ПКМ — прицел, R — перезарядка, V — режим огня; модель и звуки АКМ — TACZ (CC BY-NC-ND 4.0)"
+}

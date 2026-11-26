@@ -45,3 +45,4 @@ include("oxygen")        // нет воздуха на выбранных кар
 include("items")         // выбрасывание и подбор предметов как в ванили (ItemEntity)
 include("gravzones")     // зоны гравитации, выделяемые топориком (/hozone, depends: gravity)
 include("starmap")       // данные для карты-радара клиентского модуля starmap (корабли, игроки)
+include("guns")          // огнестрел: АКМ (ассеты TACZ), стрельба/прицел/перезарядка (softdepends: clientmods, hoitems, hosounds, gravity)
