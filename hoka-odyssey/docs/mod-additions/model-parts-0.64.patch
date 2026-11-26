@@ -1,0 +1,160 @@
+diff --git a/client/core/build.gradle.kts b/client/core/build.gradle.kts
+index afe05c2..1c78213 100644
+--- a/client/core/build.gradle.kts
++++ b/client/core/build.gradle.kts
+@@ -1,5 +1,5 @@
+ // Ядро-мод Hoka Odyssey: маленький, ставится один раз. Всё остальное приходит с сервера модулями.
+-version = "0.64.0"
++version = "0.65.0"
+ group = "ink.hoka"
+ 
+ val mc = "1.21.11"
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/Hooks.java b/client/core/src/main/java/ink/hoka/odyssey/client/Hooks.java
+index 251c98d..0931b2a 100644
+--- a/client/core/src/main/java/ink/hoka/odyssey/client/Hooks.java
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/Hooks.java
+@@ -30,6 +30,10 @@ public final class Hooks {
+     static final List<Owned<ClientContext.PickHook>> PICK = new ArrayList<>();
+     static final List<Owned<ClientContext.EntityBoxHook>> BOX = new java.util.concurrent.CopyOnWriteArrayList<>();
+     static final List<Owned<ClientContext.EntityEyeHook>> EYE = new java.util.concurrent.CopyOnWriteArrayList<>();
++    static final List<Owned<ClientContext.ModelPartsHook>> PARTS = new java.util.concurrent.CopyOnWriteArrayList<>();
++    /** id сущности в состоянии отрисовки (кладёт EntityTiltMixin, пока есть крючки onModelParts). */
++    public static final net.fabricmc.fabric.api.client.rendering.v1.RenderStateDataKey<Integer> ENTITY_ID =
++            net.fabricmc.fabric.api.client.rendering.v1.RenderStateDataKey.create(() -> "hoka_odyssey:entity_id");
+     static volatile Owned<ClientContext.YardResolver> yardResolver;
+     static volatile Owned<ClientContext.LocalViewHook> localView;
+     static final List<Owned<ClientContext.TravelHook>> TICK_EXIT = new ArrayList<>();
+@@ -72,6 +76,7 @@ public final class Hooks {
+         PICK.removeIf(o -> o.owner().equals(owner));
+         BOX.removeIf(o -> o.owner().equals(owner));
+         EYE.removeIf(o -> o.owner().equals(owner));
++        PARTS.removeIf(o -> o.owner().equals(owner));
+         if (yardResolver != null && yardResolver.owner().equals(owner)) yardResolver = null;
+         if (localView != null && localView.owner().equals(owner)) localView = null;
+         TICK_EXIT.removeIf(o -> o.owner().equals(owner));
+@@ -97,6 +102,7 @@ public final class Hooks {
+         PICK.clear();
+         BOX.clear();
+         EYE.clear();
++        PARTS.clear();
+         yardResolver = null;
+         localView = null;
+         TICK_EXIT.clear();
+@@ -228,6 +234,18 @@ public final class Hooks {
+         return null;
+     }
+ 
++    public static boolean hasParts() { return !PARTS.isEmpty(); }
++
++    /** Части модели гуманоида от модулей (миксин HumanoidModel.setupAnim, после игры). */
++    public static void parts(net.minecraft.client.model.HumanoidModel<?> model,
++                             net.minecraft.client.renderer.entity.state.HumanoidRenderState s) {
++        if (PARTS.isEmpty() || model == null || s == null) return;
++        Integer id = s.getData(ENTITY_ID);
++        var level = net.minecraft.client.Minecraft.getInstance().level;
++        net.minecraft.world.entity.Entity e = id == null || level == null ? null : level.getEntity(id);
++        for (var o : PARTS) safe(o.owner(), () -> o.hook().apply(e, model, s));
++    }
++
+     /** Взгляд своего игрока в системе модуля {курс, наклон} или null. */
+     public static float[] localView(float pt) {
+         var h = localView;
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/ModuleManager.java b/client/core/src/main/java/ink/hoka/odyssey/client/ModuleManager.java
+index 6a0c3b4..c3e799f 100644
+--- a/client/core/src/main/java/ink/hoka/odyssey/client/ModuleManager.java
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/ModuleManager.java
+@@ -332,6 +332,7 @@ final class ModuleManager {
+         @Override public void onEntityPose(EntityPoseHook hook) { Hooks.POSE.add(new Hooks.Owned<>(id, hook)); }
+         @Override public void onEntityBox(EntityBoxHook hook) { Hooks.BOX.add(new Hooks.Owned<>(id, hook)); }
+         @Override public void onEntityEye(EntityEyeHook hook) { Hooks.EYE.add(new Hooks.Owned<>(id, hook)); }
++        @Override public void onModelParts(ModelPartsHook hook) { Hooks.PARTS.add(new Hooks.Owned<>(id, hook)); }
+         @Override public void setLocalView(LocalViewHook h) { Hooks.localView = h == null ? null : new Hooks.Owned<>(id, h); }
+         @Override public void setYardResolver(YardResolver r) { Hooks.yardResolver = r == null ? null : new Hooks.Owned<>(id, r); }
+         @Override public void onClick(ClickHook hook) { Hooks.CLICK.add(new Hooks.Owned<>(id, hook)); }
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/api/ClientContext.java b/client/core/src/main/java/ink/hoka/odyssey/client/api/ClientContext.java
+index e71c663..06df44a 100644
+--- a/client/core/src/main/java/ink/hoka/odyssey/client/api/ClientContext.java
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/api/ClientContext.java
+@@ -176,6 +176,15 @@ public interface ClientContext {
+      */
+     default void onEntityEye(EntityEyeHook hook) {}
+ 
++    /**
++     * Части модели гуманоида (голова, тело, руки, ноги) после того, как игра их расставила
++     * ({@code HumanoidModel.setupAnim}): модуль может поменять их поворот ({@code xRot/yRot/zRot}) и положение
++     * ({@code x/y/z}) — например, игрок держит винтовку двумя руками. Зовётся для модели сущности и для моделей её
++     * брони (они расставляются тем же состоянием), предмет в руке идёт за рукой сам. Каждый кадр, на каждую модель:
++     * считать дёшево. Без крючков — как у игры.
++     */
++    default void onModelParts(ModelPartsHook hook) {}
++
+     interface HudLayer { void render(GuiGraphics g, DeltaTracker delta); }
+ 
+     interface MouseHook { boolean onMouse(double yawDeg, double pitchDeg); }
+@@ -198,6 +207,12 @@ public interface ClientContext {
+ 
+     interface EntityBoxHook { net.minecraft.world.phys.AABB box(net.minecraft.world.entity.Entity entity, net.minecraft.world.phys.Vec3 pos); }
+ 
++    /** entity — сущность модели (null — уже не в мире), model и state — как в HumanoidModel.setupAnim. */
++    interface ModelPartsHook {
++        void apply(net.minecraft.world.entity.Entity entity, net.minecraft.client.model.HumanoidModel<?> model,
++                   net.minecraft.client.renderer.entity.state.HumanoidRenderState state);
++    }
++
+     interface EntityEyeHook { net.minecraft.world.phys.Vec3 eye(net.minecraft.world.entity.Entity entity); }
+ 
+     interface EntityTiltHook { org.joml.Quaternionfc tilt(net.minecraft.world.entity.Entity entity, float partialTick); }
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/mixin/EntityTiltMixin.java b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/EntityTiltMixin.java
+index 260af2c..53cf1bd 100644
+--- a/client/core/src/main/java/ink/hoka/odyssey/client/mixin/EntityTiltMixin.java
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/EntityTiltMixin.java
+@@ -31,6 +31,7 @@ public abstract class EntityTiltMixin {
+     @Inject(method = "extractRenderState(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;F)V",
+             at = @At("TAIL"))
+     private void hokaOdyssey$extract(LivingEntity e, LivingEntityRenderState s, float pt, CallbackInfo ci) {
++        if (Hooks.hasParts()) s.setData(Hooks.ENTITY_ID, e.getId());   // для onModelParts (HumanoidPartsMixin)
+         var pose = Hooks.pose(e, pt);
+         if (pose != null) {
+             s.bodyRot = pose.bodyYaw();
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/mixin/HumanoidPartsMixin.java b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/HumanoidPartsMixin.java
+new file mode 100644
+index 0000000..16a0b78
+--- /dev/null
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/HumanoidPartsMixin.java
+@@ -0,0 +1,24 @@
++package ink.hoka.odyssey.client.mixin;
++
++import ink.hoka.odyssey.client.Hooks;
++import net.minecraft.client.model.HumanoidModel;
++import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
++import org.spongepowered.asm.mixin.Mixin;
++import org.spongepowered.asm.mixin.injection.At;
++import org.spongepowered.asm.mixin.injection.Inject;
++import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
++
++/**
++ * Части модели гуманоида от модулей (ClientContext.onModelParts): в самом конце {@code HumanoidModel.setupAnim} —
++ * после всех поз игры (PlayerModel.setupAnim зовёт его последним). Тем же путём расставляются модели брони, так что
++ * броня идёт за частями тела. Без крючков — сразу как у игры.
++ */
++@Mixin(HumanoidModel.class)
++public abstract class HumanoidPartsMixin {
++
++    @Inject(method = "setupAnim(Lnet/minecraft/client/renderer/entity/state/HumanoidRenderState;)V", at = @At("TAIL"))
++    private void hokaOdyssey$parts(HumanoidRenderState s, CallbackInfo ci) {
++        if (!Hooks.hasParts()) return;
++        Hooks.parts((HumanoidModel<?>) (Object) this, s);
++    }
++}
+diff --git a/client/core/src/main/resources/hoka_odyssey.mixins.json b/client/core/src/main/resources/hoka_odyssey.mixins.json
+index 81fe46d..5392bc7 100644
+--- a/client/core/src/main/resources/hoka_odyssey.mixins.json
++++ b/client/core/src/main/resources/hoka_odyssey.mixins.json
+@@ -24,6 +24,7 @@
+     "EntityTiltMixin",
+     "EntityBoxMixin",
+     "PlayerPoseMixin",
++    "HumanoidPartsMixin",
+     "BackOffMixin",
+     "HitboxTiltMixin",
+     "ClickMixin",
