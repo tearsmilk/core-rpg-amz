@@ -313,30 +313,57 @@ final class ViewModel {
     }
 
     /**
-     * Нарисовать: base — из координат камеры в координаты буфера мира. arms — руки игрока (его скин) на костях
-     * righthand_pos / lefthand_pos, как в TACZ.
+     * Множитель координат x, y камеры, с которым модель, нарисованная с углом обзора мира worldFov, выглядит как
+     * нарисованная с углом viewFov (градусы, по вертикали): tan(worldFov/2) / tan(viewFov/2). Центр экрана на месте —
+     * прицел в ADS остаётся по центру. viewFov ≤ 0 — 1 (угол мира).
      */
-    void render(MultiBufferSource buffers, Matrix4f base, int light, int ammo, boolean arms) {
+    static float fovScale(double worldFov, double viewFov) {
+        if (!(viewFov > 0) || !(worldFov > 0)) return 1f;
+        double w = Math.toRadians(Math.min(179, worldFov)) / 2, v = Math.toRadians(Math.min(179, viewFov)) / 2;
+        return (float) (Math.tan(w) / Math.tan(v));
+    }
+
+    /** Из координат камеры в «экранный» угол обзора оружия: x, y ×k (см. {@link #fovScale}). */
+    static Matrix4f fovMatrix(float k) {
+        return new Matrix4f().scaling(k, k, 1);
+    }
+
+    /**
+     * Нарисовать: base — из координат камеры в координаты буфера мира, fov — сжатие x, y камеры под угол обзора
+     * оружия ({@link #fovMatrix}; вершины — через base·fov, нормали — через base: свет как без сжатия). arms — руки
+     * игрока (его скин) на костях righthand_pos / lefthand_pos, как в TACZ.
+     */
+    void render(MultiBufferSource buffers, Matrix4f base, Matrix4f fov, Matrix4f m2c, int light, int ammo, boolean arms) {
         VertexConsumer vc = buffers.getBuffer(RenderTypes.entityCutoutNoCull(tex));
-        Matrix4f m = new Matrix4f();
+        Matrix4f pos = new Matrix4f(base).mul(fov).mul(m2c);
+        Matrix4f nrm = new Matrix4f(base).mul(m2c);
+        Matrix4f m = new Matrix4f(), n = new Matrix4f();
         for (BbModel.Bone b : model.bones) {
             if (b.faces.isEmpty() || hidden.contains(b.index)) continue;
             if (ammo <= 0 && (barrelRound.contains(b.index) || magRounds.contains(b.index))) continue;
-            m.set(base).mul(pose[b.index]);
-            faces(vc, m, b, light);
+            m.set(pos).mul(pose[b.index]);
+            n.set(nrm).mul(pose[b.index]);
+            faces(vc, m, n, b, light);
         }
         // запасной магазин (перезарядка): сетка магазина в точке additional_magazine, патроны в нём есть всегда
         if (extraMag != null && magazine != null && animates(extraMag)) {
             Matrix4f toExtra = new Matrix4f(pose[extraMag.index]).mul(new Matrix4f(pose[magazine.index]).invert());
             for (BbModel.Bone b : model.bones) {
                 if (b.faces.isEmpty() || !magBones.contains(b.index)) continue;
-                m.set(base).mul(toExtra).mul(pose[b.index]);
-                faces(vc, m, b, light);
+                m.set(pos).mul(toExtra).mul(pose[b.index]);
+                n.set(nrm).mul(toExtra).mul(pose[b.index]);
+                faces(vc, m, n, b, light);
             }
         }
         if (!arms) return;
-        if (handRight != null) FirstPersonArms.render(buffers, armMatrix(base, handRight), true, light);
-        if (handLeft != null) FirstPersonArms.render(buffers, armMatrix(base, handLeft), false, light);
+        if (handRight != null) {
+            FirstPersonArms.render(buffers, armMatrix(pos, handRight), FirstPersonArms.normal(armMatrix(nrm, handRight)),
+                    true, light);
+        }
+        if (handLeft != null) {
+            FirstPersonArms.render(buffers, armMatrix(pos, handLeft), FirstPersonArms.normal(armMatrix(nrm, handLeft)),
+                    false, light);
+        }
     }
 
     /**
@@ -348,19 +375,23 @@ final class ViewModel {
         return new Matrix4f(base).mul(pose[b.index]).translate(b.origin).scale(16f);
     }
 
-    private static void faces(VertexConsumer vc, Matrix4f m, BbModel.Bone b, int light) {
+    /** Грани кости: вершины — матрицей m, нормаль — по тем же точкам матрицей nm (без сжатия под угол обзора). */
+    private static void faces(VertexConsumer vc, Matrix4f m, Matrix4f nm, BbModel.Bone b, int light) {
         Vector3f p0 = new Vector3f(), p1 = new Vector3f(), p2 = new Vector3f(), p3 = new Vector3f();
         Vector3f n = new Vector3f(), e = new Vector3f();
         Vector3f[] pts = {p0, p1, p2, p3};
         for (BbModel.Face f : b.faces) {
             float[] xyz = f.xyz();
             float[] uv = f.uv();
+            nm.transformPosition(xyz[0], xyz[1], xyz[2], p0);
+            nm.transformPosition(xyz[3], xyz[4], xyz[5], p1);
+            nm.transformPosition(xyz[9], xyz[10], xyz[11], p3);
+            n.set(p1).sub(p0).cross(e.set(p3).sub(p0)).normalize();
+            if (!Float.isFinite(n.x)) n.set(0, 1, 0);
             m.transformPosition(xyz[0], xyz[1], xyz[2], p0);
             m.transformPosition(xyz[3], xyz[4], xyz[5], p1);
             m.transformPosition(xyz[6], xyz[7], xyz[8], p2);
             m.transformPosition(xyz[9], xyz[10], xyz[11], p3);
-            n.set(p1).sub(p0).cross(e.set(p3).sub(p0)).normalize();
-            if (!Float.isFinite(n.x)) n.set(0, 1, 0);
             for (int i = 0; i < 4; i++) {
                 vc.addVertex(pts[i].x, pts[i].y, pts[i].z).setColor(-1).setUv(uv[i * 2], uv[i * 2 + 1])
                         .setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(n.x, n.y, n.z);

@@ -381,6 +381,7 @@ public final class GunsModule extends OdysseyModule {
             syncHeld(p);
             if (st.gun == null) {
                 restoreFov(p, st);
+                aimPose(p, st);
                 relayPose(p, st, now);
                 continue;
             }
@@ -389,6 +390,7 @@ public final class GunsModule extends OdysseyModule {
                 endAim(p);
             }
             reloadTick(p, st, now);
+            aimPose(p, st);
             if (st.pushX != 0 || st.pushY != 0 || st.pushZ != 0) {
                 if (st.vacuum && vacuum != null) {
                     vacuum.push(p, st.pushX, st.pushY, st.pushZ);
@@ -534,11 +536,7 @@ public final class GunsModule extends OdysseyModule {
             return;
         }
         st.aimSince = System.currentTimeMillis();
-        if (modded(p)) {                                      // замедление в прицеле (без мода — USE_EFFECTS предмета)
-            var speed = p.getAttribute(Attribute.MOVEMENT_SPEED);
-            speed.removeModifier(AIM_SLOW);
-            speed.addModifier(new AttributeModifier(AIM_SLOW, st.gun.aimSpeed() - 1, AttributeOperation.ADD_MULTIPLIED_TOTAL));
-        }
+        aimPose(p, st);
         double z = st.gun.zoom();
         if (modded(p) || z <= 1.001) {                       // с клиентским модулем приближает он сам, плавно
             return;
@@ -561,7 +559,47 @@ public final class GunsModule extends OdysseyModule {
         }
         st.aimSince = 0;
         restoreFov(p, st);
-        p.getAttribute(Attribute.MOVEMENT_SPEED).removeModifier(AIM_SLOW);
+        aimPose(p, st);
+    }
+
+    /**
+     * Поза прицела, видная ванильному клиенту (ядро без крючка onModelParts — и свой F5, и чужие): игроку с модулем
+     * в прицеле (не в перезарядке) ставим «использование» предмета основной рукой. Анимация использования у оружия —
+     * BOW ({@link GunItems}): обе руки вперёд, оружие вдоль руки — стволом вперёд. С крючком поза TACZ модуля ставится
+     * поверх (руки он задаёт сам). Без модуля «использование» настоящее (ПКМ) — его ведёт Minestom, не трогаем.
+     * <p>
+     * Замедление прицела у игрока с модулем: при позе — USE_EFFECTS предмета (клиент «использует» его и замедляет
+     * сам, как без модуля), без позы (перезарядка с зажатой ПКМ) — атрибутом; вместе не бывают.
+     */
+    private void aimPose(Player p, ShooterState st) {
+        boolean mod = modded(p);
+        boolean pose = mod && st.gun != null && st.aimSince > 0 && st.reloadKind == 0;
+        if (pose != st.aimPose) {
+            st.aimPose = pose;
+            p.refreshActiveHand(pose, false, false);
+        }
+        if (pose) {
+            java.util.Set<java.util.UUID> now = new java.util.HashSet<>();
+            for (Player v : p.getViewers()) {
+                now.add(v.getUuid());
+                if (st.aimPoseSeen.add(v.getUuid())) {
+                    v.sendPacket(p.getMetadataPacket());
+                }
+            }
+            st.aimPoseSeen.retainAll(now);
+        } else {
+            st.aimPoseSeen.clear();
+        }
+        boolean slow = mod && st.gun != null && st.aimSince > 0 && !pose;
+        if (slow != st.aimSlow) {
+            st.aimSlow = slow;
+            var speed = p.getAttribute(Attribute.MOVEMENT_SPEED);
+            speed.removeModifier(AIM_SLOW);
+            if (slow) {
+                speed.addModifier(new AttributeModifier(AIM_SLOW, st.gun.aimSpeed() - 1,
+                        AttributeOperation.ADD_MULTIPLIED_TOTAL));
+            }
+        }
     }
 
     private static void restoreFov(Player p, ShooterState st) {

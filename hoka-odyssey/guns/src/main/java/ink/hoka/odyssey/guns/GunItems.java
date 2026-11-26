@@ -26,10 +26,10 @@ import net.minestom.server.tag.Tag;
 /**
  * Предметы оружия и патронов. Вид — из hoitems (модель TACZ в руке и иконка), поведение — компоненты поверх:
  * <ul>
- *   <li>CONSUMABLE (час, без анимации, звука и частиц) — ПКМ держится как «использование»: сервер получает
- *       начало/конец (прицел), а клиентский модуль сводит оружие к глазу. Анимация NONE, а не BOW: в позе лука рука
- *       вытянута вперёд, и предмет в ней (как лук) смотрит стволом вверх; без анимации оружие у других остаётся в руке
- *       стволом вперёд;</li>
+ *   <li>CONSUMABLE (час, без звука и частиц) — ПКМ держится как «использование»: сервер получает начало/конец
+ *       (прицел), а клиентский модуль сводит оружие к глазу. Анимация BOW: у ванильного клиента в прицеле поза лука —
+ *       обе руки вперёд, а оружие в модели hoitems лежит вдоль руки (display thirdperson, как у TACZ), то есть
+ *       стволом вперёд. Игроку с модулем «использование» в прицеле ставит сервер (ПКМ модуль забирает сам);</li>
  *   <li>USE_EFFECTS — в прицеле нельзя бежать и скорость ×aim-speed (как −20% в TACZ);</li>
  *   <li>дальность взаимодействия −10 (только в основной руке, в подсказке скрыто) — ЛКМ не ломает блоки и не бьёт,
  *       ПКМ не открывает двери: всё это делать на клиенте нечем, поэтому так;</li>
@@ -78,7 +78,7 @@ final class GunItems {
                 new AttributeList.Modifier(Attribute.ENTITY_INTERACTION_RANGE,
                         new AttributeModifier("hoka:gun_reach_entity", -10, AttributeOperation.ADD_VALUE),
                         EquipmentSlotGroup.MAIN_HAND, AttributeList.Display.Hidden.INSTANCE)));
-        return s.with(DataComponents.CONSUMABLE, new Consumable(3600f, ItemAnimation.NONE,
+        return s.with(DataComponents.CONSUMABLE, new Consumable(3600f, ItemAnimation.BOW,
                         SoundEvent.INTENTIONALLY_EMPTY, false, List.of()))
                 .with(DataComponents.USE_EFFECTS, new UseEffects(false, false, (float) g.aimSpeed()))
                 .with(DataComponents.ATTRIBUTE_MODIFIERS, attrs)

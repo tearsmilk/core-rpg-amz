@@ -56,6 +56,9 @@ public final class GunsClientModule implements ClientModule {
     /** Ключ в System.getProperties: прятать ли прицел игры (общий флаг для обёртки HUD — она одна на клиент). */
     static final String HIDE_CROSSHAIR = "hoka.guns.hideCrosshair";
     private static final String CROSSHAIR_HOOK = "hoka.guns.crosshairHook";
+    /** Ключи в System.getProperties: обработчик начала тика игры (Runnable модуля) и признак, что слушатель стоит. */
+    static final String PRE_TICK = "hoka.guns.preTick";
+    private static final String PRE_TICK_HOOK = "hoka.guns.preTickHook";
     /** Поворот взгляда через spaceflight (в невесомости взгляд держит он): BiFunction(dYaw°, dPitch°) → забрал ли. */
     static final String LOOK_KICK = "hoka.spaceflight.lookKick";
     private static final float INACCURACY_K = 0.0172275f;
@@ -127,6 +130,9 @@ public final class GunsClientModule implements ClientModule {
     private boolean zoomOn;
     private float savedWalk;
     private float lastWalk;
+    // ---- угол обзора мира: как его считает игра (GameRenderer.tickFov — множитель с плавным переходом по тикам)
+    private float fovMod = 1;
+    private float fovModO = 1;
     // ---- покачивание оружия за взглядом
     private float lastYaw = Float.NaN;
     private float lastPitch;
@@ -151,11 +157,13 @@ public final class GunsClientModule implements ClientModule {
         ctx.onCamera(this::camera);
         ctx.onClick(this::click);
         installCrosshairHook();
+        installPreTickHook();
+        System.getProperties().put(PRE_TICK, (Runnable) this::preTick);
         partsHook = installPartsHook();
         ctx.send(Proto.hello());
         ctx.logger().info("guns: загружен (перезарядка — {}, режим огня — {}, размер оружия {}; поза тела от третьего"
                 + " лица — {})", cfg.reloadKey, cfg.fireModeKey, cfg.viewmodelScale,
-                partsHook ? "есть (onModelParts)" : "нет: ядро без onModelParts, поза игры");
+                partsHook ? "есть (onModelParts)" : "нет: ядро без onModelParts — поза игры, в прицеле поза лука");
     }
 
     @Override
@@ -169,6 +177,7 @@ public final class GunsClientModule implements ClientModule {
             }
         }
         System.getProperties().remove(HIDE_CROSSHAIR);
+        System.getProperties().remove(PRE_TICK);
         restoreZoom();
         for (ViewModel vm : models.values()) vm.close();
         models.clear();
@@ -237,6 +246,33 @@ public final class GunsClientModule implements ClientModule {
         } catch (Throwable e) {
             ctx.logger().warn("guns: прицел игры не спрятать ({}) — будет виден вместе со своим", e.toString());
         }
+    }
+
+    /**
+     * Слушатель начала тика игры (Fabric START_CLIENT_TICK) — один на клиент, как обёртка прицела; зовёт то, что
+     * лежит в {@link #PRE_TICK} (у выгруженного модуля — ничего).
+     */
+    private void installPreTickHook() {
+        if (System.getProperties().containsKey(PRE_TICK_HOOK)) return;
+        try {
+            net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.START_CLIENT_TICK.register(c -> {
+                if (System.getProperties().get(PRE_TICK) instanceof Runnable r) r.run();
+            });
+            System.getProperties().put(PRE_TICK_HOOK, Boolean.TRUE);
+        } catch (Throwable e) {
+            ctx.logger().warn("guns: слушатель начала тика не поставлен ({}) — щелчок ЛКМ в прицеле может теряться",
+                    e.toString());
+        }
+    }
+
+    /**
+     * Начало тика, до разбора клавиш игрой. В прицеле игрок «использует» предмет (поза лука от третьего лица): игра
+     * тогда молча выбрасывает щелчки ЛКМ и startAttack (наш onClick) не зовёт — забираем их сами раньше неё.
+     */
+    private void preTick() {
+        Minecraft mc = Minecraft.getInstance();
+        if (held == null || mc.screen != null || mc.player == null || !mc.player.isUsingItem()) return;
+        while (mc.options.keyAttack.consumeClick()) clickEdge = true;
     }
 
     // ---------------------------------------------------------------- сервер
@@ -426,6 +462,7 @@ public final class GunsClientModule implements ClientModule {
         LocalPlayer p = mc.player;
         if (p == null) return;
         third.cleanup();
+        tickFov(mc);
         ItemStack stack = p.getMainHandItem();
         Proto.Spec now = specOf(specs, stack);
         int slot = p.getInventory().getSelectedSlot();
@@ -606,6 +643,35 @@ public final class GunsClientModule implements ClientModule {
         }
     }
 
+    /** Раз в тик — как GameRenderer.tickFov: множитель угла обзора тянется к цели игрока за полшага. */
+    private void tickFov(Minecraft mc) {
+        float target = 1;
+        if (mc.getCameraEntity() instanceof net.minecraft.client.player.AbstractClientPlayer a) {
+            target = a.getFieldOfViewModifier(mc.options.getCameraType().isFirstPerson(),
+                    mc.options.fovEffectScale().get().floatValue());
+        }
+        fovModO = fovMod;
+        fovMod = net.minecraft.util.Mth.clamp(fovMod + (target - fovMod) * 0.5f, 0.1f, 1.5f);
+    }
+
+    /**
+     * Сжатие x, y камеры для оружия в руке: угол обзора мира (настройка × множитель игры, как GameRenderer.getFov)
+     * → угол оружия viewmodel_fov (у руки игры — всегда 70). Вода и лава сужают оба одинаково.
+     */
+    private float viewFovScale(Minecraft mc, float pt) {
+        if (cfg.viewmodelFov <= 0) return 1;
+        double world = mc.options.fov().get() * net.minecraft.util.Mth.lerp(pt, fovModO, fovMod);
+        double view = cfg.viewmodelFov;
+        var fluid = mc.gameRenderer.getMainCamera().getFluidInCamera();
+        if (fluid == net.minecraft.world.level.material.FogType.WATER
+                || fluid == net.minecraft.world.level.material.FogType.LAVA) {
+            double k = net.minecraft.util.Mth.lerp(mc.options.fovEffectScale().get(), 1.0, 0.85714287);
+            world *= k;
+            view *= k;
+        }
+        return ViewModel.fovScale(world, view);
+    }
+
     // ---------------------------------------------------------------- кадр: стрельба, отдача
 
     private void frameUpdate(Minecraft mc, LocalPlayer p, long now) {
@@ -613,8 +679,9 @@ public final class GunsClientModule implements ClientModule {
         lastFrameNs = now;
         bloom *= (float) Math.exp(-6 * dt);
         if (held == null) return;
-        // прицел — пока зажата «использовать» (ПКМ): клик забран модулем, «использования» предмета нет, поэтому
-        // щелчки ЛКМ в прицеле игра не глотает; серверу — ADS (разброс, замедление)
+        // прицел — пока зажата «использовать» (ПКМ): клик забран модулем, серверу — ADS (разброс, замедление). Сервер
+        // в ответ ставит «использование» предмета (поза лука от третьего лица на ядре без onModelParts) — щелчки ЛКМ
+        // тогда игра выбрасывает, их забирают preTick и кадр
         boolean aimKey = mc.screen == null && mc.options.keyUse.isDown();
         if (aimKey != adsSent) {
             adsSent = aimKey;
@@ -771,16 +838,18 @@ public final class GunsClientModule implements ClientModule {
         Matrix4f sway = new Matrix4f().rotateY((float) Math.toRadians(swayX)).rotateX((float) Math.toRadians(swayY));
         m2c = sway.mul(m2c);
         Matrix4f camToBuf = new Matrix4f(pose).rotate(q);
-        Matrix4f base = new Matrix4f(camToBuf).mul(m2c);
-        vm.render(frame.buffers(), base, light(mc, frame.camera()), ammo, cfg.arms);
+        // свой угол обзора оружия (как рука игры — 70 при любой настройке): x, y камеры ×k
+        Matrix4f fov = ViewModel.fovMatrix(viewFovScale(mc, frame.partialTick()));
+        vm.render(frame.buffers(), camToBuf, fov, m2c, light(mc, frame.camera()), ammo, cfg.arms);
         Vector3f mz = vm.muzzle(m2c);
         if (mz != null) {
+            mz = fov.transformPosition(mz);                        // где ствол виден на экране
             Vector3f w = new Vector3f(mz).rotate(q);
             Vec3 c = frame.camera();
             muzzleWorld = new Vec3(c.x + w.x, c.y + w.y, c.z + w.z);
             if (flashNs > 0 && now - flashNs < 55_000_000L && flashTex != null && cfg.tracers) {
                 float size = cfg.viewmodelScale * 13f / 16f * (vacuum() ? 0.6f : 1f);
-                vm.renderFlash(frame.buffers(), camToBuf, mz, flashTex, size, flashSpin);
+                vm.renderFlash(frame.buffers(), camToBuf, mz, flashTex, size * fov.m00(), flashSpin);  // в плоскости экрана
             }
         }
     }

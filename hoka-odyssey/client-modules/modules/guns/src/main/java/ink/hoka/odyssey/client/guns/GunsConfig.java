@@ -25,6 +25,9 @@ final class GunsConfig {
 
             # Размер оружия в руке (1 — как в TACZ по пикселям модели; меньше — меньше «влезает» в стены)
             viewmodel_scale = 0.3
+            # Угол обзора оружия и рук в руке, градусы (как у руки в игре: 70, не зависит от настройки «угол обзора»;
+            # иначе при большом угле обзора оружие и руки растягиваются и вылезают снизу). 0 — угол обзора мира
+            viewmodel_fov = 70
             # Наименьшая яркость оружия в руке, 0…15 (в космосе темно — иначе его не видно)
             min_light = 8
             # Трассеры пуль и вспышка у ствола
@@ -48,6 +51,7 @@ final class GunsConfig {
     String reloadKey = "key.keyboard.r";
     String fireModeKey = "key.keyboard.v";
     float viewmodelScale = 0.3f;
+    float viewmodelFov = 70f;
     int minLight = 8;
     boolean tracers = true;
     float cameraShake = 0.5f;
@@ -73,6 +77,8 @@ final class GunsConfig {
             c.reloadKey = p.getProperty("reload", c.reloadKey).trim();
             c.fireModeKey = p.getProperty("firemode", c.fireModeKey).trim();
             c.viewmodelScale = (float) num(p, "viewmodel_scale", c.viewmodelScale, 0.05, 2);
+            double fov = num(p, "viewmodel_fov", c.viewmodelFov, 0, 150);
+            c.viewmodelFov = fov < 1 ? 0 : (float) Math.max(30, fov);
             c.minLight = (int) num(p, "min_light", c.minLight, 0, 15);
             c.tracers = bool(p, "tracers", c.tracers);
             c.cameraShake = (float) num(p, "camera_shake", c.cameraShake, 0, 2);

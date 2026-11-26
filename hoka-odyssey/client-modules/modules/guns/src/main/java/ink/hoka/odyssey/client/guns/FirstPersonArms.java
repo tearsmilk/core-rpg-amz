@@ -24,7 +24,8 @@ final class FirstPersonArms {
     private FirstPersonArms() {
     }
 
-    static void render(MultiBufferSource buffers, Matrix4f m, boolean right, int light) {
+    /** m — матрица руки (вершины), normal — её нормали (без сжатия под угол обзора оружия). */
+    static void render(MultiBufferSource buffers, Matrix4f m, Matrix3f normal, boolean right, int light) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer p = mc.player;
         if (p == null || p.isInvisible()) return;
@@ -41,7 +42,7 @@ final class FirstPersonArms {
             sleeve.visible = p.isModelPartShown(right ? PlayerModelPart.RIGHT_SLEEVE : PlayerModelPart.LEFT_SLEEVE);
             PoseStack ps = new PoseStack();
             ps.last().pose().set(m);
-            ps.last().normal().set(normal(m));
+            ps.last().normal().set(normal);
             Identifier skin = p.getSkin().body().texturePath();
             arm.render(ps, buffers.getBuffer(RenderTypes.entityTranslucent(skin)), light, OverlayTexture.NO_OVERLAY);
         } finally {

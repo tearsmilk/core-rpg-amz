@@ -58,4 +58,23 @@ class MathTest {
             prev = v;
         }
     }
+
+    @Test
+    void viewmodelFovLooksTheSameAtAnyWorldFov() {
+        assertEquals(1, ViewModel.fovScale(70, 70), 1e-6);
+        assertEquals(1, ViewModel.fovScale(110, 0), 1e-6);                 // 0 — угол мира, как было
+        // точка камеры (x, y, z): на экране x/(−z·tan(fov/2)). С углом мира 110 и сжатием k — как с углом 70.
+        for (double world : new double[] {50, 70, 90, 110}) {
+            float k = ViewModel.fovScale(world, 70);
+            Vector3f p = ViewModel.fovMatrix(k).transformPosition(new Vector3f(0.1f, -0.2f, -0.5f));
+            double screenWorld = p.x / (0.5 * Math.tan(Math.toRadians(world) / 2));
+            double screen70 = 0.1 / (0.5 * Math.tan(Math.toRadians(70) / 2));
+            assertEquals(screen70, screenWorld, 1e-5);
+            assertEquals(-0.5f, p.z, 1e-6);                                  // глубина та же — стены как были
+            Vector3f c = ViewModel.fovMatrix(k).transformPosition(new Vector3f(0, 0, -0.3f));
+            assertEquals(0, c.x, 0);                                         // центр (прицел в ADS) на месте
+            assertEquals(0, c.y, 0);
+        }
+        assertTrue(ViewModel.fovScale(110, 70) > 1.9f);                      // при 110 модель без сжатия вдвое меньше
+    }
 }
