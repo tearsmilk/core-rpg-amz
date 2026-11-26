@@ -272,6 +272,8 @@ public final class GunsClientModule implements ClientModule {
     private void preTick() {
         Minecraft mc = Minecraft.getInstance();
         if (held == null || mc.screen != null || mc.player == null || !mc.player.isUsingItem()) return;
+        // только «использование» оружия (поза прицела): ест/пьёт другой рукой — щелчки игра выбрасывает, как всегда
+        if (mc.player.getUsedItemHand() != net.minecraft.world.InteractionHand.MAIN_HAND) return;
         while (mc.options.keyAttack.consumeClick()) clickEdge = true;
     }
 
