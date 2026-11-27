@@ -1,12 +1,12 @@
 # Добавки в мод
 
-## 0.69: части модели гуманоида (`onModelParts`) — нужно сделать
+## 0.70: части модели гуманоида (`onModelParts`) — нужно сделать
 
 Модулю `guns` нужно ставить руки, голову, тело и ноги модели игрока (винтовка двумя руками у плеча, прицел,
 перезарядка от третьего лица, как в TACZ). Ядру — один крючок в конце `HumanoidModel.setupAnim` (и для моделей брони).
 
-> **Патч против 0.68.0** (`SakuraMesd/hokaodyssey`, коммит `6780080`):
-> [`model-parts-0.68.patch`](model-parts-0.68.patch) — версия ядра 0.69.0. Проверен `git apply --check` на чистой выгрузке `6780080`,
+> **Патч против 0.69.0** (`SakuraMesd/hokaodyssey`, коммит `8097358`):
+> [`model-parts-0.69.patch`](model-parts-0.69.patch) — версия ядра 0.70.0. Проверен `git apply --check` на чистой выгрузке `8097358`,
 > мод с ним собирается целиком (ядро с gen-api + hello + planets + sky + ships). Старые патчи: [`model-parts-0.64.patch`](model-parts-0.64.patch)
 > — против `63ba753` (0.64.0), [`model-parts-0.55.patch`](model-parts-0.55.patch) — против `9e8351b` (0.55.0).
 > Постановка для агента мода — [`AGENT_MESSAGE-model-parts.md`](AGENT_MESSAGE-model-parts.md).
