@@ -73,6 +73,8 @@ public final class GunsClientModule implements ClientModule {
     private InputConstants.Key modeKey;
 
     private Map<String, Proto.Spec> specs = new HashMap<>();
+    /** Вид оружия по id (третий хвост CONFIG): пистолет, ручной затвор, оптика. */
+    private Map<String, Proto.Kind> kinds = new HashMap<>();
     private float vacVolume = 0.35f;
     private final Map<String, ViewModel> models = new HashMap<>();
     private final Set<String> watched = new HashSet<>();
@@ -112,6 +114,8 @@ public final class GunsClientModule implements ClientModule {
     private float reloadLen;
     private int reloadKind;
     private long drawUntilNs;
+    /** Ручной затвор: когда начать анимацию затвора (нс, −1 — не надо). */
+    private long boltAtNs = -1;
     private float ads;
     private long lastFrameNs;
     private final RecoilSpline recoilPitch = new RecoilSpline();
@@ -158,11 +162,12 @@ public final class GunsClientModule implements ClientModule {
         ctx.onHud(this::hud);
         ctx.onCamera(this::camera);
         ctx.onClick(this::click);
+        ctx.onMouse(this::mouse);
         installCrosshairHook();
         installPreTickHook();
         System.getProperties().put(PRE_TICK, (Runnable) this::preTick);
         partsHook = installPartsHook();
-        if (cfg.backGun) back = new BackGun(ctx.logger(), cfg.backTune);
+        if (cfg.backGun) back = new BackGun(ctx.logger(), cfg.backTune, cfg.holsterTune);
         ctx.send(Proto.hello());
         ctx.logger().info("guns: загружен (перезарядка — {}, режим огня — {}, размер оружия {}; поза тела от третьего"
                 + " лица — {})", cfg.reloadKey, cfg.fireModeKey, cfg.viewmodelScale,
@@ -294,8 +299,10 @@ public final class GunsClientModule implements ClientModule {
                     float[] vv = {0.35f};
                     playerAnimPaths.clear();
                     Map<String, String> gunItems = new HashMap<>();
-                    specs = Proto.readConfig(in, vv, playerAnimPaths, gunItems);
-                    if (back != null) back.setItems(gunItems);
+                    Map<String, Proto.Kind> k = new HashMap<>();
+                    specs = Proto.readConfig(in, vv, playerAnimPaths, gunItems, k);
+                    kinds = k;
+                    if (back != null) back.setItems(gunItems, k);
                     vacVolume = vv[0];
                     for (Proto.Spec s : specs.values()) watch(s);
                     third.clearAnims();
@@ -531,6 +538,7 @@ public final class GunsClientModule implements ClientModule {
         pending.clear();
         inflight.clear();
         reloadStartNs = -1;
+        boltAtNs = -1;
         ads = 0;
         flashNs = -1;
         clickEdge = false;
@@ -569,6 +577,7 @@ public final class GunsClientModule implements ClientModule {
     }
 
     private void startReloadLocal(int kind, float seconds) {
+        boltAtNs = -1;                                             // перезарядка с пустым магазином передёргивает сама
         reloadKind = kind;
         reloadLen = Math.max(0.1f, seconds);
         reloadStartNs = System.nanoTime();
@@ -619,7 +628,8 @@ public final class GunsClientModule implements ClientModule {
 
     /**
      * Приближение в прицеле — только у себя: игра умножает угол обзора на (скорость/walkingSpeed + 1)/2 (и ещё ×1,1
-     * в полёте), с плавным переходом по тикам; подбираем walkingSpeed своих способностей так, чтобы вышло 1/zoom.
+     * в полёте), с плавным переходом по тикам; подбираем walkingSpeed своих способностей так, чтобы вышло 1/zoom
+     * (игра держит множитель в 0,1…1,5 — приближение до 10).
      * Сервер walkingSpeed на клиенте ни для чего, кроме обзора, не читает. Ползунок «эффекты обзора» учтён (на 0 —
      * без приближения).
      */
@@ -643,8 +653,11 @@ public final class GunsClientModule implements ClientModule {
         double want = 1 + (1 / z - 1) / fx;
         double fly = ab.flying ? 1.1 : 1;
         double attr = p.getAttributeValue(Attributes.MOVEMENT_SPEED);
+        // (скорость/walkingSpeed + 1)/2 = want: для приближения больше ×2 (оптика 8x) walkingSpeed отрицательная —
+        // игра на клиенте берёт её только для угла обзора (на сервер способности с ней не уходят)
         double k = 2 * want / fly - 1;
-        if (attr <= 0 || k <= 0.01) return;
+        if (attr <= 0) return;
+        if (Math.abs(k) < 1e-3) k = 1e-3;
         lastWalk = (float) (attr / k);
         ab.setWalkingSpeed(lastWalk);
     }
@@ -733,6 +746,11 @@ public final class GunsClientModule implements ClientModule {
                     shoot(mc, p, now);
                     semiFired = true;
                     nextShotNs = now + interval;
+                    float bolt = kind().boltTime();
+                    if (bolt > 0 && ammo > 0) {                    // ручной затвор: передёрнуть после промежутка
+                        boltAtNs = now + interval;
+                        nextShotNs = now + interval + (long) (bolt * 1e9);
+                    }
                 }
             } else {
                 if (nextShotNs < now - interval) nextShotNs = now;
@@ -743,10 +761,41 @@ public final class GunsClientModule implements ClientModule {
                 }
             }
         }
+        if (boltAtNs >= 0 && now >= boltAtNs) {                    // затвор — анимация TACZ «bolt» со звуками
+            boltAtNs = -1;
+            ViewModel bvm = models.get(held.model());
+            if (bvm != null && !reloading()) bvm.play("bolt");
+        }
         // отдача камеры: изменение сплайнов с прошлого кадра
         double dp = recoilPitch.delta(now / 1_000_000) * cfg.recoil;
         double dy = recoilYaw.delta(now / 1_000_000) * cfg.recoil;
         if (dp != 0 || dy != 0) kick(p, dy, dp);
+    }
+
+    /** Вид оружия в руке (нет данных — винтовка без затвора и оптики). */
+    private Proto.Kind kind() {
+        Proto.Kind k = held == null ? null : kinds.get(held.id());
+        return k == null ? Proto.Kind.RIFLE : k;
+    }
+
+    /**
+     * Оптика: насколько закрыт экран (0 — не в прицеле, 1 — чёрный экран и круг прицела). Только от первого лица и у
+     * оружия с прицелом; нарастает в последней трети сведения оружия к глазу.
+     */
+    private float scopeCover() {
+        if (held == null || !kind().scope() || !Minecraft.getInstance().options.getCameraType().isFirstPerson()) return 0;
+        return Math.max(0, Math.min(1, (ads - 0.7f) / 0.28f));
+    }
+
+    /** В оптике мышь медленнее: делённая на текущее приближение (как подзорная труба игры) × scope_sensitivity. */
+    private boolean mouse(double yawDeg, double pitchDeg) {
+        Minecraft mc = Minecraft.getInstance();
+        LocalPlayer p = mc.player;
+        if (p == null || mc.screen != null || scopeCover() <= 0 || vacuum()) return false;
+        float z = 1 + (held.zoom() - 1) * AdsBlend.easeInOutCubic(ads);
+        double k = cfg.scopeSensitivity / Math.max(1, z);
+        p.turn(yawDeg * k / 0.15, pitchDeg * k / 0.15);           // как MouseHandler.turnPlayer: градусы = ×0,15
+        return true;
     }
 
     private static String keyName(InputConstants.Key k) {
@@ -826,14 +875,16 @@ public final class GunsClientModule implements ClientModule {
         boolean firstPerson = mc.options.getCameraType().isFirstPerson();
         ViewModel vm = held == null ? null : models.get(held.model());
         boolean show = vm != null && firstPerson;
+        boolean scoped = scopeCover() >= 1;                       // экран закрыт оптикой — оружие не видно
         if (show != handHidden) {
             ctx.hideHand(show);
             handHidden = show;
         }
         if (held != null && firstPerson) System.getProperties().put(HIDE_CROSSHAIR, Boolean.TRUE);
         else System.getProperties().remove(HIDE_CROSSHAIR);
-        if (!show) {
+        if (!show || scoped) {
             muzzleWorld = null;
+            if (scoped) vm.update();
             return;
         }
         // покачивание за поворотом взгляда (инерция оружия), в прицеле — слабее
@@ -863,7 +914,7 @@ public final class GunsClientModule implements ClientModule {
             Vec3 c = frame.camera();
             muzzleWorld = new Vec3(c.x + w.x, c.y + w.y, c.z + w.z);
             if (flashNs > 0 && now - flashNs < 55_000_000L && flashTex != null && cfg.tracers) {
-                float size = cfg.viewmodelScale * 13f / 16f * (vacuum() ? 0.6f : 1f);
+                float size = cfg.viewmodelScale * 13f / 16f * (vacuum() ? 0.6f : 1f) * kind().flashScale();
                 vm.renderFlash(frame.buffers(), camToBuf, mz, flashTex, size * fov.m00(), flashSpin);  // в плоскости экрана
             }
         }
@@ -897,7 +948,13 @@ public final class GunsClientModule implements ClientModule {
 
     private void hud(GuiGraphics g, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
-        if (held == null || mc.player == null || mc.options.hideGui) return;
+        if (held == null || mc.player == null) return;
+        float cover = scopeCover();
+        if (cover > 0) {                                           // оптика: и при F1 — это вид в прицел, не HUD
+            ViewModel vm = models.get(held.model());
+            ScopeOverlay.render(g, vm == null ? null : vm.reticle, cover, cfg.scopeSize);
+        }
+        if (mc.options.hideGui) return;
         long now = System.nanoTime();
         GunHud.View v = view;
         v.name = held.name();
@@ -916,7 +973,7 @@ public final class GunsClientModule implements ClientModule {
         v.hitKind = hitKind;
         v.hitLeft = hitKind == 0 ? 0 : Math.max(0, 1 - (now - hitNs) / 0.35e9f);
         v.silhouette = hudTex.get(held.hud());
-        v.crosshair = mc.options.getCameraType().isFirstPerson();
+        v.crosshair = mc.options.getCameraType().isFirstPerson() && cover <= 0;
         v.hint = !hint.isEmpty() && now - hintNs < 2_000_000_000L ? hint : ammo <= 0 ? "ПУСТО" : "";
         hud.render(g, v, cfg.hud);
     }

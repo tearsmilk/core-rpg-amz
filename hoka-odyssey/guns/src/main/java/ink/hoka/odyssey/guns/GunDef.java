@@ -10,6 +10,11 @@ import java.util.TreeMap;
 /**
  * Описание одного оружия из config.yml (раздел {@code guns.<id>}). Неизменяемое: после {@code homodule reload guns}
  * читается заново. Значения по умолчанию — АКМ из пака TACZ (числа из его ak47_data.json).
+ * <p>
+ * Вид оружия ({@code type}): rifle / sniper — длинное (за спиной), pistol — пистолет (в кобуре на бедре; поза тела
+ * pistol_default). Затвор ({@code bolt-time} &gt; 0, ручной, как у AWP) — после каждого выстрела анимация затвора,
+ * следующий выстрел — не раньше «промежуток по rpm + bolt-time». Оптика ({@code scope: true}) — в прицеле клиент
+ * закрывает экран чёрным, кроме круга прицела (сетка из модели прицела TACZ), приближение {@code zoom} до 10.
  */
 record GunDef(
         String id,
@@ -56,7 +61,20 @@ record GunDef(
         String playerAnimation,
         Map<String, String> sounds,
         Map<Double, String> reloadSoundsTactical,
-        Map<Double, String> reloadSoundsEmpty) {
+        Map<Double, String> reloadSoundsEmpty,
+        String type,
+        double boltTime,
+        boolean scope,
+        String itemIcon,
+        String itemModel,
+        String ammoIcon,
+        Map<Double, String> boltSounds3p,
+        double flashScale) {
+
+    /** Виды оружия: длинное — за спиной, пистолет — в кобуре. */
+    static final String RIFLE = "rifle";
+    static final String SNIPER = "sniper";
+    static final String PISTOL = "pistol";
 
     /** Ключевая точка отдачи: время (с) и пределы случайного значения (градусы). */
     record RecoilKey(double time, double min, double max) {}
@@ -67,6 +85,16 @@ record GunDef(
     /** Промежуток между выстрелами, мс. */
     double intervalMs() {
         return 60000.0 / rpm;
+    }
+
+    /** Полный цикл выстрела, мс: промежуток по rpm и (у ручного затвора) время затвора после него. */
+    double cycleMs() {
+        return intervalMs() + boltTime * 1000;
+    }
+
+    /** Пистолет (в кобуре на бедре, а не за спиной). */
+    boolean pistol() {
+        return PISTOL.equals(type);
     }
 
     /** Сколько патронов вмещает оружие сейчас: магазин и (если в патроннике остался патрон) ещё один. */
@@ -159,7 +187,7 @@ record GunDef(
                 reload(c, b + "reload.empty", 2.25, 2.6),
                 clamp(c.dbl(b + "draw", 0.35), 0, 10),
                 clamp(c.dbl(b + "aim-time", 0.22), 0.01, 5),
-                clamp(c.dbl(b + "zoom", 1.33), 1, 1.9),
+                clamp(c.dbl(b + "zoom", 1.33), 1, 10),
                 clamp(c.dbl(b + "aim-speed", 0.8), 0, 1),
                 c.str(b + "model", "guns/" + id + ".bbmodel"),
                 c.str(b + "hud", "guns/" + id + "_hud.png"),
@@ -167,7 +195,20 @@ record GunDef(
                 c.str(b + "player-animation", "guns/rifle_default.player_animation.json"),
                 Map.copyOf(sounds),
                 timeline(c, b + "reload-sounds-3p.tactical"),
-                timeline(c, b + "reload-sounds-3p.empty"));
+                timeline(c, b + "reload-sounds-3p.empty"),
+                type(c.str(b + "type", RIFLE)),
+                clamp(c.dbl(b + "bolt-time", 0), 0, 10),
+                c.bool(b + "scope", false),
+                c.str(b + "item-icon", "tacz/" + id + "_slot.png"),
+                c.str(b + "item-model", "tacz/" + id + "_lod.bbmodel"),
+                c.str(b + "ammo-icon", "tacz/" + c.str(b + "caliber", "762x39") + ".png"),
+                timeline(c, b + "bolt-sounds-3p"),
+                clamp(c.dbl(b + "flash-scale", 1), 0, 4));
+    }
+
+    private static String type(String s) {
+        String t = s == null ? RIFLE : s.trim().toLowerCase(Locale.ROOT);
+        return t.equals(PISTOL) || t.equals(SNIPER) ? t : RIFLE;
     }
 
     private static List<RecoilKey> recoil(Cfg c, String path, List<RecoilKey> def) {

@@ -34,7 +34,10 @@ import java.util.Set;
  * ({@link BbModel#parse}, поза — {@link Pose#compute}), а рисуется здесь, в onWorld, из итоговой камеры того же кадра
  * (без отставания на кадр, как было бы с ModelHandle). Положение — как в TACZ: модель ставится так, чтобы кость «глаза»
  * idle_view (от бедра) или iron_view (в прицеле — целик и мушка ровно по центру) оказалась в камере; между ними —
- * {@link AdsBlend}. Анимации — одна за раз (как умеет ядро): shoot, reload_*, draw, switch_*.
+ * {@link AdsBlend}. Анимации — одна за раз (как умеет ядро): shoot, bolt, reload_*, draw, switch_*.
+ * <p>
+ * Оружие с прицелом (AWP: обвес TACZ в кости scope_pos, вторая текстура) — в прицеле глаз в кости scope_view
+ * прицела; сетка прицела (division) в модели не рисуется — из неё {@link Reticle} делает картинку для круга оптики.
  */
 final class ViewModel {
     /** Звук в анимации: время (с) и id звука hoka:… */
@@ -42,7 +45,10 @@ final class ViewModel {
 
     final String path;
     final BbModel model;
-    private final Identifier tex;
+    /** Текстуры модели (у оружия с прицелом — вторая, прицела); null — нет картинки. */
+    private final Identifier[] tex;
+    /** Сетка прицела (кости division модели прицела TACZ) — для круга оптики; null — у модели нет прицела. */
+    final Reticle reticle;
     private final Map<String, List<Cue>> cues = new HashMap<>();
     private final Matrix4f[] pose;
     private final Matrix4f[] rest;
@@ -73,7 +79,8 @@ final class ViewModel {
     private long animStart;
     private int nextCue;
 
-    private ViewModel(String path, BbModel model, Identifier tex, JsonObject json) {
+    private ViewModel(String path, BbModel model, Identifier[] tex, JsonObject json, Reticle reticle) {
+        this.reticle = reticle;
         this.path = path;
         this.model = model;
         this.tex = tex;
@@ -91,11 +98,29 @@ final class ViewModel {
         Pose.compute(model, null, -1, rest);
         Pose.compute(model, null, -1, pose);
         idle = model.bone("idle_view");
-        iron = model.bone("iron_view");
+        // прицел на оружии (обвес TACZ в кости scope_pos): в прицеле глаз — в его кости scope_view, как у TACZ
+        BbModel.Bone sv = model.bone("scope_view");
+        iron = sv != null ? sv : model.bone("iron_view");
         camera = model.bone("camera");
         BbModel.Bone mf = model.bone("muzzle_flash");
         muzzle = mf != null ? mf : model.bone("muzzle_pos");
         for (String n : new String[] {"hitbox", "additional_magazine"}) mark(model.bone(n), hidden);
+        // у прицела TACZ рисует сетку (division) только в круге оптики, а точки взгляда (views) и место под
+        // надпись (ammo_count_text) не рисует вовсе
+        for (String n : new String[] {"divisions", "division", "division_2", "ammo_count_text", "scope_view",
+                "scope_view_2"}) {
+            mark(model.bone(n), hidden);
+        }
+        // окуляры TACZ рисует только трафаретом (в цвете — лишь чёрная «линза» оптики ocular_scope до прицеливания):
+        // остальные (коллиматор сбоку у прицела 8x) не видны
+        for (BbModel.Bone b : model.bones) {
+            if (b.name.matches("ocular(_sight)?(_\\d+)?")) mark(b, hidden);
+        }
+        if (sv != null) {                                         // кость views прицела (у оружия своя — с тем же именем)
+            for (BbModel.Bone b : model.bones) {
+                if (b.children.contains(sv)) mark(b, hidden);
+            }
+        }
         // запасной магазин TACZ рисует только пока анимация его двигает (перезарядка) — сеткой основного магазина
         mark(model.bone("bullet_in_barrel"), barrelRound);
         mark(model.bone("bullet_in_mag"), magRounds);
@@ -156,12 +181,20 @@ final class ViewModel {
             JsonObject json = JsonParser.parseString(new String(bytes, StandardCharsets.UTF_8)).getAsJsonObject();
             BbModel m = BbModel.parse(path, json);
             if (m.texturePngs.isEmpty() || m.texturePngs.get(0).length == 0) throw new IllegalStateException("нет текстуры");
-            NativeImage img = NativeImage.read(m.texturePngs.get(0));
-            Identifier id = Identifier.fromNamespaceAndPath("hoka_guns", "viewmodel/" + sanitize(path));
-            Minecraft.getInstance().getTextureManager().register(id, new DynamicTexture(() -> "hoka guns " + path, img));
+            Identifier[] ids = new Identifier[m.texturePngs.size()];
+            Reticle reticle = null;
+            for (int i = 0; i < ids.length; i++) {
+                byte[] png = m.texturePngs.get(i);
+                if (png.length == 0) continue;
+                NativeImage img = NativeImage.read(png);
+                if (reticle == null) reticle = Reticle.build(path, m, i, img, log);   // сетка — на текстуре прицела
+                ids[i] = Identifier.fromNamespaceAndPath("hoka_guns", "viewmodel/" + sanitize(path) + (i == 0 ? "" : "_" + i));
+                Minecraft.getInstance().getTextureManager().register(ids[i], new DynamicTexture(() -> "hoka guns " + path, img));
+            }
             m.texturePngs.clear();
-            log.info("guns: модель {} — костей {}, анимаций {}", path, m.bones.size(), m.animations.size());
-            return new ViewModel(path, m, id, json);
+            log.info("guns: модель {} — костей {}, анимаций {}, текстур {}{}", path, m.bones.size(), m.animations.size(),
+                    ids.length, reticle != null ? ", прицел (сетка " + reticle.faces + " граней)" : "");
+            return new ViewModel(path, m, ids, json, reticle);
         } catch (Exception e) {
             log.error("guns: модель {} не разобрана: {}", path, e.toString());
             return null;
@@ -169,7 +202,8 @@ final class ViewModel {
     }
 
     void close() {
-        Minecraft.getInstance().getTextureManager().release(tex);
+        for (Identifier t : tex) if (t != null) Minecraft.getInstance().getTextureManager().release(t);
+        if (reticle != null) reticle.close();
     }
 
     private static String sanitize(String p) {
@@ -181,6 +215,11 @@ final class ViewModel {
     }
 
     // ---------------------------------------------------------------- анимации
+
+    /** Есть ли у модели анимация name. */
+    boolean has(String name) {
+        return name != null && model.animations.containsKey(name);
+    }
 
     /** Играть анимацию name с начала (нет такой — поза по умолчанию). */
     void play(String name) {
@@ -199,7 +238,9 @@ final class ViewModel {
     private float animTime() {
         if (anim == null) return -1;
         float t = (System.nanoTime() - animStart) / 1e9f;
-        if (anim.loop == BbAnimation.Loop.ONCE && t > anim.length) {
+        // выстрел TACZ у пистолета помечен петлёй, но играется один раз
+        if ((anim.loop == BbAnimation.Loop.ONCE || anim.loop == BbAnimation.Loop.LOOP && "shoot".equals(animName))
+                && t > anim.length) {
             anim = null;
             animName = null;
             return -1;
@@ -334,25 +375,28 @@ final class ViewModel {
      * игрока (его скин) на костях righthand_pos / lefthand_pos, как в TACZ.
      */
     void render(MultiBufferSource buffers, Matrix4f base, Matrix4f fov, Matrix4f m2c, int light, int ammo, boolean arms) {
-        VertexConsumer vc = buffers.getBuffer(RenderTypes.entityCutoutNoCull(tex));
         Matrix4f pos = new Matrix4f(base).mul(fov).mul(m2c);
         Matrix4f nrm = new Matrix4f(base).mul(m2c);
         Matrix4f m = new Matrix4f(), n = new Matrix4f();
-        for (BbModel.Bone b : model.bones) {
-            if (b.faces.isEmpty() || hidden.contains(b.index)) continue;
-            if (ammo <= 0 && (barrelRound.contains(b.index) || magRounds.contains(b.index))) continue;
-            m.set(pos).mul(pose[b.index]);
-            n.set(nrm).mul(pose[b.index]);
-            faces(vc, m, n, b, light);
-        }
-        // запасной магазин (перезарядка): сетка магазина в точке additional_magazine, патроны в нём есть всегда
-        if (extraMag != null && magazine != null && animates(extraMag)) {
-            Matrix4f toExtra = new Matrix4f(pose[extraMag.index]).mul(new Matrix4f(pose[magazine.index]).invert());
+        for (int t = 0; t < tex.length; t++) {                     // по текстуре за раз: буфер одного вида до конца
+            if (tex[t] == null) continue;
+            VertexConsumer vc = buffers.getBuffer(RenderTypes.entityCutoutNoCull(tex[t]));
             for (BbModel.Bone b : model.bones) {
-                if (b.faces.isEmpty() || !magBones.contains(b.index)) continue;
-                m.set(pos).mul(toExtra).mul(pose[b.index]);
-                n.set(nrm).mul(toExtra).mul(pose[b.index]);
-                faces(vc, m, n, b, light);
+                if (b.faces.isEmpty() || hidden.contains(b.index)) continue;
+                if (ammo <= 0 && (barrelRound.contains(b.index) || magRounds.contains(b.index))) continue;
+                m.set(pos).mul(pose[b.index]);
+                n.set(nrm).mul(pose[b.index]);
+                faces(vc, m, n, b, light, t);
+            }
+            // запасной магазин (перезарядка): сетка магазина в точке additional_magazine, патроны в нём есть всегда
+            if (extraMag != null && magazine != null && animates(extraMag)) {
+                Matrix4f toExtra = new Matrix4f(pose[extraMag.index]).mul(new Matrix4f(pose[magazine.index]).invert());
+                for (BbModel.Bone b : model.bones) {
+                    if (b.faces.isEmpty() || !magBones.contains(b.index)) continue;
+                    m.set(pos).mul(toExtra).mul(pose[b.index]);
+                    n.set(nrm).mul(toExtra).mul(pose[b.index]);
+                    faces(vc, m, n, b, light, t);
+                }
             }
         }
         if (!arms) return;
@@ -376,11 +420,12 @@ final class ViewModel {
     }
 
     /** Грани кости: вершины — матрицей m, нормаль — по тем же точкам матрицей nm (без сжатия под угол обзора). */
-    private static void faces(VertexConsumer vc, Matrix4f m, Matrix4f nm, BbModel.Bone b, int light) {
+    private static void faces(VertexConsumer vc, Matrix4f m, Matrix4f nm, BbModel.Bone b, int light, int texture) {
         Vector3f p0 = new Vector3f(), p1 = new Vector3f(), p2 = new Vector3f(), p3 = new Vector3f();
         Vector3f n = new Vector3f(), e = new Vector3f();
         Vector3f[] pts = {p0, p1, p2, p3};
         for (BbModel.Face f : b.faces) {
+            if (f.texture() != texture) continue;
             float[] xyz = f.xyz();
             float[] uv = f.uv();
             nm.transformPosition(xyz[0], xyz[1], xyz[2], p0);

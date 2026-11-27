@@ -46,8 +46,13 @@ final class GunsConfig {
             arms = true
             # Поза тела с оружием от третьего лица (свой в F5 и другие игроки): нужен крючок ядра onModelParts (0.56+)
             third_person = true
-            # Оружие за спиной: оружие в быстрой панели, но не в руке, висит на спине (у себя в F5 и у других игроков)
+            # Оружие за спиной: оружие в быстрой панели, но не в руке, висит на спине (у себя в F5 и у других игроков);
+            # пистолет — в кобуре на правом бедре
             back_gun = true
+            # Оптика (AWP): чувствительность мыши в прицеле (1 — как без прицела, делённая на приближение, как у
+            # подзорной трубы) и размер круга прицела (доля высоты экрана)
+            scope_sensitivity = 1.0
+            scope_size = 0.94
             """;
 
     String reloadKey = "key.keyboard.r";
@@ -64,8 +69,12 @@ final class GunsConfig {
     boolean arms = true;
     boolean thirdPerson = true;
     boolean backGun = true;
+    float scopeSensitivity = 1f;
+    float scopeSize = 0.94f;
     /** Подстройка положения оружия за спиной (для проверки, в файле по умолчанию нет): угол°, x, y, z, масштаб, x°, y°, z°. */
     float[] backTune = {45, 0, 0, 0, 1, 0, 90, 180};
+    /** Подстройка кобуры (в файле по умолчанию нет): x, y, z (пиксели от правой ноги), масштаб, x°, y°, z°. */
+    float[] holsterTune = {-2.4f, 5f, 0f, 1f, 90f, 180f, 0f};
 
     static GunsConfig load(Path dir, Logger log) {
         GunsConfig c = new GunsConfig();
@@ -94,22 +103,27 @@ final class GunsConfig {
             c.arms = bool(p, "arms", c.arms);
             c.thirdPerson = bool(p, "third_person", c.thirdPerson);
             c.backGun = bool(p, "back_gun", c.backGun);
-            String tune = p.getProperty("back_gun_tune");
-            if (tune != null) {
-                String[] parts = tune.trim().split("[,\\s]+");
-                for (int i = 0; i < Math.min(parts.length, c.backTune.length); i++) {
-                    try {
-                        float v = Float.parseFloat(parts[i]);
-                        if (Float.isFinite(v)) c.backTune[i] = v;
-                    } catch (NumberFormatException ignored) {
-                        // как было
-                    }
-                }
-            }
+            c.scopeSensitivity = (float) num(p, "scope_sensitivity", c.scopeSensitivity, 0.05, 8);
+            c.scopeSize = (float) num(p, "scope_size", c.scopeSize, 0.3, 1.5);
+            tune(p.getProperty("back_gun_tune"), c.backTune);
+            tune(p.getProperty("holster_tune"), c.holsterTune);
         } catch (IOException | RuntimeException e) {
             log.warn("guns: не удалось прочитать {} — значения по умолчанию ({})", file, e.toString());
         }
         return c;
+    }
+
+    private static void tune(String tune, float[] out) {
+        if (tune == null) return;
+        String[] parts = tune.trim().split("[,\\s]+");
+        for (int i = 0; i < Math.min(parts.length, out.length); i++) {
+            try {
+                float v = Float.parseFloat(parts[i]);
+                if (Float.isFinite(v)) out[i] = v;
+            } catch (NumberFormatException ignored) {
+                // как было
+            }
+        }
     }
 
     private static boolean bool(Properties p, String key, boolean def) {

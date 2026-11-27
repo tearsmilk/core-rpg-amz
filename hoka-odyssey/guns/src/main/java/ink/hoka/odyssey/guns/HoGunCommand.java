@@ -18,10 +18,12 @@ import net.minestom.server.item.ItemStack;
  * /hogun — только операторы и консоль:
  * <ul>
  *   <li>{@code /hogun give <оружие> [игрок]} — выдать оружие (полный магазин);</li>
- *   <li>{@code /hogun ammo [кол-во] [игрок]} — патроны к оружию в руке (или к первому оружию);</li>
+ *   <li>{@code /hogun ammo [кол-во] [игрок] [оружие]} — патроны к оружию (к указанному, иначе к оружию в руке, а если
+ *       в руке нет оружия — ко всему оружию из config.yml);</li>
  *   <li>{@code /hogun reload [игрок]} — перезарядить оружие в руке (как клавиша R);</li>
  *   <li>{@code /hogun list} — оружие из config.yml; {@code /hogun info [игрок]} — что в руке, патроны, связи;</li>
- *   <li>{@code /hogun install} — положить модель/иконки/звуки TACZ в hoitems и hosounds и дописать их config.yml.</li>
+ *   <li>{@code /hogun install} — дописать в свой config.yml оружие из jar, которого там нет (AWP, Glock 17), положить
+ *       модели/иконки/звуки TACZ всего оружия в hoitems и hosounds и дописать их config.yml.</li>
  * </ul>
  */
 final class HoGunCommand extends Command {
@@ -46,6 +48,7 @@ final class HoGunCommand extends Command {
         addSyntax((s, c) -> ammo(s, 90, null), ArgumentType.Literal("ammo"));
         addSyntax((s, c) -> ammo(s, c.get(count), null), ArgumentType.Literal("ammo"), count);
         addSyntax((s, c) -> ammo(s, c.get(count), c.get(who)), ArgumentType.Literal("ammo"), count, who);
+        addSyntax((s, c) -> ammo(s, c.get(count), c.get(who), c.get(gun)), ArgumentType.Literal("ammo"), count, who, gun);
         addSyntax((s, c) -> reload(s, null), ArgumentType.Literal("reload"));
         addSyntax((s, c) -> reload(s, c.get(who)), ArgumentType.Literal("reload"), who);
         addSyntax((s, c) -> list(s), ArgumentType.Literal("list"));
@@ -55,7 +58,7 @@ final class HoGunCommand extends Command {
     }
 
     private static void help(CommandSender s) {
-        s.sendMessage(Component.text("Оружие: /hogun give <оружие> [игрок] · /hogun ammo [кол-во] [игрок] · /hogun reload [игрок] · /hogun list"
+        s.sendMessage(Component.text("Оружие: /hogun give <оружие> [игрок] · /hogun ammo [кол-во] [игрок] [оружие] · /hogun reload [игрок] · /hogun list"
                 + " · /hogun info [игрок] · /hogun install", NamedTextColor.AQUA));
     }
 
@@ -110,36 +113,55 @@ final class HoGunCommand extends Command {
     }
 
     private void ammo(CommandSender s, int n, String who) {
+        ammo(s, n, who, null);
+    }
+
+    private void ammo(CommandSender s, int n, String who, String gunId) {
         Player p = target(s, who);
         if (p == null) {
             return;
         }
-        String held = GunItems.gunId(p.getItemInMainHand());
-        GunDef g = held != null ? mod.guns().get(held) : null;
-        if (g == null) {
-            g = mod.guns().values().stream().findFirst().orElse(null);
+        java.util.Collection<GunDef> forGuns;
+        if (gunId != null) {
+            GunDef g = mod.guns().get(gunId);
+            if (g == null) {
+                s.sendMessage(Component.text("Нет оружия «" + gunId + "». Есть: " + String.join(", ", mod.guns().keySet()), NamedTextColor.RED));
+                return;
+            }
+            forGuns = List.of(g);
+        } else {
+            String held = GunItems.gunId(p.getItemInMainHand());
+            GunDef g = held != null ? mod.guns().get(held) : null;
+            forGuns = g != null ? List.of(g) : mod.guns().values();
         }
-        if (g == null) {
+        if (forGuns.isEmpty()) {
             s.sendMessage(Component.text("В config.yml нет оружия", NamedTextColor.RED));
             return;
         }
-        int left = n;
-        while (left > 0) {
-            int k = Math.min(64, left);
-            if (!p.getInventory().addItemStack(mod.items().ammo(g, k))) {
-                break;
+        java.util.Set<String> done = new java.util.HashSet<>();
+        for (GunDef g : forGuns) {
+            if (!done.add(g.ammoItem() + "|" + g.caliber())) {
+                continue;                                     // патроны одного калибра — один раз
             }
-            left -= k;
+            int left = n;
+            while (left > 0) {
+                int k = Math.min(64, left);
+                if (!p.getInventory().addItemStack(mod.items().ammo(g, k))) {
+                    break;
+                }
+                left -= k;
+            }
+            s.sendMessage(Component.text("Патроны: " + (n - left) + " шт. (" + g.ammoName() + ") → " + p.getUsername(),
+                    left == 0 ? NamedTextColor.GREEN : NamedTextColor.YELLOW));
         }
-        s.sendMessage(Component.text("Патроны: " + (n - left) + " шт. (" + g.ammoName() + ") → " + p.getUsername(),
-                left == 0 ? NamedTextColor.GREEN : NamedTextColor.YELLOW));
     }
 
     private void list(CommandSender s) {
         s.sendMessage(Component.text("Оружие (" + mod.guns().size() + "):", NamedTextColor.AQUA));
         for (GunDef g : mod.guns().values()) {
             s.sendMessage(Component.text(" " + g.id() + " — " + g.name() + ": магазин " + g.magazine()
-                    + (g.chamber() ? "+1" : "") + ", " + (int) g.rpm() + " в/мин, урон " + g.damage()[0]
+                    + (g.chamber() ? "+1" : "") + ", " + (int) g.rpm() + " в/мин" + (g.boltTime() > 0 ? " (затвор " + g.boltTime() + " с)" : "")
+                    + ", урон " + g.damage()[0] + (g.scope() ? ", прицел " + g.zoom() + "x" : "")
                     + ", разброс " + g.spreadStand() + "°/" + g.spreadAim() + "° в прицеле", NamedTextColor.GRAY));
         }
     }
@@ -168,17 +190,26 @@ final class HoGunCommand extends Command {
     }
 
     private void install(CommandSender s) {
-        GunDef g = mod.guns().get("ak47");
-        if (g == null) {
-            g = mod.guns().values().stream().findFirst().orElse(null);
+        // оружие, которого нет в module/guns/config.yml (создан старой версией модуля), — дописать из jar
+        try {
+            Assets.Result rg = Assets.addMissingGuns(mod.dataFolder().resolve("config.yml"));
+            s.sendMessage(Component.text("guns: " + rg.message(), NamedTextColor.GRAY));
+            if (rg.manual() != null) {
+                s.sendMessage(Component.text("Допишите в module/guns/config.yml вручную (YAML — в лог сервера)", NamedTextColor.YELLOW));
+                mod.logger().info("guns: допишите в module/guns/config.yml:\n{}", rg.manual());
+            } else if (rg.message().startsWith("дописано")) {
+                mod.reloadGuns();
+            }
+        } catch (IOException | RuntimeException e) {
+            s.sendMessage(Component.text("Оружие в config.yml не дописано: " + e, NamedTextColor.RED));
         }
-        if (g == null) {
+        if (mod.guns().isEmpty()) {
             s.sendMessage(Component.text("В config.yml нет оружия", NamedTextColor.RED));
             return;
         }
         Assets.Report r;
         try {
-            r = mod.assets().install(g);
+            r = mod.assets().install(mod.guns().values());
         } catch (IOException | RuntimeException e) {
             s.sendMessage(Component.text("Не получилось: " + e, NamedTextColor.RED));
             return;

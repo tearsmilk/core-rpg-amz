@@ -1,0 +1,10 @@
+{
+  "thirdperson_righthand": {"rotation": [0, 0, 0], "translation": [0.075, 1.77, -4.305], "scale": [0.6, 0.6, 0.6]},
+  "thirdperson_lefthand":  {"rotation": [0, 0, 0], "translation": [0.075, 1.77, -4.305], "scale": [0.6, 0.6, 0.6]},
+  "firstperson_righthand": {"rotation": [0, 0, 0], "translation": [0.0625, 1.475, -3.5875], "scale": [0.5, 0.5, 0.5]},
+  "firstperson_lefthand":  {"rotation": [0, 0, 0], "translation": [0.0625, 1.475, -3.5875], "scale": [0.5, 0.5, 0.5]},
+  "ground": {"rotation": [0, 0, 0], "translation": [0, 0.86, 4.095], "scale": [0.6, 0.6, 0.6]},
+  "fixed":  {"rotation": [0, 90, 0], "translation": [2.7, 0, 0], "scale": [0.6, 0.6, 0.6]},
+  "head":   {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [0.5, 0.5, 0.5]},
+  "gui":    {"rotation": [90, -60, 90], "translation": [-1.63, -0.27, 0], "scale": [0.34, 0.34, 0.34]}
+}

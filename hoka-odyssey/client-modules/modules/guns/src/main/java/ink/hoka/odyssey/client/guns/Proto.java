@@ -46,6 +46,15 @@ final class Proto {
     private Proto() {
     }
 
+    /** Вид оружия (третий хвост CONFIG): rifle / sniper / pistol, ручной затвор (с, 0 — нет), оптика. */
+    record Kind(String type, float boltTime, boolean scope, float flashScale) {
+        static final Kind RIFLE = new Kind("rifle", 0, false, 1);
+
+        boolean pistol() {
+            return "pistol".equals(type);
+        }
+    }
+
     /** Ключевая точка отдачи. */
     record Key(float time, float min, float max) {}
 
@@ -70,6 +79,15 @@ final class Proto {
      */
     static Map<String, Spec> readConfig(DataInputStream in, float[] vacuumVolume, Map<String, String> playerAnims,
                                         Map<String, String> gunItems) throws IOException {
+        return readConfig(in, vacuumVolume, playerAnims, gunItems, new HashMap<>());
+    }
+
+    /**
+     * То же и третий хвост: kinds — вид оружия по id (u16 n, n раз UTF id, UTF вид, f32 затвор, u8 флаги: 1 — оптика,
+     * f32 размер вспышки).
+     */
+    static Map<String, Spec> readConfig(DataInputStream in, float[] vacuumVolume, Map<String, String> playerAnims,
+                                        Map<String, String> gunItems, Map<String, Kind> kinds) throws IOException {
         int ver = in.readUnsignedByte();
         if (ver != VERSION) throw new IOException("версия протокола сервера " + ver + ", модуля " + VERSION);
         int n = in.readUnsignedShort();
@@ -116,6 +134,17 @@ final class Proto {
                 String id = in.readUTF();
                 String item = in.readUTF();
                 if (!item.isEmpty()) gunItems.put(id, item);
+            }
+        }
+        if (in.available() >= 2) {
+            int m = in.readUnsignedShort();
+            for (int i = 0; i < m; i++) {
+                String id = in.readUTF();
+                String type = in.readUTF();
+                float bolt = in.readFloat();
+                int flags = in.readUnsignedByte();
+                float flash = in.readFloat();
+                kinds.put(id, new Kind(type, Math.max(0, bolt), (flags & 1) != 0, Float.isFinite(flash) ? flash : 1));
             }
         }
         return out;

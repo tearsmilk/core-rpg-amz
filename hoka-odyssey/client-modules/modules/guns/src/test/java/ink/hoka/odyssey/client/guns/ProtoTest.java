@@ -51,4 +51,34 @@ class ProtoTest {
         Proto.readConfig(new DataInputStream(new ByteArrayInputStream(config(false))), new float[1], new HashMap<>(), items);
         assertTrue(items.isEmpty());
     }
+
+    @Test
+    void configReadsKindsTrailer() throws IOException {
+        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+        DataOutputStream o = new DataOutputStream(bo);
+        o.write(config(true));
+        o.writeShort(2);
+        o.writeUTF("ai_awp");
+        o.writeUTF("sniper");
+        o.writeFloat(0.9f);
+        o.writeByte(1);
+        o.writeFloat(1f);
+        o.writeUTF("glock_17");
+        o.writeUTF("pistol");
+        o.writeFloat(0f);
+        o.writeByte(0);
+        o.writeFloat(0.4f);
+        Map<String, Proto.Kind> kinds = new HashMap<>();
+        Proto.readConfig(new DataInputStream(new ByteArrayInputStream(bo.toByteArray())), new float[1], new HashMap<>(),
+                new HashMap<>(), kinds);
+        assertEquals(new Proto.Kind("sniper", 0.9f, true, 1f), kinds.get("ai_awp"));
+        assertEquals(0.4f, kinds.get("glock_17").flashScale());
+        assertTrue(kinds.get("glock_17").pistol());
+        assertTrue(!kinds.get("ai_awp").pistol());
+        // старый сервер (без третьего хвоста) — видов нет, оружие считается винтовкой
+        Map<String, Proto.Kind> none = new HashMap<>();
+        Proto.readConfig(new DataInputStream(new ByteArrayInputStream(config(true))), new float[1], new HashMap<>(),
+                new HashMap<>(), none);
+        assertTrue(none.isEmpty());
+    }
 }

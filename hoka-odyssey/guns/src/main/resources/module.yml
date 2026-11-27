@@ -4,6 +4,6 @@ name: Оружие
 version: 0.1.0
 main: ink.hoka.odyssey.guns.GunsModule
 authors: [tearsmilk]
-description: "Огнестрел — АКМ (модель и звуки TACZ, CC BY-NC-ND 4.0): стрельба, прицел, магазин, перезарядка, отдача в вакууме"
+description: "Огнестрел — АКМ, AWP с прицелом 8x, Glock 17 (модели и звуки TACZ, CC BY-NC-ND 4.0): стрельба, прицел, магазин, перезарядка, затвор, отдача в вакууме"
 depends: []
 softdepends: [clientmods, hoitems, hosounds, gravity]

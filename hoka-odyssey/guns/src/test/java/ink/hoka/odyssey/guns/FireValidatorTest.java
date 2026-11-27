@@ -78,6 +78,30 @@ class FireValidatorTest {
     }
 
     @Test
+    void boltActionCycle() {
+        GunDef awp = GunDef.read("ai_awp", GunDef.Cfg.of(TestGuns.config()));
+        ShooterState s = new ShooterState();
+        long t0 = 10_000;
+        s.equip(awp, 0, "sn", 5, t0 - 1000);
+        s.bucket.reset(t0);
+        assertEquals(FireValidator.Result.OK, FireValidator.check(s, t0, 0, 25, 3));
+        // через промежуток по rpm (351 мс) — ещё передёргивает затвор
+        assertEquals(FireValidator.Result.RATE, FireValidator.check(s, t0 + 400, 0, 25, 3));
+        // ведро на один выстрел: долгая пауза не копит очередь
+        ShooterState w = new ShooterState();
+        w.equip(awp, 0, "sn", 5, t0 - 1000);
+        w.bucket.reset(t0);
+        assertEquals(FireValidator.Result.OK, FireValidator.check(w, t0 + 10_000, 0, 25, 3));
+        assertEquals(FireValidator.Result.RATE, FireValidator.check(w, t0 + 10_000, 0, 25, 3));
+        // цикл 1,25 с проходит и с дрожанием сети −200 мс
+        long t = t0 + 10_000;
+        for (int i = 1; i <= 4; i++) {
+            long at = t + i * 1251L - (i % 2 == 0 ? 200 : 0);
+            assertEquals(FireValidator.Result.OK, FireValidator.check(w, at, 0, 25, 3), "выстрел " + i);
+        }
+    }
+
+    @Test
     void angleMath() {
         assertEquals(0, FireValidator.angle(0, 0, 1, 0, 0, 2), 1e-9);
         assertEquals(90, FireValidator.angle(1, 0, 0, 0, 1, 0), 1e-9);

@@ -3,7 +3,7 @@
 # по тикам, считает попадания и урон. Без клиентского модуля можно стрелять ЛКМ (по одному выстрелу), перезарядка — F.
 # Перечитать: homodule reload guns.
 #
-# Модель, текстуры и звуки АКМ — из мода TACZ (https://github.com/MCModderAnchor/TACZ), лицензия CC BY-NC-ND 4.0:
+# Модели, текстуры и звуки АКМ, AWP (с прицелом 8x) и Glock 17 — из мода TACZ (https://github.com/MCModderAnchor/TACZ), лицензия CC BY-NC-ND 4.0:
 # только некоммерческое использование, без изменений, с указанием авторов (см. NOTICE.md в jar, папка tacz/).
 # Поставить предмет и звуки в hoitems/hosounds — /hogun install (OP), потом всё работает само.
 
@@ -133,3 +133,174 @@ guns:
     reload-sounds-3p:
       tactical: {"0.35": ak47_reload_magout, "1.4": ak47_reload_magin}
       empty: {"0.5": ak47_reload_empty_magout, "1.15": ak47_reload_empty_magin, "1.75": ak47_reload_empty_chamber}
+    # Вид: rifle (за спиной), sniper (за спиной), pistol (в кобуре на бедре, поза тела pistol_default).
+    type: rifle
+    # Предмет hoitems, который ставит /hogun install: иконка в инвентаре ("" — в инвентаре модель) и модель.
+    item-icon: tacz/ak47_slot.png
+    item-model: tacz/ak47_lod.bbmodel
+    ammo-icon: tacz/762x39.png
+
+  # AWP (ai_awp из TACZ) с прицелом 8x (scope_standard_8x) — прицел часть винтовки, не снимается. Ручной затвор:
+  # после каждого выстрела — передёргивание (bolt-time), в прицеле — чёрный экран и круг прицела с сеткой TACZ.
+  ai_awp:
+    name: "AWP"
+    lore: ["Снайперская винтовка с прицелом 8x.", "Модель и звуки: TACZ, CC BY-NC-ND 4.0"]
+    item: ai_awp
+    material: iron_horse_armor
+    ammo-item: ammo_338
+    ammo-material: gold_nugget
+    ammo-name: "Патроны .338 Lapua Magnum"
+    caliber: "338"
+    infinite-ammo: false
+    magazine: 5
+    chamber: true
+    rpm: 171
+    modes: [semi]
+    # Ручной затвор: секунд на передёргивание после выстрела (TACZ bolt_action_time). 0 — нет затвора.
+    bolt-time: 0.9
+    damage:
+      - {distance: 80, damage: 50}
+      - {distance: 160, damage: 45}
+      - {distance: inf, damage: 40}
+    headshot: 2
+    bullet:
+      speed: 575
+      life: 0.9
+      gravity: 0.15
+      friction: 0.015
+      pierce: 4
+      knockback: 0
+      tracer: "#FF8888"
+    # От бедра разброс большой (TACZ: 5°), в прицеле — 0,05°.
+    spread:
+      stand: 5
+      move: 5.5
+      sneak: 3
+      aim: 0.05
+      vacuum: 5
+    recoil:
+      pitch:
+        - {time: 0, min: 3.5, max: 3.5}
+        - {time: 0.07, min: 2.5, max: 2.5}
+        - {time: 0.16, min: 3.25, max: 3.25}
+        - {time: 0.24, min: 2, max: 2}
+        - {time: 0.6, min: -0.5, max: -0.5}
+        - {time: 0.71, min: 0.25, max: 0.25}
+        - {time: 0.83, min: 0, max: 0}
+        - {time: 0.88, min: 0, max: 0}
+      yaw:
+        - {time: 0, min: -0.75, max: -0.75}
+        - {time: 0.08, min: 0.6, max: 0.6}
+        - {time: 0.17, min: -0.35, max: -0.35}
+        - {time: 0.28, min: 0.25, max: 0.25}
+        - {time: 0.5, min: 0, max: 0}
+        - {time: 0.8, min: 0, max: 0}
+    reload:
+      tactical: {feed: 2.05, total: 2.25}
+      empty: {feed: 2.85, total: 3.25}
+    draw: 0.35
+    aim-time: 0.33
+    # Оптика: в прицеле экран чёрный, кроме круга прицела; приближение 8x.
+    scope: true
+    zoom: 8
+    aim-speed: 0.6
+    model: guns/ai_awp.bbmodel
+    hud: guns/ai_awp_hud.png
+    flash: guns/common_muzzle_flash.png
+    player-animation: guns/rifle_default.player_animation.json
+    sounds:
+      shoot: awp_shoot
+      shoot3p: awp_shoot_3p
+      draw: awp_draw
+      put_away: awp_put_away
+      dry_fire: gun_dry_fire
+      fire_select: gun_fire_select
+      flesh_hit: gun_flesh_hit
+      head_hit: gun_head_hit
+      kill: gun_kill
+    reload-sounds-3p:
+      tactical: {"0.55": awp_reload_magout, "1.98": awp_reload_magin}
+      empty: {"0.58": awp_reload_empty_magout, "2.03": awp_reload_empty_magin, "2.62": awp_reload_empty_boltclose}
+    # Звуки затвора, которые слышат остальные: секунда от начала передёргивания → id звука.
+    bolt-sounds-3p: {"0.17": awp_rechamber_out, "0.62": awp_rechamber_in}
+    type: sniper
+    # В инвентаре — модель (с прицелом), а не плоская иконка TACZ без прицела.
+    item-icon: ""
+    item-model: tacz/ai_awp_lod.bbmodel
+    ammo-icon: tacz/338.png
+
+  # Glock 17 (glock_17 из TACZ): пистолет, одиночный огонь; поза тела — pistol_default TACZ.
+  glock_17:
+    name: "Glock 17"
+    lore: ["Пистолет под 9×19.", "Модель и звуки: TACZ, CC BY-NC-ND 4.0"]
+    item: glock_17
+    material: iron_horse_armor
+    ammo-item: ammo_9mm
+    ammo-material: gold_nugget
+    ammo-name: "Патроны 9×19"
+    caliber: "9mm"
+    infinite-ammo: false
+    magazine: 17
+    chamber: true
+    rpm: 400
+    modes: [semi]
+    damage:
+      - {distance: 18, damage: 7}
+      - {distance: 45, damage: 5}
+      - {distance: inf, damage: 4}
+    headshot: 1.5
+    bullet:
+      speed: 150
+      life: 0.8
+      gravity: 0.15
+      friction: 0.025
+      pierce: 1
+      knockback: 0
+      tracer: "#FF8888"
+    spread:
+      stand: 2
+      move: 2.5
+      sneak: 1.5
+      aim: 0.2
+      vacuum: 2
+    recoil:
+      pitch:
+        - {time: 0, min: 1, max: 1}
+        - {time: 0.1, min: 1, max: 1}
+        - {time: 0.25, min: 0.1, max: 0.1}
+        - {time: 0.3, min: 0.05, max: 0.05}
+        - {time: 0.35, min: 0, max: 0}
+      yaw:
+        - {time: 0, min: -0.5, max: 0.5}
+        - {time: 0.2, min: 0, max: 0}
+        - {time: 0.3, min: 0, max: 0}
+    reload:
+      tactical: {feed: 1.05, total: 1.5}
+      empty: {feed: 1.63, total: 1.88}
+    draw: 0.32
+    aim-time: 0.16
+    zoom: 1.2
+    aim-speed: 1.0
+    # Размер вспышки у ствола (TACZ muzzle_flash.scale; 1 — как у винтовок).
+    flash-scale: 0.4
+    model: guns/glock_17.bbmodel
+    hud: guns/glock_17_hud.png
+    flash: guns/common_muzzle_flash.png
+    player-animation: guns/pistol_default.player_animation.json
+    sounds:
+      shoot: glock17_shoot
+      shoot3p: glock17_shoot_3p
+      draw: glock17_draw
+      put_away: ""
+      dry_fire: gun_dry_fire
+      fire_select: gun_fire_select
+      flesh_hit: gun_flesh_hit
+      head_hit: gun_head_hit
+      kill: gun_kill
+    reload-sounds-3p:
+      tactical: {"0.48": glock17_reload_magout, "0.87": glock17_reload_magin}
+      empty: {"0.0": glock17_reload_empty_magout, "0.87": glock17_reload_empty_magin, "1.5": glock17_reload_empty_charge}
+    type: pistol
+    item-icon: tacz/glock_17_slot.png
+    item-model: tacz/glock_17_lod.bbmodel
+    ammo-icon: tacz/9mm.png

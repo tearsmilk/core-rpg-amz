@@ -207,6 +207,25 @@ public final class GunsModule extends OdysseyModule {
         }
     }
 
+    /**
+     * Перечитать config.yml (после /hogun install дописал новое оружие): оружие, файлы для мода, настройки игрокам с
+     * клиентским модулем. Оружие в руках подхватывается заново при следующей проверке (патроны пишутся в предмет).
+     */
+    void reloadGuns() {
+        config().reload();
+        readConfig();
+        if (links.hasClient()) {
+            publishFiles();
+            for (Player p : MinecraftServer.getConnectionManager().getOnlinePlayers()) {
+                if (modded(p)) {
+                    sendConfig(p);
+                    state(p).sentKey = "";
+                }
+            }
+        }
+        logger().info("guns: config.yml перечитан, оружие: {}", String.join(", ", guns.keySet()));
+    }
+
     // ---------------------------------------------------------------- для других классов модуля
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -397,6 +416,7 @@ public final class GunsModule extends OdysseyModule {
                 endAim(p);
             }
             reloadTick(p, st, now);
+            boltTick(p, st, now);
             aimPose(p, st);
             if (st.pushX != 0 || st.pushY != 0 || st.pushZ != 0) {
                 if (st.vacuum && vacuum != null) {
@@ -472,13 +492,16 @@ public final class GunsModule extends OdysseyModule {
     }
 
     /**
-     * Оружие «за спиной»: первое оружие в быстрой панели (слоты 0–8) не в выбранном слоте. Вторая рука не в счёт —
-     * оружие в ней и так видно в руке. null — ничего.
+     * Оружие «за спиной»: первое длинное оружие (rifle / sniper) в быстрой панели (слоты 0–8) не в выбранном слоте, и
+     * первый такой же пистолет — «в кобуре». Вторая рука не в счёт — оружие в ней и так видно в руке. null — ничего;
+     * иначе id через запятую (длинное первым).
      */
     String backGunOf(Player p) {
         int held = p.getHeldSlot();
         PlayerInventory inv = p.getInventory();
-        for (int i = 0; i < 9; i++) {
+        String longGun = null;
+        String pistol = null;
+        for (int i = 0; i < 9 && (longGun == null || pistol == null); i++) {
             if (i == held) {
                 continue;
             }
@@ -487,15 +510,20 @@ public final class GunsModule extends OdysseyModule {
                 continue;
             }
             String id = GunItems.gunId(s);
-            if (id != null && guns.containsKey(id)) {
-                return id;
+            GunDef g = id != null ? guns.get(id) : items.bareGun(s, guns.values());
+            if (g == null) {
+                continue;
             }
-            GunDef bare = id == null ? items.bareGun(s, guns.values()) : null;
-            if (bare != null) {
-                return bare.id();
+            if (g.pistol()) {
+                pistol = pistol == null ? g.id() : pistol;
+            } else {
+                longGun = longGun == null ? g.id() : longGun;
             }
         }
-        return null;
+        if (longGun == null) {
+            return pistol;
+        }
+        return pistol == null ? longGun : longGun + "," + pistol;
     }
 
     /**
@@ -734,6 +762,10 @@ public final class GunsModule extends OdysseyModule {
                 g.pierce(), vac ? 0 : g.gravity(), vac ? 0 : g.friction(), p);
         Live live = new Live(b, p, g, inst);
         effects.shot(p, g, ex, ey, ez, vx * 20, vy * 20, vz * 20, life, vac);
+        if (g.boltTime() > 0 && !g.boltSounds3p().isEmpty()) {     // затвор — после промежутка по rpm
+            st.boltStart = now + Math.round(g.intervalMs());
+            st.boltSoundIndex = 0;
+        }
         if (step(live)) {                                     // первый отрезок — в том же тике
             bullets.add(live);
         }
@@ -992,6 +1024,28 @@ public final class GunsModule extends OdysseyModule {
                 p.sendActionBar(Component.text(g.name() + "  " + st.ammo + " / " + fmtReserve(reserve(p, g)), NamedTextColor.GREEN));
             }
         }
+    }
+
+    /** Звуки затвора для остальных (на планете; в вакууме не слышно) — по времени от начала передёргивания. */
+    private void boltTick(Player p, ShooterState st, long now) {
+        if (st.boltStart <= 0 || now < st.boltStart) {
+            return;
+        }
+        double el = (now - st.boltStart) / 1000.0;
+        int i = 0;
+        for (Map.Entry<Double, String> e : st.gun.boltSounds3p().entrySet()) {
+            if (i++ < st.boltSoundIndex) {
+                continue;
+            }
+            if (e.getKey() > el) {
+                return;
+            }
+            st.boltSoundIndex++;
+            if (!st.vacuum || "all".equals(vacSound)) {
+                effects.others(p, e.getValue(), 0.8f);
+            }
+        }
+        st.boltStart = 0;                                     // все сыграны
     }
 
     static String fmtReserve(int r) {

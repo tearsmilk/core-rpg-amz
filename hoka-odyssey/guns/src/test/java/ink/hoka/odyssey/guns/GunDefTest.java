@@ -34,6 +34,45 @@ class GunDefTest {
     }
 
     @Test
+    void awpAndGlockFromTacz() {
+        Map<?, ?> c = TestGuns.config();
+        GunDef awp = GunDef.read("ai_awp", GunDef.Cfg.of(c));
+        assertEquals(5, awp.magazine());
+        assertEquals(6, awp.capacity(1));
+        assertEquals(171, awp.rpm());
+        assertEquals(0.9, awp.boltTime());
+        assertEquals(60000.0 / 171 + 900, awp.cycleMs(), 1e-9);
+        assertTrue(awp.scope());
+        assertEquals(8, awp.zoom());
+        assertEquals(50, awp.damageAt(10));
+        assertEquals(40, awp.damageAt(500));
+        assertEquals(2, awp.headshot());
+        assertEquals(4, awp.pierce());
+        assertEquals(5, awp.spreadStand());
+        assertEquals(0.05, awp.spreadAim());
+        assertTrue(!awp.auto() && awp.semi());
+        assertEquals("sniper", awp.type());
+        assertEquals("", awp.itemIcon());
+        assertEquals("tacz/ai_awp_lod.bbmodel", awp.itemModel());
+        assertEquals("tacz/338.png", awp.ammoIcon());
+        assertEquals("awp_rechamber_out", awp.boltSounds3p().get(0.17));
+        assertEquals("338", awp.caliber());
+
+        GunDef glock = GunDef.read("glock_17", GunDef.Cfg.of(c));
+        assertTrue(glock.pistol());
+        assertEquals(17, glock.magazine());
+        assertEquals(400, glock.rpm());
+        assertEquals(0, glock.boltTime());
+        assertEquals(150, glock.intervalMs(), 1e-9);
+        assertEquals(7, glock.damageAt(0));
+        assertEquals("guns/pistol_default.player_animation.json", glock.playerAnimation());
+        assertEquals("tacz/glock_17_slot.png", glock.itemIcon());
+        assertEquals("", glock.sound("put_away"));
+        assertEquals("9mm", glock.caliber());
+        assertTrue(!TestGuns.ak().pistol());
+    }
+
+    @Test
     void defaultsWithoutConfig() {
         GunDef g = GunDef.read("ak47", GunDef.Cfg.of(Map.of()));
         assertEquals(30, g.magazine());

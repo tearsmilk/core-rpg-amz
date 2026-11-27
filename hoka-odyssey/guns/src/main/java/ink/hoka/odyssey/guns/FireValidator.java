@@ -3,7 +3,7 @@ package ink.hoka.odyssey.guns;
 /**
  * Проверка выстрела на сервере: оружие в руке, не достаёт, не перезаряжает, есть патрон, направление близко к взгляду
  * и темп не выше rpm («ведро» на rate-burst выстрелов: пачки из-за задержек сети пропускаем, длинную очередь быстрее
- * темпа — нет). Только логика, без Minestom.
+ * темпа — нет; у ручного затвора — цикл «выстрел + затвор», ведро на один выстрел). Только логика, без Minestom.
  */
 final class FireValidator {
 
@@ -19,6 +19,8 @@ final class FireValidator {
 
     /** Темп на сервере чуть выше rpm: часы клиента и сервера немного расходятся. */
     static final double RATE_SLACK = 1.05;
+    /** У ручного затвора выстрелы редкие и по одному — запас на задержки сети больше (цикл AWP 1,25 с → от 1 с). */
+    static final double BOLT_SLACK = 1.25;
 
     private FireValidator() {
     }
@@ -47,7 +49,11 @@ final class FireValidator {
         if (!(angleDeg <= maxAngle)) {
             return Result.ANGLE;
         }
-        if (!s.bucket.take(nowMs, g.rpm() / 60.0 * RATE_SLACK, Math.max(1, burst))) {
+        // ручной затвор (AWP): после выстрела ещё и передёргивание — темп по полному циклу, без запаса «ведра»
+        // (выстрел — один за цикл; запас на дрожание сети — BOLT_SLACK)
+        double perSecond = 1000.0 / g.cycleMs() * (g.boltTime() > 0 ? BOLT_SLACK : RATE_SLACK);
+        double cap = g.boltTime() > 0 ? 1 : Math.max(1, burst);
+        if (!s.bucket.take(nowMs, perSecond, cap)) {
             return Result.RATE;
         }
         return Result.OK;

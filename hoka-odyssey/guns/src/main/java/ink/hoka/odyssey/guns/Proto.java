@@ -43,8 +43,11 @@ import java.util.Map;
  * </ul>
  * CONFIG после громкости вакуума — хвост: u16 оружий, на каждое UTF id и UTF файл анимаций тела от третьего лица;
  * за ним второй хвост: u16 оружий, на каждое UTF id и UTF id предмета hoitems («» — нет; по нему клиент рисует
- * оружие за спиной). Старые клиенты хвосты не читают.
- * </ul>
+ * оружие за спиной); за ним третий хвост: u16 оружий, на каждое UTF id, UTF вид (rifle / sniper / pistol), f32 время
+ * ручного затвора (с, 0 — нет), u8 флаги (1 — оптика: в прицеле экран чёрный, кроме круга прицела), f32 размер вспышки
+ * у ствола (TACZ muzzle_flash.scale). Старые клиенты
+ * хвосты не читают. В BACK вместо одного id может прийти список через запятую (длинное оружие за спиной и
+ * пистолет в кобуре).
  */
 final class Proto {
     static final String CHANNEL = "guns";
@@ -182,6 +185,14 @@ final class Proto {
                 o.writeUTF(g.id());
                 o.writeUTF(g.item() == null ? "" : g.item());
             }
+            o.writeShort(guns.size());
+            for (GunDef g : guns) {
+                o.writeUTF(g.id());
+                o.writeUTF(g.type());
+                o.writeFloat((float) g.boltTime());
+                o.writeByte(g.scope() ? 1 : 0);
+                o.writeFloat((float) g.flashScale());
+            }
         });
     }
 
@@ -205,7 +216,7 @@ final class Proto {
         });
     }
 
-    /** Оружие за спиной игрока entityId (gun «» — нет). */
+    /** Оружие за спиной игрока entityId (gun «» — нет; несколько — через запятую: за спиной и в кобуре). */
     static byte[] back(int entityId, String gun) {
         return write(o -> {
             o.writeByte(S_BACK);

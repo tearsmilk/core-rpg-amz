@@ -31,7 +31,8 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 /**
- * Оружие за спиной: оружие в быстрой панели, но не в руке, висит у игрока на спине наискось, как автомат на ремне.
+ * Оружие за спиной: оружие в быстрой панели, но не в руке, висит у игрока на спине наискось, как автомат на ремне
+ * (длинное — первое такое в панели), а пистолет (первый) — в кобуре на правом бедре, стволом вниз.
  * Рисуется слоем модели игрока (как плащ и элитры): слой ставится в рендеры игроков игры (у каждого типа скина —
  * свой рендер, после перезагрузки ресурсов — новые), а значит, едет вместе с телом — поворот, присед, плавание,
  * элитры, наклон и сдвиг модели от ядра (onEntityTilt / onEntityPose: невесомость, стены, корабли).
@@ -49,10 +50,12 @@ final class BackGun {
     private static final float SCALE = 0.6f;                  // как в руке (display thirdperson у модели TACZ)
 
     private final Logger log;
-    /** id сущности → id оружия за спиной (от сервера). */
-    private final Map<Integer, String> remote = new HashMap<>();
+    /** id сущности → id оружия за спиной и в кобуре (от сервера). */
+    private final Map<Integer, String[]> remote = new HashMap<>();
     /** id оружия → id предмета hoitems (хвост CONFIG). */
     private final Map<String, String> gunItems = new HashMap<>();
+    /** id оружия → вид (третий хвост CONFIG): пистолет — в кобуру. */
+    private final Map<String, Proto.Kind> kinds = new HashMap<>();
     private final Map<String, ItemStack> stacks = new HashMap<>();
     /** Свои слои в рендерах игры (рендер → слой). */
     private final Map<LivingEntityRenderer<?, ?, ?>, Layer> installed = new WeakHashMap<>();
@@ -62,21 +65,32 @@ final class BackGun {
     private boolean warned;
     /** Подстройка положения: угол°, x, y, z, масштаб, поворот предмета x°, y°, z° (ключ back_gun_tune). */
     final float[] tune;
+    /** Кобура (от правой ноги): x, y, z (пиксели модели), масштаб, поворот x°, y°, z° (ключ holster_tune). */
+    final float[] holster;
 
-    BackGun(Logger log, float[] tune) {
+    BackGun(Logger log, float[] tune, float[] holster) {
         this.log = log;
         this.tune = tune;
+        this.holster = holster;
     }
 
-    void setItems(Map<String, String> items) {
+    void setItems(Map<String, String> items, Map<String, Proto.Kind> kinds) {
         gunItems.clear();
         gunItems.putAll(items);
+        this.kinds.clear();
+        this.kinds.putAll(kinds);
         stacks.clear();
     }
 
+    /** gun — id через запятую (длинное за спиной и пистолет в кобуре), «» — ничего. */
     void set(int entityId, String gun) {
         if (gun == null || gun.isEmpty()) remote.remove(entityId);
-        else remote.put(entityId, gun);
+        else remote.put(entityId, gun.split(","));
+    }
+
+    private boolean pistol(String gun) {
+        Proto.Kind k = gun == null ? null : kinds.get(gun);
+        return k != null && k.pistol();
     }
 
     /** Раз в тик: слой — во все рендеры игроков в мире; забыть ушедших. */
@@ -91,9 +105,9 @@ final class BackGun {
             if (r instanceof LivingEntityRenderer<?, ?, ?> lr) install(lr);
         }
         for (Iterator<Integer> it = remote.keySet().iterator(); it.hasNext(); ) {
-            if (mc.level.getEntity(it.next()) == null) it.remove();
+            if (mc.level.getEntity(it.next()) == null) it.remove();   // remote: id → гнёзда
         }
-        states.keySet().removeIf(id -> mc.level.getEntity(id) == null);
+        states.keySet().removeIf(key -> mc.level.getEntity(key >> 1) == null);
     }
 
     /** Снять свои слои (выгрузка модуля). */
@@ -142,28 +156,38 @@ final class BackGun {
 
     // ---------------------------------------------------------------- что за спиной
 
-    /** Своё: первое оружие быстрой панели не в выбранном слоте (как считает сервер). */
-    private ItemStack own(Minecraft mc) {
-        if (mc.player == null) return null;
+    /**
+     * Своё: первое длинное оружие и первый пистолет быстрой панели не в выбранном слоте (как считает сервер):
+     * {за спиной, в кобуре}, нет — null.
+     */
+    private ItemStack[] own(Minecraft mc) {
+        ItemStack[] out = new ItemStack[2];
+        if (mc.player == null) return out;
         Inventory inv = mc.player.getInventory();
         int sel = inv.getSelectedSlot();
         for (int i = 0; i < Inventory.getSelectionSize(); i++) {
             if (i == sel) continue;
             ItemStack s = inv.getItem(i);
-            if (isGun(s)) return s;
+            String gun = gunOf(s);
+            if (gun == null) continue;
+            int slot = pistol(gun) ? 1 : 0;
+            if (out[slot] == null) out[slot] = s;
         }
-        return null;
+        return out;
     }
 
-    private boolean isGun(ItemStack s) {
-        if (s == null || s.isEmpty()) return false;
+    /** id оружия предмета (метка hoka_gun или предмет hoitems оружия) или null. */
+    private String gunOf(ItemStack s) {
+        if (s == null || s.isEmpty()) return null;
         CustomData cd = s.get(DataComponents.CUSTOM_DATA);
-        if (cd == null || cd.isEmpty()) return false;
+        if (cd == null || cd.isEmpty()) return null;
         CompoundTag t = cd.copyTag();
         String gun = t.getStringOr("hoka_gun", "");
-        if (!gun.isEmpty()) return gunItems.containsKey(gun);   // пусто — старый сервер или back-gun: false
+        if (!gun.isEmpty()) return gunItems.containsKey(gun) ? gun : null;   // нет — старый сервер или back-gun: false
         String item = t.getStringOr("hoka_item", "");
-        return !item.isEmpty() && gunItems.containsValue(item);
+        if (item.isEmpty()) return null;
+        for (Map.Entry<String, String> e : gunItems.entrySet()) if (e.getValue().equals(item)) return e.getKey();
+        return null;
     }
 
     /** Чужое: предмет hoitems оружия (метки, по которым его рисует ядро). */
@@ -186,34 +210,63 @@ final class BackGun {
         if (s.isInvisible || s.isSpectator || s.hasPose(Pose.SLEEPING)) return;
         Minecraft mc = Minecraft.getInstance();
         boolean self = mc.player != null && s.id == mc.player.getId();
-        ItemStack stack;
+        ItemStack[] stacks2;
         if (self) {
             if (mc.options.getCameraType().isFirstPerson() && mc.getCameraEntity() == mc.player) return;
-            stack = own(mc);
+            stacks2 = own(mc);
         } else {
-            String gun = remote.get(s.id);
-            stack = gun == null ? null : stackOf(gun);
+            stacks2 = new ItemStack[2];
+            String[] guns = remote.get(s.id);
+            if (guns != null) {
+                for (String gun : guns) {
+                    int slot = pistol(gun) ? 1 : 0;
+                    if (stacks2[slot] == null) stacks2[slot] = stackOf(gun);
+                }
+            }
         }
-        if (stack == null || mc.level == null) return;
-        ItemStackRenderState rs = states.computeIfAbsent(s.id, k -> new ItemStackRenderState());
-        mc.getItemModelResolver().updateForTopItem(rs, stack, ItemDisplayContext.NONE, mc.level, null, s.id);
-        if (rs.isEmpty()) return;
+        if (mc.level == null) return;
+        for (int slot = 0; slot < 2; slot++) {
+            ItemStack stack = stacks2[slot];
+            if (stack == null) continue;
+            final int key = s.id * 2 + slot;
+            ItemStackRenderState rs = states.computeIfAbsent(key, k -> new ItemStackRenderState());
+            mc.getItemModelResolver().updateForTopItem(rs, stack, ItemDisplayContext.NONE, mc.level, null, s.id);
+            if (rs.isEmpty()) continue;
+            ps.pushPose();
+            try {
+                if (slot == 0) onBack(layer, ps, s);
+                else inHolster(layer, ps);
+                rs.submit(ps, out, light, OverlayTexture.NO_OVERLAY, s.outlineColor);
+            } finally {
+                ps.popPose();
+            }
+        }
+    }
+
+    /** За спиной наискось (как автомат на ремне); броня на груди — чуть дальше от спины. */
+    private void onBack(Layer layer, PoseStack ps, AvatarRenderState s) {
         float[] t = tune;
         boolean armor = s.chestEquipment != null && !s.chestEquipment.isEmpty();
-        ps.pushPose();
-        try {
-            layer.getParentModel().body.translateAndRotate(ps);
-            ps.translate(t[1], CENTER_Y + t[2], BACK + (armor ? ARMOR : 0) + t[3]);
-            ps.mulPose(Axis.ZP.rotationDegrees(t[0]));
-            ps.mulPose(Axis.XP.rotationDegrees(t[5]));
-            ps.mulPose(Axis.YP.rotationDegrees(t[6]));
-            ps.mulPose(Axis.ZP.rotationDegrees(t[7]));
-            float k = SCALE * t[4];
-            ps.scale(k, k, k);
-            rs.submit(ps, out, light, OverlayTexture.NO_OVERLAY, s.outlineColor);
-        } finally {
-            ps.popPose();
-        }
+        layer.getParentModel().body.translateAndRotate(ps);
+        ps.translate(t[1], CENTER_Y + t[2], BACK + (armor ? ARMOR : 0) + t[3]);
+        ps.mulPose(Axis.ZP.rotationDegrees(t[0]));
+        ps.mulPose(Axis.XP.rotationDegrees(t[5]));
+        ps.mulPose(Axis.YP.rotationDegrees(t[6]));
+        ps.mulPose(Axis.ZP.rotationDegrees(t[7]));
+        float k = SCALE * t[4];
+        ps.scale(k, k, k);
+    }
+
+    /** Пистолет в кобуре: снаружи правого бедра, стволом вниз, рукоятью назад; едет с ногой. */
+    private void inHolster(Layer layer, PoseStack ps) {
+        float[] h = holster;
+        layer.getParentModel().rightLeg.translateAndRotate(ps);
+        ps.translate(h[0] / 16f, h[1] / 16f, h[2] / 16f);
+        ps.mulPose(Axis.YP.rotationDegrees(h[5]));
+        ps.mulPose(Axis.XP.rotationDegrees(h[4]));
+        ps.mulPose(Axis.ZP.rotationDegrees(h[6]));
+        float k = SCALE * h[3];
+        ps.scale(k, k, k);
     }
 
     /** Слой модели игрока (как плащ): зовёт {@link #submit}. */

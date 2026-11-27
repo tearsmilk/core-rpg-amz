@@ -22,6 +22,10 @@ final class ShooterState {
     /** Звуки перезарядки для остальных — уже сыгранные (индекс в списке). */
     int reloadSoundIndex;
 
+    /** Ручной затвор: когда началось передёргивание (мс, 0 — нет) и сколько его звуков для остальных уже сыграно. */
+    long boltStart;
+    int boltSoundIndex;
+
     /** До этого момента (мс) оружие достают — стрелять нельзя. */
     long drawUntil;
     /** Прицел: момент начала (мс), 0 — не целится. */
@@ -103,6 +107,7 @@ final class ShooterState {
         ammo = 0;
         cancelReload();
         aimSince = 0;
+        boltStart = 0;
         ammoDirty = false;
         sentKey = "";
     }

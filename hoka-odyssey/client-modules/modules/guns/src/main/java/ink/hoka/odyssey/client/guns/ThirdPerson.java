@@ -14,7 +14,8 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * Игрок с оружием от третьего лица (свой в F5 и чужие): поза тела по анимациям TACZ «rifle_default» (формат
+ * Игрок с оружием от третьего лица (свой в F5 и чужие): поза тела по анимациям TACZ «rifle_default» (у пистолета —
+ * «pistol_default»; файл у каждого оружия свой, с сервера) (формат
  * player_animation, {@link PlayerAnim}), как их проигрывает TACZ через PlayerAnimator:
  * <ul>
  *   <li>ноги — hold_lower / walk_lower / run_lower (присев — ноги игры);</li>
@@ -199,6 +200,13 @@ final class ThirdPerson {
         en.targetYaw = Mth.clamp(Mth.wrapDegrees(s.yRot), -85f, 85f) * DEG;
     }
 
+    /** Клип текущих анимаций; у пистолета (pistol_default) нет crouch_walk_upper — тогда walk_upper. */
+    private PlayerAnim.Clip clip(String name) {
+        PlayerAnim.Clip c = anim.clip(name);
+        if (c == null && "crouch_walk_upper".equals(name)) c = anim.clip("walk_upper");
+        return c;
+    }
+
     /** Слой петлёй со сменой клипа через плавный переход от последней своей позы. */
     private void layer(Layer l, String name, long now, float[][] v, float[][] t, int from, int to) {
         if (!java.util.Objects.equals(name, l.cur)) {
@@ -208,7 +216,7 @@ final class ThirdPerson {
             l.start = now;
             l.fadeStart = now;
         }
-        PlayerAnim.Clip c = name == null ? null : anim.clip(name);
+        PlayerAnim.Clip c = name == null ? null : clip(name);
         if (c != null) sample(c, c.local((now - l.start) / 1e9f), v, t, from, to);
         float f = ease((now - l.fadeStart) / 1e9f / FADE);
         if (f < 1) for (int i = from; i <= to; i++) for (int k = 0; k < 6; k++) t[i][k] = Mth.lerp(f, l.snap[i][k], t[i][k]);

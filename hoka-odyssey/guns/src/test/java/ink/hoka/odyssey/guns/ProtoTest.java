@@ -75,6 +75,12 @@ class ProtoTest {
         o.writeShort(1);
         o.writeUTF("ak47");
         o.writeUTF(g.item());
+        o.writeShort(1);
+        o.writeUTF("ak47");
+        o.writeUTF("rifle");
+        o.writeFloat(0f);
+        o.writeByte(0);
+        o.writeFloat(1f);
         byte[] tail = bo.toByteArray();
         assertEquals("guns/rifle_default.player_animation.json", g.playerAnimation());
         assertEquals(java.util.Arrays.toString(tail),
@@ -87,11 +93,37 @@ class ProtoTest {
         byte[] on = Proto.config(List.of(g), 0.35f, true);
         byte[] off = Proto.config(List.of(g), 0.35f, false);
         int items = 2 + (2 + "ak47".length()) + (2 + g.item().getBytes(java.nio.charset.StandardCharsets.UTF_8).length);
+        int kinds = 2 + (2 + "ak47".length()) + (2 + "rifle".length()) + 4 + 1 + 4;    // третий хвост — тот же
         assertEquals(on.length - items + 2, off.length);
-        assertEquals(0, off[off.length - 1]);
-        assertEquals(0, off[off.length - 2]);
-        assertEquals(java.util.Arrays.toString(java.util.Arrays.copyOf(on, off.length - 2)),
-                java.util.Arrays.toString(java.util.Arrays.copyOf(off, off.length - 2)));
+        int end = off.length - kinds;
+        assertEquals(0, off[end - 1]);
+        assertEquals(0, off[end - 2]);
+        assertEquals(java.util.Arrays.toString(java.util.Arrays.copyOf(on, end - 2)),
+                java.util.Arrays.toString(java.util.Arrays.copyOf(off, end - 2)));
+    }
+
+    @Test
+    void configKindsTrailer() throws IOException {
+        java.util.Map<?, ?> c = TestGuns.config();
+        GunDef awp = GunDef.read("ai_awp", GunDef.Cfg.of(c));
+        GunDef glock = GunDef.read("glock_17", GunDef.Cfg.of(c));
+        byte[] b = Proto.config(List.of(awp, glock), 0.35f);
+        java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+        java.io.DataOutputStream o = new java.io.DataOutputStream(bo);
+        o.writeShort(2);
+        o.writeUTF("ai_awp");
+        o.writeUTF("sniper");
+        o.writeFloat(0.9f);
+        o.writeByte(1);
+        o.writeFloat(1f);
+        o.writeUTF("glock_17");
+        o.writeUTF("pistol");
+        o.writeFloat(0f);
+        o.writeByte(0);
+        o.writeFloat(0.4f);
+        byte[] tail = bo.toByteArray();
+        assertEquals(java.util.Arrays.toString(tail),
+                java.util.Arrays.toString(java.util.Arrays.copyOfRange(b, b.length - tail.length, b.length)));
     }
 
     @Test

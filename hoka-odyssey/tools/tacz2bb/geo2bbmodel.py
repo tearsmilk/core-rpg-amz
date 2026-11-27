@@ -7,6 +7,10 @@
 # переворачивает rotation x,y и position x само — BbModel.legacyKeys).
 # Использование: python3 -I geo2bbmodel.py GEO.json TEXTURE.png OUT.bbmodel [--anim ANIM.json]
 #                [--drop bone1,bone2] [--strip-cubes bone1,bone2] [--name ak47]
+#                [--attach GEO.json TEXTURE.png BONE [--attach-name scope]]
+# --attach: модель обвеса (прицел TACZ) ставится в кость BONE оружия, как её ставит сам TACZ при рисовании: кости и
+# кубы обвеса — как есть, только сдвинуты в точку кости (origin обвеса = пивот BONE); своя текстура (вторая в файле,
+# со своим uv_width/uv_height). Имена костей обвеса, совпавшие с костями оружия, получают приставку «<attach-name>_».
 import argparse, base64, json, re, struct, sys, uuid as uuidlib
 
 
@@ -55,7 +59,7 @@ def vec3(v):
     return [num(x) if num(x) is not None else str(x) for x in v]
 
 
-def convert(geo, png, anim, drop, strip, name):
+def convert(geo, png, anim, drop, strip, name, attach=None, attach_name='scope'):
     g = geo['minecraft:geometry'][0]
     desc = g['description']
     tw, th = desc.get('texture_width', 16), desc.get('texture_height', 16)
@@ -82,29 +86,7 @@ def convert(geo, png, anim, drop, strip, name):
         order.append(b)
         if n in strip: continue
         for ci, c in enumerate(b.get('cubes', [])):
-            o, s = c['origin'], c['size']
-            frm = [-(o[0] + s[0]), o[1], o[2]]
-            to = [frm[0] + s[0], frm[1] + s[1], frm[2] + s[2]]
-            cp = c.get('pivot', [0, 0, 0]); cr = c.get('rotation', [0, 0, 0])
-            faces = {}
-            uv = c.get('uv')
-            if not isinstance(uv, dict):
-                raise ValueError(f'{n}: box-UV не поддержан этим конвертером')
-            for f in ('north', 'east', 'south', 'west', 'up', 'down'):
-                if f in uv:
-                    u, v = uv[f]['uv']; w, h = uv[f].get('uv_size', [0, 0])
-                    q = [u, v, u + w, v + h]
-                    if f in ('up', 'down'): q = [q[2], q[3], q[0], q[1]]
-                    face = {'uv': q, 'texture': 0}
-                    if uv[f].get('uv_rotation'): face['rotation'] = uv[f]['uv_rotation']
-                    faces[f] = face
-                else:
-                    faces[f] = {'uv': [0, 0, 0, 0], 'texture': None}
-            e = {'name': n, 'type': 'cube', 'box_uv': False, 'rescale': False, 'locked': False,
-                 'from': frm, 'to': to, 'autouv': 0, 'color': 0,
-                 'origin': [-cp[0], cp[1], cp[2]], 'rotation': [-cr[0], -cr[1], cr[2]],
-                 'faces': faces, 'uuid': uid(f'{name}/cube/{n}/{ci}')}
-            if c.get('inflate'): e['inflate'] = c['inflate']
+            e = cube_element(c, n, f'{name}/cube/{n}/{ci}', 0, [0, 0, 0])
             elements.append(e)
             grp['children'].append(e['uuid'])
     outliner = []
@@ -112,6 +94,10 @@ def convert(geo, png, anim, drop, strip, name):
         n, p = b['name'], b.get('parent')
         if p and p in groups: groups[p]['children'].append(groups[n])
         else: outliner.append(groups[n])
+    if attach:
+        a_geo, a_png, a_bone = attach
+        if a_bone not in groups: raise ValueError(f'нет кости {a_bone} для обвеса')
+        add_attachment(a_geo, a_png, groups[a_bone], groups, elements, name, attach_name, tex_index=1)
     w, h = png_size(png)
     tex = {'path': '', 'name': name + '.png', 'folder': '', 'namespace': '', 'id': '0', 'particle': False,
            'render_mode': 'default', 'visible': True, 'mode': 'bitmap', 'saved': True,
@@ -121,6 +107,14 @@ def convert(geo, png, anim, drop, strip, name):
            'name': name, 'model_identifier': '', 'visible_box': [1, 1, 0],
            'resolution': {'width': tw, 'height': th},
            'elements': elements, 'outliner': outliner, 'textures': [tex], 'animations': []}
+    if attach:
+        aw, ah = png_size(attach[1])
+        ad = attach[0]['minecraft:geometry'][0]['description']
+        out['textures'].append({'path': '', 'name': attach_name + '.png', 'folder': '', 'namespace': '', 'id': '1',
+                                'particle': False, 'render_mode': 'default', 'visible': True, 'mode': 'bitmap',
+                                'saved': True, 'uuid': uid(name + '/tex/' + attach_name), 'width': aw, 'height': ah,
+                                'uv_width': ad.get('texture_width', 16), 'uv_height': ad.get('texture_height', 16),
+                                'source': 'data:image/png;base64,' + base64.b64encode(attach[1]).decode()})
     if anim:
         for an_name, a in anim.get('animations', {}).items():
             loop = a.get('loop', False)
@@ -157,16 +151,76 @@ def convert(geo, png, anim, drop, strip, name):
     return out, dropped
 
 
+def cube_element(c, n, tag, tex_index, off):
+    """Куб Bedrock → элемент .bbmodel (правила осей — в начале файла); off — сдвиг [x, y, z] в координатах .bbmodel."""
+    o, s = c['origin'], c['size']
+    frm = [-(o[0] + s[0]) + off[0], o[1] + off[1], o[2] + off[2]]
+    to = [frm[0] + s[0], frm[1] + s[1], frm[2] + s[2]]
+    cp = c.get('pivot', [0, 0, 0]); cr = c.get('rotation', [0, 0, 0])
+    faces = {}
+    uv = c.get('uv')
+    if not isinstance(uv, dict):
+        raise ValueError(f'{n}: box-UV не поддержан этим конвертером')
+    for f in ('north', 'east', 'south', 'west', 'up', 'down'):
+        if f in uv:
+            u, v = uv[f]['uv']; w, h = uv[f].get('uv_size', [0, 0])
+            q = [u, v, u + w, v + h]
+            if f in ('up', 'down'): q = [q[2], q[3], q[0], q[1]]
+            face = {'uv': q, 'texture': tex_index}
+            if uv[f].get('uv_rotation'): face['rotation'] = uv[f]['uv_rotation']
+            faces[f] = face
+        else:
+            faces[f] = {'uv': [0, 0, 0, 0], 'texture': None}
+    e = {'name': n, 'type': 'cube', 'box_uv': False, 'rescale': False, 'locked': False,
+         'from': frm, 'to': to, 'autouv': 0, 'color': 0,
+         'origin': [-cp[0] + off[0], cp[1] + off[1], cp[2] + off[2]], 'rotation': [-cr[0], -cr[1], cr[2]],
+         'faces': faces, 'uuid': uid(tag)}
+    if c.get('inflate'): e['inflate'] = c['inflate']
+    return e
+
+
+def add_attachment(geo, png, parent, groups, elements, name, prefix, tex_index):
+    """Кости и кубы обвеса — детьми кости parent, сдвинутыми в её точку (как TACZ рисует обвес в кости *_pos)."""
+    g = geo['minecraft:geometry'][0]
+    off = list(parent['origin'])
+    own = {}
+    for b in g['bones']:
+        n = b['name']
+        out_name = prefix + '_' + n if n in groups else n
+        piv = list(map(float, b.get('pivot', [0, 0, 0])))
+        rot = list(map(float, b.get('rotation', [0, 0, 0])))
+        grp = {'name': out_name, 'origin': [-piv[0] + off[0], piv[1] + off[1], piv[2] + off[2]],
+               'rotation': [-rot[0], -rot[1], rot[2]], 'uuid': uid(f'{name}/{prefix}/bone/{n}'), 'export': True,
+               'isOpen': False, 'visibility': True, 'children': []}
+        own[n] = grp
+        for ci, c in enumerate(b.get('cubes', [])):
+            e = cube_element(c, out_name, f'{name}/{prefix}/cube/{n}/{ci}', tex_index, off)
+            elements.append(e)
+            grp['children'].append(e['uuid'])
+    for b in g['bones']:
+        p = b.get('parent')
+        (own[p]['children'] if p and p in own else parent['children']).append(own[b['name']])
+    for n, grp in own.items():
+        groups[grp['name']] = grp
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('geo'); ap.add_argument('png'); ap.add_argument('out')
     ap.add_argument('--anim'); ap.add_argument('--drop', default=''); ap.add_argument('--strip-cubes', default='')
     ap.add_argument('--name', default='model')
+    ap.add_argument('--attach', nargs=3, metavar=('GEO', 'PNG', 'BONE'),
+                    help='модель обвеса (Bedrock geo) и её текстура — в кость BONE оружия (как TACZ ставит прицел)')
+    ap.add_argument('--attach-name', default='scope')
     ap.add_argument('--display', help='JSON-файл вкладки Display (Java: thirdperson_righthand, firstperson_righthand, ground, fixed, gui…)')
     a = ap.parse_args()
     with open(a.png, 'rb') as f: png = f.read()
+    attach = None
+    if a.attach:
+        with open(a.attach[1], 'rb') as f: attach = (load(a.attach[0]), f.read(), a.attach[2])
     res, dropped = convert(load(a.geo), png, load(a.anim) if a.anim else None,
-                           [x for x in a.drop.split(',') if x], set(x for x in a.strip_cubes.split(',') if x), a.name)
+                           [x for x in a.drop.split(',') if x], set(x for x in a.strip_cubes.split(',') if x), a.name,
+                           attach, a.attach_name)
     if a.display: res['display'] = load(a.display)
     with open(a.out, 'w', encoding='utf-8') as f: json.dump(res, f, ensure_ascii=False, separators=(',', ':'))
     print(f'{a.out}: кубов {len(res["elements"])}, анимаций {len(res["animations"])}, убрано костей {len(dropped)}: {sorted(dropped)}')
