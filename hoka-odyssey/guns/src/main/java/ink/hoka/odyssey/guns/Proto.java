@@ -135,6 +135,11 @@ final class Proto {
     // ---------------------------------------------------------------- сервер → клиент
 
     static byte[] config(Collection<GunDef> guns, float vacuumVolume) {
+        return config(guns, vacuumVolume, true);
+    }
+
+    /** CONFIG; backItems false (back-gun выключен) — второй хвост пустой: клиент не рисует оружие за спиной и у себя. */
+    static byte[] config(Collection<GunDef> guns, float vacuumVolume, boolean backItems) {
         return write(o -> {
             o.writeByte(S_CONFIG);
             o.writeByte(VERSION);
@@ -172,8 +177,8 @@ final class Proto {
                 o.writeUTF(g.id());
                 o.writeUTF(g.playerAnimation() == null ? "" : g.playerAnimation());
             }
-            o.writeShort(guns.size());
-            for (GunDef g : guns) {
+            o.writeShort(backItems ? guns.size() : 0);
+            for (GunDef g : backItems ? guns : List.<GunDef>of()) {
                 o.writeUTF(g.id());
                 o.writeUTF(g.item() == null ? "" : g.item());
             }

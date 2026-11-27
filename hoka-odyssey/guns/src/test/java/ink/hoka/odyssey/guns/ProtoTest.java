@@ -82,6 +82,19 @@ class ProtoTest {
     }
 
     @Test
+    void configWithoutBackGunHasEmptyItemTrailer() {
+        GunDef g = TestGuns.ak();
+        byte[] on = Proto.config(List.of(g), 0.35f, true);
+        byte[] off = Proto.config(List.of(g), 0.35f, false);
+        int items = 2 + (2 + "ak47".length()) + (2 + g.item().getBytes(java.nio.charset.StandardCharsets.UTF_8).length);
+        assertEquals(on.length - items + 2, off.length);
+        assertEquals(0, off[off.length - 1]);
+        assertEquals(0, off[off.length - 2]);
+        assertEquals(java.util.Arrays.toString(java.util.Arrays.copyOf(on, off.length - 2)),
+                java.util.Arrays.toString(java.util.Arrays.copyOf(off, off.length - 2)));
+    }
+
+    @Test
     void poseLayout() throws IOException {
         DataInputStream in = new DataInputStream(new ByteArrayInputStream(
                 Proto.pose(17, Proto.POSE_HOLDING | Proto.POSE_RELOAD, 0.5f, 2.6f)));

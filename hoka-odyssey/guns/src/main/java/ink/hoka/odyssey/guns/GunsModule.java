@@ -2,6 +2,7 @@ package ink.hoka.odyssey.guns;
 
 import ink.hoka.odyssey.api.OdysseyModule;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -319,7 +320,8 @@ public final class GunsModule extends OdysseyModule {
     }
 
     private void sendConfig(Player p) {
-        links.send(p, Proto.config(guns.values(), "self".equals(vacSound) ? 0.35f : "none".equals(vacSound) ? 0f : 1f));
+        links.send(p, Proto.config(guns.values(), "self".equals(vacSound) ? 0.35f : "none".equals(vacSound) ? 0f : 1f,
+                backGun));
     }
 
     /** Модели, силуэты и вспышки — моду через clientmods (у игроков с модом обновятся сразу). */
@@ -497,11 +499,18 @@ public final class GunsModule extends OdysseyModule {
     }
 
     /**
-     * Разослать «оружие за спиной» игрокам с клиентским модулем в том же мире (и самому игроку — свой клиент
-     * рисует его в F5): при смене, а с refresh — заново всем (кто подошёл, зашёл, сменил мир).
+     * Разослать «оружие за спиной» тем, кто игрока видит, с клиентским модулем (и самому игроку — свой клиент
+     * рисует его в F5): при смене, а с refresh — заново (кто подошёл, зашёл, сменил мир).
      */
     private void relayBacks(boolean refresh) {
         var online = MinecraftServer.getConnectionManager().getOnlinePlayers();
+        if (refresh && backSent.size() > online.size()) {
+            Set<UUID> ids = new HashSet<>();
+            for (Player p : online) {
+                ids.add(p.getUuid());
+            }
+            backSent.keySet().retainAll(ids);              // вышедшие (гонка с отключением)
+        }
         for (Player p : online) {
             String gun = backGun ? backGunOf(p) : null;
             String key = gun == null ? "" : gun;
@@ -511,8 +520,11 @@ public final class GunsModule extends OdysseyModule {
                 continue;
             }
             byte[] msg = Proto.back(p.getEntityId(), key);
-            for (Player v : online) {
-                if (modded(v) && v.getInstance() == p.getInstance()) {
+            if (modded(p)) {
+                links.send(p, msg);
+            }
+            for (Player v : p.getViewers()) {
+                if (modded(v)) {
                     links.send(v, msg);
                 }
             }

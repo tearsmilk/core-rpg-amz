@@ -161,7 +161,7 @@ final class BackGun {
         if (cd == null || cd.isEmpty()) return false;
         CompoundTag t = cd.copyTag();
         String gun = t.getStringOr("hoka_gun", "");
-        if (!gun.isEmpty()) return gunItems.containsKey(gun) || gunItems.isEmpty();
+        if (!gun.isEmpty()) return gunItems.containsKey(gun);   // пусто — старый сервер или back-gun: false
         String item = t.getStringOr("hoka_item", "");
         return !item.isEmpty() && gunItems.containsValue(item);
     }
