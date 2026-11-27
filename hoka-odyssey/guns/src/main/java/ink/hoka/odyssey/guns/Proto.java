@@ -37,10 +37,13 @@ import java.util.Map;
  *   <li>7 HIT: u8 вид (1 — попадание, 2 — в голову, 3 — убийство);</li>
  *   <li>8 POSE: i32 id игрока, u8 флаги (1 — в руке оружие, 2 — прицел, 4 — перезарядка), f32 секунд с начала
  *       перезарядки, f32 её длина — тем, кто его видит (поза тела от третьего лица; старые клиенты op не знают и
- *       пропускают).</li>
+ *       пропускают);</li>
+ *   <li>9 BACK: i32 id игрока, UTF id оружия «за спиной» («» — нет): оружие в быстрой панели не в руке — тем, кто
+ *       его видит, и ему самому (старые клиенты op не знают и пропускают).</li>
  * </ul>
- * CONFIG после громкости вакуума — хвост: u16 оружий, на каждое UTF id и UTF файл анимаций тела от третьего лица
- * (старые клиенты хвост не читают).
+ * CONFIG после громкости вакуума — хвост: u16 оружий, на каждое UTF id и UTF файл анимаций тела от третьего лица;
+ * за ним второй хвост: u16 оружий, на каждое UTF id и UTF id предмета hoitems («» — нет; по нему клиент рисует
+ * оружие за спиной). Старые клиенты хвосты не читают.
  * </ul>
  */
 final class Proto {
@@ -61,6 +64,7 @@ final class Proto {
     static final int S_REJECT = 6;
     static final int S_HIT = 7;
     static final int S_POSE = 8;
+    static final int S_BACK = 9;
 
     static final int POSE_HOLDING = 1;
     static final int POSE_AIM = 2;
@@ -168,6 +172,11 @@ final class Proto {
                 o.writeUTF(g.id());
                 o.writeUTF(g.playerAnimation() == null ? "" : g.playerAnimation());
             }
+            o.writeShort(guns.size());
+            for (GunDef g : guns) {
+                o.writeUTF(g.id());
+                o.writeUTF(g.item() == null ? "" : g.item());
+            }
         });
     }
 
@@ -188,6 +197,15 @@ final class Proto {
             o.writeByte(flags);
             o.writeFloat(reloadSince);
             o.writeFloat(reloadLength);
+        });
+    }
+
+    /** Оружие за спиной игрока entityId (gun «» — нет). */
+    static byte[] back(int entityId, String gun) {
+        return write(o -> {
+            o.writeByte(S_BACK);
+            o.writeInt(entityId);
+            o.writeUTF(gun == null ? "" : gun);
         });
     }
 

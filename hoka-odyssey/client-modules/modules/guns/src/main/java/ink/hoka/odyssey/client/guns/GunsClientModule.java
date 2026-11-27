@@ -81,6 +81,8 @@ public final class GunsClientModule implements ClientModule {
     private boolean partsHook;
     private final Map<String, String> playerAnimPaths = new HashMap<>();
     private final Set<String> watchedAnims = new HashSet<>();
+    /** Оружие за спиной (слой модели игрока). */
+    private BackGun back;
 
     // ---- что прислал сервер
     private String srvGun = "";
@@ -160,6 +162,7 @@ public final class GunsClientModule implements ClientModule {
         installPreTickHook();
         System.getProperties().put(PRE_TICK, (Runnable) this::preTick);
         partsHook = installPartsHook();
+        if (cfg.backGun) back = new BackGun(ctx.logger(), cfg.backTune);
         ctx.send(Proto.hello());
         ctx.logger().info("guns: загружен (перезарядка — {}, режим огня — {}, размер оружия {}; поза тела от третьего"
                 + " лица — {})", cfg.reloadKey, cfg.fireModeKey, cfg.viewmodelScale,
@@ -179,6 +182,8 @@ public final class GunsClientModule implements ClientModule {
         System.getProperties().remove(HIDE_CROSSHAIR);
         System.getProperties().remove(PRE_TICK);
         restoreZoom();
+        if (back != null) back.close();
+        back = null;
         for (ViewModel vm : models.values()) vm.close();
         models.clear();
         fx.close();
@@ -288,7 +293,9 @@ public final class GunsClientModule implements ClientModule {
                 case Proto.S_CONFIG -> {
                     float[] vv = {0.35f};
                     playerAnimPaths.clear();
-                    specs = Proto.readConfig(in, vv, playerAnimPaths);
+                    Map<String, String> gunItems = new HashMap<>();
+                    specs = Proto.readConfig(in, vv, playerAnimPaths, gunItems);
+                    if (back != null) back.setItems(gunItems);
                     vacVolume = vv[0];
                     for (Proto.Spec s : specs.values()) watch(s);
                     third.clearAnims();
@@ -352,6 +359,11 @@ public final class GunsClientModule implements ClientModule {
                         sg.reloadStartNs = -1;
                     }
                     if ((flags & Proto.POSE_HOLDING) == 0) third.forget(id);
+                }
+                case Proto.S_BACK -> {
+                    int id = in.readInt();
+                    String gun = in.readUTF();
+                    if (back != null) back.set(id, gun);
                 }
                 case Proto.S_HIT -> {
                     hitKind = in.readUnsignedByte();
@@ -464,6 +476,7 @@ public final class GunsClientModule implements ClientModule {
         LocalPlayer p = mc.player;
         if (p == null) return;
         third.cleanup();
+        if (back != null) back.tick(mc);
         tickFov(mc);
         ItemStack stack = p.getMainHandItem();
         Proto.Spec now = specOf(specs, stack);

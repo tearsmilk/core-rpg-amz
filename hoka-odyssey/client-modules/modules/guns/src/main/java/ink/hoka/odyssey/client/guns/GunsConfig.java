@@ -46,6 +46,8 @@ final class GunsConfig {
             arms = true
             # Поза тела с оружием от третьего лица (свой в F5 и другие игроки): нужен крючок ядра onModelParts (0.56+)
             third_person = true
+            # Оружие за спиной: оружие в быстрой панели, но не в руке, висит на спине (у себя в F5 и у других игроков)
+            back_gun = true
             """;
 
     String reloadKey = "key.keyboard.r";
@@ -61,6 +63,9 @@ final class GunsConfig {
     boolean monoDigits = true;
     boolean arms = true;
     boolean thirdPerson = true;
+    boolean backGun = true;
+    /** Подстройка положения оружия за спиной (для проверки, в файле по умолчанию нет): угол°, x, y, z, масштаб, x°, y°, z°. */
+    float[] backTune = {45, 0, 0, 0, 1, 0, 90, 180};
 
     static GunsConfig load(Path dir, Logger log) {
         GunsConfig c = new GunsConfig();
@@ -88,6 +93,19 @@ final class GunsConfig {
             c.monoDigits = bool(p, "mono_digits", c.monoDigits);
             c.arms = bool(p, "arms", c.arms);
             c.thirdPerson = bool(p, "third_person", c.thirdPerson);
+            c.backGun = bool(p, "back_gun", c.backGun);
+            String tune = p.getProperty("back_gun_tune");
+            if (tune != null) {
+                String[] parts = tune.trim().split("[,\\s]+");
+                for (int i = 0; i < Math.min(parts.length, c.backTune.length); i++) {
+                    try {
+                        float v = Float.parseFloat(parts[i]);
+                        if (Float.isFinite(v)) c.backTune[i] = v;
+                    } catch (NumberFormatException ignored) {
+                        // как было
+                    }
+                }
+            }
         } catch (IOException | RuntimeException e) {
             log.warn("guns: не удалось прочитать {} — значения по умолчанию ({})", file, e.toString());
         }

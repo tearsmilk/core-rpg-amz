@@ -32,6 +32,8 @@ final class Proto {
     static final int S_HIT = 7;
     /** Поза стрелка для тех, кто его видит: i32 id сущности, u8 флаги (1 — в руке оружие, 2 — прицел, 4 — перезарядка), f32 с перезарядки, f32 её длина. */
     static final int S_POSE = 8;
+    /** Оружие за спиной игрока: i32 id сущности, UTF id оружия («» — ничего). */
+    static final int S_BACK = 9;
 
     static final int POSE_HOLDING = 1;
     static final int POSE_AIM = 2;
@@ -63,10 +65,11 @@ final class Proto {
 
     /**
      * CONFIG. playerAnims — сюда файл анимаций тела от третьего лица по id оружия (хвост сообщения после громкости
-     * вакуума: u16 n, n раз UTF id и UTF путь; старый сервер его не шлёт).
+     * вакуума: u16 n, n раз UTF id и UTF путь; старый сервер его не шлёт). gunItems — сюда id предмета hoitems по id
+     * оружия (второй хвост: u16 n, n раз UTF id и UTF предмет).
      */
-    static Map<String, Spec> readConfig(DataInputStream in, float[] vacuumVolume, Map<String, String> playerAnims)
-            throws IOException {
+    static Map<String, Spec> readConfig(DataInputStream in, float[] vacuumVolume, Map<String, String> playerAnims,
+                                        Map<String, String> gunItems) throws IOException {
         int ver = in.readUnsignedByte();
         if (ver != VERSION) throw new IOException("версия протокола сервера " + ver + ", модуля " + VERSION);
         int n = in.readUnsignedShort();
@@ -105,6 +108,14 @@ final class Proto {
                 String id = in.readUTF();
                 String path = in.readUTF();
                 if (!path.isEmpty()) playerAnims.put(id, path);
+            }
+        }
+        if (in.available() >= 2) {
+            int m = in.readUnsignedShort();
+            for (int i = 0; i < m; i++) {
+                String id = in.readUTF();
+                String item = in.readUTF();
+                if (!item.isEmpty()) gunItems.put(id, item);
             }
         }
         return out;

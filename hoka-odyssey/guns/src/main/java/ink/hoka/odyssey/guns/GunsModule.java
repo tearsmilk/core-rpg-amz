@@ -61,6 +61,8 @@ public final class GunsModule extends OdysseyModule {
     /** Игроки, у которых загружен клиентский модуль guns (прислали HELLO). */
     private final Set<UUID> modded = ConcurrentHashMap.newKeySet();
     private final List<Live> bullets = new ArrayList<>();
+    /** Что последним разослали «за спиной» у каждого игрока (id оружия, «» — ничего). */
+    private final Map<UUID, String> backSent = new ConcurrentHashMap<>();
 
     private Links links;
     private GunItems items;
@@ -71,6 +73,7 @@ public final class GunsModule extends OdysseyModule {
     private long ticks;
 
     private boolean pvp;
+    private boolean backGun;
     private boolean damageMobs;
     private double maxAim;
     private double burst;
@@ -114,6 +117,7 @@ public final class GunsModule extends OdysseyModule {
                 flushAmmo(p, st);
             }
             modded.remove(p.getUuid());
+            backSent.remove(p.getUuid());
         });
         // без клиентского модуля: ЛКМ (взмах руки) — одиночный выстрел, F (смена рук) — перезарядка
         events().addListener(PlayerHandAnimationEvent.class, e -> {
@@ -190,6 +194,7 @@ public final class GunsModule extends OdysseyModule {
         particles = c.getBoolean("particles", true);
         soundRange = GunDef.clamp(c.getDouble("sound-range", 96), 4, 512);
         logHits = c.getBoolean("log-hits", false);
+        backGun = c.getBoolean("back-gun", true);
         guns.clear();
         GunDef.Cfg cfg = c::get;
         for (String id : c.keys("guns")) {
@@ -406,6 +411,7 @@ public final class GunsModule extends OdysseyModule {
         if (ticks % 40 == 0) {
             resendPoses(now);                                 // кто только что увидел стрелка (подошёл, зашёл)
         }
+        relayBacks(ticks % 40 == 20);
         stepBullets();
     }
 
@@ -457,6 +463,56 @@ public final class GunsModule extends OdysseyModule {
             byte[] msg = poseMessage(p, st, now);
             for (Player v : MinecraftServer.getConnectionManager().getOnlinePlayers()) {
                 if (v != p && modded(v) && v.getInstance() == p.getInstance()) {
+                    links.send(v, msg);
+                }
+            }
+        }
+    }
+
+    /**
+     * Оружие «за спиной»: первое оружие в быстрой панели (слоты 0–8) не в выбранном слоте. Вторая рука не в счёт —
+     * оружие в ней и так видно в руке. null — ничего.
+     */
+    String backGunOf(Player p) {
+        int held = p.getHeldSlot();
+        PlayerInventory inv = p.getInventory();
+        for (int i = 0; i < 9; i++) {
+            if (i == held) {
+                continue;
+            }
+            ItemStack s = inv.getItemStack(i);
+            if (s == null || s.isAir()) {
+                continue;
+            }
+            String id = GunItems.gunId(s);
+            if (id != null && guns.containsKey(id)) {
+                return id;
+            }
+            GunDef bare = id == null ? items.bareGun(s, guns.values()) : null;
+            if (bare != null) {
+                return bare.id();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Разослать «оружие за спиной» игрокам с клиентским модулем в том же мире (и самому игроку — свой клиент
+     * рисует его в F5): при смене, а с refresh — заново всем (кто подошёл, зашёл, сменил мир).
+     */
+    private void relayBacks(boolean refresh) {
+        var online = MinecraftServer.getConnectionManager().getOnlinePlayers();
+        for (Player p : online) {
+            String gun = backGun ? backGunOf(p) : null;
+            String key = gun == null ? "" : gun;
+            String was = backSent.put(p.getUuid(), key);
+            boolean changed = !key.equals(was == null ? "" : was);
+            if (!changed && !(refresh && !key.isEmpty())) {
+                continue;
+            }
+            byte[] msg = Proto.back(p.getEntityId(), key);
+            for (Player v : online) {
+                if (modded(v) && v.getInstance() == p.getInstance()) {
                     links.send(v, msg);
                 }
             }
