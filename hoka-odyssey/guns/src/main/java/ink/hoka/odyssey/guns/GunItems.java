@@ -138,4 +138,74 @@ final class GunItems {
         String id = links.idOf(s);
         return id != null && id.equals(g.ammoItem());
     }
+
+    // ---------------------------------------------------------------- обвес
+
+    /** Предмет-обвес d (hoitems att_<id>, иначе простой предмет с названием); laser ≥ 0 — свой цвет луча. */
+    ItemStack attachment(Attachments.Def d, int laser) {
+        ItemStack s = d.item().isEmpty() ? null : links.item(d.item(), 1);
+        if (s == null) {
+            s = ItemStack.of(Material.PAPER).with(DataComponents.CUSTOM_NAME,
+                    Component.text(d.name(), NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false))
+                    .with(DataComponents.LORE, List.of(Component.text("Обвес: " + Attachments.slotRu(d.slot()),
+                            NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)));
+        }
+        s = s.withAmount(1).withTag(Loadout.ITEM, d.id());
+        return laser >= 0 ? s.withTag(Loadout.ITEM_LASER, laser & 0xFFFFFF) : s;
+    }
+
+    /** id обвеса на предмете (метка hoka_att или предмет hoitems att_<id> из каталога) или null. */
+    String attachmentId(ItemStack s, Attachments cat) {
+        if (s == null || s.isAir() || s.getTag(GUN) != null) {
+            return null;
+        }
+        String id = s.getTag(Loadout.ITEM);
+        if (id != null) {
+            return cat.get(id) != null ? id : null;
+        }
+        String h = links.idOf(s);
+        if (h != null && h.startsWith("att_") && cat.get(h.substring(4)) != null) {
+            return h.substring(4);
+        }
+        return null;
+    }
+
+    /** Описание оружия: строки из config.yml и (если обвес есть) «Обвес: …» по слотам. */
+    static ItemStack withLore(ItemStack s, GunDef g, Loadout lo, Attachments cat) {
+        List<Component> lore = new ArrayList<>();
+        for (String l : g.lore()) {
+            lore.add(Component.text(l, NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+        }
+        if (!lo.isEmpty()) {
+            lore.add(Component.text("Обвес:", NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false));
+            for (var e : lo.entries().entrySet()) {
+                Attachments.Def d = cat.get(e.getValue().id());
+                lore.add(Component.text(" " + e.getKey().ru + ": " + (d == null ? e.getValue().id() : d.name())
+                        + (e.getValue().virtual() ? " (встроенный)" : ""), NamedTextColor.DARK_AQUA)
+                        .decoration(TextDecoration.ITALIC, false));
+            }
+            Attachments.Adapter a = cat.adapter(lo.adapter);
+            if (a != null) {
+                lore.add(Component.text(" Планка: " + a.name(), NamedTextColor.DARK_AQUA).decoration(TextDecoration.ITALIC, false));
+            }
+        }
+        return lore.isEmpty() ? s.without(DataComponents.LORE) : s.with(DataComponents.LORE, lore);
+    }
+
+    /** Обвес по умолчанию (default у оружия) — на оружие без обвеса, один раз (метка hoka_att_init). */
+    static Loadout defaults(Loadout lo, Attachments.GunAtt ga, Attachments cat) {
+        if (lo.init) {
+            return lo;
+        }
+        Loadout out = lo.withInit();
+        if (ga != null) {
+            for (var e : ga.defaults().entrySet()) {
+                Attachments.Def d = cat.get(e.getValue());
+                if (d != null && out.get(e.getKey()) == null && d.slot() == e.getKey()) {
+                    out = out.with(e.getKey(), new Loadout.Entry(d.id(), d.builtin(), -1));
+                }
+            }
+        }
+        return out;
+    }
 }

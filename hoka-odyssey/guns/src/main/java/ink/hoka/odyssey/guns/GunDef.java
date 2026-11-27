@@ -106,6 +106,24 @@ record GunDef(
      */
     record ShellPlan(boolean empty, int loops, double[] feeds, double total) {}
 
+    /**
+     * Это же оружие с другими характеристиками (с обвесом, {@link AttachmentMath}): остальное — как есть. id тот же —
+     * сравнивать оружие по id, а не по ссылке.
+     */
+    GunDef tuned(int magazine, double rpm, double[] damageDistance, double[] damage, double headshot, double speed,
+                 int pierce, double knockback, double spreadStand, double spreadMove, double spreadSneak,
+                 double spreadAim, double spreadVacuum, List<RecoilKey> recoilPitch, List<RecoilKey> recoilYaw,
+                 Reload tactical, Reload empty, double aimTime, double zoom, Map<String, String> sounds,
+                 double flashScale, int pellets) {
+        return new GunDef(id, name, lore, item, material, ammoItem, ammoMaterial, ammoName, caliber, infiniteAmmo,
+                magazine, chamber, rpm, auto, semi, damageDistance, damage, headshot, speed, life, gravity, friction,
+                pierce, knockback, tracerColor, spreadStand, spreadMove, spreadSneak, spreadAim, spreadVacuum,
+                recoilPitch, recoilYaw, tactical, empty, draw, aimTime, zoom, aimSpeed, model, hud, flash,
+                playerAnimation, sounds, reloadSoundsTactical, reloadSoundsEmpty, type, boltTime, scope, itemIcon,
+                itemModel, ammoIcon, boltSounds3p, flashScale, vacuumRecoil, pellets, shellReload, crosshair,
+                reloadSoundsLoop, reloadSoundsEnd);
+    }
+
     /** Сколько патронов вмещает оружие с перезарядкой по одному: магазин и патрон в патроннике. */
     int shellTarget() {
         return magazine + (chamber ? 1 : 0);

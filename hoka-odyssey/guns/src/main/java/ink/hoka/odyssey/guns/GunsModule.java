@@ -64,6 +64,10 @@ public final class GunsModule extends OdysseyModule {
     private final List<Live> bullets = new ArrayList<>();
     /** Что последним разослали «за спиной» у каждого игрока (id оружия, «» — ничего). */
     private final Map<UUID, String> backSent = new ConcurrentHashMap<>();
+    /** Каталог обвесов (attachments.yml) и обвес каждого оружия (guns.<id>.attachments). */
+    private Attachments catalog = Attachments.EMPTY;
+    private final Map<String, Attachments.GunAtt> gunAtt = new LinkedHashMap<>();
+    private Refit refit;
 
     private Links links;
     private GunItems items;
@@ -84,9 +88,11 @@ public final class GunsModule extends OdysseyModule {
     private boolean particles;
     private double soundRange;
     private boolean logHits;
+    private boolean ammoModsExtendMag;
 
-    /** Пуля в полёте и чья она. */
-    private record Live(Ballistics.Bullet b, Player shooter, GunDef gun, Instance inst, int shot) {}
+    /** Пуля в полёте, чья она и что даёт обвес (взрыв, поджог). */
+    private record Live(Ballistics.Bullet b, Player shooter, GunDef gun, Instance inst, int shot,
+                        AttachmentMath.Effective fx) {}
 
     @Override
     protected void onEnable() {
@@ -100,6 +106,7 @@ public final class GunsModule extends OdysseyModule {
         }
         effects = new Effects(this);
         assets = new Assets(dataFolder());
+        refit = new Refit(this);
         if (links.resolve(this::onClientMessage, this::onClientReady)) {
             publishFiles();
             adoptReady();
@@ -194,11 +201,20 @@ public final class GunsModule extends OdysseyModule {
         soundRange = GunDef.clamp(c.getDouble("sound-range", 96), 4, 512);
         logHits = c.getBoolean("log-hits", false);
         backGun = c.getBoolean("back-gun", true);
+        ammoModsExtendMag = c.getBoolean("attachments.ammo-mods-extend-mag", true);
+        try {
+            catalog = Attachments.load(dataFolder());
+        } catch (java.io.IOException | RuntimeException e) {
+            catalog = Attachments.EMPTY;
+            logger().warn("guns: attachments.yml не прочитан: {}", e.toString());
+        }
         guns.clear();
+        gunAtt.clear();
         GunDef.Cfg cfg = c::get;
         for (String id : c.keys("guns")) {
             try {
                 guns.put(id, GunDef.read(id, cfg));
+                gunAtt.put(id, catalog.gun(id, cfg));
             } catch (RuntimeException e) {
                 logger().warn("guns: оружие {} не прочитано: {}", id, e.toString());
             }
@@ -219,6 +235,14 @@ public final class GunsModule extends OdysseyModule {
                     sendConfig(p);
                     state(p).sentKey = "";
                 }
+            }
+        }
+        for (Player p : MinecraftServer.getConnectionManager().getOnlinePlayers()) {
+            ShooterState st = states.get(p.getUuid());
+            if (st != null && st.gun != null) {                // оружие и обвес — заново (новые числа)
+                flushAmmo(p, st);
+                endAim(p);
+                st.unequip();
             }
         }
         logger().info("guns: config.yml перечитан, оружие: {}", String.join(", ", guns.keySet()));
@@ -245,6 +269,26 @@ public final class GunsModule extends OdysseyModule {
 
     Map<String, GunDef> guns() {
         return guns;
+    }
+
+    Attachments catalog() {
+        return catalog;
+    }
+
+    Attachments.GunAtt gunAtt(String id) {
+        return gunAtt.getOrDefault(id, Attachments.GunAtt.NONE);
+    }
+
+    Effects effects() {
+        return effects;
+    }
+
+    Refit refit() {
+        return refit;
+    }
+
+    Map<String, Attachments.GunAtt> gunAtts() {
+        return gunAtt;
     }
 
     boolean modded(Player p) {
@@ -297,10 +341,12 @@ public final class GunsModule extends OdysseyModule {
                     syncHeld(p);
                     startReload(p, state(p));
                 }
+                case Proto.C_REFIT, Proto.C_ATTACH, Proto.C_DETACH, Proto.C_BUILTIN, Proto.C_ADAPTER, Proto.C_LASER,
+                     Proto.C_ZOOM -> refit.handle(p, m);
                 case Proto.C_ADS -> {
                     syncHeld(p);
                     ShooterState st = state(p);
-                    if (m.mode() != 0 && st.gun != null && st.aimSince == 0) {
+                    if (m.mode() != 0 && st.gun != null && st.aimSince == 0 && !st.refit) {
                         beginAim(p);
                     } else if (m.mode() == 0) {
                         endAim(p);
@@ -362,8 +408,79 @@ public final class GunsModule extends OdysseyModule {
                 }
             }
         }
+        // обвесы: модели (и упрощённые), модели планок, иконки и каталог guns/attachments.json
+        java.util.Set<String> att = new java.util.LinkedHashSet<>();
+        for (Attachments.Def d : catalog.all()) {
+            att.add(d.model());
+            att.add(d.lod());
+            if (d.icon().startsWith("tacz/")) {
+                att.add("guns/" + d.icon().substring(5));
+            }
+        }
+        for (Attachments.Adapter a : catalog.adapters()) {
+            att.add(a.model());
+        }
+        for (String path : att) {
+            if (path == null || path.isBlank()) {
+                continue;
+            }
+            byte[] b = assets.read(path);
+            if (b != null) {
+                links.putFile(path, b);
+                n++;
+            }
+        }
+        links.putFile(ATT_JSON, attachmentsJson().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        n++;
         links.publish();
         logger().info("guns: моду отдано файлов: {}", n);
+    }
+
+    /** Каталог обвесов для клиентского модуля. */
+    static final String ATT_JSON = "guns/attachments.json";
+
+    /**
+     * guns/attachments.json: {version, tags, adapters, attachments — как в attachments.yml; guns — у каждого оружия
+     * slots, allow (метки раскрыты, без планок), adapters (разрешённые планки), builtin, default, locked,
+     * extended-mag, reload-xmag, base-magazine}.
+     */
+    String attachmentsJson() {
+        Map<String, Object> root = new LinkedHashMap<>();
+        root.put("version", 1);
+        root.put("tags", catalog.raw().get("tags"));
+        root.put("adapters", catalog.raw().get("adapters"));
+        root.put("attachments", catalog.raw().get("attachments"));
+        Map<String, Object> gs = new LinkedHashMap<>();
+        for (GunDef g : guns.values()) {
+            Attachments.GunAtt ga = gunAtt(g.id());
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("slots", ga.slots().stream().map(s -> s.key).toList());
+            m.put("allow", List.copyOf(ga.allow()));
+            m.put("adapters", List.copyOf(ga.adapters()));
+            Map<String, Object> bi = new LinkedHashMap<>();
+            ga.builtin().forEach((k, v) -> bi.put(k.key, v));
+            m.put("builtin", bi);
+            Map<String, Object> df = new LinkedHashMap<>();
+            ga.defaults().forEach((k, v) -> df.put(k.key, v));
+            m.put("default", df);
+            m.put("locked", ga.locked().stream().map(s -> s.key).toList());
+            List<Integer> xm = new ArrayList<>();
+            for (int x : ga.extendedMag()) {
+                xm.add(x);
+            }
+            m.put("extended-mag", xm);
+            if (ga.xmagTactical() != null && ga.xmagEmpty() != null) {
+                m.put("reload-xmag", Map.of("tactical", Map.of("feed", ga.xmagTactical().feed(), "total", ga.xmagTactical().total()),
+                        "empty", Map.of("feed", ga.xmagEmpty().feed(), "total", ga.xmagEmpty().total())));
+            }
+            m.put("base-magazine", g.magazine());
+            m.put("armor-ignore", ga.armorIgnore());
+            gs.put(g.id(), m);
+        }
+        root.put("guns", gs);
+        StringBuilder b = new StringBuilder(256 * 1024);
+        Json.write(b, root);
+        return b.toString();
     }
 
     // ---------------------------------------------------------------- тик
@@ -429,6 +546,7 @@ public final class GunsModule extends OdysseyModule {
             resendPoses(now);                                 // кто только что увидел стрелка (подошёл, зашёл)
         }
         relayBacks(ticks % 40 == 20);
+        relayGear(ticks % 40 == 30);
         stepBullets();
     }
 
@@ -553,6 +671,84 @@ public final class GunsModule extends OdysseyModule {
         }
     }
 
+    /**
+     * Разослать обвес оружия в руке (GEAR) тем, кто видит игрока, с клиентским модулем, и ему самому: при смене, а с
+     * refresh — заново (вид от третьего лица).
+     */
+    private void relayGear(boolean refresh) {
+        for (Player p : MinecraftServer.getConnectionManager().getOnlinePlayers()) {
+            ShooterState st = states.get(p.getUuid());
+            String gun = st == null || st.base == null ? "" : st.base.id();
+            String csv = st == null || st.base == null ? "" : st.loadout.gearCsv();
+            String key = gun + "|" + csv;
+            String was = st == null ? "|" : st.gearSent;
+            boolean changed = !key.equals(was.isEmpty() ? "|" : was);
+            if (!changed && !(refresh && !gun.isEmpty())) {
+                continue;
+            }
+            if (st != null) {
+                st.gearSent = key;
+            }
+            byte[] msg = Proto.gear(p.getEntityId(), gun, csv);
+            if (modded(p)) {
+                links.send(p, msg);
+            }
+            for (Player v : p.getViewers()) {
+                if (modded(v)) {
+                    links.send(v, msg);
+                }
+            }
+        }
+    }
+
+    /**
+     * Поставить обвес lo оружию в руке: записать в предмет (и описание), пересчитать характеристики, лишние патроны
+     * (магазин стал меньше) — обратно в инвентарь, сообщить клиенту.
+     */
+    void setLoadout(Player p, ShooterState st, Loadout lo) {
+        if (st.base == null) {
+            return;
+        }
+        PlayerInventory inv = p.getInventory();
+        ItemStack s = inv.getItemStack(st.slot);
+        if (st.serial == null || !st.serial.equals(s.getTag(GunItems.SERIAL))) {
+            return;
+        }
+        st.ammo = Math.max(0, st.ammo);
+        st.loadout = lo;
+        st.fx = AttachmentMath.apply(st.base, gunAtt(st.base.id()), lo, catalog, ammoModsExtendMag);
+        st.gun = st.fx.gun();
+        int cap = st.gun.magazine() + (st.gun.chamber() ? 1 : 0);
+        if (st.ammo > cap) {
+            int extra = st.ammo - cap;
+            st.ammo = cap;
+            if (!infinite(p, st.base)) {
+                giveOrDrop(p, items.ammo(st.base, extra));
+            }
+        }
+        inv.setItemStack(st.slot, GunItems.withLore(lo.write(s), st.base, lo, catalog).withTag(GunItems.AMMO, st.ammo));
+        st.ammoDirty = false;
+        st.sentKey = "";
+        if (st.aimSince > 0 && !modded(p)) {                  // кратность прицела сменилась — FOV заново
+            restoreFov(p, st);
+            long since = st.aimSince;
+            beginAim(p);
+            st.aimSince = since;
+        }
+    }
+
+    /** Предмет в инвентарь, а нет места — под ноги. */
+    void giveOrDrop(Player p, ItemStack s) {
+        if (s == null || s.isAir()) {
+            return;
+        }
+        if (!p.getInventory().addItemStack(s)) {
+            net.minestom.server.entity.ItemEntity e = new net.minestom.server.entity.ItemEntity(s);
+            e.setPickupDelay(java.time.Duration.ofMillis(500));
+            e.setInstance(p.getInstance(), p.getPosition().add(0, 1, 0));
+        }
+    }
+
     /** Что в руке: взяли оружие — «достаёт», убрали — патроны в предмет. */
     void syncHeld(Player p) {
         ShooterState st = state(p);
@@ -571,18 +767,28 @@ public final class GunsModule extends OdysseyModule {
             s = s.withTag(GunItems.SERIAL, serial);
             p.getInventory().setItemStack(slot, s);
         }
-        if (st.gun != null && (g == null || slot != st.slot || !Objects.equals(serial, st.serial) || st.gun != g)) {
+        if (st.gun != null && (g == null || slot != st.slot || !Objects.equals(serial, st.serial) || st.base != g)) {
             flushAmmo(p, st);
             endAim(p);
             st.unequip();
         }
         if (g != null && st.gun == null) {
             Integer ammo = s.getTag(GunItems.AMMO);
+            Attachments.GunAtt ga = gunAtt(g.id());
+            Loadout lo0 = Loadout.read(s);
+            Loadout lo = GunItems.defaults(lo0, ga, catalog);    // новое оружие — обвес по умолчанию
             ItemStack fresh = GunItems.decorate(s, g, serial, ammo == null ? g.magazine() : ammo);
+            if (!lo.equals(lo0)) {
+                fresh = GunItems.withLore(lo.write(fresh), g, lo, catalog);
+            }
             if (!fresh.equals(s)) {                           // предмет от старой версии модуля — поведение заново
                 p.getInventory().setItemStack(slot, fresh);
             }
-            st.equip(g, slot, serial, ammo == null ? g.magazine() : ammo, System.currentTimeMillis());
+            AttachmentMath.Effective fx = AttachmentMath.apply(g, ga, lo, catalog, ammoModsExtendMag);
+            st.equip(fx.gun(), slot, serial, ammo == null ? g.magazine() : ammo, System.currentTimeMillis());
+            st.base = g;
+            st.loadout = lo;
+            st.fx = fx;
             st.ammoDirty = false;
             if (!modded(p)) {
                 effects.others(p, g.sound("draw"), 0.6f);
@@ -642,7 +848,7 @@ public final class GunsModule extends OdysseyModule {
         p.setFieldViewModifier((float) (speed / (2 / z - 1)));
     }
 
-    private void endAim(Player p) {
+    void endAim(Player p) {
         ShooterState st = states.get(p.getUuid());
         if (st == null) {
             return;
@@ -775,8 +981,10 @@ public final class GunsModule extends OdysseyModule {
             double vz = d[2] * v + m[2];
             Ballistics.Bullet b = new Ballistics.Bullet(ex, ey, ez, vx, vy, vz, (int) Math.max(1, Math.round(life * 20)),
                     g.pierce(), vac ? 0 : g.gravity(), vac ? 0 : g.friction(), p);
-            Live live = new Live(b, p, g, inst, shot);
-            effects.shot(p, g, ex, ey, ez, vx * 20, vy * 20, vz * 20, life, vac, k == 0);
+            Live live = new Live(b, p, g, inst, shot, st.fx);
+            boolean sil = st.fx != null && st.fx.silenced();
+            effects.shot(p, g, ex, ey, ez, vx * 20, vy * 20, vz * 20, life, vac, k == 0, sil,
+                    st.fx == null ? 0 : st.fx.soundAdd());
             if (step(live)) {                                 // первый отрезок — в том же тике
                 bullets.add(live);
             }
@@ -833,6 +1041,7 @@ public final class GunsModule extends OdysseyModule {
                     block = null;
                 }
                 effects.blockHit(l.inst(), block, x, y, z, nx, ny, nz);
+                explode(l, x, y, z, null);
             }
         });
     }
@@ -842,9 +1051,13 @@ public final class GunsModule extends OdysseyModule {
         GunDef g = l.gun();
         Player shooter = l.shooter();
         effects.entityHit(l.inst(), x, y, z, nx, ny, nz, head);
+        explode(l, x, y, z, target);
         boolean allowed = target instanceof Player ? pvp : damageMobs;
         if (!allowed || target.isDead()) {
             return;
+        }
+        if (l.fx() != null && l.fx().ignite()) {                 // зажигательные патроны
+            target.setFireTicks(Math.max(target.getFireTicks(), 60));
         }
         double dmg = g.damageAt(fromStart) * (head ? g.headshot() : 1) / g.pellets();   // дробь: урон на выстрел
         float hpBefore = target.getHealth();
@@ -881,6 +1094,45 @@ public final class GunsModule extends OdysseyModule {
                 links.send(shooter, Proto.hit(kind));
             } else {
                 links.play(shooter, g.sound(kind == 3 ? "kill" : head ? "head_hit" : "flesh_hit"), shooter.getPosition(), 0.8f, 1f);
+            }
+        }
+    }
+
+    /**
+     * Взрыв фугасной пули (обвес ammo_mod_he и у оружия раздел explosion): урон живым в радиусе (меньше к краю, кроме
+     * той цели, в которую попала пуля — она получает обычный урон пули), отбрасывание, частица и звук. Блоки не
+     * ломаются.
+     */
+    private void explode(Live l, double x, double y, double z, LivingEntity direct) {
+        Attachments.Explosion ex = l.fx() == null ? null : l.fx().explosion();
+        if (ex == null || ex.damage() <= 0) {
+            return;
+        }
+        effects.explosion(l.inst(), x, y, z);
+        Player shooter = l.shooter();
+        Vec c = new Vec(x, y, z);
+        for (Entity e : l.inst().getNearbyEntities(c, ex.radius())) {
+            if (!(e instanceof LivingEntity le) || le == direct || le.isDead() || le.isRemoved()) {
+                continue;
+            }
+            if (le instanceof Player pl && (pl.getGameMode() == GameMode.SPECTATOR || (!pvp && pl != shooter))) {
+                continue;
+            }
+            if (!(le instanceof Player) && !damageMobs) {
+                continue;
+            }
+            Pos ep = le.getPosition();
+            double d = ep.add(0, le.getBoundingBox().height() / 2, 0).distance(c);
+            double k = Math.max(0, 1 - d / ex.radius());
+            if (k <= 0) {
+                continue;
+            }
+            le.damage(new Damage(DamageType.PLAYER_EXPLOSION, shooter, shooter, c, (float) (ex.damage() * k)));
+            if (ex.knockback()) {
+                double dx = ep.x() - x;
+                double dz = ep.z() - z;
+                double len = Math.max(1e-6, Math.sqrt(dx * dx + dz * dz));
+                le.takeKnockback((float) (0.5 * k), -dx / len, -dz / len);
             }
         }
     }
@@ -1122,6 +1374,11 @@ public final class GunsModule extends OdysseyModule {
                 | (st.vacuum ? Proto.FLAG_VACUUM : 0);
         String key = g.id() + '|' + st.ammo + '|' + reserve + '|' + st.mode + '|' + flags + '|' + st.ackSeq;
         if (modded(p)) {
+            String lk = st.serial + '|' + st.loadout.key() + '|' + st.gun.magazine();
+            if (!lk.equals(st.loadoutSent)) {                 // обвес своего оружия — при смене
+                st.loadoutSent = lk;
+                links.send(p, Proto.loadout(st.base.id(), st.serial, st.loadout, st.fx, st.base));
+            }
             if (!key.equals(st.sentKey)) {
                 st.sentKey = key;
                 links.send(p, Proto.state(g.id(), st.ammo, reserve, st.mode, flags, st.ackSeq));
@@ -1137,6 +1394,7 @@ public final class GunsModule extends OdysseyModule {
         if (modded(p)) {
             links.send(p, Proto.state("", 0, 0, 0, 0, state(p).ackSeq));
             state(p).sentKey = "";
+            state(p).loadoutSent = "";
         }
     }
 }

@@ -42,6 +42,13 @@ back-gun: true
 # Кто слышит выстрел на планете (блоков) — не дальше этого (сам звук ещё ограничен range в hosounds).
 sound-range: 96
 
+# Обвес оружия (как в TACZ): экран обвеса — клавиша Y с оружием в руке (клиентский модуль guns). Все обвесы пака
+# TACZ — в attachments.yml (в jar; свой — module/guns/attachments.yml), какие подходят оружию — guns.<id>.attachments.
+attachments:
+  # Патроны (ammo_mod_*) стоят в слоте магазина и, как в TACZ, удлиняют магазин (их уровень extended-mag).
+  # false — патроны магазин не меняют.
+  ammo-mods-extend-mag: true
+
 # Оружие. Ключ — id оружия (он же в custom_data предмета: hoka_gun=<id>).
 guns:
   ak47:
@@ -142,6 +149,17 @@ guns:
     item-icon: tacz/ak47_slot.png
     item-model: tacz/ak47_lod.bbmodel
     ammo-icon: tacz/762x39.png
+    # Обвес (как в TACZ, клавиша Y с оружием в руке): slots — какие слоты есть; allow — какие обвесы можно (id
+    # и #метки из attachments.yml; метки adapter/… — повышающие планки); builtin — встроенные (ставятся без
+    # предмета); default — что стоит на новом оружии; locked — слоты, которые нельзя менять; extended-mag —
+    # патронов в магазине с удлинённым магазином 1/2/3 уровня; reload-xmag — перезарядка с ним (как reload).
+    attachments:
+      slots: ["scope", "stock", "muzzle", "extended_mag"]
+      allow: ["#scope_scope", "#scope_sight", "#muzzle", "#extended_mag", "#oem_stock", "#stock", "#bayonet_ak", "#ammo_mod_no_he", "#adapter/pistol_riser", "#adapter/rail_mid"]
+      builtin: {stock: ["oem_stock_light", "oem_stock_tactical", "oem_stock_heavy"]}
+      default: {stock: "oem_stock_tactical"}
+      extended-mag: [34, 37, 40]
+      reload-xmag: {tactical: {feed: 1.54, total: 2.29}, empty: {feed: 2.5, total: 2.85}}
 
   # AWP (ai_awp из TACZ) с прицелом 8x (scope_standard_8x) — прицел часть винтовки, не снимается. Ручной затвор:
   # после каждого выстрела — передёргивание (bolt-time), в прицеле — чёрный экран и круг прицела с сеткой TACZ.
@@ -236,6 +254,19 @@ guns:
     item-icon: ""
     item-model: tacz/ai_awp_lod.bbmodel
     ammo-icon: tacz/338.png
+    # Обвес (как в TACZ, клавиша Y с оружием в руке): slots — какие слоты есть; allow — какие обвесы можно (id
+    # и #метки из attachments.yml; метки adapter/… — повышающие планки); builtin — встроенные (ставятся без
+    # предмета); default — что стоит на новом оружии; locked — слоты, которые нельзя менять; extended-mag —
+    # патронов в магазине с удлинённым магазином 1/2/3 уровня; reload-xmag — перезарядка с ним (как reload).
+    attachments:
+      slots: ["extended_mag", "scope", "muzzle"]
+      allow: ["#scope", "#sniper_extended_mag", "#muzzle_silencer", "#ammo_mod", "#scope_lowsight", "#adapter/pistol_riser", "#adapter/rail_mid"]
+      builtin: {}
+      default: {}
+      extended-mag: [6, 7, 8]
+      locked: [scope]                  # прицел 8x — часть винтовки (модель с ним), не снимается
+    # Взрыв (только с фугасными патронами ammo_mod_he): урон в центре, радиус (блоков), отбрасывает ли.
+    explosion: {damage: 25, radius: 1.25, knockback: true}
 
   # Glock 17 (glock_17 из TACZ): пистолет, одиночный огонь; поза тела — pistol_default TACZ.
   glock_17:
@@ -317,6 +348,17 @@ guns:
     item-icon: tacz/glock_17_slot.png
     item-model: tacz/glock_17_lod.bbmodel
     ammo-icon: tacz/9mm.png
+    # Обвес (как в TACZ, клавиша Y с оружием в руке): slots — какие слоты есть; allow — какие обвесы можно (id
+    # и #метки из attachments.yml; метки adapter/… — повышающие планки); builtin — встроенные (ставятся без
+    # предмета); default — что стоит на новом оружии; locked — слоты, которые нельзя менять; extended-mag —
+    # патронов в магазине с удлинённым магазином 1/2/3 уровня; reload-xmag — перезарядка с ним (как reload).
+    attachments:
+      slots: ["scope", "muzzle", "extended_mag", "laser"]
+      allow: ["#pistol_sight", "#pistol_muzzle", "#light_extended_mag", "#ammo_mod_no_he", "#pistol_laser"]
+      builtin: {}
+      default: {}
+      extended-mag: [20, 25, 30]
+      reload-xmag: {tactical: {feed: 1.32, total: 2.1}, empty: {feed: 1.9, total: 2.23}}
 
   # M4A1 (m4a1 из TACZ): карабин под 5,56×45, очередь/одиночный. Числа — из m4a1_data.json TACZ.
   m4a1:
@@ -394,6 +436,17 @@ guns:
     item-icon: tacz/m4a1_slot.png
     item-model: tacz/m4a1_lod.bbmodel
     ammo-icon: tacz/556x45.png
+    # Обвес (как в TACZ, клавиша Y с оружием в руке): slots — какие слоты есть; allow — какие обвесы можно (id
+    # и #метки из attachments.yml; метки adapter/… — повышающие планки); builtin — встроенные (ставятся без
+    # предмета); default — что стоит на новом оружии; locked — слоты, которые нельзя менять; extended-mag —
+    # патронов в магазине с удлинённым магазином 1/2/3 уровня; reload-xmag — перезарядка с ним (как reload).
+    attachments:
+      slots: ["scope", "stock", "laser", "grip", "muzzle", "extended_mag"]
+      allow: ["oem_sight_1", "oem_sight_2", "oem_side_cover", "oem_grip_cover", "oem_stock_tactical", "#scope_scope", "#scope_sight", "#muzzle", "#extended_mag", "#grip", "#bayonet_ar", "#stock", "#ammo_mod_no_he", "#ar_laser", "#pistol_laser", "#adapter/pistol_riser", "#adapter/rail_mid"]
+      builtin: {scope: ["oem_sight_1", "oem_sight_2"], laser: ["oem_side_cover"], grip: ["oem_grip_cover"], stock: ["oem_stock_tactical"]}
+      default: {stock: "oem_stock_tactical"}
+      extended-mag: [40, 50, 60]
+      reload-xmag: {tactical: {feed: 1.46, total: 2.29}, empty: {feed: 2.29, total: 2.67}}
 
   # M16A1 (m16a1 из TACZ): винтовка под те же патроны 5,56×45, что у M4A1. Перезарядка — один звук на всю
   # перезарядку (sounds.reload_tactical / reload_empty: в анимации TACZ звуков нет).
@@ -474,6 +527,16 @@ guns:
     item-icon: tacz/m16a1_slot.png
     item-model: tacz/m16a1_lod.bbmodel
     ammo-icon: tacz/556x45.png
+    # Обвес (как в TACZ, клавиша Y с оружием в руке): slots — какие слоты есть; allow — какие обвесы можно (id
+    # и #метки из attachments.yml; метки adapter/… — повышающие планки); builtin — встроенные (ставятся без
+    # предмета); default — что стоит на новом оружии; locked — слоты, которые нельзя менять; extended-mag —
+    # патронов в магазине с удлинённым магазином 1/2/3 уровня; reload-xmag — перезарядка с ним (как reload).
+    attachments:
+      slots: ["muzzle", "extended_mag", "scope", "grip"]
+      allow: ["#muzzle", "#extended_mag", "#bayonet_ar", "#m16a1_scope", "oem_m16a1_handguard_a2", "#ammo_mod_no_he", "#adapter/pistol_riser", "#adapter/rail_mid"]
+      builtin: {grip: ["oem_m16a1_handguard_a2"]}
+      default: {}
+      extended-mag: [30, 40, 50]
 
   # Desert Eagle (deagle из TACZ): пистолет под .50 AE, одиночный; поза тела — pistol_default TACZ.
   deagle:
@@ -553,6 +616,19 @@ guns:
     item-icon: tacz/deagle_slot.png
     item-model: tacz/deagle_lod.bbmodel
     ammo-icon: tacz/50ae.png
+    # Обвес (как в TACZ, клавиша Y с оружием в руке): slots — какие слоты есть; allow — какие обвесы можно (id
+    # и #метки из attachments.yml; метки adapter/… — повышающие планки); builtin — встроенные (ставятся без
+    # предмета); default — что стоит на новом оружии; locked — слоты, которые нельзя менять; extended-mag —
+    # патронов в магазине с удлинённым магазином 1/2/3 уровня; reload-xmag — перезарядка с ним (как reload).
+    attachments:
+      slots: ["scope", "muzzle", "extended_mag", "laser"]
+      allow: ["#scope_sight", "#deagle_sight", "#pistol_muzzle", "#light_extended_mag", "#ammo_mod", "#pistol_laser", "#scope_lowsight", "#adapter/pistol_riser"]
+      builtin: {}
+      default: {}
+      extended-mag: [8, 10, 12]
+      reload-xmag: {tactical: {feed: 1.53, total: 1.93}, empty: {feed: 1.93, total: 2.33}}
+    # Взрыв (только с фугасными патронами ammo_mod_he): урон в центре, радиус (блоков), отбрасывает ли.
+    explosion: {damage: 10, radius: 1, knockback: true}
 
   # M1897 (m1897 из TACZ): помповый дробовик. За выстрел 8 дробин (pellets), урон из damage — на весь выстрел
   # (делится между дробинами, как у TACZ). После выстрела — помпа (bolt-time, как затвор AWP); зажатая ЛКМ — стреляет
@@ -653,3 +729,14 @@ guns:
     item-icon: tacz/m1897_slot.png
     item-model: tacz/m1897_item.bbmodel
     ammo-icon: tacz/12g.png
+    # Обвес (как в TACZ, клавиша Y с оружием в руке): slots — какие слоты есть; allow — какие обвесы можно (id
+    # и #метки из attachments.yml; метки adapter/… — повышающие планки); builtin — встроенные (ставятся без
+    # предмета); default — что стоит на новом оружии; locked — слоты, которые нельзя менять; extended-mag —
+    # патронов в магазине с удлинённым магазином 1/2/3 уровня; reload-xmag — перезарядка с ним (как reload).
+    attachments:
+      slots: ["extended_mag", "muzzle"]
+      allow: ["#ammo_mod_no_he", "#ammo_mod_shotgun_exclusive", "#muzzle_shotgun", "oem_m1897_bayonet"]
+      builtin: {muzzle: ["oem_m1897_bayonet"]}
+      default: {}
+    # Взрыв (только с фугасными патронами ammo_mod_he): урон в центре, радиус (блоков), отбрасывает ли.
+    explosion: {damage: 50, radius: 3, knockback: false}

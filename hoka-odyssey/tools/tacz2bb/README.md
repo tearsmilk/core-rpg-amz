@@ -96,3 +96,17 @@ M4A1, M16A1, Desert Eagle и M1897 (силуэты HUD, иконки, патро
 Проверка: модуль guns при загрузке пишет `guns: модель guns/ak47.bbmodel — костей 77, анимаций 16` (у AWP ещё
 `прицел (сетка 68 граней)` — грани сетки прицела для круга оптики). Перегенерация `ak47*.bbmodel` этой версией
 конвертера даёт байт-в-байт те же файлы.
+
+## Обвесы — `attachments2yml.py`
+
+```bash
+python3 -I attachments2yml.py P ../../guns/src/main/resources/attachments.yml ../../guns/assets-tacz
+```
+
+Читает пак (обвесы, их data/display, метки, повышающие планки, ru_ru) и пишет `attachments.yml` модуля guns, модели
+обвесов и планок `assets-tacz/models/att/<id>.bbmodel` (и упрощённые `<id>_lod.bbmodel`) — та же конвертация формата,
+что `geo2bbmodel.py`, без изменений геометрии и пикселей; копирует иконки (`textures/att/`) и звуки установки/снятия
+(`sounds/`) как есть и обновляет строки таблицы обвесов в `NOTICE.md` (между метками `<!-- attachments:begin/end -->`).
+Встроенные обвесы оружия, которого у нас нет, не берутся. В stdout — разделы `attachments` нашего оружия (для
+`config.yml`).
+

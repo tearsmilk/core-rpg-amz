@@ -74,6 +74,15 @@ final class Effects {
      */
     void shot(Player shooter, GunDef g, double x, double y, double z, double vx, double vy, double vz, double life,
               boolean vacuum, boolean sound) {
+        shot(shooter, g, x, y, z, vx, vy, vz, life, vacuum, sound, false, 0);
+    }
+
+    /**
+     * То же с глушителем (silenced): у других нет вспышки (флаг TRACER), звук — sounds.shoot3p оружия с обвесом
+     * (уже «с глушителем»), слышно на soundAdd блоков меньше/больше sound-range.
+     */
+    void shot(Player shooter, GunDef g, double x, double y, double z, double vx, double vy, double vz, double life,
+              boolean vacuum, boolean sound, boolean silenced, double soundAdd) {
         Instance inst = shooter.getInstance();
         if (inst == null) {
             return;
@@ -88,17 +97,34 @@ final class Effects {
             }
             if (mod.modded(v) && near(v, x, y, z, mod.tracerRange())) {
                 if (tracer == null) {
-                    tracer = Proto.tracer(shooter.getEntityId(), x, y, z, vx, vy, vz, life, g.tracerColor(), vacuum);
+                    tracer = Proto.tracer(shooter.getEntityId(), x, y, z, vx, vy, vz, life, g.tracerColor(),
+                            (vacuum ? Proto.TRACER_VACUUM : 0) | (silenced ? Proto.TRACER_SILENCED : 0));
                 }
                 mod.links().send(v, tracer);
             }
-            if (othersHear && near(v, x, y, z, mod.soundRange())) {
-                mod.links().play(v, s3p, at, 1f, 0.95f + (float) Math.random() * 0.1f);
+            if (othersHear && near(v, x, y, z, Math.max(4, mod.soundRange() + soundAdd))) {
+                mod.links().play(v, s3p, at, silenced ? 0.8f : 1f, 0.95f + (float) Math.random() * 0.1f);
             }
         }
         // стрелок без клиентского модуля слышит свой выстрел от сервера (с модулем — играет сам, без задержки)
         if (sound && !mod.modded(shooter) && !(vacuum && "none".equals(mod.vacuumSound()))) {
             mod.links().play(shooter, g.sound("shoot"), at, vacuum ? 0.35f : 1f, vacuum ? 0.7f : 1f);
+        }
+    }
+
+    /** Взрыв (фугасные патроны): частица и звук всем рядом. */
+    void explosion(Instance inst, double x, double y, double z) {
+        ParticlePacket pk = new ParticlePacket(Particle.EXPLOSION, x, y, z, 0.1f, 0.1f, 0.1f, 0f, 1);
+        net.kyori.adventure.sound.Sound snd = net.kyori.adventure.sound.Sound.sound(
+                net.kyori.adventure.key.Key.key("minecraft", "entity.generic.explode"),
+                net.kyori.adventure.sound.Sound.Source.PLAYER, 0.6f, 1.2f);
+        for (Player v : inst.getPlayers()) {
+            if (near(v, x, y, z, PARTICLE_RANGE)) {
+                if (mod.particles()) {
+                    v.sendPacket(pk);
+                }
+                v.playSound(snd, x, y, z);
+            }
         }
     }
 

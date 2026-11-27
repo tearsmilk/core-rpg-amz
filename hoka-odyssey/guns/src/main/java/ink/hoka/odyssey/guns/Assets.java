@@ -127,6 +127,13 @@ final class Assets {
     /** Все файлы предметов (для проверки jar). */
     static final List<String> ITEM_FILES = GUNS.values().stream().flatMap(g -> g.itemFiles().stream()).toList();
 
+    /** Звуки установки/снятия обвеса (tacz_sounds/attachments). */
+    static final List<SoundEntry> ATTACHMENT_SOUNDS = java.util.stream.Stream.of("attachment_general_a",
+                    "attachment_general_b", "attachment_general_uninstall", "bayonet_install", "bayonet_uninstall",
+                    "extended_mag_install", "extended_mag_uninstall", "laser_general", "muzzle_general",
+                    "scope_general_a", "scope_general_b", "scope_general_c", "scope_general_d", "scope_general_e")
+            .map(n -> new SoundEntry("gun_att_" + n, n + ".ogg", 8, null)).toList();
+
     /** Все звуки (общие и всего оружия). */
     static final List<SoundEntry> SOUNDS = java.util.stream.Stream.concat(COMMON_SOUNDS.stream(),
             GUNS.values().stream().flatMap(g -> g.sounds().stream())).toList();
@@ -163,6 +170,9 @@ final class Assets {
             }
         }
         String name = path.substring(path.lastIndexOf('/') + 1);
+        if (path.startsWith("guns/att/")) {                   // обвесы: tacz/models/att, tacz/textures/att
+            return resource((name.endsWith(".png") ? "textures/att/" : "models/att/") + name);
+        }
         byte[] b = resource("models/" + name);
         if (b == null) b = resource("animations/" + name);
         return b != null ? b : resource("textures/" + name);
@@ -179,6 +189,14 @@ final class Assets {
      * item-icon и ammo-icon, если они есть в jar.
      */
     Report install(Collection<GunDef> guns) throws IOException {
+        return install(guns, Attachments.EMPTY, Map.of());
+    }
+
+    /**
+     * То же и обвесы каталога cat: иконки (tacz/att/), предметы hoitems att_<id> (кроме встроенных) и звуки
+     * установки/снятия; «Подходит:» в описании предмета — оружие, которому обвес разрешён (по guns).
+     */
+    Report install(Collection<GunDef> guns, Attachments cat, Map<String, Attachments.GunAtt> gunAtt) throws IOException {
         List<String> lines = new ArrayList<>();
         StringBuilder manual = new StringBuilder();
         Path modules = dataFolder.getParent();
@@ -194,6 +212,16 @@ final class Assets {
         Map<String, SoundEntry> snd = new LinkedHashMap<>();
         for (SoundEntry e : COMMON_SOUNDS) {
             snd.put(e.id(), e);
+        }
+        if (!cat.all().isEmpty()) {
+            for (SoundEntry e : ATTACHMENT_SOUNDS) {
+                snd.put(e.id(), e);
+            }
+            for (Attachments.Def d : cat.all()) {
+                if (d.icon().startsWith("tacz/")) {
+                    files.add("textures/" + d.icon().substring(5));
+                }
+            }
         }
         for (GunDef g : guns) {
             GunAssets a = GUNS.get(g.id());
@@ -212,7 +240,9 @@ final class Assets {
         }
         int copied = 0;
         for (String rel : files) {
-            copied += copy(rel, itemDir.resolve(rel.substring(rel.indexOf('/') + 1)));
+            Path to = itemDir.resolve(rel.substring(rel.indexOf('/') + 1));
+            Files.createDirectories(to.getParent());
+            copied += copy(rel, to);
         }
         copied += copy(NOTICE, itemDir.resolve(NOTICE));
         for (SoundEntry e : snd.values()) {
@@ -226,6 +256,11 @@ final class Assets {
         for (GunDef g : guns) {
             itemEntries.putIfAbsent(g.item(), itemYaml(g));
             itemEntries.putIfAbsent(g.ammoItem(), ammoYaml(g, guns));
+        }
+        for (Attachments.Def d : cat.all()) {
+            if (!d.builtin() && !d.item().isEmpty()) {
+                itemEntries.putIfAbsent(d.item(), attachmentYaml(d, guns, cat, gunAtt));
+            }
         }
         Result ri = addEntries(items.resolve("config.yml"), "items", itemEntries);
         lines.add("hoitems: " + ri.message());
@@ -345,6 +380,33 @@ final class Assets {
                 + "icon: " + g.ammoIcon() + "\n"
                 + "stack: 64\n"
                 + "lore: [" + q("Для: " + forGuns) + ", " + q("Иконка: TACZ, CC BY-NC-ND 4.0") + "]\n";
+    }
+
+    /** Предмет-обвес для hoitems: иконка TACZ, описание — вид обвеса и к какому оружию подходит. */
+    static String attachmentYaml(Attachments.Def d, Collection<GunDef> guns, Attachments cat,
+                                 Map<String, Attachments.GunAtt> gunAtt) {
+        StringBuilder fits = new StringBuilder();
+        for (GunDef g : guns) {
+            Attachments.GunAtt ga = gunAtt.get(g.id());
+            if (ga == null || ga.locked(d.slot())) {
+                continue;
+            }
+            boolean ok = cat.allowed(ga, d, "");
+            for (String a : ga.adapters()) {
+                ok |= cat.allowed(ga, d, a);
+            }
+            if (ok) {
+                fits.append(fits.isEmpty() ? "" : ", ").append(g.name());
+            }
+        }
+        return "name: " + q(d.name()) + "\n"
+                + "color: aqua\n"
+                + "material: paper\n"
+                + (d.icon().isEmpty() ? "" : "icon: " + d.icon() + "\n")
+                + "stack: 1\n"
+                + "lore: [" + q("Обвес: " + Attachments.slotRu(d.slot())) + ", "
+                + q(fits.isEmpty() ? "Пока ни к чему не подходит" : "Подходит: " + fits) + ", "
+                + q("Y с оружием в руке — поставить") + ", " + q("Иконка: TACZ, CC BY-NC-ND 4.0") + "]\n";
     }
 
     static String soundYaml(SoundEntry s) {

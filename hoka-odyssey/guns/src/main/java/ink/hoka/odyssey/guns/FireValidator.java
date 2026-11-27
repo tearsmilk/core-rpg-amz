@@ -8,7 +8,7 @@ package ink.hoka.odyssey.guns;
 final class FireValidator {
 
     enum Result {
-        OK(0), RATE(1), EMPTY(2), RELOADING(3), DRAWING(4), ANGLE(5), NOT_HELD(6);
+        OK(0), RATE(1), EMPTY(2), RELOADING(3), DRAWING(4), ANGLE(5), NOT_HELD(6), REFIT(7);
 
         final int code;
 
@@ -36,6 +36,9 @@ final class FireValidator {
         GunDef g = s.gun;
         if (g == null) {
             return Result.NOT_HELD;
+        }
+        if (s.refit) {
+            return Result.REFIT;                              // открыт экран обвеса
         }
         if (s.drawing(nowMs)) {
             return Result.DRAWING;

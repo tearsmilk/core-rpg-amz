@@ -22,8 +22,17 @@ import java.util.Map;
  *       (уже с отдачей), раз в тик пачкой;</li>
  *   <li>3 RELOAD: без данных;</li>
  *   <li>4 FIREMODE: u8 режим (0 — очередь, 1 — одиночный);</li>
- *   <li>5 ADS: u8 1/0 — прицел (ПКМ) нажат/отпущен (клиентский модуль забирает ПКМ себе, «использования» нет).</li>
+ *   <li>5 ADS: u8 1/0 — прицел (ПКМ) нажат/отпущен (клиентский модуль забирает ПКМ себе, «использования» нет);</li>
+ *   <li>6 REFIT: u8 1/0 — экран обвеса (Y) открыт/закрыт: пока открыт, сервер не даёт стрелять и целиться;</li>
+ *   <li>7 ATTACH: u8 слот обвеса, u8 слот инвентаря (0–35) с предметом-обвесом — поставить (старый обвес — в тот же
+ *       слот инвентаря);</li>
+ *   <li>8 DETACH: u8 слот обвеса — снять (предмет — в свободный слот инвентаря, встроенный — просто убрать);</li>
+ *   <li>9 BUILTIN: u8 слот, UTF id — поставить встроенный обвес оружия (без предмета);</li>
+ *   <li>10 ADAPTER: u8 слот (0 — прицел), UTF id планки («» — без неё);</li>
+ *   <li>11 LASER: u8 слот ЛЦУ (4 — laser, 3 — рукоять с ЛЦУ), i32 цвет RGB;</li>
+ *   <li>12 ZOOM: u8 номер кратности прицела.</li>
  * </ul>
+ * Слоты обвеса (номер): 0 scope, 1 muzzle, 2 stock, 3 grip, 4 laser, 5 extended_mag ({@link Attachments.Slot}).
  * Сервер → клиент:
  * <ul>
  *   <li>1 CONFIG: u8 версия, u16 оружий, на каждое — см. {@link #config};</li>
@@ -40,8 +49,23 @@ import java.util.Map;
  *       перезарядки, f32 её длина — тем, кто его видит (поза тела от третьего лица; старые клиенты op не знают и
  *       пропускают);</li>
  *   <li>9 BACK: i32 id игрока, UTF id оружия «за спиной» («» — нет): оружие в быстрой панели не в руке — тем, кто
- *       его видит, и ему самому (старые клиенты op не знают и пропускают).</li>
+ *       его видит, и ему самому (старые клиенты op не знают и пропускают);</li>
+ *   <li>10 LOADOUT: обвес своего оружия в руке — UTF id оружия («» — нет), UTF серийный номер, u8 n, n раз: u8 слот,
+ *       UTF id обвеса, u8 флаги (1 — встроенный), i32 цвет луча (−1 — по умолчанию); UTF планка прицела, u8 кратность;
+ *       дальше характеристики с обвесом: f32 время прицеливания, f32 разброс стоя, в движении, присев, в прицеле,
+ *       f32 множитель вертикальной и горизонтальной отдачи, f32 приближение, i32 магазин, f32 rpm, f32 размер
+ *       вспышки, u8 флаги (1 — глушитель, 2 — взрыв, 4 — поджог), u8 пуль за выстрел, f32 перезарядка тактическая и
+ *       с пустым (с), u8 уровень магазина, f32 урон (первая полоса), f32 её дальность, f32 скорость пули, f32 множитель
+ *       в голову, f32 пробитие брони, u8 пронзание, f32 отбрасывание, f32 вес обвеса, u8 n и n × f32 кратностей
+ *       прицела;</li>
+ *   <li>11 GEAR: i32 id игрока, UTF id оружия в руке («» — нет), UTF обвес «слот=id[:rrggbb]» через запятую
+ *       (и «adapter=id») — тем, кто его видит, и ему самому (вид от третьего лица);</li>
+ *   <li>12 REFIT_RESULT: u8 код (0 — готово, 1 — нет места в инвентаре, 2 — не подходит, 3 — слот заперт,
+ *       4 — мешает планка/прицел, 5 — нет предмета, 6 — занято (перезарядка), 7 — оружия нет в руке, 8 — слишком
+ *       часто), UTF подсказка по-русски.</li>
  * </ul>
+ * Каталог обвесов и обвес каждого оружия клиент берёт из файла {@code guns/attachments.json} (clientmods, как модели).
+ * У TRACER в флагах ещё 2 — выстрел с глушителем (вспышки у дула нет).
  * CONFIG после громкости вакуума — хвост: u16 оружий, на каждое UTF id и UTF файл анимаций тела от третьего лица;
  * за ним второй хвост: u16 оружий, на каждое UTF id и UTF id предмета hoitems («» — нет; по нему клиент рисует
  * оружие за спиной); за ним третий хвост: u16 оружий, на каждое UTF id, UTF вид (rifle / sniper / pistol), f32 время
@@ -62,6 +86,13 @@ final class Proto {
     static final int C_RELOAD = 3;
     static final int C_FIREMODE = 4;
     static final int C_ADS = 5;
+    static final int C_REFIT = 6;
+    static final int C_ATTACH = 7;
+    static final int C_DETACH = 8;
+    static final int C_BUILTIN = 9;
+    static final int C_ADAPTER = 10;
+    static final int C_LASER = 11;
+    static final int C_ZOOM = 12;
 
     static final int S_CONFIG = 1;
     static final int S_STATE = 2;
@@ -72,6 +103,24 @@ final class Proto {
     static final int S_HIT = 7;
     static final int S_POSE = 8;
     static final int S_BACK = 9;
+    static final int S_LOADOUT = 10;
+    static final int S_GEAR = 11;
+    static final int S_REFIT_RESULT = 12;
+
+    /** Флаги TRACER: 1 — вакуум, 2 — с глушителем (у дула нет вспышки). */
+    static final int TRACER_VACUUM = 1;
+    static final int TRACER_SILENCED = 2;
+
+    /** Итог действия с обвесом (REFIT_RESULT). */
+    static final int REFIT_OK = 0;
+    static final int REFIT_NO_SPACE = 1;
+    static final int REFIT_NOT_ALLOWED = 2;
+    static final int REFIT_LOCKED = 3;
+    static final int REFIT_ADAPTER = 4;
+    static final int REFIT_NO_ITEM = 5;
+    static final int REFIT_BUSY = 6;
+    static final int REFIT_NOT_HELD = 7;
+    static final int REFIT_RATE = 8;
 
     static final int POSE_HOLDING = 1;
     static final int POSE_AIM = 2;
@@ -90,8 +139,15 @@ final class Proto {
 
     record Fire(int seq, List<Shot> shots) {}
 
-    /** Сообщение клиента: op и (для FIRE/FIREMODE) данные. null — битое. */
-    record Msg(int op, Fire fire, int mode) {}
+    /**
+     * Сообщение клиента: op и данные (FIRE — выстрелы; FIREMODE/ADS/REFIT/ZOOM — mode; действия с обвесом — slot
+     * (номер {@link Attachments.Slot}), arg (слот инвентаря, цвет RGB) и str (id обвеса, планки)). null — битое.
+     */
+    record Msg(int op, Fire fire, int mode, int slot, int arg, String str) {
+        Msg(int op, Fire fire, int mode) {
+            this(op, fire, mode, 0, 0, "");
+        }
+    }
 
     static Msg decode(byte[] b) {
         if (b == null || b.length == 0) {
@@ -107,8 +163,27 @@ final class Proto {
                 case C_RELOAD -> {
                     return new Msg(op, null, 0);
                 }
-                case C_FIREMODE, C_ADS -> {
+                case C_FIREMODE, C_ADS, C_REFIT, C_ZOOM -> {
                     return new Msg(op, null, in.readUnsignedByte());
+                }
+                case C_ATTACH -> {
+                    int slot = in.readUnsignedByte();
+                    return new Msg(op, null, 0, slot, in.readUnsignedByte(), "");
+                }
+                case C_DETACH -> {
+                    return new Msg(op, null, 0, in.readUnsignedByte(), 0, "");
+                }
+                case C_BUILTIN, C_ADAPTER -> {
+                    int slot = in.readUnsignedByte();
+                    String id = in.readUTF();
+                    if (id.length() > 64) {
+                        return null;
+                    }
+                    return new Msg(op, null, 0, slot, 0, id);
+                }
+                case C_LASER -> {
+                    int slot = in.readUnsignedByte();
+                    return new Msg(op, null, 0, slot, in.readInt() & 0xFFFFFF, "");
                 }
                 case C_FIRE -> {
                     int seq = in.readInt();
@@ -274,7 +349,25 @@ final class Proto {
             o.writeFloat((float) vz);
             o.writeFloat((float) life);
             o.writeInt(color);
-            o.writeByte(vacuum ? 1 : 0);
+            o.writeByte(vacuum ? TRACER_VACUUM : 0);
+        });
+    }
+
+    /** TRACER с флагами (TRACER_VACUUM, TRACER_SILENCED). */
+    static byte[] tracer(int shooter, double x, double y, double z, double vx, double vy, double vz, double life,
+                         int color, int flags) {
+        return write(o -> {
+            o.writeByte(S_TRACER);
+            o.writeInt(shooter);
+            o.writeDouble(x);
+            o.writeDouble(y);
+            o.writeDouble(z);
+            o.writeFloat((float) vx);
+            o.writeFloat((float) vy);
+            o.writeFloat((float) vz);
+            o.writeFloat((float) life);
+            o.writeInt(color);
+            o.writeByte(flags);
         });
     }
 
@@ -307,6 +400,89 @@ final class Proto {
             o.writeFloat((float) seconds);
             o.writeByte(Math.max(0, Math.min(255, loops)));
             o.writeByte(empty ? 1 : 0);
+        });
+    }
+
+    /** Обвес своего оружия в руке и его характеристики с обвесом (см. описание класса). gun «» — оружия нет. */
+    static byte[] loadout(String gun, String serial, Loadout lo, AttachmentMath.Effective fx, GunDef base) {
+        return write(o -> {
+            o.writeByte(S_LOADOUT);
+            o.writeUTF(gun == null ? "" : gun);
+            o.writeUTF(serial == null ? "" : serial);
+            var entries = lo == null ? java.util.Map.<Attachments.Slot, Loadout.Entry>of() : lo.entries();
+            o.writeByte(entries.size());
+            for (var e : entries.entrySet()) {
+                o.writeByte(e.getKey().ordinal());
+                o.writeUTF(e.getValue().id());
+                o.writeByte(e.getValue().virtual() ? 1 : 0);
+                o.writeInt(e.getValue().laser());
+            }
+            o.writeUTF(lo == null ? "" : lo.adapter);
+            o.writeByte(lo == null ? 0 : Math.min(255, lo.zoom));
+            GunDef g = fx == null ? base : fx.gun();
+            if (g == null) {
+                return;
+            }
+            o.writeFloat((float) g.aimTime());
+            o.writeFloat((float) g.spreadStand());
+            o.writeFloat((float) g.spreadMove());
+            o.writeFloat((float) g.spreadSneak());
+            o.writeFloat((float) g.spreadAim());
+            o.writeFloat((float) (base == null ? 1 : AttachmentMath.recoilMul(base, g, true)));
+            o.writeFloat((float) (base == null ? 1 : AttachmentMath.recoilMul(base, g, false)));
+            o.writeFloat((float) g.zoom());
+            o.writeInt(g.magazine());
+            o.writeFloat((float) g.rpm());
+            o.writeFloat((float) g.flashScale());
+            o.writeByte((fx != null && fx.silenced() ? 1 : 0) | (fx != null && fx.explosion() != null ? 2 : 0)
+                    | (fx != null && fx.ignite() ? 4 : 0));
+            o.writeByte(g.pellets());
+            o.writeFloat((float) g.tactical().total());
+            o.writeFloat((float) g.empty().total());
+            o.writeByte(fx == null ? 0 : fx.xmagLevel());
+            o.writeFloat((float) (g.damage().length == 0 ? 0 : g.damage()[0]));
+            o.writeFloat((float) (g.damageDistance().length == 0 || !Double.isFinite(g.damageDistance()[0]) ? 0
+                    : g.damageDistance()[0]));
+            o.writeFloat((float) g.speed());
+            o.writeFloat((float) g.headshot());
+            o.writeFloat((float) (fx == null ? 0 : fx.armorIgnore()));
+            o.writeByte(g.pierce());
+            o.writeFloat((float) g.knockback());
+            o.writeFloat((float) (fx == null ? 0 : fx.weight()));
+            double[] z = fx == null ? new double[0] : fx.zooms();
+            o.writeByte(Math.min(16, z.length));
+            for (int i = 0; i < Math.min(16, z.length); i++) {
+                o.writeFloat((float) z[i]);
+            }
+        });
+    }
+
+    /** Обвес оружия в руке игрока entityId — тем, кто его видит (и ему самому): csv «слот=id[:rrggbb]», «adapter=id». */
+    static byte[] gear(int entityId, String gun, String csv) {
+        return write(o -> {
+            o.writeByte(S_GEAR);
+            o.writeInt(entityId);
+            o.writeUTF(gun == null ? "" : gun);
+            o.writeUTF(csv == null ? "" : csv);
+        });
+    }
+
+    /** Итог действия с обвесом: код (REFIT_*) и подсказка игроку по-русски. */
+    static byte[] refitResult(int code, String message) {
+        return write(o -> {
+            o.writeByte(S_REFIT_RESULT);
+            o.writeByte(code);
+            o.writeUTF(message == null ? "" : message);
+        });
+    }
+
+    // ---------------------------------------------------------------- клиент → сервер, обвес (для тестов и клиента)
+
+    static byte[] attach(int slot, int invSlot) {
+        return write(o -> {
+            o.writeByte(C_ATTACH);
+            o.writeByte(slot);
+            o.writeByte(invSlot);
         });
     }
 

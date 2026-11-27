@@ -1,0 +1,1746 @@
+# Обвесы оружия (модуль guns) — весь стандартный пак TACZ tacz_default_gun: названия (ru_ru), вес, вид и
+# модификаторы характеристик. Сделан скриптом tools/tacz2bb/attachments2yml.py из файлов пака (числа как есть).
+# Модели, иконки и звуки обвесов — TACZ, CC BY-NC-ND 4.0 (без изменений, см. NOTICE.md в jar, папка tacz/).
+# Свой файл без пересборки — module/guns/attachments.yml (тогда этот из jar не читается).
+#
+# Модификатор (как в TACZ): значение = (база + сумма add) × max(0, 1 + сумма percent) × произведение mul,
+# потом op: set — заменить числом; gt/then-add — «если больше gt, прибавить»; gt/then-mul/else-mul — «если больше
+# gt, умножить на then-mul, иначе на else-mul». Ключи: ads — время прицеливания; inaccuracy — разброс от бедра
+# (стоя и в движении); aim-/sneak-/lie-inaccuracy — в прицеле, присев, лёжа; recoil-pitch/yaw — отдача;
+# effective-range — дальности полос урона; damage, ammo-speed, rpm, head-shot, armor-ignore, pierce, knockback;
+# flash-hider — размер вспышки; extended-mag-level — какой из extended-mag оружия (1–3); silence — глушитель
+# (distance — на сколько блоков тише, sound — звук «с глушителем»); explosion — фугасный (взрыв оружия);
+# ignite — поджигает; single-projectile — одна пуля вместо дроби (пуля «slug»); melee — штык/приклад (пока
+# только хранится, ближнего боя нет); recoil-push — пока не используется.
+
+# Метки (#имя в списках allow): какие обвесы входят. Внутри могут быть другие метки.
+tags:
+  "adapter/pistol_riser": ["riser_pistol_low", "riser_pistol_mid", "riser_pistol_high"]
+  "adapter/rail_mid": ["riser_rail_mid", "riser_rail_high", "riser_rail_unity"]
+  "ammo_mod": ["ammo_mod_fmj", "ammo_mod_he", "ammo_mod_hp", "ammo_mod_i"]
+  "ammo_mod_no_he": ["ammo_mod_fmj", "ammo_mod_hp", "ammo_mod_i"]
+  "ammo_mod_shotgun_exclusive": ["ammo_mod_slug"]
+  "ammo_mod_slug": ["ammo_mod_he", "ammo_mod_slug"]
+  "amr_muzzle_silencer": ["muzzle_silencer_vulture"]
+  "ar_laser": ["laser_peq15", "laser_lopro", "laser_ngal"]
+  "aug_scope": ["scope_aug_default", "oem_sight_aug"]
+  "bayonet_ak": ["bayonet_6h3"]
+  "bayonet_ar": ["bayonet_m9"]
+  "bayonet_other": []
+  "db_short_stock": ["oem_stock_tactical"]
+  "deagle_exclusive": ["deagle_golden_long_barrel", "muzzle_silencer_phantom_s1"]
+  "deagle_sight": ["sight_t1"]
+  "extended_mag": ["extended_mag_1", "extended_mag_2", "extended_mag_3"]
+  "grip": ["grip_magpul_afg_2", "grip_magpul_afg", "grip_troy", "grip_vertical_talon", "grip_vertical_military", "grip_vertical_ranger", "grip_td", "grip_osovets_black", "grip_rk0", "grip_rk6", "grip_rk1_b25u", "grip_cobra", "grip_se_5", "grip_cqr"]
+  "grip_afg": ["grip_magpul_afg_2", "grip_magpul_afg", "grip_troy", "grip_cobra", "grip_se_5"]
+  "grip_vertical": ["grip_vertical_talon", "grip_vertical_military", "grip_vertical_ranger", "grip_td", "grip_osovets_black", "grip_rk0", "grip_rk6", "grip_rk1_b25u"]
+  "hk416d_stock": ["stock_carbon_bone_c5", "stock_militech_b5", "stock_tactical_ar", "stock_moe", "stock_ripstock"]
+  "intrinsic/slug": ["#ammo_mod_slug"]
+  "kar98_scope": ["scope_98k"]
+  "light_extended_mag": ["light_extended_mag_1", "light_extended_mag_2", "light_extended_mag_3"]
+  "m16a1_scope": ["scope_retro_2x", "#scope_scope", "#scope_sight", "#scope_lowsight"]
+  "m4a1_stock": ["stock_carbon_bone_c5", "stock_militech_b5", "stock_tactical_ar", "oem_stock_tactical", "stock_moe", "stock_ripstock"]
+  "mk18_stock": ["stock_carbon_bone_c5", "stock_militech_b5", "stock_tactical_ar", "oem_stock_tactical", "stock_moe", "stock_ripstock"]
+  "mk23_laser": ["laser_peq6"]
+  "muzzle": ["muzzle_brake_cyclone_d2", "muzzle_compensator_trident", "muzzle_silencer_phantom_s1", "muzzle_silencer_ursus", "muzzle_silencer_knight_qd", "muzzle_silencer_socom_rc1", "muzzle_brake_cthulhu", "muzzle_brake_pioneer", "muzzle_brake_trex"]
+  "muzzle_brake": ["muzzle_brake_cyclone_d2", "muzzle_brake_cthulhu", "muzzle_brake_pioneer", "muzzle_brake_trex"]
+  "muzzle_compensator": ["muzzle_compensator_trident"]
+  "muzzle_shotgun": ["muzzle_duckbill_sg", "muzzle_choke_sg", "muzzle_brake_mastiff_sg", "muzzle_silencer_sg"]
+  "muzzle_silencer": ["muzzle_silencer_phantom_s1", "muzzle_silencer_ursus", "muzzle_silencer_knight_qd", "muzzle_silencer_socom_rc1"]
+  "oem_stock": ["oem_stock_light", "oem_stock_removed", "oem_stock_tactical", "oem_stock_heavy"]
+  "okp_scope": ["sight_okp7"]
+  "p90_scope": ["scope_elcan_4x", "scope_standard_8x", "sight_552", "sight_exp3", "sight_uh1", "sight_t2", "scope_lpvo_1_6", "scope_acog_ta31", "sight_coyote", "sight_p90"]
+  "pistol_brake": []
+  "pistol_compensator": []
+  "pistol_grip": []
+  "pistol_laser": ["laser_compact", "laser_nightstick"]
+  "pistol_muzzle": ["muzzle_silencer_mirage", "muzzle_silencer_ptilopsis", "muzzle_silencer_wraith"]
+  "pistol_sight": ["sight_sro_dot", "sight_rmr_dot", "sight_acro_pistol", "sight_deltapoint_pistol", "sight_fastfire_pistol", "sight_pk06_pistol", "sight_infitac_fmp13"]
+  "pistol_silencer": ["muzzle_silencer_mirage", "muzzle_silencer_ptilopsis", "muzzle_silencer_wraith"]
+  "rhino357_sight": ["sight_acro_rifle", "sight_deltapoint_rifle", "sight_fastfire_rifle", "sight_pk06_rifle"]
+  "scope": ["scope_elcan_4x", "scope_standard_8x", "scope_hamr", "sight_552", "sight_exp3", "sight_1p87", "sight_uh1", "sight_t2", "scope_lpvo_1_6", "scope_acog_ta31", "scope_c79", "sight_coyote", "sight_acro_rifle", "sight_deltapoint_rifle", "sight_fastfire_rifle", "sight_pk06_rifle", "scope_vudu", "scope_mk5hd", "scope_xm157", "sight_srs_02", "sight_apm4s", "scope_qmk152", "sight_okp7", "scope_mk4ert", "scope_amg_10", "scope_reap_ir", "scope_xl50"]
+  "scope_lowsight": ["scope_contender"]
+  "scope_m1866": ["scope_1866_4x"]
+  "scope_scope": ["scope_elcan_4x", "scope_acog_ta31", "scope_c79", "scope_hamr", "scope_xm157", "scope_qmk152", "scope_vudu", "scope_lpvo_1_6", "scope_amg_10", "scope_reap_ir"]
+  "scope_sight": ["sight_552", "sight_exp3", "sight_uh1", "sight_t2", "sight_coyote", "sight_acro_rifle", "sight_deltapoint_rifle", "sight_fastfire_rifle", "sight_pk06_rifle", "sight_srs_02", "sight_okp7", "sight_apm4s", "sight_1p87"]
+  "scope_sniper": ["scope_standard_8x", "scope_lpvo_1_6", "scope_mk5hd", "scope_xm157", "scope_vudu", "scope_mk4ert", "scope_amg_10", "scope_xl50"]
+  "scope_springfield": ["scope_1873_6x"]
+  "shotgun_extended_mag": ["shotgun_extended_mag_1", "shotgun_extended_mag_2", "shotgun_extended_mag_3"]
+  "sks_tactical_stock": ["stock_carbon_bone_c5", "stock_militech_b5", "stock_tactical_ar", "oem_stock_tactical", "oem_stock_heavy"]
+  "sniper_extended_mag": ["sniper_extended_mag_1", "sniper_extended_mag_2", "sniper_extended_mag_3"]
+  "spas_12_stock": ["stock_heavy_spas_12", "stock_tactical_spas_12"]
+  "stock": ["stock_carbon_bone_c5", "stock_militech_b5", "stock_tactical_ar", "stock_sba3", "stock_hk_slim_line", "stock_ak12", "stock_moe", "stock_m4ss", "stock_ripstock", "stock_heavy_ctr"]
+  "stock_sniper": ["stock_psg"]
+  "svd_scope": ["scope_pso_1"]
+  "timeless50_exclusive": ["muzzle_brake_timeless50"]
+
+# Повышающие планки (TACZ slot adapters): ставятся в слот (scope), разрешают ещё обвесы (allow) и поднимают
+# их на mount-offset (пикселей модели). Своих характеристик нет.
+adapters:
+  riser_pistol_high:
+    name: "Пистолетная высокая повышающая планка"
+    slot: "scope"
+    sort: 11
+    allow: ["#pistol_sight"]
+    model: "guns/att/riser_pistol_high.bbmodel"
+    mount-offset: [0, 1.25, 0]
+  riser_pistol_low:
+    name: "Пистолетная низкая повышающая планка"
+    slot: "scope"
+    sort: 10
+    allow: ["#pistol_sight"]
+    model: "guns/att/riser_pistol_low.bbmodel"
+    mount-offset: [0, 0.375, 0]
+  riser_pistol_mid:
+    name: "Пистолетная средняя повышающая планка"
+    slot: "scope"
+    sort: 10
+    allow: ["#pistol_sight"]
+    model: "guns/att/riser_pistol_mid.bbmodel"
+    mount-offset: [0, 1, 0]
+  riser_rail_high:
+    name: "Высокая повышающая планка"
+    slot: "scope"
+    sort: 20
+    allow: ["#scope_sight"]
+    model: "guns/att/riser_rail_high.bbmodel"
+    mount-offset: [0, 1.825, 0]
+  riser_rail_mid:
+    name: "Средняя повышающая планка"
+    slot: "scope"
+    sort: 20
+    allow: ["#scope_sight"]
+    model: "guns/att/riser_rail_mid.bbmodel"
+    mount-offset: [0, 0.75, 0]
+  riser_rail_unity:
+    name: "Повышающая планка Unity"
+    slot: "scope"
+    sort: 20
+    allow: ["#scope_sight"]
+    model: "guns/att/riser_rail_unity.bbmodel"
+    mount-offset: [0, 0.85, 0]
+
+# Обвесы. type — слот (scope, muzzle, stock, grip, laser, extended_mag); hidden — не показывать в списках
+# (только если разрешён оружию); builtin — встроенный (часть оружия: ставится без предмета, при снятии
+# ничего не возвращается); item — предмет hoitems; display — вид (zoom — кратности прицела, views — какая
+# точка взгляда scope_view для каждой кратности, views-fov / fov — угол обзора модели в прицеле, scope — оптика,
+# sight — коллиматор, height-adjust — подъём оружия у глаза, adapter — какую кость оружия показать,
+# show-muzzle — не прятать дульный срез, flash-offset — вспышка дальше на столько пикселей, laser — луч ЛЦУ).
+attachments:
+  ammo_mod_fmj:
+    type: extended_mag
+    name: "Патроны с цельнометаллической оболочкой"
+    sort: 1000
+    weight: 0.6
+    item: att_ammo_mod_fmj
+    icon: tacz/att/ammo_mod_fmj.png
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    mods:
+      ads: {add: 0.02}
+      damage: {mul: 0.9}
+      ammo-speed: {mul: 1.1}
+      armor-ignore: {op: {gt: 0.5, then-mul: 1.5, else-mul: 1.75}}
+      pierce: {op: {gt: 2, then-add: 2}}
+      extended-mag-level: 3
+  ammo_mod_he:
+    type: extended_mag
+    name: "Разрывные патроны"
+    sort: 1001
+    weight: 0.6
+    item: att_ammo_mod_he
+    icon: tacz/att/ammo_mod_he.png
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    mods:
+      aim-inaccuracy: {mul: 0.25}
+      inaccuracy: {mul: 1}
+      rpm: {mul: 0.85}
+      head-shot: {op: {set: 1}}
+      armor-ignore: {mul: 0.5}
+      pierce: {op: {set: 1}}
+      extended-mag-level: 1
+      explosion: true
+      single-projectile: true
+  ammo_mod_hp:
+    type: extended_mag
+    name: "Экспансивные патроны"
+    sort: 1000
+    weight: 0.6
+    item: att_ammo_mod_hp
+    icon: tacz/att/ammo_mod_hp.png
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    mods:
+      ads: {add: 0.02}
+      damage: {mul: 1.3}
+      ammo-speed: {mul: 0.9}
+      armor-ignore: {mul: 0.5}
+      pierce: {mul: 0}
+      extended-mag-level: 3
+  ammo_mod_i:
+    type: extended_mag
+    name: "Зажигательные патроны"
+    sort: 1000
+    weight: 0.6
+    item: att_ammo_mod_i
+    icon: tacz/att/ammo_mod_i.png
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    mods:
+      ads: {add: 0.02}
+      damage: {mul: 1.1}
+      ammo-speed: {mul: 1}
+      armor-ignore: {mul: 0.8}
+      extended-mag-level: 3
+      ignite: true
+  ammo_mod_overpressure_recoil:
+    type: extended_mag
+    name: "Патроны избыточного давления"
+    sort: 1002
+    weight: 0
+    item: att_ammo_mod_overpressure_recoil
+    icon: tacz/att/ammo_mod_overpressure_recoil.png
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    mods:
+      aim-inaccuracy: {mul: 1.5}
+      inaccuracy: {mul: 1.5}
+      damage: {mul: 1.5}
+      knockback: {mul: 2}
+      recoil-pitch: {mul: 1.25}
+      recoil-push: true
+  ammo_mod_slug:
+    type: extended_mag
+    name: "Пуля для дробовика"
+    sort: 1000
+    weight: 0.6
+    item: att_ammo_mod_slug
+    icon: tacz/att/ammo_mod_slug.png
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    mods:
+      aim-inaccuracy: {mul: 0.1}
+      inaccuracy: {mul: 0.6}
+      damage: {mul: 0.75}
+      ammo-speed: {mul: 1.1}
+      extended-mag-level: 3
+      single-projectile: true
+  bayonet_6h3:
+    type: muzzle
+    name: "Штык-нож 6H3"
+    sort: 5
+    weight: 0.34
+    item: att_bayonet_6h3
+    icon: tacz/att/bayonet_6h3.png
+    model: guns/att/bayonet_6h3.bbmodel
+    sounds: {install: "gun_att_bayonet_install", uninstall: "gun_att_bayonet_uninstall"}
+    display: {show-muzzle: true}
+    mods:
+      ads: {add: 0.03}
+      melee: {damage: 5, distance: 2}
+  bayonet_m9:
+    type: muzzle
+    name: "Штык-нож M9"
+    sort: 6
+    weight: 0.34
+    item: att_bayonet_m9
+    icon: tacz/att/bayonet_m9.png
+    model: guns/att/bayonet_m9.bbmodel
+    sounds: {install: "gun_att_bayonet_install", uninstall: "gun_att_bayonet_uninstall"}
+    display: {show-muzzle: true}
+    mods:
+      ads: {add: 0.03}
+      melee: {damage: 6, distance: 2}
+  deagle_golden_long_barrel:
+    type: muzzle
+    name: "Длинный ствол для золотого Desert Eagle .357"
+    sort: 4
+    weight: 0.4
+    item: att_deagle_golden_long_barrel
+    icon: tacz/att/deagle_golden_long_barrel.png
+    model: guns/att/deagle_golden_long_barrel.bbmodel
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {flash-offset: 6.5}
+    mods:
+      ads: {add: 0.04}
+      aim-inaccuracy: {mul: 0.85}
+      inaccuracy: {mul: 0.9}
+      effective-range: {add: 5}
+      recoil-pitch: {mul: 0.8}
+      recoil-yaw: {mul: 0.8}
+  extended_mag_1:
+    type: extended_mag
+    name: "Расширенный магазин для тяжёлых патронов"
+    sort: 1
+    weight: 0.4
+    item: att_extended_mag_1
+    icon: tacz/att/extended_mag_1.png
+    sounds: {install: "gun_att_extended_mag_install", uninstall: "gun_att_extended_mag_uninstall"}
+    mods:
+      ads: {add: 0.01}
+      extended-mag-level: 1
+  extended_mag_2:
+    type: extended_mag
+    name: "Расширенный магазин для тяжёлых патронов"
+    sort: 2
+    weight: 0.6
+    item: att_extended_mag_2
+    icon: tacz/att/extended_mag_2.png
+    sounds: {install: "gun_att_extended_mag_install", uninstall: "gun_att_extended_mag_uninstall"}
+    mods:
+      ads: {add: 0.025}
+      extended-mag-level: 2
+  extended_mag_3:
+    type: extended_mag
+    name: "Расширенный магазин для тяжёлых патронов"
+    sort: 3
+    weight: 0.8
+    item: att_extended_mag_3
+    icon: tacz/att/extended_mag_3.png
+    sounds: {install: "gun_att_extended_mag_install", uninstall: "gun_att_extended_mag_uninstall"}
+    mods:
+      ads: {add: 0.045}
+      extended-mag-level: 3
+  grip_cobra:
+    type: grip
+    name: "Рукоять SI"
+    sort: 5
+    weight: 0.08
+    item: att_grip_cobra
+    icon: tacz/att/grip_cobra.png
+    model: guns/att/grip_cobra.bbmodel
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    mods:
+      ads: {mul: 0.8}
+  grip_cqr:
+    type: grip
+    name: "Рукоять Hera Arms CQR"
+    sort: 0
+    hidden: true
+    weight: 0.167
+    item: att_grip_cqr
+    icon: tacz/att/grip_cqr.png
+    model: guns/att/grip_cqr.bbmodel
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    mods:
+      ads: {mul: 0.85}
+      recoil-pitch: {mul: 0.92}
+      recoil-yaw: {mul: 0.92}
+  grip_magpul_afg:
+    type: grip
+    name: "Рукоять Magpul AFG"
+    sort: 2
+    weight: 0.15
+    item: att_grip_magpul_afg
+    icon: tacz/att/grip_magpul_afg.png
+    model: guns/att/grip_magpul_afg.bbmodel
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    mods:
+      ads: {add: 0.01}
+      recoil-yaw: {mul: 0.75}
+  grip_magpul_afg_2:
+    type: grip
+    name: "Рукоять Talon AFG1"
+    sort: 3
+    weight: 0.15
+    item: att_grip_magpul_afg_2
+    icon: tacz/att/grip_magpul_afg_2.png
+    model: guns/att/grip_magpul_afg_2.bbmodel
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    mods:
+      ads: {add: 0.01}
+      recoil-pitch: {mul: 0.75}
+  grip_osovets_black:
+    type: grip
+    name: "Рукоять П-2"
+    sort: 8
+    weight: 0.125
+    item: att_grip_osovets_black
+    icon: tacz/att/grip_osovets_black.png
+    model: guns/att/grip_osovets_black.bbmodel
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    mods:
+      ads: {add: 0.02}
+      recoil-yaw: {mul: 0.6}
+  grip_rk0:
+    type: grip
+    name: "Рукоять РК-0"
+    sort: 10
+    weight: 0.138
+    item: att_grip_rk0
+    icon: tacz/att/grip_rk0.png
+    model: guns/att/grip_rk0.bbmodel
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    mods:
+      recoil-pitch: {mul: 0.8}
+  grip_rk1_b25u:
+    type: grip
+    name: "Рукоять РК-1 на креплении Б-25У"
+    sort: 12
+    weight: 0.18
+    item: att_grip_rk1_b25u
+    icon: tacz/att/grip_rk1_b25u.png
+    model: guns/att/grip_rk1_b25u.bbmodel
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    mods:
+      ads: {add: 0.18}
+      aim-inaccuracy: {mul: 1.25}
+      inaccuracy: {mul: 0.48}
+      recoil-yaw: {mul: 0.66}
+  grip_rk6:
+    type: grip
+    name: "Рукоять РК-6"
+    sort: 6
+    weight: 0.1
+    item: att_grip_rk6
+    icon: tacz/att/grip_rk6.png
+    model: guns/att/grip_rk6.bbmodel
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    mods:
+      ads: {mul: 0.8}
+      aim-inaccuracy: {mul: 1.2}
+      recoil-pitch: {mul: 1.2}
+  grip_se_5:
+    type: grip
+    name: "Рукоять SE-5 Express"
+    sort: 4
+    weight: 0.09
+    item: att_grip_se_5
+    icon: tacz/att/grip_se_5.png
+    model: guns/att/grip_se_5.bbmodel
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    mods:
+      recoil-pitch: {mul: 0.93}
+      recoil-yaw: {mul: 0.92}
+  grip_td:
+    type: grip
+    name: "Рукоять TD"
+    sort: 7
+    weight: 0.133
+    item: att_grip_td
+    icon: tacz/att/grip_td.png
+    model: guns/att/grip_td.bbmodel
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    mods:
+      aim-inaccuracy: {mul: 0.88}
+      inaccuracy: {mul: 0.88}
+  grip_troy:
+    type: grip
+    name: "Рукоять TROY"
+    sort: 1
+    weight: 0.12
+    item: att_grip_troy
+    icon: tacz/att/grip_troy.png
+    model: guns/att/grip_troy.bbmodel
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    mods:
+      ads: {add: 0.05}
+      inaccuracy: {mul: 0.5}
+      sneak-inaccuracy: {mul: 0.5}
+      recoil-pitch: {mul: 1.15}
+  grip_vertical_military:
+    type: grip
+    name: "Стандартная военная рукоятка Ngoma"
+    sort: 11
+    weight: 0.25
+    item: att_grip_vertical_military
+    icon: tacz/att/grip_vertical_military.png
+    model: guns/att/grip_vertical_military.bbmodel
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    mods:
+      ads: {mul: 1.02}
+      aim-inaccuracy: {mul: 0.85}
+      recoil-pitch: {mul: 0.8}
+      recoil-yaw: {mul: 0.8}
+  grip_vertical_ranger:
+    type: grip
+    name: "Тяжелая рукоятка Koch Ranger"
+    sort: 13
+    weight: 0.8
+    item: att_grip_vertical_ranger
+    icon: tacz/att/grip_vertical_ranger.png
+    model: guns/att/grip_vertical_ranger.bbmodel
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {laser: {color: "#FF0000", editable: false, length: 75, width: 0.008}}
+    mods:
+      ads: {mul: 1.05}
+      inaccuracy: {mul: 0.7}
+      sneak-inaccuracy: {mul: 0.75}
+      recoil-pitch: {mul: 0.8}
+      recoil-yaw: {mul: 0.7}
+  grip_vertical_talon:
+    type: grip
+    name: "Рукоять Talon SG2"
+    sort: 9
+    weight: 0.2
+    item: att_grip_vertical_talon
+    icon: tacz/att/grip_vertical_talon.png
+    model: guns/att/grip_vertical_talon.bbmodel
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    mods:
+      ads: {mul: 1.01}
+      aim-inaccuracy: {mul: 0.8}
+      recoil-pitch: {mul: 0.85}
+  laser_compact:
+    type: laser
+    name: "Компактный ЛЦУ Militech"
+    sort: 1
+    weight: 0.13
+    item: att_laser_compact
+    icon: tacz/att/laser_compact_slot.png
+    model: guns/att/laser_compact.bbmodel
+    lod: guns/att/laser_compact_lod.bbmodel
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "laser_adapter", laser: {color: "#00FF00", editable: true, length: 2, width: 0.008}}
+    mods:
+      aim-inaccuracy: {mul: 0.6}
+      inaccuracy: {mul: 0.7}
+      sneak-inaccuracy: {mul: 0.7}
+  laser_lopro:
+    type: laser
+    name: "Тактический ЛЦУ Lopro"
+    sort: 10
+    weight: 0.25
+    item: att_laser_lopro
+    icon: tacz/att/laser_lopro_slot.png
+    model: guns/att/laser_lopro.bbmodel
+    lod: guns/att/laser_lopro_lod.bbmodel
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "laser_adapter", laser: {color: "#FF0000", editable: true, length: 75, width: 0.008}}
+    mods:
+      ads: {add: 0.1}
+      aim-inaccuracy: {mul: 0.25}
+      inaccuracy: {mul: 0.75}
+      sneak-inaccuracy: {mul: 0.2}
+  laser_ngal:
+    type: laser
+    name: "ЛЦУ NGAL"
+    sort: 10
+    weight: 0.2
+    item: att_laser_ngal
+    icon: tacz/att/laser_ngal.png
+    model: guns/att/laser_ngal.bbmodel
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "laser_adapter", laser: {color: "#00FFFF", editable: true, length: 75, width: 0.008}}
+    mods:
+      ads: {add: 0.05}
+      aim-inaccuracy: {mul: 0.65}
+      inaccuracy: {mul: 0.6}
+      sneak-inaccuracy: {mul: 0.4}
+  laser_nightstick:
+    type: laser
+    name: "Компактный ЛЦУ Nightstick"
+    sort: 1
+    weight: 0.2
+    item: att_laser_nightstick
+    icon: tacz/att/laser_nightstick_slot.png
+    model: guns/att/laser_nightstick.bbmodel
+    lod: guns/att/laser_nightstick_lod.bbmodel
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {laser: {color: "#00FF00", editable: true, length: 50, width: 0.008}}
+    mods:
+      ads: {add: 0.06}
+      inaccuracy: {mul: 0.6}
+      sneak-inaccuracy: {mul: 0.75}
+  laser_peq15:
+    type: laser
+    name: "laser_peq15"
+    sort: 10
+    hidden: true
+    weight: 0.133
+    item: att_laser_peq15
+    icon: tacz/att/grip_td.png
+    model: guns/att/laser_peq15.bbmodel
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "laser_adapter", laser: {color: "#FF6060", editable: true, length: 75, width: 0.008}}
+    mods:
+      ads: {add: -0.03}
+      aim-inaccuracy: {mul: 0.88}
+      sneak-inaccuracy: {mul: 0.5}
+  laser_peq6:
+    type: laser
+    name: "ЛЦУ PEQ6 ILLM"
+    sort: 1
+    weight: 0.25
+    item: att_laser_peq6
+    icon: tacz/att/laser_peq6.png
+    model: guns/att/laser_peq6.bbmodel
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {laser: {color: "#00FF00", editable: true, length: 75, width: 0.008}}
+    mods:
+      ads: {add: 0.1}
+      aim-inaccuracy: {mul: 0.5}
+      inaccuracy: {mul: 0.5}
+      sneak-inaccuracy: {mul: 0.35}
+      lie-inaccuracy: {mul: 0.75}
+      head-shot: {add: 0.5}
+  light_extended_mag_1:
+    type: extended_mag
+    name: "Расширенный магазин для лёгких патронов"
+    sort: 5
+    weight: 0.2
+    item: att_light_extended_mag_1
+    icon: tacz/att/light_extended_mag_1.png
+    sounds: {install: "gun_att_extended_mag_install", uninstall: "gun_att_extended_mag_uninstall"}
+    mods:
+      ads: {add: 0.01}
+      extended-mag-level: 1
+  light_extended_mag_2:
+    type: extended_mag
+    name: "Расширенный магазин для лёгких патронов"
+    sort: 5
+    weight: 0.3
+    item: att_light_extended_mag_2
+    icon: tacz/att/light_extended_mag_2.png
+    sounds: {install: "gun_att_extended_mag_install", uninstall: "gun_att_extended_mag_uninstall"}
+    mods:
+      ads: {add: 0.02}
+      extended-mag-level: 2
+  light_extended_mag_3:
+    type: extended_mag
+    name: "Расширенный магазин для лёгких патронов"
+    sort: 5
+    weight: 0.4
+    item: att_light_extended_mag_3
+    icon: tacz/att/light_extended_mag_3.png
+    sounds: {install: "gun_att_extended_mag_install", uninstall: "gun_att_extended_mag_uninstall"}
+    mods:
+      ads: {add: 0.03}
+      extended-mag-level: 3
+  muzzle_brake_cthulhu:
+    type: muzzle
+    name: "Пламегаситель Cthulhu K7"
+    sort: 10
+    weight: 0.25
+    item: att_muzzle_brake_cthulhu
+    icon: tacz/att/muzzle_brake_cthulhu.png
+    model: guns/att/muzzle_brake_cthulhu.bbmodel
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {flash-offset: 4.7}
+    mods:
+      ads: {add: 0.02}
+      aim-inaccuracy: {mul: 0.9}
+      inaccuracy: {mul: 1.1}
+      recoil-pitch: {mul: 0.85}
+      recoil-yaw: {mul: 0.8}
+      flash-hider: 0.13
+  muzzle_brake_cyclone_d2:
+    type: muzzle
+    name: "Пламегаситель Cyclone D2"
+    sort: 7
+    weight: 0.2
+    item: att_muzzle_brake_cyclone_d2
+    icon: tacz/att/muzzle_brake_cyclone_d2.png
+    model: guns/att/muzzle_brake_cyclone_d2.bbmodel
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {flash-offset: 3}
+    mods:
+      ads: {add: 0.02}
+      inaccuracy: {mul: 1.1}
+      recoil-pitch: {mul: 0.8}
+      recoil-yaw: {mul: 0.7}
+  muzzle_brake_mastiff_sg:
+    type: muzzle
+    name: "Дробовиковый дульный тормоз «Мастифф»"
+    sort: 16
+    weight: 0.25
+    item: att_muzzle_brake_mastiff_sg
+    icon: tacz/att/muzzle_brake_mastiff_sg.png
+    model: guns/att/muzzle_brake_mastiff_sg.bbmodel
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {flash-offset: 5.5}
+    mods:
+      ads: {mul: 1.15}
+      recoil-pitch: {mul: 0.6}
+      recoil-yaw: {mul: 0.7}
+  muzzle_brake_pioneer:
+    type: muzzle
+    name: "Пламегаситель Pioneer A3"
+    sort: 9
+    weight: 0.25
+    item: att_muzzle_brake_pioneer
+    icon: tacz/att/muzzle_brake_pioneer.png
+    model: guns/att/muzzle_brake_pioneer.bbmodel
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {flash-offset: 3.1}
+    mods:
+      ads: {add: 0.06}
+      aim-inaccuracy: {mul: 1.33}
+      recoil-pitch: {mul: 0.4}
+  muzzle_brake_timeless50:
+    type: muzzle
+    name: "Пламегаситель Timeless .50 калибра"
+    sort: 19
+    weight: 0.15
+    item: att_muzzle_brake_timeless50
+    icon: tacz/att/muzzle_brake_timeless50_slot.png
+    model: guns/att/muzzle_brake_timeless50.bbmodel
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {flash-offset: 2}
+    mods:
+      ads: {add: 0.03}
+      inaccuracy: {mul: 0.6}
+      sneak-inaccuracy: {mul: 0.5}
+      recoil-pitch: {mul: 0.35}
+      recoil-yaw: {mul: 0.75}
+  muzzle_brake_trex:
+    type: muzzle
+    name: "Тяжёлый пламегаситель T-Rex"
+    sort: 15
+    weight: 0.6
+    item: att_muzzle_brake_trex
+    icon: tacz/att/muzzle_brake_trex.png
+    model: guns/att/muzzle_brake_trex.bbmodel
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {flash-offset: 3.4}
+    mods:
+      ads: {mul: 1.2}
+      recoil-pitch: {mul: 0.66}
+      recoil-yaw: {mul: 0.66}
+  muzzle_choke_sg:
+    type: muzzle
+    name: "Дульный чок"
+    sort: 18
+    weight: 0.3
+    item: att_muzzle_choke_sg
+    icon: tacz/att/muzzle_choke_sg.png
+    model: guns/att/muzzle_choke_sg.bbmodel
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {flash-offset: 5.4}
+    mods:
+      ads: {add: 0.05}
+      aim-inaccuracy: {mul: 0.6}
+      inaccuracy: {mul: 0.6}
+      sneak-inaccuracy: {mul: 0.6}
+      lie-inaccuracy: {mul: 0.6}
+      recoil-pitch: {mul: 1.1}
+      recoil-yaw: {mul: 1.1}
+  muzzle_compensator_trident:
+    type: muzzle
+    name: "Компенсатор отдачи Tempest Trident"
+    sort: 8
+    weight: 0.15
+    item: att_muzzle_compensator_trident
+    icon: tacz/att/muzzle_compensator_trident.png
+    model: guns/att/muzzle_compensator_trident.bbmodel
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {flash-offset: 2.7}
+    mods:
+      ads: {add: 0.01}
+      inaccuracy: {mul: 0.85}
+      recoil-yaw: {mul: 0.6}
+  muzzle_silencer_knight_qd:
+    type: muzzle
+    name: "Глушитель Knight QD"
+    sort: 13
+    weight: 0.35
+    item: att_muzzle_silencer_knight_qd
+    icon: tacz/att/muzzle_silencer_knight_qd.png
+    model: guns/att/muzzle_silencer_knight_qd.bbmodel
+    sounds: {install: "gun_att_muzzle_general", uninstall: "gun_att_muzzle_general"}
+    display: {flash-offset: 8}
+    mods:
+      ads: {add: 0.05}
+      aim-inaccuracy: {mul: 0.75}
+      recoil-pitch: {mul: 0.8}
+      flash-hider: 0.2
+      silence: {distance: -20, sound: true}
+  muzzle_silencer_mirage:
+    type: muzzle
+    name: "Глушитель Mirage"
+    sort: 1
+    weight: 0.3
+    item: att_muzzle_silencer_mirage
+    icon: tacz/att/muzzle_silencer_mirage.png
+    model: guns/att/muzzle_silencer_mirage.bbmodel
+    sounds: {install: "gun_att_muzzle_general", uninstall: "gun_att_muzzle_general"}
+    display: {flash-offset: 7.5}
+    mods:
+      ads: {add: 0.06}
+      inaccuracy: {mul: 1.1}
+      effective-range: {mul: 0.8}
+      head-shot: {mul: 1.25}
+      flash-hider: 0.13
+      silence: {distance: -24, sound: true}
+  muzzle_silencer_phantom_s1:
+    type: muzzle
+    name: "Глушитель Phantom S1"
+    sort: 11
+    weight: 0.25
+    item: att_muzzle_silencer_phantom_s1
+    icon: tacz/att/muzzle_silencer_phantom_s1.png
+    model: guns/att/muzzle_silencer_phantom_s1.bbmodel
+    sounds: {install: "gun_att_muzzle_general", uninstall: "gun_att_muzzle_general"}
+    display: {flash-offset: 10.5}
+    mods:
+      ads: {add: 0.06}
+      inaccuracy: {mul: 1.1}
+      effective-range: {mul: 1.33}
+      rpm: {mul: 0.9}
+      flash-hider: 0.13
+      silence: {distance: -20, sound: true}
+  muzzle_silencer_ptilopsis:
+    type: muzzle
+    name: "Глушитель PO-2 \"Плюмаж\""
+    sort: 2
+    weight: 0.4
+    item: att_muzzle_silencer_ptilopsis
+    icon: tacz/att/muzzle_silencer_ptilopsis.png
+    model: guns/att/muzzle_silencer_ptilopsis.bbmodel
+    sounds: {install: "gun_att_muzzle_general", uninstall: "gun_att_muzzle_general"}
+    display: {flash-offset: 7.5}
+    mods:
+      ads: {add: 0.06}
+      inaccuracy: {mul: 0.8}
+      effective-range: {mul: 1.25}
+      flash-hider: 0.13
+      silence: {distance: -24, sound: true}
+  muzzle_silencer_sg:
+    type: muzzle
+    name: "Глушитель 12 калибра"
+    sort: 17
+    weight: 0.4
+    item: att_muzzle_silencer_sg
+    icon: tacz/att/muzzle_silencer_sg.png
+    model: guns/att/muzzle_silencer_sg.bbmodel
+    sounds: {install: "gun_att_muzzle_general", uninstall: "gun_att_muzzle_general"}
+    display: {flash-offset: 13}
+    mods:
+      ads: {add: 0.1}
+      aim-inaccuracy: {mul: 0.9}
+      inaccuracy: {mul: 0.95}
+      effective-range: {mul: 1.5}
+      rpm: {mul: 0.95}
+      recoil-pitch: {mul: 0.9}
+      flash-hider: 0.2
+      silence: {distance: -20, sound: true}
+  muzzle_silencer_socom_rc1:
+    type: muzzle
+    name: "Глушитель SOCOM RC1"
+    sort: 14
+    weight: 0.3
+    item: att_muzzle_silencer_socom_rc1
+    icon: tacz/att/muzzle_silencer_socom_rc1.png
+    model: guns/att/muzzle_silencer_socom_rc1.bbmodel
+    sounds: {install: "gun_att_muzzle_general", uninstall: "gun_att_muzzle_general"}
+    display: {flash-offset: 7.4}
+    mods:
+      ads: {add: 0.02}
+      effective-range: {mul: 1.1}
+      recoil-pitch: {mul: 0.85}
+      recoil-yaw: {mul: 0.75}
+      flash-hider: 0.2
+      silence: {distance: -22, sound: true}
+  muzzle_silencer_ursus:
+    type: muzzle
+    name: "Глушитель военного стандарта Ursus"
+    sort: 12
+    weight: 0.35
+    item: att_muzzle_silencer_ursus
+    icon: tacz/att/muzzle_silencer_ursus.png
+    model: guns/att/muzzle_silencer_ursus.bbmodel
+    sounds: {install: "gun_att_muzzle_general", uninstall: "gun_att_muzzle_general"}
+    display: {flash-offset: 9}
+    mods:
+      ads: {add: 0.035}
+      inaccuracy: {mul: 1.15}
+      effective-range: {mul: 1.2}
+      recoil-pitch: {mul: 0.75}
+      recoil-yaw: {mul: 0.8}
+      flash-hider: 0.2
+      silence: {distance: -18, sound: true}
+  muzzle_silencer_vulture:
+    type: muzzle
+    name: "Глушитель Vulture калибра .50 BMG"
+    sort: 20
+    weight: 1.55
+    item: att_muzzle_silencer_vulture
+    icon: tacz/att/muzzle_silencer_vulture.png
+    model: guns/att/muzzle_silencer_vulture.bbmodel
+    sounds: {install: "gun_att_muzzle_general", uninstall: "gun_att_muzzle_general"}
+    display: {flash-offset: 20}
+    mods:
+      ads: {add: 0.09}
+      inaccuracy: {mul: 1.1}
+      effective-range: {mul: 1.25}
+      head-shot: {add: 0.25}
+      recoil-pitch: {mul: 0.66}
+      recoil-yaw: {mul: 0.75}
+      flash-hider: 0.2
+      silence: {distance: -25, sound: true}
+  muzzle_silencer_wraith:
+    type: muzzle
+    name: "Глушитель Wraith"
+    sort: 3
+    weight: 0.35
+    item: att_muzzle_silencer_wraith
+    icon: tacz/att/muzzle_silencer_wraith.png
+    model: guns/att/muzzle_silencer_wraith.bbmodel
+    sounds: {install: "gun_att_muzzle_general", uninstall: "gun_att_muzzle_general"}
+    display: {flash-offset: 9.75}
+    mods:
+      ads: {add: 0.04}
+      aim-inaccuracy: {mul: 0.75}
+      effective-range: {mul: 1.5}
+      ammo-speed: {mul: 1.2}
+      head-shot: {add: 0.25}
+      flash-hider: 0.13
+      silence: {distance: -20, sound: true}
+  oem_grip_cover:
+    type: grip
+    name: "Заводская накладка на цевье 1"
+    sort: 1
+    hidden: true
+    builtin: true
+    weight: 0
+    icon: tacz/att/oem_grip_cover.png
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "oem_grip_cover"}
+    mods:
+      ads: {add: -0.008}
+  oem_m16a1_handguard_a2:
+    type: grip
+    name: "Штурмовое цевье"
+    sort: 2
+    hidden: true
+    builtin: true
+    weight: 0
+    icon: tacz/att/oem_handguard_assault.png
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "oem_handguard_a2"}
+    mods:
+      ads: {add: -0.01}
+  oem_m1897_bayonet:
+    type: muzzle
+    name: "Заводской штык M1897"
+    sort: 6
+    hidden: true
+    builtin: true
+    weight: 0.34
+    icon: tacz/att/oem_m1897_bayonet.png
+    sounds: {install: "gun_att_bayonet_install", uninstall: "gun_att_bayonet_uninstall"}
+    display: {adapter: "bayonet"}
+    mods:
+      ads: {add: 0.03}
+      melee: {damage: 9, distance: 2.5}
+  oem_side_cover:
+    type: laser
+    name: "Заводская накладка на цевье 1"
+    sort: 1
+    hidden: true
+    builtin: true
+    weight: 0
+    icon: tacz/att/oem_side_cover.png
+    sounds: {install: "gun_att_attachment_general_b", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "oem_side_cover"}
+    mods:
+      ads: {add: -0.008}
+  oem_sight_1:
+    type: scope
+    name: "Заводской тактический прицел"
+    sort: 1
+    hidden: true
+    builtin: true
+    weight: 0
+    icon: tacz/att/oem_sight_1.png
+    model: guns/att/oem_sight_1.bbmodel
+    texture-from-gun: true
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [1.33], fov: 40, sight: true}
+  oem_sight_2:
+    type: scope
+    name: "Заводской боевой прицел"
+    sort: 1
+    hidden: true
+    builtin: true
+    weight: 0
+    icon: tacz/att/oem_sight_2.png
+    model: guns/att/oem_sight_2.bbmodel
+    texture-from-gun: true
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [1.33], fov: 40, sight: true}
+  oem_stock_heavy:
+    type: stock
+    name: "Заводской тяжёлый приклад"
+    sort: 1
+    hidden: true
+    builtin: true
+    weight: 0
+    icon: tacz/att/oem_stock_heavy.png
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "oem_stock_heavy"}
+    mods:
+      ads: {add: 0.05}
+      recoil-pitch: {mul: 0.8}
+      recoil-yaw: {mul: 0.7}
+      melee: {damage: 5, distance: 2}
+  oem_stock_light:
+    type: stock
+    name: "Заводской лёгкий приклад"
+    sort: 1
+    builtin: true
+    weight: -0.5
+    icon: tacz/att/oem_stock_light.png
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "oem_stock_light"}
+    mods:
+      ads: {add: -0.02}
+      aim-inaccuracy: {mul: 1.15}
+      melee: {damage: 3, distance: 2}
+  oem_stock_removed:
+    type: stock
+    name: "Убранный заводской приклад"
+    sort: 1
+    weight: -0.5
+    item: att_oem_stock_removed
+    icon: tacz/att/oem_stock_removed.png
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "oem_stock_removed"}
+    mods:
+      ads: {add: -0.1}
+      aim-inaccuracy: {mul: 1.1}
+      melee: {damage: 3, distance: 2}
+  oem_stock_tactical:
+    type: stock
+    name: "Заводской тактический приклад"
+    sort: 1
+    builtin: true
+    weight: 0
+    icon: tacz/att/oem_stock_tactical.png
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "oem_stock_tactical"}
+    mods:
+      aim-inaccuracy: {mul: 0.9}
+      recoil-pitch: {mul: 0.9}
+      melee: {damage: 4, distance: 2}
+  scope_1866_4x:
+    type: scope
+    name: "Винтажный стрелковый прицел Winchester"
+    sort: 33
+    weight: 1
+    item: att_scope_1866_4x
+    icon: tacz/att/scope_1866_4x_slot.png
+    model: guns/att/scope_1866_4x.bbmodel
+    sounds: {install: "gun_att_scope_general_b", uninstall: "gun_att_scope_general_b"}
+    display: {zoom: [3.25], fov: 33, scope: true, height-adjust: 0, lens: {tint: "#70AEE8", tint-strength: 0.2, vision: "NORMAL"}}
+    mods:
+      aim-inaccuracy: {mul: 0.66}
+      ads: {add: 0.13}
+  scope_1873_6x:
+    type: scope
+    name: "Винтажный оптический прицел Springfield"
+    sort: 33
+    weight: 1
+    item: att_scope_1873_6x
+    icon: tacz/att/scope_1873_6x_slot.png
+    model: guns/att/scope_1873_6x.bbmodel
+    sounds: {install: "gun_att_scope_general_b", uninstall: "gun_att_scope_general_b"}
+    display: {zoom: [6], fov: 33, scope: true, height-adjust: 0, lens: {tint: "#70AEE8", tint-strength: 0.2, vision: "NORMAL"}}
+    mods:
+      aim-inaccuracy: {mul: 0.66}
+      ads: {add: 0.15}
+  scope_98k:
+    type: scope
+    name: "Оптический прицел Mauser 4×"
+    sort: 27
+    weight: 0.8
+    item: att_scope_98k
+    icon: tacz/att/scope_98k.png
+    model: guns/att/scope_98k.bbmodel
+    sounds: {install: "gun_att_scope_general_b", uninstall: "gun_att_scope_general_b"}
+    display: {zoom: [4.25], fov: 30, scope: true, height-adjust: 0}
+    mods:
+      ads: {add: 0.03}
+  scope_acog_ta31:
+    type: scope
+    name: "Прицел TA31 2x ACOG"
+    sort: 22
+    weight: 1.2
+    item: att_scope_acog_ta31
+    icon: tacz/att/scope_acog_ta31.png
+    model: guns/att/scope_acog_ta31.bbmodel
+    lod: guns/att/scope_acog_ta31_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_b", uninstall: "gun_att_scope_general_b"}
+    display: {zoom: [2.5], fov: 30, scope: true, height-adjust: 0.5, lens: {tint: "#d78780", tint-strength: 0.2, vision: "NORMAL"}}
+    mods:
+      ads: {add: 0.015}
+  scope_amg_10:
+    type: scope
+    name: "Оптический прицел Vortex AMG 10"
+    sort: 37
+    weight: 1.3
+    item: att_scope_amg_10
+    icon: tacz/att/scope_amg_10.png
+    model: guns/att/scope_amg_10.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [7.25, 4.25, 1.25], views: [1, 1, 2], views-fov: [25, 40, 60], scope: true, sight: true, height-adjust: 0.75, lens: {tint: "#D8A376", tint-strength: 0.2, vision: "NORMAL"}}
+    mods:
+      ads: {add: 0.03}
+  scope_c79:
+    type: scope
+    name: "Оптический прицел C79"
+    sort: 26
+    weight: 1.2
+    item: att_scope_c79
+    icon: tacz/att/scope_c79.png
+    model: guns/att/scope_c79.bbmodel
+    lod: guns/att/scope_c79_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_b", uninstall: "gun_att_scope_general_b"}
+    display: {zoom: [3.75], fov: 36, scope: true, height-adjust: 1.25, lens: {tint: "#DAB3B3", tint-strength: 0.2, vision: "NORMAL"}}
+    mods:
+      aim-inaccuracy: {mul: 0.66}
+      ads: {add: 0.1}
+  scope_contender:
+    type: scope
+    name: "Оптический прицел Contender 4×"
+    sort: 28
+    weight: 1.6
+    item: att_scope_contender
+    icon: tacz/att/scope_contender_slot.png
+    model: guns/att/scope_contender.bbmodel
+    sounds: {install: "gun_att_scope_general_d", uninstall: "gun_att_scope_general_d"}
+    display: {zoom: [4.25], views: [2], views-fov: [36], scope: true, height-adjust: 0}
+    mods:
+      aim-inaccuracy: {mul: 0.85}
+      ads: {add: 0.05}
+  scope_elcan_4x:
+    type: scope
+    name: "Прицел 4x Elcan"
+    sort: 29
+    weight: 1.6
+    item: att_scope_elcan_4x
+    icon: tacz/att/scope_elcan_4x.png
+    model: guns/att/scope_elcan_4x.bbmodel
+    lod: guns/att/scope_elcan_4x_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_d", uninstall: "gun_att_scope_general_d"}
+    display: {zoom: [4.25, 1.25], views: [2, 2], views-fov: [35, 55], scope: true, height-adjust: 0.75}
+    mods:
+      ads: {add: 0.05}
+  scope_hamr:
+    type: scope
+    name: "Оптический прицел HAMR 3×"
+    sort: 25
+    weight: 0.85
+    item: att_scope_hamr
+    icon: tacz/att/scope_hamr_slot.png
+    model: guns/att/scope_hamr.bbmodel
+    lod: guns/att/scope_hamr_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [3.25, 1.25], views: [2, 1], views-fov: [40, 60], scope: true, sight: true, height-adjust: 0.75}
+    mods:
+      ads: {add: 0.015}
+      aim-inaccuracy: {mul: 0.85}
+  scope_lpvo_1_6:
+    type: scope
+    name: "Прицел LPVO 1-6x"
+    sort: 34
+    weight: 1.3
+    item: att_scope_lpvo_1_6
+    icon: tacz/att/scope_lpvo_1_6.png
+    model: guns/att/scope_lpvo_1_6.bbmodel
+    lod: guns/att/scope_lpvo_1_6_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [6.25, 3.25, 1.25], views: [2, 2, 2], views-fov: [30, 45, 60], scope: true, height-adjust: 0.75}
+    mods:
+      ads: {add: 0.03}
+  scope_mk4ert:
+    type: scope
+    name: "Оптический прицел Mark 4 ER/T 8×"
+    sort: 36
+    weight: 0.9
+    item: att_scope_mk4ert
+    icon: tacz/att/scope_mk4ert.png
+    model: guns/att/scope_mk4ert.bbmodel
+    lod: guns/att/scope_mk4ert_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_a", uninstall: "gun_att_scope_general_a"}
+    display: {zoom: [8], views: [1], views-fov: [25], scope: true, height-adjust: 0.5, lens: {tint: "#D8FCC6", tint-strength: 0.2, vision: "NORMAL"}}
+    mods:
+      ads: {add: 0.06}
+      aim-inaccuracy: {mul: 0.8}
+  scope_mk5hd:
+    type: scope
+    name: "Оптический прицел Mark 5 HD 5-25×"
+    sort: 41
+    weight: 0.85
+    item: att_scope_mk5hd
+    icon: tacz/att/scope_mk5hd_slot.png
+    model: guns/att/scope_mk5hd.bbmodel
+    lod: guns/att/scope_mk5hd_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [5, 25, 1.25], views: [2, 2, 1], views-fov: [27, 10, 60], scope: true, sight: true, height-adjust: 1.25}
+    mods:
+      ads: {add: 0.13}
+      aim-inaccuracy: {mul: 0.66}
+  scope_qmk152:
+    type: scope
+    name: "Оптический прицел QMK-152 3×"
+    sort: 24
+    weight: 1
+    item: att_scope_qmk152
+    icon: tacz/att/scope_qmk152.png
+    model: guns/att/scope_qmk152.bbmodel
+    sounds: {install: "gun_att_scope_general_b", uninstall: "gun_att_scope_general_b"}
+    display: {zoom: [3.25], views: [2], views-fov: [50], scope: true, height-adjust: 0.5, lens: {tint: "#d78780", tint-strength: 0.2, vision: "NORMAL"}}
+    mods:
+      ads: {add: 0.02}
+  scope_reap_ir:
+    type: scope
+    name: "Тепловизионный прицел REAP-IR 2-4×"
+    sort: 30
+    weight: 0.8
+    item: att_scope_reap_ir
+    icon: tacz/att/scope_reap_ir.png
+    model: guns/att/scope_reap_ir.bbmodel
+    lod: guns/att/scope_reap_ir_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_b", uninstall: "gun_att_scope_general_b"}
+    display: {zoom: [2.5, 4], fov: 30, scope: true, height-adjust: 0.5, lens: {tint: "#70AEE8", tint-strength: 0.2, vision: "THERMAL_WHITE_HOT"}}
+    mods:
+      ads: {mul: 1.1}
+  scope_retro_2x:
+    type: scope
+    name: "Прицел \"Ретро\" 3×"
+    sort: 23
+    weight: 1.6
+    item: att_scope_retro_2x
+    icon: tacz/att/scope_retro_2x.png
+    model: guns/att/scope_retro_2x.bbmodel
+    lod: guns/att/scope_retro_2x_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_d", uninstall: "gun_att_scope_general_d"}
+    display: {zoom: [3.25], fov: 45, scope: true, height-adjust: 0.5, show-mount: false}
+    mods:
+      ads: {add: 0.02}
+  scope_standard_8x:
+    type: scope
+    name: "Оптический прицел Scout 4-10×"
+    sort: 40
+    weight: 2
+    item: att_scope_standard_8x
+    icon: tacz/att/scope_scout_slot.png
+    model: guns/att/scope_standard_8x.bbmodel
+    lod: guns/att/scope_standard_8x_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [4.5, 10], views: [2, 2], views-fov: [40, 25], scope: true, height-adjust: 1, lens: {tint: "#D8A376", tint-strength: 0.2, vision: "NORMAL"}}
+    mods:
+      aim-inaccuracy: {mul: 0.75}
+      ads: {add: 0.09}
+  scope_vudu:
+    type: scope
+    name: "Оптический прицел Vudu 1-6×"
+    sort: 38
+    weight: 0.85
+    item: att_scope_vudu
+    icon: tacz/att/scope_vudu.png
+    model: guns/att/scope_vudu.bbmodel
+    lod: guns/att/scope_vudu_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [6.5, 1.35], views: [2, 1], views-fov: [30, 60], scope: true, sight: true, height-adjust: 0.75}
+    mods:
+      ads: {add: 0.015}
+      aim-inaccuracy: {mul: 0.9}
+  scope_xl50:
+    type: scope
+    name: "Тепловизионный прицел Pulsar XL50 6-10×"
+    sort: 40
+    weight: 1.03
+    item: att_scope_xl50
+    icon: tacz/att/scope_xl50.png
+    model: guns/att/scope_xl50.bbmodel
+    lod: guns/att/scope_xl50_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_b", uninstall: "gun_att_scope_general_b"}
+    display: {zoom: [6, 10], fov: 20, scope: true, height-adjust: 0.75, lens: {tint: "#1F1F1F", tint-strength: 0.2, vision: "THERMAL_WHITE_HOT"}}
+    mods:
+      ads: {add: 0.15}
+  scope_xm157:
+    type: scope
+    name: "Оптический прицел XM157 4-8× с системой управления огнем"
+    sort: 39
+    weight: 0.85
+    item: att_scope_xm157
+    icon: tacz/att/scope_xm157_slot.png
+    model: guns/att/scope_xm157.bbmodel
+    lod: guns/att/scope_xm157_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [4.25, 8.25], views: [1, 1], views-fov: [45, 25], scope: true, sight: true, height-adjust: 0.75}
+    mods:
+      ads: {add: 0.13}
+      aim-inaccuracy: {mul: 0.66}
+  shotgun_extended_mag_1:
+    type: extended_mag
+    name: "Расширенный магазин для дробовика"
+    sort: 10
+    weight: 0.4
+    item: att_shotgun_extended_mag_1
+    icon: tacz/att/shotgun_extended_mag_1.png
+    sounds: {install: "gun_att_extended_mag_install", uninstall: "gun_att_extended_mag_uninstall"}
+    mods:
+      ads: {add: 0.01}
+      extended-mag-level: 1
+  shotgun_extended_mag_2:
+    type: extended_mag
+    name: "Расширенный магазин для дробовика"
+    sort: 10
+    weight: 0.4
+    item: att_shotgun_extended_mag_2
+    icon: tacz/att/shotgun_extended_mag_2.png
+    sounds: {install: "gun_att_extended_mag_install", uninstall: "gun_att_extended_mag_uninstall"}
+    mods:
+      ads: {add: 0.01}
+      extended-mag-level: 2
+  shotgun_extended_mag_3:
+    type: extended_mag
+    name: "Расширенный магазин для дробовика"
+    sort: 10
+    weight: 0.4
+    item: att_shotgun_extended_mag_3
+    icon: tacz/att/shotgun_extended_mag_3.png
+    sounds: {install: "gun_att_extended_mag_install", uninstall: "gun_att_extended_mag_uninstall"}
+    mods:
+      ads: {add: 0.01}
+      extended-mag-level: 3
+  sight_1p87:
+    type: scope
+    name: "Коллиматорный прицел 1П87"
+    sort: 16
+    weight: 0.3
+    item: att_sight_1p87
+    icon: tacz/att/sight_1p87.png
+    model: guns/att/sight_1p87.bbmodel
+    lod: guns/att/sight_1p87_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [1.5], fov: 40, sight: true}
+  sight_552:
+    type: scope
+    name: "Голографический прицел Militech 552"
+    sort: 17
+    weight: 0.4
+    item: att_sight_552
+    icon: tacz/att/sight_552.png
+    model: guns/att/sight_552.bbmodel
+    lod: guns/att/sight_552_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [1.5], fov: 35, sight: true}
+    mods:
+      ads: {add: 0.02}
+      aim-inaccuracy: {mul: 0.8}
+  sight_acro_pistol:
+    type: scope
+    name: "Коллиматорный прицел Aimpoint ACRO P-1"
+    sort: 5
+    weight: 0.4
+    item: att_sight_acro_pistol
+    icon: tacz/att/sight_acro_pistol.png
+    model: guns/att/sight_acro_pistol.bbmodel
+    lod: guns/att/sight_acro_pistol_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [1.25], fov: 45, sight: true}
+    mods:
+      aim-inaccuracy: {mul: 0.95}
+  sight_acro_rifle:
+    type: scope
+    name: "Коллиматорный прицел Aimpoint ACRO P-1 (на доп. планке)"
+    sort: 20
+    weight: 0.5
+    item: att_sight_acro_rifle
+    icon: tacz/att/sight_acro_rifle.png
+    model: guns/att/sight_acro_rifle.bbmodel
+    lod: guns/att/sight_acro_rifle_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [2], fov: 45, sight: true}
+    mods:
+      aim-inaccuracy: {mul: 0.9}
+  sight_apm4s:
+    type: scope
+    name: "Коллиматорный прицел APM4s"
+    sort: 22
+    weight: 1.2
+    item: att_sight_apm4s
+    icon: tacz/att/sight_apm4s.png
+    model: guns/att/sight_apm4s.bbmodel
+    lod: guns/att/sight_apm4s_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [2], fov: 38, scope: true, height-adjust: 0.5}
+    mods:
+      ads: {add: 0.035}
+  sight_coyote:
+    type: scope
+    name: "Коллиматорный прицел Coyote"
+    sort: 15
+    weight: 0.25
+    item: att_sight_coyote
+    icon: tacz/att/sight_coyote.png
+    model: guns/att/sight_coyote.bbmodel
+    lod: guns/att/sight_coyote_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [1.5], fov: 40, sight: true}
+    mods:
+      aim-inaccuracy: {mul: 0.9}
+  sight_deltapoint_pistol:
+    type: scope
+    name: "Коллиматорный прицел DeltaPoint"
+    sort: 1
+    weight: 0.4
+    item: att_sight_deltapoint_pistol
+    icon: tacz/att/sight_deltapoint_pistol.png
+    model: guns/att/sight_deltapoint_pistol.bbmodel
+    lod: guns/att/sight_deltapoint_pistol_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [1.25], fov: 45, sight: true}
+    mods:
+      aim-inaccuracy: {mul: 0.95}
+  sight_deltapoint_rifle:
+    type: scope
+    name: "Коллиматорный прицел DeltaPoint (на высоком креплении)"
+    sort: 10
+    weight: 0.5
+    item: att_sight_deltapoint_rifle
+    icon: tacz/att/sight_deltapoint_rifle.png
+    model: guns/att/sight_deltapoint_rifle.bbmodel
+    lod: guns/att/sight_deltapoint_rifle_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [1.5], fov: 45, sight: true}
+    mods:
+      aim-inaccuracy: {mul: 0.95}
+  sight_exp3:
+    type: scope
+    name: "Голографический прицел EXP3"
+    sort: 18
+    weight: 0.35
+    item: att_sight_exp3
+    icon: tacz/att/sight_exp3.png
+    model: guns/att/sight_exp3.bbmodel
+    lod: guns/att/sight_exp3_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [1.5], fov: 35, sight: true}
+    mods:
+      ads: {add: 0.02}
+      aim-inaccuracy: {mul: 0.9}
+  sight_fastfire_pistol:
+    type: scope
+    name: "Коллиматорный прицел FastFire"
+    sort: 2
+    weight: 0.4
+    item: att_sight_fastfire_pistol
+    icon: tacz/att/sight_fastfire_pistol.png
+    model: guns/att/sight_fastfire_pistol.bbmodel
+    lod: guns/att/sight_fastfire_pistol_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [1.25], fov: 45, sight: true}
+    mods:
+      aim-inaccuracy: {mul: 0.95}
+  sight_fastfire_rifle:
+    type: scope
+    name: "Коллиматорный прицел FastFire (на высоком креплении)"
+    sort: 11
+    weight: 0.5
+    item: att_sight_fastfire_rifle
+    icon: tacz/att/sight_fastfire_rifle.png
+    model: guns/att/sight_fastfire_rifle.bbmodel
+    lod: guns/att/sight_fastfire_rifle_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [1.5], fov: 45, sight: true}
+    mods:
+      aim-inaccuracy: {mul: 0.95}
+  sight_infitac_fmp13:
+    type: scope
+    name: "Тепловизионный прицел FMP13 Mini"
+    sort: 9
+    weight: 0.1
+    item: att_sight_infitac_fmp13
+    icon: tacz/att/sight_infitac_fmp13.png
+    model: guns/att/sight_infitac_fmp13.bbmodel
+    lod: guns/att/sight_infitac_fmp13_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_e", uninstall: "gun_att_scope_general_e"}
+    display: {zoom: [1.25], fov: 45, scope: true, lens: {tint: "#70AEE8", tint-strength: 0.2, vision: "THERMAL_IRONBOW"}}
+  sight_okp7:
+    type: scope
+    name: "Коллиматорный прицел ОКП-7"
+    sort: 13
+    weight: 0.4
+    item: att_sight_okp7
+    icon: tacz/att/sight_okp7.png
+    model: guns/att/sight_okp7.bbmodel
+    lod: guns/att/sight_okp7_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [1.5], fov: 45, sight: true}
+  sight_pk06_pistol:
+    type: scope
+    name: "Коллиматорный прицел ПК06"
+    sort: 6
+    weight: 0.4
+    item: att_sight_pk06_pistol
+    icon: tacz/att/sight_pk06_pistol.png
+    model: guns/att/sight_pk06_pistol.bbmodel
+    lod: guns/att/sight_pk06_pistol_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [1.5], fov: 45, sight: true}
+    mods:
+      aim-inaccuracy: {mul: 0.95}
+  sight_pk06_rifle:
+    type: scope
+    name: "Коллиматорный прицел ПК06 (на доп. планке)"
+    sort: 21
+    weight: 0.5
+    item: att_sight_pk06_rifle
+    icon: tacz/att/sight_pk06_rifle.png
+    model: guns/att/sight_pk06_rifle.bbmodel
+    lod: guns/att/sight_pk06_rifle_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [1.5], fov: 45, sight: true}
+    mods:
+      aim-inaccuracy: {mul: 0.95}
+  sight_rmr_dot:
+    type: scope
+    name: "Коллиматорный прицел RMR Mini"
+    sort: 3
+    weight: 0.1
+    item: att_sight_rmr_dot
+    icon: tacz/att/sight_rmr_dot.png
+    model: guns/att/sight_rmr_dot.bbmodel
+    lod: guns/att/sight_rmr_dot_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_e", uninstall: "gun_att_scope_general_e"}
+    display: {zoom: [1.25], fov: 45, sight: true}
+  sight_sro_dot:
+    type: scope
+    name: "Коллиматорный прицел SRO Mini"
+    sort: 4
+    weight: 0.1
+    item: att_sight_sro_dot
+    icon: tacz/att/sight_sro_dot.png
+    model: guns/att/sight_sro_dot.bbmodel
+    lod: guns/att/sight_sro_dot_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_e", uninstall: "gun_att_scope_general_e"}
+    display: {zoom: [1.25], fov: 45, sight: true}
+  sight_srs_02:
+    type: scope
+    name: "Рефлекторный прицел Trijicon SRS-02"
+    sort: 14
+    weight: 0.8
+    item: att_sight_srs_02
+    icon: tacz/att/sight_srs_02.png
+    model: guns/att/sight_srs_02.bbmodel
+    lod: guns/att/sight_srs_02_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [1.5], fov: 40, sight: true}
+  sight_t1:
+    type: scope
+    name: "Коллиматорный прицел T1"
+    sort: 8
+    weight: 0.2
+    item: att_sight_t1
+    icon: tacz/att/sight_t1.png
+    model: guns/att/sight_t1.bbmodel
+    lod: guns/att/sight_t1_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [1.5], fov: 35, sight: true}
+    mods:
+      ads: {add: 0.01}
+      aim-inaccuracy: {mul: 0.8}
+  sight_t2:
+    type: scope
+    name: "Коллиматорный прицел T2"
+    sort: 12
+    weight: 0.25
+    item: att_sight_t2
+    icon: tacz/att/sight_t2.png
+    model: guns/att/sight_t2.bbmodel
+    lod: guns/att/sight_t2_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [1.5], fov: 35, sight: true}
+    mods:
+      ads: {add: 0.01}
+      aim-inaccuracy: {mul: 0.8}
+  sight_uh1:
+    type: scope
+    name: "Умный прицел UH-1"
+    sort: 19
+    weight: 0.4
+    item: att_sight_uh1
+    icon: tacz/att/sight_uh1.png
+    model: guns/att/sight_uh1.bbmodel
+    lod: guns/att/sight_uh1_lod.bbmodel
+    sounds: {install: "gun_att_scope_general_c", uninstall: "gun_att_scope_general_c"}
+    display: {zoom: [1.75], fov: 35, scope: true}
+    mods:
+      ads: {add: 0.03}
+  sniper_extended_mag_1:
+    type: extended_mag
+    name: "Расширенный магазин для снайперских патронов"
+    sort: 100
+    weight: 0.5
+    item: att_sniper_extended_mag_1
+    icon: tacz/att/sniper_extended_mag_1.png
+    sounds: {install: "gun_att_extended_mag_install", uninstall: "gun_att_extended_mag_uninstall"}
+    mods:
+      ads: {add: 0.03}
+      extended-mag-level: 1
+  sniper_extended_mag_2:
+    type: extended_mag
+    name: "Расширенный магазин для снайперских патронов"
+    sort: 100
+    weight: 0.8
+    item: att_sniper_extended_mag_2
+    icon: tacz/att/sniper_extended_mag_2.png
+    sounds: {install: "gun_att_extended_mag_install", uninstall: "gun_att_extended_mag_uninstall"}
+    mods:
+      ads: {add: 0.05}
+      extended-mag-level: 2
+  sniper_extended_mag_3:
+    type: extended_mag
+    name: "Расширенный магазин для снайперских патронов"
+    sort: 100
+    weight: 1.2
+    item: att_sniper_extended_mag_3
+    icon: tacz/att/sniper_extended_mag_3.png
+    sounds: {install: "gun_att_extended_mag_install", uninstall: "gun_att_extended_mag_uninstall"}
+    mods:
+      ads: {add: 0.08}
+      extended-mag-level: 3
+  stock_ak12:
+    type: stock
+    name: "Стандартный приклад АК-12"
+    sort: 10
+    weight: 0.148
+    item: att_stock_ak12
+    icon: tacz/att/stock_ak12.png
+    model: guns/att/stock_ak12.bbmodel
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "ar_stock_adapter"}
+    mods:
+      ads: {add: 0.01}
+      aim-inaccuracy: {mul: 0.9}
+      recoil-pitch: {mul: 0.8}
+      recoil-yaw: {mul: 0.8}
+  stock_carbon_bone_c5:
+    type: stock
+    name: "Карбоновый приклад C5"
+    sort: 10
+    weight: 0.3
+    item: att_stock_carbon_bone_c5
+    icon: tacz/att/stock_carbon_bone_c5.png
+    model: guns/att/stock_carbon_bone_c5.bbmodel
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "ar_stock_adapter"}
+    mods:
+      ads: {add: -0.03}
+      aim-inaccuracy: {mul: 1.1}
+      melee: {damage: 3, distance: 2}
+  stock_heavy_ctr:
+    type: stock
+    name: "Тяжёлый приклад CTR"
+    sort: 10
+    weight: 0.695
+    item: att_stock_heavy_ctr
+    icon: tacz/att/stock_heavy_ctr.png
+    model: guns/att/stock_heavy_ctr.bbmodel
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "ar_stock_adapter"}
+    mods:
+      ads: {add: 0.01}
+      recoil-pitch: {mul: 0.75}
+      recoil-yaw: {mul: 0.5}
+  stock_hk_slim_line:
+    type: stock
+    name: "Приклад HK Slim Line"
+    sort: 10
+    weight: 0.695
+    item: att_stock_hk_slim_line
+    icon: tacz/att/stock_hk_slim_line.png
+    model: guns/att/stock_hk_slim_line.bbmodel
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "ar_stock_adapter"}
+    mods:
+      ads: {add: 0.01}
+      recoil-pitch: {mul: 0.75}
+      recoil-yaw: {mul: 0.72}
+  stock_m4ss:
+    type: stock
+    name: "Приклад M4SS"
+    sort: 10
+    weight: 0.695
+    item: att_stock_m4ss
+    icon: tacz/att/stock_m4ss.png
+    model: guns/att/stock_m4ss.bbmodel
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "ar_stock_adapter"}
+    mods:
+      ads: {add: 0.012}
+      recoil-pitch: {mul: 0.85}
+      recoil-yaw: {mul: 0.9}
+  stock_militech_b5:
+    type: stock
+    name: "Приклад Militech B5"
+    sort: 10
+    weight: 0.5
+    item: att_stock_militech_b5
+    icon: tacz/att/stock_militech_b5.png
+    model: guns/att/stock_militech_b5.bbmodel
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "ar_stock_adapter"}
+    mods:
+      ads: {mul: 1.1}
+      aim-inaccuracy: {mul: 0.87}
+      recoil-pitch: {mul: 0.68}
+      recoil-yaw: {mul: 0.6}
+      melee: {damage: 5, distance: 2}
+  stock_moe:
+    type: stock
+    name: "Приклад Magpul MOE"
+    sort: 10
+    weight: 0.15
+    item: att_stock_moe
+    icon: tacz/att/stock_moe.png
+    model: guns/att/stock_moe.bbmodel
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "ar_stock_adapter"}
+    mods:
+      ads: {add: 0.02}
+      recoil-pitch: {mul: 0.85}
+  stock_psg:
+    type: stock
+    name: "Стрелковый приклад PSG"
+    sort: 11
+    weight: 0.85
+    item: att_stock_psg
+    icon: tacz/att/stock_psg.png
+    model: guns/att/stock_psg.bbmodel
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "ar_stock_adapter"}
+    mods:
+      ads: {add: 0.03}
+      recoil-pitch: {mul: 0.68}
+      recoil-yaw: {mul: 0.55}
+  stock_ripstock:
+    type: stock
+    name: "Складной приклад CMMG"
+    sort: 10
+    weight: 0.12
+    item: att_stock_ripstock
+    icon: tacz/att/stock_ripstock.png
+    model: guns/att/stock_ripstock.bbmodel
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "ar_stock_adapter"}
+    mods:
+      ads: {mul: 0.82}
+      aim-inaccuracy: {mul: 1.05}
+  stock_sba3:
+    type: stock
+    name: "Приклад SBA3"
+    sort: 10
+    weight: 0.1
+    item: att_stock_sba3
+    icon: tacz/att/stock_sba3.png
+    model: guns/att/stock_sba3.bbmodel
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "ar_stock_adapter"}
+    mods:
+      inaccuracy: {mul: 0.75}
+      sneak-inaccuracy: {mul: 0.75}
+  stock_tactical_ar:
+    type: stock
+    name: "Приклад Magpul CTR"
+    sort: 10
+    weight: 0.4
+    item: att_stock_tactical_ar
+    icon: tacz/att/stock_tactical_ar.png
+    model: guns/att/stock_tactical_ar.bbmodel
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "ar_stock_adapter"}
+    mods:
+      recoil-pitch: {mul: 0.75}
+      recoil-yaw: {mul: 0.75}
+      melee: {damage: 4, distance: 2}

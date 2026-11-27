@@ -22,6 +22,10 @@ import net.minestom.server.item.ItemStack;
  *       в руке нет оружия — ко всему оружию из config.yml);</li>
  *   <li>{@code /hogun reload [игрок]} — перезарядить оружие в руке (как клавиша R);</li>
  *   <li>{@code /hogun list} — оружие из config.yml; {@code /hogun info [игрок]} — что в руке, патроны, связи;</li>
+ *   <li>{@code /hogun attach list [оружие]} — обвесы (все или подходящие оружию); {@code /hogun attach give <обвес>
+ *       [игрок]} — выдать предмет-обвес; {@code /hogun attach set <обвес>} — поставить на оружие в руке (без
+ *       предмета, совместимость проверяется); {@code /hogun attach remove <слот>} и {@code /hogun detach <слот>} —
+ *       снять (предмет — в инвентарь); {@code /hogun attach clear} — снять всё;</li>
  *   <li>{@code /hogun install} — дописать в свой config.yml оружие из jar, которого там нет (AWP, Glock 17), положить
  *       модели/иконки/звуки TACZ всего оружия в hoitems и hosounds и дописать их config.yml.</li>
  * </ul>
@@ -55,11 +59,104 @@ final class HoGunCommand extends Command {
         addSyntax((s, c) -> info(s, null), ArgumentType.Literal("info"));
         addSyntax((s, c) -> info(s, c.get(who)), ArgumentType.Literal("info"), who);
         addSyntax((s, c) -> install(s), ArgumentType.Literal("install"));
+
+        ArgumentWord att = ArgumentType.Word("обвес");
+        att.setSuggestionCallback((s, c, sug) -> mod.catalog().all().forEach(d -> sug.addEntry(new SuggestionEntry(d.id()))));
+        ArgumentWord slot = ArgumentType.Word("слот");
+        slot.setSuggestionCallback((s, c, sug) -> {
+            for (Attachments.Slot sl : Attachments.Slot.values()) {
+                sug.addEntry(new SuggestionEntry(sl.key));
+            }
+        });
+        addSyntax((s, c) -> attList(s, null), ArgumentType.Literal("attach"), ArgumentType.Literal("list"));
+        addSyntax((s, c) -> attList(s, c.get(gun)), ArgumentType.Literal("attach"), ArgumentType.Literal("list"), gun);
+        addSyntax((s, c) -> attGive(s, c.get(att), null), ArgumentType.Literal("attach"), ArgumentType.Literal("give"), att);
+        addSyntax((s, c) -> attGive(s, c.get(att), c.get(who)), ArgumentType.Literal("attach"), ArgumentType.Literal("give"), att, who);
+        addSyntax((s, c) -> attSet(s, c.get(att)), ArgumentType.Literal("attach"), ArgumentType.Literal("set"), att);
+        addSyntax((s, c) -> attRemove(s, c.get(slot)), ArgumentType.Literal("attach"), ArgumentType.Literal("remove"), slot);
+        addSyntax((s, c) -> attRemove(s, c.get(slot)), ArgumentType.Literal("detach"), slot);
+        addSyntax((s, c) -> attClear(s), ArgumentType.Literal("attach"), ArgumentType.Literal("clear"));
+    }
+
+    private void attList(CommandSender s, String gunId) {
+        Attachments cat = mod.catalog();
+        Attachments.GunAtt ga = null;
+        if (gunId != null) {
+            GunDef g = mod.guns().get(gunId);
+            if (g == null) {
+                s.sendMessage(Component.text("Нет оружия «" + gunId + "»", NamedTextColor.RED));
+                return;
+            }
+            ga = mod.gunAtt(gunId);
+            s.sendMessage(Component.text(g.name() + ": слоты " + String.join(", ", ga.slots().stream().map(x -> x.ru).toList())
+                    + (ga.locked().isEmpty() ? "" : "; заперты: " + String.join(", ", ga.locked().stream().map(x -> x.ru).toList()))
+                    + (ga.adapters().isEmpty() ? "" : "; планки: " + String.join(", ", ga.adapters())), NamedTextColor.AQUA));
+        }
+        int n = 0;
+        StringBuilder line = new StringBuilder();
+        for (Attachments.Def d : cat.all()) {
+            if (ga != null) {
+                boolean ok = cat.allowed(ga, d, "");
+                for (String a : ga.adapters()) {
+                    ok |= cat.allowed(ga, d, a);
+                }
+                if (!ok) {
+                    continue;
+                }
+            }
+            n++;
+            line.append(line.isEmpty() ? "" : ", ").append(d.id()).append(d.builtin() ? "*" : "");
+        }
+        s.sendMessage(Component.text("Обвесы (" + n + ", * — встроенный): " + line, NamedTextColor.GRAY));
+    }
+
+    private void attGive(CommandSender s, String id, String who) {
+        Attachments.Def d = mod.catalog().get(id);
+        if (d == null || d.builtin()) {
+            s.sendMessage(Component.text("Нет обвеса-предмета «" + id + "» (/hogun attach list)", NamedTextColor.RED));
+            return;
+        }
+        Player p = target(s, who);
+        if (p == null) {
+            return;
+        }
+        if (!p.getInventory().addItemStack(mod.items().attachment(d, -1))) {
+            s.sendMessage(Component.text("У игрока нет места в инвентаре", NamedTextColor.RED));
+            return;
+        }
+        s.sendMessage(Component.text("Выдано: " + d.name() + " → " + p.getUsername(), NamedTextColor.GREEN));
+    }
+
+    private void attSet(CommandSender s, String id) {
+        Player p = target(s, null);
+        if (p != null) {
+            s.sendMessage(Refit.text(mod.refit().adminSet(p, id), "Обвес поставлен"));
+        }
+    }
+
+    private void attRemove(CommandSender s, String slot) {
+        Player p = target(s, null);
+        if (p == null) {
+            return;
+        }
+        Attachments.Slot sl = Attachments.Slot.of(slot);
+        if (sl == null) {
+            s.sendMessage(Component.text("Нет слота «" + slot + "»: scope, muzzle, stock, grip, laser, extended_mag", NamedTextColor.RED));
+            return;
+        }
+        s.sendMessage(Refit.text(mod.refit().detach(p, sl, true), "Обвес снят"));
+    }
+
+    private void attClear(CommandSender s) {
+        Player p = target(s, null);
+        if (p != null) {
+            s.sendMessage(Refit.text(mod.refit().adminClear(p), "Весь обвес снят"));
+        }
     }
 
     private static void help(CommandSender s) {
         s.sendMessage(Component.text("Оружие: /hogun give <оружие> [игрок] · /hogun ammo [кол-во] [игрок] [оружие] · /hogun reload [игрок] · /hogun list"
-                + " · /hogun info [игрок] · /hogun install", NamedTextColor.AQUA));
+                + " · /hogun info [игрок] · /hogun install · /hogun attach list|give|set|remove|clear · /hogun detach <слот>", NamedTextColor.AQUA));
     }
 
     private static Player target(CommandSender s, String name) {
@@ -88,6 +185,8 @@ final class HoGunCommand extends Command {
             return;
         }
         ItemStack item = mod.items().gun(g);
+        Loadout lo = GunItems.defaults(Loadout.EMPTY, mod.gunAtt(g.id()), mod.catalog());   // обвес по умолчанию
+        item = GunItems.withLore(lo.write(item), g, lo, mod.catalog());
         if (!p.getInventory().addItemStack(item)) {
             s.sendMessage(Component.text("У игрока нет места в инвентаре", NamedTextColor.RED));
             return;
@@ -211,7 +310,7 @@ final class HoGunCommand extends Command {
         }
         Assets.Report r;
         try {
-            r = mod.assets().install(mod.guns().values());
+            r = mod.assets().install(mod.guns().values(), mod.catalog(), mod.gunAtts());
         } catch (IOException | RuntimeException e) {
             s.sendMessage(Component.text("Не получилось: " + e, NamedTextColor.RED));
             return;

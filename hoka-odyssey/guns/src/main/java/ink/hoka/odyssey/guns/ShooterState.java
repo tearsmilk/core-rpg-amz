@@ -9,8 +9,20 @@ import java.util.Map;
  * перезарядки и выключении модуля — не на каждый выстрел. Без Minestom — проверяется тестами.
  */
 final class ShooterState {
-    /** Оружие в руке (null — не оружие). */
+    /** Оружие в руке с обвесом (null — не оружие): по нему стреляем, считаем разброс, магазин, перезарядку. */
     GunDef gun;
+    /** То же оружие как в config.yml (без обвеса) — по нему узнаём, то ли оружие в руке. */
+    GunDef base;
+    /** Обвес оружия в руке и что он даёт. */
+    Loadout loadout = Loadout.EMPTY;
+    AttachmentMath.Effective fx;
+    /** Открыт экран обвеса (Y): стрелять и целиться нельзя. */
+    boolean refit;
+    /** Темп действий с обвесом (не чаще 10 в секунду). */
+    final FireValidator.Bucket refitBucket = new FireValidator.Bucket();
+    /** Последний отправленный своему клиенту LOADOUT и разосланный другим GEAR (ключи — слать при смене). */
+    String loadoutSent = "";
+    String gearSent = "";
     /** Слот хотбара с этим оружием и серийный номер предмета (по нему ищем предмет, чтобы записать патроны). */
     int slot = -1;
     String serial;
@@ -137,6 +149,11 @@ final class ShooterState {
 
     void unequip() {
         gun = null;
+        base = null;
+        loadout = Loadout.EMPTY;
+        fx = null;
+        refit = false;
+        loadoutSent = "";
         slot = -1;
         serial = null;
         ammo = 0;
