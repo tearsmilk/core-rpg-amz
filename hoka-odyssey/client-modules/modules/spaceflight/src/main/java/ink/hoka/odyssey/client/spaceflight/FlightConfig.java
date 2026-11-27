@@ -14,12 +14,12 @@ import java.util.Properties;
 /** Настройки модуля: {@code <dataDir>/config.properties} (создаётся с комментариями при первом запуске). */
 final class FlightConfig {
     /** Версия файла настроек: без неё (файл от старой версии) прежние умолчания заменяются новыми. */
-    static final int VERSION = 7;
+    static final int VERSION = 8;
 
     private static final String DEFAULT = """
             # Hoka Odyssey — модуль spaceflight (невесомость в вакууме). Файл читается при загрузке модуля.
             # Версия файла (не меняйте): по ней модуль узнаёт файл от старой версии.
-            config_version = 7
+            config_version = 8
 
             # Тяга ранца, блоки/с² (W/S — вперёд/назад, A/D — вбок, пробел/shift — вверх/вниз по осям взгляда).
             # Сервер может ограничить её своей (physics.thrust.acceleration) — действует меньшая.
@@ -38,9 +38,9 @@ final class FlightConfig {
             # Скорость крена, градусы в секунду
             roll_speed = 60
             # Клавиши крена (имена Minecraft: key.keyboard.z, key.keyboard.q, key.mouse.4 …).
-            # По умолчанию Z/C: Q и E в игре уже заняты (выбросить предмет и инвентарь).
+            # По умолчанию Z/B: Q и E в игре уже заняты (выбросить предмет и инвентарь), C — у модов приближения.
             roll_left = key.keyboard.z
-            roll_right = key.keyboard.c
+            roll_right = key.keyboard.b
             # Сцепление с поверхностью при стоянии на блоке (0 — лёд, 1 — мгновенная остановка), доля за тик
             ground_grip = 0.35
             # Скорость шага по поверхности, блоки/с
@@ -51,9 +51,12 @@ final class FlightConfig {
             upright_rate = 4.0
 
             # Тяготение грани: встал ногами на любую грань блока (пол, стену, потолок) — ходишь по ней, как по земле
-            # (шаг, бег, прыжок, падение обратно — как у обычной игры). Сошёл с блока в воздух — сразу невесомость.
+            # (шаг, бег, прыжок, падение обратно — как у обычной игры). Ближе gravity_reach блоков к любому блоку
+            # невесомости нет: прыжок и шаг с края — падаешь обратно (с края астероида — на его бок).
             # Оттолкнуться и улететь — Shift+пробел или двойной пробел (второе нажатие в прыжке). Скорость толчка, блоки/с
             push_off = 5.0
+            # Радиус тяготения у блоков, блоки (0 — только касание ногами; 1–3)
+            gravity_reach = 3
             # Переход на другую грань (внутренний угол, приземление): камера и тело доворачиваются за столько
             # секунд — с мягким стартом и остановкой (0.1–3)
             surface_turn_time = 0.55
@@ -63,6 +66,11 @@ final class FlightConfig {
 
     /** Прежние умолчания (файл без config_version): такие значения считаем «не менял» и берём новые. */
     private static final Map<String, String> OLD_DEFAULTS = Map.of("thrust", "2.0", "roll_speed", "90", "max_speed", "120");
+    /**
+     * Умолчания, сменённые в версии файла: ключ → {версия, с которой новое умолчание; прежнее значение}. В файле версии
+     * ниже такое значение считаем «не менял» и берём новое (roll_right был C — C занят модами приближения).
+     */
+    private static final Map<String, String[]> CHANGED_DEFAULTS = Map.of("roll_right", new String[] {"8", "key.keyboard.c"});
 
     double thrust = 0.8;
     double maxSpeed = 20;
@@ -72,12 +80,13 @@ final class FlightConfig {
     String proneKey = "key.keyboard.r";
     double rollSpeed = 60;
     String rollLeft = "key.keyboard.z";
-    String rollRight = "key.keyboard.c";
+    String rollRight = "key.keyboard.b";
     double groundGrip = 0.35;
     double walkSpeed = 4.3;
     double jumpSpeed = 5.0;
     double uprightRate = 4.0;
     double pushOff = 5.0;
+    double gravityReach = SurfaceGravity.REACH;
     double surfaceTurnTime = SurfaceGravity.SNAP_SECONDS;
     double surfaceMoveTime = SurfaceGravity.SNAP_SECONDS;
 
@@ -112,6 +121,7 @@ final class FlightConfig {
             c.jumpSpeed = num(p, "jump_speed", c.jumpSpeed, 0, 30);
             c.uprightRate = num(p, "upright_rate", c.uprightRate, 0.1, 50);
             c.pushOff = num(p, "push_off", c.pushOff, 0, 30);
+            c.gravityReach = num(p, "gravity_reach", c.gravityReach, 0, SurfaceGravity.REACH);
             c.surfaceTurnTime = num(p, "surface_turn_time", c.surfaceTurnTime, 0.1, 3);
             c.surfaceMoveTime = num(p, "surface_move_time", c.surfaceMoveTime, 0.1, 3);
         } catch (IOException | RuntimeException e) {
@@ -140,12 +150,22 @@ final class FlightConfig {
             String was = key == null || key.equals("config_version") ? null : old.getProperty(key);
             // прежние умолчания OLD_DEFAULTS — только у файла без версии (самой первой); с версией — всё своё
             String oldDefault = old.getProperty("config_version") == null ? OLD_DEFAULTS.get(key) : null;
+            String[] changed = key == null ? null : CHANGED_DEFAULTS.get(key);
+            if (was != null && changed != null && version(old) < Integer.parseInt(changed[0])
+                    && was.trim().equals(changed[1])) {
+                was = null;                                   // прежнее умолчание — новое
+            }
             if (was != null && !was.trim().equals(oldDefault) && !same(was, oldDefault)) {
                 line = key + " = " + was.trim();
             }
             out.append(line).append('\n');
         }
         return out.substring(0, out.length() - 1);
+    }
+
+    /** Версия старого файла (без config_version — 1). */
+    private static int version(Properties p) {
+        return (int) num(p, "config_version", 1, 0, 1000);
     }
 
     /** Одно и то же число («2» и «2.0»). */

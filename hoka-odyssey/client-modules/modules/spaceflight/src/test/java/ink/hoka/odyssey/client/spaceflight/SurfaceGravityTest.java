@@ -7,6 +7,9 @@ import ink.hoka.odyssey.spacephys.Quat;
 import ink.hoka.odyssey.spacephys.Vec3d;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /** Тяготение грани: шаг как у vanilla, прыжок и падение обратно, вход, углы, взгляд в системе грани. */
 class SurfaceGravityTest {
     private static final double EPS = 1e-6;
@@ -85,166 +88,300 @@ class SurfaceGravityTest {
     }
 
     /**
-     * Мини-мир для сходов с края: пол (+Y), блоки — отрезки по X с верхом на своей высоте, рамка 0,6 шириной. Тик —
-     * как {@code SpaceflightModule.surfaceStep}: опора, своя плоскость, {@link SurfaceGravity#keeps}, шаг, прыжок,
-     * удар о верх блока.
+     * Мини-мир: блоки — рамки {minX, minY, minZ, maxX, maxY, maxZ}, игрок — рамка 0,6×1,8×0,6 (ровная, как у ядра без
+     * крючка рамки). Тик — как {@code SpaceflightModule.physics} + {@code surfaceStep}: вход из свободного полёта
+     * (касание ногами или притянуло без клавиш), толчок, внутренний угол, тяготение в воздухе ({@link SurfaceGravity#pull}),
+     * переворот на стену в прыжке, шаг и прыжок, затем движение с ударами о блоки по осям.
      */
-    private static final class Walk {
-        final double[][] blocks;                               // {x0, x1, верх}
-        double x, y;
+    private static final class Sim {
+        static final double CONTACT = 0.05, WALL_FROM = 1.0, REACH = SurfaceGravity.REACH, PUSH = 0.25;
+        static final int REENTRY = 10, ESCAPE = 40;
+        final List<double[]> blocks = new ArrayList<>();
+        final SurfaceGravity g = new SurfaceGravity();
+        double[] box;
         Vec3d v = Vec3d.ZERO;
-        double plane;
-        boolean free;
-        int ticks;
+        int reentry, escape, ticks, jumpDelay;
+        long jumpTick;
+        boolean jumpHeld, jumped, everFree, everLeft;
 
-        Walk(double x, double y, double[]... blocks) {
-            this.blocks = blocks;
-            this.x = x;
-            this.y = y;
-            plane = y;
+        Sim(double x, double y, double z) {
+            box = new double[] {x - 0.3, y, z - 0.3, x + 0.3, y + 1.8, z + 0.3};
         }
 
-        /** Верх блоков под рамкой (не выше ног), −∞ — пусто. */
-        double top() {
-            double t = Double.NEGATIVE_INFINITY;
-            for (double[] b : blocks) {
-                if (x - 0.29 < b[1] && x + 0.29 > b[0] && b[2] <= y + 1e-9) t = Math.max(t, b[2]);
-            }
-            return t;
+        Sim block(double x0, double y0, double z0, double x1, double y1, double z1) {
+            blocks.add(new double[] {x0, y0, z0, x1, y1, z1});
+            return this;
         }
 
-        /** Ещё под рамкой есть блок (хоть краем). */
-        boolean supported() {
-            return y - top() <= SurfaceGravity.SEAM;
+        /** Встать на пол (+Y), взгляд — в +X. */
+        Sim stand() {
+            g.enter(2, Quat.fromYawPitchRoll(-90, 0, 0), 0);
+            return this;
         }
 
-        void tick(Vec3d wish, boolean jump) {
-            double g = y - top();
-            boolean grounded = g <= 0.05 && v.y() <= 1e-3;
-            if (grounded) {
-                plane = y;
-            } else if (!SurfaceGravity.keeps(plane - y, g <= SurfaceGravity.STEP_DOWN ? g : Double.POSITIVE_INFINITY)) {
-                free = true;
-                v = SurfaceGravity.drift(v, UP);
-                return;
+        double x() { return (box[0] + box[3]) / 2; }
+        double y() { return box[1]; }
+
+        static boolean hit(double[] a, double[] b) {
+            return a[0] < b[3] && a[3] > b[0] && a[1] < b[4] && a[4] > b[1] && a[2] < b[5] && a[5] > b[2];
+        }
+
+        /** Касание грани i (блок со стороны −NORMALS[i]) в пределах gap; part — только эта часть рамки (или null). */
+        boolean touching(double[] part, int i, double gap) {
+            double[] b = (part == null ? box : part).clone();
+            int axis = i / 2;
+            for (int k = 0; k < 3; k++) {
+                if (k == axis) continue;
+                b[k] += 0.01;
+                b[k + 3] -= 0.01;
             }
-            Vec3d next = SurfaceGravity.step(v, UP, grounded, 0.6, wish, 0.1, false);
-            if (grounded && jump) next = SurfaceGravity.jump(next, UP, wish, false);
-            double t = top();
-            x += next.x();
-            double ny = y + next.y();
-            double t2 = top();
-            double floor = Math.max(t, t2);
-            if (ny < floor && y >= floor - 1e-9) {
-                ny = floor;
-                next = new Vec3d(next.x(), 0, next.z());
+            if (i % 2 == 0) {
+                b[axis + 3] = b[axis];
+                b[axis] -= gap;
+            } else {
+                b[axis] = b[axis + 3];
+                b[axis + 3] += gap;
             }
-            y = ny;
-            v = next;
+            for (double[] bl : blocks) {
+                if (hit(b, bl)) return true;
+            }
+            return false;
+        }
+
+        boolean touching(int i, double gap) {
+            return touching(null, i, gap);
+        }
+
+        /** Касание грани i только от WALL_FROM вдоль n от ног и выше (стена выше шага). */
+        boolean touchingHigh(int i, Vec3d n) {
+            int axis = BodyFrame.normalIndex(n) / 2;
+            double[] b = box.clone();
+            if (n.x() + n.y() + n.z() > 0) b[axis] = Math.min(b[axis + 3], b[axis] + WALL_FROM);
+            else b[axis + 3] = Math.max(b[axis], b[axis + 3] - WALL_FROM);
+            return touching(b, i, CONTACT * 2);
+        }
+
+        boolean free() {
+            return !g.active();
+        }
+
+        void tick(int fwd, boolean jump, boolean shift) {
+            Vec3d was = v;
+            if (reentry > 0) reentry--;
+            if (!g.active() && escape > 0) {
+                escape--;
+                if (!SurfaceGravity.within(box, blocks, REACH)) escape = 0;
+            }
+            if (!g.active() && reentry == 0) {
+                int f = SurfaceGravity.entry(i -> touching(i, CONTACT * 2), UP, was);
+                if (f >= 0) {
+                    g.enter(f, Quat.fromYawPitchRoll(-90, 0, 0), 0);
+                } else if (escape == 0 && fwd == 0 && !jump && !shift) {
+                    Vec3d up = SurfaceGravity.pull(null, false, box, blocks, REACH);
+                    if (up != null) g.enter(SurfaceGravity.faceOf(up), up, Quat.fromYawPitchRoll(-90, 0, 0), 0);
+                }
+            }
+            if (g.active()) surface(fwd, jump, shift);
+            else {
+                everFree = true;
+                jumpHeld = jump;
+            }
+            move();
             ticks++;
         }
+
+        private void surface(int fwd, boolean jump, boolean shift) {
+            int face = g.face();
+            Vec3d n = g.normal();
+            boolean grounded = touching(face, CONTACT) && v.dot(n) <= 1e-3;
+            boolean jumpPress = jump && !jumpHeld;
+            jumpHeld = jump;
+            if (jumpPress && (shift || (!grounded && jumped && ticks - jumpTick <= SurfaceGravity.DOUBLE_TAP))) {
+                v = SurfaceGravity.pushOff(v, g.up(), PUSH);
+                g.leave();
+                reentry = REENTRY;
+                escape = ESCAPE;
+                everLeft = true;
+                return;
+            }
+            Vec3d wish = g.wish(fwd, 0);
+            Vec3d up = n;
+            double turn = SurfaceGravity.tiltPerTick(SurfaceGravity.SNAP_SECONDS);
+            if (grounded) {
+                jumped = false;
+                Vec3d n0 = n;
+                int c = SurfaceGravity.innerCorner(face, wish, i -> touchingHigh(i, n0));
+                if (c >= 0) {
+                    g.transfer(c, g.target(), 0);
+                    n = g.normal();
+                    up = n;
+                    wish = g.wish(fwd, 0);
+                }
+                g.tilt(n, turn, 0);
+            } else {
+                up = SurfaceGravity.pull(n, touching(face, REACH), box, blocks, REACH);
+                if (up == null) {
+                    g.leave();
+                    reentry = REENTRY;
+                    everLeft = true;
+                    return;
+                }
+                int c = up == n ? SurfaceGravity.innerCorner(face, wish, i -> touching(i, CONTACT * 2)) : -1;
+                if (c < 0 && up != n) {
+                    Vec3d u = up;
+                    c = SurfaceGravity.entry(i -> touching(i, CONTACT * 2), u, v);
+                }
+                if (c >= 0 && c != face) {
+                    g.transfer(c, g.target(), 0);
+                    face = c;
+                    n = g.normal();
+                    up = n;
+                    wish = g.wish(fwd, 0);
+                    grounded = touching(face, CONTACT * 2);
+                } else {
+                    g.tilt(up, turn, 0);
+                }
+            }
+            Vec3d w = shift ? wish.scale(0.3) : wish;
+            if (!grounded) {
+                Vec3d t = BodyFrame.tangent(w, up);
+                w = t.length() < 1e-9 ? Vec3d.ZERO : t.scale(w.length() / t.length());
+            }
+            Vec3d next = SurfaceGravity.step(v, up, grounded, 0.6, w, 0.1, false);
+            if (jumpDelay > 0) jumpDelay--;
+            if (!jump) jumpDelay = 0;
+            if (grounded && jump && !shift && jumpDelay == 0) {
+                next = SurfaceGravity.jump(next, n, g.forward(), false);
+                jumpDelay = SurfaceGravity.JUMP_DELAY;
+                jumped = true;
+                jumpTick = ticks;
+            }
+            v = next;
+        }
+
+        /** Шаг с ударами о блоки: по осям Y, X, Z; упёрся — скорость по оси 0. */
+        private void move() {
+            double[] d = {v.x(), v.y(), v.z()};
+            for (int axis : new int[] {1, 0, 2}) {
+                double m = d[axis];
+                for (double[] b : blocks) {
+                    boolean overlap = true;
+                    for (int k = 0; k < 3; k++) {
+                        if (k != axis && !(box[k] < b[k + 3] - 1e-9 && box[k + 3] > b[k] + 1e-9)) overlap = false;
+                    }
+                    if (!overlap) continue;
+                    if (m > 0 && box[axis + 3] <= b[axis] + 1e-9) m = Math.min(m, b[axis] - box[axis + 3]);
+                    if (m < 0 && box[axis] >= b[axis + 3] - 1e-9) m = Math.max(m, b[axis + 3] - box[axis]);
+                }
+                box[axis] += m;
+                box[axis + 3] += m;
+                if (m != d[axis]) d[axis] = 0;
+            }
+            v = new Vec3d(d[0], d[1], d[2]);
+        }
     }
 
-    private static final Vec3d EAST = new Vec3d(1, 0, 0);
-
-    /** Обычный прыжок (и зажатый пробел — прыжок за прыжком) режим не меняет: падаешь обратно на ту же плоскость. */
+    /** Прыжки (и зажатый пробел — прыжок за прыжком, с бегом вперёд) в пределах reach в невесомость не выводят. */
     @Test
-    void jumpStaysOnTheFace() {
-        Walk w = new Walk(0, 0, new double[] {-100, 100, 0});
+    void jumpsNeverLeaveWithinReach() {
+        Sim s = new Sim(0, 0, 0).block(-100, -1, -100, 100, 0, 100).stand();
         double top = 0;
         for (int i = 0; i < 200; i++) {
-            w.tick(Vec3d.ZERO, true);
-            top = Math.max(top, w.y);
-            assertTrue(!w.free, "прыжок вывел в невесомость на тике " + i);
+            s.tick(0, true, false);
+            top = Math.max(top, s.y());
+            assertTrue(!s.free(), "прыжок вывел в невесомость на тике " + i);
         }
-        assertEquals(1.25, top, 0.03);
-        // прыжок с бегом вперёд по большой площадке — тоже на месте
-        Walk r = new Walk(-50, 0, new double[] {-100, 100, 0});
+        assertEquals(1.25, top, 0.05);
+        assertEquals(2, s.g.face());
+        Sim r = new Sim(-50, 0, 0).block(-100, -1, -100, 100, 0, 100).stand();
         for (int i = 0; i < 200; i++) {
-            r.tick(EAST, true);
-            assertTrue(!r.free);
+            r.tick(1, true, false);
+            assertTrue(!r.free());
         }
-        assertTrue(r.y >= -1e-9);
+        assertTrue(r.x() > -30 && r.y() >= -1e-9 && r.y() < 1.3);
     }
 
-    /** Сошёл с края в воздух — сразу свободный полёт: на первом же тике, когда под рамкой ничего, а не через 8. */
+    /** Сошёл с края астероида — не невесомость: тянет к ребру, обходишь его и встаёшь на боковую грань. */
     @Test
-    void stepOffEdgeIsFreeImmediately() {
-        Walk w = new Walk(-3, 0, new double[] {-100, 0, 0});
-        int offAt = -1;
-        while (!w.free && w.ticks < 200) {
-            w.tick(EAST, false);
-            if (offAt < 0 && !w.supported()) offAt = w.ticks;
+    void stepOffAsteroidEdgeCurvesOntoTheSide() {
+        Sim s = new Sim(2, 5, 2.5).block(0, 0, 0, 5, 5, 5).stand();        // астероид 5×5×5, идём в +X
+        boolean side = false;
+        for (int i = 0; i < 200 && !side; i++) {
+            s.tick(1, false, false);
+            assertTrue(!s.free(), "сход с края вывел в невесомость на тике " + i + ", x = " + s.x() + ", y = " + s.y());
+            side = s.g.face() == 0;
         }
-        assertTrue(w.free, "так и не сошёл с грани");
-        assertTrue(offAt > 0);
-        assertEquals(offAt, w.ticks, "между сходом с края и невесомостью — тики");
-        // ушёл недалеко за край (рамка целиком над пустотой — меньше шага за ним), к грани не тянет
-        assertTrue(w.x - 0.29 >= 0 && w.x - 0.29 < 0.3, "x = " + w.x);
-        assertTrue(w.v.y() >= 0, "скорость к грани не погашена: " + w.v);
-        assertTrue(w.v.x() > 0.1, "скорость вдоль грани пропала: " + w.v);
-        // то же самое — пешком через угол площадки из чистой логики: на плоскости, опоры нет — полёт
-        assertTrue(!SurfaceGravity.keeps(0, Double.POSITIVE_INFINITY));
-        assertTrue(!SurfaceGravity.keeps(0.08, Double.POSITIVE_INFINITY));
+        assertTrue(side, "не перешёл на боковую грань: грань " + s.g.face());
+        assertTrue(s.box[0] >= 5 - 1e-6 && s.box[0] < 5.3, "minX = " + s.box[0]);
+        // дальше стоит на боку: тяжесть к нему, верх доворачивается к +X
+        for (int i = 0; i < 40; i++) s.tick(0, false, false);
+        assertTrue(!s.free());
+        assertEquals(0, s.g.face());
+        assertTrue(s.g.up().x() > 0.99, "верх " + s.g.up());
+        assertTrue(s.touching(0, 0.06), "не стоит на боку: minX = " + s.box[0]);
     }
 
-    /** Стыки блоков и плит (щели в сотые доли блока) не роняют: 60 блоков пола, каждый следующий ниже на 0,02–0,04. */
+    /** Дальше reach от всех блоков — свободный полёт; ближе и без клавиш — притянуло, упал на ближайшую грань. */
     @Test
-    void seamsBetweenBlocksDoNotDrop() {
-        double[][] floor = new double[60][];
-        double h = 0;
-        for (int i = 0; i < floor.length; i++) {
-            floor[i] = new double[] {i - 30, i - 29, h};
-            h -= i % 2 == 0 ? 0.02 : 0.04;
-        }
-        Walk w = new Walk(-29.5, 0, floor);
-        for (int i = 0; i < 400 && w.x < 29; i++) {
-            w.tick(EAST, false);
-            assertTrue(!w.free, "упал на стыке у x = " + w.x);
-        }
-        assertTrue(w.x >= 29, "x = " + w.x + ", y = " + w.y);
-        assertTrue(SurfaceGravity.keeps(0, 0.03));
-        assertTrue(SurfaceGravity.keeps(0, SurfaceGravity.SEAM));
+    void freeOnlyFarFromBlocks() {
+        Sim far = new Sim(0, 4, 0).block(-10, -1, -10, 10, 0, 10);         // 4 блока над полом
+        for (int i = 0; i < 40; i++) far.tick(0, false, false);
+        assertTrue(far.free());
+        assertEquals(4, far.y(), 1e-9);
+
+        Sim near = new Sim(0, 2.5, 0).block(-10, -1, -10, 10, 0, 10);
+        for (int i = 0; i < 60; i++) near.tick(0, false, false);
+        assertTrue(!near.free());
+        assertEquals(2, near.g.face());
+        assertEquals(0, near.y(), 1e-6);
+
+        // на грани в воздухе, а блоки ушли дальше reach (подбросило) — свободный полёт
+        Sim up = new Sim(0, 0, 0).block(-10, -1, -10, 10, 0, 10).stand();
+        up.v = new Vec3d(0, 1.5, 0);
+        for (int i = 0; i < 10 && !up.everLeft; i++) up.tick(0, false, false);
+        assertTrue(up.everLeft && up.free());
+        assertTrue(up.y() > SurfaceGravity.REACH);
     }
 
-    /** Ступенька вниз до 0,6 (плита, лестница) — обычная ходьба; уступ в блок в воздух — невесомость. */
+    /** Shift+пробел и двойной пробел отталкивают: блоки не тянут, пока не улетишь дальше reach, — улетаешь. */
     @Test
-    void smallStepDownWalksButLedgeIsFree() {
-        Walk slab = new Walk(-2, 0, new double[] {-100, 0, 0}, new double[] {0, 100, -0.5});
-        for (int i = 0; i < 100; i++) {
-            slab.tick(EAST, false);
-            assertTrue(!slab.free, "ступенька в полблока вывела в невесомость");
+    void pushOffEscapes() {
+        for (boolean chord : new boolean[] {true, false}) {
+            Sim s = new Sim(0, 0, 0).block(-10, -1, -10, 10, 0, 10).stand();
+            s.tick(0, false, false);
+            if (chord) {
+                s.tick(0, true, true);
+            } else {
+                s.tick(0, true, false);                                     // прыжок
+                s.tick(0, false, false);
+                s.tick(0, true, false);                                     // второе нажатие в прыжке
+            }
+            assertTrue(s.everLeft && s.free(), chord ? "Shift+пробел" : "двойной пробел");
+            for (int i = 0; i < 60; i++) {
+                s.tick(0, false, false);
+                assertTrue(s.free(), "притянуло обратно на тике " + i + ", y = " + s.y());
+            }
+            assertTrue(s.y() > SurfaceGravity.REACH + 3, "y = " + s.y());
         }
-        assertEquals(-0.5, slab.y, 1e-9);
-        assertTrue(slab.x > 10);
-
-        Walk ledge = new Walk(-2, 0, new double[] {-100, 0, 0}, new double[] {0, 100, -1});
-        for (int i = 0; i < 100 && !ledge.free; i++) ledge.tick(EAST, false);
-        assertTrue(ledge.free, "уступ в блок — это шаг в воздух");
-        assertTrue(ledge.y > -0.1, "упал до невесомости: y = " + ledge.y);
-
-        assertTrue(SurfaceGravity.keeps(0.1, 0.45));             // падаешь на плиту ниже
-        assertTrue(!SurfaceGravity.keeps(0.1, Double.POSITIVE_INFINITY));
-        assertTrue(!SurfaceGravity.keeps(0, 0.9));               // уступ глубже 0,6
     }
 
-    /** Прыжок унёс за край: пока выше своей плоскости — режим тот же, опустился ниже неё — невесомость сразу. */
+    /** Прыжок с «вперёд» в низкую стену (в один блок) — переворот на неё; шаг в неё без прыжка — нет. */
     @Test
-    void jumpOverTheEdgeIsFreeBelowThePlane() {
-        Walk w = new Walk(-0.6, 0, new double[] {-100, 0, 0});
-        w.tick(EAST, true);
-        boolean wasAbove = false;
-        while (!w.free && w.ticks < 100) {
-            double before = w.y;
-            w.tick(EAST, false);
-            if (w.y > 0.5) wasAbove = true;
-            if (w.free) assertTrue(before < -SurfaceGravity.SEAM, "вышел, ещё не опустившись ниже плоскости: " + before);
+    void jumpForwardIntoLowWallFlips() {
+        Sim walk = new Sim(0, 0, 0.5).block(-10, -1, -10, 10, 0, 10).block(2, 0, -10, 3, 1, 10).stand();
+        for (int i = 0; i < 40; i++) walk.tick(1, false, false);
+        assertEquals(2, walk.g.face(), "шаг в низкую стену перевернул на неё");
+        assertEquals(2 - 0.3, walk.x(), 1e-6);
+
+        Sim s = new Sim(0, 0, 0.5).block(-10, -1, -10, 10, 0, 10).block(2, 0, -10, 3, 1, 10).stand();
+        boolean flipped = false;
+        for (int i = 0; i < 40 && !flipped; i++) {
+            s.tick(1, s.x() > 1.6, false);                              // упёрся в стену — прыжок
+            assertTrue(!s.free());
+            flipped = s.g.face() == 1;
         }
-        assertTrue(wasAbove);
-        assertTrue(w.free);
-        assertTrue(w.y > -0.6, "провалился ниже плоскости на " + -w.y);
-        // выше своей плоскости (в прыжке) — остаёшься, даже если под тобой пусто
-        assertTrue(SurfaceGravity.keeps(-1.0, Double.POSITIVE_INFINITY));
+        assertTrue(flipped, "не перевернуло на стену: грань " + s.g.face() + ", x = " + s.x() + ", y = " + s.y());
+        assertEquals(2, s.box[3], 0.1);
     }
 
     /** Внутренний угол (стена выше шага) — по-прежнему плавный переход на стену. */

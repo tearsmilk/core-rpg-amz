@@ -97,8 +97,13 @@ public final class SpaceflightModule implements ClientModule {
     private static final double SNAP_REACH = 0.35;
     /** Внутренний угол — только если соседняя грань выше шага: касание на этой высоте от ног и выше, блоки. */
     private static final double WALL_FROM = 1.0;
-    /** После выхода из тяготения грани (оттолкнулся, сошёл в пустоту) — столько тиков не входить снова. */
+    /** После выхода из тяготения грани (оттолкнулся, улетел от блоков) — столько тиков не входить снова. */
     private static final int REENTRY = 10;
+    /**
+     * После толчка (Shift+пробел, двойной пробел) блоки не притягивают, пока не улетишь дальше reach от всех, но не
+     * дольше стольких тиков (не улетел — притянет снова).
+     */
+    private static final int ESCAPE = 40;
     /** Шаг, которым новая рамка придвигается к грани при смене у ребра, блоки (меньше зазора касания 2·CONTACT). */
     private static final double SNAP_STEP = 0.05;
     /** Свой поворот серверу — не чаще чем раз в столько тиков (~10 раз в секунду)… */
@@ -152,8 +157,9 @@ public final class SpaceflightModule implements ClientModule {
     private final SurfaceGravity grav = new SurfaceGravity();
     /** Тиков до того, как можно снова встать на грань (после выхода). */
     private int reentry;
-    /** Тяготение грани: своя плоскость (координата ног вдоль n, где стоял последний раз), пауза прыжка, прыжок был, тик прыжка. */
-    private double plane;
+    /** Тиков толчка: блоки не притягивают (пока не улетел дальше reach или не вышло время). */
+    private int escape;
+    /** Тяготение грани: пауза прыжка, прыжок был, тик прыжка. */
     private int jumpDelay;
     private boolean jumped;
     private long jumpTick;
@@ -193,7 +199,7 @@ public final class SpaceflightModule implements ClientModule {
         this.ctx = ctx;
         cfg = FlightConfig.load(ctx.dataDir(), ctx.logger());
         rollLeftKey = key(cfg.rollLeft, "key.keyboard.z");
-        rollRightKey = key(cfg.rollRight, "key.keyboard.c");
+        rollRightKey = key(cfg.rollRight, "key.keyboard.b");
         brakeKey = key(cfg.brakeKey, "key.keyboard.x");
         proneKey = key(cfg.proneKey, "key.keyboard.r");
         bodies = new BodyPoses(ctx, new BodyPoses.Self() {
@@ -391,6 +397,7 @@ public final class SpaceflightModule implements ClientModule {
         lookOwned = true;
         grav.leave();
         reentry = 0;
+        escape = 0;
         boxSurface = -1;
         eyeCorr = Vec3d.ZERO;
         eyeGlide = null;
@@ -429,15 +436,21 @@ public final class SpaceflightModule implements ClientModule {
     }
 
     /**
-     * Ввод vanilla (крючок ядра onInput, после того как игра прочла клавиши): в невесомости — пустой, ни ходьбы, ни
-     * приседа, ни бега, ни прыжка. Движением управляет модуль, клавиши он читает сам (с учётом переназначения).
-     * Вне невесомости — не трогаем: ввод снова обычный уже со следующего тика.
+     * Ввод vanilla (крючок ядра onInput, после того как игра прочла клавиши): в невесомости — без ходьбы, бега и
+     * прыжка (движением управляет модуль, клавиши он читает сам, с учётом переназначения). Shift остаётся игре:
+     * присед, Shift+клик (поставить блок на сундук и т. п.) работают как обычно; модуль тоже читает его сам (тяга
+     * вниз, медленный шаг по грани, Shift+пробел). Ввод заменяется каждый тик одинаково — клавиши не «отпускаются»
+     * и не дёргают камеру. Вне невесомости — не трогаем: ввод снова обычный уже со следующего тика.
      */
     private void onInput(ClientInput input) {
         if (!active || input == null) return;
-        input.keyPresses = Input.EMPTY;
+        boolean shift = input.keyPresses != null && input.keyPresses.shift();
+        input.keyPresses = shift ? SHIFT_ONLY : Input.EMPTY;
         ctx.setMove(input, 0, 0);
     }
+
+    /** Ввод vanilla в невесомости с зажатым Shift: только присед. */
+    private static final Input SHIFT_ONLY = new Input(false, false, false, false, false, true, false);
 
     private void physics(Minecraft mc, LocalPlayer p) {
         Options o = mc.options;
@@ -452,10 +465,9 @@ public final class SpaceflightModule implements ClientModule {
             proneDown = physical(mc, proneKey) && !holdingGun(p);
             vert = (jump ? 1 : 0) - (shift ? 1 : 0);
         }
-        // ввод vanilla пустой (onInput): ходьбу, прыжок, присед и бег игра не видит, движением управляет модуль.
-        // Бег и присед, включённые до входа в вакуум, — снять.
+        // ввод vanilla без ходьбы, прыжка и бега (onInput; Shift — игре): движением управляет модуль.
+        // Бег, включённый до входа в вакуум, — снять.
         if (p.isSprinting()) p.setSprinting(false);
-        if (p.isShiftKeyDown()) p.setShiftKeyDown(false);
         if (proneDown && !sprintHeld) {                            // R — лечь / встать
             prone = !prone;
             p.displayClientMessage(Component.literal(prone ? "Лёжа: тело вдоль взгляда (R — встать)"
@@ -491,13 +503,26 @@ public final class SpaceflightModule implements ClientModule {
 
         Quat q = look.orientation();
         if (reentry > 0) reentry--;
+        boolean keys0 = fwd != 0 || side != 0 || vert != 0;
+        if (!grav.active() && escape > 0) {
+            // после толчка: улетел дальше reach от всех блоков (или вышло время) — снова притягивает
+            escape--;
+            if (!SurfaceGravity.within(box(p.getBoundingBox()), near(p), cfg.gravityReach)) escape = 0;
+        }
         if (!grav.active() && reentry == 0) {
             // свободный полёт: коснулся грани стороной ног (или приземлился на неё) — встать на неё
             AABB bb = p.getBoundingBox();
             double gap = p.horizontalCollision || p.verticalCollision ? CONTACT * 2 : CONTACT;
             Vec3d was = lastSet == null ? base : new Vec3d(lastSet.x, lastSet.y, lastSet.z);
             int f = SurfaceGravity.entry(i -> touching(p, bb, i, gap), q.up(), was);
-            if (f >= 0) enterSurface(p, f);
+            if (f >= 0) {
+                enterSurface(p, f);
+            } else if (escape == 0 && !keys0 && cfg.gravityReach > 0) {
+                // блок ближе reach и ранец не включён — притянуло: падаешь на ближайшую поверхность. С клавишами
+                // ранца можно пролететь мимо (и улететь после толчка), отпустил — притянет
+                Vec3d up = SurfaceGravity.pull(null, false, box(bb), near(p), cfg.gravityReach);
+                if (up != null) enterAir(p, up);
+            }
         }
         if (grav.active()) {
             clearRecoil();                                         // на грани отдача не толкает
@@ -596,11 +621,26 @@ public final class SpaceflightModule implements ClientModule {
         transferred = false;
         standSurface = f;
         standLost = 0;
-        plane = feet(p.getBoundingBox(), grav.normal());
         jumpDelay = 0;
         jumped = false;
         orientNow = true;
         return true;
+    }
+
+    /**
+     * Притянуло в воздухе (из свободного полёта, блок ближе reach): верх — против тяжести (up), своя грань — ближайшая
+     * к up по оси. Рамка прежняя — сменится, когда встанешь на грань.
+     */
+    private void enterAir(LocalPlayer p, Vec3d up) {
+        int f = SurfaceGravity.faceOf(up);
+        grav.enter(f, up, look.orientation(), System.nanoTime());
+        transitions++;
+        transferred = false;
+        standSurface = f;
+        standLost = 0;
+        jumpDelay = 0;
+        jumped = false;
+        orientNow = true;
     }
 
     /** Сойти с грани в свободный полёт (рамка вернётся обычной, как только для неё будет место). */
@@ -608,12 +648,15 @@ public final class SpaceflightModule implements ClientModule {
         grav.leave();
         reentry = REENTRY;
         orientNow = true;
+        clearNear();
     }
 
     /**
      * Тик на грани: как vanilla на земле, только «вниз» — к грани. Шаг и трение вдоль грани, тяжесть и прыжок вдоль
-     * её нормали; внутренний угол — переход на соседнюю грань; Shift+пробел или двойной пробел — оттолкнуться; сошёл
-     * с блока в воздух (или прыжок унёс за край) — сразу свободный полёт ({@link SurfaceGravity#keeps}).
+     * верха; внутренний угол и прыжок с «вперёд» в стену — переход на неё; в воздухе тянет к своей грани, а без опоры
+     * под ногами — к ближайшему блоку ({@link SurfaceGravity#pull}), верх плавно доворачивается, коснулся грани, к
+     * которой тянет, — встал на неё; дальше reach от всех блоков — свободный полёт; Shift+пробел или двойной пробел —
+     * оттолкнуться.
      *
      * @param v скорость после шага (с ударами о блоки), блоки/тик
      */
@@ -625,14 +668,17 @@ public final class SpaceflightModule implements ClientModule {
         boolean grounded = touching(p, bb, face, CONTACT) && v.dot(n) <= 1e-3;
         boolean jumpPress = jump && !jumpHeld;
         jumpHeld = jump;
-        // оттолкнуться: Shift+пробел или второе нажатие пробела в прыжке
+        // оттолкнуться: Shift+пробел или второе нажатие пробела в прыжке — блоки не тянут, пока не улетишь от них
         if (jumpPress && (shift || (!grounded && jumped && ticks - jumpTick <= SurfaceGravity.DOUBLE_TAP))) {
-            Vec3d out = SurfaceGravity.pushOff(v, n, Units.toPerTick(cfg.pushOff));
+            Vec3d out = SurfaceGravity.pushOff(v, grav.up(), Units.toPerTick(cfg.pushOff));
             leaveSurface();
+            escape = ESCAPE;
             setVelocity(p, toVec3(Thrust.capSpeed(out, Units.toPerTick(maxSpeed()))));
             return;
         }
         Vec3d wish = grav.wish(fwd, side);
+        Vec3d up = n;                                              // против тяжести
+        double turn = SurfaceGravity.tiltPerTick(cfg.surfaceTurnTime);
         if (grounded) {
             jumped = false;
             // внутренний угол: шагнул в стену выше шага — встать на неё
@@ -644,28 +690,51 @@ public final class SpaceflightModule implements ClientModule {
                 transferred = true;
                 face = c;
                 n = grav.normal();
+                up = n;
                 wish = grav.wish(fwd, side);
             }
-            plane = feet(p.getBoundingBox(), n);
+            grav.tilt(n, turn, now);                               // приземлился, ещё не довернувшись, — к грани
         } else {
-            // опоры нет: прыжок (выше своей плоскости) и ступенька вниз (земля не ниже STEP_DOWN) — остаёмся;
-            // сошёл с блока в воздух или прыжок унёс за край и опустился ниже плоскости — сразу свободный полёт
-            AABB b = p.getBoundingBox();
-            double below = plane - feet(b, n);
-            if (!SurfaceGravity.keeps(below, ground(p, b, face, SurfaceGravity.STEP_DOWN))) {
+            // в воздухе: к своей грани, если под ногами в пределах reach есть блок, иначе — к ближайшему блоку;
+            // блоков ближе reach нет — свободный полёт
+            List<double[]> blocks = near(p);
+            up = SurfaceGravity.pull(n, touching(p, bb, face, cfg.gravityReach), box(bb), blocks, cfg.gravityReach);
+            if (up == null) {
                 leaveSurface();
-                setVelocity(p, toVec3(SurfaceGravity.drift(v, n)));
+                setVelocity(p, toVec3(v));
                 return;
             }
+            Vec3d was = lastSet == null ? v : new Vec3d(lastSet.x, lastSet.y, lastSet.z);
+            double gap = p.horizontalCollision || p.verticalCollision ? CONTACT * 2 : CONTACT;
+            // прыжок с «вперёд» в стену (любой высоты, хоть в блок) — переворот на неё (внутренний угол в воздухе)
+            int c = up == n ? SurfaceGravity.innerCorner(face, wish, i -> touching(p, bb, i, gap)) : -1;
+            // тянет к ребру: коснулся грани, к которой тянет (или в которую летишь), — встать на неё
+            if (c < 0 && up != n) {
+                Vec3d u = up;
+                c = SurfaceGravity.entry(i -> touching(p, bb, i, gap), u, was);
+            }
+            if (c >= 0 && c != face && switchBox(p, c, true)) {
+                grav.transfer(c, look.orientation(), now);
+                transitions++;
+                transferred = true;
+                face = c;
+                n = grav.normal();
+                up = n;
+                wish = grav.wish(fwd, side);
+                grounded = touching(p, p.getBoundingBox(), face, CONTACT * 2);
+            } else {
+                grav.tilt(up, turn, now);
+            }
         }
-        if (boxApi && boxSurface != (SurfaceBox.turned(face) ? face : -1)) switchBox(p, face, true);
+        if (boxApi && grounded && boxSurface != (SurfaceBox.turned(face) ? face : -1)) switchBox(p, face, true);
         standSurface = face;
         standLost = 0;
 
         boolean sprint = mc.screen == null && down(mc, mc.options.keySprint) && fwd > 0 && !shift;
         double speed = p.getAttributeValue(Attributes.MOVEMENT_SPEED);
         Vec3d w = shift ? wish.scale(SNEAK) : wish;
-        Vec3d next = SurfaceGravity.step(v, n, grounded, friction(p, n), w, speed, sprint);
+        if (!grounded) w = tangent(w, up);
+        Vec3d next = SurfaceGravity.step(v, up, grounded, friction(p, n), w, speed, sprint);
         if (jumpDelay > 0) jumpDelay--;
         if (!jump) jumpDelay = 0;
         if (grounded && jump && !shift && jumpDelay == 0) {
@@ -675,6 +744,78 @@ public final class SpaceflightModule implements ClientModule {
             jumpTick = ticks;
         }
         setVelocity(p, toVec3(Thrust.capSpeed(next, Units.toPerTick(maxSpeed()))));
+    }
+
+    /** Составляющая a поперёк единичного n (единичная, если a была единичной и не вдоль n; иначе — как есть). */
+    private static Vec3d tangent(Vec3d a, Vec3d n) {
+        Vec3d t = BodyFrame.tangent(a, n);
+        double l = t.length();
+        return l < 1e-9 ? Vec3d.ZERO : t.scale(a.length() / l);
+    }
+
+    // ---------------------------------------------------------------- блоки рядом (тяготение у блоков)
+
+    /** Рамки блоков ближе reach к игроку — на этот тик (null — ещё не искали). */
+    private List<double[]> nearBlocks;
+    private long nearTick = -1;
+    /** Рамки столкновений по месту блока: блок тот же (тот же BlockState) — рамки те же, без пересчёта формы. */
+    private final java.util.HashMap<Long, Object[]> shapes = new java.util.HashMap<>();
+
+    private void clearNear() {
+        nearBlocks = null;
+        nearTick = -1;
+    }
+
+    /**
+     * Рамки столкновений блоков (мир) не дальше reach от рамки игрока — раз в тик. Перебор мест блоков в рамке,
+     * расширенной на reach (~7×8×7), формы — из кэша по месту блока (пока там тот же блок).
+     */
+    private List<double[]> near(LocalPlayer p) {
+        if (nearBlocks != null && nearTick == ticks) return nearBlocks;
+        List<double[]> out = new ArrayList<>();
+        double r = cfg.gravityReach;
+        AABB b = p.getBoundingBox();
+        double[] me = box(b);
+        var level = p.level();
+        if (shapes.size() > 8192) shapes.clear();
+        BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
+        int x0 = Mth.floor(b.minX - r), x1 = Mth.floor(b.maxX + r), y0 = Mth.floor(b.minY - r),
+                y1 = Mth.floor(b.maxY + r), z0 = Mth.floor(b.minZ - r), z1 = Mth.floor(b.maxZ + r);
+        double r2 = r * r;
+        for (int x = x0; x <= x1; x++) {
+            for (int y = y0; y <= y1; y++) {
+                for (int z = z0; z <= z1; z++) {
+                    at.set(x, y, z);
+                    var st = level.getBlockState(at);
+                    if (st.isAir()) continue;
+                    long key = at.asLong();
+                    Object[] c = shapes.get(key);
+                    double[][] boxes;
+                    if (c != null && c[0] == st) {
+                        boxes = (double[][]) c[1];
+                    } else {
+                        List<AABB> parts = st.getCollisionShape(level, at).toAabbs();
+                        boxes = new double[parts.size()][];
+                        for (int i = 0; i < boxes.length; i++) {
+                            AABB a = parts.get(i);
+                            boxes[i] = new double[] {a.minX + x, a.minY + y, a.minZ + z, a.maxX + x, a.maxY + y,
+                                a.maxZ + z};
+                        }
+                        shapes.put(key, new Object[] {st, boxes});
+                    }
+                    for (double[] bx : boxes) {
+                        if (SurfaceGravity.gap2(me, bx) <= r2) out.add(bx);
+                    }
+                }
+            }
+        }
+        nearBlocks = out;
+        nearTick = ticks;
+        return out;
+    }
+
+    private static double[] box(AABB b) {
+        return new double[] {b.minX, b.minY, b.minZ, b.maxX, b.maxY, b.maxZ};
     }
 
     /** Присед: шаг медленнее (как у vanilla). */
@@ -692,27 +833,6 @@ public final class SpaceflightModule implements ClientModule {
                 c.z - n.z() * (half + 0.5));
         float f = p.level().getBlockState(at).getBlock().getFriction();
         return f > 0 && f <= 1.2f ? f : 0.6;
-    }
-
-    /** Координата ног вдоль n (сторона рамки к −n), блоки. */
-    private static double feet(AABB b, Vec3d n) {
-        return SurfaceGravity.feet(new double[] {b.minX, b.minY, b.minZ}, new double[] {b.maxX, b.maxY, b.maxZ}, n);
-    }
-
-    /**
-     * Расстояние от ног до блока под рамкой вдоль −NORMALS[face] (проба — сечение рамки, чуть уже), блоки, с точностью
-     * ~0,005; дальше max — {@link Double#POSITIVE_INFINITY}.
-     */
-    private static double ground(LocalPlayer p, AABB b, int face, double max) {
-        if (touching(p, b, face, 0.005)) return 0;
-        if (!touching(p, b, face, max)) return Double.POSITIVE_INFINITY;
-        double lo = 0.005, hi = max;
-        while (hi - lo > 0.005) {
-            double mid = (lo + hi) / 2;
-            if (touching(p, b, face, mid)) hi = mid;
-            else lo = mid;
-        }
-        return hi;
     }
 
     /** Касание грани i только на уровне головы: от WALL_FROM вдоль n от ног и выше (стена выше шага). */
@@ -925,7 +1045,8 @@ public final class SpaceflightModule implements ClientModule {
         boolean now = orientNow;
         orientNow = false;
         if (!now && ticks % ORIENT_EVERY != 0) return;
-        Quat q = BodyFrame.base(look.orientation(), standSurface);
+        // на грани — тело по системе грани (в воздухе у ребра верх уже доворачивается против тяжести)
+        Quat q = grav.active() ? grav.bodyTarget() : BodyFrame.base(look.orientation(), standSurface);
         int flags = BodyFrame.flags(true, prone, standSurface, boxSurface >= 0)
                 | (grav.active() ? BodyFrame.FLAG_GRAVITY : 0);
         boolean changed = flags != sentFlags || sentBody == null

@@ -6,25 +6,32 @@ import ink.hoka.odyssey.spacephys.Vec3d;
 import java.util.function.IntPredicate;
 
 /**
- * Тяготение поверхности в вакууме (без Minecraft — проверяется тестами): встал ногами на любую грань блока — пол,
- * стену, потолок — и она тянет к себе как обычная земля. Отдельный режим рядом со свободным полётом.
+ * Тяготение у блоков в вакууме (без Minecraft — проверяется тестами): ближе {@link #REACH} блоков (настройка
+ * gravity_reach) к любому блоку невесомости нет — тянет к поверхности с силой обычной земли. Ходишь по любой грани
+ * блока — полу, стене, потолку — как по земле.
  * <ul>
- *   <li><b>вход</b> — касание грани стороной ног: нормаль грани ближе 60° к верху камеры, или приземлился на неё
- *       (летишь к ней) не вниз головой ({@link #entry});</li>
+ *   <li><b>вход</b> — касание грани стороной ног (нормаль ближе 60° к верху камеры) или приземление на неё
+ *       ({@link #entry}); из свободного полёта без клавиш ранца — сразу, как только блок ближе reach (притянуло:
+ *       падаешь на ближайшую поверхность);</li>
+ *   <li><b>куда тянет</b> ({@link #pull}) — к своей грани (−n), пока под рамкой вдоль −n есть блок в пределах reach
+ *       (прыжок, ступенька, уступ — падаешь обратно или ниже, как на земле); опоры вдоль −n нет (сошёл с края
+ *       астероида) — к ближайшей точке блоков: обходишь ребро и падаешь на боковую грань. Верх камеры и тела в
+ *       воздухе плавно доворачивается против тяжести ({@link #tilt}); коснулся грани, к которой тянет, — встал на неё;</li>
  *   <li><b>грань заперта</b> — поворот головы её не меняет. Сменить — шагнуть в соседнюю (внутренний угол, стена
- *       выше шага); камера и тело переезжают плавно. Через внешнее ребро на боковую грань не переходишь;</li>
- *   <li><b>движение</b> — как vanilla на земле, только «вниз» = −n: тяжесть 0,08 блока/тик² и сопротивление 0,98
- *       вдоль n, разгон шага и трение блока вдоль грани, прыжок 0,42 вдоль n ({@link #step});</li>
- *   <li><b>взгляд</b> — как на земле, но в системе грани: курс вокруг n, наклон от грани ±90°, без крена
+ *       выше шага), прыгнуть в стену с «вперёд» ({@link #innerCorner} в воздухе — переворот на стену) или
+ *       обойти внешнее ребро (см. выше); камера и тело переезжают плавно;</li>
+ *   <li><b>движение</b> — как vanilla на земле, только «вниз» — против верха: тяжесть 0,08 блока/тик² и
+ *       сопротивление 0,98 вдоль него, разгон шага и трение блока вдоль грани, прыжок 0,42 ({@link #step});</li>
+ *   <li><b>взгляд</b> — как на земле, но в системе грани: курс вокруг верха, наклон ±90°, без крена
  *       ({@link #target}); при входе и смене грани камера доворачивается плавно ({@link #shown});</li>
- *   <li><b>прыжок</b> — обычный прыжок режим не меняет: поднялся и упал обратно на ту же плоскость;</li>
- *   <li><b>выход</b> — Shift+пробел или двойной пробел (второе нажатие в прыжке) отталкивают от грани; сошёл с блока
- *       в воздух (под рамкой нет опоры, а ниже своей плоскости земли нет и в {@link #STEP_DOWN}) — сразу свободный
- *       полёт; прыжок унёс за край — свободный полёт, как только опустился ниже своей плоскости ({@link #keeps}).</li>
+ *   <li><b>выход</b> — Shift+пробел или двойной пробел (второе нажатие в прыжке) отталкивают от грани, притяжение
+ *       выключено, пока не улетишь дальше reach от всех блоков (или ~2 с); ушёл дальше reach от всех блоков — свободный
+ *       полёт.</li>
  * </ul>
- * Система грани {@code frame}: поворот, переводящий «свою» систему (верх +Y = нормаль грани) в мир; курс и наклон
- * взгляда — в ней (как yaw/pitch Minecraft). При смене грани система поворачивается кратчайшим поворотом n → n',
- * курс и наклон остаются — шагнул с пола на стену, и взгляд «вперёд по стене», а не в небо.
+ * Система грани {@code frame}: поворот, переводящий «свою» систему (верх +Y) в мир; курс и наклон взгляда — в ней
+ * (как yaw/pitch Minecraft). Стоя — верх = нормаль грани; в воздухе у ребра верх идёт за направлением тяжести. При
+ * смене грани система поворачивается кратчайшим поворотом, курс и наклон остаются — шагнул с пола на стену, и взгляд
+ * «вперёд по стене», а не в небо.
  */
 final class SurfaceGravity {
     /** Тяжесть vanilla, блоки/тик². */
@@ -48,8 +55,8 @@ final class SurfaceGravity {
     static final int DOUBLE_TAP = 7;
     /** Опора под ногами: блок ближе этого вдоль −n (стыки блоков и плит, округление позиции), блоки. */
     static final double SEAM = 0.06;
-    /** Ступенька вниз (плита, ступень лестницы): земля не ниже стольких блоков от своей плоскости — падаешь на неё. */
-    static final double STEP_DOWN = 0.6;
+    /** Невесомости нет, пока блок ближе стольких блоков к рамке (по умолчанию; настройка gravity_reach). */
+    static final double REACH = 3.0;
     /** «Ногами к грани»: нормаль ближе к верху камеры, чем на 60°. */
     static final double FEET_DOT = 0.5;
     /** Приземление: летишь к грани быстрее этого (блоки/тик) и не вниз головой. */
@@ -69,6 +76,11 @@ final class SurfaceGravity {
     private long blendStart;
     /** Длительность доворота, с (настройка). */
     private double turnSeconds = SNAP_SECONDS;
+    /** Доворот верха в воздухе ({@link #tilt}): поворот (мир) от системы к тому, что было видно, гаснет за тик. */
+    private Quat lag;
+    private long lagStart;
+    /** Тик, нс: доворот за тик ({@link #tilt}) камера проходит плавно за это время. */
+    static final long TICK_NS = 50_000_000L;
 
     /** Длительность доворота камеры и тела при входе и смене грани, с. */
     void turnSeconds(double s) { turnSeconds = Math.max(0.01, s); }
@@ -80,28 +92,66 @@ final class SurfaceGravity {
 
     Vec3d normal() { return BodyFrame.normal(face); }
 
+    /** Верх системы (мир): стоя — нормаль грани, в воздухе у ребра — против тяжести (с доворотом). */
+    Vec3d up() { return frame.up(); }
+
     /**
      * Встать на грань: система грани — верх по нормали, «вперёд» — взгляд вдоль грани (смотришь прямо в неё —
      * по верху камеры), наклон — угол взгляда к грани. Направление взгляда не меняется, крен уходит плавно.
      */
     void enter(int f, Quat look, long now) {
-        Vec3d n = BodyFrame.normal(f);
-        if (n == null) return;
+        enter(f, BodyFrame.normal(f), look, now);
+    }
+
+    /**
+     * Войти в воздухе (притянуло из свободного полёта): верх системы — up (против тяжести, не обязательно по оси),
+     * своя грань — f (ближайшая к up по оси: на неё и упадёшь, если под ногами окажется блок).
+     */
+    void enter(int f, Vec3d up, Quat look, long now) {
+        if (BodyFrame.normal(f) == null || up == null || up.lengthSquared() < 1e-12) return;
+        Vec3d n = up.normalize();
         face = f;
         frame = BodyFrame.onSurface(look, n);
         yaw = 0;
         pitch = (float) Math.toDegrees(Math.asin(FreeLook.clamp(-look.forward().dot(n), -1, 1)));
+        lag = null;
         startBlend(look, now);
     }
 
     /** Перейти на соседнюю грань: система поворачивается кратчайшим поворотом n → n', курс и наклон те же. */
     void transfer(int to, Quat shown, long now) {
-        Vec3d n0 = normal(), n1 = BodyFrame.normal(to);
-        if (n0 == null || n1 == null || to == face) return;
-        Quat r = between(n0, n1);
+        Vec3d n1 = BodyFrame.normal(to);
+        if (face < 0 || n1 == null) return;
+        Quat r = between(up(), n1);                                // в воздухе верх мог уйти от своей грани
+        if (to == face && FreeLook.angle(r, Quat.IDENTITY) < 1e-9) return;
         frame = r.mul(frame).normalize();
         face = to;
+        lag = null;
         startBlend(shown, now);
+    }
+
+    /**
+     * Довернуть верх системы к up (в воздухе — против тяжести; стоя — к нормали грани), не больше чем на maxRad за
+     * вызов (раз в тик). Курс и наклон взгляда в системе те же — взгляд поворачивается вместе с ней. Камера и тело
+     * проходят этот поворот плавно за тик ({@link #TICK_NS}), без рывков 20 раз в секунду.
+     *
+     * @return угол, на который ещё осталось довернуть, рад
+     */
+    double tilt(Vec3d up, double maxRad, long now) {
+        if (face < 0 || up == null || up.lengthSquared() < 1e-12) return 0;
+        Vec3d u0 = up(), u1 = up.normalize();
+        double angle = Math.acos(FreeLook.clamp(u0.dot(u1), -1, 1));
+        if (angle < 1e-6) return 0;
+        Quat r = between(u0, u1);
+        if (angle > maxRad) r = FreeLook.slerp(Quat.IDENTITY, r, maxRad / angle);
+        Quat seen = shown(now);
+        frame = r.mul(frame).normalize();
+        // то, что видно, не скачет: остаток поворота (мир) от новой системы (с доворотом грани) к прежней картинке
+        Quat turn = turning(now);
+        Quat t = turn == null ? target() : turn.mul(target()).normalize();
+        lag = seen.mul(t.conjugate()).normalize();
+        lagStart = now;
+        return Math.max(0, angle - maxRad);
     }
 
     /** Повернуть вектор (мир) тем же поворотом, что и систему при переходе с грани from на to. */
@@ -114,6 +164,7 @@ final class SurfaceGravity {
     void leave() {
         face = -1;
         blend = null;
+        lag = null;
     }
 
     /** Мышь: курс вокруг нормали, наклон от грани (±90°). */
@@ -129,9 +180,7 @@ final class SurfaceGravity {
 
     /** Взгляд, который видно сейчас: после входа и смены грани — плавно от прежнего, мышь — без задержки. */
     Quat shown(long now) {
-        Quat t = target();
-        Quat r = turning(now);
-        return r == null ? t : r.mul(t).normalize();
+        return lagged(now, target());
     }
 
     /**
@@ -139,9 +188,24 @@ final class SurfaceGravity {
      * повёрнуто тем же поворотом, что и камера, — тело и камера переезжают на новую грань вместе.
      */
     Quat body(long now) {
-        Quat b = BodyFrame.onSurface(target(), normal());
+        return lagged(now, bodyTarget());
+    }
+
+    /** Тело без перехода: верх — верх системы, лицом по взгляду (его и шлём серверу — так видят другие). */
+    Quat bodyTarget() {
+        return BodyFrame.onSurface(target(), up());
+    }
+
+    /** Поворот q (мир) с остатками доворотов: смены грани (плавно) и доворота верха в воздухе (за тик). */
+    private Quat lagged(long now, Quat q) {
         Quat r = turning(now);
-        return r == null ? b : r.mul(b).normalize();
+        Quat out = r == null ? q : r.mul(q).normalize();
+        if (lag != null) {
+            double s = (now - lagStart) / (double) TICK_NS;
+            if (s >= 1 || s < 0) lag = null;
+            else out = FreeLook.slerp(lag, Quat.IDENTITY, s).mul(out).normalize();
+        }
+        return out;
     }
 
     /** Остаток доворота (мир): от показанного к целевому, плавно (smootherstep) к нулю; null — доворота нет. */
@@ -280,27 +344,77 @@ final class SurfaceGravity {
     }
 
     /**
-     * Остаться ли на грани, когда под ногами нет опоры (сошёл с блока, прыжок, ступенька). Да — если опора в пределах
-     * стыка ({@link #SEAM}), или ты выше своей плоскости (прыжок, подъём на ступень — упадёшь обратно), или ниже
-     * своей плоскости есть земля не дальше {@link #STEP_DOWN} (ступенька вниз). Иначе — сразу свободный полёт: сошёл
-     * с ребра в воздух или прыжок унёс за край и ты опустился ниже плоскости, с которой прыгнул.
+     * Куда тянет в воздухе: верх (против тяжести, единичный) или null — блоков ближе reach нет, невесомость.
+     * Под рамкой вдоль −n своей грани есть блок в пределах reach (support) — к своей грани, как на земле (прыжок,
+     * ступенька, уступ); нет — от ближайшей точки блоков к середине рамки: сошёл с края — тянет к ребру, обходишь
+     * его и падаешь на боковую грань.
      *
-     * @param below  на сколько ноги ниже своей плоскости (где стоял последний раз), блоки; &lt;0 — выше неё
-     * @param ground расстояние от ног до земли вдоль −n, блоки ({@link Double#POSITIVE_INFINITY} — не нашли)
+     * @param n       нормаль своей грани
+     * @param support под рамкой вдоль −n в пределах reach есть блок
+     * @param box     рамка игрока {minX, minY, minZ, maxX, maxY, maxZ}
+     * @param blocks  рамки блоков рядом (те же 6 чисел)
      */
-    static boolean keeps(double below, double ground) {
-        if (ground <= SEAM) return true;
-        if (below < -SEAM) return true;
-        return below + ground <= STEP_DOWN + 1e-9;
+    static Vec3d pull(Vec3d n, boolean support, double[] box, Iterable<double[]> blocks, double reach) {
+        if (!within(box, blocks, reach)) return null;
+        if (support && n != null) return n;
+        Vec3d c = new Vec3d((box[0] + box[3]) / 2, (box[1] + box[4]) / 2, (box[2] + box[5]) / 2);
+        Vec3d up = nearestUp(c, blocks);
+        return up != null ? up : n;
     }
 
-    /**
-     * Скорость при выходе в свободный полёт сходом с грани: вдоль грани — как была, к грани (−n, набранная тяжестью
-     * грани) — убрать: в вакууме тяжести нет, игрок просто дрейфует.
-     */
-    static Vec3d drift(Vec3d v, Vec3d n) {
-        double vn = v.dot(n);
-        return vn < 0 ? v.sub(n.scale(vn)) : v;
+    /** Есть ли блок не дальше reach от рамки (расстояние между рамками). */
+    static boolean within(double[] box, Iterable<double[]> blocks, double reach) {
+        double r2 = reach * reach;
+        for (double[] b : blocks) {
+            if (gap2(box, b) <= r2) return true;
+        }
+        return false;
+    }
+
+    /** Квадрат расстояния между рамками (0 — касаются или пересекаются). */
+    static double gap2(double[] a, double[] b) {
+        double s = 0;
+        for (int k = 0; k < 3; k++) {
+            double d = Math.max(0, Math.max(b[k] - a[k + 3], a[k] - b[k + 3]));
+            s += d * d;
+        }
+        return s;
+    }
+
+    /** От ближайшей к точке c точки блоков — к c (единичный); null — блоков нет или c внутри блока. */
+    static Vec3d nearestUp(Vec3d c, Iterable<double[]> blocks) {
+        double best = Double.POSITIVE_INFINITY;
+        Vec3d up = null;
+        for (double[] b : blocks) {
+            double px = FreeLook.clamp(c.x(), b[0], b[3]), py = FreeLook.clamp(c.y(), b[1], b[4]),
+                    pz = FreeLook.clamp(c.z(), b[2], b[5]);
+            Vec3d d = new Vec3d(c.x() - px, c.y() - py, c.z() - pz);
+            double l = d.lengthSquared();
+            if (l > 1e-12 && l < best) {
+                best = l;
+                up = d;
+            }
+        }
+        return up == null ? null : up.normalize();
+    }
+
+    /** Грань (0..5) по оси, ближайшая к направлению up. */
+    static int faceOf(Vec3d up) {
+        int best = 2;
+        double bd = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < BodyFrame.NORMALS.length; i++) {
+            double d = BodyFrame.NORMALS[i].dot(up);
+            if (d > bd) {
+                bd = d;
+                best = i;
+            }
+        }
+        return best;
+    }
+
+    /** Наибольший доворот верха в воздухе за тик, рад: 90° — за время доворота камеры (turnSeconds). */
+    static double tiltPerTick(double turnSeconds) {
+        return Math.PI / 2 / Math.max(1, turnSeconds * 20);
     }
 
     /** Координата ног вдоль n (сторона рамки к −n), блоки: рамка [lo, hi] по осям X, Y, Z. */

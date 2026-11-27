@@ -123,10 +123,11 @@ public final class GravityModule extends OdysseyModule {
     /** Сколько тиков после касания ещё действует запас (оттолкнулся и отлетел). */
     private static final int SURFACE_HOLD = 20;
     /**
-     * Тяготение грани: запас surface-walk, пока блок ближе этого (блоков) — прыжок vanilla поднимает на ~1,25 от
-     * грани, сервер отстаёт; дальше — обычная проверка касания (и SURFACE_HOLD после неё).
+     * Тяготение грани: запас surface-walk, пока блок ближе этого (блоков): у клиента невесомости нет ближе 3 блоков
+     * к любому блоку (gravity_reach), +1 — запас на отставание сервера; дальше — обычная проверка касания (и
+     * SURFACE_HOLD после неё).
      */
-    private static final double GRAVITY_PROBE = 2.0;
+    private static final double GRAVITY_PROBE = 4.0;
     /** Скорость в action bar — раз в столько тиков. */
     private static final int READOUT_TICKS = 10;
     /** Гравитация игрока по умолчанию в Minecraft, блоков/тик². */
