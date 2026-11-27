@@ -84,12 +84,191 @@ class SurfaceGravityTest {
         assertEquals(-1, SurfaceGravity.innerCorner(2, new Vec3d(0, 0, 1), i -> i == 1));   // идём вдоль неё
     }
 
+    /**
+     * Мини-мир для сходов с края: пол (+Y), блоки — отрезки по X с верхом на своей высоте, рамка 0,6 шириной. Тик —
+     * как {@code SpaceflightModule.surfaceStep}: опора, своя плоскость, {@link SurfaceGravity#keeps}, шаг, прыжок,
+     * удар о верх блока.
+     */
+    private static final class Walk {
+        final double[][] blocks;                               // {x0, x1, верх}
+        double x, y;
+        Vec3d v = Vec3d.ZERO;
+        double plane;
+        boolean free;
+        int ticks;
+
+        Walk(double x, double y, double[]... blocks) {
+            this.blocks = blocks;
+            this.x = x;
+            this.y = y;
+            plane = y;
+        }
+
+        /** Верх блоков под рамкой (не выше ног), −∞ — пусто. */
+        double top() {
+            double t = Double.NEGATIVE_INFINITY;
+            for (double[] b : blocks) {
+                if (x - 0.29 < b[1] && x + 0.29 > b[0] && b[2] <= y + 1e-9) t = Math.max(t, b[2]);
+            }
+            return t;
+        }
+
+        /** Ещё под рамкой есть блок (хоть краем). */
+        boolean supported() {
+            return y - top() <= SurfaceGravity.SEAM;
+        }
+
+        void tick(Vec3d wish, boolean jump) {
+            double g = y - top();
+            boolean grounded = g <= 0.05 && v.y() <= 1e-3;
+            if (grounded) {
+                plane = y;
+            } else if (!SurfaceGravity.keeps(plane - y, g <= SurfaceGravity.STEP_DOWN ? g : Double.POSITIVE_INFINITY)) {
+                free = true;
+                v = SurfaceGravity.drift(v, UP);
+                return;
+            }
+            Vec3d next = SurfaceGravity.step(v, UP, grounded, 0.6, wish, 0.1, false);
+            if (grounded && jump) next = SurfaceGravity.jump(next, UP, wish, false);
+            double t = top();
+            x += next.x();
+            double ny = y + next.y();
+            double t2 = top();
+            double floor = Math.max(t, t2);
+            if (ny < floor && y >= floor - 1e-9) {
+                ny = floor;
+                next = new Vec3d(next.x(), 0, next.z());
+            }
+            y = ny;
+            v = next;
+            ticks++;
+        }
+    }
+
+    private static final Vec3d EAST = new Vec3d(1, 0, 0);
+
+    /** Обычный прыжок (и зажатый пробел — прыжок за прыжком) режим не меняет: падаешь обратно на ту же плоскость. */
     @Test
-    void outerEdgeIsTheSideOfTheBlockWeLeft() {
-        // шли по полу в +X и сошли с края: боковая грань блока — +X (0)
-        assertEquals(0, SurfaceGravity.outerEdge(2, new Vec3d(0.2, 0, 0), i -> i == 0));
-        // касание грани, к которой идём (−X) — это не ребро, с которого сошли
-        assertEquals(-1, SurfaceGravity.outerEdge(2, new Vec3d(0.2, 0, 0), i -> i == 1));
+    void jumpStaysOnTheFace() {
+        Walk w = new Walk(0, 0, new double[] {-100, 100, 0});
+        double top = 0;
+        for (int i = 0; i < 200; i++) {
+            w.tick(Vec3d.ZERO, true);
+            top = Math.max(top, w.y);
+            assertTrue(!w.free, "прыжок вывел в невесомость на тике " + i);
+        }
+        assertEquals(1.25, top, 0.03);
+        // прыжок с бегом вперёд по большой площадке — тоже на месте
+        Walk r = new Walk(-50, 0, new double[] {-100, 100, 0});
+        for (int i = 0; i < 200; i++) {
+            r.tick(EAST, true);
+            assertTrue(!r.free);
+        }
+        assertTrue(r.y >= -1e-9);
+    }
+
+    /** Сошёл с края в воздух — сразу свободный полёт: на первом же тике, когда под рамкой ничего, а не через 8. */
+    @Test
+    void stepOffEdgeIsFreeImmediately() {
+        Walk w = new Walk(-3, 0, new double[] {-100, 0, 0});
+        int offAt = -1;
+        while (!w.free && w.ticks < 200) {
+            w.tick(EAST, false);
+            if (offAt < 0 && !w.supported()) offAt = w.ticks;
+        }
+        assertTrue(w.free, "так и не сошёл с грани");
+        assertTrue(offAt > 0);
+        assertEquals(offAt, w.ticks, "между сходом с края и невесомостью — тики");
+        // ушёл недалеко за край (рамка целиком над пустотой — меньше шага за ним), к грани не тянет
+        assertTrue(w.x - 0.29 >= 0 && w.x - 0.29 < 0.3, "x = " + w.x);
+        assertTrue(w.v.y() >= 0, "скорость к грани не погашена: " + w.v);
+        assertTrue(w.v.x() > 0.1, "скорость вдоль грани пропала: " + w.v);
+        // то же самое — пешком через угол площадки из чистой логики: на плоскости, опоры нет — полёт
+        assertTrue(!SurfaceGravity.keeps(0, Double.POSITIVE_INFINITY));
+        assertTrue(!SurfaceGravity.keeps(0.08, Double.POSITIVE_INFINITY));
+    }
+
+    /** Стыки блоков и плит (щели в сотые доли блока) не роняют: 60 блоков пола, каждый следующий ниже на 0,02–0,04. */
+    @Test
+    void seamsBetweenBlocksDoNotDrop() {
+        double[][] floor = new double[60][];
+        double h = 0;
+        for (int i = 0; i < floor.length; i++) {
+            floor[i] = new double[] {i - 30, i - 29, h};
+            h -= i % 2 == 0 ? 0.02 : 0.04;
+        }
+        Walk w = new Walk(-29.5, 0, floor);
+        for (int i = 0; i < 400 && w.x < 29; i++) {
+            w.tick(EAST, false);
+            assertTrue(!w.free, "упал на стыке у x = " + w.x);
+        }
+        assertTrue(w.x >= 29, "x = " + w.x + ", y = " + w.y);
+        assertTrue(SurfaceGravity.keeps(0, 0.03));
+        assertTrue(SurfaceGravity.keeps(0, SurfaceGravity.SEAM));
+    }
+
+    /** Ступенька вниз до 0,6 (плита, лестница) — обычная ходьба; уступ в блок в воздух — невесомость. */
+    @Test
+    void smallStepDownWalksButLedgeIsFree() {
+        Walk slab = new Walk(-2, 0, new double[] {-100, 0, 0}, new double[] {0, 100, -0.5});
+        for (int i = 0; i < 100; i++) {
+            slab.tick(EAST, false);
+            assertTrue(!slab.free, "ступенька в полблока вывела в невесомость");
+        }
+        assertEquals(-0.5, slab.y, 1e-9);
+        assertTrue(slab.x > 10);
+
+        Walk ledge = new Walk(-2, 0, new double[] {-100, 0, 0}, new double[] {0, 100, -1});
+        for (int i = 0; i < 100 && !ledge.free; i++) ledge.tick(EAST, false);
+        assertTrue(ledge.free, "уступ в блок — это шаг в воздух");
+        assertTrue(ledge.y > -0.1, "упал до невесомости: y = " + ledge.y);
+
+        assertTrue(SurfaceGravity.keeps(0.1, 0.45));             // падаешь на плиту ниже
+        assertTrue(!SurfaceGravity.keeps(0.1, Double.POSITIVE_INFINITY));
+        assertTrue(!SurfaceGravity.keeps(0, 0.9));               // уступ глубже 0,6
+    }
+
+    /** Прыжок унёс за край: пока выше своей плоскости — режим тот же, опустился ниже неё — невесомость сразу. */
+    @Test
+    void jumpOverTheEdgeIsFreeBelowThePlane() {
+        Walk w = new Walk(-0.6, 0, new double[] {-100, 0, 0});
+        w.tick(EAST, true);
+        boolean wasAbove = false;
+        while (!w.free && w.ticks < 100) {
+            double before = w.y;
+            w.tick(EAST, false);
+            if (w.y > 0.5) wasAbove = true;
+            if (w.free) assertTrue(before < -SurfaceGravity.SEAM, "вышел, ещё не опустившись ниже плоскости: " + before);
+        }
+        assertTrue(wasAbove);
+        assertTrue(w.free);
+        assertTrue(w.y > -0.6, "провалился ниже плоскости на " + -w.y);
+        // выше своей плоскости (в прыжке) — остаёшься, даже если под тобой пусто
+        assertTrue(SurfaceGravity.keeps(-1.0, Double.POSITIVE_INFINITY));
+    }
+
+    /** Внутренний угол (стена выше шага) — по-прежнему плавный переход на стену. */
+    @Test
+    void innerCornerStillTransfers() {
+        SurfaceGravity g = new SurfaceGravity();
+        g.enter(2, Quat.fromYawPitchRoll(-90, 0, 0), 0);
+        Vec3d wish = new Vec3d(1, 0, 0);
+        int c = SurfaceGravity.innerCorner(g.face(), wish, i -> i == 1);
+        assertEquals(1, c);
+        g.transfer(c, g.target(), 0);
+        assertEquals(1, g.face());
+        near(new Vec3d(-1, 0, 0), g.normal(), 1e-9);
+        // переход плавный: сразу после него видно прежний взгляд
+        assertTrue(g.shown(0).up().dot(UP) > 0.99);
+    }
+
+    @Test
+    void feetAlongTheNormal() {
+        double[] lo = {1, 2, 3}, hi = {1.6, 3.8, 3.6};
+        assertEquals(2, SurfaceGravity.feet(lo, hi, UP), EPS);
+        assertEquals(-3.8, SurfaceGravity.feet(lo, hi, new Vec3d(0, -1, 0)), EPS);
+        assertEquals(1, SurfaceGravity.feet(lo, hi, new Vec3d(1, 0, 0)), EPS);
+        assertEquals(-3.6, SurfaceGravity.feet(lo, hi, new Vec3d(0, 0, -1)), EPS);
     }
 
     @Test

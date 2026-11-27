@@ -59,8 +59,8 @@ import java.util.List;
  *       петля через верх проходит без упора в ±90°. Поворот игрока (прицел, ломание блоков) следует за взглядом;</li>
  *   <li>тяготение грани ({@link SurfaceGravity}): коснулся ногами любой грани блока (пол, стена, потолок) — она
  *       тянет к себе, как земля: шаг, бег, прыжок и падение обратно — как у vanilla, камера ровная в системе грани.
- *       Грань заперта (поворот головы её не меняет), внутренний угол и ребро переводят на соседнюю. Shift+пробел или
- *       двойной пробел — оттолкнуться в свободный полёт;</li>
+ *       Грань заперта (поворот головы её не меняет), внутренний угол переводит на соседнюю. Обычный прыжок режим не
+ *       меняет; сошёл с блока в воздух — сразу свободный полёт; Shift+пробел или двойной пробел — оттолкнуться;</li>
  *   <li>рамка (мод 0.54+, крючки onEntityBox/onEntityEye): стоя на стене или потолке, рамка игрока повёрнута —
  *       1.8 вдоль нормали грани ({@link SurfaceBox}), глаза у головы; по блокам мира её считает сама игра (и сервер
  *       — модуль gravity ставит такую же рамку). В свободном полёте рамка обычная, как только для неё есть место;</li>
@@ -93,12 +93,8 @@ public final class SpaceflightModule implements ClientModule {
     private static final int BODY_BYTES = 6 * 8;
     /** Касание блока: зазор между рамкой игрока и блоком меньше этого, блоки. */
     private static final double CONTACT = 0.05;
-    /** Сошёл с грани (ребро): касание боковой грани того же блока ищем с таким зазором, блоки. */
-    private static final double LOST_GAP = 0.35;
-    /** Сошёл с грани, а ниже (вдоль −n) блок ближе этого — это ступенька: падаем на неё, а не переходим на ребро. */
-    private static final double STEP_DEPTH = 1.3;
-    /** Без опоры, и ниже (вдоль −n) нет блока ближе этого — «пустота»: через SurfaceGravity.GRACE тиков — полёт. */
-    private static final double VOID_DEPTH = 3.0;
+    /** Смена рамки при входе на грань: придвинуть новую рамку к грани не дальше стольких блоков. */
+    private static final double SNAP_REACH = 0.35;
     /** Внутренний угол — только если соседняя грань выше шага: касание на этой высоте от ног и выше, блоки. */
     private static final double WALL_FROM = 1.0;
     /** После выхода из тяготения грани (оттолкнулся, сошёл в пустоту) — столько тиков не входить снова. */
@@ -156,9 +152,8 @@ public final class SpaceflightModule implements ClientModule {
     private final SurfaceGravity grav = new SurfaceGravity();
     /** Тиков до того, как можно снова встать на грань (после выхода). */
     private int reentry;
-    /** Тяготение грани: тики без опоры, «пустота» ниже, пауза прыжка, прыжок был, тик прыжка. */
-    private int airTicks;
-    private int voidTicks;
+    /** Тяготение грани: своя плоскость (координата ног вдоль n, где стоял последний раз), пауза прыжка, прыжок был, тик прыжка. */
+    private double plane;
     private int jumpDelay;
     private boolean jumped;
     private long jumpTick;
@@ -601,8 +596,7 @@ public final class SpaceflightModule implements ClientModule {
         transferred = false;
         standSurface = f;
         standLost = 0;
-        airTicks = 0;
-        voidTicks = 0;
+        plane = feet(p.getBoundingBox(), grav.normal());
         jumpDelay = 0;
         jumped = false;
         orientNow = true;
@@ -618,7 +612,8 @@ public final class SpaceflightModule implements ClientModule {
 
     /**
      * Тик на грани: как vanilla на земле, только «вниз» — к грани. Шаг и трение вдоль грани, тяжесть и прыжок вдоль
-     * её нормали; внутренний угол и ребро — переход на соседнюю грань; Shift+пробел или двойной пробел — оттолкнуться.
+     * её нормали; внутренний угол — переход на соседнюю грань; Shift+пробел или двойной пробел — оттолкнуться; сошёл
+     * с блока в воздух (или прыжок унёс за край) — сразу свободный полёт ({@link SurfaceGravity#keeps}).
      *
      * @param v скорость после шага (с ударами о блоки), блоки/тик
      */
@@ -639,7 +634,6 @@ public final class SpaceflightModule implements ClientModule {
         }
         Vec3d wish = grav.wish(fwd, side);
         if (grounded) {
-            airTicks = 0;
             jumped = false;
             // внутренний угол: шагнул в стену выше шага — встать на неё
             Vec3d n0 = n;
@@ -652,35 +646,17 @@ public final class SpaceflightModule implements ClientModule {
                 n = grav.normal();
                 wish = grav.wish(fwd, side);
             }
+            plane = feet(p.getBoundingBox(), n);
         } else {
-            airTicks++;
-            // сошёл с ребра (не прыжок) и ниже не ступенька — на боковую грань того же блока
-            if (!jumped && !blockBelow(p, bb, n, STEP_DEPTH)) {
-                Vec3d vt = v.sub(n.scale(v.dot(n)));
-                AABB b0 = bb;
-                int e = SurfaceGravity.outerEdge(face, vt, i -> touching(p, b0, i, LOST_GAP));
-                if (e >= 0 && switchBox(p, e, true)) {
-                    v = SurfaceGravity.carry(face, e, v);
-                    grav.transfer(e, look.orientation(), now);
-                    transitions++;
-                    transferred = true;
-                    face = e;
-                    n = grav.normal();
-                    wish = grav.wish(fwd, side);
-                    grounded = true;
-                    airTicks = 0;
-                }
-            }
-        }
-        // сошёл в пустоту (некуда перейти, земли ниже нет) — через GRACE тиков свободный полёт
-        if (!grounded && !blockBelow(p, p.getBoundingBox(), n, VOID_DEPTH)) {
-            if (++voidTicks > SurfaceGravity.GRACE) {
+            // опоры нет: прыжок (выше своей плоскости) и ступенька вниз (земля не ниже STEP_DOWN) — остаёмся;
+            // сошёл с блока в воздух или прыжок унёс за край и опустился ниже плоскости — сразу свободный полёт
+            AABB b = p.getBoundingBox();
+            double below = plane - feet(b, n);
+            if (!SurfaceGravity.keeps(below, ground(p, b, face, SurfaceGravity.STEP_DOWN))) {
                 leaveSurface();
-                setVelocity(p, toVec3(v));
+                setVelocity(p, toVec3(SurfaceGravity.drift(v, n)));
                 return;
             }
-        } else {
-            voidTicks = 0;
         }
         if (boxApi && boxSurface != (SurfaceBox.turned(face) ? face : -1)) switchBox(p, face, true);
         standSurface = face;
@@ -718,10 +694,25 @@ public final class SpaceflightModule implements ClientModule {
         return f > 0 && f <= 1.2f ? f : 0.6;
     }
 
-    /** Есть ли блок «под ногами» вдоль −n не дальше depth (проба — сечение рамки, чуть уже). */
-    private static boolean blockBelow(LocalPlayer p, AABB b, Vec3d n, double depth) {
-        int i = BodyFrame.normalIndex(n);
-        return i >= 0 && touching(p, b, i, depth);
+    /** Координата ног вдоль n (сторона рамки к −n), блоки. */
+    private static double feet(AABB b, Vec3d n) {
+        return SurfaceGravity.feet(new double[] {b.minX, b.minY, b.minZ}, new double[] {b.maxX, b.maxY, b.maxZ}, n);
+    }
+
+    /**
+     * Расстояние от ног до блока под рамкой вдоль −NORMALS[face] (проба — сечение рамки, чуть уже), блоки, с точностью
+     * ~0,005; дальше max — {@link Double#POSITIVE_INFINITY}.
+     */
+    private static double ground(LocalPlayer p, AABB b, int face, double max) {
+        if (touching(p, b, face, 0.005)) return 0;
+        if (!touching(p, b, face, max)) return Double.POSITIVE_INFINITY;
+        double lo = 0.005, hi = max;
+        while (hi - lo > 0.005) {
+            double mid = (lo + hi) / 2;
+            if (touching(p, b, face, mid)) hi = mid;
+            else lo = mid;
+        }
+        return hi;
     }
 
     /** Касание грани i только на уровне головы: от WALL_FROM вдоль n от ног и выше (стена выше шага). */
@@ -837,10 +828,10 @@ public final class SpaceflightModule implements ClientModule {
         Vec3d n = BodyFrame.normal(target);
         boolean snap = contact && n != null;
         for (Vec3d c0 : cands) {
-            // contact: сторона рамки к −n — на плоскости прежней рамки; но у ребра (сошёл с грани, LOST_GAP) прежняя
-            // рамка могла не доставать до новой грани — тогда придвинуть к ней (шагами, до LOST_GAP), пока не коснётся
+            // contact: сторона рамки к −n — на плоскости прежней рамки; но прежняя рамка могла не доставать до новой
+            // грани (вход с зазором) — тогда придвинуть к ней (шагами, до SNAP_REACH), пока не коснётся
             Vec3d c = null;
-            for (double gap = 0; gap <= LOST_GAP + 1e-9; gap += SNAP_STEP) {
+            for (double gap = 0; gap <= SNAP_REACH + 1e-9; gap += SNAP_STEP) {
                 Vec3d ci = snap ? c0.sub(n.scale(gap)) : c0;
                 if (ci.distance(new Vec3d(pos.x, pos.y, pos.z)) > SurfaceBox.MAX_SHIFT + 1e-9) break;
                 double[] nb = SurfaceBox.box(next, ci.x(), ci.y(), ci.z(), h, w);
