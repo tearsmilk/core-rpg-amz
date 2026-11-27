@@ -45,7 +45,8 @@ import java.util.Map;
  * за ним второй хвост: u16 оружий, на каждое UTF id и UTF id предмета hoitems («» — нет; по нему клиент рисует
  * оружие за спиной); за ним третий хвост: u16 оружий, на каждое UTF id, UTF вид (rifle / sniper / pistol), f32 время
  * ручного затвора (с, 0 — нет), u8 флаги (1 — оптика: в прицеле экран чёрный, кроме круга прицела), f32 размер вспышки
- * у ствола (TACZ muzzle_flash.scale). Старые клиенты
+ * у ствола (TACZ muzzle_flash.scale); за ним четвёртый хвост: u16 оружий, на каждое UTF id и f32 отдача в вакууме
+ * (блоков за выстрел в свободном полёте, 0 — нет; клиентский модуль отдаёт её spaceflight). Старые клиенты
  * хвосты не читают. В BACK вместо одного id может прийти список через запятую (длинное оружие за спиной и
  * пистолет в кобуре).
  */
@@ -192,6 +193,11 @@ final class Proto {
                 o.writeFloat((float) g.boltTime());
                 o.writeByte(g.scope() ? 1 : 0);
                 o.writeFloat((float) g.flashScale());
+            }
+            o.writeShort(guns.size());                        // четвёртый хвост: отдача в вакууме, блоков за выстрел
+            for (GunDef g : guns) {
+                o.writeUTF(g.id());
+                o.writeFloat((float) g.vacuumRecoil());
             }
         });
     }

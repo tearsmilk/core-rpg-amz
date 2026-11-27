@@ -160,6 +160,7 @@ public final class GravityModule extends OdysseyModule {
     protected void onEnable() {
         settings = Settings.from(config());
         physics = loadPhysics();
+        overrides.stabilizer = physics.stabilizer();
         link = new SpaceflightLink(this, logger());
         bodyRelay = new BodyRelay(link, p -> {
             Spacer sp = spacers.get(p.getUuid());
@@ -242,6 +243,7 @@ public final class GravityModule extends OdysseyModule {
         config().reload();
         settings = Settings.from(config());
         physics = loadPhysics();
+        overrides.stabilizer = physics.stabilizer();
         for (Spacer sp : spacers.values()) {
             sp.clientOn = false;                           // тела могли поменяться — разослать заново в тике
             sp.pack = new Thrust(thrustSpec(physics));
@@ -820,6 +822,7 @@ public final class GravityModule extends OdysseyModule {
         if (flying) {                                       // креативный полёт — у клиента своя физика
             st.setVelocity(m[0], m[1], m[2]);
             sp.grounded = false;
+            sp.recoil.clear();
             return;
         }
         boolean onGround = p.isOnGround() && sp.pushGrace == 0;
@@ -832,6 +835,7 @@ public final class GravityModule extends OdysseyModule {
                 landing(p, sp, rp);
             }
             sp.grounded = true;
+            sp.recoil.clear();                             // на опоре отдача не толкает
             st.setVelocity(m[0], m[1], m[2]);
             sp.pack.refill();
             sp.sentZero = false;
@@ -884,6 +888,9 @@ public final class GravityModule extends OdysseyModule {
         collide(p, sp, instance, pos, rp);
         if (!finite(st)) {
             st.setVelocity(0, 0, 0);
+        }
+        if (sp.recoil.active() && (p.getVehicle() != null || contactNormal(instance, p, pos).lengthSquared() > 0)) {
+            sp.recoil.clear();                             // коснулся блока (или сел) — отдача кончилась
         }
         sendVelocity(p, sp, Inertia.airInput(pos.yaw(), fwd, strafe, in.sprint()));
         readout(p, sp, rp);
@@ -1151,7 +1158,9 @@ public final class GravityModule extends OdysseyModule {
     /** Послать клиенту настоящую скорость (абсолютную, блоков/тик) с поправкой на его затухание и ввод WASD. */
     private static void sendVelocity(Player p, Spacer sp, double[] input) {
         State st = sp.state;
-        Vec3d v = Inertia.toClient(st.vx, st.vy, st.vz, input, 1);
+        Vec3d r = sp.recoil.velocity();                    // отдача выстрелов — поверх, в состояние не входит
+        sp.recoil.step();
+        Vec3d v = Inertia.toClient(st.vx + r.x(), st.vy + r.y(), st.vz + r.z(), input, 1);
         boolean zero = v.lengthSquared() < 1.0e-12;
         if (zero && sp.sentZero) {
             return;                                         // клиент и так стоит

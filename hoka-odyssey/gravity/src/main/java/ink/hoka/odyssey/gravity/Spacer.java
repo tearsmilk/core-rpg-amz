@@ -1,5 +1,6 @@
 package ink.hoka.odyssey.gravity;
 
+import ink.hoka.odyssey.spacephys.Recoil;
 import ink.hoka.odyssey.spacephys.State;
 import ink.hoka.odyssey.spacephys.Thrust;
 
@@ -35,6 +36,13 @@ final class Spacer {
     /** Значение атрибута гравитации, которое сейчас стоит игроку, блоков/тик². */
     double gravityAttr = Double.NaN;
     final Inertia.MoveGuard guard = new Inertia.MoveGuard();
+    /**
+     * Отдача выстрелов (игрок без мода spaceflight): затухающая скорость поверх {@link #state}, уходит клиенту вместе
+     * с ней, пока игрок в свободном полёте. Гаснет как скорость самого клиента в воздухе (×0,91 за тик): пакет
+     * опоздал или пропал — клиент сдвинется так же. Пишет тик guns (VacuumService.recoil), читает тик gravity —
+     * оба в тике сервера.
+     */
+    final Recoil recoil = new Recoil(Inertia.CLIENT_H_DRAG);
     /** Тиков, пока действует запас проверки скорости у блоков (ходьба по стенам с модом). */
     int surfaceTicks;
     /**
@@ -74,6 +82,7 @@ final class Spacer {
         guard.reset(0);
         lastMoveSpeed = 0;
         surfaceTicks = 0;
+        recoil.clear();
         pack.refill();
     }
 

@@ -8,6 +8,7 @@ import ink.hoka.odyssey.spacephys.Body;
 import ink.hoka.odyssey.spacephys.Field;
 import ink.hoka.odyssey.spacephys.Integrator;
 import ink.hoka.odyssey.spacephys.Quat;
+import ink.hoka.odyssey.spacephys.Recoil;
 import ink.hoka.odyssey.spacephys.State;
 import ink.hoka.odyssey.spacephys.Thrust;
 import ink.hoka.odyssey.spacephys.Units;
@@ -143,6 +144,13 @@ public final class SpaceflightModule implements ClientModule {
     /** Скорость, поставленная игроку в прошлый тик, блоки/тик, и позиция после неё (null — первый тик). */
     private Vec3 lastSet;
     private Vec3 lastPos;
+    /**
+     * Отдача выстрелов (модуль guns, {@link #RECOIL}): затухающая скорость поверх своей, только в свободном полёте.
+     * recoilSent — её доля в lastSet (блоки/тик), freeFlight — прошлый тик был свободный полёт (без опоры и касаний).
+     */
+    private final Recoil recoil = new Recoil();
+    private Vec3d recoilSent = Vec3d.ZERO;
+    private boolean freeFlight;
 
     /** Тяготение грани: встал ногами на пол/стену/потолок — ходишь по ней, как по земле. */
     private final SurfaceGravity grav = new SurfaceGravity();
@@ -215,6 +223,7 @@ public final class SpaceflightModule implements ClientModule {
         ctx.onTick(this::tick);
         ctx.onMouse(this::onMouse);
         System.getProperties().put(LOOK_KICK, lookKick);
+        System.getProperties().put(RECOIL, recoilHandOff);
         ctx.onCamera(this::onCamera);
         ctx.onInput(this::onInput);
         bodies.install();
@@ -234,6 +243,7 @@ public final class SpaceflightModule implements ClientModule {
     @Override
     public void disable() {
         System.getProperties().remove(LOOK_KICK, lookKick);
+        System.getProperties().remove(RECOIL, recoilHandOff);
         if (active) deactivate();
         boxHooksOn = false;                                        // крючки ядро снимет после disable — уже сейчас null
         refreshRemoteBoxes(bodies == null ? List.of() : bodies.boxed());
@@ -252,6 +262,18 @@ public final class SpaceflightModule implements ClientModule {
     static final String LOOK_KICK = "hoka.spaceflight.lookKick";
     private final java.util.function.BiFunction<Double, Double, Boolean> lookKick =
             (yaw, pitch) -> yaw != null && pitch != null && onMouse(yaw, pitch);
+
+    /**
+     * Отдача выстрела от модуля guns: double[] {dx, dy, dz} — куда и на сколько блоков отнести (длина — путь). Только
+     * в свободном полёте (в невесомости, не на грани, не на земле, не касаясь блоков): true — приняли (отнесём сами,
+     * сервер про это знает и не толкает), false — не в свободном полёте, отдачи нет. Связь, как у {@link #LOOK_KICK}.
+     */
+    static final String RECOIL = "hoka.spaceflight.recoil";
+    private final java.util.function.Predicate<double[]> recoilHandOff = d -> {
+        if (d == null || d.length < 3 || !active || !freeFlight || grav.active()) return false;
+        recoil.add(d[0], d[1], d[2]);
+        return true;
+    };
 
     /** В основной руке оружие модуля guns (метка hoka_gun в custom_data) — тогда R у него (перезарядка), не «лечь». */
     static boolean holdingGun(LocalPlayer p) {
@@ -385,6 +407,7 @@ public final class SpaceflightModule implements ClientModule {
         standLost = 0;
         lastSet = null;                                            // первый тик — скорость как есть у vanilla
         lastPos = null;
+        clearRecoil();
     }
 
     private void deactivate() {
@@ -397,6 +420,7 @@ public final class SpaceflightModule implements ClientModule {
         eyeCorr = Vec3d.ZERO;
         eyeGlide = null;
         grav.leave();
+        clearRecoil();
         sendOrientation(true);                                     // «поворот больше не действует»
         active = false;
         prone = false;
@@ -453,6 +477,7 @@ public final class SpaceflightModule implements ClientModule {
         if (lastSet == null || lastPos == null
                 || pos.subtract(lastPos).subtract(lastSet).length() > TELEPORT_JUMP) {
             base = new Vec3d(d.x, d.y, d.z);                       // первый тик или телепорт — как есть
+            clearRecoil();
             if (grav.active()) {                                   // телепорт — грань заново по месту, куда попал
                 grav.leave();
                 reentry = 0;
@@ -460,7 +485,11 @@ public final class SpaceflightModule implements ClientModule {
         } else {
             base = VanillaMotion.reconcile(new Vec3d(lastSet.x, lastSet.y, lastSet.z), new Vec3d(d.x, d.y, d.z),
                     p.horizontalCollision, p.verticalCollision);
+            // отдача прошлого тика — не своя скорость: вычесть (упёрся в блок — ось и так 0)
+            base = new Vec3d(Recoil.own(base.x(), lastSet.x, recoilSent.x()), Recoil.own(base.y(), lastSet.y,
+                    recoilSent.y()), Recoil.own(base.z(), lastSet.z, recoilSent.z()));
         }
+        recoilSent = Vec3d.ZERO;
         state.set(p.getX(), p.getY() + p.getBbHeight() * 0.5, p.getZ(),
                 Units.fromPerTick(base.x()), Units.fromPerTick(base.y()), Units.fromPerTick(base.z()));
         boolean brake = input && physical(mc, brakeKey);
@@ -476,6 +505,7 @@ public final class SpaceflightModule implements ClientModule {
             if (f >= 0) enterSurface(p, f);
         }
         if (grav.active()) {
+            clearRecoil();                                         // на грани отдача не толкает
             surfaceStep(mc, p, base, fwd, side, jump, shift);
             return;
         }
@@ -491,6 +521,9 @@ public final class SpaceflightModule implements ClientModule {
         }
         double ax = 0, ay = 0, az = 0;
         boolean grounded = p.onGround();
+        // свободный полёт: ни на земле, ни у блока (касание любой гранью), рамка обычная — только тут отдача толкает
+        freeFlight = !grounded && contact == null && boxSurface < 0;
+        if (!freeFlight) recoil.clear();
         boolean keys = fwd != 0 || side != 0 || vert != 0;
         if (!grounded && brake) {
             Vec3d a = Thrust.damp(state.velocity(), cfg.brake, Units.TICK);   // тормоз — поверх ранца
@@ -536,7 +569,18 @@ public final class SpaceflightModule implements ClientModule {
         jumpHeld = jump;
 
         Vec3d capped = Thrust.capSpeed(state.velocity(), maxSpeed());
-        setVelocity(p, new Vec3(Units.toPerTick(capped.x()), Units.toPerTick(capped.y()), Units.toPerTick(capped.z())));
+        // отдача — поверх своей скорости (не в state: стабилизатор и предел скорости её не трогают)
+        Vec3d r = recoil.velocity();
+        recoil.step();
+        recoilSent = new Vec3d(Units.toPerTick(r.x()), Units.toPerTick(r.y()), Units.toPerTick(r.z()));
+        setVelocity(p, new Vec3(Units.toPerTick(capped.x()) + recoilSent.x(),
+                Units.toPerTick(capped.y()) + recoilSent.y(), Units.toPerTick(capped.z()) + recoilSent.z()));
+    }
+
+    private void clearRecoil() {
+        recoil.clear();
+        recoilSent = Vec3d.ZERO;
+        freeFlight = false;
     }
 
     /** Скорость на следующий тик (блоки/тик): игроку и себе — для сверки после шага. */

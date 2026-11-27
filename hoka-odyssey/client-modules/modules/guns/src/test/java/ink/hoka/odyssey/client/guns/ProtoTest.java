@@ -81,4 +81,27 @@ class ProtoTest {
                 new HashMap<>(), none);
         assertTrue(none.isEmpty());
     }
+
+    @Test
+    void configReadsVacuumRecoilTrailer() throws IOException {
+        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+        DataOutputStream o = new DataOutputStream(bo);
+        o.write(config(true));
+        o.writeShort(0);                                           // третий хвост — пустой
+        o.writeShort(3);
+        o.writeUTF("glock_17");
+        o.writeFloat(0.5f);
+        o.writeUTF("ak47");
+        o.writeFloat(1f);
+        o.writeUTF("ai_awp");
+        o.writeFloat(3f);
+        Map<String, Float> recoil = new HashMap<>();
+        Proto.readConfig(new DataInputStream(new ByteArrayInputStream(bo.toByteArray())), new float[1], new HashMap<>(),
+                new HashMap<>(), new HashMap<>(), recoil);
+        assertEquals(Map.of("glock_17", 0.5f, "ak47", 1f, "ai_awp", 3f), recoil);
+        Map<String, Float> none = new HashMap<>();                 // старый сервер — хвоста нет
+        Proto.readConfig(new DataInputStream(new ByteArrayInputStream(config(true))), new float[1], new HashMap<>(),
+                new HashMap<>(), new HashMap<>(), none);
+        assertTrue(none.isEmpty());
+    }
 }

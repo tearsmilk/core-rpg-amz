@@ -78,7 +78,6 @@ public final class GunsModule extends OdysseyModule {
     private boolean damageMobs;
     private double maxAim;
     private double burst;
-    private double vacImpulse;
     private double vacTargetImpulse;
     private String vacSound;
     private double vacLife;
@@ -188,7 +187,6 @@ public final class GunsModule extends OdysseyModule {
         damageMobs = c.getBoolean("damage-mobs", true);
         maxAim = GunDef.clamp(c.getDouble("max-aim-deviation", 25), 1, 180);
         burst = GunDef.clamp(c.getDouble("rate-burst", 3), 1, 20);
-        vacImpulse = Math.max(0, c.getDouble("vacuum.impulse", 0.25));
         vacTargetImpulse = Math.max(0, c.getDouble("vacuum.target-impulse", 0.15));
         vacSound = c.getString("vacuum.sound", "self");
         vacLife = GunDef.clamp(c.getDouble("vacuum.bullet-life", 3.0), 0.05, 30);
@@ -280,6 +278,9 @@ public final class GunsModule extends OdysseyModule {
         Proto.Msg m = Proto.decode(data);
         if (p == null || m == null) {
             return;
+        }
+        if (m.op() == Proto.C_FIRE) {
+            expectRecoil(p, m.fire().shots().size());
         }
         scheduler().run(() -> {
             if (!p.isOnline()) {
@@ -418,12 +419,6 @@ public final class GunsModule extends OdysseyModule {
             reloadTick(p, st, now);
             boltTick(p, st, now);
             aimPose(p, st);
-            if (st.pushX != 0 || st.pushY != 0 || st.pushZ != 0) {
-                if (st.vacuum && vacuum != null) {
-                    vacuum.push(p, st.pushX, st.pushY, st.pushZ);
-                }
-                st.pushX = st.pushY = st.pushZ = 0;
-            }
             if (st.ammoDirty && ticks % 10 == 0) {
                 flushAmmo(p, st);
             }
@@ -705,6 +700,20 @@ public final class GunsModule extends OdysseyModule {
         }
     }
 
+    /**
+     * Пришли выстрелы от клиента с модом: в вакууме его spaceflight уже относит его отдачей, а разберём выстрелы мы
+     * только в тике — пусть gravity сразу допустит этот путь в проверке скорости (не больше выстрелов, чем патронов).
+     */
+    private void expectRecoil(Player p, int shots) {
+        Vacuum v = vacuum;
+        ShooterState st = states.get(p.getUuid());
+        GunDef g = st == null ? null : st.gun;
+        if (v == null || g == null || !st.vacuum || g.vacuumRecoil() <= 0 || shots <= 0) {
+            return;
+        }
+        v.expectRecoil(p, g.vacuumRecoil() * Math.min(shots, Math.max(1, st.ammo)));
+    }
+
     boolean aiming(Player p, ShooterState st, long now) {
         return st.gun != null && (modded(p) || p.isUsingItem()) && st.aimSince > 0
                 && now - st.aimSince >= st.gun.aimTime() * 1000;
@@ -771,11 +780,13 @@ public final class GunsModule extends OdysseyModule {
         if (step(live)) {                                     // первый отрезок — в том же тике
             bullets.add(live);
         }
-        if (vac && vacImpulse > 0) {                          // отдача в вакууме: назад вдоль выстрела
-            double k = vacImpulse / 20.0;
-            st.pushX -= d[0] * k;
-            st.pushY -= d[1] * k;
-            st.pushZ -= d[2] * k;
+        if (vac && vacuum != null && g.vacuumRecoil() > 0) {
+            // отдача в вакууме: назад вдоль выстрела на vacuum-recoil блоков — сразу, чтобы проверка скорости gravity
+            // уже знала про путь, который клиент с модом пролетит сам; без мода толкает gravity
+            // вдоль прицела (без разброса — как у клиента)
+            double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            double k = g.vacuumRecoil() / (len > 1e-9 ? len : 1);
+            vacuum.recoil(p, -dx * k, -dy * k, -dz * k, modded(p));
         }
         if (st.ammo <= 0 && !modded(p)) {
             p.sendActionBar(Component.text("Магазин пуст — F: перезарядка", NamedTextColor.RED));

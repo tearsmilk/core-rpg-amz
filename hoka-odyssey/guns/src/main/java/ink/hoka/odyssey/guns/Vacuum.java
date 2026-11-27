@@ -39,6 +39,35 @@ final class Vacuum {
         }
     }
 
+    /**
+     * Отдача выстрела: отнести стрелка на вектор (dx, dy, dz) блоков, если он в свободном полёте. clientSide —
+     * клиентский модуль guns отдаёт отдачу клиентскому spaceflight сам (сервер тогда не толкает игрока с модом).
+     */
+    void recoil(Player p, double dx, double dy, double dz, boolean clientSide) {
+        Object s = service();
+        if (s == null) {
+            return;
+        }
+        try {
+            ((VacuumService) s).recoil(p, dx, dy, dz, clientSide);
+        } catch (RuntimeException | LinkageError ignored) {
+            // gravity выгрузили посреди тика — отдачи не будет
+        }
+    }
+
+    /** Выстрел с отдачей на distance блоков вот-вот (до разбора) — см. VacuumService.expectRecoil. */
+    void expectRecoil(Player p, double distance) {
+        Object s = service();
+        if (s == null) {
+            return;
+        }
+        try {
+            ((VacuumService) s).expectRecoil(p, distance);
+        } catch (RuntimeException | LinkageError ignored) {
+            // старый gravity или выгружен
+        }
+    }
+
     /** Толчок (блоков/тик). */
     void push(Player p, double vx, double vy, double vz) {
         Object s = service();

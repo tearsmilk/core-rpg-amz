@@ -73,10 +73,6 @@ final class ShooterState {
 
     /** Последнее отправленное клиенту состояние (чтобы не слать одно и то же). */
     String sentKey = "";
-    /** Толчок отдачи в вакууме, накопленный за тик (блоков/тик). */
-    double pushX;
-    double pushY;
-    double pushZ;
 
     boolean reloading() {
         return reloadKind != 0;

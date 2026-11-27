@@ -79,4 +79,18 @@ class GunDefTest {
         assertEquals(6, g.damageAt(Double.MAX_VALUE));
         assertEquals("guns/ak47.bbmodel", g.model());
     }
+
+    @Test
+    void vacuumRecoilPerGun() {
+        Map<?, ?> c = TestGuns.config();
+        assertEquals(0.5, GunDef.read("glock_17", GunDef.Cfg.of(c)).vacuumRecoil());
+        assertEquals(1.0, GunDef.read("ak47", GunDef.Cfg.of(c)).vacuumRecoil());
+        assertEquals(3.0, GunDef.read("ai_awp", GunDef.Cfg.of(c)).vacuumRecoil());
+        // старый config.yml без vacuum-recoil — по виду оружия
+        assertEquals(1.0, GunDef.read("ak47", GunDef.Cfg.of(Map.of())).vacuumRecoil());
+        assertEquals(3.0, GunDef.defaultVacuumRecoil(GunDef.SNIPER));
+        assertEquals(0.5, GunDef.defaultVacuumRecoil(GunDef.PISTOL));
+        assertEquals(0, GunDef.read("x", GunDef.Cfg.of(Map.of("guns", Map.of("x", Map.of("vacuum-recoil", 0)))))
+                .vacuumRecoil());
+    }
 }

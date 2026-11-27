@@ -81,6 +81,9 @@ class ProtoTest {
         o.writeFloat(0f);
         o.writeByte(0);
         o.writeFloat(1f);
+        o.writeShort(1);
+        o.writeUTF("ak47");
+        o.writeFloat(1f);                                     // отдача в вакууме АК — 1 блок
         byte[] tail = bo.toByteArray();
         assertEquals("guns/rifle_default.player_animation.json", g.playerAnimation());
         assertEquals(java.util.Arrays.toString(tail),
@@ -93,7 +96,8 @@ class ProtoTest {
         byte[] on = Proto.config(List.of(g), 0.35f, true);
         byte[] off = Proto.config(List.of(g), 0.35f, false);
         int items = 2 + (2 + "ak47".length()) + (2 + g.item().getBytes(java.nio.charset.StandardCharsets.UTF_8).length);
-        int kinds = 2 + (2 + "ak47".length()) + (2 + "rifle".length()) + 4 + 1 + 4;    // третий хвост — тот же
+        int kinds = 2 + (2 + "ak47".length()) + (2 + "rifle".length()) + 4 + 1 + 4    // третий хвост — тот же
+                + 2 + (2 + "ak47".length()) + 4;                                      // и четвёртый
         assertEquals(on.length - items + 2, off.length);
         int end = off.length - kinds;
         assertEquals(0, off[end - 1]);
@@ -121,6 +125,11 @@ class ProtoTest {
         o.writeFloat(0f);
         o.writeByte(0);
         o.writeFloat(0.4f);
+        o.writeShort(2);                                      // четвёртый хвост: отдача в вакууме
+        o.writeUTF("ai_awp");
+        o.writeFloat(3f);
+        o.writeUTF("glock_17");
+        o.writeFloat(0.5f);
         byte[] tail = bo.toByteArray();
         assertEquals(java.util.Arrays.toString(tail),
                 java.util.Arrays.toString(java.util.Arrays.copyOfRange(b, b.length - tail.length, b.length)));

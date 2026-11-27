@@ -61,6 +61,8 @@ public final class GunsClientModule implements ClientModule {
     private static final String PRE_TICK_HOOK = "hoka.guns.preTickHook";
     /** Поворот взгляда через spaceflight (в невесомости взгляд держит он): BiFunction(dYaw°, dPitch°) → забрал ли. */
     static final String LOOK_KICK = "hoka.spaceflight.lookKick";
+    /** Отдача в вакууме через spaceflight: Predicate(double[] {dx, dy, dz} блоков) → отнёс ли (свободный полёт). */
+    static final String RECOIL = "hoka.spaceflight.recoil";
     private static final float INACCURACY_K = 0.0172275f;
 
     private ClientContext ctx;
@@ -75,6 +77,8 @@ public final class GunsClientModule implements ClientModule {
     private Map<String, Proto.Spec> specs = new HashMap<>();
     /** Вид оружия по id (третий хвост CONFIG): пистолет, ручной затвор, оптика. */
     private Map<String, Proto.Kind> kinds = new HashMap<>();
+    /** Отдача в вакууме по id (четвёртый хвост CONFIG), блоков за выстрел. */
+    private Map<String, Float> vacRecoil = new HashMap<>();
     private float vacVolume = 0.35f;
     private final Map<String, ViewModel> models = new HashMap<>();
     private final Set<String> watched = new HashSet<>();
@@ -306,8 +310,10 @@ public final class GunsClientModule implements ClientModule {
                     playerAnimPaths.clear();
                     Map<String, String> gunItems = new HashMap<>();
                     Map<String, Proto.Kind> k = new HashMap<>();
-                    specs = Proto.readConfig(in, vv, playerAnimPaths, gunItems, k);
+                    Map<String, Float> vr = new HashMap<>();
+                    specs = Proto.readConfig(in, vv, playerAnimPaths, gunItems, k, vr);
                     kinds = k;
+                    vacRecoil = vr;
                     if (back != null) back.setItems(gunItems, k);
                     vacVolume = vv[0];
                     for (Proto.Spec s : specs.values()) watch(s);
@@ -828,6 +834,23 @@ public final class GunsClientModule implements ClientModule {
         return s.length() > 6 ? s.substring(0, 6) : s.toUpperCase();
     }
 
+    /**
+     * Отдача в вакууме: отнести себя назад вдоль выстрела на distance блоков — сразу, через spaceflight (скорость
+     * в невесомости ведёт он). Только в свободном полёте — это решает spaceflight; сервер игрока со spaceflight сам
+     * не толкает (нет spaceflight — толкает сервер, и тогда здесь ничего не делаем).
+     */
+    @SuppressWarnings("unchecked")
+    private static void pushBack(Vec3 dir, float distance) {
+        Object r = System.getProperties().get(RECOIL);
+        if (!(r instanceof java.util.function.Predicate<?> f)) return;
+        try {
+            ((java.util.function.Predicate<double[]>) f).test(
+                    new double[] {-dir.x * distance, -dir.y * distance, -dir.z * distance});
+        } catch (RuntimeException ignored) {
+            // spaceflight выгружается — отдачи не будет
+        }
+    }
+
     /** Повернуть взгляд на отдачу: pitch + — ствол вверх, yaw + — влево (как у сплайнов отдачи). */
     @SuppressWarnings("unchecked")
     private void kick(LocalPlayer p, double yaw, double pitch) {
@@ -860,6 +883,8 @@ public final class GunsClientModule implements ClientModule {
         ViewModel vm = models.get(g.model());
         if (vm != null) vm.play("shoot");
         boolean vac = vacuum();
+        Float vr = vacRecoil.get(g.id());
+        if (vr != null && vr > 0) pushBack(dir, vr);
         Sfx.play(g.sound("shoot"), cfg.volume * (vac ? vacVolume : 1f), vac ? 0.7f : 0.97f + rnd.nextFloat() * 0.06f);
         flashNs = now;
         flashSpin = rnd.nextFloat() * (float) Math.PI * 2;

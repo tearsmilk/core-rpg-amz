@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ink.hoka.odyssey.spacephys.Body;
 import ink.hoka.odyssey.spacephys.Field;
 import ink.hoka.odyssey.spacephys.Integrator;
+import ink.hoka.odyssey.spacephys.Recoil;
 import ink.hoka.odyssey.spacephys.State;
 import ink.hoka.odyssey.spacephys.Units;
 import ink.hoka.odyssey.spacephys.Vec3d;
@@ -170,6 +171,64 @@ class InertiaTest {
         assertEquals(Inertia.MoveGuard.Verdict.GROSS, g.check(3 * 0.4 + 1.5, 3));
         g.tick(0, 0);
         assertEquals(Inertia.MoveGuard.Verdict.OVER, g.check(10, 0), "0 — никогда не возвращать");
+    }
+
+    /**
+     * Игрок с модом стоит в пустоте (скорость 0) и стреляет из AWP: каждый выстрел клиент сам уносит на 3 блока за
+     * ~1 с. Проверка скорости тикает, как в tickModded (замер прошлого шага, тик, пакет); выстрел (expectRecoil)
+     * приходит перед первым пакетом движения с отдачей — сообщение клиента идёт раньше пакета движения.
+     */
+    private static int awpViolations(boolean credit) {
+        Inertia.MoveGuard g = new Inertia.MoveGuard();
+        g.reset(0);
+        g.credit = Inertia.MoveGuard.SLACK * Inertia.MoveGuard.BURST / Settings.TPS;
+        Recoil r = new Recoil();
+        double last = 0;
+        int bad = 0;
+        double travelled = 0;
+        for (int t = 0; t < 200; t++) {
+            boolean shot = t == 20 || t == 50 || t == 80 || t == 110;   // AWP: темп 40/мин + затвор — с запасом чаще
+            if (shot) {
+                g.credit = 0;                                   // худший случай: запас только что потрачен
+                r.add(-3, 0, 0);
+                if (credit) {
+                    g.recoil(3);
+                }
+            }
+            double step = r.velocity().length() * Units.TICK;
+            r.step();
+            travelled += step;
+            g.measured(last * Settings.TPS);
+            g.tick(0, 0);
+            if (g.check(step, RealPhysics.TELEPORT_FACTOR) != Inertia.MoveGuard.Verdict.OK) {
+                bad++;
+            }
+            last = step;
+        }
+        assertEquals(12, travelled, 0.01, "четыре выстрела — 12 блоков");
+        return bad;
+    }
+
+    @Test
+    void moveGuardAcceptsAwpRecoil() {
+        assertEquals(0, awpViolations(true), "отдача AWP в проверке скорости допущена");
+        assertTrue(awpViolations(false) > 0, "без запаса отдачи тот же путь — нарушение (тест не пустой)");
+    }
+
+    @Test
+    void moveGuardRecoilCreditExpires() {
+        Inertia.MoveGuard g = new Inertia.MoveGuard();
+        g.reset(0);
+        g.recoil(3);
+        assertEquals(3 * Inertia.MoveGuard.RECOIL_MARGIN, g.recoil, 1e-12);
+        for (int t = 0; t <= Inertia.MoveGuard.RECOIL_HOLD; t++) {
+            g.tick(0, 0);
+        }
+        assertEquals(0, g.recoil, "запас отдачи не копится навсегда");
+        for (int i = 0; i < 100; i++) {
+            g.recoil(3);
+        }
+        assertEquals(Inertia.MoveGuard.RECOIL_MAX, g.recoil, 1e-12);
     }
 
     @Test

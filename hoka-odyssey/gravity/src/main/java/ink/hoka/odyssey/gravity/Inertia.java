@@ -128,6 +128,29 @@ final class Inertia {
         double credit;
         /** Допустимая скорость прошлого тика (speed + запасы), блоки/с. */
         double allowed;
+        /**
+         * Путь отдачи выстрелов (VacuumService.recoil), блоки: тратится после {@link #credit} и, в отличие от него,
+         * не упирается в предел накопления — отдача AWP (3 блока за ~1 с) больше запаса тика. Держится
+         * {@link #RECOIL_HOLD} тиков после последнего выстрела.
+         */
+        double recoil;
+        private int recoilHold;
+
+        /** Запас пути отдачи сверх её пути (неточность, пакеты пачкой). */
+        static final double RECOIL_MARGIN = 1.25;
+        /** Сколько тиков после выстрела держать путь отдачи. */
+        static final int RECOIL_HOLD = 60;
+        /** Больше этого пути отдачи не копим, блоки (очередь АК — до ~12 выстрелов вперёд). */
+        static final double RECOIL_MAX = 15;
+
+        /** Выстрел отнесёт игрока на distance блоков — допустить этот путь. */
+        void recoil(double distance) {
+            if (!(distance > 0) || !Double.isFinite(distance)) {
+                return;
+            }
+            recoil = Math.min(RECOIL_MAX, recoil + distance * RECOIL_MARGIN);
+            recoilHold = RECOIL_HOLD;
+        }
 
         /**
          * Тик сервера.
@@ -139,6 +162,11 @@ final class Inertia {
             allowed = speed + SLACK + push;
             credit = Math.min(credit + allowed / Settings.TPS, allowed * BURST / Settings.TPS + 1);
             speed += accel / Settings.TPS;
+            if (recoilHold > 0) {
+                recoilHold--;
+            } else {
+                recoil = 0;
+            }
         }
 
         /**
@@ -148,6 +176,11 @@ final class Inertia {
         boolean accept(double dist) {
             if (dist <= credit) {
                 credit -= dist;
+                return true;
+            }
+            if (dist <= credit + recoil) {                  // сверх запаса — путь отдачи выстрела
+                recoil -= dist - credit;
+                credit = 0;
                 return true;
             }
             return false;
@@ -176,6 +209,8 @@ final class Inertia {
         void reset(double v) {
             speed = v;
             credit = 0;
+            recoil = 0;
+            recoilHold = 0;
         }
     }
 }

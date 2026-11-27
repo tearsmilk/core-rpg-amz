@@ -15,6 +15,8 @@ import java.util.TreeMap;
  * pistol_default). Затвор ({@code bolt-time} &gt; 0, ручной, как у AWP) — после каждого выстрела анимация затвора,
  * следующий выстрел — не раньше «промежуток по rpm + bolt-time». Оптика ({@code scope: true}) — в прицеле клиент
  * закрывает экран чёрным, кроме круга прицела (сетка из модели прицела TACZ), приближение {@code zoom} до 10.
+ * Отдача в вакууме ({@code vacuum-recoil}) — на сколько блоков выстрел относит стрелка назад в свободном полёте
+ * (без опоры под ногами); 0 — не относит.
  */
 record GunDef(
         String id,
@@ -69,7 +71,8 @@ record GunDef(
         String itemModel,
         String ammoIcon,
         Map<Double, String> boltSounds3p,
-        double flashScale) {
+        double flashScale,
+        double vacuumRecoil) {
 
     /** Виды оружия: длинное — за спиной, пистолет — в кобуре. */
     static final String RIFLE = "rifle";
@@ -203,7 +206,17 @@ record GunDef(
                 c.str(b + "item-model", "tacz/" + id + "_lod.bbmodel"),
                 c.str(b + "ammo-icon", "tacz/" + c.str(b + "caliber", "762x39") + ".png"),
                 timeline(c, b + "bolt-sounds-3p"),
-                clamp(c.dbl(b + "flash-scale", 1), 0, 4));
+                clamp(c.dbl(b + "flash-scale", 1), 0, 4),
+                clamp(c.dbl(b + "vacuum-recoil", defaultVacuumRecoil(type(c.str(b + "type", RIFLE)))), 0, 50));
+    }
+
+    /** Отдача в вакууме по умолчанию (нет vacuum-recoil в конфиге), блоков за выстрел — по виду оружия. */
+    static double defaultVacuumRecoil(String type) {
+        return switch (type) {
+            case PISTOL -> 0.5;
+            case SNIPER -> 3.0;
+            default -> 1.0;
+        };
     }
 
     private static String type(String s) {

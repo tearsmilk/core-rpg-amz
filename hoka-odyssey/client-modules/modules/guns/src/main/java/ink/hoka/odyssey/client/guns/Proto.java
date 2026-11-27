@@ -88,6 +88,16 @@ final class Proto {
      */
     static Map<String, Spec> readConfig(DataInputStream in, float[] vacuumVolume, Map<String, String> playerAnims,
                                         Map<String, String> gunItems, Map<String, Kind> kinds) throws IOException {
+        return readConfig(in, vacuumVolume, playerAnims, gunItems, kinds, new HashMap<>());
+    }
+
+    /**
+     * То же и четвёртый хвост: vacuumRecoil — отдача в вакууме по id, блоков за выстрел (u16 n, n раз UTF id и f32;
+     * старый сервер хвоста не шлёт — тогда пусто, отдачу ведёт сервер).
+     */
+    static Map<String, Spec> readConfig(DataInputStream in, float[] vacuumVolume, Map<String, String> playerAnims,
+                                        Map<String, String> gunItems, Map<String, Kind> kinds,
+                                        Map<String, Float> vacuumRecoil) throws IOException {
         int ver = in.readUnsignedByte();
         if (ver != VERSION) throw new IOException("версия протокола сервера " + ver + ", модуля " + VERSION);
         int n = in.readUnsignedShort();
@@ -145,6 +155,14 @@ final class Proto {
                 int flags = in.readUnsignedByte();
                 float flash = in.readFloat();
                 kinds.put(id, new Kind(type, Math.max(0, bolt), (flags & 1) != 0, Float.isFinite(flash) ? flash : 1));
+            }
+        }
+        if (in.available() >= 2) {
+            int m = in.readUnsignedShort();
+            for (int i = 0; i < m; i++) {
+                String id = in.readUTF();
+                float d = in.readFloat();
+                if (Float.isFinite(d) && d > 0) vacuumRecoil.put(id, Math.min(d, 50f));
             }
         }
         return out;
