@@ -102,6 +102,33 @@ class FireValidatorTest {
     }
 
     @Test
+    void boltNotSkippedBySwitchingAway() {
+        GunDef awp = GunDef.read("ai_awp", GunDef.Cfg.of(TestGuns.config()));
+        ShooterState s = new ShooterState();
+        long t0 = 10_000;
+        s.equip(awp, 0, "sn", 5, t0 - 1000);
+        assertEquals(FireValidator.Result.OK, FireValidator.check(s, t0, 0, 25, 3));
+        s.ammo--;
+        s.boltAfterShot(t0);
+        // сразу сменил слот и вернулся: draw 0,35 с + затвор 0,9 с, а не только draw
+        s.unequip();
+        s.equip(awp, 0, "sn", 4, t0 + 100);
+        assertEquals(FireValidator.Result.DRAWING, FireValidator.check(s, t0 + 100 + 400, 0, 25, 3));
+        assertEquals(FireValidator.Result.OK, FireValidator.check(s, t0 + 100 + 1300, 0, 25, 3));
+        // цикл закончился, пока оружие было убрано, — затвора при доставании нет
+        s.ammo--;
+        s.boltAfterShot(t0 + 1400);
+        s.unequip();
+        s.equip(awp, 0, "sn", 3, t0 + 1400 + 2000);
+        assertEquals(FireValidator.Result.OK, FireValidator.check(s, t0 + 3400 + 400, 0, 25, 3));
+        // последний патрон — затвор не передёргивается
+        ShooterState e = new ShooterState();
+        e.equip(awp, 0, "sn2", 0, t0);
+        e.boltAfterShot(t0);
+        assertTrue(e.boltDue.isEmpty());
+    }
+
+    @Test
     void angleMath() {
         assertEquals(0, FireValidator.angle(0, 0, 1, 0, 0, 2), 1e-9);
         assertEquals(90, FireValidator.angle(1, 0, 0, 0, 1, 0), 1e-9);

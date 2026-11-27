@@ -1,5 +1,8 @@
 package ink.hoka.odyssey.guns;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Состояние стрелка (одно на игрока, живёт в памяти модуля): какое оружие в руке, патроны в нём, перезарядка,
  * «достаёт», режим огня, «ведро» темпа. Патроны в предмет записываются только при смене слота, выходе, конце
@@ -25,6 +28,12 @@ final class ShooterState {
     /** Ручной затвор: когда началось передёргивание (мс, 0 — нет) и сколько его звуков для остальных уже сыграно. */
     long boltStart;
     int boltSoundIndex;
+    /**
+     * Ручной затвор: серийный номер оружия → когда (мс) после выстрела закончится передёргивание. Если убрать оружие
+     * раньше, затвор не передёрнут: при следующем доставании к «достаёт» прибавляется время затвора (иначе сменой
+     * слота туда-обратно затвор пропускался бы и AWP стрелял бы чаще цикла).
+     */
+    final Map<String, Long> boltDue = new HashMap<>();
 
     /** До этого момента (мс) оружие достают — стрелять нельзя. */
     long drawUntil;
@@ -91,6 +100,13 @@ final class ShooterState {
         this.ammo = Math.max(0, Math.min(ammo, g.magazine() + (g.chamber() ? 1 : 0)));
         cancelReload();
         drawUntil = now + Math.round(g.draw() * 1000);
+        boltStart = 0;
+        boltDue.values().removeIf(t -> t <= now);
+        Long due = serial == null ? null : boltDue.get(serial);
+        if (g.boltTime() > 0 && due != null) {                // затвор не передёрнут — сначала передёрнуть
+            drawUntil += Math.round(g.boltTime() * 1000);
+            boltDue.put(serial, drawUntil);
+        }
         if (!g.auto() && mode == 0) {
             mode = 1;
         }
@@ -98,6 +114,13 @@ final class ShooterState {
             mode = 0;
         }
         bucket.reset(now);
+    }
+
+    /** Выстрел из оружия с ручным затвором: если остался патрон, затвор передёргивается до {@code now + cycleMs}. */
+    void boltAfterShot(long now) {
+        if (gun != null && gun.boltTime() > 0 && ammo > 0 && serial != null) {
+            boltDue.put(serial, now + Math.round(gun.cycleMs()));
+        }
     }
 
     void unequip() {

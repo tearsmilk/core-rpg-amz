@@ -762,7 +762,9 @@ public final class GunsModule extends OdysseyModule {
                 g.pierce(), vac ? 0 : g.gravity(), vac ? 0 : g.friction(), p);
         Live live = new Live(b, p, g, inst);
         effects.shot(p, g, ex, ey, ez, vx * 20, vy * 20, vz * 20, life, vac);
-        if (g.boltTime() > 0 && !g.boltSounds3p().isEmpty()) {     // затвор — после промежутка по rpm
+        st.boltAfterShot(now);
+        if (g.boltTime() > 0 && st.ammo > 0 && !g.boltSounds3p().isEmpty()) {   // затвор — после промежутка по rpm
+                                                                                // (последний патрон — без затвора)
             st.boltStart = now + Math.round(g.intervalMs());
             st.boltSoundIndex = 0;
         }

@@ -116,6 +116,12 @@ public final class GunsClientModule implements ClientModule {
     private long drawUntilNs;
     /** Ручной затвор: когда начать анимацию затвора (нс, −1 — не надо). */
     private long boltAtNs = -1;
+    /**
+     * Ручной затвор: оружие (серийный номер предмета) → когда закончится передёргивание после выстрела (нс). Убрал
+     * оружие раньше — затвор не передёрнут: при доставании сначала draw, потом bolt (как и на сервере).
+     */
+    private final Map<String, Long> boltDue = new HashMap<>();
+    private String heldKey = "";
     private float ads;
     private long lastFrameNs;
     private final RecoilSpline recoilPitch = new RecoilSpline();
@@ -471,6 +477,13 @@ public final class GunsClientModule implements ClientModule {
         return id.isEmpty() ? null : id;
     }
 
+    /** Ключ оружия для затвора: серийный номер предмета (hoka_gun_sn), без него — слот. */
+    private static String gunKey(ItemStack s, int slot) {
+        CustomData cd = s.get(DataComponents.CUSTOM_DATA);
+        String sn = cd == null ? "" : cd.copyTag().getStringOr("hoka_gun_sn", "");
+        return sn.isEmpty() ? "slot:" + slot : sn;
+    }
+
     private static int itemAmmo(ItemStack s, int def) {
         CustomData cd = s.get(DataComponents.CUSTOM_DATA);
         if (cd == null) return def;
@@ -495,7 +508,16 @@ public final class GunsClientModule implements ClientModule {
             resetGun();
             if (held != null) {
                 ammo = itemAmmo(stack, held.magazine());
-                drawUntilNs = System.nanoTime() + (long) (held.draw() * 1e9);
+                long t = System.nanoTime();
+                drawUntilNs = t + (long) (held.draw() * 1e9);
+                heldKey = gunKey(stack, slot);
+                boltDue.values().removeIf(d -> d <= t);
+                float bolt = kind().boltTime();
+                if (bolt > 0 && boltDue.containsKey(heldKey)) {    // затвор не передёрнут — передёрнуть после draw
+                    boltAtNs = drawUntilNs;
+                    drawUntilNs += (long) (bolt * 1e9);
+                    boltDue.put(heldKey, drawUntilNs);
+                }
                 ViewModel vm = models.get(held.model());
                 if (vm != null) vm.play("draw");
                 Sfx.play(held.sound("draw"), 0.7f * cfg.volume, 1f);
@@ -750,6 +772,7 @@ public final class GunsClientModule implements ClientModule {
                     if (bolt > 0 && ammo > 0) {                    // ручной затвор: передёрнуть после промежутка
                         boltAtNs = now + interval;
                         nextShotNs = now + interval + (long) (bolt * 1e9);
+                        boltDue.put(heldKey, nextShotNs);
                     }
                 }
             } else {
