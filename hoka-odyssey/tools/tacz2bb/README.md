@@ -14,7 +14,10 @@ CC BY-NC-ND 4.0 разрешает техническую конвертацию
 - `--attach GEO PNG BONE` (и `--attach-name`) — поставить модель обвеса TACZ (прицел) в кость `BONE` оружия так, как
   её ставит сам TACZ при рисовании: кости и кубы обвеса не меняются, только сдвигаются в точку кости; у обвеса своя
   текстура (вторая в файле, со своим `uv_width`/`uv_height`). Имена костей обвеса, совпавшие с именами костей оружия,
-  получают приставку `<attach-name>_` (у AWP и прицела есть кость `views` — у прицела она `scope_views`).
+  получают приставку `<attach-name>_` (у AWP и прицела есть кость `views` — у прицела она `scope_views`);
+- `--view DISPLAY [DISPLAY_ПРИЦЕЛА]` — поле `hoka_view` {`model_fov`, `zoom_model_fov`}: угол обзора модели от
+  первого лица из display оружия TACZ (нет — 70, как у TACZ), с прицелом в прицеле — `views_fov` прицела (так берёт
+  TACZ); его читает клиентский модуль guns.
 
 ## Команды (как сделаны файлы в `guns/assets-tacz/models/`)
 
@@ -25,21 +28,24 @@ CC BY-NC-ND 4.0 разрешает техническую конвертацию
 python3 -I geo2bbmodel.py P/assets/tacz/geo_models/gun/ak47_geo.json P/assets/tacz/textures/gun/uv/ak47.png ak47.bbmodel \
     --anim P/assets/tacz/animations/ak47.animation.json \
     --drop mag_extended_1,mag_extended_2,mag_extended_3,mount,oem_stock_heavy,oem_stock_light,ar_stock_adapter \
-    --strip-cubes lefthand_pos,righthand_pos --name ak47
+    --strip-cubes lefthand_pos,righthand_pos --name ak47 \
+    --view P/assets/tacz/display/guns/ak47_display.json
 python3 -I geo2bbmodel.py P/assets/tacz/geo_models/gun/lod/ak47.json P/assets/tacz/textures/gun/lod/ak47.png ak47_lod.bbmodel \
     --name ak47_lod --display ak47_display.json
 python3 -I geo2bbmodel.py P/assets/tacz/geo_models/gun/ai_awp_geo.json P/assets/tacz/textures/gun/uv/ai_awp.png ai_awp.bbmodel \
     --anim P/assets/tacz/animations/ai_awp.animation.json \
     --drop mag_extended_1,mag_extended_2,mag_extended_3,sight --strip-cubes lefthand_pos,righthand_pos --name ai_awp \
     --attach P/assets/tacz/geo_models/attachment/scope_standard_8x_geo.json \
-             P/assets/tacz/textures/attachment/uv/scope_standard_8x.png scope_pos --attach-name scope
+             P/assets/tacz/textures/attachment/uv/scope_standard_8x.png scope_pos --attach-name scope \
+    --view P/assets/tacz/display/guns/ai_awp_display.json P/assets/tacz/display/attachments/scope_standard_8x_display.json
 python3 -I geo2bbmodel.py P/assets/tacz/geo_models/gun/lod/ai_awp.json P/assets/tacz/textures/gun/lod/ai_awp.png ai_awp_lod.bbmodel \
     --name ai_awp_lod --display ai_awp_display.json \
     --attach P/assets/tacz/geo_models/attachment/lod/scope_standard_8x.json \
              P/assets/tacz/textures/attachment/lod/scope_standard_8x.png scope_pos --attach-name scope
 python3 -I geo2bbmodel.py P/assets/tacz/geo_models/gun/glock_17_geo.json P/assets/tacz/textures/gun/uv/glock_17.png glock_17.bbmodel \
     --anim P/assets/tacz/animations/glock_17.animation.json \
-    --drop mag_extended_1,mag_extended_2,mag_extended_3 --strip-cubes lefthand_pos,righthand_pos --name glock_17
+    --drop mag_extended_1,mag_extended_2,mag_extended_3 --strip-cubes lefthand_pos,righthand_pos --name glock_17 \
+    --view P/assets/tacz/display/guns/glock_17_display.json
 python3 -I geo2bbmodel.py P/assets/tacz/geo_models/gun/lod/glock_17.json P/assets/tacz/textures/gun/lod/glock_17.png glock_17_lod.bbmodel \
     --name glock_17_lod --display glock_17_display.json
 ```

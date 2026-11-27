@@ -706,12 +706,14 @@ public final class GunsClientModule implements ClientModule {
 
     /**
      * Сжатие x, y камеры для оружия в руке: угол обзора мира (настройка × множитель игры, как GameRenderer.getFov)
-     * → угол оружия viewmodel_fov (у руки игры — всегда 70). Вода и лава сужают оба одинаково.
+     * → угол обзора модели. По умолчанию — как у TACZ: свой у каждого оружия (model_fov от бедра, к zoom_model_fov в
+     * прицеле — {@link ViewModel#viewFov}); viewmodel_fov числом — один для всего оружия. Вода и лава сужают оба.
      */
-    private float viewFovScale(Minecraft mc, float pt) {
-        if (cfg.viewmodelFov <= 0) return 1;
+    private float viewFovScale(Minecraft mc, float pt, ViewModel vm) {
+        double view = cfg.viewmodelFov == GunsConfig.FOV_MODEL ? vm.viewFov(ads) : cfg.viewmodelFov;
+        if (view <= 0 && cfg.viewmodelFov == GunsConfig.FOV_MODEL) view = 70;   // в модели угла нет — как рука игры
+        if (view <= 0) return 1;
         double world = mc.options.fov().get() * net.minecraft.util.Mth.lerp(pt, fovModO, fovMod);
-        double view = cfg.viewmodelFov;
         var fluid = mc.gameRenderer.getMainCamera().getFluidInCamera();
         if (fluid == net.minecraft.world.level.material.FogType.WATER
                 || fluid == net.minecraft.world.level.material.FogType.LAVA) {
@@ -927,8 +929,8 @@ public final class GunsClientModule implements ClientModule {
         Matrix4f sway = new Matrix4f().rotateY((float) Math.toRadians(swayX)).rotateX((float) Math.toRadians(swayY));
         m2c = sway.mul(m2c);
         Matrix4f camToBuf = new Matrix4f(pose).rotate(q);
-        // свой угол обзора оружия (как рука игры — 70 при любой настройке): x, y камеры ×k
-        Matrix4f fov = ViewModel.fovMatrix(viewFovScale(mc, frame.partialTick()));
+        // свой угол обзора оружия (как у TACZ — model_fov оружия при любой настройке): x, y камеры ×k
+        Matrix4f fov = ViewModel.fovMatrix(viewFovScale(mc, frame.partialTick(), vm));
         vm.render(frame.buffers(), camToBuf, fov, m2c, light(mc, frame.camera()), ammo, cfg.arms);
         Vector3f mz = vm.muzzle(m2c);
         if (mz != null) {

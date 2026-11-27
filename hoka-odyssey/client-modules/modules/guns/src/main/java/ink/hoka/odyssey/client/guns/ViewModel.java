@@ -49,6 +49,12 @@ final class ViewModel {
     private final Identifier[] tex;
     /** Сетка прицела (кости division модели прицела TACZ) — для круга оптики; null — у модели нет прицела. */
     final Reticle reticle;
+    /**
+     * Угол обзора модели от первого лица, градусы (поле hoka_view файла — из display TACZ): от бедра (model_fov) и в
+     * прицеле (zoom_model_fov; у оружия с прицелом — views_fov прицела). 0 — в файле нет.
+     */
+    final float modelFov;
+    final float zoomModelFov;
     private final Map<String, List<Cue>> cues = new HashMap<>();
     private final Matrix4f[] pose;
     private final Matrix4f[] rest;
@@ -81,6 +87,9 @@ final class ViewModel {
 
     private ViewModel(String path, BbModel model, Identifier[] tex, JsonObject json, Reticle reticle) {
         this.reticle = reticle;
+        JsonObject view = json.get("hoka_view") instanceof JsonObject v ? v : new JsonObject();
+        modelFov = fovField(view, "model_fov", 0);
+        zoomModelFov = fovField(view, "zoom_model_fov", modelFov);
         this.path = path;
         this.model = model;
         this.tex = tex;
@@ -140,6 +149,25 @@ final class ViewModel {
                 animated.put(a.get("name").getAsString(), animatedBones(model, a));
             }
         }
+    }
+
+    private static float fovField(JsonObject o, String key, float def) {
+        try {
+            float v = o.has(key) ? o.get(key).getAsFloat() : def;
+            return Float.isFinite(v) && v >= 1 && v < 179 ? v : def;
+        } catch (RuntimeException e) {
+            return def;
+        }
+    }
+
+    /**
+     * Угол обзора модели при прицеливании ads (0…1), как у TACZ (пресет renew, канал model): от model_fov к
+     * zoom_model_fov с задержкой 20 % и плавностью ease-in-out-cubic. 0 — у модели угла нет.
+     */
+    float viewFov(float ads) {
+        if (modelFov <= 0) return 0;
+        float w = AdsBlend.easeInOutCubic(AdsBlend.clamp01((ads - 0.2f) / 0.8f));
+        return AdsBlend.lerp(modelFov, zoomModelFov, w);
     }
 
     /** «tacz:ak47/ak47_reload_magout» → «ak47_reload_magout» (так звук назван в hosounds). Чужие (без tacz:) — null. */

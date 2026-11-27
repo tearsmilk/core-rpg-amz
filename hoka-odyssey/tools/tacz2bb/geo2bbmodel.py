@@ -7,10 +7,13 @@
 # переворачивает rotation x,y и position x само — BbModel.legacyKeys).
 # Использование: python3 -I geo2bbmodel.py GEO.json TEXTURE.png OUT.bbmodel [--anim ANIM.json]
 #                [--drop bone1,bone2] [--strip-cubes bone1,bone2] [--name ak47]
-#                [--attach GEO.json TEXTURE.png BONE [--attach-name scope]]
+#                [--attach GEO.json TEXTURE.png BONE [--attach-name scope]] [--view GUN_DISPLAY.json [SCOPE_DISPLAY.json]]
 # --attach: модель обвеса (прицел TACZ) ставится в кость BONE оружия, как её ставит сам TACZ при рисовании: кости и
 # кубы обвеса — как есть, только сдвинуты в точку кости (origin обвеса = пивот BONE); своя текстура (вторая в файле,
 # со своим uv_width/uv_height). Имена костей обвеса, совпавшие с костями оружия, получают приставку «<attach-name>_».
+# --view: угол обзора модели от первого лица из вкладки display оружия TACZ (model_fov — от бедра, zoom_model_fov —
+# в прицеле; нет — 70, как у TACZ); с прицелом (второй файл — display обвеса) в прицеле — его views_fov[0], как у TACZ.
+# Пишется в поле hoka_view {model_fov, zoom_model_fov} (его читает клиентский модуль guns; Blockbench — нет).
 import argparse, base64, json, re, struct, sys, uuid as uuidlib
 
 
@@ -204,6 +207,18 @@ def add_attachment(geo, png, parent, groups, elements, name, prefix, tex_index):
         groups[grp['name']] = grp
 
 
+def view_fov(files):
+    """Углы обзора модели от первого лица, как их берёт TACZ (CameraSetupEvent.applyGunModelFovModifying)."""
+    gun = load(files[0])
+    hip = float(gun.get('model_fov', 70))
+    zoom = float(gun.get('zoom_model_fov', 70))
+    if len(files) > 1:                     # прицел: в прицеле — его views_fov (первая кратность)
+        fovs = load(files[1]).get('views_fov')
+        if isinstance(fovs, list) and fovs: zoom = float(fovs[0])
+        elif isinstance(fovs, (int, float)): zoom = float(fovs)
+    return {'model_fov': hip, 'zoom_model_fov': zoom}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('geo'); ap.add_argument('png'); ap.add_argument('out')
@@ -212,6 +227,8 @@ def main():
     ap.add_argument('--attach', nargs=3, metavar=('GEO', 'PNG', 'BONE'),
                     help='модель обвеса (Bedrock geo) и её текстура — в кость BONE оружия (как TACZ ставит прицел)')
     ap.add_argument('--attach-name', default='scope')
+    ap.add_argument('--view', nargs='+', metavar='DISPLAY',
+                    help='display оружия TACZ (model_fov, zoom_model_fov) [и display прицела (views_fov)] → hoka_view')
     ap.add_argument('--display', help='JSON-файл вкладки Display (Java: thirdperson_righthand, firstperson_righthand, ground, fixed, gui…)')
     a = ap.parse_args()
     with open(a.png, 'rb') as f: png = f.read()
@@ -222,6 +239,7 @@ def main():
                            [x for x in a.drop.split(',') if x], set(x for x in a.strip_cubes.split(',') if x), a.name,
                            attach, a.attach_name)
     if a.display: res['display'] = load(a.display)
+    if a.view: res['hoka_view'] = view_fov(a.view)
     with open(a.out, 'w', encoding='utf-8') as f: json.dump(res, f, ensure_ascii=False, separators=(',', ':'))
     print(f'{a.out}: кубов {len(res["elements"])}, анимаций {len(res["animations"])}, убрано костей {len(dropped)}: {sorted(dropped)}')
 

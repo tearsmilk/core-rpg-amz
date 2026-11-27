@@ -15,7 +15,7 @@ final class GunsConfig {
     private static final String DEFAULT = """
             # Hoka Odyssey — модуль guns (огнестрел). Файл читается при загрузке модуля (вход на сервер,
             # /hoclient reload). Клавиши — имена Minecraft: key.keyboard.r, key.keyboard.v, key.mouse.left, key.mouse.4 …
-            config_version = 1
+            config_version = 2
 
             # Выстрел — кнопка «атаковать» игры (ЛКМ; зажать — очередь в режиме «авто»), прицел — «использовать» (ПКМ).
             # Перезарядка (работает, только пока в руке оружие — иначе R остаётся у spaceflight: «лечь» в невесомости)
@@ -25,9 +25,11 @@ final class GunsConfig {
 
             # Размер оружия в руке (1 — как в TACZ по пикселям модели; меньше — меньше «влезает» в стены)
             viewmodel_scale = 0.3
-            # Угол обзора оружия и рук в руке, градусы (как у руки в игре: 70, не зависит от настройки «угол обзора»;
-            # иначе при большом угле обзора оружие и руки растягиваются и вылезают снизу). 0 — угол обзора мира
-            viewmodel_fov = 70
+            # Угол обзора оружия и рук в руке, градусы (не зависит от настройки «угол обзора» — иначе при большом угле
+            # оружие и руки растягиваются и вылезают снизу). model — как в TACZ: свой у каждого оружия (model_fov от
+            # бедра, zoom_model_fov в прицеле; у АКМ, AWP и Glock — 60, в прицеле 45/20/45); число — один для всего
+            # оружия (у руки в игре — 70); 0 — угол обзора мира
+            viewmodel_fov = model
             # Наименьшая яркость оружия в руке, 0…15 (в космосе темно — иначе его не видно)
             min_light = 8
             # Трассеры пуль и вспышка у ствола
@@ -58,7 +60,9 @@ final class GunsConfig {
     String reloadKey = "key.keyboard.r";
     String fireModeKey = "key.keyboard.v";
     float viewmodelScale = 0.3f;
-    float viewmodelFov = 70f;
+    /** viewmodel_fov = model: угол обзора модели у каждого оружия свой (из TACZ). */
+    static final float FOV_MODEL = -1f;
+    float viewmodelFov = FOV_MODEL;
     int minLight = 8;
     boolean tracers = true;
     float cameraShake = 0.5f;
@@ -91,8 +95,7 @@ final class GunsConfig {
             c.reloadKey = p.getProperty("reload", c.reloadKey).trim();
             c.fireModeKey = p.getProperty("firemode", c.fireModeKey).trim();
             c.viewmodelScale = (float) num(p, "viewmodel_scale", c.viewmodelScale, 0.05, 2);
-            double fov = num(p, "viewmodel_fov", c.viewmodelFov, 0, 150);
-            c.viewmodelFov = fov < 1 ? 0 : (float) Math.max(30, fov);
+            c.viewmodelFov = viewFov(p);
             c.minLight = (int) num(p, "min_light", c.minLight, 0, 15);
             c.tracers = bool(p, "tracers", c.tracers);
             c.cameraShake = (float) num(p, "camera_shake", c.cameraShake, 0, 2);
@@ -111,6 +114,25 @@ final class GunsConfig {
             log.warn("guns: не удалось прочитать {} — значения по умолчанию ({})", file, e.toString());
         }
         return c;
+    }
+
+    /**
+     * viewmodel_fov: «model» (или нет ключа) — свой у каждого оружия; число — один для всего; 0 — угол мира. В файлах
+     * версии 1 стояло 70 по умолчанию (тогда считали, что у TACZ так) — это значение там читается как model.
+     */
+    static float viewFov(Properties p) {
+        String s = p.getProperty("viewmodel_fov");
+        if (s == null || s.trim().equalsIgnoreCase("model")) return FOV_MODEL;
+        double v;
+        try {
+            v = Double.parseDouble(s.trim());
+        } catch (NumberFormatException e) {
+            return FOV_MODEL;
+        }
+        if (!Double.isFinite(v)) return FOV_MODEL;
+        String ver = p.getProperty("config_version", "1").trim();
+        if (ver.equals("1") && v == 70) return FOV_MODEL;
+        return v < 1 ? 0 : (float) Math.max(30, Math.min(150, v));
     }
 
     private static void tune(String tune, float[] out) {
