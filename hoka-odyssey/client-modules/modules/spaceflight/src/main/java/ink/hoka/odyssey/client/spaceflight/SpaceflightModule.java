@@ -97,6 +97,10 @@ public final class SpaceflightModule implements ClientModule {
     private static final double SNAP_REACH = 0.35;
     /** Внутренний угол — только если соседняя грань выше шага: касание на этой высоте от ног и выше, блоки. */
     private static final double WALL_FROM = 1.0;
+    /** Переход на другую плоскость в прыжке — только на стену не ниже стольких блоков от плоскости, с которой прыгнул. */
+    private static final double JUMP_WALL = 2.0;
+    /** Где были ноги (по своей нормали) в последний тик на грани — от неё меряется высота стены в прыжке. */
+    private double takeoff = Double.NaN;
     /** После выхода из тяготения грани (оттолкнулся, улетел от блоков) — столько тиков не входить снова. */
     private static final int REENTRY = 10;
     /**
@@ -645,6 +649,7 @@ public final class SpaceflightModule implements ClientModule {
 
     /** Сойти с грани в свободный полёт (рамка вернётся обычной, как только для неё будет место). */
     private void leaveSurface() {
+        takeoff = Double.NaN;
         grav.leave();
         reentry = REENTRY;
         orientNow = true;
@@ -681,6 +686,7 @@ public final class SpaceflightModule implements ClientModule {
         double turn = SurfaceGravity.tiltPerTick(cfg.surfaceTurnTime);
         if (grounded) {
             jumped = false;
+            takeoff = feetAlong(bb, n);
             // внутренний угол: шагнул в стену выше шага — встать на неё
             Vec3d n0 = n;
             int c = SurfaceGravity.innerCorner(face, wish, i -> touchingHigh(p, bb, i, n0));
@@ -706,8 +712,12 @@ public final class SpaceflightModule implements ClientModule {
             }
             Vec3d was = lastSet == null ? v : new Vec3d(lastSet.x, lastSet.y, lastSet.z);
             double gap = p.horizontalCollision || p.verticalCollision ? CONTACT * 2 : CONTACT;
-            // прыжок с «вперёд» в стену (любой высоты, хоть в блок) — переворот на неё (внутренний угол в воздухе)
-            int c = up == n ? SurfaceGravity.innerCorner(face, wish, i -> touching(p, bb, i, gap)) : -1;
+            // прыжок с «вперёд» в стену — переворот на неё, но только если стена не ниже JUMP_WALL от плоскости, с
+            // которой прыгнул (иначе на неровном астероиде каждый бугор переворачивал)
+            Vec3d nj = n;
+            double base = Double.isNaN(takeoff) ? feetAlong(bb, n) : takeoff;
+            int c = up == n ? SurfaceGravity.innerCorner(face, wish,
+                    i -> touchingBand(p, bb, i, nj, base + WALL_FROM, base + JUMP_WALL - 0.05, gap)) : -1;
             // тянет к ребру: коснулся грани, к которой тянет (или в которую летишь), — встать на неё
             if (c < 0 && up != n) {
                 Vec3d u = up;
@@ -721,6 +731,7 @@ public final class SpaceflightModule implements ClientModule {
                 n = grav.normal();
                 up = n;
                 wish = grav.wish(fwd, side);
+                takeoff = Double.NaN;                              // новая грань — высоту стены мерить от неё
                 grounded = touching(p, p.getBoundingBox(), face, CONTACT * 2);
             } else {
                 grav.tilt(up, turn, now);
@@ -836,6 +847,30 @@ public final class SpaceflightModule implements ClientModule {
     }
 
     /** Касание грани i только на уровне головы: от WALL_FROM вдоль n от ног и выше (стена выше шага). */
+    /** Ноги рамки вдоль нормали n (координата её оси, со знаком n). */
+    private static double feetAlong(AABB b, Vec3d n) {
+        int axis = BodyFrame.normalIndex(n) / 2;
+        double along = n.x() + n.y() + n.z();
+        double lo = axis == 0 ? b.minX : axis == 1 ? b.minY : b.minZ;
+        double hi = axis == 0 ? b.maxX : axis == 1 ? b.maxY : b.maxZ;
+        return along > 0 ? lo : -hi;
+    }
+
+    /** Касание грани i полосой рамки, обрезанной вдоль n высотами [from; to] (в тех же единицах, что feetAlong). */
+    private static boolean touchingBand(LocalPlayer p, AABB b, int i, Vec3d n, double from, double to, double gap) {
+        int axis = BodyFrame.normalIndex(n) / 2;
+        double along = n.x() + n.y() + n.z();
+        double[] lo = {b.minX, b.minY, b.minZ}, hi = {b.maxX, b.maxY, b.maxZ};
+        double a0 = along > 0 ? from : -to, a1 = along > 0 ? to : -from;   // в координатах оси
+        lo[axis] = Math.max(lo[axis], a0);
+        hi[axis] = Math.min(hi[axis], a1);
+        if (hi[axis] - lo[axis] < 0.02) {                              // рамка целиком ниже/выше полосы —
+            lo[axis] = a0;                                             // смотреть саму полосу (стена над головой)
+            hi[axis] = a1;
+        }
+        return touching(p, new AABB(lo[0], lo[1], lo[2], hi[0], hi[1], hi[2]), i, gap);
+    }
+
     private static boolean touchingHigh(LocalPlayer p, AABB b, int i, Vec3d n) {
         int axis = BodyFrame.normalIndex(n) / 2;
         double[] lo = {b.minX, b.minY, b.minZ}, hi = {b.maxX, b.maxY, b.maxZ};
