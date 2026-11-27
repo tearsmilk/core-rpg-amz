@@ -68,16 +68,19 @@ final class Effects {
         }
     }
 
-    /** Трассер (кроме стрелка — он рисует свой сразу) и звук выстрела остальным. */
+    /**
+     * Трассер (кроме стрелка — он рисует свой сразу) и (sound) звук выстрела остальным. У дроби трассер — на каждую
+     * пулю, звук — один на выстрел.
+     */
     void shot(Player shooter, GunDef g, double x, double y, double z, double vx, double vy, double vz, double life,
-              boolean vacuum) {
+              boolean vacuum, boolean sound) {
         Instance inst = shooter.getInstance();
         if (inst == null) {
             return;
         }
         byte[] tracer = null;
         String s3p = g.sound("shoot3p");
-        boolean othersHear = !vacuum || "all".equals(mod.vacuumSound());
+        boolean othersHear = sound && (!vacuum || "all".equals(mod.vacuumSound()));
         Vec at = new Vec(x, y, z);
         for (Player v : inst.getPlayers()) {
             if (v == shooter) {
@@ -94,7 +97,7 @@ final class Effects {
             }
         }
         // стрелок без клиентского модуля слышит свой выстрел от сервера (с модулем — играет сам, без задержки)
-        if (!mod.modded(shooter) && !(vacuum && "none".equals(mod.vacuumSound()))) {
+        if (sound && !mod.modded(shooter) && !(vacuum && "none".equals(mod.vacuumSound()))) {
             mod.links().play(shooter, g.sound("shoot"), at, vacuum ? 0.35f : 1f, vacuum ? 0.7f : 1f);
         }
     }

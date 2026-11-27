@@ -16,7 +16,9 @@ import java.util.TreeMap;
  * следующий выстрел — не раньше «промежуток по rpm + bolt-time». Оптика ({@code scope: true}) — в прицеле клиент
  * закрывает экран чёрным, кроме круга прицела (сетка из модели прицела TACZ), приближение {@code zoom} до 10.
  * Отдача в вакууме ({@code vacuum-recoil}) — на сколько блоков выстрел относит стрелка назад в свободном полёте
- * (без опоры под ногами); 0 — не относит.
+ * (без опоры под ногами); 0 — не относит. Дробь ({@code pellets} &gt; 1) — столько пуль за выстрел, урон из
+ * {@code damage} делится между ними (у TACZ урон M1897 — на весь выстрел). Перезарядка по одному патрону
+ * ({@code shell-reload}) — {@link ShellReload}.
  */
 record GunDef(
         String id,
@@ -72,7 +74,12 @@ record GunDef(
         String ammoIcon,
         Map<Double, String> boltSounds3p,
         double flashScale,
-        double vacuumRecoil) {
+        double vacuumRecoil,
+        int pellets,
+        ShellReload shellReload,
+        boolean crosshair,
+        Map<Double, String> reloadSoundsLoop,
+        Map<Double, String> reloadSoundsEnd) {
 
     /** Виды оружия: длинное — за спиной, пистолет — в кобуре. */
     static final String RIFLE = "rifle";
@@ -84,6 +91,49 @@ record GunDef(
 
     /** Перезарядка: feed — патроны в магазине, total — можно стрелять (секунды от начала). */
     record Reload(double feed, double total) {}
+
+    /**
+     * Перезарядка по одному патрону (дробовик M1897, как в TACZ), секунд: вступление (с непустым магазином — intro,
+     * с пустым — introEmpty, в нём патрон в патронник в introEmptyFeed), потом на каждый патрон цикл loop (патрон в
+     * магазине в loopFeed от начала цикла), в конце — end.
+     */
+    record ShellReload(double intro, double introEmpty, double introEmptyFeed, double loop, double loopFeed,
+                       double end) {}
+
+    /**
+     * План перезарядки по одному патрону: с пустым ли магазином, сколько циклов loop, когда (с от начала) в оружие
+     * входит каждый патрон, и вся длина.
+     */
+    record ShellPlan(boolean empty, int loops, double[] feeds, double total) {}
+
+    /** Сколько патронов вмещает оружие с перезарядкой по одному: магазин и патрон в патроннике. */
+    int shellTarget() {
+        return magazine + (chamber ? 1 : 0);
+    }
+
+    /** План перезарядки по одному патрону: ammo — сейчас в оружии, available — в инвентаре (−1 — бесконечно). */
+    ShellPlan shellPlan(int ammo, int available) {
+        ShellReload s = shellReload;
+        int n = Math.max(0, shellTarget() - ammo);
+        if (available >= 0) {
+            n = Math.min(n, available);
+        }
+        boolean empty = ammo <= 0;
+        List<Double> feeds = new ArrayList<>();
+        double t = empty ? s.introEmpty() : s.intro();
+        if (empty && n > 0) {
+            feeds.add(s.introEmptyFeed());
+            n--;
+        }
+        for (int i = 0; i < n; i++) {
+            feeds.add(t + i * s.loop() + s.loopFeed());
+        }
+        double[] f = new double[feeds.size()];
+        for (int i = 0; i < f.length; i++) {
+            f[i] = feeds.get(i);
+        }
+        return new ShellPlan(empty, n, f, t + n * s.loop() + s.end());
+    }
 
     /** Промежуток между выстрелами, мс. */
     double intervalMs() {
@@ -207,7 +257,24 @@ record GunDef(
                 c.str(b + "ammo-icon", "tacz/" + c.str(b + "caliber", "762x39") + ".png"),
                 timeline(c, b + "bolt-sounds-3p"),
                 clamp(c.dbl(b + "flash-scale", 1), 0, 4),
-                clamp(c.dbl(b + "vacuum-recoil", defaultVacuumRecoil(type(c.str(b + "type", RIFLE)))), 0, 50));
+                clamp(c.dbl(b + "vacuum-recoil", defaultVacuumRecoil(type(c.str(b + "type", RIFLE)))), 0, 50),
+                clamp(c.integer(b + "pellets", 1), 1, 32),
+                shellReload(c, b + "shell-reload"),
+                c.bool(b + "crosshair", true),
+                timeline(c, b + "reload-sounds-3p.loop"),
+                timeline(c, b + "reload-sounds-3p.end"));
+    }
+
+    /** Перезарядка по одному патрону (раздел shell-reload); нет раздела — null (обычная, магазином). */
+    private static ShellReload shellReload(Cfg c, String path) {
+        if (!(c.get(path) instanceof Map<?, ?>)) {
+            return null;
+        }
+        double intro = clamp(c.dbl(path + ".intro", 0.47), 0, 10);
+        double introEmpty = clamp(c.dbl(path + ".intro-empty", 2.1), 0, 10);
+        return new ShellReload(intro, introEmpty, clamp(c.dbl(path + ".intro-empty-feed", 1.53), 0, introEmpty),
+                clamp(c.dbl(path + ".loop", 0.53), 0.05, 10), clamp(c.dbl(path + ".loop-feed", 0.27), 0, 10),
+                clamp(c.dbl(path + ".end", 0.37), 0, 10));
     }
 
     /** Отдача в вакууме по умолчанию (нет vacuum-recoil в конфиге), блоков за выстрел — по виду оружия. */

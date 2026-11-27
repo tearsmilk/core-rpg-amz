@@ -86,7 +86,7 @@ public final class GunsModule extends OdysseyModule {
     private boolean logHits;
 
     /** Пуля в полёте и чья она. */
-    private record Live(Ballistics.Bullet b, Player shooter, GunDef gun, Instance inst) {}
+    private record Live(Ballistics.Bullet b, Player shooter, GunDef gun, Instance inst, int shot) {}
 
     @Override
     protected void onEnable() {
@@ -445,8 +445,7 @@ public final class GunsModule extends OdysseyModule {
         float len = 0;
         float since = 0;
         if ((flags & Proto.POSE_RELOAD) != 0) {
-            GunDef.Reload r = st.reloadKind == 1 ? st.gun.tactical() : st.gun.empty();
-            len = (float) r.total();
+            len = (float) st.reloadTotal;
             since = Math.max(0, (now - st.reloadStart) / 1000f);
         }
         return Proto.pose(p.getEntityId(), flags, since, len);
@@ -739,6 +738,10 @@ public final class GunsModule extends OdysseyModule {
         if (inst == null || p.isDead() || p.getGameMode() == GameMode.SPECTATOR) {
             return false;
         }
+        if (st.reloadKind == 3 && st.ammo > 0) {             // по одному патрону: выстрел прерывает перезарядку
+            st.cancelReload();
+            flushAmmo(p, st);
+        }
         Vec look = p.getPosition().direction();
         double ang = FireValidator.angle(dx, dy, dz, look.x(), look.y(), look.z());
         FireValidator.Result r = FireValidator.check(st, now, ang, maxAim, burst);
@@ -756,29 +759,33 @@ public final class GunsModule extends OdysseyModule {
         boolean vac = st.vacuum;
         Spread.Stance stance = new Spread.Stance(aiming(p, st, now), vac, p.isSneaking(),
                 st.speed > 0.08 || (!vac && !p.isOnGround()));
-        double[] d = Spread.apply(dx, dy, dz, Spread.inaccuracy(g, stance), ThreadLocalRandom.current());
+        double inacc = Spread.inaccuracy(g, stance);
         Pos pos = p.getPosition();
         double ex = pos.x();
         double ey = pos.y() + p.getEyeHeight();
         double ez = pos.z();
         double v = g.speed() / 20.0;
         double[] m = st.motion == null ? new double[3] : st.motion;
-        double vx = d[0] * v + m[0];
-        double vy = d[1] * v + (vac || !p.isOnGround() ? m[1] : 0);
-        double vz = d[2] * v + m[2];
         double life = vac ? vacLife : g.life();
-        Ballistics.Bullet b = new Ballistics.Bullet(ex, ey, ez, vx, vy, vz, (int) Math.max(1, Math.round(life * 20)),
-                g.pierce(), vac ? 0 : g.gravity(), vac ? 0 : g.friction(), p);
-        Live live = new Live(b, p, g, inst);
-        effects.shot(p, g, ex, ey, ez, vx * 20, vy * 20, vz * 20, life, vac);
+        int shot = ++st.shotNo;
+        for (int k = 0; k < g.pellets(); k++) {               // дробь — у каждой пули свой разброс
+            double[] d = Spread.apply(dx, dy, dz, inacc, ThreadLocalRandom.current());
+            double vx = d[0] * v + m[0];
+            double vy = d[1] * v + (vac || !p.isOnGround() ? m[1] : 0);
+            double vz = d[2] * v + m[2];
+            Ballistics.Bullet b = new Ballistics.Bullet(ex, ey, ez, vx, vy, vz, (int) Math.max(1, Math.round(life * 20)),
+                    g.pierce(), vac ? 0 : g.gravity(), vac ? 0 : g.friction(), p);
+            Live live = new Live(b, p, g, inst, shot);
+            effects.shot(p, g, ex, ey, ez, vx * 20, vy * 20, vz * 20, life, vac, k == 0);
+            if (step(live)) {                                 // первый отрезок — в том же тике
+                bullets.add(live);
+            }
+        }
         st.boltAfterShot(now);
         if (g.boltTime() > 0 && st.ammo > 0 && !g.boltSounds3p().isEmpty()) {   // затвор — после промежутка по rpm
                                                                                 // (последний патрон — без затвора)
             st.boltStart = now + Math.round(g.intervalMs());
             st.boltSoundIndex = 0;
-        }
-        if (step(live)) {                                     // первый отрезок — в том же тике
-            bullets.add(live);
         }
         if (vac && vacuum != null && g.vacuumRecoil() > 0) {
             // отдача в вакууме: назад вдоль выстрела на vacuum-recoil блоков — сразу, чтобы проверка скорости gravity
@@ -839,7 +846,7 @@ public final class GunsModule extends OdysseyModule {
         if (!allowed || target.isDead()) {
             return;
         }
-        double dmg = g.damageAt(fromStart) * (head ? g.headshot() : 1);
+        double dmg = g.damageAt(fromStart) * (head ? g.headshot() : 1) / g.pellets();   // дробь: урон на выстрел
         float hpBefore = target.getHealth();
         boolean ok = target.damage(new Damage(DamageType.PLAYER_ATTACK, shooter, shooter, new Vec(x, y, z), (float) dmg));
         if (logHits) {
@@ -862,6 +869,14 @@ public final class GunsModule extends OdysseyModule {
         }
         if (shooter.isOnline()) {
             int kind = target.isDead() || target.getHealth() <= 0 ? 3 : head ? 2 : 1;
+            ShooterState ss = states.get(shooter.getUuid());
+            if (ss != null && g.pellets() > 1) {              // дробь: одна отметка «попал» на выстрел (сильнейшая)
+                if (ss.hitShot == l.shot() && kind <= ss.hitKindSent) {
+                    return;
+                }
+                ss.hitShot = l.shot();
+                ss.hitKindSent = kind;
+            }
             if (modded(shooter)) {
                 links.send(shooter, Proto.hit(kind));
             } else {
@@ -991,14 +1006,37 @@ public final class GunsModule extends OdysseyModule {
             }
             return;
         }
-        st.reloadKind = st.ammo > 0 ? 1 : 2;
+        st.cancelReload();
         st.reloadStart = now;
-        st.reloadFed = false;
-        st.reloadSoundIndex = 0;
-        GunDef.Reload r = st.reloadKind == 1 ? g.tactical() : g.empty();
-        links.send(p, Proto.reloadStart(st.reloadKind, r.total()));
+        if (g.shellReload() != null) {                       // по одному патрону: вступление, циклы, конец
+            GunDef.ShellPlan plan = g.shellPlan(st.ammo, reserve(p, g));
+            GunDef.ShellReload sh = g.shellReload();
+            st.reloadKind = 3;
+            st.reloadTotal = plan.total();
+            st.reloadFeeds = plan.feeds();
+            addSounds(st, plan.empty() ? g.reloadSoundsEmpty() : g.reloadSoundsTactical(), 0);
+            double t = plan.empty() ? sh.introEmpty() : sh.intro();
+            for (int i = 0; i < plan.loops(); i++) {
+                addSounds(st, g.reloadSoundsLoop(), t + i * sh.loop());
+            }
+            addSounds(st, g.reloadSoundsEnd(), t + plan.loops() * sh.loop());
+            st.reloadSounds.sort(Map.Entry.comparingByKey());
+            links.send(p, Proto.reloadStart(3, plan.total(), plan.loops(), plan.empty()));
+        } else {
+            st.reloadKind = st.ammo > 0 ? 1 : 2;
+            GunDef.Reload r = st.reloadKind == 1 ? g.tactical() : g.empty();
+            st.reloadTotal = r.total();
+            addSounds(st, st.reloadKind == 1 ? g.reloadSoundsTactical() : g.reloadSoundsEmpty(), 0);
+            links.send(p, Proto.reloadStart(st.reloadKind, r.total()));
+        }
         if (!modded(p)) {
             p.sendActionBar(Component.text("Перезарядка…", NamedTextColor.YELLOW));
+        }
+    }
+
+    private static void addSounds(ShooterState st, Map<Double, String> snd, double offset) {
+        for (Map.Entry<Double, String> e : snd.entrySet()) {
+            st.reloadSounds.add(Map.entry(e.getKey() + offset, e.getValue()));
         }
     }
 
@@ -1007,23 +1045,35 @@ public final class GunsModule extends OdysseyModule {
             return;
         }
         GunDef g = st.gun;
-        GunDef.Reload r = st.reloadKind == 1 ? g.tactical() : g.empty();
         double el = (now - st.reloadStart) / 1000.0;
         // звуки для остальных (на планете; в вакууме не слышно)
-        Map<Double, String> snd = st.reloadKind == 1 ? g.reloadSoundsTactical() : g.reloadSoundsEmpty();
-        int i = 0;
-        for (Map.Entry<Double, String> e : snd.entrySet()) {
-            if (i++ < st.reloadSoundIndex) {
-                continue;
-            }
-            if (e.getKey() > el) {
-                break;
-            }
-            st.reloadSoundIndex++;
+        while (st.reloadSoundIndex < st.reloadSounds.size() && st.reloadSounds.get(st.reloadSoundIndex).getKey() <= el) {
+            String id = st.reloadSounds.get(st.reloadSoundIndex++).getValue();
             if (!st.vacuum || "all".equals(vacSound)) {
-                effects.others(p, e.getValue(), 0.8f);
+                effects.others(p, id, 0.8f);
             }
         }
+        if (st.reloadKind == 3) {                             // по одному патрону
+            while (st.reloadFedCount < st.reloadFeeds.length && el >= st.reloadFeeds[st.reloadFedCount]) {
+                st.reloadFedCount++;
+                int got = takeAmmo(p, g, 1);
+                if (got <= 0) {
+                    st.reloadFedCount = st.reloadFeeds.length;  // патроны кончились — дальше только конец
+                    break;
+                }
+                st.ammo += got;
+                st.ammoDirty = true;
+            }
+            if (el >= st.reloadTotal) {
+                st.cancelReload();
+                flushAmmo(p, st);
+                if (!modded(p)) {
+                    p.sendActionBar(Component.text(g.name() + "  " + st.ammo + " / " + fmtReserve(reserve(p, g)), NamedTextColor.GREEN));
+                }
+            }
+            return;
+        }
+        GunDef.Reload r = st.reloadKind == 1 ? g.tactical() : g.empty();
         if (!st.reloadFed && el >= r.feed()) {
             int cap = st.reloadKind == 1 ? g.capacity(1) : g.magazine();
             int want = Math.max(0, cap - st.ammo);

@@ -161,7 +161,9 @@ final class HoGunCommand extends Command {
         for (GunDef g : mod.guns().values()) {
             s.sendMessage(Component.text(" " + g.id() + " — " + g.name() + ": магазин " + g.magazine()
                     + (g.chamber() ? "+1" : "") + ", " + (int) g.rpm() + " в/мин" + (g.boltTime() > 0 ? " (затвор " + g.boltTime() + " с)" : "")
-                    + ", урон " + g.damage()[0] + (g.scope() ? ", прицел " + g.zoom() + "x" : "")
+                    + ", урон " + g.damage()[0] + (g.pellets() > 1 ? " (" + g.pellets() + " дробин)" : "")
+                    + (g.shellReload() != null ? ", заряжается по патрону" : "")
+                    + (g.scope() ? ", прицел " + g.zoom() + "x" : "")
                     + ", разброс " + g.spreadStand() + "°/" + g.spreadAim() + "° в прицеле", NamedTextColor.GRAY));
         }
     }

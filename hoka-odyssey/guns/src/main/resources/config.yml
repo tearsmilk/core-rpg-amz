@@ -3,7 +3,7 @@
 # по тикам, считает попадания и урон. Без клиентского модуля можно стрелять ЛКМ (по одному выстрелу), перезарядка — F.
 # Перечитать: homodule reload guns.
 #
-# Модели, текстуры и звуки АКМ, AWP (с прицелом 8x) и Glock 17 — из мода TACZ (https://github.com/MCModderAnchor/TACZ), лицензия CC BY-NC-ND 4.0:
+# Модели, текстуры и звуки АКМ, AWP (с прицелом 8x), Glock 17, M4A1, M16A1, Desert Eagle и M1897 — из мода TACZ (https://github.com/MCModderAnchor/TACZ), лицензия CC BY-NC-ND 4.0:
 # только некоммерческое использование, без изменений, с указанием авторов (см. NOTICE.md в jar, папка tacz/).
 # Поставить предмет и звуки в hoitems/hosounds — /hogun install (OP), потом всё работает само.
 
@@ -120,6 +120,8 @@ guns:
     sounds:
       shoot: ak47_shoot            # свой выстрел (стерео, слышит только стрелок)
       shoot3p: ak47_shoot_3p       # выстрел для остальных (из точки)
+      silence: ak47_silence        # с глушителем (для обвесов): свой выстрел и для остальных
+      silence3p: ak47_silence_3p
       draw: ak47_draw
       put_away: ak47_put_away
       dry_fire: gun_dry_fire
@@ -212,6 +214,8 @@ guns:
     sounds:
       shoot: awp_shoot
       shoot3p: awp_shoot_3p
+      silence: awp_silence
+      silence3p: awp_silence_3p
       draw: awp_draw
       put_away: awp_put_away
       dry_fire: gun_dry_fire
@@ -294,6 +298,8 @@ guns:
     sounds:
       shoot: glock17_shoot
       shoot3p: glock17_shoot_3p
+      silence: glock17_silence
+      silence3p: glock17_silence_3p
       draw: glock17_draw
       put_away: ""
       dry_fire: gun_dry_fire
@@ -311,3 +317,339 @@ guns:
     item-icon: tacz/glock_17_slot.png
     item-model: tacz/glock_17_lod.bbmodel
     ammo-icon: tacz/9mm.png
+
+  # M4A1 (m4a1 из TACZ): карабин под 5,56×45, очередь/одиночный. Числа — из m4a1_data.json TACZ.
+  m4a1:
+    name: "M4A1"
+    lore: ["Карабин под 5,56×45 НАТО.", "Модель и звуки: TACZ, CC BY-NC-ND 4.0"]
+    item: m4a1
+    material: iron_horse_armor
+    ammo-item: ammo_556x45
+    ammo-material: gold_nugget
+    ammo-name: "Патроны 5,56×45"
+    caliber: "556x45"
+    infinite-ammo: false
+    magazine: 30
+    chamber: true
+    rpm: 800
+    modes: [auto, semi]
+    damage:
+      - {distance: 32, damage: 7}
+      - {distance: 64, damage: 6}
+      - {distance: inf, damage: 4.5}
+    headshot: 1.5
+    bullet:
+      speed: 270
+      life: 0.75
+      gravity: 0.15
+      friction: 0.015
+      pierce: 1
+      knockback: 0
+      tracer: "#FF8888"
+    spread:
+      stand: 5
+      move: 5.5
+      sneak: 2.75
+      aim: 0.1
+      vacuum: 5
+    recoil:
+      pitch:
+        - {time: 0, min: 0.55, max: 0.55}
+        - {time: 0.3, min: 0.55, max: 0.55}
+        - {time: 0.5, min: -0.125, max: -0.125}
+        - {time: 0.65, min: 0, max: 0}
+      yaw:
+        - {time: 0, min: -0.35, max: 0.25}
+        - {time: 0.3, min: -0.35, max: 0.25}
+        - {time: 0.5, min: 0, max: 0}
+    reload:
+      tactical: {feed: 1.4, total: 1.87}
+      empty: {feed: 1.87, total: 2.2}
+    draw: 0.3
+    aim-time: 0.2
+    zoom: 1.33
+    aim-speed: 0.85
+    flash-scale: 0.65
+    model: guns/m4a1.bbmodel
+    hud: guns/m4a1_hud.png
+    flash: guns/common_muzzle_flash.png
+    player-animation: guns/rifle_default.player_animation.json
+    sounds:
+      shoot: m4a1_shoot
+      shoot3p: m4a1_shoot_3p
+      silence: m4a1_silence
+      silence3p: m4a1_silence_3p
+      draw: m4a1_draw
+      put_away: m4a1_put_away
+      dry_fire: gun_dry_fire
+      fire_select: gun_fire_select
+      flesh_hit: gun_flesh_hit
+      head_hit: gun_head_hit
+      kill: gun_kill
+    reload-sounds-3p:
+      tactical: {"0.87": m4a1_reload_tactical_magout, "1.27": m4a1_reload_tactical_magin}
+      empty: {"0.5": m4a1_reload_empty_magout, "1.23": m4a1_reload_empty_magin, "1.83": m4a1_reload_empty_charge}
+    type: rifle
+    vacuum-recoil: 1.0
+    item-icon: tacz/m4a1_slot.png
+    item-model: tacz/m4a1_lod.bbmodel
+    ammo-icon: tacz/556x45.png
+
+  # M16A1 (m16a1 из TACZ): винтовка под те же патроны 5,56×45, что у M4A1. Перезарядка — один звук на всю
+  # перезарядку (sounds.reload_tactical / reload_empty: в анимации TACZ звуков нет).
+  m16a1:
+    name: "M16A1"
+    lore: ["Винтовка под 5,56×45 времён Вьетнама.", "Модель и звуки: TACZ, CC BY-NC-ND 4.0"]
+    item: m16a1
+    material: iron_horse_armor
+    ammo-item: ammo_556x45
+    ammo-material: gold_nugget
+    ammo-name: "Патроны 5,56×45"
+    caliber: "556x45"
+    infinite-ammo: false
+    magazine: 20
+    chamber: true
+    rpm: 700
+    modes: [auto, semi]
+    damage:
+      - {distance: 45, damage: 8.5}
+      - {distance: 70, damage: 7}
+      - {distance: inf, damage: 5}
+    headshot: 1.5
+    bullet:
+      speed: 360
+      life: 0.75
+      gravity: 0.15
+      friction: 0.015
+      pierce: 1
+      knockback: 0
+      tracer: "#FF8888"
+    spread:
+      stand: 3.75
+      move: 4.5
+      sneak: 2.5
+      aim: 0.1
+      vacuum: 3.75
+    recoil:
+      pitch:
+        - {time: 0, min: 0.45, max: 0.45}
+        - {time: 0.25, min: 0.4, max: 0.4}
+        - {time: 0.55, min: 0, max: 0}
+        - {time: 0.7, min: 0, max: 0}
+      yaw:
+        - {time: 0, min: -0.2, max: 0.25}
+        - {time: 0.3, min: -0.2, max: 0.25}
+        - {time: 0.5, min: 0, max: 0}
+    reload:
+      tactical: {feed: 1.33, total: 1.85}
+      empty: {feed: 2.17, total: 2.65}
+    draw: 0.43
+    aim-time: 0.22
+    zoom: 1.33
+    aim-speed: 0.8
+    flash-scale: 0.5
+    model: guns/m16a1.bbmodel
+    hud: guns/m16a1_hud.png
+    flash: guns/common_muzzle_flash.png
+    player-animation: guns/rifle_default.player_animation.json
+    sounds:
+      shoot: m16a1_shoot
+      shoot3p: m16a1_shoot_3p
+      silence: m16a1_silence
+      silence3p: m16a1_silence_3p
+      draw: m16a1_draw
+      put_away: m16a1_put_away
+      reload_tactical: m16a1_reload_tactical   # свой звук в начале перезарядки
+      reload_empty: m16a1_reload_empty
+      dry_fire: gun_dry_fire
+      fire_select: gun_fire_select
+      flesh_hit: gun_flesh_hit
+      head_hit: gun_head_hit
+      kill: gun_kill
+    reload-sounds-3p:
+      tactical: {"0": m16a1_reload_tactical}
+      empty: {"0": m16a1_reload_empty}
+    type: rifle
+    vacuum-recoil: 1.0
+    item-icon: tacz/m16a1_slot.png
+    item-model: tacz/m16a1_lod.bbmodel
+    ammo-icon: tacz/556x45.png
+
+  # Desert Eagle (deagle из TACZ): пистолет под .50 AE, одиночный; поза тела — pistol_default TACZ.
+  deagle:
+    name: "Desert Eagle"
+    lore: ["Пистолет под .50 AE — мощный и тяжёлый.", "Модель и звуки: TACZ, CC BY-NC-ND 4.0"]
+    item: deagle
+    material: iron_horse_armor
+    ammo-item: ammo_50ae
+    ammo-material: gold_nugget
+    ammo-name: "Патроны .50 AE"
+    caliber: "50ae"
+    infinite-ammo: false
+    magazine: 7
+    chamber: true
+    rpm: 300
+    modes: [semi]
+    damage:
+      - {distance: 15, damage: 16}
+      - {distance: 30, damage: 14}
+      - {distance: 50, damage: 12}
+      - {distance: inf, damage: 10}
+    headshot: 1.75
+    bullet:
+      speed: 170
+      life: 0.7
+      gravity: 0.15
+      friction: 0.03
+      pierce: 1
+      knockback: 0.1
+      tracer: "#FF8888"
+    spread:
+      stand: 4
+      move: 4.5
+      sneak: 2.25
+      aim: 0.1
+      vacuum: 4
+    recoil:
+      pitch:
+        - {time: 0, min: 0.95, max: 0.95}
+        - {time: 0.4, min: 0.95, max: 0.95}
+        - {time: 0.65, min: -0.225, max: -0.225}
+        - {time: 0.85, min: 0.125, max: 0.125}
+        - {time: 1.1, min: 0, max: 0}
+        - {time: 1.2, min: 0, max: 0}
+      yaw:
+        - {time: 0, min: -0.3, max: 0.3}
+        - {time: 0.5, min: 0, max: 0}
+    reload:
+      tactical: {feed: 1.2, total: 1.64}
+      empty: {feed: 1.67, total: 2.0}
+    draw: 0.33
+    aim-time: 0.2
+    zoom: 1.2
+    aim-speed: 0.9
+    flash-scale: 0.7
+    model: guns/deagle.bbmodel
+    hud: guns/deagle_hud.png
+    flash: guns/common_muzzle_flash.png
+    player-animation: guns/pistol_default.player_animation.json
+    sounds:
+      shoot: deagle_shoot
+      shoot3p: deagle_shoot_3p
+      silence: deagle_silence
+      silence3p: deagle_silence_3p
+      draw: deagle_draw
+      put_away: deagle_put_away
+      dry_fire: gun_dry_fire
+      fire_select: gun_fire_select
+      flesh_hit: gun_flesh_hit
+      head_hit: gun_head_hit
+      kill: gun_kill
+    reload-sounds-3p:
+      tactical: {"0.5": deagle_reload_magout, "1.1": deagle_reload_magin}
+      empty: {"0.33": deagle_reload_empty_magout, "1.0": deagle_reload_empty_magin, "1.53": deagle_reload_empty_slideback}
+    type: pistol
+    vacuum-recoil: 0.8
+    item-icon: tacz/deagle_slot.png
+    item-model: tacz/deagle_lod.bbmodel
+    ammo-icon: tacz/50ae.png
+
+  # M1897 (m1897 из TACZ): помповый дробовик. За выстрел 8 дробин (pellets), урон из damage — на весь выстрел
+  # (делится между дробинами, как у TACZ). После выстрела — помпа (bolt-time, как затвор AWP); зажатая ЛКМ — стреляет
+  # и передёргивает подряд. Перезарядка — по одному патрону (shell-reload); выстрел её прерывает.
+  m1897:
+    name: "M1897"
+    lore: ["Помповый дробовик под 12 калибр.", "Модель и звуки: TACZ, CC BY-NC-ND 4.0"]
+    item: m1897
+    material: iron_horse_armor
+    ammo-item: ammo_12g
+    ammo-material: gold_nugget
+    ammo-name: "Патроны 12 калибра"
+    caliber: "12g"
+    infinite-ammo: false
+    # Трубчатый магазин на 5 и патрон в патроннике.
+    magazine: 5
+    chamber: true
+    rpm: 400
+    modes: [auto]
+    bolt-time: 0.2
+    # Дробин за выстрел.
+    pellets: 8
+    damage:
+      - {distance: 16, damage: 32}
+      - {distance: 20, damage: 28}
+      - {distance: 24, damage: 24}
+      - {distance: inf, damage: 16}
+    headshot: 1.25
+    bullet:
+      speed: 150
+      life: 0.6
+      gravity: 0.15
+      friction: 0.05
+      pierce: 1
+      knockback: 0.15
+      tracer: "#FF8888"
+    # У дробовика конус широкий и в прицеле.
+    spread:
+      stand: 3.65
+      move: 3.7
+      sneak: 3.65
+      aim: 3.5
+      vacuum: 3.65
+    recoil:
+      pitch:
+        - {time: 0, min: 2.25, max: 2.25}
+        - {time: 0.2, min: 2.25, max: 2.25}
+        - {time: 0.5, min: 0.15, max: 0.15}
+        - {time: 0.75, min: 0, max: 0}
+      yaw:
+        - {time: 0, min: -1.5, max: -1.5}
+        - {time: 0.1, min: -1, max: -1}
+        - {time: 0.5, min: 0.15, max: 0.15}
+        - {time: 0.75, min: 0, max: 0}
+    # Перезарядка по одному патрону, секунд (TACZ m870_unload_gun_logic): вступление intro (в магазине что-то есть)
+    # или intro-empty (пустой: патрон в патронник в intro-empty-feed), потом на каждый патрон цикл loop (патрон в
+    # магазине в loop-feed от начала цикла), в конце end.
+    shell-reload:
+      intro: 0.47
+      intro-empty: 2.1
+      intro-empty-feed: 1.53
+      loop: 0.53
+      loop-feed: 0.27
+      end: 0.37
+    draw: 0.25
+    aim-time: 0.18
+    zoom: 1.25
+    aim-speed: 0.9
+    flash-scale: 2.0
+    # Своего прицела (крестика по разбросу) на экране нет — как у TACZ.
+    crosshair: false
+    model: guns/m1897.bbmodel
+    hud: guns/m1897_hud.png
+    flash: guns/common_muzzle_flash.png
+    player-animation: guns/rifle_default.player_animation.json
+    sounds:
+      shoot: m1897_shoot
+      shoot3p: m1897_shoot_3p
+      silence: m1897_silence
+      silence3p: m1897_silence_3p
+      draw: m1897_draw
+      put_away: m1897_put_away
+      dry_fire: gun_dry_fire
+      fire_select: gun_fire_select
+      flesh_hit: gun_flesh_hit
+      head_hit: gun_head_hit
+      kill: gun_kill
+    # Для остальных: tactical — вступление, empty — вступление с пустым магазином, loop — каждый патрон, end — конец.
+    reload-sounds-3p:
+      tactical: {"0": m1897_reload_empty_start}
+      empty: {"0": m1897_reload_empty_start, "0.33": m1897_bolt_out, "1.47": m1897_bolt_in}
+      loop: {"0.03": m1897_reload_shellinsert}
+      end: {"0": m1897_reload_end}
+    bolt-sounds-3p: {"0.03": m1897_bolt_in, "0.23": m1897_bolt_out}
+    type: rifle
+    vacuum-recoil: 2.0
+    # В TACZ нет упрощённой модели M1897 — предмет hoitems из полной модели (без рук и штыка).
+    item-icon: tacz/m1897_slot.png
+    item-model: tacz/m1897_item.bbmodel
+    ammo-icon: tacz/12g.png

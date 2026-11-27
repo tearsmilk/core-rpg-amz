@@ -114,6 +114,13 @@ final class ViewModel {
         BbModel.Bone mf = model.bone("muzzle_flash");
         muzzle = mf != null ? mf : model.bone("muzzle_pos");
         for (String n : new String[] {"hitbox", "additional_magazine"}) mark(model.bone(n), hidden);
+        // кости, которые TACZ показывает только с обвесами (удлинённые магазины, крепление прицела, тактическое цевьё,
+        // другие приклады): конвертер пишет их в hoka_hidden — пока обвесов нет, не рисуем
+        if (json.get("hoka_hidden") instanceof JsonArray hh) {
+            for (JsonElement e : hh) {
+                if (e.isJsonPrimitive()) mark(model.bone(e.getAsString()), hidden);
+            }
+        }
         // у прицела TACZ рисует сетку (division) только в круге оптики, а точки взгляда (views) и место под
         // надпись (ammo_count_text) не рисует вовсе
         for (String n : new String[] {"divisions", "division", "division_2", "ammo_count_text", "scope_view",
@@ -420,7 +427,7 @@ final class ViewModel {
             if (extraMag != null && magazine != null && animates(extraMag)) {
                 Matrix4f toExtra = new Matrix4f(pose[extraMag.index]).mul(new Matrix4f(pose[magazine.index]).invert());
                 for (BbModel.Bone b : model.bones) {
-                    if (b.faces.isEmpty() || !magBones.contains(b.index)) continue;
+                    if (b.faces.isEmpty() || !magBones.contains(b.index) || hidden.contains(b.index)) continue;
                     m.set(pos).mul(toExtra).mul(pose[b.index]);
                     n.set(nrm).mul(toExtra).mul(pose[b.index]);
                     faces(vc, m, n, b, light, t);

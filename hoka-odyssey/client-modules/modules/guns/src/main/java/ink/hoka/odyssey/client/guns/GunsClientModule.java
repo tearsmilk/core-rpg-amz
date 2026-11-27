@@ -79,6 +79,8 @@ public final class GunsClientModule implements ClientModule {
     private Map<String, Proto.Kind> kinds = new HashMap<>();
     /** Отдача в вакууме по id (четвёртый хвост CONFIG), блоков за выстрел. */
     private Map<String, Float> vacRecoil = new HashMap<>();
+    /** Дробь, свой прицел, перезарядка по одному патрону по id (пятый хвост CONFIG). */
+    private Map<String, Proto.Extra> extras = new HashMap<>();
     private float vacVolume = 0.35f;
     private final Map<String, ViewModel> models = new HashMap<>();
     private final Set<String> watched = new HashSet<>();
@@ -117,6 +119,10 @@ public final class GunsClientModule implements ClientModule {
     private long reloadStartNs = -1;
     private float reloadLen;
     private int reloadKind;
+    /** Перезарядка по одному патрону (вид 3): циклов loop, с пустым ли магазином, какая часть играет (−1 — ещё никакая). */
+    private int shellLoops;
+    private boolean shellEmpty;
+    private int shellPhase = -1;
     private long drawUntilNs;
     /** Ручной затвор: когда начать анимацию затвора (нс, −1 — не надо). */
     private long boltAtNs = -1;
@@ -311,8 +317,10 @@ public final class GunsClientModule implements ClientModule {
                     Map<String, String> gunItems = new HashMap<>();
                     Map<String, Proto.Kind> k = new HashMap<>();
                     Map<String, Float> vr = new HashMap<>();
-                    specs = Proto.readConfig(in, vv, playerAnimPaths, gunItems, k, vr);
+                    Map<String, Proto.Extra> ex = new HashMap<>();
+                    specs = Proto.readConfig(in, vv, playerAnimPaths, gunItems, k, vr, ex);
                     kinds = k;
+                    extras = ex;
                     vacRecoil = vr;
                     if (back != null) back.setItems(gunItems, k);
                     vacVolume = vv[0];
@@ -353,6 +361,18 @@ public final class GunsClientModule implements ClientModule {
                 case Proto.S_RELOAD -> {
                     int kind = in.readUnsignedByte();
                     float sec = in.readFloat();
+                    if (kind == 3 && in.available() >= 2) {
+                        int loops = in.readUnsignedByte();
+                        boolean empty = in.readUnsignedByte() != 0;
+                        if (reloadStartNs >= 0 && reloadKind == 3) {   // уже идёт у себя — поправить по серверу
+                            shellLoops = loops;
+                            shellEmpty = empty;
+                            reloadLen = Math.max(0.1f, sec);
+                            break;
+                        }
+                        shellLoops = loops;
+                        shellEmpty = empty;
+                    }
                     if (reloadStartNs < 0 || reloadKind != kind) startReloadLocal(kind, sec);
                 }
                 case Proto.S_REJECT -> {
@@ -566,6 +586,7 @@ public final class GunsClientModule implements ClientModule {
         pending.clear();
         inflight.clear();
         reloadStartNs = -1;
+        shellPhase = -1;
         boltAtNs = -1;
         ads = 0;
         flashNs = -1;
@@ -600,8 +621,41 @@ public final class GunsClientModule implements ClientModule {
             return;
         }
         ctx.send(Proto.reload());
+        Proto.Extra ex = extra();
+        if (ex.shell() != null) {                                  // по одному патрону: вступление, циклы, конец
+            shellEmpty = ammo <= 0;
+            shellLoops = ex.shellLoops(ammo, held.magazine() + 1, gotState ? srvReserve : -1);
+            startReloadLocal(3, ex.shellTotal(shellEmpty, shellLoops));
+            return;
+        }
         int kind = ammo > 0 ? 1 : 2;
         startReloadLocal(kind, kind == 1 ? held.reloadTactical() : held.reloadEmpty());
+    }
+
+    /** Дробь, свой прицел, перезарядка по одному патрону у оружия в руке. */
+    private Proto.Extra extra() {
+        Proto.Extra e = held == null ? null : extras.get(held.id());
+        return e == null ? Proto.Extra.NONE : e;
+    }
+
+    /**
+     * Перезарядка по одному патрону — анимации TACZ по очереди: reload_intro (reload_intro_empty с пустым магазином),
+     * reload_loop на каждый патрон, reload_end. Вызывать каждый кадр.
+     */
+    private void shellAnim() {
+        if (!reloading() || reloadKind != 3 || held == null) return;
+        float[] sh = extra().shell();
+        if (sh == null) return;
+        float el = (System.nanoTime() - reloadStartNs) / 1e9f;
+        float intro = shellEmpty ? sh[1] : sh[0];
+        int phase = el < intro ? 0 : Math.min(shellLoops + 1, 1 + (int) ((el - intro) / sh[3]));
+        if (phase == shellPhase) return;
+        shellPhase = phase;
+        ViewModel vm = models.get(held.model());
+        if (vm == null) return;
+        if (phase == 0) vm.play(shellEmpty && vm.has("reload_intro_empty") ? "reload_intro_empty" : "reload_intro");
+        else if (phase <= shellLoops) vm.play("reload_loop");
+        else vm.play("reload_end");
     }
 
     private void startReloadLocal(int kind, float seconds) {
@@ -609,8 +663,16 @@ public final class GunsClientModule implements ClientModule {
         reloadKind = kind;
         reloadLen = Math.max(0.1f, seconds);
         reloadStartNs = System.nanoTime();
-        ViewModel vm = held == null ? null : models.get(held.model());
+        shellPhase = -1;
+        if (held == null) return;
+        if (kind == 3) {
+            shellAnim();
+            return;
+        }
+        ViewModel vm = models.get(held.model());
         if (vm != null) vm.play(kind == 1 ? "reload_tactical" : "reload_empty");
+        // звук на всю перезарядку (M16A1: в анимации TACZ своих звуков нет)
+        Sfx.play(held.sound(kind == 1 ? "reload_tactical" : "reload_empty"), 0.8f * cfg.volume, 1f);
     }
 
     private void toggleMode() {
@@ -765,14 +827,20 @@ public final class GunsClientModule implements ClientModule {
         triggerWas = mc.options.keyAttack.isDown();
         if (!down) semiFired = false;
         long interval = (long) (held.intervalMs() * 1e6);
+        if (down && edge && reloading() && reloadKind == 3 && ammo > 0) {
+            reloadStartNs = -1;                                    // по одному патрону: выстрел прерывает перезарядку
+        }
+        shellAnim();
         if (down && !reloading() && !drawing()) {
             if (ammo <= 0) {
                 if (edge) {
                     Sfx.play(held.sound("dry_fire"), 0.8f * cfg.volume, 1f);
                     setHint(keyName(reloadKey) + " — ПЕРЕЗАРЯДКА");
                 }
-            } else if (mode == 1 || !held.auto()) {
-                if (edge && !semiFired && now >= nextShotNs) {
+            } else if (mode == 1 || !held.auto() || kind().boltTime() > 0) {
+                // одиночный — по нажатию; очередь с помпой/затвором (M1897) — пока зажата, после каждого передёргивания
+                boolean single = mode == 1 || !held.auto();
+                if ((single ? edge && !semiFired : true) && now >= nextShotNs) {
                     shoot(mc, p, now);
                     semiFired = true;
                     nextShotNs = now + interval;
@@ -897,10 +965,13 @@ public final class GunsClientModule implements ClientModule {
         if (cfg.tracers) {
             float inacc = ads > 0.95f ? g.spreadAim() : g.spreadHip();
             double s = INACCURACY_K * inacc;
-            Vec3 d = dir.add(tri(s), tri(s), tri(s)).normalize();
             Vec3 o = mc.options.getCameraType().isFirstPerson() && muzzleWorld != null ? muzzleWorld
                     : p.getEyePosition().add(dir.scale(0.8));
-            fx.tracer(o, d.scale(g.speed()), vac ? 3 : g.life(), g.tracerColor(), true);
+            int pellets = extra().pellets();                       // дробь — трассер на каждую дробину
+            for (int k = 0; k < pellets; k++) {
+                Vec3 d = dir.add(tri(s), tri(s), tri(s)).normalize();
+                fx.tracer(o, d.scale(g.speed()), vac ? 3 : g.life(), g.tracerColor(), true);
+            }
             if (!mc.options.getCameraType().isFirstPerson()) fx.flash(o, 0.55f);
         }
     }
@@ -1023,7 +1094,7 @@ public final class GunsClientModule implements ClientModule {
         v.hitKind = hitKind;
         v.hitLeft = hitKind == 0 ? 0 : Math.max(0, 1 - (now - hitNs) / 0.35e9f);
         v.silhouette = hudTex.get(held.hud());
-        v.crosshair = mc.options.getCameraType().isFirstPerson() && cover <= 0;
+        v.crosshair = mc.options.getCameraType().isFirstPerson() && cover <= 0 && extra().crosshair();
         v.hint = !hint.isEmpty() && now - hintNs < 2_000_000_000L ? hint : ammo <= 0 ? "ПУСТО" : "";
         hud.render(g, v, cfg.hud);
     }

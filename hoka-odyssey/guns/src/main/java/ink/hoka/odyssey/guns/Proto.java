@@ -32,7 +32,8 @@ import java.util.Map;
  *   <li>3 TRACER: i32 id стрелка, f64 x, y, z, f32 vx, vy, vz (блоков/с), f32 жизнь (с), i32 цвет RGB, u8 флаги
  *       (1 — вакуум);</li>
  *   <li>4 IMPACT: f64 x, y, z, f32 nx, ny, nz, u8 вид (0 — блок, 1 — тело, 2 — голова);</li>
- *   <li>5 RELOAD_START: u8 вид (1 — тактическая, 2 — пустой магазин), f32 секунд до готовности;</li>
+ *   <li>5 RELOAD_START: u8 вид (1 — тактическая, 2 — пустой магазин, 3 — по одному патрону), f32 секунд до
+ *       готовности; у вида 3 — ещё u8 циклов loop и u8 1 — с пустым магазином (вступление reload_intro_empty);</li>
  *   <li>6 REJECT: i32 seq, u8 причина ({@link FireValidator.Result#code});</li>
  *   <li>7 HIT: u8 вид (1 — попадание, 2 — в голову, 3 — убийство);</li>
  *   <li>8 POSE: i32 id игрока, u8 флаги (1 — в руке оружие, 2 — прицел, 4 — перезарядка), f32 секунд с начала
@@ -46,7 +47,9 @@ import java.util.Map;
  * оружие за спиной); за ним третий хвост: u16 оружий, на каждое UTF id, UTF вид (rifle / sniper / pistol), f32 время
  * ручного затвора (с, 0 — нет), u8 флаги (1 — оптика: в прицеле экран чёрный, кроме круга прицела), f32 размер вспышки
  * у ствола (TACZ muzzle_flash.scale); за ним четвёртый хвост: u16 оружий, на каждое UTF id и f32 отдача в вакууме
- * (блоков за выстрел в свободном полёте, 0 — нет; клиентский модуль отдаёт её spaceflight). Старые клиенты
+ * (блоков за выстрел в свободном полёте, 0 — нет; клиентский модуль отдаёт её spaceflight); за ним пятый хвост:
+ * u16 оружий, на каждое UTF id, u8 пуль за выстрел (дробь), u8 флаги (1 — без своего прицела на экране, 2 — дальше
+ * перезарядка по одному патрону: f32 intro, intro-empty, intro-empty-feed, loop, loop-feed, end). Старые клиенты
  * хвосты не читают. В BACK вместо одного id может прийти список через запятую (длинное оружие за спиной и
  * пистолет в кобуре).
  */
@@ -199,6 +202,21 @@ final class Proto {
                 o.writeUTF(g.id());
                 o.writeFloat((float) g.vacuumRecoil());
             }
+            o.writeShort(guns.size());                        // пятый хвост: дробь, свой прицел, перезарядка по одному
+            for (GunDef g : guns) {
+                o.writeUTF(g.id());
+                o.writeByte(g.pellets());
+                GunDef.ShellReload sh = g.shellReload();
+                o.writeByte((g.crosshair() ? 0 : 1) | (sh != null ? 2 : 0));
+                if (sh != null) {
+                    o.writeFloat((float) sh.intro());
+                    o.writeFloat((float) sh.introEmpty());
+                    o.writeFloat((float) sh.introEmptyFeed());
+                    o.writeFloat((float) sh.loop());
+                    o.writeFloat((float) sh.loopFeed());
+                    o.writeFloat((float) sh.end());
+                }
+            }
         });
     }
 
@@ -278,6 +296,17 @@ final class Proto {
             o.writeByte(S_RELOAD);
             o.writeByte(kind);
             o.writeFloat((float) seconds);
+        });
+    }
+
+    /** RELOAD_START перезарядки по одному патрону (вид 3) с хвостом: u8 циклов loop, u8 1 — с пустым магазином. */
+    static byte[] reloadStart(int kind, double seconds, int loops, boolean empty) {
+        return write(o -> {
+            o.writeByte(S_RELOAD);
+            o.writeByte(kind);
+            o.writeFloat((float) seconds);
+            o.writeByte(Math.max(0, Math.min(255, loops)));
+            o.writeByte(empty ? 1 : 0);
         });
     }
 

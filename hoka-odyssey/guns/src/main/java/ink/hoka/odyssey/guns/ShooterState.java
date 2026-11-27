@@ -18,12 +18,25 @@ final class ShooterState {
     /** Режим: 0 — очередь, 1 — одиночный. */
     int mode;
 
-    /** Перезарядка: 0 — нет, 1 — тактическая, 2 — с пустым магазином. Время начала и «патроны уже вставлены». */
+    /**
+     * Перезарядка: 0 — нет, 1 — тактическая, 2 — с пустым магазином, 3 — по одному патрону (дробовик). Время начала,
+     * «патроны уже вставлены» (1, 2) и вся длина, с.
+     */
     int reloadKind;
     long reloadStart;
     boolean reloadFed;
-    /** Звуки перезарядки для остальных — уже сыгранные (индекс в списке). */
+    double reloadTotal;
+    /** По одному патрону: когда (с от начала) входит каждый патрон и сколько уже вошло. */
+    double[] reloadFeeds = new double[0];
+    int reloadFedCount;
+    /** Звуки перезарядки для остальных: {время с, id} по порядку и сколько уже сыграно. */
+    final java.util.List<Map.Entry<Double, String>> reloadSounds = new java.util.ArrayList<>();
     int reloadSoundIndex;
+
+    /** Номер выстрела (у дроби — общий у всех пуль) и по какому выстрелу уже сказали стрелку «попал» и как. */
+    int shotNo;
+    int hitShot = -1;
+    int hitKindSent;
 
     /** Ручной затвор: когда началось передёргивание (мс, 0 — нет) и сколько его звуков для остальных уже сыграно. */
     long boltStart;
@@ -86,6 +99,9 @@ final class ShooterState {
         reloadKind = 0;
         reloadFed = false;
         reloadSoundIndex = 0;
+        reloadSounds.clear();
+        reloadFeeds = new double[0];
+        reloadFedCount = 0;
     }
 
     /** Взять новое оружие в руку. */

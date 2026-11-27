@@ -26,7 +26,8 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  *       {@code module/guns/files/<путь>} (своё оружие без пересборки), потом jar;</li>
  *   <li>{@link #install} — /hogun install: положить предметы и звуки всего оружия в {@code module/hoitems/assets/tacz/}
  *       и {@code module/hosounds/assets/tacz/} и дописать недостающие записи в их config.yml (с копией .bak-guns);
- *       {@link #addMissingGuns} — дописать в свой config.yml оружие, которого там ещё нет (AWP, Glock 17).</li>
+ *       {@link #addMissingGuns} — дописать в свой config.yml оружие, которого там ещё нет (AWP, Glock 17, M4A1,
+ *       M16A1, Desert Eagle, M1897).</li>
  * </ul>
  */
 final class Assets {
@@ -56,8 +57,43 @@ final class Assets {
 
     /** Оружие из пака TACZ, которое модуль везёт в jar (id оружия → его файлы и звуки). */
     static final Map<String, GunAssets> GUNS = Map.of(
+            "m4a1", new GunAssets(List.of("models/m4a1_lod.bbmodel", "textures/m4a1_slot.png", "textures/556x45.png"),
+                    List.of(s("m4a1_shoot", 16), s("m4a1_shoot_3p", 128, "Выстрел M4A1"), s("m4a1_silence", 16),
+                            s("m4a1_silence_3p", 48, "Выстрел с глушителем"), s("m4a1_draw", 12),
+                            s("m4a1_put_away", 12), s("m4a1_reload_tactical_start", 12),
+                            s("m4a1_reload_tactical_magout", 16, "Смена магазина"), s("m4a1_reload_tactical_magin", 16),
+                            s("m4a1_reload_tactical_maghit", 12), s("m4a1_reload_tactical_end", 12),
+                            s("m4a1_reload_empty_raise", 12), s("m4a1_reload_empty_magout", 16, "Смена магазина"),
+                            s("m4a1_reload_empty_maghit", 12), s("m4a1_reload_empty_magin", 16),
+                            s("m4a1_reload_empty_charge", 16, "Затвор"), s("m4a1_reload_empty_end", 12),
+                            s("m4a1_reload_empty_xmag_start", 12))),
+            "m16a1", new GunAssets(List.of("models/m16a1_lod.bbmodel", "textures/m16a1_slot.png", "textures/556x45.png"),
+                    List.of(s("m16a1_shoot", 16), s("m16a1_shoot_3p", 128, "Выстрел M16A1"), s("m16a1_silence", 16),
+                            s("m16a1_silence_3p", 48, "Выстрел с глушителем"), s("m16a1_draw", 12),
+                            s("m16a1_put_away", 12), s("m16a1_reload_tactical", 16, "Смена магазина"),
+                            s("m16a1_reload_empty", 16, "Смена магазина"))),
+            "deagle", new GunAssets(List.of("models/deagle_lod.bbmodel", "textures/deagle_slot.png", "textures/50ae.png"),
+                    List.of(s("deagle_shoot", 16), s("deagle_shoot_3p", 128, "Выстрел Desert Eagle"),
+                            s("deagle_silence", 16), s("deagle_silence_3p", 48, "Выстрел с глушителем"),
+                            s("deagle_draw", 12), s("deagle_put_away", 12), s("deagle_reload_raise", 12),
+                            s("deagle_reload_magout", 16, "Смена магазина"), s("deagle_reload_magrelease", 12),
+                            s("deagle_reload_magfindwell", 12), s("deagle_reload_magin", 16), s("deagle_reload_end", 12),
+                            s("deagle_reload_xmag_bounce", 12), s("deagle_reload_xmag_magbang", 12),
+                            s("deagle_reload_empty_raise", 12), s("deagle_reload_empty_tilt", 12),
+                            s("deagle_reload_empty_magout", 16, "Смена магазина"),
+                            s("deagle_reload_empty_magfindwell", 12), s("deagle_reload_empty_magin", 16),
+                            s("deagle_reload_empty_slideback", 16, "Затвор"), s("deagle_reload_empty_slideclose", 16),
+                            s("deagle_reload_empty_end", 12))),
+            "m1897", new GunAssets(List.of("models/m1897_item.bbmodel", "textures/m1897_slot.png", "textures/12g.png"),
+                    List.of(s("m1897_shoot", 16), s("m1897_shoot_3p", 128, "Выстрел M1897"), s("m1897_silence", 16),
+                            s("m1897_silence_3p", 48, "Выстрел с глушителем"), s("m1897_draw", 12),
+                            s("m1897_put_away", 12), s("m1897_bolt_in", 16, "Помпа"), s("m1897_bolt_out", 16),
+                            s("m1897_bolt_shell_out", 12), s("m1897_shell_impact_brass", 12),
+                            s("m1897_reload_empty_start", 12), s("m1897_reload_shellinsert", 16, "Зарядка патрона"),
+                            s("m1897_reload_side", 12), s("m1897_reload_end", 12))),
             "ak47", new GunAssets(List.of("models/ak47_lod.bbmodel", "textures/ak47_slot.png", "textures/762x39.png"),
-                    List.of(s("ak47_shoot", 16), s("ak47_shoot_3p", 128, "Выстрел АКМ"), s("ak47_draw", 12),
+                    List.of(s("ak47_shoot", 16), s("ak47_shoot_3p", 128, "Выстрел АКМ"), s("ak47_silence", 16),
+                            s("ak47_silence_3p", 48, "Выстрел с глушителем"), s("ak47_draw", 12),
                             s("ak47_put_away", 12), s("ak47_reload_raise_shoulder", 12),
                             s("ak47_reload_magout", 16, "Смена магазина"), s("ak47_reload_mvt", 12),
                             s("ak47_reload_magin", 16), s("ak47_reload_mvt2", 12), s("ak47_reload_shoulder", 12),
@@ -67,7 +103,8 @@ final class Assets {
                             s("ak47_reload_empty_chamber", 16, "Затвор"), s("ak47_reload_empty_mvt", 12),
                             s("ak47_reload_empty_shoulder", 12))),
             "ai_awp", new GunAssets(List.of("models/ai_awp_lod.bbmodel", "textures/338.png"),
-                    List.of(s("awp_shoot", 16), s("awp_shoot_3p", 160, "Выстрел AWP"), s("awp_draw", 12),
+                    List.of(s("awp_shoot", 16), s("awp_shoot_3p", 160, "Выстрел AWP"), s("awp_silence", 16),
+                            s("awp_silence_3p", 48, "Выстрел с глушителем"), s("awp_draw", 12),
                             s("awp_put_away", 12), s("awp_rechamber_out", 16, "Затвор"),
                             s("awp_rechember_ejectclick", 12), s("awp_rechamber_in", 16), s("awp_rechamber_end", 12),
                             s("awp_reload_raise", 12), s("awp_reload_rattle", 12), s("awp_reload_ejectclick", 12),
@@ -80,6 +117,7 @@ final class Assets {
             "glock_17", new GunAssets(List.of("models/glock_17_lod.bbmodel", "textures/glock_17_slot.png",
                     "textures/9mm.png"),
                     List.of(s("glock17_shoot", 16), s("glock17_shoot_3p", 112, "Выстрел Glock"),
+                            s("glock17_silence", 16), s("glock17_silence_3p", 48, "Выстрел с глушителем"),
                             s("glock17_draw", 12), s("glock17_reload_start", 12),
                             s("glock17_reload_magout", 16, "Смена магазина"), s("glock17_reload_magin", 16),
                             s("glock17_reload_end", 12), s("glock17_reload_empty_magout", 16, "Смена магазина"),

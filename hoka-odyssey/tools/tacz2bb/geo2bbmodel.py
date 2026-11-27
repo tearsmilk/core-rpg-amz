@@ -8,6 +8,9 @@
 # Использование: python3 -I geo2bbmodel.py GEO.json TEXTURE.png OUT.bbmodel [--anim ANIM.json]
 #                [--drop bone1,bone2] [--strip-cubes bone1,bone2] [--name ak47]
 #                [--attach GEO.json TEXTURE.png BONE [--attach-name scope]] [--view GUN_DISPLAY.json [SCOPE_DISPLAY.json]]
+#                [--hide bone1,bone2]
+# --hide: кости остаются в модели (с кубами), но перечислены в поле hoka_hidden — клиентский модуль guns их не рисует
+# (так TACZ прячет без обвесов удлинённые магазины, крепление прицела, тактическое цевьё, другие приклады).
 # --attach: модель обвеса (прицел TACZ) ставится в кость BONE оружия, как её ставит сам TACZ при рисовании: кости и
 # кубы обвеса — как есть, только сдвинуты в точку кости (origin обвеса = пивот BONE); своя текстура (вторая в файле,
 # со своим uv_width/uv_height). Имена костей обвеса, совпавшие с костями оружия, получают приставку «<attach-name>_».
@@ -219,6 +222,13 @@ def view_fov(files):
     return {'model_fov': hip, 'zoom_model_fov': zoom}
 
 
+def _outliner_names(nodes):
+    for n in nodes:
+        if isinstance(n, dict):
+            yield n.get('name')
+            yield from _outliner_names(n.get('children', []))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('geo'); ap.add_argument('png'); ap.add_argument('out')
@@ -229,6 +239,9 @@ def main():
     ap.add_argument('--attach-name', default='scope')
     ap.add_argument('--view', nargs='+', metavar='DISPLAY',
                     help='display оружия TACZ (model_fov, zoom_model_fov) [и display прицела (views_fov)] → hoka_view')
+    ap.add_argument('--hide', default='',
+                    help='кости, которые TACZ показывает только с обвесами: остаются в модели, но в поле hoka_hidden '
+                         '(клиентский модуль guns их не рисует, пока обвеса нет)')
     ap.add_argument('--display', help='JSON-файл вкладки Display (Java: thirdperson_righthand, firstperson_righthand, ground, fixed, gui…)')
     a = ap.parse_args()
     with open(a.png, 'rb') as f: png = f.read()
@@ -240,6 +253,12 @@ def main():
                            attach, a.attach_name)
     if a.display: res['display'] = load(a.display)
     if a.view: res['hoka_view'] = view_fov(a.view)
+    if a.hide:
+        names = {o.get('name') for o in res.get('groups', [])} | set(_outliner_names(res.get('outliner', [])))
+        hide = [x for x in a.hide.split(',') if x]
+        missing = [x for x in hide if x not in names]
+        if missing: sys.exit(f'--hide: нет костей {missing}')
+        res['hoka_hidden'] = hide
     with open(a.out, 'w', encoding='utf-8') as f: json.dump(res, f, ensure_ascii=False, separators=(',', ':'))
     print(f'{a.out}: кубов {len(res["elements"])}, анимаций {len(res["animations"])}, убрано костей {len(dropped)}: {sorted(dropped)}')
 

@@ -55,6 +55,25 @@ final class Proto {
         }
     }
 
+    /**
+     * Пятый хвост CONFIG: пуль за выстрел (дробь), свой прицел на экране, перезарядка по одному патрону (null — магазином):
+     * {intro, introEmpty, introEmptyFeed, loop, loopFeed, end}, секунды.
+     */
+    record Extra(int pellets, boolean crosshair, float[] shell) {
+        static final Extra NONE = new Extra(1, true, null);
+
+        /** Перезарядка по одному патрону: сколько циклов loop и её длина (с) — как план сервера (GunDef.shellPlan). */
+        int shellLoops(int ammo, int target, int reserve) {
+            int n = Math.max(0, target - ammo);
+            if (reserve >= 0) n = Math.min(n, reserve);
+            return ammo <= 0 && n > 0 ? n - 1 : n;
+        }
+
+        float shellTotal(boolean empty, int loops) {
+            return (empty ? shell[1] : shell[0]) + loops * shell[3] + shell[5];
+        }
+    }
+
     /** Ключевая точка отдачи. */
     record Key(float time, float min, float max) {}
 
@@ -98,6 +117,13 @@ final class Proto {
     static Map<String, Spec> readConfig(DataInputStream in, float[] vacuumVolume, Map<String, String> playerAnims,
                                         Map<String, String> gunItems, Map<String, Kind> kinds,
                                         Map<String, Float> vacuumRecoil) throws IOException {
+        return readConfig(in, vacuumVolume, playerAnims, gunItems, kinds, vacuumRecoil, new HashMap<>());
+    }
+
+    /** То же и пятый хвост: extras — дробь, свой прицел, перезарядка по одному патрону ({@link Extra}). */
+    static Map<String, Spec> readConfig(DataInputStream in, float[] vacuumVolume, Map<String, String> playerAnims,
+                                        Map<String, String> gunItems, Map<String, Kind> kinds,
+                                        Map<String, Float> vacuumRecoil, Map<String, Extra> extras) throws IOException {
         int ver = in.readUnsignedByte();
         if (ver != VERSION) throw new IOException("версия протокола сервера " + ver + ", модуля " + VERSION);
         int n = in.readUnsignedShort();
@@ -163,6 +189,24 @@ final class Proto {
                 String id = in.readUTF();
                 float d = in.readFloat();
                 if (Float.isFinite(d) && d > 0) vacuumRecoil.put(id, Math.min(d, 50f));
+            }
+        }
+        if (in.available() >= 2) {
+            int m = in.readUnsignedShort();
+            for (int i = 0; i < m; i++) {
+                String id = in.readUTF();
+                int pellets = Math.max(1, in.readUnsignedByte());
+                int flags = in.readUnsignedByte();
+                float[] shell = null;
+                if ((flags & 2) != 0) {
+                    shell = new float[6];
+                    for (int k = 0; k < 6; k++) {
+                        float v = in.readFloat();
+                        shell[k] = Float.isFinite(v) ? Math.max(0, Math.min(10, v)) : 0;
+                    }
+                    shell[3] = Math.max(0.05f, shell[3]);
+                }
+                extras.put(id, new Extra(pellets, (flags & 1) == 0, shell));
             }
         }
         return out;
