@@ -10,6 +10,7 @@ import ink.hoka.odyssey.client.model.BbAnimation;
 import ink.hoka.odyssey.client.model.BbModel;
 import ink.hoka.odyssey.client.model.Pose;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.DynamicTexture;
@@ -63,6 +64,16 @@ final class ViewModel {
     private final BbModel.Bone camera;
     private final BbModel.Bone muzzle;
     private final Set<Integer> hidden = new HashSet<>();
+    /** Кости, которые TACZ показывает только с обвесами (hoka_hidden файла) — пока с сервера нет обвеса. */
+    private final Set<Integer> hokaHidden = new HashSet<>();
+    /** Спрятанные по обвесу (правила TACZ: магазины, крепление, цевьё, переходники) — для ключа {@link #gearKey}. */
+    private Set<Integer> gearHidden;
+    private String gearKey;
+    private final Set<Integer> illum = new HashSet<>();
+    /** Кости обвеса &lt;слот&gt;_pos по номеру слота и «камеры» окна обвеса refit_view / refit_&lt;слот&gt;_view. */
+    private final BbModel.Bone[] slotPos = new BbModel.Bone[Att.SLOTS.length];
+    private final BbModel.Bone refitView;
+    private final BbModel.Bone[] refitSlot = new BbModel.Bone[Att.SLOTS.length];
     private final Set<Integer> barrelRound = new HashSet<>();
     private final Set<Integer> magRounds = new HashSet<>();
 
@@ -118,7 +129,7 @@ final class ViewModel {
         // другие приклады): конвертер пишет их в hoka_hidden — пока обвесов нет, не рисуем
         if (json.get("hoka_hidden") instanceof JsonArray hh) {
             for (JsonElement e : hh) {
-                if (e.isJsonPrimitive()) mark(model.bone(e.getAsString()), hidden);
+                if (e.isJsonPrimitive()) mark(model.bone(e.getAsString()), hokaHidden);
             }
         }
         // у прицела TACZ рисует сетку (division) только в круге оптики, а точки взгляда (views) и место под
@@ -137,6 +148,15 @@ final class ViewModel {
                 if (b.children.contains(sv)) mark(b, hidden);
             }
         }
+        for (BbModel.Bone b : model.bones) {
+            String n = b.name.toLowerCase(Locale.ROOT);
+            if (n.endsWith("_illuminated")) mark(b, illum);       // светится сам (у TACZ — полная яркость)
+        }
+        for (int i = 0; i < Att.SLOTS.length; i++) {
+            slotPos[i] = model.bone(Att.SLOTS[i] + "_pos");
+            refitSlot[i] = model.bone("refit_" + Att.SLOTS[i] + "_view");
+        }
+        refitView = model.bone("refit_view");
         // запасной магазин TACZ рисует только пока анимация его двигает (перезарядка) — сеткой основного магазина
         mark(model.bone("bullet_in_barrel"), barrelRound);
         mark(model.bone("bullet_in_mag"), magRounds);
@@ -172,9 +192,14 @@ final class ViewModel {
      * zoom_model_fov с задержкой 20 % и плавностью ease-in-out-cubic. 0 — у модели угла нет.
      */
     float viewFov(float ads) {
+        return viewFov(ads, 0);
+    }
+
+    /** То же, в прицеле — zoomFov (угол прицела-обвеса, display.views_fov / fov), 0 — свой у оружия. */
+    float viewFov(float ads, float zoomFov) {
         if (modelFov <= 0) return 0;
         float w = AdsBlend.easeInOutCubic(AdsBlend.clamp01((ads - 0.2f) / 0.8f));
-        return AdsBlend.lerp(modelFov, zoomModelFov, w);
+        return AdsBlend.lerp(modelFov, zoomFov > 0 ? zoomFov : zoomModelFov, w);
     }
 
     /** «tacz:ak47/ak47_reload_magout» → «ak47_reload_magout» (так звук назван в hosounds). Чужие (без tacz:) — null. */
@@ -348,15 +373,114 @@ final class ViewModel {
 
     /** Из координат модели (пиксели) в координаты камеры (блоки): масштаб и смесь «от бедра» ↔ «в прицеле». */
     Matrix4f modelToCamera(float scale, float ads) {
-        Matrix4f invIdle = eye(idle).invert();
-        Matrix4f invIron = eye(iron != null ? iron : idle).invert();
-        return new Matrix4f().scale(scale / 16f).mul(AdsBlend.blend(invIdle, invIron, ads));
+        return modelToCamera(scale, ads, null, 0, null, 0);
+    }
+
+    /**
+     * То же с обвесом и окном обвеса: sightEye — глаз прицела-обвеса в координатах оружия (null — свой iron_view
+     * оружия), heightAdjust — на сколько пикселей поднять глаз от бедра с прицелом (display.idle_scope_height_adjust
+     * TACZ), refit — «глаз» окна обвеса (обратная матрица из {@link #refitEye}) и сколько окно открыто (0…1).
+     */
+    Matrix4f modelToCamera(float scale, float ads, Matrix4f sightEye, float heightAdjust, Matrix4f refit, float refitW) {
+        Matrix4f idleEye = eye(idle);
+        if (heightAdjust != 0) idleEye = new Matrix4f().translation(0, heightAdjust, 0).mul(idleEye);
+        Matrix4f invIdle = idleEye.invert();
+        Matrix4f invIron = (sightEye != null ? new Matrix4f(sightEye) : eye(iron != null ? iron : idle)).invert();
+        Matrix4f m = AdsBlend.blend(invIdle, invIron, ads);
+        if (refit != null && refitW > 0) m = AdsBlend.blend(m, refit, AdsBlend.easeOutCubic(AdsBlend.clamp01(refitW)));
+        return new Matrix4f().scale(scale / 16f).mul(m);
+    }
+
+    /** Обратная матрица «глаза» окна обвеса: refit_&lt;слот&gt;_view (slot −1 — общий вид refit_view), нет кости — от бедра. */
+    Matrix4f refitEye(int slot) {
+        BbModel.Bone b = slot >= 0 && slot < refitSlot.length && refitSlot[slot] != null ? refitSlot[slot]
+                : refitView != null ? refitView : idle;
+        return eye(b).invert();
+    }
+
+    /** Есть ли у оружия кость &lt;слот&gt;_pos (туда ставится модель обвеса). */
+    boolean hasPos(int slot) {
+        return slotPos[slot] != null;
+    }
+
+    /**
+     * Где стоит обвес слота slot: из координат модели обвеса в координаты оружия (кость &lt;слот&gt;_pos в её точке; у
+     * прицела на планке — ещё вверх на mount-offset планки). null — у оружия нет такой кости.
+     */
+    Matrix4f mount(int slot, float[] offset) {
+        BbModel.Bone b = slotPos[slot];
+        if (b == null) return null;
+        Matrix4f m = new Matrix4f(pose[b.index]).translate(b.origin);
+        if (offset != null && offset.length >= 3) m.translate(-offset[0], offset[1], offset[2]);
+        return m;
+    }
+
+    /**
+     * Видимость костей по обвесу — правила TACZ: &lt;слот&gt;_default — без обвеса в слоте (дуло — и с обвесом
+     * show_muzzle); mount — с прицелом (если у него не show_mount: false); carry и sight — без прицела, sight_folded —
+     * с ним; mag_standard — штатный магазин, mag_extended_N — уровень N; handguard_default — без рукояти и ЛЦУ,
+     * handguard_tactical — с ними; переходники (кости из display.adapter обвесов) — только если их назвал стоящий
+     * обвес. gear null — как в файле (hoka_hidden). bakedScope — прицел часть модели (AWP).
+     */
+    void applyGear(Att.Catalog cat, Att.Gear gear, boolean bakedScope) {
+        String key = gear == null ? null : gear.key() + bakedScope;
+        if (java.util.Objects.equals(key, gearKey) && gearHidden != null) return;
+        gearKey = key;
+        if (gear == null) {
+            gearHidden = hokaHidden;
+            return;
+        }
+        Set<Integer> out = new HashSet<>();
+        Att.Def scope = cat.def(gear.ids[Att.SCOPE]);
+        boolean scoped = scope != null || bakedScope;
+        boolean gripOrLaser = gear.has(Att.GRIP) || gear.has(Att.LASER);
+        int level = gear.xmagLevel(cat);
+        Set<String> adapters = new HashSet<>();
+        for (String id : gear.ids) {
+            Att.Def d = cat.def(id);
+            if (d != null && !d.adapter().isEmpty()) adapters.add(d.adapter());
+        }
+        for (BbModel.Bone b : model.bones) {
+            String n = b.name;
+            boolean hide = false;
+            if (n.equals("mag_standard")) {
+                hide = level > 0;
+            } else if (n.startsWith("mag_extended_")) {
+                hide = !n.equals("mag_extended_" + level);
+            } else if (n.equals("mount")) {
+                hide = !(bakedScope || scope != null && scope.showMount());
+            } else if (n.equals("carry") || n.equals("sight")) {
+                hide = scoped && !bakedScope;
+            } else if (n.equals("sight_folded")) {
+                hide = !scoped;
+            } else if (n.equals("handguard_default")) {
+                hide = gripOrLaser;
+            } else if (n.equals("handguard_tactical")) {
+                hide = !gripOrLaser;
+            } else if (cat.adapterBones.contains(n)) {
+                hide = !adapters.contains(n);
+            } else if (n.endsWith("_default")) {
+                int slot = Att.slotOf(n.substring(0, n.length() - "_default".length()));
+                if (slot >= 0 && gear.has(slot)) {
+                    Att.Def d = cat.def(gear.ids[slot]);
+                    hide = !(slot == Att.MUZZLE && d != null && d.showMuzzle());
+                }
+            }
+            if (hide) mark(b, out);
+        }
+        gearHidden = out;
     }
 
     /** Точка ствола (кость muzzle_flash) в координатах камеры, блоки. null — нет кости. */
     Vector3f muzzle(Matrix4f modelToCamera) {
+        return muzzle(modelToCamera, 0);
+    }
+
+    /** То же, вспышка дальше вперёд на forward пикселей модели (display.muzzle_flash_offset дульного обвеса TACZ). */
+    Vector3f muzzle(Matrix4f modelToCamera, float forward) {
         if (muzzle == null) return null;
         Vector3f o = new Vector3f(muzzle.origin);
+        if (forward != 0) o.add(0, 0, -forward);
         pose[muzzle.index].transformPosition(o);
         return modelToCamera.transformPosition(o);
     }
@@ -410,6 +534,15 @@ final class ViewModel {
      * игрока (его скин) на костях righthand_pos / lefthand_pos, как в TACZ.
      */
     void render(MultiBufferSource buffers, Matrix4f base, Matrix4f fov, Matrix4f m2c, int light, int ammo, boolean arms) {
+        render(buffers, base, fov, m2c, light, ammo, arms, null);
+    }
+
+    /** Что дорисовать на оружии: модели обвесов (по слоту) — в &lt;слот&gt;_pos; прицел на планке — с моделью планки. */
+    record Mounted(AttModel[] models, AttModel riser, float[] riserOffset, boolean aiming) {}
+
+    void render(MultiBufferSource buffers, Matrix4f base, Matrix4f fov, Matrix4f m2c, int light, int ammo, boolean arms,
+                Mounted att) {
+        Set<Integer> condHidden = gearHidden != null ? gearHidden : hokaHidden;
         Matrix4f pos = new Matrix4f(base).mul(fov).mul(m2c);
         Matrix4f nrm = new Matrix4f(base).mul(m2c);
         Matrix4f m = new Matrix4f(), n = new Matrix4f();
@@ -417,20 +550,35 @@ final class ViewModel {
             if (tex[t] == null) continue;
             VertexConsumer vc = buffers.getBuffer(RenderTypes.entityCutoutNoCull(tex[t]));
             for (BbModel.Bone b : model.bones) {
-                if (b.faces.isEmpty() || hidden.contains(b.index)) continue;
+                if (b.faces.isEmpty() || hidden.contains(b.index) || condHidden.contains(b.index)) continue;
                 if (ammo <= 0 && (barrelRound.contains(b.index) || magRounds.contains(b.index))) continue;
                 m.set(pos).mul(pose[b.index]);
                 n.set(nrm).mul(pose[b.index]);
-                faces(vc, m, n, b, light, t);
+                faces(vc, m, n, b, illum.contains(b.index) ? LightTexture.FULL_BRIGHT : light, t);
             }
             // запасной магазин (перезарядка): сетка магазина в точке additional_magazine, патроны в нём есть всегда
             if (extraMag != null && magazine != null && animates(extraMag)) {
                 Matrix4f toExtra = new Matrix4f(pose[extraMag.index]).mul(new Matrix4f(pose[magazine.index]).invert());
                 for (BbModel.Bone b : model.bones) {
-                    if (b.faces.isEmpty() || !magBones.contains(b.index) || hidden.contains(b.index)) continue;
+                    if (b.faces.isEmpty() || !magBones.contains(b.index) || hidden.contains(b.index)
+                            || condHidden.contains(b.index)) continue;
                     m.set(pos).mul(toExtra).mul(pose[b.index]);
                     n.set(nrm).mul(toExtra).mul(pose[b.index]);
                     faces(vc, m, n, b, light, t);
+                }
+            }
+        }
+        if (att != null) {                                         // обвесы: прицел первым (как у TACZ), планка под ним
+            for (int s = 0; s < Att.SLOTS.length; s++) {
+                AttModel am = att.models()[s];
+                if (am == null) continue;
+                float[] off = s == Att.SCOPE && att.riser() != null ? att.riserOffset() : null;
+                Matrix4f mt = mount(s, off);
+                if (mt == null) continue;
+                am.render(buffers, new Matrix4f(pos).mul(mt), new Matrix4f(nrm).mul(mt), light, att.aiming() && s == Att.SCOPE);
+                if (s == Att.SCOPE && att.riser() != null) {
+                    Matrix4f rm = mount(s, null);
+                    att.riser().render(buffers, new Matrix4f(pos).mul(rm), new Matrix4f(nrm).mul(rm), light, false);
                 }
             }
         }
@@ -455,7 +603,7 @@ final class ViewModel {
     }
 
     /** Грани кости: вершины — матрицей m, нормаль — по тем же точкам матрицей nm (без сжатия под угол обзора). */
-    private static void faces(VertexConsumer vc, Matrix4f m, Matrix4f nm, BbModel.Bone b, int light, int texture) {
+    static void faces(VertexConsumer vc, Matrix4f m, Matrix4f nm, BbModel.Bone b, int light, int texture) {
         Vector3f p0 = new Vector3f(), p1 = new Vector3f(), p2 = new Vector3f(), p3 = new Vector3f();
         Vector3f n = new Vector3f(), e = new Vector3f();
         Vector3f[] pts = {p0, p1, p2, p3};

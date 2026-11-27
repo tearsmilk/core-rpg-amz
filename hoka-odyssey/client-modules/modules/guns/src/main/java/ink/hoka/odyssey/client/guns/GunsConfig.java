@@ -15,13 +15,17 @@ final class GunsConfig {
     private static final String DEFAULT = """
             # Hoka Odyssey — модуль guns (огнестрел). Файл читается при загрузке модуля (вход на сервер,
             # /hoclient reload). Клавиши — имена Minecraft: key.keyboard.r, key.keyboard.v, key.mouse.left, key.mouse.4 …
-            config_version = 2
+            config_version = 3
 
             # Выстрел — кнопка «атаковать» игры (ЛКМ; зажать — очередь в режиме «авто»), прицел — «использовать» (ПКМ).
             # Перезарядка (работает, только пока в руке оружие — иначе R остаётся у spaceflight: «лечь» в невесомости)
             reload = key.keyboard.r
             # Режим огня: очередь / одиночный
             firemode = key.keyboard.v
+            # Окно обвеса (как в TACZ): с оружием в руке — прицелы, глушители, приклады, рукояти, ЛЦУ, магазины
+            refit = key.keyboard.y
+            # Кратность прицела (у прицелов с несколькими кратностями), пока целишься
+            zoom = key.keyboard.g
 
             # Размер оружия в руке (1 — как в TACZ по пикселям модели; меньше — меньше «влезает» в стены)
             viewmodel_scale = 0.3
@@ -55,10 +59,18 @@ final class GunsConfig {
             # подзорной трубы) и размер круга прицела (доля высоты экрана)
             scope_sensitivity = 1.0
             scope_size = 0.94
+            # Сетка коллиматоров (красная точка и т.п.) поверх мира в прицеле
+            sight_reticle = true
+            # Лучи ЛЦУ (свой и других игроков)
+            laser = true
             """;
 
     String reloadKey = "key.keyboard.r";
     String fireModeKey = "key.keyboard.v";
+    String refitKey = "key.keyboard.y";
+    String zoomKey = "key.keyboard.g";
+    boolean sightReticle = true;
+    boolean laser = true;
     float viewmodelScale = 0.3f;
     /** viewmodel_fov = model: угол обзора модели у каждого оружия свой (из TACZ). */
     static final float FOV_MODEL = -1f;
@@ -94,6 +106,10 @@ final class GunsConfig {
             }
             c.reloadKey = p.getProperty("reload", c.reloadKey).trim();
             c.fireModeKey = p.getProperty("firemode", c.fireModeKey).trim();
+            c.refitKey = p.getProperty("refit", c.refitKey).trim();
+            c.zoomKey = p.getProperty("zoom", c.zoomKey).trim();
+            c.sightReticle = bool(p, "sight_reticle", c.sightReticle);
+            c.laser = bool(p, "laser", c.laser);
             c.viewmodelScale = (float) num(p, "viewmodel_scale", c.viewmodelScale, 0.05, 2);
             c.viewmodelFov = viewFov(p);
             c.minLight = (int) num(p, "min_light", c.minLight, 0, 15);

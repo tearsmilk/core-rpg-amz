@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import ink.hoka.odyssey.client.api.CameraState;
 import ink.hoka.odyssey.client.api.ClientContext;
 import ink.hoka.odyssey.client.api.ClientModule;
+import ink.hoka.odyssey.client.model.BbModel;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -164,12 +165,45 @@ public final class GunsClientModule implements ClientModule {
     private final Map<String, Identifier> hudTex = new HashMap<>();
     private int rejects;
 
+    // ---- обвес (как в TACZ): каталог с сервера, свой обвес (LOADOUT), чужой (GEAR), модели обвесов, окно обвеса (Y)
+    static final String ATT_JSON = "guns/attachments.json";
+    Att.Catalog cat = Att.Catalog.EMPTY;
+    private boolean catWatched;
+    private final Map<String, AttModel> attModels = new HashMap<>();
+    private final Set<String> attWatched = new HashSet<>();
+    private final Map<String, Identifier> iconTex = new HashMap<>();
+    /** Обвес своего оружия в руке и его характеристики (LOADOUT); null — нет. */
+    private Proto.Loadout ownLoadout;
+    private Proto.Spec eff;
+    private Proto.Loadout effFrom;
+    private Proto.Spec effBase;
+    /** Обвес оружия в руке других игроков (и своего — для вида от третьего лица): id игрока → обвес. */
+    private final Map<Integer, Att.Gear> gears = new HashMap<>();
+    private InputConstants.Key refitKey;
+    private InputConstants.Key zoomKey;
+    private boolean refitWas;
+    private boolean zoomWas;
+    /** Окно обвеса: насколько открыто (0…1, «камера» к refit_view), какой слот смотрим (−1 — общий вид) и прошлый. */
+    private float refitW;
+    private int refitView = -1;
+    private int refitPrevView = -1;
+    private long refitViewNs;
+    /** Обвес для показа в окне обвеса (наведён на обвес в списке) — только у себя; null — как на оружии. */
+    Att.Gear preview;
+    /** Звук, который сыграть, когда сервер ответит «готово» на действие с обвесом. */
+    private String pendingSound = "";
+    /** Прицел-обвес в этом кадре (для HUD, приближения, мыши): вид через окуляр и сколько пикселей экрана на тангенс. */
+    private AttModel.Optic curOptic;
+    private float pxPerTanK;
+
     @Override
     public void enable(ClientContext ctx) {
         this.ctx = ctx;
         cfg = GunsConfig.load(ctx.dataDir(), ctx.logger());
         reloadKey = key(cfg.reloadKey, "key.keyboard.r");
         modeKey = key(cfg.fireModeKey, "key.keyboard.v");
+        refitKey = key(cfg.refitKey, "key.keyboard.y");
+        zoomKey = key(cfg.zoomKey, "key.keyboard.g");
         font = new MonoFont(ctx.logger(), cfg.monoDigits);
         hud = new GunHud(font);
         ctx.onMessage(this::onMessage);
@@ -185,8 +219,9 @@ public final class GunsClientModule implements ClientModule {
         partsHook = installPartsHook();
         if (cfg.backGun) back = new BackGun(ctx.logger(), cfg.backTune, cfg.holsterTune);
         ctx.send(Proto.hello());
-        ctx.logger().info("guns: загружен (перезарядка — {}, режим огня — {}, размер оружия {}; поза тела от третьего"
-                + " лица — {})", cfg.reloadKey, cfg.fireModeKey, cfg.viewmodelScale,
+        ctx.logger().info("guns: загружен (перезарядка — {}, режим огня — {}, обвес — {}, кратность — {}, размер оружия {};"
+                + " поза тела от третьего лица — {})", cfg.reloadKey, cfg.fireModeKey, cfg.refitKey, cfg.zoomKey,
+                cfg.viewmodelScale,
                 partsHook ? "есть (onModelParts)" : "нет: ядро без onModelParts — поза игры, в прицеле поза лука");
     }
 
@@ -207,6 +242,9 @@ public final class GunsClientModule implements ClientModule {
         back = null;
         for (ViewModel vm : models.values()) vm.close();
         models.clear();
+        for (AttModel am : attModels.values()) am.close();
+        attModels.clear();
+        if (Minecraft.getInstance().screen instanceof RefitScreen) Minecraft.getInstance().setScreen(null);
         fx.close();
         if (font != null) font.close();
         held = null;
@@ -325,6 +363,7 @@ public final class GunsClientModule implements ClientModule {
                     if (back != null) back.setItems(gunItems, k);
                     vacVolume = vv[0];
                     for (Proto.Spec s : specs.values()) watch(s);
+                    watchCatalog();
                     third.clearAnims();
                     for (var e : playerAnimPaths.entrySet()) watchAnim(e.getKey(), e.getValue());
                     ctx.logger().info("guns: оружие с сервера: {}", specs.keySet());
@@ -353,7 +392,8 @@ public final class GunsClientModule implements ClientModule {
                     Vec3 v = new Vec3(in.readFloat(), in.readFloat(), in.readFloat());
                     float life = in.readFloat();
                     int color = in.readInt();
-                    otherShot(shooter, o, v, life, color);
+                    int tf = in.available() > 0 ? in.readUnsignedByte() : 0;
+                    otherShot(shooter, o, v, life, color, (tf & Proto.TRACER_SILENCED) != 0);
                 }
                 case Proto.S_IMPACT -> {
                     // искры и крошку блока рассылает сервер частицами игры — здесь ничего
@@ -404,11 +444,31 @@ public final class GunsClientModule implements ClientModule {
                     String gun = in.readUTF();
                     if (back != null) back.set(id, gun);
                 }
+                case Proto.S_LOADOUT -> {
+                    Proto.Loadout lo = Proto.readLoadout(in);
+                    ownLoadout = lo.gun().isEmpty() ? null : lo;
+                    preview = null;
+                }
+                case Proto.S_GEAR -> {
+                    int id = in.readInt();
+                    String gun = in.readUTF();
+                    String csv = in.readUTF();
+                    if (gun.isEmpty()) gears.remove(id);
+                    else gears.put(id, Att.Gear.parseCsv(csv));
+                }
+                case Proto.S_REFIT_RESULT -> {
+                    int code = in.readUnsignedByte();
+                    String msg = in.readUTF();
+                    if (code == 0 && !pendingSound.isEmpty()) Sfx.play(pendingSound, 0.8f * cfg.volume, 1f);
+                    pendingSound = "";
+                    if (Minecraft.getInstance().screen instanceof RefitScreen rs) rs.result(code, msg);
+                    else if (!msg.isEmpty()) setHint(msg.toUpperCase(java.util.Locale.ROOT));
+                }
                 case Proto.S_HIT -> {
                     hitKind = in.readUnsignedByte();
                     hitNs = System.nanoTime();
                     if (held != null) {
-                        String s = held.sound(hitKind == 3 ? "kill" : hitKind == 2 ? "head_hit" : "flesh_hit");
+                        String s = g().sound(hitKind == 3 ? "kill" : hitKind == 2 ? "head_hit" : "flesh_hit");
                         Sfx.play(s, 0.8f * cfg.volume, 1f);
                     }
                 }
@@ -458,7 +518,7 @@ public final class GunsClientModule implements ClientModule {
         else apply.run();
     }
 
-    private void otherShot(int shooterId, Vec3 eye, Vec3 v, float life, int color) {
+    private void otherShot(int shooterId, Vec3 eye, Vec3 v, float life, int color, boolean silenced) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null && shooterId == mc.player.getId()) return;
         third.signals(shooterId).shotNs = System.nanoTime();
@@ -473,7 +533,7 @@ public final class GunsClientModule implements ClientModule {
         }
         if (cfg.tracers) {
             fx.tracer(o, v, life, color, false);
-            fx.flash(o, 0.55f);
+            if (!silenced) fx.flash(o, 0.55f);
         }
     }
 
@@ -527,15 +587,16 @@ public final class GunsClientModule implements ClientModule {
         ItemStack stack = p.getMainHandItem();
         Proto.Spec now = specOf(specs, stack);
         int slot = p.getInventory().getSelectedSlot();
+        if ((now != held || slot != heldSlot) && mc.screen instanceof RefitScreen) mc.setScreen(null);
         if (now != held || slot != heldSlot) {
-            if (held != null && now == null) Sfx.play(held.sound("put_away"), 0.6f * cfg.volume, 1f);
+            if (held != null && now == null) Sfx.play(g().sound("put_away"), 0.6f * cfg.volume, 1f);
             held = now;
             heldSlot = slot;
             resetGun();
             if (held != null) {
-                ammo = itemAmmo(stack, held.magazine());
+                ammo = itemAmmo(stack, g().magazine());
                 long t = System.nanoTime();
-                drawUntilNs = t + (long) (held.draw() * 1e9);
+                drawUntilNs = t + (long) (g().draw() * 1e9);
                 heldKey = gunKey(stack, slot);
                 boltDue.values().removeIf(d -> d <= t);
                 float bolt = kind().boltTime();
@@ -544,9 +605,9 @@ public final class GunsClientModule implements ClientModule {
                     drawUntilNs += (long) (bolt * 1e9);
                     boltDue.put(heldKey, drawUntilNs);
                 }
-                ViewModel vm = models.get(held.model());
+                ViewModel vm = models.get(g().model());
                 if (vm != null) vm.play("draw");
-                Sfx.play(held.sound("draw"), 0.7f * cfg.volume, 1f);
+                Sfx.play(g().sound("draw"), 0.7f * cfg.volume, 1f);
             }
         }
         if (held == null) {
@@ -561,7 +622,7 @@ public final class GunsClientModule implements ClientModule {
         }
         keys(mc);
         flush();
-        ViewModel vm = models.get(held.model());
+        ViewModel vm = models.get(g().model());
         if (vm != null) for (String s : vm.dueSounds()) Sfx.play(s, 0.8f * cfg.volume, 1f);
         if (reloadStartNs >= 0 && (System.nanoTime() - reloadStartNs) / 1e9 > reloadLen + 1.5) reloadStartNs = -1;
         zoom(p);
@@ -576,6 +637,179 @@ public final class GunsClientModule implements ClientModule {
         boolean v = input && physical(mc, modeKey);
         if (v && !modeWas) toggleMode();
         modeWas = v;
+        // Y — окно обвеса (закрывает его само окно; пока клавиша держится после закрытия — не открываем снова)
+        boolean y = physical(mc, refitKey);
+        if (y && !refitWas && input) openRefit(mc);
+        refitWas = y;
+        boolean z = input && physical(mc, zoomKey);
+        if (z && !zoomWas && ads > 0.5f) nextZoom();
+        zoomWas = z;
+    }
+
+    // ---------------------------------------------------------------- обвес
+
+    /** Каталог обвесов с сервера (обновится сам при смене файла). */
+    private void watchCatalog() {
+        if (catWatched) return;
+        catWatched = true;
+        ctx.onFile(ATT_JSON, bytes -> {
+            if (bytes == null) return;
+            try {
+                cat = Att.Catalog.parse(bytes);
+                ctx.logger().info("guns: каталог обвесов — {} обвесов, {} планок, оружия {}", cat.defs.size(),
+                        cat.adapters.size(), cat.guns.keySet());
+            } catch (RuntimeException e) {
+                ctx.logger().warn("guns: каталог обвесов не разобран: {}", e.toString());
+            }
+        });
+    }
+
+    /** Модель обвеса по пути (грузится с сервера при первом запросе; пока нет — null). */
+    AttModel attModel(String path) {
+        if (path == null || path.isEmpty()) return null;
+        if (attWatched.add(path)) {
+            ctx.onFile(path, bytes -> {
+                AttModel old = attModels.remove(path);
+                if (old != null) old.close();
+                if (bytes == null) return;
+                Att.Def def = null;
+                for (Att.Def d : cat.defs.values()) {
+                    if (path.equals(d.model())) {
+                        def = d;
+                        break;
+                    }
+                }
+                AttModel am = AttModel.load(path, bytes, def, ctx.logger());
+                if (am != null) attModels.put(path, am);
+            });
+        }
+        return attModels.get(path);
+    }
+
+    /** Иконка обвеса (текстура ядра из файлов сервера). */
+    Identifier icon(Att.Def d) {
+        String f = d == null ? "" : d.iconFile();
+        if (f.isEmpty()) return null;
+        return iconTex.computeIfAbsent(f, ctx::texture);
+    }
+
+    /** Обвес своего оружия в руке (null — сервер ещё не прислал). */
+    Att.Gear ownGear() {
+        Proto.Loadout lo = ownLoadout;
+        return lo == null || held == null || !lo.gun().equals(held.id()) ? null : lo.gear();
+    }
+
+    Proto.Stats ownStats() {
+        Proto.Loadout lo = ownLoadout;
+        return lo == null || held == null || !lo.gun().equals(held.id()) ? null : lo.stats();
+    }
+
+    /** Оружие в руке с характеристиками обвеса (до LOADOUT — как в CONFIG). */
+    Proto.Spec g() {
+        if (held == null) return null;
+        Proto.Loadout lo = ownLoadout;
+        if (lo == null || lo.stats() == null || !lo.gun().equals(held.id())) return held;
+        if (eff == null || effFrom != lo || effBase != held) {
+            eff = Proto.tuned(held, lo.stats());
+            effFrom = lo;
+            effBase = held;
+        }
+        return eff;
+    }
+
+    Proto.Spec heldBase() {
+        return held;
+    }
+
+    /** Прицел-обвес на своём оружии (null — нет или прицел часть модели). */
+    private Att.Def scopeDef() {
+        Att.Gear gr = preview != null ? preview : ownGear();
+        return gr == null ? null : cat.def(gr.ids[Att.SCOPE]);
+    }
+
+    /** Приближение в прицеле: кратность прицела-обвеса (не больше 10 — столько даёт угол обзора игры), иначе оружия. */
+    private float effZoom() {
+        Att.Def d = scopeDef();
+        Att.Gear gr = ownGear();
+        if (d != null && d.zoom().length > 0) return Math.max(1, Math.min(10, d.zoomAt(gr == null ? 0 : gr.zoom)));
+        return g() == null ? 1 : g().zoom();
+    }
+
+    /** G в прицеле — следующая кратность (у прицелов с несколькими). */
+    private void nextZoom() {
+        Att.Gear gr = ownGear();
+        Att.Def d = scopeDef();
+        if (gr == null || d == null || d.zoom().length < 2) return;
+        gr.zoom = Math.floorMod(gr.zoom + 1, d.zoom().length);
+        ctx.send(Proto.zoom(gr.zoom));
+        Sfx.play(d.soundInstall(), 0.4f * cfg.volume, 1.3f);
+        setHint("КРАТНОСТЬ " + fmt(Math.min(10, d.zoomAt(gr.zoom))) + "x");
+    }
+
+    static String fmt(double v) {
+        return Math.abs(v - Math.rint(v)) < 1e-3 ? String.valueOf((long) Math.rint(v))
+                : String.format(java.util.Locale.ROOT, "%.2f", v).replaceAll("0+$", "").replaceAll("\\.$", "");
+    }
+
+    private void openRefit(Minecraft mc) {
+        if (held == null || mc.screen != null || mc.player == null) return;
+        if (reloading() || drawing()) {
+            setHint(reloading() ? "ИДЁТ ПЕРЕЗАРЯДКА" : "ДОСТАЮ");
+            return;
+        }
+        if (cat.guns.isEmpty()) {
+            setHint("НЕТ КАТАЛОГА ОБВЕСА");
+            return;
+        }
+        if (adsSent) {
+            adsSent = false;
+            ctx.send(Proto.ads(false));
+        }
+        refitView = -1;
+        refitPrevView = -1;
+        mc.setScreen(new RefitScreen(this));
+    }
+
+    // ---- для окна обвеса
+
+    MonoFont font() {
+        return font;
+    }
+
+    InputConstants.Key refitKey() {
+        return refitKey;
+    }
+
+    void send(byte[] msg) {
+        ctx.send(msg);
+    }
+
+    void expectSound(String id) {
+        pendingSound = id == null ? "" : id;
+    }
+
+    /** «Камера» окна обвеса — к слоту slot (−1 — общий вид), плавно за 0,25 с. */
+    void refitLook(int slot) {
+        if (slot == refitView) return;
+        refitPrevView = refitView;
+        refitView = slot;
+        refitViewNs = System.nanoTime();
+    }
+
+    boolean refitMoving() {
+        return System.nanoTime() - refitViewNs < 250_000_000L;
+    }
+
+    int fireMode() {
+        return mode;
+    }
+
+    void switchMode() {
+        toggleMode();
+    }
+
+    int ammoNow() {
+        return ammo;
     }
 
     private void resetGun() {
@@ -614,27 +848,27 @@ public final class GunsClientModule implements ClientModule {
 
     private void requestReload() {
         if (held == null || reloading() || drawing()) return;
-        if (ammo >= held.magazine() + 1) return;
+        if (ammo >= g().magazine() + 1) return;
         if (gotState && srvReserve == 0) {
             setHint("НЕТ ПАТРОНОВ");
-            Sfx.play(held.sound("dry_fire"), 0.8f * cfg.volume, 1f);
+            Sfx.play(g().sound("dry_fire"), 0.8f * cfg.volume, 1f);
             return;
         }
         ctx.send(Proto.reload());
         Proto.Extra ex = extra();
         if (ex.shell() != null) {                                  // по одному патрону: вступление, циклы, конец
             shellEmpty = ammo <= 0;
-            shellLoops = ex.shellLoops(ammo, held.magazine() + 1, gotState ? srvReserve : -1);
+            shellLoops = ex.shellLoops(ammo, g().magazine() + 1, gotState ? srvReserve : -1);
             startReloadLocal(3, ex.shellTotal(shellEmpty, shellLoops));
             return;
         }
         int kind = ammo > 0 ? 1 : 2;
-        startReloadLocal(kind, kind == 1 ? held.reloadTactical() : held.reloadEmpty());
+        startReloadLocal(kind, kind == 1 ? g().reloadTactical() : g().reloadEmpty());
     }
 
     /** Дробь, свой прицел, перезарядка по одному патрону у оружия в руке. */
     private Proto.Extra extra() {
-        Proto.Extra e = held == null ? null : extras.get(held.id());
+        Proto.Extra e = held == null ? null : extras.get(g().id());
         return e == null ? Proto.Extra.NONE : e;
     }
 
@@ -651,7 +885,7 @@ public final class GunsClientModule implements ClientModule {
         int phase = el < intro ? 0 : Math.min(shellLoops + 1, 1 + (int) ((el - intro) / sh[3]));
         if (phase == shellPhase) return;
         shellPhase = phase;
-        ViewModel vm = models.get(held.model());
+        ViewModel vm = models.get(g().model());
         if (vm == null) return;
         if (phase == 0) vm.play(shellEmpty && vm.has("reload_intro_empty") ? "reload_intro_empty" : "reload_intro");
         else if (phase <= shellLoops) vm.play("reload_loop");
@@ -669,19 +903,25 @@ public final class GunsClientModule implements ClientModule {
             shellAnim();
             return;
         }
-        ViewModel vm = models.get(held.model());
-        if (vm != null) vm.play(kind == 1 ? "reload_tactical" : "reload_empty");
+        ViewModel vm = models.get(g().model());
+        if (vm != null) {
+            // с удлинённым магазином — своя анимация TACZ (reload_tactical_xmag / reload_empty_xmag), если есть
+            String anim = kind == 1 ? "reload_tactical" : "reload_empty";
+            Att.Gear gr = ownGear();
+            if (gr != null && gr.xmagLevel(cat) > 0 && vm.has(anim + "_xmag")) anim += "_xmag";
+            vm.play(anim);
+        }
         // звук на всю перезарядку (M16A1: в анимации TACZ своих звуков нет)
-        Sfx.play(held.sound(kind == 1 ? "reload_tactical" : "reload_empty"), 0.8f * cfg.volume, 1f);
+        Sfx.play(g().sound(kind == 1 ? "reload_tactical" : "reload_empty"), 0.8f * cfg.volume, 1f);
     }
 
     private void toggleMode() {
-        if (held == null || !(held.auto() && held.semi())) return;
+        if (held == null || !(g().auto() && g().semi())) return;
         mode = mode == 0 ? 1 : 0;
         modeSetNs = System.nanoTime();
         ctx.send(Proto.fireMode(mode));
-        Sfx.play(held.sound("fire_select"), 0.8f * cfg.volume, 1f);
-        ViewModel vm = models.get(held.model());
+        Sfx.play(g().sound("fire_select"), 0.8f * cfg.volume, 1f);
+        ViewModel vm = models.get(g().model());
         if (vm != null && !reloading()) vm.play(mode == 0 ? "switch_auto" : "switch_semi");
         setHint(mode == 0 ? "РЕЖИМ: АВТО" : "РЕЖИМ: ОДИНОЧНЫЙ");
     }
@@ -696,7 +936,7 @@ public final class GunsClientModule implements ClientModule {
     }
 
     private boolean drawing() {
-        return System.nanoTime() < drawUntilNs || (srvFlags & Proto.FLAG_DRAWING) != 0 && srvGun.equals(held == null ? "" : held.id());
+        return System.nanoTime() < drawUntilNs || (srvFlags & Proto.FLAG_DRAWING) != 0 && srvGun.equals(held == null ? "" : g().id());
     }
 
     private boolean vacuum() {
@@ -726,7 +966,7 @@ public final class GunsClientModule implements ClientModule {
     private void zoom(LocalPlayer p) {
         // от третьего лица (F5) не приближаем: прицел там — только поза тела
         boolean fp = Minecraft.getInstance().options.getCameraType().isFirstPerson();
-        float z = held == null || !fp ? 1 : 1 + (held.zoom() - 1) * AdsBlend.easeInOutCubic(ads);
+        float z = held == null || !fp ? 1 : 1 + (effZoom() - 1) * AdsBlend.easeInOutCubic(ads);
         double fx = Minecraft.getInstance().options.fovEffectScale().get();
         if (z <= 1.001f || fx < 0.05) {
             restoreZoom();
@@ -778,10 +1018,14 @@ public final class GunsClientModule implements ClientModule {
      * прицеле — {@link ViewModel#viewFov}); viewmodel_fov числом — один для всего оружия. Вода и лава сужают оба.
      */
     private float viewFovScale(Minecraft mc, float pt, ViewModel vm) {
-        double view = cfg.viewmodelFov == GunsConfig.FOV_MODEL ? vm.viewFov(ads) : cfg.viewmodelFov;
+        Att.Def sd = scopeDef();
+        Att.Gear sg = preview != null ? preview : ownGear();
+        float sightFov = sd == null ? 0 : sd.fovAt(sg == null ? 0 : sg.zoom);
+        double view = cfg.viewmodelFov == GunsConfig.FOV_MODEL ? vm.viewFov(ads, sightFov) : cfg.viewmodelFov;
         if (view <= 0 && cfg.viewmodelFov == GunsConfig.FOV_MODEL) view = 70;   // в модели угла нет — как рука игры
-        if (view <= 0) return 1;
         double world = mc.options.fov().get() * net.minecraft.util.Mth.lerp(pt, fovModO, fovMod);
+        pxPerTanK = (float) (1 / Math.tan(Math.toRadians(Math.min(179, world)) / 2));
+        if (view <= 0) return 1;
         var fluid = mc.gameRenderer.getMainCamera().getFluidInCamera();
         if (fluid == net.minecraft.world.level.material.FogType.WATER
                 || fluid == net.minecraft.world.level.material.FogType.LAVA) {
@@ -789,7 +1033,9 @@ public final class GunsClientModule implements ClientModule {
             world *= k;
             view *= k;
         }
-        return ViewModel.fovScale(world, view);
+        float k = ViewModel.fovScale(world, view);
+        pxPerTanK = (float) (k / Math.tan(Math.toRadians(Math.min(179, world)) / 2));
+        return k;
     }
 
     // ---------------------------------------------------------------- кадр: стрельба, отдача
@@ -809,7 +1055,7 @@ public final class GunsClientModule implements ClientModule {
         }
         if (aimKey && p.isSprinting()) p.setSprinting(false);
         float target = aimKey && !reloading() && !drawing() ? 1 : 0;
-        float rate = dt / Math.max(0.05f, held.aimTime());
+        float rate = dt / Math.max(0.05f, g().aimTime());
         ads = target > ads ? Math.min(target, ads + rate) : Math.max(target, ads - rate * 1.2f);
         keys(mc);
         ThirdPerson.Signals own = third.signals(p.getId());       // своя поза от третьего лица (F5)
@@ -826,7 +1072,7 @@ public final class GunsClientModule implements ClientModule {
         clickEdge = false;
         triggerWas = mc.options.keyAttack.isDown();
         if (!down) semiFired = false;
-        long interval = (long) (held.intervalMs() * 1e6);
+        long interval = (long) (g().intervalMs() * 1e6);
         if (down && edge && reloading() && reloadKind == 3 && ammo > 0) {
             reloadStartNs = -1;                                    // по одному патрону: выстрел прерывает перезарядку
         }
@@ -834,12 +1080,12 @@ public final class GunsClientModule implements ClientModule {
         if (down && !reloading() && !drawing()) {
             if (ammo <= 0) {
                 if (edge) {
-                    Sfx.play(held.sound("dry_fire"), 0.8f * cfg.volume, 1f);
+                    Sfx.play(g().sound("dry_fire"), 0.8f * cfg.volume, 1f);
                     setHint(keyName(reloadKey) + " — ПЕРЕЗАРЯДКА");
                 }
-            } else if (mode == 1 || !held.auto() || kind().boltTime() > 0) {
+            } else if (mode == 1 || !g().auto() || kind().boltTime() > 0) {
                 // одиночный — по нажатию; очередь с помпой/затвором (M1897) — пока зажата, после каждого передёргивания
-                boolean single = mode == 1 || !held.auto();
+                boolean single = mode == 1 || !g().auto();
                 if ((single ? edge && !semiFired : true) && now >= nextShotNs) {
                     shoot(mc, p, now);
                     semiFired = true;
@@ -862,7 +1108,7 @@ public final class GunsClientModule implements ClientModule {
         }
         if (boltAtNs >= 0 && now >= boltAtNs) {                    // затвор — анимация TACZ «bolt» со звуками
             boltAtNs = -1;
-            ViewModel bvm = models.get(held.model());
+            ViewModel bvm = models.get(g().model());
             if (bvm != null && !reloading()) bvm.play("bolt");
         }
         // отдача камеры: изменение сплайнов с прошлого кадра
@@ -873,7 +1119,7 @@ public final class GunsClientModule implements ClientModule {
 
     /** Вид оружия в руке (нет данных — винтовка без затвора и оптики). */
     private Proto.Kind kind() {
-        Proto.Kind k = held == null ? null : kinds.get(held.id());
+        Proto.Kind k = held == null ? null : kinds.get(g().id());
         return k == null ? Proto.Kind.RIFLE : k;
     }
 
@@ -882,7 +1128,10 @@ public final class GunsClientModule implements ClientModule {
      * оружия с прицелом; нарастает в последней трети сведения оружия к глазу.
      */
     private float scopeCover() {
-        if (held == null || !kind().scope() || !Minecraft.getInstance().options.getCameraType().isFirstPerson()) return 0;
+        if (held == null || !Minecraft.getInstance().options.getCameraType().isFirstPerson()) return 0;
+        Att.Def d = scopeDef();
+        boolean scope = d != null ? (curOptic != null ? curOptic.scope() : d.scope() && !d.sight()) : kind().scope();
+        if (!scope) return 0;
         return Math.max(0, Math.min(1, (ads - 0.7f) / 0.28f));
     }
 
@@ -891,7 +1140,7 @@ public final class GunsClientModule implements ClientModule {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer p = mc.player;
         if (p == null || mc.screen != null || scopeCover() <= 0 || vacuum()) return false;
-        float z = 1 + (held.zoom() - 1) * AdsBlend.easeInOutCubic(ads);
+        float z = 1 + (effZoom() - 1) * AdsBlend.easeInOutCubic(ads);
         double k = cfg.scopeSensitivity / Math.max(1, z);
         p.turn(yawDeg * k / 0.15, pitchDeg * k / 0.15);           // как MouseHandler.turnPlayer: градусы = ×0,15
         return true;
@@ -940,7 +1189,7 @@ public final class GunsClientModule implements ClientModule {
     }
 
     private void shoot(Minecraft mc, LocalPlayer p, long now) {
-        Proto.Spec g = held;
+        Proto.Spec g = g();
         Vec3 dir = p.calculateViewVector(p.getXRot(), p.getYRot());
         int ms = lastShotNs == 0 ? 0 : (int) Math.min(65535, (now - lastShotNs) / 1_000_000);
         lastShotNs = now;
@@ -987,57 +1236,156 @@ public final class GunsClientModule implements ClientModule {
         LocalPlayer p = mc.player;
         if (p == null) return;
         long now = System.nanoTime();
+        float dtRefit = lastFrameNs == 0 ? 0 : Math.min(0.1f, (now - lastFrameNs) / 1e9f);
         frameUpdate(mc, p, now);
         Quaternionf q = frame.cameraState().orientation;
         Matrix4f pose = frame.pose().last().pose();
         // эффекты — в системе камеры (повёрнутые обратно её поворотом) и той же матрицей, что оружие в руке
         fx.render(frame.buffers(), new Matrix4f(pose).rotate(q), frame.camera(), q, flashTex);
+        otherLasers(mc, frame.partialTick());
 
         boolean firstPerson = mc.options.getCameraType().isFirstPerson();
-        ViewModel vm = held == null ? null : models.get(held.model());
+        ViewModel vm = held == null ? null : models.get(g().model());
         boolean show = vm != null && firstPerson;
-        boolean scoped = scopeCover() >= 1;                       // экран закрыт оптикой — оружие не видно
+        // окно обвеса: «камера» плавно к refit_view (0,25 с), как у TACZ
+        boolean refitOpen = mc.screen instanceof RefitScreen;
+        refitW = refitOpen ? Math.min(1, refitW + dtRefit / 0.25f) : Math.max(0, refitW - dtRefit / 0.25f);
+        if (!refitOpen) preview = null;
+        Att.Gear gear = preview != null ? preview : ownGear();
+        curOptic = null;
         if (show != handHidden) {
             ctx.hideHand(show);
             handHidden = show;
         }
         if (held != null && firstPerson) System.getProperties().put(HIDE_CROSSHAIR, Boolean.TRUE);
         else System.getProperties().remove(HIDE_CROSSHAIR);
+        // без каталога (ещё не пришёл) — как в файле модели: иначе видны все переходники сразу
+        if (vm != null) vm.applyGear(cat, cat.defs.isEmpty() ? null : gear, kind().scope());
+        // прицел-обвес: модель, глаз в прицеле (кратность выбирает свой scope_view), вид через окуляр
+        Att.Def sd = gear == null ? null : cat.def(gear.ids[Att.SCOPE]);
+        AttModel sm = sd == null ? null : attModel(sd.model());
+        Att.Adapter riser = gear == null || gear.adapter.isEmpty() ? null : cat.adapters.get(gear.adapter);
+        int view = sd == null ? 1 : sd.viewAt(gear.zoom);
+        if (sm != null) curOptic = sm.optic(view);
+        boolean scoped = scopeCover() >= 1;                       // экран закрыт оптикой — оружие не видно
         if (!show || scoped) {
             muzzleWorld = null;
-            if (scoped) vm.update();
+            if (scoped && vm != null) vm.update();
+            fx.renderBeams(frame.buffers(), new Matrix4f(pose).rotate(q), frame.camera(), q);
             return;
         }
-        // покачивание за поворотом взгляда (инерция оружия), в прицеле — слабее
+        // покачивание за поворотом взгляда (инерция оружия), в прицеле — слабее; в окне обвеса — нет
         float yaw = p.getViewYRot(frame.partialTick()), pitch = p.getViewXRot(frame.partialTick());
         if (!Float.isNaN(lastYaw)) {
             float dyaw = net.minecraft.util.Mth.wrapDegrees(yaw - lastYaw), dpitch = pitch - lastPitch;
-            float k = 1 - 0.75f * ads;
+            float k = (1 - 0.75f * ads) * (1 - refitW);
             swayX += (Math.max(-6, Math.min(6, dyaw)) * 0.35f * k - swayX) * 0.25f;
             swayY += (Math.max(-6, Math.min(6, dpitch)) * 0.35f * k - swayY) * 0.25f;
         }
         lastYaw = yaw;
         lastPitch = pitch;
 
-        vm.safety(mode == 0 && held.auto() ? "static_auto" : "static_semi");
+        vm.safety(mode == 0 && g().auto() ? "static_auto" : "static_semi");
         vm.update();
-        Matrix4f m2c = vm.modelToCamera(cfg.viewmodelScale, ads);
+        float[] riserOff = riser == null ? null : riser.mountOffset();
+        Matrix4f sightEye = null;
+        if (sm != null) {
+            Matrix4f mt = vm.mount(Att.SCOPE, riserOff);
+            Matrix4f e = sm.eye(view);
+            if (mt != null && e != null) sightEye = mt.mul(e);
+        }
+        Matrix4f refitInv = null;
+        if (refitW > 0) {
+            float t = AdsBlend.easeOutCubic(AdsBlend.clamp01((now - refitViewNs) / 0.25e9f));
+            refitInv = AdsBlend.blend(vm.refitEye(refitPrevView), vm.refitEye(refitView), t);
+        }
+        Matrix4f m2c = vm.modelToCamera(cfg.viewmodelScale, ads, sightEye, sd == null ? 0 : sd.heightAdjust(), refitInv, refitW);
         Matrix4f sway = new Matrix4f().rotateY((float) Math.toRadians(swayX)).rotateX((float) Math.toRadians(swayY));
         m2c = sway.mul(m2c);
         Matrix4f camToBuf = new Matrix4f(pose).rotate(q);
         // свой угол обзора оружия (как у TACZ — model_fov оружия при любой настройке): x, y камеры ×k
         Matrix4f fov = ViewModel.fovMatrix(viewFovScale(mc, frame.partialTick(), vm));
-        vm.render(frame.buffers(), camToBuf, fov, m2c, light(mc, frame.camera()), ammo, cfg.arms);
-        Vector3f mz = vm.muzzle(m2c);
+        int light = light(mc, frame.camera());
+        ViewModel.Mounted mounted = null;
+        if (gear != null) {
+            AttModel[] ms = new AttModel[Att.SLOTS.length];
+            for (int s = 0; s < ms.length; s++) {
+                Att.Def d = cat.def(gear.ids[s]);
+                if (d != null && !d.model().isEmpty() && vm.hasPos(s)) ms[s] = attModel(d.model());
+            }
+            mounted = new ViewModel.Mounted(ms, riser == null ? null : attModel(riser.model()), riserOff, ads > 0.7f);
+        }
+        vm.render(frame.buffers(), camToBuf, fov, m2c, light, ammo, cfg.arms, mounted);
+        if (mounted != null && cfg.laser) ownLasers(vm, gear, mounted, fov, m2c, q, frame.camera());
+        Att.Def md = gear == null ? null : cat.def(gear.ids[Att.MUZZLE]);
+        Vector3f mz = vm.muzzle(m2c, md == null ? 0 : md.flashOffset());
         if (mz != null) {
             mz = fov.transformPosition(mz);                        // где ствол виден на экране
             Vector3f w = new Vector3f(mz).rotate(q);
             Vec3 c = frame.camera();
             muzzleWorld = new Vec3(c.x + w.x, c.y + w.y, c.z + w.z);
             if (flashNs > 0 && now - flashNs < 55_000_000L && flashTex != null && cfg.tracers) {
-                float size = cfg.viewmodelScale * 13f / 16f * (vacuum() ? 0.6f : 1f) * kind().flashScale();
+                Proto.Stats st = ownStats();
+                float scale = st != null ? st.flashScale() : kind().flashScale();
+                float size = cfg.viewmodelScale * 13f / 16f * (vacuum() ? 0.6f : 1f) * scale;
                 vm.renderFlash(frame.buffers(), camToBuf, mz, flashTex, size * fov.m00(), flashSpin);  // в плоскости экрана
             }
+        }
+        fx.renderBeams(frame.buffers(), camToBuf, frame.camera(), q);
+    }
+
+    /** Свои лучи ЛЦУ: из костей laser_beam обвесов (ЛЦУ, рукоять с ЛЦУ) — туда, куда смотрит кость. */
+    private void ownLasers(ViewModel vm, Att.Gear gear, ViewModel.Mounted mounted, Matrix4f fov, Matrix4f m2c,
+                           Quaternionf q, Vec3 cam) {
+        Vector3f at = new Vector3f(), dir = new Vector3f();
+        for (int s = 0; s < Att.SLOTS.length; s++) {
+            AttModel am = mounted.models()[s];
+            int color = gear.laserColor(cat, s);
+            if (am == null || color < 0 || am.beams.isEmpty()) continue;
+            Matrix4f mt = vm.mount(s, null);
+            if (mt == null) continue;
+            Matrix4f full = new Matrix4f(fov).mul(m2c).mul(mt);
+            Att.Def d = cat.def(gear.ids[s]);
+            for (BbModel.Bone b : am.beams) {
+                am.beam(b, at, dir);
+                Vector3f p0 = full.transformPosition(new Vector3f(at));
+                Vector3f d0 = full.transformDirection(new Vector3f(dir)).normalize();
+                p0.rotate(q);
+                d0.rotate(q);
+                fx.laser(new Vec3(cam.x + p0.x, cam.y + p0.y, cam.z + p0.z), new Vec3(d0.x, d0.y, d0.z),
+                        d.laser().length(), color, Minecraft.getInstance().player);
+            }
+        }
+    }
+
+    /** Лучи ЛЦУ других игроков (и свой в F5): от ствола (как у трассера) по взгляду. */
+    private void otherLasers(Minecraft mc, float pt) {
+        if (!cfg.laser || mc.level == null || gears.isEmpty()) return;
+        boolean fp = mc.options.getCameraType().isFirstPerson();
+        for (var e : gears.entrySet()) {
+            Att.Gear gr = e.getValue();
+            int color = -1;
+            float len = 0;
+            for (int s : new int[] {Att.LASER, Att.GRIP}) {
+                int c = gr.laserColor(cat, s);
+                if (c >= 0) {
+                    color = c;
+                    len = cat.def(gr.ids[s]).laser().length();
+                    break;
+                }
+            }
+            if (color < 0) continue;
+            Entity en = mc.level.getEntity(e.getKey());
+            if (en == null || en.isRemoved()) continue;
+            if (en == mc.player && fp) continue;                   // свой от первого лица — из модели в руке
+            if (en.distanceToSqr(mc.player) > 96 * 96) continue;
+            Vec3 eye = en.getEyePosition(pt);
+            Vec3 look = en.getViewVector(pt).normalize();
+            Vec3 right = look.cross(new Vec3(0, 1, 0));
+            right = right.lengthSqr() < 1e-6 ? new Vec3(1, 0, 0) : right.normalize();
+            Vec3 up = right.cross(look);
+            Vec3 o = eye.add(look.scale(0.7)).add(right.scale(0.25)).add(up.scale(-0.3));
+            fx.laser(o, look, len, color, en);
         }
     }
 
@@ -1051,7 +1399,7 @@ public final class GunsClientModule implements ClientModule {
 
     private void camera(CameraState cam, float pt) {
         if (held == null || cam.detached || cfg.cameraShake <= 0) return;
-        ViewModel vm = models.get(held.model());
+        ViewModel vm = models.get(g().model());
         if (vm == null) return;
         Vector3f s = vm.cameraShake().mul(cfg.cameraShake * (1 - 0.6f * ads));
         if (s.lengthSquared() < 1e-6f) return;
@@ -1070,30 +1418,37 @@ public final class GunsClientModule implements ClientModule {
     private void hud(GuiGraphics g, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
         if (held == null || mc.player == null) return;
+        if (mc.screen instanceof RefitScreen) return;              // окно обвеса рисует своё
         float cover = scopeCover();
+        boolean att = scopeDef() != null;
         if (cover > 0) {                                           // оптика: и при F1 — это вид в прицел, не HUD
-            ViewModel vm = models.get(held.model());
-            ScopeOverlay.render(g, vm == null ? null : vm.reticle, cover, cfg.scopeSize);
+            ViewModel vm = models.get(g().model());
+            Reticle r = att ? (curOptic == null ? null : curOptic.reticle()) : vm == null ? null : vm.reticle;
+            ScopeOverlay.render(g, r, cover, cfg.scopeSize);
+        } else if (att && curOptic != null && !curOptic.scope() && cfg.sightReticle && ads > 0.75f
+                && mc.options.getCameraType().isFirstPerson()) {
+            // коллиматор: сетка (красная точка и т.п.) поверх мира — на оси прицела, т.е. в центре экрана
+            ScopeOverlay.sight(g, curOptic.reticle(), pxPerTanK, (ads - 0.75f) / 0.25f);
         }
         if (mc.options.hideGui) return;
         long now = System.nanoTime();
         GunHud.View v = view;
-        v.name = held.name();
+        v.name = g().name();
         v.ammo = ammo;
-        v.magazine = held.magazine();
+        v.magazine = g().magazine();
         v.reserve = gotState ? srvReserve : -1;
-        v.auto = mode == 0 && held.auto();
-        v.bothModes = held.auto() && held.semi();
+        v.auto = mode == 0 && g().auto();
+        v.bothModes = g().auto() && g().semi();
         v.reload = reloading() ? Math.min(1, (now - reloadStartNs) / 1e9f / reloadLen) : -1;
         v.drawing = drawing();
         v.vacuum = vacuum();
         v.ads = ads;
         boolean moving = mc.player.getDeltaMovement().horizontalDistanceSqr() > 0.003;
-        v.spreadDeg = held.spreadHip() * (moving ? 1.15f : 1f);
+        v.spreadDeg = g().spreadHip() * (moving ? 1.15f : 1f);
         v.bloom = bloom;
         v.hitKind = hitKind;
         v.hitLeft = hitKind == 0 ? 0 : Math.max(0, 1 - (now - hitNs) / 0.35e9f);
-        v.silhouette = hudTex.get(held.hud());
+        v.silhouette = hudTex.get(g().hud());
         v.crosshair = mc.options.getCameraType().isFirstPerson() && cover <= 0 && extra().crosshair();
         v.hint = !hint.isEmpty() && now - hintNs < 2_000_000_000L ? hint : ammo <= 0 ? "ПУСТО" : "";
         hud.render(g, v, cfg.hud);

@@ -71,10 +71,17 @@ final class Reticle {
      * division) или грани сетки нарисованы другой текстурой.
      */
     static Reticle build(String path, BbModel m, int texIndex, NativeImage img, Logger log) {
-        BbModel.Bone view = m.bone("scope_view");
         // первая сетка (division) — у окуляра оптики ocular_scope; division_2 и дальше — у других окуляров (коллиматор
         // сбоку у прицела 8x): их TACZ видит только через свой окуляр, в круг оптики они не попадают
-        BbModel.Bone root = m.bone("division");
+        return build(path, m, texIndex, img, m.bone("scope_view"), m.bone("division"), m.bone("ocular_scope"), log);
+    }
+
+    /**
+     * Сетка обвеса (прицел или коллиматор): глаз — кость view, сетка — division, стекло — ocular (его видимый из глаза
+     * радиус — край картинки; null — полразмера сетки). У коллиматора фон картинки прозрачный (сетка поверх мира).
+     */
+    static Reticle build(String path, BbModel m, int texIndex, NativeImage img, BbModel.Bone view, BbModel.Bone root,
+                         BbModel.Bone ocular, Logger log) {
         if (view == null || root == null) return null;
         Matrix4f[] rest = new Matrix4f[m.bones.size()];
         Pose.compute(m, null, -1, rest);
@@ -84,7 +91,6 @@ final class Reticle {
         if (quads.isEmpty()) return null;
         // радиус окуляра из глаза (тангенс угла); нет окуляра — полразмера самой сетки
         float aperture = 0;
-        BbModel.Bone ocular = m.bone("ocular_scope");
         if (ocular != null) {
             List<float[]> oq = new ArrayList<>();
             collect(ocular, rest, eye, -1, oq);
@@ -96,9 +102,15 @@ final class Reticle {
         int w = img.getWidth(), h = img.getHeight();
         int[] src = new int[w * h];
         for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) src[y * w + x] = img.getPixel(x, y);
-        Identifier id = Identifier.fromNamespaceAndPath("hoka_guns", "reticle/" + sanitize(path));
-        log.info("guns: сетка прицела {} — граней {}, окуляр ±{}", path, quads.size(), String.format(Locale.ROOT, "%.4f", aperture));
+        Identifier id = Identifier.fromNamespaceAndPath("hoka_guns", "reticle/" + sanitize(path + "/" + root.name));
+        log.info("guns: сетка прицела {} ({}) — граней {}, окуляр ±{}", path, root.name, quads.size(),
+                String.format(Locale.ROOT, "%.4f", aperture));
         return new Reticle(id, quads, src, w, h, aperture);
+    }
+
+    /** Видимый из глаза радиус стекла (тангенс угла от оси взгляда) — половина стороны картинки. */
+    float aperture() {
+        return aperture;
     }
 
     /**

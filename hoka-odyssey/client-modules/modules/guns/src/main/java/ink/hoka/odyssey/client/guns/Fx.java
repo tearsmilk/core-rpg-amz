@@ -75,9 +75,59 @@ final class Fx {
     private Identifier white;
     private final List<Flash> flashes = new ArrayList<>();
 
+    /** Луч ЛЦУ на этот кадр: от a до b (мир), цвет RGB, точка на конце (луч упёрся). */
+    private record Beam(Vec3 a, Vec3 b, int rgb, boolean dot) {}
+
+    private final List<Beam> beams = new ArrayList<>();
+
     void clear() {
         tracers.clear();
         flashes.clear();
+        beams.clear();
+    }
+
+    /**
+     * Луч ЛЦУ из from по dir длиной до length блоков (до первого блока на пути; там — точка). Рисуется в этом кадре
+     * ({@link #renderBeams}), как у TACZ — без влияния на стрельбу.
+     */
+    void laser(Vec3 from, Vec3 dir, double length, int rgb, net.minecraft.world.entity.Entity owner) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || beams.size() >= 64 || dir.lengthSqr() < 1e-9) return;
+        Vec3 d = dir.normalize();
+        Vec3 to = from.add(d.scale(Math.max(0.5, Math.min(length, 200))));
+        boolean hit = false;
+        try {
+            HitResult h = mc.level.clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE,
+                    owner == null ? mc.player : owner));
+            if (h.getType() != HitResult.Type.MISS) {
+                to = h.getLocation();
+                hit = true;
+            }
+        } catch (RuntimeException ignored) {
+            // нет мира рядом — во всю длину
+        }
+        beams.add(new Beam(from, to, rgb & 0xFFFFFF, hit));
+    }
+
+    /** Нарисовать лучи кадра и забыть их (то же, что {@link #render}, — для лучей, посчитанных после него). */
+    void renderBeams(MultiBufferSource buffers, Matrix4f camToBuf, Vec3 cam, Quaternionf rot) {
+        if (beams.isEmpty()) return;
+        Matrix4f pose = new Matrix4f(camToBuf).rotate(new Quaternionf(rot).conjugate());
+        VertexConsumer vc = buffers.getBuffer(RenderTypes.entityTranslucentEmissive(white()));
+        Vector3f right = new Vector3f(1, 0, 0).rotate(rot);
+        Vector3f up = new Vector3f(0, 1, 0).rotate(rot);
+        Vector3f n = new Vector3f(0, 0, 1).rotate(rot);
+        for (Beam b : beams) {
+            Vec3 a = b.a().subtract(cam), e = b.b().subtract(cam);
+            ribbon(vc, pose, a, e, width(a, 0.006f), width(e, 0.006f), b.rgb(), 0.75f, 0.05f);
+            ribbon(vc, pose, a, e, width(a, 0.0025f), width(e, 0.0025f), 0xFFFFFF, 0.5f, 0.02f);
+            if (b.dot()) {
+                float s = (float) Math.max(0.025, e.length() * 0.004);
+                int c = 0xE0000000 | b.rgb();
+                quad(vc, pose, (float) e.x, (float) e.y, (float) e.z, new Vector3f(right).mul(s), new Vector3f(up).mul(s), n, c);
+            }
+        }
+        beams.clear();
     }
 
     void close() {

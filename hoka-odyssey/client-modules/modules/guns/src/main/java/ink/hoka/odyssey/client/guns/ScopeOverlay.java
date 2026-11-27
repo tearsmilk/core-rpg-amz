@@ -41,6 +41,33 @@ final class ScopeOverlay {
         }
     }
 
+    /**
+     * Сетка коллиматора поверх мира, по центру экрана (ось прицела в прицеле — ровно там): картинка ±aperture
+     * тангенсов (край стекла), pxPerTanK — сколько полувысот экрана на единицу тангенса (угол обзора модели в руке).
+     * Без трафарета: сетка видна только в пределах стекла, каким оно видно из глаза.
+     */
+    static void sight(GuiGraphics g, Reticle reticle, float pxPerTanK, float alpha) {
+        if (reticle == null || !(pxPerTanK > 0) || alpha <= 0.01f) return;
+        Window win = Minecraft.getInstance().getWindow();
+        int gs = Math.max(1, win.getGuiScale());
+        int fbW = win.getWidth(), fbH = win.getHeight();
+        int d = Math.round(2 * reticle.aperture() * pxPerTanK * fbH / 2f);
+        if (d < 4) return;
+        d = Math.min(d, fbH * 2);
+        var pose = g.pose();
+        pose.pushMatrix();
+        pose.scale(1f / gs, 1f / gs);
+        try {
+            int x0 = fbW / 2 - d / 2, y0 = fbH / 2 - d / 2;
+            // картинка — с шагом 32 пикселя (угол обзора в прицеле плавно меняется — не пересчитывать каждый кадр)
+            int q = Math.max(32, Math.round(d / 32f) * 32);
+            g.blit(RenderPipelines.GUI_TEXTURED, reticle.texture(q), x0, y0, 0f, 0f, d, d, d, d,
+                    GunHud.a(0xFFFFFFFF, Math.min(1, alpha)));
+        } finally {
+            pose.popMatrix();
+        }
+    }
+
     /** Без сетки: чёрное внутри квадрата, но вне круга радиуса r (полосами по строкам). */
     private static void circleMask(GuiGraphics g, int cx, int cy, int r, int y0, int d, int color) {
         for (int y = y0; y < y0 + d; y++) {
