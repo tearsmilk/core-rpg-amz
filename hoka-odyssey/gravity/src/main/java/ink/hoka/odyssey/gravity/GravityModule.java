@@ -49,10 +49,12 @@ import net.minestom.server.entity.attribute.AttributeOperation;
 import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.entity.vehicle.PlayerInputs;
 import net.minestom.server.event.entity.EntitySpawnEvent;
+import net.minestom.server.event.item.ItemDropEvent;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerMoveEvent;
 import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.instance.Instance;
+import net.minestom.server.item.ItemStack;
 import net.minestom.server.network.packet.server.play.EntityVelocityPacket;
 import net.minestom.server.network.packet.server.play.ExplosionPacket;
 import net.minestom.server.network.packet.server.play.ParticlePacket;
@@ -155,6 +157,12 @@ public final class GravityModule extends OdysseyModule {
     private final VacuumOverrides overrides = new VacuumOverrides(floaters, spacers);
     /** Чёрные дыры для других модулей (spacesky рисует их в небе) — сервис {@link BlackHoles}. */
     private final BlackHolesService blackHoles = new BlackHolesService(() -> settings, w -> logger().warn(w));
+    /** Предметы, выброшенные игроком с админ-обходом: gravity их не трогает (обычная гравитация, дыры не тянут). */
+    private final Map<ItemEntity, Boolean> freeItems = new ConcurrentHashMap<>();
+    /** Выбросы игроков с обходом в этом тике — ждут появления своей сущности (её создаёт модуль items). */
+    private final List<Drop> drops = new ArrayList<>();
+    /** На каком расстоянии от игрока (блоков) искать сущность выброшенного им предмета. */
+    private static final double DROP_MATCH = 3.0;
 
     @Override
     protected void onEnable() {
@@ -169,12 +177,28 @@ public final class GravityModule extends OdysseyModule {
             }
         });
         link.resolve(p -> spaceflightReady.add(p.getUuid()), this::clientMessage);
+        overrides.op = p -> server().isOp(p);
+        try {
+            overrides.bypass.load(bypassFile());
+        } catch (IOException | RuntimeException e) {
+            logger().warn("gravity: не прочитать {}: {}", bypassFile(), e.toString());
+        }
         services().register(VacuumService.class, overrides);
         services().register(BlackHoles.class, blackHoles);
         registerCommand(new HoGravCommand(this));
         registerCommand(new HoGmCommand(this));
         // PlayerSpawnEvent срабатывает и при входе, и при каждой смене карты (setInstance)
-        events().addListener(PlayerSpawnEvent.class, e -> refresh(e.getPlayer(), e.getInstance(), true));
+        events().addListener(PlayerSpawnEvent.class, e -> {
+            refresh(e.getPlayer(), e.getInstance(), true);
+            if (e.isFirstSpawn() && overrides.bypassed(e.getPlayer())) {
+                Player p = e.getPlayer();
+                if (overrides.bypass.rename(p.getUuid(), p.getUsername())) {
+                    saveBypass();
+                }
+                p.sendMessage(Component.text(BYPASS_HINT, NamedTextColor.GOLD));
+            }
+        });
+        events().addListener(ItemDropEvent.class, this::onDrop);
         events().addListener(PlayerDisconnectEvent.class, e -> {
             floaters.remove(e.getPlayer().getUuid());
             spacers.remove(e.getPlayer().getUuid());
@@ -187,6 +211,9 @@ public final class GravityModule extends OdysseyModule {
         // набрать скорость падения)
         events().addListener(EntitySpawnEvent.class, e -> {
             if (e.getEntity() instanceof ItemEntity item && settings.space().items() && inVacuum(e.getInstance())) {
+                if (claimDrop(item, e.getInstance())) {
+                    return;                                // выбросил игрок с обходом — обычный предмет
+                }
                 Pos pos = item.getPosition();
                 if (VacuumService.itemInVacuum(true,
                     VacuumOverrides.modeAt(overrides.zones(e.getInstance()), pos.x(), pos.y(), pos.z()))) {
@@ -230,6 +257,10 @@ public final class GravityModule extends OdysseyModule {
             restore(e.getKey(), e.getValue());
         }
         items.clear();
+        freeItems.clear();
+        synchronized (drops) {
+            drops.clear();
+        }
         overrides.clear();
         blackHoles.clear();
     }
@@ -440,6 +471,113 @@ public final class GravityModule extends OdysseyModule {
         return instance == null ? Optional.empty() : server().mapName(instance);
     }
 
+    // ---------------------------------------------------------------------------------------------------------------
+    // Админ-обход вакуума (/hograv bypass)
+    // ---------------------------------------------------------------------------------------------------------------
+
+    static final String BYPASS_HINT = "Обход гравитации включён: невесомость на вас не действует (/hograv bypass off)";
+
+    private Path bypassFile() {
+        return dataFolder().resolve(Bypass.FILE);
+    }
+
+    /** Список обхода (uuid → ник). */
+    Map<UUID, String> bypassList() {
+        return overrides.bypass.snapshot();
+    }
+
+    boolean bypassListed(UUID id) {
+        return overrides.bypass.contains(id);
+    }
+
+    UUID bypassByName(String name) {
+        return overrides.bypass.byName(name);
+    }
+
+    /** Действует ли обход у игрока (в списке и оператор). */
+    boolean bypassed(Player p) {
+        return overrides.bypassed(p);
+    }
+
+    /**
+     * Включить/выключить обход игроку (uuid, ник; p — он же, если в сети). Сохраняется в bypass.yml, к игроку в сети
+     * применяется сразу: выходит из невесомости (мод spaceflight — «физика выкл.»), или снова входит, если карта/зона
+     * вакуумная. false — уже было так.
+     */
+    boolean setBypass(UUID id, String name, Player p, boolean on) {
+        if (!overrides.bypass.set(id, name, on)) {
+            return false;
+        }
+        saveBypass();
+        if (p != null && p.isOnline()) {
+            refresh(p, p.getInstance(), true);
+            if (on) {
+                if (overrides.bypassed(p)) {
+                    p.sendActionBar(Component.text(BYPASS_HINT, NamedTextColor.GOLD));
+                }
+            } else {
+                p.sendActionBar(Component.text("Обход гравитации выключен", NamedTextColor.GRAY));
+            }
+        }
+        return true;
+    }
+
+    private void saveBypass() {
+        scheduler().async(() -> {
+            try {
+                overrides.bypass.save(bypassFile());
+            } catch (IOException | RuntimeException e) {
+                logger().warn("gravity: не записать {}: {}", bypassFile(), e.toString());
+            }
+        });
+    }
+
+    /** Выброс предмета: если игрок с обходом — его предмет gravity не трогает. */
+    private void onDrop(ItemDropEvent e) {
+        Player p = e.getPlayer();
+        Instance instance = p.getInstance();
+        if (e.isCancelled() || instance == null || !overrides.bypassed(p)) {
+            return;
+        }
+        Drop d = new Drop(instance, p.getPosition(), e.getItemStack(), ticks);
+        // модуль items мог уже создать сущность (его обработчик раньше нашего) — найти её среди только что пойманных
+        for (Iterator<Map.Entry<ItemEntity, ItemState>> it = items.entrySet().iterator(); it.hasNext(); ) {
+            var en = it.next();
+            if (en.getValue().born == ticks && d.matches(en.getKey(), instance)) {
+                freeItems.put(en.getKey(), Boolean.TRUE);
+                restore(en.getKey(), en.getValue());
+                it.remove();
+                return;
+            }
+        }
+        synchronized (drops) {
+            drops.add(d);
+        }
+    }
+
+    /** Появившийся предмет — от выброса игрока с обходом в этом тике? Тогда пометить свободным. */
+    private boolean claimDrop(ItemEntity item, Instance instance) {
+        synchronized (drops) {
+            for (Iterator<Drop> it = drops.iterator(); it.hasNext(); ) {
+                Drop d = it.next();
+                if (d.tick == ticks && d.matches(item, instance)) {
+                    it.remove();
+                    freeItems.put(item, Boolean.TRUE);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** Выброс игроком с обходом: карта, где стоял, сам предмет и тик. */
+    private record Drop(Instance instance, Pos pos, ItemStack stack, long tick) {
+        boolean matches(ItemEntity item, Instance where) {
+            return where == instance && item.getItemStack().equals(stack)
+                && item.getPosition().distance(pos) <= DROP_MATCH;
+        }
+    }
+
     private void refreshAll() {
         for (Player p : MinecraftServer.getConnectionManager().getOnlinePlayers()) {
             refresh(p, p.getInstance(), false);
@@ -510,6 +648,9 @@ public final class GravityModule extends OdysseyModule {
         Settings s = settings;
         RealPhysics rp = physics;
         ticks++;
+        synchronized (drops) {
+            drops.removeIf(d -> d.tick < ticks);
+        }
         if (ticks % 100 == 0) {
             link.resolve(p -> spaceflightReady.add(p.getUuid()), this::clientMessage);   // clientmods могли перезагрузить
         }
@@ -602,11 +743,15 @@ public final class GravityModule extends OdysseyModule {
             ItemEntity item = e.getKey();
             if (item.isRemoved()) {
                 it.remove();
+            } else if (freeItems.containsKey(item)) {          // поймали раньше, чем узнали, кто выбросил
+                restore(item, e.getValue());
+                it.remove();
             } else if (!sp.items() || !inVacuum(item.getInstance())) {
                 restore(item, e.getValue());
                 it.remove();
             }
         }
+        freeItems.keySet().removeIf(ItemEntity::isRemoved);
         if (!sp.items()) {
             return;
         }
@@ -622,7 +767,7 @@ public final class GravityModule extends OdysseyModule {
             List<ItemEntity> absorbed = new ArrayList<>();
             List<ItemEntity> lost = new ArrayList<>();
             for (Entity en : instance.getEntities()) {
-                if (!(en instanceof ItemEntity item) || item.isRemoved()) {
+                if (!(en instanceof ItemEntity item) || item.isRemoved() || freeItems.containsKey(item)) {
                     continue;
                 }
                 Pos pos = item.getPosition();
@@ -704,7 +849,7 @@ public final class GravityModule extends OdysseyModule {
             it.setNoGravity(true);
             // затухание и притяжение считаем сами, сервер скорость между нашими пересчётами не меняет
             it.setAerodynamics(new Aerodynamics(a.gravity(), 1.0, real ? 1.0 : a.verticalAirResistance()));
-            return new ItemState(a, it.getSynchronizationTicks(), ticks - settings.space().itemTicks());
+            return new ItemState(a, it.getSynchronizationTicks(), ticks - settings.space().itemTicks(), ticks);
         });
     }
 
@@ -744,11 +889,14 @@ public final class GravityModule extends OdysseyModule {
         /** Прежний интервал синхронизации позиции с клиентами. */
         final long originalSync;
         volatile long updated;
+        /** Тик захвата. */
+        final long born;
 
-        ItemState(Aerodynamics original, long originalSync, long updated) {
+        ItemState(Aerodynamics original, long originalSync, long updated, long born) {
             this.original = original;
             this.originalSync = originalSync;
             this.updated = updated;
+            this.born = born;
         }
     }
 

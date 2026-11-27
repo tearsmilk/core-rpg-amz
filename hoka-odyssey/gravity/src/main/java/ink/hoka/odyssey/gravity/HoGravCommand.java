@@ -23,6 +23,9 @@ import java.util.Map;
  * /hograv hole list [карта]                     чёрные дыры
  * /hograv hole add &lt;имя&gt; [горизонт] [радиус]    дыра там, где стоишь (на твоей карте)
  * /hograv hole remove &lt;имя&gt; [карта]            убрать дыру
+ * /hograv bypass                                админ-обход вакуума себе: вкл/выкл
+ * /hograv bypass on|off [игрок]                 включить/выключить (себе или игроку)
+ * /hograv bypass list                           у кого включён
  * </pre>
  */
 final class HoGravCommand extends Command {
@@ -69,6 +72,84 @@ final class HoGravCommand extends Command {
         var remove = ArgumentType.Literal("remove");
         addSyntax((s, c) -> remove(s, c.get(oldName), null), hole, remove, oldName);
         addSyntax((s, c) -> remove(s, c.get(oldName), c.get(holeMap)), hole, remove, oldName, holeMap);
+
+        var bypass = ArgumentType.Literal("bypass");
+        addSyntax((s, c) -> bypassSelf(s, null), bypass);
+        addSyntax((s, c) -> bypassList(s), bypass, ArgumentType.Literal("list"));
+        addSyntax((s, c) -> bypassSelf(s, true), bypass, ArgumentType.Literal("on"));
+        addSyntax((s, c) -> bypassSelf(s, false), bypass, ArgumentType.Literal("off"));
+        ArgumentWord onWho = ArgumentType.Word("игрок");
+        onWho.setSuggestionCallback((sender, ctx, sug) -> suggest(sug, online(true)));
+        ArgumentWord offWho = ArgumentType.Word("игрок");
+        offWho.setSuggestionCallback((sender, ctx, sug) -> suggest(sug, new java.util.TreeSet<>(m.bypassList().values())));
+        addSyntax((s, c) -> bypassOther(s, c.get(onWho), true), bypass, ArgumentType.Literal("on"), onWho);
+        addSyntax((s, c) -> bypassOther(s, c.get(offWho), false), bypass, ArgumentType.Literal("off"), offWho);
+    }
+
+    /** Ники игроков в сети: excludeBypassed — без тех, у кого обход уже в списке. */
+    private java.util.Collection<String> online(boolean excludeBypassed) {
+        java.util.Set<String> names = new java.util.TreeSet<>();
+        for (Player p : net.minestom.server.MinecraftServer.getConnectionManager().getOnlinePlayers()) {
+            if (!excludeBypassed || !m.bypassListed(p.getUuid())) {
+                names.add(p.getUsername());
+            }
+        }
+        return names;
+    }
+
+    private void bypassSelf(CommandSender s, Boolean on) {
+        if (!(s instanceof Player p)) {
+            s.sendMessage(Component.text("Из консоли укажите игрока: /hograv bypass on|off <игрок>", NamedTextColor.RED));
+            return;
+        }
+        boolean want = on != null ? on : !m.bypassListed(p.getUuid());
+        if (!m.setBypass(p.getUuid(), p.getUsername(), p, want)) {
+            s.sendMessage(Component.text("Обход гравитации у вас уже " + (want ? "включён" : "выключен"), NamedTextColor.YELLOW));
+            return;
+        }
+        s.sendMessage(Component.text(want
+            ? "Обход гравитации включён: невесомость, инерция, притяжение дыр и проверки gravity на вас не действуют"
+                + " (сохраняется после перезахода). Выключить: /hograv bypass off"
+            : "Обход гравитации выключен: в вакууме — снова невесомость", NamedTextColor.GREEN));
+    }
+
+    private void bypassOther(CommandSender s, String name, boolean on) {
+        Player target = net.minestom.server.MinecraftServer.getConnectionManager().getOnlinePlayerByUsername(name);
+        java.util.UUID id = target != null ? target.getUuid() : m.bypassByName(name);
+        if (id == null) {
+            s.sendMessage(Component.text(on ? "Игрок " + name + " не в сети" : "У игрока " + name + " обхода нет"
+                + " (см. /hograv bypass list)", NamedTextColor.RED));
+            return;
+        }
+        String shown = target != null ? target.getUsername() : name;
+        if (!m.setBypass(id, shown, target, on)) {
+            s.sendMessage(Component.text("Обход гравитации у " + shown + " уже " + (on ? "включён" : "выключен"),
+                NamedTextColor.YELLOW));
+            return;
+        }
+        String warn = on && target != null && !m.server().isOp(target)
+            ? " — но " + shown + " не оператор: обход заработает, только когда его сделают оператором" : "";
+        s.sendMessage(Component.text("Обход гравитации у " + shown + (on ? " включён" : " выключен") + warn,
+            warn.isEmpty() ? NamedTextColor.GREEN : NamedTextColor.YELLOW));
+        if (target != null && target != s && (!on || warn.isEmpty())) {
+            target.sendMessage(Component.text(on ? GravityModule.BYPASS_HINT : "Обход гравитации выключен оператором",
+                NamedTextColor.GOLD));
+        }
+    }
+
+    private void bypassList(CommandSender s) {
+        var all = m.bypassList();
+        if (all.isEmpty()) {
+            s.sendMessage(Component.text("Обход гравитации ни у кого не включён. Себе: /hograv bypass", NamedTextColor.YELLOW));
+            return;
+        }
+        s.sendMessage(Component.text("Обход гравитации (" + all.size() + "):", NamedTextColor.AQUA));
+        all.forEach((id, name) -> {
+            Player p = net.minestom.server.MinecraftServer.getConnectionManager().getOnlinePlayerByUuid(id);
+            String state = p == null ? "не в сети" : m.bypassed(p) ? "в сети" : "в сети, не оператор — не действует";
+            s.sendMessage(Component.text(" " + (name.isEmpty() ? id.toString() : name) + " (" + state + ")",
+                NamedTextColor.GRAY));
+        });
     }
 
     private static void suggest(net.minestom.server.command.builder.suggestion.Suggestion sug, java.util.Collection<String> names) {
@@ -199,7 +280,8 @@ final class HoGravCommand extends Command {
         s.sendMessage(Component.text("Вакуум (невесомость) на картах: " + names(), NamedTextColor.AQUA));
         s.sendMessage(Component.text("Сейчас в невесомости игроков: " + m.floating() + ", предметов: " + m.floatingItems()
             + ", чёрных дыр: " + m.holeCount(), NamedTextColor.GRAY));
-        s.sendMessage(Component.text("/hograv on <карта> | off <карта> | reload | hole list|add|remove", NamedTextColor.GRAY));
+        s.sendMessage(Component.text("/hograv on <карта> | off <карта> | reload | hole list|add|remove | bypass [on|off [игрок]|list]",
+            NamedTextColor.GRAY));
     }
 
     private void toggle(CommandSender s, String map, boolean on) {

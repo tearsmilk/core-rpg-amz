@@ -3,6 +3,7 @@ package ink.hoka.odyssey.gravity;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.ItemEntity;
@@ -34,27 +35,52 @@ final class VacuumOverrides implements VacuumService {
         this.spacers = spacers;
     }
 
+    /**
+     * Админ-обход (/hograv bypass): отдельно от режимов других модулей — их override(MAP/NORMAL/VACUUM) обход не
+     * снимает и не трогает, а обход главнее любого режима. Действует, пока игрок — оператор.
+     */
+    final Bypass bypass = new Bypass();
+    /** Оператор ли игрок (обход действует только у операторов). По умолчанию — все (тесты). */
+    volatile Predicate<Player> op = p -> true;
+
+    /** Действует ли сейчас обход у игрока: он в списке и он оператор. */
+    boolean bypassed(Player p) {
+        return p != null && bypass.contains(p.getUuid()) && op.test(p);
+    }
+
     @Override
     public void override(Player p, Mode mode) {
+        override(p.getUuid(), mode);
+    }
+
+    /** Режим другого модуля (обход его не меняет: снятый обход вернёт этот режим). */
+    void override(UUID id, Mode mode) {
         if (mode == null || mode == Mode.MAP) {
-            modes.remove(p.getUuid());
+            modes.remove(id);
         } else {
-            modes.put(p.getUuid(), mode);
+            modes.put(id, mode);
         }
     }
 
     @Override
     public Mode override(Player p) {
-        return modes.getOrDefault(p.getUuid(), Mode.MAP);
+        return override(p.getUuid());
+    }
+
+    Mode override(UUID id) {
+        return modes.getOrDefault(id, Mode.MAP);
     }
 
     @Override
     public boolean inVacuum(Player p) {
-        return floaters.containsKey(p.getUuid());
+        return floaters.containsKey(p.getUuid()) && !bypassed(p);
     }
 
     @Override
     public void push(Player p, double vx, double vy, double vz) {
+        if (bypassed(p)) {
+            return;                                     // админ-обход: никаких толчков от gravity
+        }
         Spacer sp = spacers.get(p.getUuid());
         if (sp != null && !sp.modded) {
             sp.push(vx, vy, vz);                        // уйдёт клиенту в ближайшем тике вместе со скоростью
@@ -80,7 +106,7 @@ final class VacuumOverrides implements VacuumService {
     @Override
     public void recoil(Player p, double dx, double dy, double dz, boolean clientSide) {
         double d = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (!(d > 0) || !Double.isFinite(d) || p.getVehicle() != null || p.isFlying()) {
+        if (!(d > 0) || !Double.isFinite(d) || p.getVehicle() != null || p.isFlying() || bypassed(p)) {
             return;
         }
         Spacer sp = spacers.get(p.getUuid());
@@ -113,7 +139,7 @@ final class VacuumOverrides implements VacuumService {
 
     @Override
     public void expectRecoil(Player p, double distance) {
-        Spacer sp = spacers.get(p.getUuid());
+        Spacer sp = bypassed(p) ? null : spacers.get(p.getUuid());
         if (sp != null && sp.modded) {
             sp.guard.recoil(distance);                  // клиент отнесёт себя сам — допустить этот путь в проверке
         }
@@ -165,10 +191,17 @@ final class VacuumOverrides implements VacuumService {
         return m == null ? Mode.MAP : m;
     }
 
-    /** Решение для игрока: true/false — задано сервисом, null — решает карта. */
+    /** Решение для игрока: true/false — задано обходом или сервисом (обход главнее), null — решает карта. */
     Boolean decide(Player p) {
-        Mode m = modes.get(p.getUuid());
-        return m == null ? null : m == Mode.VACUUM;
+        return decide(bypassed(p), modes.get(p.getUuid()));
+    }
+
+    /** Приоритет: админ-обход → режим другого модуля (VACUUM/NORMAL) → карта (null). */
+    static Boolean decide(boolean bypassed, Mode mode) {
+        if (bypassed) {
+            return false;
+        }
+        return mode == null || mode == Mode.MAP ? null : mode == Mode.VACUUM;
     }
 
     void forget(UUID id) {
