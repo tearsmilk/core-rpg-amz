@@ -30,7 +30,7 @@ OUT = pr.OUT
 NAME = 'vssk_vykhlop'
 BORE = pr.BORE
 IRON_Y = 12.1          # линия прицеливания (целик и мушка на верхней планке)
-SUP_R = 2.25           # «радиус» глушителя (апофема 12-угольника)
+SUP_R = 1.7            # «радиус» глушителя (апофема 12-угольника)
 SUP_FRONT = -29.0      # торец глушителя
 SUP_BACK = -7.5        # глушитель входит в переднюю часть корпуса
 
@@ -91,12 +91,12 @@ def build():
     box(m, rc, -0.5, 0.5, 4.95, 5.8, 14.2, 14.7, 'steel')                                    # защёлка магазина
     # переход к передней части и сама передняя часть
     box(m, rc, -1.9, 1.9, 5.8, 10.7, 1.2, 2.6, 'blued_l', pattern='panel')
-    box(m, rc, -2.35, 2.35, 5.8, 10.9, -7.8, 1.4, 'blued', pattern='panel')
-    box(m, rc, -2.42, 2.42, 6.0, 10.7, -7.95, -7.6, 'steel')                                 # передний пояс
-    sym(m, rc, 2.35, 2.42, 6.6, 7.8, -2.6, 0.8, 'black', pattern='vents_z')                 # прорези сбоку
-    sym(m, rc, 2.35, 2.65, 8.2, 9.0, -7.1, -3.4, 'blued_d', pattern='rail_z')               # боковые планки (ЛЦУ)
-    box(m, rc, -0.7, 0.7, 5.5, 5.8, -7.2, -1.2, 'blued_d', pattern='rail_y')                # планка снизу (рукоять)
-    box(m, rc, -2.2, 2.2, 10.9, 11.0, -7.4, 1.2, 'blued_d')                                  # крышка
+    box(m, rc, -1.65, 1.65, 6.2, 10.9, -7.8, 1.4, 'blued', pattern='panel')
+    box(m, rc, -1.75, 1.75, 6.35, 10.7, -7.95, -7.6, 'steel')                                 # передний пояс
+    sym(m, rc, 1.65, 1.72, 6.6, 7.8, -2.6, 0.8, 'black', pattern='vents_z')                 # прорези сбоку
+    sym(m, rc, 1.65, 1.95, 8.2, 9.0, -7.1, -3.4, 'blued_d', pattern='rail_z')               # боковые планки (ЛЦУ)
+    box(m, rc, -0.7, 0.7, 5.9, 6.2, -7.2, -1.2, 'blued_d', pattern='rail_y')                # планка снизу (рукоять)
+    box(m, rc, -1.55, 1.55, 10.9, 11.0, -7.4, 1.2, 'blued_d')                                  # крышка
     # спусковая скоба и крючок (как у ПВ-7 — рука та же)
     box(m, rc, -0.28, 0.28, 4.55, 4.85, 3.0, 6.7, 'blued_l')
     box(m, rc, -0.28, 0.28, 4.55, 5.8, 3.0, 3.3, 'blued_l')
@@ -110,7 +110,7 @@ def build():
     box(m, li, 1.35, 1.45, 9.65, 9.95, 16.0, 16.35, 'cyan_dim')
     box(m, li, 1.35, 1.45, 9.65, 9.95, 16.7, 17.05, 'cyan')
     box(m, li, -1.45, -1.35, 9.65, 9.95, 16.4, 16.75, 'cyan_dim')
-    sym(m, li, 2.42, 2.46, 10.0, 10.2, -7.9, -7.65, 'cyan_dim')
+    sym(m, li, 1.75, 1.79, 10.0, 10.2, -7.9, -7.65, 'cyan_dim')
 
     # затворная рукоятка (слева) — для перезарядки с пустым магазином и выстрела
     m.bone('charge_handle', (-1.35, 9.6, 4.0), 'receiver')
@@ -188,9 +188,9 @@ def build():
 
     # --- переходники ЛЦУ (пистолетные ЛЦУ, display.adapter laser_adapter): слева и справа (_2) на боковых планках
     for nm, s in (('laser_adapter', -1), ('laser_adapter_2', 1)):
-        m.bone(nm, (2.65 * s, 8.6, -5.3), 'body')
-        xa, xb = sorted((2.3 * s, 2.78 * s))
-        xc, xd = sorted((2.7 * s, 2.82 * s))
+        m.bone(nm, (1.95 * s, 8.6, -5.3), 'body')
+        xa, xb = sorted((1.6 * s, 2.08 * s))
+        xc, xd = sorted((2.0 * s, 2.12 * s))
         box(m, nm, xa, xb, 9.0, 9.22, -6.8, -3.7, 'blued_l')
         box(m, nm, xa, xb, 7.98, 8.2, -6.8, -3.7, 'blued_l')
         box(m, nm, xc, xd, 8.05, 9.15, -6.9, -6.55, 'steel')
@@ -201,9 +201,9 @@ def build():
     m.bone('scope_pos', (0, 11.3, 3.5), 'positioning2')
     m.bone('muzzle_pos', (0, BORE, SUP_FRONT - 0.05), 'suppressor')
     m.bone('muzzle_flash', (0, BORE, SUP_FRONT - 0.6), 'positioning2')
-    m.bone('laser_pos', (-2.65, 8.6, -5.3), 'positioning2', rotation=(0, 0, 90))
-    m.bone('laser2_pos', (2.65, 8.6, -5.3), 'positioning2', rotation=(0, 0, -90))
-    m.bone('grip_pos', (0, 5.5, -4.3), 'positioning2')
+    m.bone('laser_pos', (-1.95, 8.6, -5.3), 'positioning2', rotation=(0, 0, 90))
+    m.bone('laser2_pos', (1.95, 8.6, -5.3), 'positioning2', rotation=(0, 0, -90))
+    m.bone('grip_pos', (0, 5.9, -4.3), 'positioning2')
     m.bone('stock_pos', (0, 8.7, 22.75), 'positioning2')
 
     # --- руки (как у ПВ-7: рукоять и передний хват там же)
