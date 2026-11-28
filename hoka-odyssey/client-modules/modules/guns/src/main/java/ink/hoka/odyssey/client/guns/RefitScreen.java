@@ -167,8 +167,12 @@ final class RefitScreen extends Screen {
         if (s == null || s.isEmpty()) return null;
         CustomData cd = s.get(DataComponents.CUSTOM_DATA);
         if (cd == null || cd.isEmpty()) return null;
-        String id = cd.copyTag().getStringOr("hoka_att", "");
-        return id.isEmpty() ? null : id;
+        var tag = cd.copyTag();
+        if (tag.contains("hoka_gun")) return null;
+        String id = tag.getStringOr("hoka_att", "");
+        if (!id.isEmpty()) return id;
+        String h = tag.getStringOr("hoka_item", "");                 // выдан через hoitems: att_<id>
+        return h.startsWith("att_") && h.length() > 4 ? h.substring(4) : null;
     }
 
     // ---------------------------------------------------------------- действия
