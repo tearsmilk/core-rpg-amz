@@ -148,7 +148,8 @@ public final class GunsClientModule implements ClientModule {
     private long hitNs;
     private String hint = "";
     private long hintNs;
-    private Vec3 muzzleWorld;
+    /** Где ствол модели в руке (первое лицо) относительно камеры — последний кадр; null — не виден. */
+    private Vec3 muzzleRel;
     private boolean handHidden;
     private boolean adsSent;
     private boolean reloadWas;
@@ -405,7 +406,15 @@ public final class GunsClientModule implements ClientModule {
                             Float.isFinite(plen) ? Math.max(0, Math.min(8, plen)) : 0);
                 }
                 case Proto.S_IMPACT -> {
-                    // искры и крошку блока рассылает сервер частицами игры — здесь ничего
+                    // искры и крошку блока рассылает сервер частицами игры; здесь — след пули на блоке
+                    Vec3 at = new Vec3(in.readDouble(), in.readDouble(), in.readDouble());
+                    Vec3 nrm = new Vec3(in.readFloat(), in.readFloat(), in.readFloat());
+                    int kind = in.readUnsignedByte();
+                    int flags = in.available() > 0 ? in.readUnsignedByte() : 0;     // хвост (сервер 0.81+)
+                    int rgb = in.available() >= 4 ? in.readInt() : 0x66CCFF;
+                    if (kind == Proto.IMPACT_BLOCK && cfg.bulletHoles) {
+                        fx.decal(at, nrm, (flags & Proto.IMPACT_PLASMA) != 0, rgb);
+                    }
                 }
                 case Proto.S_RELOAD -> {
                     int kind = in.readUnsignedByte();
@@ -533,19 +542,31 @@ public final class GunsClientModule implements ClientModule {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null && shooterId == mc.player.getId()) return;
         third.signals(shooterId).shotNs = System.nanoTime();
-        Vec3 o = eye;
         Entity e = mc.level == null ? null : mc.level.getEntity(shooterId);
-        if (e != null) {                                           // ствол — справа-впереди-ниже глаз
-            Vec3 look = v.normalize();
-            Vec3 right = look.cross(new Vec3(0, 1, 0));
-            right = right.lengthSqr() < 1e-6 ? new Vec3(1, 0, 0) : right.normalize();
-            Vec3 up = right.cross(look);
-            o = eye.add(look.scale(0.9)).add(right.scale(0.3)).add(up.scale(-0.4));
-        }
+        Vec3 o = handMuzzle(e, eye, v);
         if (cfg.tracers) {
-            fx.tracer(o, v, life, color, false, plasma, plasmaLength);
+            fx.tracer(eye, o, v, life, color, false, plasma, plasmaLength, e);
             if (!silenced) fx.flash(o, plasma ? 0.45f : 0.55f, plasma, color);
         }
+    }
+
+    /**
+     * Где ствол у игрока от третьего лица (чужие и свой в F5): поза с оружием ({@link ThirdPerson}) держит его в
+     * правой руке по взгляду — от правого плеча (ниже глаз, правее) вперёд по look на длину руки и оружия (у
+     * пистолета короче). eye — глаза, look — куда летит пуля; e — стрелок (по оружию в руке — длина), null — винтовка.
+     */
+    private Vec3 handMuzzle(Entity e, Vec3 eye, Vec3 look) {
+        Vec3 l = look.lengthSqr() < 1e-9 ? new Vec3(0, 0, 1) : look.normalize();
+        Vec3 right = l.cross(new Vec3(0, 1, 0));
+        right = right.lengthSqr() < 1e-6 ? new Vec3(1, 0, 0) : right.normalize();
+        boolean pistol = false;
+        if (e instanceof net.minecraft.world.entity.LivingEntity le) {
+            String id = gunId(le.getMainHandItem());
+            Proto.Kind k = id == null ? null : kinds.get(id);
+            pistol = k != null && k.pistol();
+        }
+        Vec3 shoulder = eye.add(0, -0.42, 0).add(right.scale(0.17));
+        return shoulder.add(l.scale(pistol ? 0.85 : 1.2));
     }
 
     // ---------------------------------------------------------------- ввод и тик
@@ -1225,15 +1246,17 @@ public final class GunsClientModule implements ClientModule {
         if (cfg.tracers) {
             float inacc = ads > 0.95f ? g.spreadAim() : g.spreadHip();
             double s = INACCURACY_K * inacc;
-            Vec3 o = mc.options.getCameraType().isFirstPerson() && muzzleWorld != null ? muzzleWorld
-                    : p.getEyePosition().add(dir.scale(0.8));
+            // от ствола: от первого лица — где ствол модели в руке на экране (в оптике — от глаз), в F5 — у руки
+            boolean fp = mc.options.getCameraType().isFirstPerson();
+            Vec3 eye = p.getEyePosition();
+            Vec3 o = fp ? (muzzleRel == null ? null : eye.add(muzzleRel)) : handMuzzle(p, eye, dir);
             int pellets = extra().pellets();                       // дробь — трассер на каждую дробину
             Proto.Tracer tk = tracerKinds.getOrDefault(g.id(), Proto.Tracer.BULLET);
             for (int k = 0; k < pellets; k++) {
                 Vec3 d = dir.add(tri(s), tri(s), tri(s)).normalize();
-                fx.tracer(o, d.scale(g.speed()), vac ? 3 : g.life(), g.tracerColor(), true, tk.plasma(), tk.length());
+                fx.tracer(eye, o, d.scale(g.speed()), vac ? 3 : g.life(), g.tracerColor(), true, tk.plasma(), tk.length(), p);
             }
-            if (!mc.options.getCameraType().isFirstPerson()) {
+            if (!fp) {
                 fx.flash(o, tk.plasma() ? 0.45f : 0.55f, tk.plasma(), g.tracerColor());
             }
         }
@@ -1283,7 +1306,7 @@ public final class GunsClientModule implements ClientModule {
         if (sm != null) curOptic = sm.optic(view);
         boolean scoped = scopeCover() >= 1;                       // экран закрыт оптикой — оружие не видно
         if (!show || scoped) {
-            muzzleWorld = null;
+            muzzleRel = null;
             if (scoped && vm != null) vm.update();
             fx.renderBeams(frame.buffers(), new Matrix4f(pose).rotate(q), frame.camera(), q);
             return;
@@ -1336,8 +1359,7 @@ public final class GunsClientModule implements ClientModule {
         if (mz != null) {
             mz = fov.transformPosition(mz);                        // где ствол виден на экране
             Vector3f w = new Vector3f(mz).rotate(q);
-            Vec3 c = frame.camera();
-            muzzleWorld = new Vec3(c.x + w.x, c.y + w.y, c.z + w.z);
+            muzzleRel = new Vec3(w.x, w.y, w.z);
             Identifier ft = flashTexs.getOrDefault(g().flash(), flashTex);    // своя вспышка оружия (у плазмы — голубая)
             if (flashNs > 0 && now - flashNs < 55_000_000L && ft != null && cfg.tracers) {
                 Proto.Stats st = ownStats();
@@ -1396,11 +1418,7 @@ public final class GunsClientModule implements ClientModule {
             if (en.distanceToSqr(mc.player) > 96 * 96) continue;
             Vec3 eye = en.getEyePosition(pt);
             Vec3 look = en.getViewVector(pt).normalize();
-            Vec3 right = look.cross(new Vec3(0, 1, 0));
-            right = right.lengthSqr() < 1e-6 ? new Vec3(1, 0, 0) : right.normalize();
-            Vec3 up = right.cross(look);
-            Vec3 o = eye.add(look.scale(0.7)).add(right.scale(0.25)).add(up.scale(-0.3));
-            fx.laser(o, look, len, color, en);
+            fx.laser(handMuzzle(en, eye, look), look, len, color, en);
         }
     }
 

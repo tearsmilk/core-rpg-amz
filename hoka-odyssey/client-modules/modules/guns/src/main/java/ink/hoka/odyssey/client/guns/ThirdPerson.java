@@ -18,8 +18,9 @@ import java.util.Map;
  * «pistol_default»; файл у каждого оружия свой, с сервера) (формат
  * player_animation, {@link PlayerAnim}), как их проигрывает TACZ через PlayerAnimator:
  * <ul>
- *   <li>ноги — hold_lower / walk_lower / run_lower (присев — ноги игры);</li>
- *   <li>верх — hold_upper / walk_upper / run_upper / crouch_walk_upper, в прицеле aim_upper; смена — плавно, 0,4 с;</li>
+ *   <li>ноги и ходьба — как в игре: клипы ходьбы TACZ (*_lower, walk_upper / run_upper / crouch_walk_upper) не
+ *       проигрываются — оружие ставит только позу рук (и наклон торса/головы стойки);</li>
+ *   <li>верх — hold_upper, в прицеле aim_upper (и на ходу, и стоя); смена — плавно, 0,4 с;</li>
  *   <li>поверх — разовые: reload_upper (растянута на время перезарядки), normal_fire_upper / aim_fire_upper;</li>
  *   <li>руки и голова наклоняются за взглядом (наклон прибавляется к xRot), а всё тело поворачивается к курсу
  *       головы — винтовка смотрит туда, куда смотрит игрок.</li>
@@ -53,7 +54,6 @@ final class ThirdPerson {
     private static final class Ent {
         boolean holding;
         long holdNs;
-        final Layer lower = new Layer();
         final Layer upper = new Layer();
         long fireStart;
         long fireSeen;
@@ -125,8 +125,8 @@ final class ThirdPerson {
             en.holding = holding;
             en.holdNs = now;
             if (holding) {
-                en.lower.cur = en.upper.cur = null;
-                en.lower.hasLast = en.upper.hasLast = false;
+                en.upper.cur = null;
+                en.upper.hasLast = false;
                 en.fireStart = 0;
             }
         }
@@ -148,16 +148,11 @@ final class ThirdPerson {
     private void target(Player p, Ent en, HumanoidRenderState s, float[][] v, long now) {
         Signals sig = signals.get(p.getId());
         boolean aim = sig != null && sig.aim;
-        boolean crouch = s.isCrouching;
-        boolean sprint = p.isSprinting();
-        boolean moving = s.walkAnimationSpeed > 0.05f;
         float[][] t = en.target;
         copy(v, t);
 
-        String lower = crouch ? null : sprint ? "run_lower" : moving ? "walk_lower" : "hold_lower";
-        layer(en.lower, lower, now, v, t, RLEG, LLEG);
-        String upper = aim ? "aim_upper" : crouch && (moving || sprint) ? "crouch_walk_upper"
-                : sprint ? "run_upper" : moving ? "walk_upper" : "hold_upper";
+        // ноги — игры (ходьба, бег, присед как без оружия); верх — стойка без шага: hold_upper / aim_upper
+        String upper = aim ? "aim_upper" : "hold_upper";
         layer(en.upper, upper, now, v, t, HEAD, LARM);
 
         // разовые: перезарядка (растянута на её время) или выстрел
@@ -200,10 +195,10 @@ final class ThirdPerson {
         en.targetYaw = Mth.clamp(Mth.wrapDegrees(s.yRot), -85f, 85f) * DEG;
     }
 
-    /** Клип текущих анимаций; у пистолета (pistol_default) нет crouch_walk_upper — тогда walk_upper. */
+    /** Клип текущих анимаций; нет aim_upper — hold_upper. */
     private PlayerAnim.Clip clip(String name) {
         PlayerAnim.Clip c = anim.clip(name);
-        if (c == null && "crouch_walk_upper".equals(name)) c = anim.clip("walk_upper");
+        if (c == null && "aim_upper".equals(name)) c = anim.clip("hold_upper");
         return c;
     }
 

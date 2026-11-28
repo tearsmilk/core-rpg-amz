@@ -37,6 +37,12 @@ final class Effects {
     /** То же; plasma — плазменный заряд: вместо части крошки — голубые искры (видны и без мода). */
     void blockHit(Instance inst, Block block, double x, double y, double z, double nx, double ny, double nz,
                   boolean plasma) {
+        blockHit(inst, block, x, y, z, nx, ny, nz, plasma, 0);
+    }
+
+    /** То же; rgb — цвет трассера (у клиента — цвет свечения подпалины плазмы). */
+    void blockHit(Instance inst, Block block, double x, double y, double z, double nx, double ny, double nz,
+                  boolean plasma, int rgb) {
         if (plasma) {
             sparks(inst, x + nx * 0.08, y + ny * 0.08, z + nz * 0.08);
         }
@@ -49,7 +55,7 @@ final class Effects {
                 }
             }
         }
-        impact(inst, x, y, z, nx, ny, nz, 0);
+        impact(inst, x, y, z, nx, ny, nz, 0, plasma ? Proto.IMPACT_PLASMA : 0, rgb);
     }
 
     /** Попадание в цель. */
@@ -71,7 +77,7 @@ final class Effects {
                 }
             }
         }
-        impact(inst, x, y, z, nx, ny, nz, head ? 2 : 1);
+        impact(inst, x, y, z, nx, ny, nz, head ? 2 : 1, plasma ? Proto.IMPACT_PLASMA : 0, 0);
     }
 
     /** Голубые искры плазмы (частицы игры electric_spark и немного «души» огня) всем рядом. */
@@ -89,12 +95,13 @@ final class Effects {
         }
     }
 
-    private void impact(Instance inst, double x, double y, double z, double nx, double ny, double nz, int kind) {
+    private void impact(Instance inst, double x, double y, double z, double nx, double ny, double nz, int kind,
+                        int flags, int rgb) {
         byte[] msg = null;
         for (Player v : inst.getPlayers()) {
             if (mod.modded(v) && near(v, x, y, z, mod.tracerRange())) {
                 if (msg == null) {
-                    msg = Proto.impact(x, y, z, nx, ny, nz, kind);
+                    msg = Proto.impact(x, y, z, nx, ny, nz, kind, flags, rgb);
                 }
                 mod.links().send(v, msg);
             }

@@ -58,6 +58,10 @@ final class Proto {
     static final int TRACER_SILENCED = 2;
     /** Флаг TRACER: плазменный сгусток; за флагами — f32 его длина (блоков). */
     static final int TRACER_PLASMA = 4;
+    /** Вид IMPACT: блок (1 — тело, 2 — голова). */
+    static final int IMPACT_BLOCK = 0;
+    /** Хвост IMPACT (u8 флаги, i32 цвет трассера): 1 — плазма (подпалина вместо отверстия). */
+    static final int IMPACT_PLASMA = 1;
 
     static final int POSE_HOLDING = 1;
     static final int POSE_AIM = 2;

@@ -1042,7 +1042,7 @@ public final class GunsModule extends OdysseyModule {
                 } catch (RuntimeException e) {
                     block = null;
                 }
-                effects.blockHit(l.inst(), block, x, y, z, nx, ny, nz, l.gun().plasma());
+                effects.blockHit(l.inst(), block, x, y, z, nx, ny, nz, l.gun().plasma(), l.gun().tracerColor());
                 explode(l, x, y, z, null);
             }
         });

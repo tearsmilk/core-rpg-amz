@@ -38,6 +38,8 @@ final class GunsConfig {
             min_light = 8
             # Трассеры пуль и вспышка у ствола
             tracers = true
+            # Следы пуль на блоках (~7 с; у плазмы — подпалина со свечением)
+            bullet_holes = true
             # Тряска камеры от анимаций выстрела и перезарядки (0 — нет, 1 — как в модели)
             camera_shake = 0.5
             # Сила отдачи камеры (1 — как у оружия на сервере, 0 — без отдачи)
@@ -77,6 +79,7 @@ final class GunsConfig {
     float viewmodelFov = FOV_MODEL;
     int minLight = 8;
     boolean tracers = true;
+    boolean bulletHoles = true;
     float cameraShake = 0.5f;
     float recoil = 1f;
     float volume = 1f;
@@ -114,6 +117,7 @@ final class GunsConfig {
             c.viewmodelFov = viewFov(p);
             c.minLight = (int) num(p, "min_light", c.minLight, 0, 15);
             c.tracers = bool(p, "tracers", c.tracers);
+            c.bulletHoles = bool(p, "bullet_holes", c.bulletHoles);
             c.cameraShake = (float) num(p, "camera_shake", c.cameraShake, 0, 2);
             c.recoil = (float) num(p, "recoil", c.recoil, 0, 3);
             c.volume = (float) num(p, "volume", c.volume, 0, 1);

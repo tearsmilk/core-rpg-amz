@@ -40,7 +40,8 @@ import java.util.Map;
  *       (1 — перезарядка, 2 — достаёт, 4 — вакуум), i32 последний принятый seq;</li>
  *   <li>3 TRACER: i32 id стрелка, f64 x, y, z, f32 vx, vy, vz (блоков/с), f32 жизнь (с), i32 цвет RGB, u8 флаги
  *       (1 — вакуум);</li>
- *   <li>4 IMPACT: f64 x, y, z, f32 nx, ny, nz, u8 вид (0 — блок, 1 — тело, 2 — голова);</li>
+ *   <li>4 IMPACT: f64 x, y, z, f32 nx, ny, nz, u8 вид (0 — блок, 1 — тело, 2 — голова); хвост — u8 флаги
+ *       (1 — плазма) и i32 цвет трассера RGB (клиент рисует след пули на блоке; старые клиенты хвост не читают);</li>
  *   <li>5 RELOAD_START: u8 вид (1 — тактическая, 2 — пустой магазин, 3 — по одному патрону), f32 секунд до
  *       готовности; у вида 3 — ещё u8 циклов loop и u8 1 — с пустым магазином (вступление reload_intro_empty);</li>
  *   <li>6 REJECT: i32 seq, u8 причина ({@link FireValidator.Result#code});</li>
@@ -114,6 +115,8 @@ final class Proto {
     static final int TRACER_SILENCED = 2;
     /** Флаг TRACER: плазменный сгусток (короткий светящийся заряд); за флагами — f32 его длина, блоков. */
     static final int TRACER_PLASMA = 4;
+    /** Флаг хвоста IMPACT: попала плазма (у клиента — подпалина вместо пулевого отверстия). */
+    static final int IMPACT_PLASMA = 1;
 
     /** Итог действия с обвесом (REFIT_RESULT). */
     static final int REFIT_OK = 0;
@@ -391,6 +394,11 @@ final class Proto {
     }
 
     static byte[] impact(double x, double y, double z, double nx, double ny, double nz, int kind) {
+        return impact(x, y, z, nx, ny, nz, kind, 0, 0);
+    }
+
+    /** IMPACT с хвостом: u8 флаги ({@link #IMPACT_PLASMA}) и i32 цвет трассера (старые клиенты хвост не читают). */
+    static byte[] impact(double x, double y, double z, double nx, double ny, double nz, int kind, int flags, int rgb) {
         return write(o -> {
             o.writeByte(S_IMPACT);
             o.writeDouble(x);
@@ -400,6 +408,8 @@ final class Proto {
             o.writeFloat((float) ny);
             o.writeFloat((float) nz);
             o.writeByte(kind);
+            o.writeByte(flags);
+            o.writeInt(rgb & 0xFFFFFF);
         });
     }
 

@@ -7,7 +7,12 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
@@ -31,8 +36,12 @@ final class Fx {
     private static final int MAX = 256;
     /** Длина хвоста трассера: столько секунд полёта (у АКМ ~25 блоков), но не больше 40 блоков. */
     private static final double TAIL_SEC = 0.05;
-    /** Свой трассер прячется первые N блоков (не мешать прицелу). */
-    private static final double OWN_SKIP = 2.5;
+    /** Свой трассер прячется первые N блоков от ствола (не мешать прицелу). */
+    private static final double OWN_SKIP = 0.5;
+    /** То же, когда ствол не виден (в оптике) и трассер идёт от глаз. */
+    private static final double OWN_SKIP_EYE = 2.5;
+    /** До скольких блоков трассер сходится и на сущность на пути (дальше — только на блок). */
+    private static final double ENTITY_RANGE = 64;
 
     private static final class Tracer {
         final Vec3 o;
@@ -70,7 +79,7 @@ final class Fx {
     /** Длина плазменного сгустка по умолчанию, блоков. */
     private static final double PLASMA_LEN = 0.8;
     /** Свой плазменный сгусток прячется только у самого ствола. */
-    private static final double OWN_SKIP_PLASMA = 0.6;
+    private static final double OWN_SKIP_PLASMA = 0.3;
     private final List<Glow> glows = new ArrayList<>();
     /** Круглое пятно (белое, к краям прозрачное) — текстура ореолов и искр. */
     private Identifier glowTex;
@@ -107,11 +116,28 @@ final class Fx {
 
     private final List<Beam> beams = new ArrayList<>();
 
+    /**
+     * След пули на грани блока: центр at (уже чуть над гранью), нормаль грани n (по оси), блок pos (сломали — след
+     * пропадает), полуразмер, поворот картинки, у плазмы — подпалина со свечением цвета rgb.
+     */
+    private record Decal(Vec3 at, Vector3f n, BlockPos pos, float size, float rot, long born, boolean plasma, int rgb) {}
+
+    private static final int MAX_DECALS = 256;
+    /** Сколько живёт след, с; последнюю секунду гаснет. */
+    private static final double DECAL_LIFE = 7, DECAL_FADE = 1;
+    /** Свечение плазменной подпалины гаснет за столько секунд. */
+    private static final double SCORCH_GLOW = 2.5;
+    private final java.util.ArrayDeque<Decal> decals = new java.util.ArrayDeque<>();
+    private int decalSeq;
+    /** Картинки следа: пулевое отверстие и подпалина (чёрные, форма — прозрачностью). */
+    private Identifier holeTex, scorchTex;
+
     void clear() {
         tracers.clear();
         flashes.clear();
         beams.clear();
         glows.clear();
+        decals.clear();
     }
 
     /**
@@ -168,6 +194,14 @@ final class Fx {
             Minecraft.getInstance().getTextureManager().release(glowTex);
             glowTex = null;
         }
+        if (holeTex != null) {
+            Minecraft.getInstance().getTextureManager().release(holeTex);
+            holeTex = null;
+        }
+        if (scorchTex != null) {
+            Minecraft.getInstance().getTextureManager().release(scorchTex);
+            scorchTex = null;
+        }
     }
 
     private Identifier glowTex() {
@@ -206,6 +240,165 @@ final class Fx {
         }
     }
 
+    /**
+     * След попадания в блок: at — точка попадания, normal — нормаль грани (с сервера). plasma — подпалина со свечением
+     * цвета rgb вместо отверстия. Следов не больше {@link #MAX_DECALS} (старые уходят), живут {@link #DECAL_LIFE} с.
+     */
+    void decal(Vec3 at, Vec3 normal, boolean plasma, int rgb) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || normal.lengthSqr() < 1e-6) return;
+        // нормаль — к ближайшей оси (грань блока)
+        double ax = Math.abs(normal.x), ay = Math.abs(normal.y), az = Math.abs(normal.z);
+        Vector3f n = ax >= ay && ax >= az ? new Vector3f(Math.signum((float) normal.x), 0, 0)
+                : ay >= az ? new Vector3f(0, Math.signum((float) normal.y), 0) : new Vector3f(0, 0, Math.signum((float) normal.z));
+        BlockPos pos = BlockPos.containing(at.x - n.x * 0.01, at.y - n.y * 0.01, at.z - n.z * 0.01);
+        try {
+            if (mc.level.getBlockState(pos).isAir()) return;
+        } catch (RuntimeException e) {
+            return;
+        }
+        float size = plasma ? 0.11f + rnd.nextFloat() * 0.05f : 0.05f + rnd.nextFloat() * 0.025f;
+        // в пределах грани блока (не свисать за край), чуть над ней — без мерцания с гранью и соседними следами
+        double x = n.x != 0 ? at.x : clamp(at.x, pos.getX() + size, pos.getX() + 1 - size);
+        double y = n.y != 0 ? at.y : clamp(at.y, pos.getY() + size, pos.getY() + 1 - size);
+        double z = n.z != 0 ? at.z : clamp(at.z, pos.getZ() + size, pos.getZ() + 1 - size);
+        double lift = 0.004 + (decalSeq++ & 7) * 0.0006;
+        Vec3 c = new Vec3(x + n.x * lift, y + n.y * lift, z + n.z * lift);
+        while (decals.size() >= MAX_DECALS) decals.pollFirst();
+        decals.addLast(new Decal(c, n, pos, size, rnd.nextFloat() * (float) Math.PI * 2, System.nanoTime(), plasma,
+                rgb & 0xFFFFFF));
+    }
+
+    private static double clamp(double v, double lo, double hi) {
+        return lo > hi ? (lo + hi) / 2 : Math.max(lo, Math.min(hi, v));
+    }
+
+    /** Следы: чёрные картинки поверх грани (не светятся, но и не зависят от света — тёмное на любом), у плазмы ещё
+     *  гаснущее свечение. Сломанный блок — след убирается. */
+    private void renderDecals(MultiBufferSource buffers, Matrix4f pose, Vec3 cam, long now) {
+        if (decals.isEmpty()) return;
+        Minecraft mc = Minecraft.getInstance();
+        VertexConsumer hole = null, scorch = null, glow = null;
+        for (Iterator<Decal> it = decals.iterator(); it.hasNext(); ) {
+            Decal d = it.next();
+            double el = (now - d.born()) / 1e9;
+            boolean gone;
+            try {
+                gone = el > DECAL_LIFE || mc.level == null || mc.level.getBlockState(d.pos()).isAir();
+            } catch (RuntimeException e) {
+                gone = true;
+            }
+            if (gone) {
+                it.remove();
+                continue;
+            }
+            Vec3 c = d.at().subtract(cam);
+            if (c.lengthSqr() > 128 * 128) continue;
+            float k = (float) Math.min(1, (DECAL_LIFE - el) / DECAL_FADE);
+            // оси в плоскости грани, повёрнутые на d.rot
+            Vector3f n = d.n();
+            Vector3f t = Math.abs(n.y) > 0.5f ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0);
+            Vector3f b = new Vector3f(n).cross(t);
+            float cs = (float) Math.cos(d.rot()), sn = (float) Math.sin(d.rot());
+            Vector3f ax = new Vector3f(t).mul(cs).add(new Vector3f(b).mul(sn)).mul(d.size());
+            Vector3f ay = new Vector3f(b).mul(cs).sub(new Vector3f(t).mul(sn)).mul(d.size());
+            int al = Math.round(Math.max(0, Math.min(1, k)) * 255);
+            if (d.plasma()) {
+                if (scorch == null) scorch = buffers.getBuffer(RenderTypes.entityTranslucentEmissive(scorchTex()));
+                quad(scorch, pose, (float) c.x, (float) c.y, (float) c.z, ax, ay, n, (al << 24) | 0xFFFFFF);
+            } else {
+                if (hole == null) hole = buffers.getBuffer(RenderTypes.entityTranslucentEmissive(holeTex()));
+                quad(hole, pose, (float) c.x, (float) c.y, (float) c.z, ax, ay, n, (al << 24) | 0xFFFFFF);
+            }
+        }
+        // свечение плазменных подпалин — отдельным проходом (другая картинка)
+        for (Decal d : decals) {
+            if (!d.plasma()) continue;
+            double el = (now - d.born()) / 1e9;
+            if (el >= SCORCH_GLOW) continue;
+            Vec3 c = d.at().subtract(cam);
+            if (c.lengthSqr() > 128 * 128) continue;
+            double f = 1 - el / SCORCH_GLOW;
+            float a = (float) (0.75 * f * f);
+            Vector3f n = d.n();
+            Vector3f t = Math.abs(n.y) > 0.5f ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0);
+            Vector3f b = new Vector3f(n).cross(t);
+            float s = d.size() * (0.55f + 0.25f * (float) f);
+            float lift = 0.002f;
+            float x = (float) c.x + n.x * lift, y = (float) c.y + n.y * lift, z = (float) c.z + n.z * lift;
+            if (glow == null) glow = buffers.getBuffer(RenderTypes.entityTranslucentEmissive(glowTex()));
+            quad(glow, pose, x, y, z, new Vector3f(t).mul(s), new Vector3f(b).mul(s), n,
+                    (Math.round(a * 255) << 24) | d.rgb());
+            if (el < 0.5) {                                     // раскалённая середина первые полсекунды
+                float w = (float) (1 - el / 0.5);
+                quad(glow, pose, x, y, z, new Vector3f(t).mul(s * 0.35f), new Vector3f(b).mul(s * 0.35f), n,
+                        (Math.round(w * 0.9f * 255) << 24) | 0xFFFFFF);
+            }
+        }
+    }
+
+    /** Пулевое отверстие: чёрная середина, тёмное кольцо с трещинками, мягкий край. */
+    private Identifier holeTex() {
+        if (holeTex == null) {
+            int n = 32;
+            java.util.Random r = new java.util.Random(7);
+            double[] crack = new double[64];
+            for (int i = 0; i < crack.length; i++) crack[i] = r.nextDouble() < 0.18 ? 0.5 + r.nextDouble() * 0.5 : 0;
+            com.mojang.blaze3d.platform.NativeImage img = new com.mojang.blaze3d.platform.NativeImage(n, n, false);
+            for (int y = 0; y < n; y++) {
+                for (int x = 0; x < n; x++) {
+                    double dx = (x + 0.5) / n * 2 - 1, dy = (y + 0.5) / n * 2 - 1;
+                    double rr = Math.sqrt(dx * dx + dy * dy);
+                    int ang = (int) Math.floor((Math.atan2(dy, dx) / (Math.PI * 2) + 0.5) * crack.length) & (crack.length - 1);
+                    double a;
+                    if (rr < 0.26) a = 1;                                       // отверстие
+                    else if (rr < 0.36) a = 0.95 - (rr - 0.26) * 2;             // край отверстия
+                    else a = Math.max(0, 0.55 * Math.pow(Math.max(0, 1 - (rr - 0.36) / 0.64), 1.6));   // копоть вокруг
+                    if (crack[ang] > 0 && rr < 0.36 + 0.6 * crack[ang] && rr > 0.3) a = Math.max(a, 0.7 * (1 - rr));
+                    int c = rr < 0.26 ? 0x050404 : 0x15120f;
+                    int al = (int) Math.round(Math.max(0, Math.min(1, a)) * 255);
+                    img.setPixel(x, y, (al << 24) | c);
+                }
+            }
+            holeTex = Identifier.fromNamespaceAndPath("hoka_guns", "bullet_hole");
+            Minecraft.getInstance().getTextureManager().register(holeTex,
+                    new net.minecraft.client.renderer.texture.DynamicTexture(() -> "hoka guns bullet hole", img));
+        }
+        return holeTex;
+    }
+
+    /** Подпалина плазмы: тёмное пятно с неровным краем, к краю светлее. */
+    private Identifier scorchTex() {
+        if (scorchTex == null) {
+            int n = 32;
+            java.util.Random r = new java.util.Random(11);
+            double[] edge = new double[32];
+            for (int i = 0; i < edge.length; i++) edge[i] = 0.75 + r.nextDouble() * 0.25;
+            com.mojang.blaze3d.platform.NativeImage img = new com.mojang.blaze3d.platform.NativeImage(n, n, false);
+            for (int y = 0; y < n; y++) {
+                for (int x = 0; x < n; x++) {
+                    double dx = (x + 0.5) / n * 2 - 1, dy = (y + 0.5) / n * 2 - 1;
+                    double rr = Math.sqrt(dx * dx + dy * dy);
+                    double u = (Math.atan2(dy, dx) / (Math.PI * 2) + 0.5) * edge.length;
+                    int i0 = (int) Math.floor(u) % edge.length, i1 = (i0 + 1) % edge.length;
+                    double f = u - Math.floor(u);
+                    double lim = edge[i0] + (edge[i1] - edge[i0]) * f;
+                    double q = rr / lim;
+                    double a = q >= 1 ? 0 : Math.pow(1 - q, 0.7) * 0.92;
+                    if (rr < 0.2) a = Math.max(a, 0.95);
+                    a *= 0.85 + 0.15 * r.nextDouble();
+                    int c = rr < 0.25 ? 0x060606 : 0x171513;
+                    int al = (int) Math.round(Math.max(0, Math.min(1, a)) * 255);
+                    img.setPixel(x, y, (al << 24) | c);
+                }
+            }
+            scorchTex = Identifier.fromNamespaceAndPath("hoka_guns", "plasma_scorch");
+            Minecraft.getInstance().getTextureManager().register(scorchTex,
+                    new net.minecraft.client.renderer.texture.DynamicTexture(() -> "hoka guns plasma scorch", img));
+        }
+        return scorchTex;
+    }
+
     private Identifier white() {
         if (white == null) {
             com.mojang.blaze3d.platform.NativeImage img = new com.mojang.blaze3d.platform.NativeImage(2, 2, false);
@@ -217,31 +410,52 @@ final class Fx {
         return white;
     }
 
-    /** Трассер из o со скоростью v (блоков/с), живёт life с; own — свой (хвост начинается дальше от глаз). */
-    void tracer(Vec3 o, Vec3 v, double life, int rgb, boolean own) {
-        tracer(o, v, life, rgb, own, false, 0);
-    }
-
-    /** То же; plasma — короткий плазменный сгусток длиной length блоков (0 — по умолчанию). */
-    void tracer(Vec3 o, Vec3 v, double life, int rgb, boolean own, boolean plasma, double length) {
+    /**
+     * Трассер выстрела: пуля летит из глаз eye со скоростью v (блоков/с), живёт life с — там, куда она попадёт (первый
+     * блок или сущность на пути, проверка лучом на клиенте; без попадания — конец пути), трассер и сходится, но
+     * начинается у ствола muzzle (null — у глаз). own — свой (начало ленты прячется у ствола); plasma — короткий
+     * плазменный сгусток длиной length блоков (0 — по умолчанию); shooter — стрелок (его луч не задевает), null — нет.
+     */
+    void tracer(Vec3 eye, Vec3 muzzle, Vec3 v, double life, int rgb, boolean own, boolean plasma, double length,
+                Entity shooter) {
         Minecraft mc = Minecraft.getInstance();
         double speed = v.length();
         if (speed < 1e-3 || mc.level == null) return;
         Vec3 dir = v.scale(1 / speed);
         double max = Math.min(speed * life, 300);
+        Vec3 end = eye.add(dir.scale(max));
         boolean blocked = false;
+        Entity self = shooter != null ? shooter : mc.player;
         try {
-            HitResult hit = mc.level.clip(new ClipContext(o, o.add(dir.scale(max)), ClipContext.Block.COLLIDER,
-                    ClipContext.Fluid.NONE, mc.player));
+            HitResult hit = mc.level.clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, self));
             if (hit.getType() != HitResult.Type.MISS) {
-                max = hit.getLocation().distanceTo(o);
+                end = hit.getLocation();
+                blocked = true;
+            }
+            // сущности — только вблизи (дальше разница со стволом незаметна, а поиск по большой области дорог)
+            Vec3 near = eye.distanceToSqr(end) > ENTITY_RANGE * ENTITY_RANGE ? eye.add(dir.scale(ENTITY_RANGE)) : end;
+            EntityHitResult eh = ProjectileUtil.getEntityHitResult(mc.level, self, eye, near,
+                    new AABB(eye, near).inflate(1), e -> e != self && e.isPickable() && !e.isSpectator() && e.isAlive(), 0.1f);
+            if (eh != null) {
+                end = eh.getLocation();
                 blocked = true;
             }
         } catch (RuntimeException ignored) {
             // нет мира рядом — до конца жизни
         }
+        Vec3 o = muzzle == null ? eye : muzzle;
+        Vec3 d = end.subtract(o);
+        double dist = d.length();
+        if (dist < 0.75) {                                     // в упор — от глаз, как пуля
+            o = eye;
+            d = dir;
+            dist = end.distanceTo(eye);
+        } else {
+            d = d.scale(1 / dist);
+        }
         if (tracers.size() >= MAX) tracers.remove(0);
-        Tracer t = new Tracer(o, dir, speed, max, System.nanoTime(), rgb, own ? (plasma ? OWN_SKIP_PLASMA : OWN_SKIP) : 0);
+        double skip = !own ? 0 : o == eye ? OWN_SKIP_EYE : plasma ? OWN_SKIP_PLASMA : OWN_SKIP;
+        Tracer t = new Tracer(o, d, speed, dist, System.nanoTime(), rgb, skip);
         t.plasma = plasma;
         t.length = length > 0 ? length : PLASMA_LEN;
         t.hit = blocked;
@@ -269,6 +483,7 @@ final class Fx {
     void render(MultiBufferSource buffers, Matrix4f camToBuf, Vec3 cam, Quaternionf rot, Identifier flashTex) {
         long now = System.nanoTime();
         Matrix4f pose = new Matrix4f(camToBuf).rotate(new Quaternionf(rot).conjugate());
+        renderDecals(buffers, pose, cam, now);
         if (!tracers.isEmpty()) {
             VertexConsumer vc = buffers.getBuffer(RenderTypes.entityTranslucentEmissive(white()));
             for (Iterator<Tracer> it = tracers.iterator(); it.hasNext(); ) {
