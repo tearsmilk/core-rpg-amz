@@ -1354,7 +1354,9 @@ public final class GunsClientModule implements ClientModule {
             }
             mounted = new ViewModel.Mounted(ms, riser == null ? null : attModel(riser.model()), riserOff, ads > 0.7f);
         }
-        vm.render(frame.buffers(), camToBuf, fov, m2c, light, ammo, cfg.arms, mounted);
+        vm.paint(gear == null ? 0 : gear.paint);                    // своя окраска модели (plasma_rifle — чёрный металл)
+        // в окне обвеса рук не видно — только оружие и обвес
+        vm.render(frame.buffers(), camToBuf, fov, m2c, light, ammo, cfg.arms && !refitOpen, mounted);
         if (mounted != null && cfg.laser) ownLasers(vm, gear, mounted, fov, m2c, q, frame.camera());
         Att.Def md = gear == null ? null : cat.def(gear.ids[Att.MUZZLE]);
         Vector3f mz = vm.muzzle(m2c, md == null ? 0 : md.flashOffset());
@@ -1403,24 +1405,36 @@ public final class GunsClientModule implements ClientModule {
         boolean fp = mc.options.getCameraType().isFirstPerson();
         for (var e : gears.entrySet()) {
             Att.Gear gr = e.getValue();
-            int color = -1;
-            float len = 0;
-            for (int s : new int[] {Att.LASER, Att.GRIP}) {
-                int c = gr.laserColor(cat, s);
+            // ЛЦУ (слева), второй ЛЦУ (справа); рукоять с ЛЦУ — если других нет
+            int[] colors = new int[3];
+            float[] lens = new float[3];
+            int[] slots = {Att.LASER, Att.LASER2, Att.GRIP};
+            int n = 0;
+            for (int i = 0; i < slots.length; i++) {
+                int c = gr.laserColor(cat, slots[i]);
+                colors[i] = c;
                 if (c >= 0) {
-                    color = c;
-                    len = cat.def(gr.ids[s]).laser().length();
-                    break;
+                    lens[i] = cat.def(gr.ids[slots[i]]).laser().length();
+                    if (i < 2) n++;
                 }
             }
-            if (color < 0) continue;
+            if (n > 0) colors[2] = -1;
+            if (colors[0] < 0 && colors[1] < 0 && colors[2] < 0) continue;
             Entity en = mc.level.getEntity(e.getKey());
             if (en == null || en.isRemoved()) continue;
             if (en == mc.player && fp) continue;                   // свой от первого лица — из модели в руке
             if (en.distanceToSqr(mc.player) > 96 * 96) continue;
             Vec3 eye = en.getEyePosition(pt);
             Vec3 look = en.getViewVector(pt).normalize();
-            fx.laser(handMuzzle(en, eye, look), look, len, color, en);
+            Vec3 from = handMuzzle(en, eye, look);
+            Vec3 right = look.cross(new Vec3(0, 1, 0));
+            right = right.lengthSqr() < 1e-6 ? new Vec3(1, 0, 0) : right.normalize();
+            for (int i = 0; i < slots.length; i++) {
+                if (colors[i] < 0) continue;
+                // два ЛЦУ — по бокам цевья (≈ 0,05 блока влево и вправо от ствола)
+                Vec3 at = n == 2 && i < 2 ? from.add(right.scale(i == 0 ? -0.05 : 0.05)) : from;
+                fx.laser(at, look, lens[i], colors[i], en);
+            }
         }
     }
 

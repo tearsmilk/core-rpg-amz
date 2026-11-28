@@ -48,6 +48,13 @@ final class ViewModel {
     final BbModel model;
     /** Текстуры модели (у оружия с прицелом — вторая, прицела); null — нет картинки. */
     private final Identifier[] tex;
+    /**
+     * Свои текстуры окрасок (поле hoka_paint файла — только у наших моделей, tools/plasma): [окраска − 1][номер
+     * текстуры], null — как обычная. TACZ-модели окрасок не имеют и не перекрашиваются.
+     */
+    private Identifier[][] paintTex = new Identifier[0][];
+    /** Окраска на этот кадр (0 — стандарт); {@link #paint}. */
+    private int paint;
     /** Сетка прицела (кости division модели прицела TACZ) — для круга оптики; null — у модели нет прицела. */
     final Reticle reticle;
     /**
@@ -262,15 +269,63 @@ final class ViewModel {
             m.texturePngs.clear();
             log.info("guns: модель {} — костей {}, анимаций {}, текстур {}{}", path, m.bones.size(), m.animations.size(),
                     ids.length, reticle != null ? ", прицел (сетка " + reticle.faces + " граней)" : "");
-            return new ViewModel(path, m, ids, json, reticle);
+            ViewModel vm = new ViewModel(path, m, ids, json, reticle);
+            vm.paintTex = paints(path, json, ids.length, log);
+            return vm;
         } catch (Exception e) {
             log.error("guns: модель {} не разобрана: {}", path, e.toString());
             return null;
         }
     }
 
+    /**
+     * Окраски из поля hoka_paint: [{name, textures: ["data:image/png;base64,…", …]}, …] — по порядку окраски 1, 2…
+     * (0 — стандарт, текстуры модели).
+     */
+    private static Identifier[][] paints(String path, JsonObject json, int n, Logger log) {
+        if (!(json.get("hoka_paint") instanceof JsonArray arr)) return new Identifier[0][];
+        Identifier[][] out = new Identifier[arr.size()][];
+        for (int p = 0; p < out.length; p++) {
+            out[p] = new Identifier[n];
+            if (!(arr.get(p) instanceof JsonObject o) || !(o.get("textures") instanceof JsonArray ts)) continue;
+            for (int i = 0; i < Math.min(n, ts.size()); i++) {
+                try {
+                    String src = ts.get(i).getAsString();
+                    byte[] png = java.util.Base64.getDecoder().decode(src.substring(src.indexOf(',') + 1));
+                    NativeImage img = NativeImage.read(png);
+                    out[p][i] = Identifier.fromNamespaceAndPath("hoka_guns", "viewmodel/" + sanitize(path) + "_paint" + (p + 1)
+                            + (i == 0 ? "" : "_" + i));
+                    Minecraft.getInstance().getTextureManager().register(out[p][i],
+                            new DynamicTexture(() -> "hoka guns paint " + path, img));
+                } catch (Exception e) {
+                    log.warn("guns: окраска {} модели {} не разобрана: {}", p + 1, path, e.toString());
+                }
+            }
+        }
+        if (out.length > 0) log.info("guns: модель {} — окрасок {}", path, out.length);
+        return out;
+    }
+
+    /** Есть ли у модели своя окраска номер p (1 — чёрный металл). */
+    boolean hasPaint(int p) {
+        return p >= 1 && p <= paintTex.length && paintTex[p - 1][0] != null;
+    }
+
+    /** Окраска для следующих {@link #render} (0 — стандарт; нет такой у модели — стандарт). */
+    void paint(int p) {
+        paint = p;
+    }
+
+    private Identifier texture(int t) {
+        if (paint >= 1 && paint <= paintTex.length && paintTex[paint - 1][t] != null) return paintTex[paint - 1][t];
+        return tex[t];
+    }
+
     void close() {
         for (Identifier t : tex) if (t != null) Minecraft.getInstance().getTextureManager().release(t);
+        for (Identifier[] pt : paintTex) {
+            for (Identifier t : pt) if (t != null) Minecraft.getInstance().getTextureManager().release(t);
+        }
         if (reticle != null) reticle.close();
     }
 
@@ -441,12 +496,13 @@ final class ViewModel {
         Set<Integer> out = new HashSet<>();
         Att.Def scope = cat.def(gear.ids[Att.SCOPE]);
         boolean scoped = scope != null || bakedScope;
-        boolean gripOrLaser = gear.has(Att.GRIP) || gear.has(Att.LASER);
+        boolean gripOrLaser = gear.has(Att.GRIP) || gear.has(Att.LASER) || gear.has(Att.LASER2);
         int level = gear.xmagLevel(cat);
         Set<String> adapters = new HashSet<>();
-        for (String id : gear.ids) {
-            Att.Def d = cat.def(id);
-            if (d != null && !d.adapter().isEmpty()) adapters.add(d.adapter());
+        for (int s = 0; s < gear.ids.length; s++) {
+            Att.Def d = cat.def(gear.ids[s]);
+            // во втором ЛЦУ (справа) — свой переходник: кость <adapter>_2 (у plasma_rifle — laser_adapter_2)
+            if (d != null && !d.adapter().isEmpty()) adapters.add(s == Att.LASER2 ? d.adapter() + "_2" : d.adapter());
         }
         for (BbModel.Bone b : model.bones) {
             String n = b.name;
@@ -465,7 +521,9 @@ final class ViewModel {
                 hide = gripOrLaser;
             } else if (n.equals("handguard_tactical")) {
                 hide = !gripOrLaser;
-            } else if (cat.adapterBones.contains(n)) {
+            } else if (cat.adapterBones.contains(n)
+                    || slotPos[Att.LASER2] != null && n.endsWith("_2")
+                    && cat.adapterBones.contains(n.substring(0, n.length() - 2))) {
                 hide = !adapters.contains(n);
             } else if (n.endsWith("_default")) {
                 int slot = Att.slotOf(n.substring(0, n.length() - "_default".length()));
@@ -556,7 +614,7 @@ final class ViewModel {
         Matrix4f m = new Matrix4f(), n = new Matrix4f();
         for (int t = 0; t < tex.length; t++) {                     // по текстуре за раз: буфер одного вида до конца
             if (tex[t] == null) continue;
-            VertexConsumer vc = buffers.getBuffer(RenderTypes.entityCutoutNoCull(tex[t]));
+            VertexConsumer vc = buffers.getBuffer(RenderTypes.entityCutoutNoCull(texture(t)));
             for (BbModel.Bone b : model.bones) {
                 if (b.faces.isEmpty() || hidden.contains(b.index) || condHidden.contains(b.index)) continue;
                 if (ammo <= 0 && (barrelRound.contains(b.index) || magRounds.contains(b.index))) continue;

@@ -141,7 +141,7 @@ final class HoGunCommand extends Command {
         }
         Attachments.Slot sl = Attachments.Slot.of(slot);
         if (sl == null) {
-            s.sendMessage(Component.text("Нет слота «" + slot + "»: scope, muzzle, stock, grip, laser, extended_mag", NamedTextColor.RED));
+            s.sendMessage(Component.text("Нет слота «" + slot + "»: scope, muzzle, stock, grip, laser, laser2, extended_mag", NamedTextColor.RED));
             return;
         }
         s.sendMessage(Refit.text(mod.refit().detach(p, sl, true), "Обвес снят"));

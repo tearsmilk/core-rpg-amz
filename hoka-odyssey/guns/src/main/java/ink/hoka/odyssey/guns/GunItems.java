@@ -176,11 +176,17 @@ final class GunItems {
         for (String l : g.lore()) {
             lore.add(Component.text(l, NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
         }
+        if (lo.paint != 0) {
+            lore.add(Component.text("Окраска: " + Loadout.paintName(lo.paint), NamedTextColor.DARK_GRAY)
+                    .decoration(TextDecoration.ITALIC, false));
+        }
         if (!lo.isEmpty()) {
             lore.add(Component.text("Обвес:", NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false));
+            boolean two = lo.get(Attachments.Slot.LASER2) != null;
             for (var e : lo.entries().entrySet()) {
                 Attachments.Def d = cat.get(e.getValue().id());
-                lore.add(Component.text(" " + e.getKey().ru + ": " + (d == null ? e.getValue().id() : d.name())
+                String sn = two && e.getKey() == Attachments.Slot.LASER ? "ЛЦУ (лево)" : e.getKey().ru;
+                lore.add(Component.text(" " + sn + ": " + (d == null ? e.getValue().id() : d.name())
                         + (e.getValue().virtual() ? " (встроенный)" : ""), NamedTextColor.DARK_AQUA)
                         .decoration(TextDecoration.ITALIC, false));
             }
@@ -201,7 +207,7 @@ final class GunItems {
         if (ga != null) {
             for (var e : ga.defaults().entrySet()) {
                 Attachments.Def d = cat.get(e.getValue());
-                if (d != null && out.get(e.getKey()) == null && d.slot() == e.getKey()) {
+                if (d != null && out.get(e.getKey()) == null && e.getKey().accepts(d.slot())) {
                     out = out.with(e.getKey(), new Loadout.Entry(d.id(), d.builtin(), -1));
                 }
             }

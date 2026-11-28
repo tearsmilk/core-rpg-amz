@@ -77,7 +77,8 @@ final class Assets {
                     List.of(h("plasma_rifle_shoot", 16, null), h("plasma_rifle_shoot_3p", 112, "Выстрел плазмой"),
                             h("plasma_rifle_draw", 12, null), h("plasma_rifle_put_away", 12, null),
                             h("plasma_rifle_cell_out", 16, "Смена ячейки"), h("plasma_rifle_cell_in", 16, null),
-                            h("plasma_rifle_charge", 16, "Заряд"))),
+                            h("plasma_rifle_charge", 16, "Заряд"), h("plasma_rifle_silence", 16, null),
+                            h("plasma_rifle_silence_3p", 48, "Выстрел с глушителем"))),
             "m4a1", new GunAssets(List.of("models/m4a1_lod.bbmodel", "textures/m4a1_slot.png", "textures/556x45.png"),
                     List.of(s("m4a1_shoot", 16), s("m4a1_shoot_3p", 128, "Выстрел M4A1"), s("m4a1_silence", 16),
                             s("m4a1_silence_3p", 48, "Выстрел с глушителем"), s("m4a1_draw", 12),
@@ -342,11 +343,22 @@ final class Assets {
     }
 
     /**
-     * Обвес оружия, который поменялся в новой версии модуля (id → слот, которого не было): если в module/guns/config.yml
-     * у оружия в attachments.slots нет этого слота, блок attachments записи заменяется блоком из jar (остальная
-     * запись и файл не трогаются). plasma_rifle — удлинённая ячейка plasma_cell_extended (слот extended_mag).
+     * Обвес оружия, который поменялся в новой версии модуля (id → слоты, которых не было): если в module/guns/config.yml
+     * у оружия в attachments.slots нет хоть одного из них, блок attachments записи заменяется блоком из jar (остальная
+     * запись и файл не трогаются). plasma_rifle — удлинённая ячейка plasma_cell_extended (слот extended_mag), дуло
+     * (muzzle) и второй ЛЦУ (laser2).
      */
-    static final Map<String, String> ATT_UPGRADES = Map.of("plasma_rifle", "extended_mag");
+    static final Map<String, List<String>> ATT_UPGRADES = Map.of("plasma_rifle", List.of("extended_mag", "muzzle", "laser2"));
+
+    /**
+     * Звуки оружия, которые появились в новой версии (id → ключ sounds): нет ключа в module/guns/config.yml — блок
+     * sounds записи заменяется блоком из jar. plasma_rifle — выстрел с глушителем (silence / silence3p).
+     */
+    static final Map<String, String> SOUND_UPGRADES = Map.of("plasma_rifle", "silence");
+
+    private static boolean hasAll(Object slots, List<String> need) {
+        return slots instanceof List<?> l && l.containsAll(need);
+    }
 
     /** Обновить блоки attachments оружия из {@link #ATT_UPGRADES}, где их ещё нет (см. там). */
     static Result upgradeGunAttachments(Path file) throws IOException {
@@ -373,12 +385,12 @@ final class Assets {
         List<String> done = new ArrayList<>();
         StringBuilder manual = new StringBuilder();
         String updated = text;
-        for (Map.Entry<String, String> u : ATT_UPGRADES.entrySet()) {
+        for (Map.Entry<String, List<String>> u : ATT_UPGRADES.entrySet()) {
             if (!(guns.get(u.getKey()) instanceof Map<?, ?> gun) || !jarBlocks.containsKey(u.getKey())) {
                 continue;
             }
             Object slots = gun.get("attachments") instanceof Map<?, ?> a ? a.get("slots") : null;
-            if (slots instanceof List<?> l && l.contains(u.getValue())) {
+            if (hasAll(slots, u.getValue())) {
                 continue;                                     // уже новый (или настроен руками)
             }
             String att = attachmentsBlock(jarBlocks.get(u.getKey()));
@@ -393,6 +405,29 @@ final class Assets {
             updated = next;
             done.add(u.getKey());
         }
+        List<String> soundsDone = new ArrayList<>();
+        for (Map.Entry<String, String> u : SOUND_UPGRADES.entrySet()) {
+            if (!(guns.get(u.getKey()) instanceof Map<?, ?> gun) || !jarBlocks.containsKey(u.getKey())) {
+                continue;
+            }
+            if (gun.get("sounds") instanceof Map<?, ?> sm && sm.containsKey(u.getValue())) {
+                continue;
+            }
+            String blk = block(jarBlocks.get(u.getKey()), "sounds");
+            if (blk == null) {
+                continue;
+            }
+            String next = replaceBlock(updated, u.getKey(), "sounds", blk);
+            if (next == null) {
+                manual.append("# guns.").append(u.getKey()).append(".sounds:\n").append(blk);
+                continue;
+            }
+            updated = next;
+            soundsDone.add(u.getKey());
+            if (!done.contains(u.getKey())) {
+                done.add(u.getKey());
+            }
+        }
         if (done.isEmpty()) {
             return new Result(manual.isEmpty() ? "обвес оружия уже новый" : "обвес оружия не обновлён — допишите вручную",
                     manual.isEmpty() ? null : manual.toString());
@@ -402,8 +437,12 @@ final class Assets {
             Object g = o instanceof Map<?, ?> r ? r.get("guns") : null;
             for (String id : done) {
                 Object a = g instanceof Map<?, ?> gm && gm.get(id) instanceof Map<?, ?> e ? e.get("attachments") : null;
-                if (!(a instanceof Map<?, ?> am) || !(am.get("slots") instanceof List<?> sl) || !sl.contains(ATT_UPGRADES.get(id))) {
+                Object sd = g instanceof Map<?, ?> gm && gm.get(id) instanceof Map<?, ?> e ? e.get("sounds") : null;
+                if (ATT_UPGRADES.containsKey(id) && !(a instanceof Map<?, ?> am && hasAll(am.get("slots"), ATT_UPGRADES.get(id)))) {
                     throw new IllegalStateException("обвес " + id + " не виден после замены");
+                }
+                if (soundsDone.contains(id) && !(sd instanceof Map<?, ?> sm && sm.containsKey(SOUND_UPGRADES.get(id)))) {
+                    throw new IllegalStateException("звуки " + id + " не видны после замены");
                 }
             }
         } catch (RuntimeException e) {
@@ -420,10 +459,15 @@ final class Assets {
 
     /** Блок «attachments:» из текста записи оружия (gunBlocks: ключи записи с начала строки) — как есть, или null. */
     static String attachmentsBlock(String gunBody) {
+        return block(gunBody, "attachments");
+    }
+
+    /** Блок «key:» из текста записи оружия — как есть, или null. */
+    static String block(String gunBody, String key) {
         StringBuilder b = null;
         for (String l : gunBody.split("\n", -1)) {
             if (b == null) {
-                if (l.matches("attachments:[ \\t]*(#.*)?")) {
+                if (l.matches(Pattern.quote(key) + ":[ \\t]*(#.*)?")) {
                     b = new StringBuilder(l).append('\n');
                 }
                 continue;
@@ -448,6 +492,11 @@ final class Assets {
      * у ключей записи в файле). Нет блока — дописать в конец записи. null — запись не найдена.
      */
     static String replaceAttachments(String text, String id, String att) {
+        return replaceBlock(text, id, "attachments", att);
+    }
+
+    /** То же для любого ключа key записи guns.&lt;id&gt;. */
+    static String replaceBlock(String text, String id, String key, String att) {
         String[] lines = text.split("\n", -1);
         int gi = -1;
         int gIndent = 0;
@@ -489,7 +538,7 @@ final class Assets {
         int ai = -1;
         for (int i = gi + 1; i <= lastBody; i++) {
             String l = lines[i];
-            if (indentOf(l) == keyIndent.length() && l.substring(keyIndent.length()).matches("attachments:[ \\t]*(#.*)?")) {
+            if (indentOf(l) == keyIndent.length() && l.substring(keyIndent.length()).matches(Pattern.quote(key) + ":[ \\t]*(#.*)?")) {
                 ai = i;
                 break;
             }

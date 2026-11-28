@@ -54,6 +54,19 @@ MAT = {
     'blue_glow': (60, 150, 255),
 }
 GLOW = {'cyan', 'cyan_w', 'white', 'blue_glow'}
+# Окраска «чёрный металл» (вторая текстура модели, поле hoka_paint; окраска 1): корпус — воронёная сталь и графит,
+# красные полосы — тёмный оружейный металл, свечение (GLOW) — как было, голубое.
+MAT_BLACK = dict(MAT, **{
+    'navy':   (30, 32, 37),
+    'navy_l': (42, 44, 50),
+    'navy_d': (19, 20, 24),
+    'steel':  (64, 67, 74),
+    'gun':    (33, 34, 39),
+    'black':  (11, 12, 14),
+    'red':    (54, 56, 62),
+    'red_d':  (38, 40, 45),
+    'rubber': (20, 20, 23),
+})
 
 
 class Model:
@@ -214,6 +227,7 @@ def build():
     box(m, 'handguard', -1.32, 1.32, 6.5, 10.35, -3.0, -2.6, 'steel')
     box(m, 'handguard', -0.7, 0.7, 6.0, 6.3, -9.8, -4.0, 'gun', pattern='rail_y')           # планка снизу (рукоять)
     box(m, 'handguard', -1.55, -1.25, 8.2, 9.0, -9.6, -5.4, 'gun', pattern='rail_z')        # планка слева (ЛЦУ)
+    box(m, 'handguard', 1.25, 1.55, 8.2, 9.0, -9.6, -5.4, 'gun', pattern='rail_z')          # планка справа (ЛЦУ 2)
 
     # --- воротник-радиатор перед стволами
     m.bone('collar', (0, BORE, -12.5), 'body')
@@ -299,13 +313,21 @@ def build():
     box(m, 'laser_adapter', -1.68, -1.2, 7.98, 8.2, -9.0, -5.9, 'gun')
     box(m, 'laser_adapter', -1.72, -1.6, 8.05, 9.15, -9.1, -8.75, 'red')
     box(m, 'laser_adapter', -1.72, -1.6, 8.05, 9.15, -6.15, -5.8, 'red')
+    # то же справа — для второго ЛЦУ (слот laser2: клиент показывает кость <adapter>_2)
+    m.bone('laser_adapter_2', (1.55, 8.6, -7.5), 'body')
+    box(m, 'laser_adapter_2', 1.2, 1.68, 9.0, 9.22, -9.0, -5.9, 'gun')
+    box(m, 'laser_adapter_2', 1.2, 1.68, 7.98, 8.2, -9.0, -5.9, 'gun')
+    box(m, 'laser_adapter_2', 1.6, 1.72, 8.05, 9.15, -9.1, -8.75, 'red')
+    box(m, 'laser_adapter_2', 1.6, 1.72, 8.05, 9.15, -6.15, -5.8, 'red')
 
     # --- точки обвеса и вспышки
     m.bone('positioning2', (0, 0, 0), 'body')
     m.bone('scope_pos', (0, 11.2, 3.5), 'positioning2')
-    m.bone('muzzle_pos', (0, BORE, -20.75), 'positioning2')
+    # дуло: перед блоком стволов по оси канала; кость — в блоке стволов, глушитель вращается вместе с ним
+    m.bone('muzzle_pos', (0, BORE, -20.75), 'barrels')
     m.bone('muzzle_flash', (0, BORE, -21.6), 'positioning2')
     m.bone('laser_pos', (-1.55, 8.6, -7.5), 'positioning2', rotation=(0, 0, 90))
+    m.bone('laser2_pos', (1.55, 8.6, -7.5), 'positioning2', rotation=(0, 0, -90))      # второй ЛЦУ — справа
     m.bone('grip_pos', (0, 6.0, -7.0), 'positioning2')
     m.bone('stock_pos', (0, 8.7, 13.4), 'positioning2')
 
@@ -326,6 +348,8 @@ def build():
     m.bone('refit_scope_view', (-13.5, 12.7, 16.5), 'views', rotation=(0, -50, 0))
     m.bone('refit_stock_view', (-16.0, 9.0, 14.0), 'views', rotation=(0, -90, 0))
     m.bone('refit_laser_view', (-12.0, 12.0, -21.0), 'views', rotation=(-15, -135, 0))
+    m.bone('refit_laser2_view', (12.0, 12.0, -21.0), 'views', rotation=(-15, 135, 0))
+    m.bone('refit_muzzle_view', (-10.0, 9.6, -28.5), 'views', rotation=(0, -120, 0))
     m.bone('refit_grip_view', (-16.0, 5.0, -7.0), 'views', rotation=(0, -90, 0))
     m.bone('refit_extended_mag_view', (-19.0, 1.5, 2.0), 'views', rotation=(0, -90, 0))
     return m
@@ -367,12 +391,12 @@ def layout(cubes):
     raise RuntimeError('не помещается')
 
 
-def paint(cubes, size, pos, seed=7):
+def paint(cubes, size, pos, seed=7, mat=MAT):
     rnd = np.random.default_rng(seed)
     img = np.zeros((size, size, 4), np.float32)
     for (ci, f), (x, y, w, h) in pos.items():
         c = cubes[ci]
-        base = np.array(MAT[c['mat']], np.float32)
+        base = np.array(mat[c['mat']], np.float32)
         glow = c['mat'] in GLOW
         tile = np.tile(base, (h, w, 1))
         if glow:
@@ -394,7 +418,7 @@ def paint(cubes, size, pos, seed=7):
                     tile[h // 2:h // 2 + 1, :] *= 0.75
             elif pat in ('vents', 'vents_z'):
                 for xx in range(1, w, 3):
-                    tile[1:h - 1, xx:xx + 1] = np.array(MAT['navy_d']) * 0.8
+                    tile[1:h - 1, xx:xx + 1] = np.array(mat['navy_d']) * 0.8
             elif pat in ('rail_y', 'rail_z'):
                 for xx in range(0, w, 2):
                     tile[:, xx:xx + 1] *= 0.7
@@ -865,15 +889,18 @@ def main():
     cubes = [c for bn in m.order for c in m.bones[bn]['cubes']]
     size, pos = layout(cubes)
     tex = paint(cubes, size, pos)
+    tex_black = paint(cubes, size, pos, mat=MAT_BLACK)
     anims = animations(m)
 
     every = lambda bn: True
     write_model(m, os.path.join(OUT, 'models', NAME + '.bbmodel'), NAME, cubes, size, pos, tex, every, anims=anims,
                 extra={'hoka_view': {'model_fov': 60.0, 'zoom_model_fov': 45.0},
-                       'hoka_hidden': ['ar_stock_adapter', 'mag_extended_1', 'laser_adapter']})
+                       'hoka_hidden': ['ar_stock_adapter', 'mag_extended_1', 'laser_adapter', 'laser_adapter_2'],
+                       # окраски (1 — чёрный металл): та же раскладка, другая картинка (ViewModel.paints)
+                       'hoka_paint': [{'name': 'black_metal', 'textures': [png_b64(tex_black)]}]})
     # упрощённая (предмет hoitems): без рук, «глаз» и трубки AR; display — под точку рукояти (как у АКМ)
     lod_skip = {'righthand', 'righthand_pos', 'lefthand', 'lefthand_pos', 'camera', 'views', 'ar_stock_adapter',
-                'additional_magazine', 'mag_extended_1', 'cell_xl_illuminated', 'laser_adapter'}
+                'additional_magazine', 'mag_extended_1', 'cell_xl_illuminated', 'laser_adapter', 'laser_adapter_2'}
 
     def lod_keep(bn):
         return bn not in lod_skip and not (m.bones[bn]['parent'] == 'views')
@@ -912,21 +939,28 @@ def main():
     print(f'{NAME}: кубов {len(cubes)}, костей {len(m.order)}, текстура {size}×{size}, анимаций {len(anims)}')
 
     if len(sys.argv) > 1:
-        # превью: с удлинённой ячейкой и ЛЦУ laser_compact (модель TACZ) в laser_pos, с переходником laser_adapter
-        skip = lod_skip - {'mag_extended_1', 'cell_xl_illuminated', 'laser_adapter'} | {'mag_standard', 'cell_illuminated'}
-        faces = world_faces(m, cubes, pos, size, lambda bn: bn not in skip and m.bones[bn]['parent'] != 'views')
-        lz = os.path.join(OUT, '..', 'assets-tacz', 'models', 'att', 'laser_compact.bbmodel')
-        if os.path.isfile(lz):
-            faces += att_faces(lz, bone_world(m, 'laser_pos'))
-        side = raster(faces, tex, view_side_left(), 1600, 560, bg=(26, 28, 34, 255))
-        tq = raster(faces, tex, view_34(), 1600, 700, bg=(26, 28, 34, 255))
-        top = raster(faces, tex, view_34(-150, 12), 1600, 700, bg=(26, 28, 34, 255))
-        sheet = Image.new('RGBA', (1600, 560 + 700 + 700), (26, 28, 34, 255))
-        sheet.paste(side, (0, 0))
-        sheet.paste(tq, (0, 560))
-        sheet.paste(top, (0, 1260))
-        sheet.convert('RGB').save(sys.argv[1])
-        print('превью:', sys.argv[1])
+        # превью: с удлинённой ячейкой, двумя ЛЦУ laser_compact (модель TACZ) в laser_pos и laser2_pos (с
+        # переходниками) и глушителем Ursus в muzzle_pos; второй файл <имя>_black.png — в окраске «чёрный металл»
+        skip = lod_skip - {'mag_extended_1', 'cell_xl_illuminated', 'laser_adapter', 'laser_adapter_2'} \
+            | {'mag_standard', 'cell_illuminated'}
+        att = os.path.join(OUT, '..', 'assets-tacz', 'models', 'att')
+        mounts = [('laser_compact', 'laser_pos'), ('laser_compact', 'laser2_pos'), ('muzzle_silencer_ursus', 'muzzle_pos')]
+        base, ext = os.path.splitext(sys.argv[1])
+        for t, out in ((tex, sys.argv[1]), (tex_black, base + '_black' + (ext or '.png'))):
+            faces = world_faces(m, cubes, pos, size, lambda bn: bn not in skip and m.bones[bn]['parent'] != 'views')
+            for am, bone in mounts:
+                path = os.path.join(att, am + '.bbmodel')
+                if os.path.isfile(path):
+                    faces += att_faces(path, bone_world(m, bone))
+            side = raster(faces, t, view_side_left(), 1600, 560, bg=(26, 28, 34, 255))
+            tq = raster(faces, t, view_34(), 1600, 700, bg=(26, 28, 34, 255))
+            top = raster(faces, t, view_34(-150, 12), 1600, 700, bg=(26, 28, 34, 255))
+            sheet = Image.new('RGBA', (1600, 560 + 700 + 700), (26, 28, 34, 255))
+            sheet.paste(side, (0, 0))
+            sheet.paste(tq, (0, 560))
+            sheet.paste(top, (0, 1260))
+            sheet.convert('RGB').save(out)
+            print('превью:', out)
 
 
 if __name__ == '__main__':

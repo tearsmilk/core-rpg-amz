@@ -6,7 +6,9 @@
 #   plasma_rifle_put_away.ogg  — убирание: гул вниз;
 #   plasma_rifle_cell_out.ogg  — ячейка вынута: защёлка, шипение сброса, падающий писк;
 #   plasma_rifle_cell_in.ogg   — ячейка вставлена: удар, защёлка, короткий подъём тона;
-#   plasma_rifle_charge.ogg    — рукоять заряжания: скольжение, щелчок и нарастающий заряд.
+#   plasma_rifle_charge.ogg    — рукоять заряжания: скольжение, щелчок и нарастающий заряд;
+#   plasma_rifle_silence.ogg   — выстрел с глушителем у стрелка: приглушённый «пф-зип» без треска, тише;
+#   plasma_rifle_silence_3p.ogg — то же для остальных (моно, короткий хвост).
 # Случайность — с постоянным зерном: перегенерация даёт те же звуки. Запуск: python3 tools/plasma/gen_plasma_sounds.py
 import os, subprocess, sys, tempfile, wave
 
@@ -115,6 +117,30 @@ def shoot_3p():
     return norm(fade(x[:int(0.9 * SR)]), 0.85)
 
 
+def silenced(sec=0.4, var=0.0):
+    """Выстрел через глушитель: тот же разряд, но глухой (верха срезаны), без треска, с мягким хлопком газа."""
+    t = t_(sec)
+    zap, f = chirp(t, 1500 + var, 180, k=26)
+    body = 0.45 * zap * env(t, 0.003, 0.05)
+    puff = lowpass(noise(len(t)), 1200) * env(t, 0.002, 0.03) * 0.9
+    thump = np.sin(2 * np.pi * (80 * t - 50 * t * t)) * env(t, 0.004, 0.05) * 0.7
+    tick = 0.25 * click(t, 0.0, 1800, 0.003)                            # металл глушителя
+    return lowpass(body + puff + thump + tick, 2200)
+
+
+def silence_1p():
+    l = silenced(0.4, 0)
+    r = silenced(0.4, 90)
+    st = np.stack([norm(fade(l), 0.55), norm(fade(r), 0.55)], 1)
+    return st
+
+
+def silence_3p():
+    x = silenced(0.45, 40)
+    x = reverb(x, mix=0.25)
+    return norm(fade(x[:int(0.6 * SR)]), 0.5)
+
+
 def hum(sec, f0, f1, up=True):
     t = t_(sec)
     f = f0 + (f1 - f0) * (t / sec) ** (0.6 if up else 1.6)
@@ -194,6 +220,8 @@ def main():
     write_ogg('plasma_rifle_cell_out', cell_out())
     write_ogg('plasma_rifle_cell_in', cell_in())
     write_ogg('plasma_rifle_charge', charge())
+    write_ogg('plasma_rifle_silence', silence_1p())
+    write_ogg('plasma_rifle_silence_3p', silence_3p())
 
 
 if __name__ == '__main__':

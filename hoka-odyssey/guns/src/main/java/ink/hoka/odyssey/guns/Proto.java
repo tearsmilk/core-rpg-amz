@@ -30,9 +30,11 @@ import java.util.Map;
  *   <li>9 BUILTIN: u8 слот, UTF id — поставить встроенный обвес оружия (без предмета);</li>
  *   <li>10 ADAPTER: u8 слот (0 — прицел), UTF id планки («» — без неё);</li>
  *   <li>11 LASER: u8 слот ЛЦУ (4 — laser, 3 — рукоять с ЛЦУ), i32 цвет RGB;</li>
- *   <li>12 ZOOM: u8 номер кратности прицела.</li>
+ *   <li>12 ZOOM: u8 номер кратности прицела;</li>
+ *   <li>13 PAINT: u8 окраска оружия в руке (0 — стандарт, 1 — чёрный металл; только у оружия с attachments.paint).</li>
  * </ul>
- * Слоты обвеса (номер): 0 scope, 1 muzzle, 2 stock, 3 grip, 4 laser, 5 extended_mag ({@link Attachments.Slot}).
+ * Слоты обвеса (номер): 0 scope, 1 muzzle, 2 stock, 3 grip, 4 laser, 5 extended_mag, 6 laser2 — второй ЛЦУ справа
+ * ({@link Attachments.Slot}; старые клиенты слоты от 6 пропускают).
  * Сервер → клиент:
  * <ul>
  *   <li>1 CONFIG: u8 версия, u16 оружий, на каждое — см. {@link #config};</li>
@@ -58,9 +60,9 @@ import java.util.Map;
  *       вспышки, u8 флаги (1 — глушитель, 2 — взрыв, 4 — поджог), u8 пуль за выстрел, f32 перезарядка тактическая и
  *       с пустым (с), u8 уровень магазина, f32 урон (первая полоса), f32 её дальность, f32 скорость пули, f32 множитель
  *       в голову, f32 пробитие брони, u8 пронзание, f32 отбрасывание, f32 вес обвеса, u8 n и n × f32 кратностей
- *       прицела;</li>
+ *       прицела; хвост — u8 окраска (старые клиенты не читают);</li>
  *   <li>11 GEAR: i32 id игрока, UTF id оружия в руке («» — нет), UTF обвес «слот=id[:rrggbb]» через запятую
- *       (и «adapter=id») — тем, кто его видит, и ему самому (вид от третьего лица);</li>
+ *       (и «adapter=id», окраска не стандарт — «paint=n») — тем, кто его видит, и ему самому (вид от третьего лица);</li>
  *   <li>12 REFIT_RESULT: u8 код (0 — готово, 1 — нет места в инвентаре, 2 — не подходит, 3 — слот заперт,
  *       4 — мешает планка/прицел, 5 — нет предмета, 6 — занято (перезарядка), 7 — оружия нет в руке, 8 — слишком
  *       часто), UTF подсказка по-русски.</li>
@@ -96,6 +98,7 @@ final class Proto {
     static final int C_ADAPTER = 10;
     static final int C_LASER = 11;
     static final int C_ZOOM = 12;
+    static final int C_PAINT = 13;
 
     static final int S_CONFIG = 1;
     static final int S_STATE = 2;
@@ -175,7 +178,7 @@ final class Proto {
                 case C_RELOAD -> {
                     return new Msg(op, null, 0);
                 }
-                case C_FIREMODE, C_ADS, C_REFIT, C_ZOOM -> {
+                case C_FIREMODE, C_ADS, C_REFIT, C_ZOOM, C_PAINT -> {
                     return new Msg(op, null, in.readUnsignedByte());
                 }
                 case C_ATTACH -> {
@@ -496,6 +499,7 @@ final class Proto {
             for (int i = 0; i < Math.min(16, z.length); i++) {
                 o.writeFloat((float) z[i]);
             }
+            o.writeByte(lo == null ? 0 : lo.paint);                 // хвост: окраска
         });
     }
 

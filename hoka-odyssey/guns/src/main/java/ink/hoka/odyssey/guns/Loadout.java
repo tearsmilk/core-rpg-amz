@@ -19,6 +19,8 @@ import net.minestom.server.tag.Tag;
  *       возвращается);</li>
  *   <li>{@code hoka_att_adapter_scope} — повышающая планка в слоте прицела; {@code hoka_att_zoom} — выбранная
  *       кратность прицела (номер); {@code hoka_laser_<слот>} — свой цвет луча ЛЦУ (RGB);</li>
+ *   <li>{@code hoka_att_laser2} — второй ЛЦУ (справа; только у оружия со слотом laser2);</li>
+ *   <li>{@code hoka_paint} — окраска (0 / нет — стандарт, 1 — чёрный металл; только у оружия с attachments.paint);</li>
  *   <li>{@code hoka_att_init} — обвес по умолчанию уже поставлен (на новое оружие — один раз).</li>
  * </ul>
  * Неизменяемый: изменения — {@code with…}, запись в предмет — {@link #write}.
@@ -28,6 +30,9 @@ final class Loadout {
     static final Tag<String> ADAPTER = Tag.String("hoka_att_adapter_scope");
     static final Tag<Integer> ZOOM = Tag.Integer("hoka_att_zoom");
     static final Tag<Boolean> INIT = Tag.Boolean("hoka_att_init");
+    static final Tag<Integer> PAINT = Tag.Integer("hoka_paint");
+    /** Окраски: 0 — стандарт, 1 — чёрный металл. */
+    static final String[] PAINTS = {"Стандарт", "Чёрный металл"};
     /** Метка предмета-обвеса: id обвеса; и свой цвет луча на нём. */
     static final Tag<String> ITEM = Tag.String("hoka_att");
     static final Tag<Integer> ITEM_LASER = Tag.Integer("hoka_laser");
@@ -45,18 +50,25 @@ final class Loadout {
     /** Обвес в слоте: id, встроенный ли, свой цвет луча (−1 — по умолчанию). */
     record Entry(String id, boolean virtual, int laser) {}
 
-    static final Loadout EMPTY = new Loadout(new EnumMap<>(Attachments.Slot.class), "", 0, false);
+    static final Loadout EMPTY = new Loadout(new EnumMap<>(Attachments.Slot.class), "", 0, false, 0);
 
     private final EnumMap<Attachments.Slot, Entry> slots;
     final String adapter;
     final int zoom;
     final boolean init;
+    /** Окраска (номер в {@link #PAINTS}). */
+    final int paint;
 
-    private Loadout(EnumMap<Attachments.Slot, Entry> slots, String adapter, int zoom, boolean init) {
+    private Loadout(EnumMap<Attachments.Slot, Entry> slots, String adapter, int zoom, boolean init, int paint) {
         this.slots = slots;
         this.adapter = adapter == null ? "" : adapter;
         this.zoom = Math.max(0, zoom);
         this.init = init;
+        this.paint = Math.max(0, Math.min(PAINTS.length - 1, paint));
+    }
+
+    static String paintName(int paint) {
+        return PAINTS[Math.max(0, Math.min(PAINTS.length - 1, paint))];
     }
 
     Entry get(Attachments.Slot s) {
@@ -84,19 +96,23 @@ final class Loadout {
         } else {
             m.put(s, e);
         }
-        return new Loadout(m, adapter, s == Attachments.Slot.SCOPE ? 0 : zoom, init);
+        return new Loadout(m, adapter, s == Attachments.Slot.SCOPE ? 0 : zoom, init, paint);
     }
 
     Loadout withAdapter(String a) {
-        return new Loadout(new EnumMap<>(slots.isEmpty() ? new EnumMap<>(Attachments.Slot.class) : slots), a, zoom, init);
+        return new Loadout(new EnumMap<>(slots.isEmpty() ? new EnumMap<>(Attachments.Slot.class) : slots), a, zoom, init, paint);
     }
 
     Loadout withZoom(int z) {
-        return new Loadout(new EnumMap<>(slots.isEmpty() ? new EnumMap<>(Attachments.Slot.class) : slots), adapter, z, init);
+        return new Loadout(new EnumMap<>(slots.isEmpty() ? new EnumMap<>(Attachments.Slot.class) : slots), adapter, z, init, paint);
     }
 
     Loadout withInit() {
-        return new Loadout(new EnumMap<>(slots.isEmpty() ? new EnumMap<>(Attachments.Slot.class) : slots), adapter, zoom, true);
+        return new Loadout(new EnumMap<>(slots.isEmpty() ? new EnumMap<>(Attachments.Slot.class) : slots), adapter, zoom, true, paint);
+    }
+
+    Loadout withPaint(int p) {
+        return new Loadout(new EnumMap<>(slots.isEmpty() ? new EnumMap<>(Attachments.Slot.class) : slots), adapter, zoom, init, p);
     }
 
     /** Прочитать с предмета оружия. */
@@ -114,7 +130,8 @@ final class Loadout {
             }
         }
         Integer z = s.getTag(ZOOM);
-        return new Loadout(m, s.getTag(ADAPTER), z == null ? 0 : z, Boolean.TRUE.equals(s.getTag(INIT)));
+        Integer pt = s.getTag(PAINT);
+        return new Loadout(m, s.getTag(ADAPTER), z == null ? 0 : z, Boolean.TRUE.equals(s.getTag(INIT)), pt == null ? 0 : pt);
     }
 
     /** Записать в предмет оружия (лишние метки убрать). */
@@ -131,7 +148,8 @@ final class Loadout {
         return s.withTag(VIRTUAL, virt.isEmpty() ? null : String.join(",", virt))
                 .withTag(ADAPTER, adapter.isEmpty() ? null : adapter)
                 .withTag(ZOOM, zoom == 0 ? null : zoom)
-                .withTag(INIT, init ? Boolean.TRUE : null);
+                .withTag(INIT, init ? Boolean.TRUE : null)
+                .withTag(PAINT, paint == 0 ? null : paint);
     }
 
     /** Ключ для «изменилось ли» (и для рассылки GEAR). */
@@ -144,11 +162,11 @@ final class Loadout {
             }
             b.append(',');
         }
-        b.append("@").append(adapter).append('#').append(zoom);
+        b.append("@").append(adapter).append('#').append(zoom).append('~').append(paint);
         return b.toString();
     }
 
-    /** Для GEAR: «слот=id[:rrggbb]» через запятую, у планки — «adapter=id». */
+    /** Для GEAR: «слот=id[:rrggbb]» через запятую, у планки — «adapter=id», окраска — «paint=n» (не стандарт). */
     String gearCsv() {
         List<String> parts = new ArrayList<>();
         for (Map.Entry<Attachments.Slot, Entry> e : slots.entrySet()) {
@@ -160,6 +178,9 @@ final class Loadout {
         }
         if (!adapter.isEmpty()) {
             parts.add("adapter=" + adapter);
+        }
+        if (paint != 0) {
+            parts.add("paint=" + paint);
         }
         return String.join(",", parts);
     }

@@ -36,6 +36,8 @@ final class Proto {
     static final int C_LASER = 11;
     /** Кратность прицела: u8 номер. */
     static final int C_ZOOM = 12;
+    /** Окраска оружия в руке: u8 (0 — стандарт, 1 — чёрный металл). */
+    static final int C_PAINT = 13;
 
     static final int S_CONFIG = 1;
     static final int S_STATE = 2;
@@ -317,6 +319,7 @@ final class Proto {
             int k = in.readUnsignedByte();
             float[] zooms = new float[k];
             for (int i = 0; i < k; i++) zooms[i] = in.readFloat();
+            if (in.available() >= 1) g.paint = in.readUnsignedByte();      // хвост: окраска (старый сервер не шлёт)
             st = new Stats(fin(aim, 0.2f), fin(s1, 0), fin(s2, 0), fin(s3, 0), fin(s4, 0), fin(rp, 1), fin(ry, 1),
                     fin(zoom, 1), Math.max(1, mag), fin(rpm, 600), fin(flash, 1), (flags & 1) != 0, (flags & 2) != 0,
                     (flags & 4) != 0, pellets, fin(rt, 2), fin(re, 2), xm, fin(dmg, 0), fin(dist, 0), fin(speed, 0),
@@ -362,6 +365,10 @@ final class Proto {
 
     static byte[] zoom(int level) {
         return new byte[] {C_ZOOM, (byte) Math.max(0, Math.min(255, level))};
+    }
+
+    static byte[] paint(int finish) {
+        return new byte[] {C_PAINT, (byte) Math.max(0, Math.min(255, finish))};
     }
 
     static byte[] builtin(int slot, String id) {

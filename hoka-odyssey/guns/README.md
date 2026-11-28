@@ -47,8 +47,10 @@
    не трогаются; существующие записи не меняются):
    - **`module/guns/config.yml`** — оружие из config.yml в jar, которого там ещё нет (сервер, где config.yml создан
      прошлой версией с одним АКМ, получает `guns.ai_awp`, `guns.glock_17`, `guns.m4a1`, `guns.m16a1`, `guns.deagle`,
-     `guns.m1897`, `guns.plasma_rifle`); у уже стоящей `guns.plasma_rifle` без слота `extended_mag` (прошлая версия)
-     блок `attachments` заменяется новым из jar (удлинённая ячейка; остальная запись не трогается); после этого
+     `guns.m1897`, `guns.plasma_rifle`); у уже стоящей `guns.plasma_rifle`, где в `attachments.slots` нет хоть одного из
+     `extended_mag`, `muzzle`, `laser2` (прошлые версии), блок `attachments` заменяется новым из jar (удлинённая
+     ячейка, дуло, второй ЛЦУ, окраска `paint: true`; остальная запись не трогается), а без звука `silence` — так же
+     блок `sounds` (выстрел с глушителем); после этого
      модуль сам перечитывает config.yml и рассылает моду новые файлы и настройки (без `homodule reload guns`);
    - **`module/hoitems/assets/tacz/`** — `ak47_lod.bbmodel`, `ak47_slot.png`, `762x39.png`, `ai_awp_lod.bbmodel`,
      `338.png`, `glock_17_lod.bbmodel`, `glock_17_slot.png`, `9mm.png`, `m4a1_lod.bbmodel`, `m4a1_slot.png`,
@@ -63,7 +65,7 @@
    - **`module/hosounds/assets/tacz/`** — 127 файлов `.ogg` и `NOTICE.md`; в **`module/hosounds/config.yml`** → 127
      звуков (`ak47_*`, `awp_*` — выстрел, выстрел с глушителем, доставание, затвор, перезарядка; `glock17_*`,
      `m4a1_*`, `m16a1_*`, `deagle_*`, `m1897_*` (помпа, патрон по одному), `gun_dry_fire`,
-     `gun_fire_select`, `gun_flesh_hit`, `gun_head_hit`, `gun_kill`); звуки ПВ-7 (7 файлов `plasma_rifle_*.ogg`) — в
+     `gun_fire_select`, `gun_flesh_hit`, `gun_head_hit`, `gun_kill`); звуки ПВ-7 (9 файлов `plasma_rifle_*.ogg`, с глушителем — `plasma_rifle_silence`, `_silence_3p`) — в
      **`module/hosounds/assets/hoka/`**, записи `plasma_rifle_*` с `files: [hoka/…]`;
    - затем сам выполняет `hoitem reload` и `hosound reload`. Не вышло дописать (YAML в одну строку и т.п.) — печатает
      YAML для ручной вставки (и пишет его в лог).
@@ -147,8 +149,16 @@
   есть, функции Lua FMJ/HE — нашими операциями `op`). Что подходит оружию — `guns.<id>.attachments` в config.yml
   (`slots`, `allow` со списком TACZ, `builtin`, `default`, `locked` — у AWP прицел, `extended-mag`, `reload-xmag`);
   `guns.<id>.explosion` — взрыв с фугасными патронами.
-- Обвес хранится на предмете оружия (метки `hoka_att_scope|muzzle|stock|grip|laser|mag`, `hoka_att_virtual`,
+- Обвес хранится на предмете оружия (метки `hoka_att_scope|muzzle|stock|grip|laser|mag|laser2`, `hoka_att_virtual`,
   `hoka_att_adapter_scope`, `hoka_att_zoom`, `hoka_laser_<слот>`, `hoka_att_init`), в описании — «Обвес: …».
+  Слот `laser2` — второй ЛЦУ (справа; в окне обвеса «ЛЦУ (право)», первый тогда — «ЛЦУ (лево)»): есть только у
+  оружия, которое его объявило в `attachments.slots` (сейчас ПВ-7), принимает те же ЛЦУ, что `laser`; модификаторы
+  обоих складываются. Кость модели — `laser2_pos`, камера окна — `refit_laser2_view`, переходник пистолетного ЛЦУ —
+  кость `<display.adapter>_2` (`laser_adapter_2`).
+- Окраска: у оружия с `attachments.paint: true` (сейчас только ПВ-7 — у неё в модели своя текстура «чёрный металл»,
+  поле `hoka_paint`; модели TACZ и обвесы не перекрашиваются) в окне обвеса кнопка «Покрасить» — «Стандарт» /
+  «Чёрный металл». Ставит сервер (оружие в руке, не перезарядка), хранится меткой `hoka_paint` (1 — чёрный металл),
+  в описании — «Окраска: …»; другим игрокам уходит в `GEAR` (`paint=1`).
   Предмет-обвес — hoitems `att_<id>` (метка `hoka_att`), без hoitems — бумага с названием.
 - Характеристики с обвесом ([`AttachmentMath`](src/main/java/ink/hoka/odyssey/guns/AttachmentMath.java), как TACZ:
   (база + add) × (1 + percent) × mul, потом op): время прицеливания, разброс (от бедра, присев, в прицеле), отдача,
@@ -163,7 +173,8 @@
   магазин стал меньше — лишние патроны в инвентарь. Пока экран открыт, стрелять и целиться нельзя.
 - Протокол обвеса — в [Proto.java](src/main/java/ink/hoka/odyssey/guns/Proto.java): клиент → сервер `REFIT` (6),
   `ATTACH` (7), `DETACH` (8), `BUILTIN` (9), `ADAPTER` (10), `LASER` (11), `ZOOM` (12); сервер → клиент `LOADOUT` (10,
-  обвес своего оружия и его характеристики), `GEAR` (11, обвес оружия в руке — тем, кто видит), `REFIT_RESULT` (12).
+  обвес своего оружия и его характеристики), `GEAR` (11, обвес оружия в руке — тем, кто видит), `REFIT_RESULT` (12); окраска — клиент → сервер `PAINT` (13), в
+  хвосте `LOADOUT` — u8 окраска.
   Каталог и обвес каждого оружия — файлом `guns/attachments.json` (clientmods), модели обвесов — `guns/att/<id>.bbmodel`
   (упрощённые — `<id>_lod.bbmodel`), иконки — `guns/att/<иконка>.png`.
 
@@ -194,15 +205,22 @@ ffmpeg с libvorbis).
   `reload_tactical_xmag` / `reload_empty_xmag` медленнее в 1,12 раза (с удлинённой ячейкой), `inspect`;
   упрощённая модель для hoitems, силуэт HUD, иконки винтовки, ячейки, удлинённой ячейки и приклада, голубая вспышка. Координаты — как у
   `ak47.bbmodel`, поэтому в руках лежит так же. Кости: `sight` (механический прицел — прячется под оптикой),
-  `scope_pos`, `laser_pos` (левая планка цевья), `grip_pos`, `stock_pos`, `refit_*_view`, `magazine` (внутри —
+  `scope_pos`, `muzzle_pos` (перед блоком стволов, по оси канала; в кости `barrels` — глушитель крутится вместе с
+  блоком), `laser_pos` / `laser2_pos` (левая / правая планка цевья), `grip_pos`, `stock_pos`, `refit_*_view` (и
+  `refit_muzzle_view`, `refit_laser2_view`), `magazine` (внутри —
   `mag_standard` и удлинённая `mag_extended_1`, ×1,75, видна только с удлинённой ячейкой) / `additional_magazine`,
   `*_illuminated` (светятся), `plasma_wire_stock` (встроенный приклад), `ar_stock_adapter` (трубка для прикладов AR),
-  `laser_adapter` (прижимные планки — только с ЛЦУ, у которых `display.adapter: laser_adapter`, например
-  `laser_compact`).
+  `laser_adapter` / `laser_adapter_2` (прижимные планки слева / справа — только с ЛЦУ, у которых
+  `display.adapter: laser_adapter`, например `laser_compact`). Вторая текстура — окраска «чёрный металл» (воронёная
+  сталь и графит вместо синего и красного, свечение остаётся голубым) — в поле `hoka_paint` модели. Превью пишется
+  вдвоём: `превью.png` и `превью_black.png` (два ЛЦУ `laser_compact` и глушитель Ursus).
 - `gen_plasma_sounds.py` — звуки синтезом (numpy) → `.ogg` через ffmpeg (libvorbis): выстрел (стерео у стрелка и
-  моно из точки), доставание, убирание, ячейка вынута / вставлена, заряд. Звуки в анимации — `hoka:<id>`.
-- Обвес: слоты `scope`, `stock`, `laser`, `grip`, `extended_mag` — прицелы, рукояти, приклады AR и ЛЦУ (`#ar_laser` и
-  пистолетные `#pistol_laser`, например «Компактный ЛЦУ Militech» `laser_compact`) те же, что у M4A1; встроенный
+  моно из точки), выстрел с глушителем (глухой, без треска, тише), доставание, убирание, ячейка вынута / вставлена,
+  заряд. Звуки в анимации — `hoka:<id>`.
+- Обвес: слоты `scope`, `muzzle`, `stock`, `laser`, `laser2`, `grip`, `extended_mag` — прицелы, рукояти, приклады AR и
+  ЛЦУ (`#ar_laser` и пистолетные `#pistol_laser`, например «Компактный ЛЦУ Militech» `laser_compact`) те же, что у
+  M4A1; два ЛЦУ — слева и справа; дуло — глушители, ДТК и компенсаторы TACZ (`#muzzle`; с глушителем — звук
+  `plasma_rifle_silence` и без вспышки у других); окраска `paint: true` (стандарт / чёрный металл); встроенный
   приклад `plasma_wire_stock`; в слот магазина — только своя «Удлинённая плазменная ячейка» `plasma_cell_extended`
   (72 выстрела вместо 36, `extended-mag: [72, 72, 72]`, перезарядка `reload-xmag` 2,13 / 2,63 с; выдать —
   `hogun attach give plasma_cell_extended`). Обе записи — в `attachments.yml` в конце файла (свои, не TACZ).

@@ -24,14 +24,21 @@ import java.util.Map;
 /**
  * Окно обвеса (Y, как Z у TACZ): с оружием в руке. Мир идёт дальше (не пауза), оружие в руке плавно поворачивается к
  * «камере» refit_view, а у выбранного слота — к refit_&lt;слот&gt;_view (их двигает модуль, см. {@code refitLook}).
- * Справа вверху — слоты (справа налево: прицел, дуло, приклад, рукоять, ЛЦУ, магазин); под выбранным — «СНЯТЬ» и
+ * Справа вверху — слоты (справа налево: прицел, дуло, приклад, рукоять, ЛЦУ, [второй ЛЦУ — только у оружия с ним],
+ * магазин); под выбранным — «СНЯТЬ» и
  * список подходящих обвесов (встроенные и из инвентаря, по 8 на страницу); наведённый показывается на оружии и в
  * характеристиках (слева вверху: что изменится — зелёным/красным). У прицела — планки, у ЛЦУ — цвет луча. Ставит и
  * снимает сервер (он же всё проверяет), ответ — строкой внизу. Стиль — как радар starmap и HUD оружия: тёмное стекло,
- * зелёный люминофор, моноширинный шрифт.
+ * зелёный люминофор, моноширинный шрифт. Характеристики по умолчанию скрыты (выбор помнится, пока игра запущена); у
+ * оружия со своей окраской (attachments.paint) — кнопка «Покрасить» (стандарт / чёрный металл). Руки в окне не видны.
  */
 final class RefitScreen extends Screen {
     private static final int[] ORDER = {Att.SCOPE, Att.MUZZLE, Att.STOCK, Att.GRIP, Att.LASER, Att.MAG};
+    /** То же у оружия со вторым ЛЦУ (справа от первого). */
+    private static final int[] ORDER2 = {Att.SCOPE, Att.MUZZLE, Att.STOCK, Att.GRIP, Att.LASER, Att.LASER2, Att.MAG};
+    private static final String[] PAINTS = {"Стандарт", "Чёрный металл"};
+    /** Показывать ли характеристики (по умолчанию нет; выбор помнится, пока игра запущена). */
+    private static boolean statsShown;
     private static final int PAGE = 8;
 
     private final GunsClientModule mod;
@@ -39,7 +46,7 @@ final class RefitScreen extends Screen {
     private long openedAt;
     private int selected = -1;
     private int page;
-    private boolean showStats = true;
+    private boolean showStats = statsShown;
     private String msg = "";
     private int msgCode;
     private long msgNs;
@@ -74,8 +81,11 @@ final class RefitScreen extends Screen {
         }
     }
 
-    /** Строка списка: обвес из инвентаря (invSlot — слот, count — сколько всего) или встроенный (invSlot −1). */
-    private record Entry(Att.Def def, int invSlot, int count, boolean builtin, boolean installed) {}
+    /**
+     * Строка списка: обвес из инвентаря (invSlot — слот, count — сколько всего) или встроенный (invSlot −1); slot — в
+     * какой слот оружия (второй ЛЦУ принимает те же ЛЦУ).
+     */
+    private record Entry(Att.Def def, int invSlot, int count, boolean builtin, boolean installed, int slot) {}
 
     RefitScreen(GunsClientModule mod) {
         super(Component.literal("Обвес"));
@@ -139,7 +149,7 @@ final class RefitScreen extends Screen {
         List<Entry> out = new ArrayList<>();
         for (String id : ga.builtin().getOrDefault(slot, List.of())) {
             Att.Def d = cat.def(id);
-            if (d != null) out.add(new Entry(d, -1, 1, true, id.equals(gear.ids[slot])));
+            if (d != null) out.add(new Entry(d, -1, 1, true, id.equals(gear.ids[slot]), slot));
         }
         Map<String, int[]> inv = new LinkedHashMap<>();
         if (mc.player != null) {
@@ -149,14 +159,16 @@ final class RefitScreen extends Screen {
                 String id = attId(st);
                 if (id == null) continue;
                 Att.Def d = cat.def(id);
-                if (d == null || d.slot() != slot || !cat.allowed(gunId(), d, gear.adapter)) continue;
+                if (d == null || !Att.accepts(slot, d.slot()) || !cat.allowed(gunId(), d, gear.adapter, slot)) continue;
                 int[] e = inv.computeIfAbsent(id, k -> new int[] {-1, 0});
                 if (e[0] < 0) e[0] = i;
                 e[1] += st.getCount();
             }
         }
         List<Entry> items = new ArrayList<>();
-        for (var e : inv.entrySet()) items.add(new Entry(cat.def(e.getKey()), e.getValue()[0], e.getValue()[1], false, false));
+        for (var e : inv.entrySet()) {
+            items.add(new Entry(cat.def(e.getKey()), e.getValue()[0], e.getValue()[1], false, false, slot));
+        }
         items.sort(Comparator.comparingInt((Entry e) -> e.def().sort()).thenComparing(e -> e.def().name()));
         out.addAll(items);
         return out;
@@ -180,7 +192,7 @@ final class RefitScreen extends Screen {
     private void select(int slot) {
         Att.GunAtt ga = mod.cat.gun(gunId());
         if (!ga.has(slot)) {
-            say(Att.SLOT_RU[slot] + ": у этого оружия такого слота нет", false);
+            say(Att.slotName(ga, slot) + ": у этого оружия такого слота нет", false);
             return;
         }
         if (ga.locked().contains(slot)) {
@@ -199,7 +211,7 @@ final class RefitScreen extends Screen {
         if (slot == Att.SCOPE && s != null) {
             return "Прицел " + GunsClientModule.fmt(s.zoom()) + "x — часть винтовки, не снимается";
         }
-        return Att.SLOT_RU[slot] + ": слот заперт";
+        return Att.slotName(mod.cat.gun(gunId()), slot) + ": слот заперт";
     }
 
     private void detach(int slot) {
@@ -216,10 +228,23 @@ final class RefitScreen extends Screen {
 
     private void install(Entry e) {
         if (e.installed()) return;
-        int slot = e.def().slot();
+        int slot = e.slot();
         mod.expectSound(e.def().soundInstall());
         if (e.builtin()) mod.send(Proto.builtin(slot, e.def().id()));
         else mod.send(Proto.attach(slot, e.invSlot()));
+    }
+
+    /** Окраска по кругу (стандарт → чёрный металл → стандарт); ставит сервер. */
+    private void repaint() {
+        Att.Gear gr = mod.ownGear();
+        int cur = gr == null ? 0 : gr.paint;
+        int next = (cur + 1) % PAINTS.length;
+        mod.expectSound("gun_att_attachment_general_a");
+        mod.send(Proto.paint(next));
+    }
+
+    private int[] order() {
+        return mod.cat.gun(gunId()).has(Att.LASER2) ? ORDER2 : ORDER;
     }
 
     private void riser(String id) {
@@ -269,6 +294,7 @@ final class RefitScreen extends Screen {
             slots(g, font, mx, my, ap);
             if (showStats) stats(g, font, ap);
             statsToggle(g, font, mx, my);
+            paintButton(g, font, mx, my);
             laser(g, font, ap);
             footer(g, font);
             // наведённый обвес — на оружии (только у себя) и в характеристиках
@@ -278,7 +304,7 @@ final class RefitScreen extends Screen {
             Att.Gear pv = null;
             if (hoverEntry != null && !hoverEntry.installed()) {
                 pv = gear().copy();
-                int s = hoverEntry.def().slot();
+                int s = hoverEntry.slot();
                 pv.ids[s] = hoverEntry.def().id();
                 pv.builtin[s] = hoverEntry.builtin();
                 pv.laser[s] = -1;
@@ -337,8 +363,9 @@ final class RefitScreen extends Screen {
         String title = "ОБВЕС · " + mod.heldBase().name().toUpperCase();
         font.draw(g, title, right - font.width(title, fs), margin, fs, GunHud.a(GunHud.LABEL, ap));
         int selX = -1;
-        for (int i = 0; i < ORDER.length; i++) {
-            int s = ORDER[i];
+        int[] order = order();
+        for (int i = 0; i < order.length; i++) {
+            int s = order[i];
             int x = right - (i + 1) * cell - i * gap, y = top;
             boolean has = ga.has(s), locked = ga.locked().contains(s);
             boolean hover = mx >= x && mx < x + cell && my >= y && my < y + cell;
@@ -354,7 +381,7 @@ final class RefitScreen extends Screen {
             if (d != null) {
                 icon(g, d, x + pad, y + pad, cell - 2 * pad, GunHud.a(0xFFFFFFFF, ap));
             } else {
-                String lbl = Att.SLOT_RU[s].toUpperCase();
+                String lbl = Att.slotName(ga, s).toUpperCase();
                 int sfs = fs;
                 while (sfs > 8 && font.width(lbl, sfs) > cell - 6) sfs--;
                 font.draw(g, lbl, x + (cell - font.width(lbl, sfs)) / 2, y + (cell - font.lineHeight(sfs)) / 2, sfs,
@@ -373,8 +400,8 @@ final class RefitScreen extends Screen {
             final int slot = s;
             buttons.add(new Btn(x, y, cell, cell, () -> select(slot), () -> detach(slot), null));
             if (hover) {
-                String tip = locked ? lockedText(s) : has ? Att.SLOT_RU[s] + (d != null ? ": " + d.name() : ": пусто")
-                        : Att.SLOT_RU[s] + ": нет слота";
+                String tip = locked ? lockedText(s) : has ? Att.slotName(ga, s) + (d != null ? ": " + d.name() : ": пусто")
+                        : Att.slotName(ga, s) + ": нет слота";
                 int tw = Math.min(font.width(tip, fs), fbW / 2);
                 tip = fit(font, tip, fs, tw);
                 int ty = y + cell + Math.round(4 * u);
@@ -431,7 +458,7 @@ final class RefitScreen extends Screen {
             }
             final Entry fe = e;
             buttons.add(new Btn(lx, ly, listW, rowH, () -> install(fe), () -> {
-                if (fe.installed()) detach(fe.def().slot());
+                if (fe.installed()) detach(fe.slot());
             }, e));
             ly += rowH;
         }
@@ -499,7 +526,31 @@ final class RefitScreen extends Screen {
         panel(g, x, y, w, h, 1);
         if (hover) g.fill(x + 2, y + 2, x + w - 2, y + h - 2, 0xC00B2A1E);
         font.draw(g, t, x + 8, y + 5, fs, GunHud.LABEL);
-        buttons.add(new Btn(x, y, w, h, () -> showStats = !showStats, null, null));
+        buttons.add(new Btn(x, y, w, h, () -> {
+            showStats = !showStats;
+            statsShown = showStats;
+        }, null, null));
+    }
+
+    /** «Покрасить: …» справа от кнопки характеристик — только у оружия со своей окраской (attachments.paint). */
+    private void paintButton(GuiGraphics g, MonoFont font, double mx, double my) {
+        if (!mod.cat.gun(gunId()).paint()) return;
+        int fs = Math.max(11, Math.round(14 * u));
+        int margin = Math.round(28 * u);
+        String st = showStats ? "Скрыть характеристики" : "Показать характеристики";
+        int x = margin + font.width(st, fs) + 16 + Math.round(10 * u), y = margin;
+        Att.Gear gr = mod.ownGear();
+        int cur = gr == null ? 0 : Math.max(0, Math.min(PAINTS.length - 1, gr.paint));
+        String t = "Покрасить: " + PAINTS[cur];
+        int h = font.lineHeight(fs) + 10, sw = h - 10;
+        int w = font.width(t, fs) + 24 + sw;
+        boolean hover = mx >= x && mx < x + w && my >= y && my < y + h;
+        panel(g, x, y, w, h, 1);
+        if (hover) g.fill(x + 2, y + 2, x + w - 2, y + h - 2, 0xC00B2A1E);
+        // образец: стандарт — синий корпус, чёрный металл — графит
+        g.fill(x + w - 8 - sw, y + 5, x + w - 8, y + 5 + sw, cur == 1 ? 0xFF1A1C22 : 0xFF22305C);
+        font.draw(g, t, x + 8, y + 5, fs, GunHud.LABEL);
+        buttons.add(new Btn(x, y, w, h, this::repaint, this::repaint, null));
     }
 
     private void stats(GuiGraphics g, MonoFont font, float ap) {
@@ -619,7 +670,7 @@ final class RefitScreen extends Screen {
     private void laser(GuiGraphics g, MonoFont font, float ap) {
         hueBar = null;
         satBar = null;
-        if (selected != Att.LASER && selected != Att.GRIP) return;
+        if (selected != Att.LASER && selected != Att.LASER2 && selected != Att.GRIP) return;
         Att.Gear gear = gear();
         Att.Def d = mod.cat.def(gear.ids[selected]);
         if (d == null || d.laser() == null || !d.laser().editable()) return;
@@ -791,8 +842,9 @@ final class RefitScreen extends Screen {
             onClose();
             return true;
         }
-        if (key >= GLFW.GLFW_KEY_1 && key <= GLFW.GLFW_KEY_6) {      // 1…6 — слоты по порядку (как кнопки справа налево)
-            select(ORDER[key - GLFW.GLFW_KEY_1]);
+        int[] order = order();
+        if (key >= GLFW.GLFW_KEY_1 && key < GLFW.GLFW_KEY_1 + order.length) {   // 1…6 (7) — слоты по порядку справа налево
+            select(order[key - GLFW.GLFW_KEY_1]);
             return true;
         }
         return super.keyPressed(e);

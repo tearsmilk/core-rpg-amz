@@ -57,6 +57,7 @@ final class Refit {
                 case Proto.C_ADAPTER -> adapter(p, slot, m.str());
                 case Proto.C_LASER -> laser(p, slot, m.arg());
                 case Proto.C_ZOOM -> zoom(p, m.mode());
+                case Proto.C_PAINT -> paint(p, m.mode());
                 default -> new Outcome(Proto.REFIT_NOT_ALLOWED, "");
             };
         }
@@ -113,11 +114,11 @@ final class Refit {
         if (d == null) {
             return new Outcome(Proto.REFIT_NO_ITEM, "Нет такого обвеса в инвентаре");
         }
-        if (d.slot() != slot || d.builtin()) {
+        if (!slot.accepts(d.slot()) || d.builtin()) {
             return new Outcome(Proto.REFIT_NOT_ALLOWED, d.name() + " — не " + Attachments.slotRu(slot));
         }
         Loadout lo = st.loadout;
-        if (!cat.allowed(ga, d, lo.adapter)) {
+        if (!cat.allowed(ga, d, lo.adapter, slot)) {
             return new Outcome(Proto.REFIT_NOT_ALLOWED, d.name() + " не подходит к " + st.base.name());
         }
         Loadout.Entry old = lo.get(slot);
@@ -185,7 +186,7 @@ final class Refit {
             return bad;
         }
         Attachments.Def d = mod.catalog().get(id);
-        if (d == null || !d.builtin() || d.slot() != slot || !ga.builtinIn(slot, id)) {
+        if (d == null || !d.builtin() || !slot.accepts(d.slot()) || !ga.builtinIn(slot, id)) {
             return new Outcome(Proto.REFIT_NOT_ALLOWED, "Такого встроенного обвеса у " + st.base.name() + " нет");
         }
         Loadout lo = st.loadout;
@@ -225,7 +226,7 @@ final class Refit {
         }
         Loadout lo = st.loadout;
         Loadout.Entry cur = lo.get(slot);
-        if (cur != null && !cat.allowed(ga, cat.get(cur.id()), to)) {
+        if (cur != null && !cat.allowed(ga, cat.get(cur.id()), to, slot)) {
             return new Outcome(Proto.REFIT_ADAPTER, "Снимите прицел, чтобы сменить планку");
         }
         mod.setLoadout(p, st, lo.withAdapter(to));
@@ -266,6 +267,29 @@ final class Refit {
         return new Outcome(Proto.REFIT_OK, "Кратность " + fmt(d.zoomAt(st.loadout.zoom)) + "x");
     }
 
+    /**
+     * Окраска оружия в руке (номер {@link Loadout#PAINTS}): только у оружия с attachments.paint (своя текстура
+     * «чёрный металл» в модели), в руке и не во время перезарядки.
+     */
+    Outcome paint(Player p, int finish) {
+        ShooterState st = mod.state(p);
+        Outcome bad = held(p, st);
+        if (bad != null) {
+            return bad;
+        }
+        if (!mod.gunAtt(st.base.id()).paint()) {
+            return new Outcome(Proto.REFIT_NOT_ALLOWED, st.base.name() + " не красится");
+        }
+        if (finish < 0 || finish >= Loadout.PAINTS.length) {
+            return new Outcome(Proto.REFIT_NOT_ALLOWED, "Нет такой окраски");
+        }
+        if (st.loadout.paint != finish) {
+            mod.setLoadout(p, st, st.loadout.withPaint(finish));
+            sound(p, "gun_att_attachment_general_a");
+        }
+        return new Outcome(Proto.REFIT_OK, "Окраска: " + Loadout.paintName(finish));
+    }
+
     // ---------------------------------------------------------------- для /hogun attach
 
     /** Поставить обвес id в слот его вида без предмета (оператор): проверки совместимости — те же. */
@@ -287,11 +311,16 @@ final class Refit {
         if (!cat.allowed(ga, d, st.loadout.adapter)) {
             return new Outcome(Proto.REFIT_NOT_ALLOWED, d.name() + " не подходит к " + st.base.name());
         }
-        Loadout.Entry old = st.loadout.get(d.slot());
+        Attachments.Slot to = d.slot();                   // первый ЛЦУ занят, второй свободен — во второй
+        if (to == Attachments.Slot.LASER && st.loadout.get(to) != null && ga.has(Attachments.Slot.LASER2)
+                && st.loadout.get(Attachments.Slot.LASER2) == null) {
+            to = Attachments.Slot.LASER2;
+        }
+        Loadout.Entry old = st.loadout.get(to);
         if (old != null && !old.virtual()) {
             mod.giveOrDrop(p, oldItem(old));
         }
-        mod.setLoadout(p, st, st.loadout.with(d.slot(), new Loadout.Entry(d.id(), d.builtin(), -1)));
+        mod.setLoadout(p, st, st.loadout.with(to, new Loadout.Entry(d.id(), d.builtin(), -1)));
         return Outcome.OK;
     }
 
@@ -308,7 +337,7 @@ final class Refit {
                 mod.giveOrDrop(p, oldItem(e.getValue()));
             }
         }
-        Loadout empty = Loadout.EMPTY.withInit();
+        Loadout empty = Loadout.EMPTY.withInit().withPaint(lo.paint);
         mod.setLoadout(p, st, empty);
         return Outcome.OK;
     }

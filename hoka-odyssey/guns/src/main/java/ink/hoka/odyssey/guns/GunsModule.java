@@ -342,7 +342,7 @@ public final class GunsModule extends OdysseyModule {
                     startReload(p, state(p));
                 }
                 case Proto.C_REFIT, Proto.C_ATTACH, Proto.C_DETACH, Proto.C_BUILTIN, Proto.C_ADAPTER, Proto.C_LASER,
-                     Proto.C_ZOOM -> refit.handle(p, m);
+                     Proto.C_ZOOM, Proto.C_PAINT -> refit.handle(p, m);
                 case Proto.C_ADS -> {
                     syncHeld(p);
                     ShooterState st = state(p);
@@ -444,7 +444,7 @@ public final class GunsModule extends OdysseyModule {
     /**
      * guns/attachments.json: {version, tags, adapters, attachments — как в attachments.yml; guns — у каждого оружия
      * slots, allow (метки раскрыты, без планок), adapters (разрешённые планки), builtin, default, locked,
-     * extended-mag, reload-xmag, base-magazine}.
+     * extended-mag, reload-xmag, base-magazine, armor-ignore, paint (есть окраска «чёрный металл»)}.
      */
     String attachmentsJson() {
         Map<String, Object> root = new LinkedHashMap<>();
@@ -477,6 +477,7 @@ public final class GunsModule extends OdysseyModule {
             }
             m.put("base-magazine", g.magazine());
             m.put("armor-ignore", ga.armorIgnore());
+            m.put("paint", ga.paint());
             gs.put(g.id(), m);
         }
         root.put("guns", gs);

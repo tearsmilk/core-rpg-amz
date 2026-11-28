@@ -24,14 +24,18 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  */
 final class Attachments {
 
-    /** Слоты обвеса (порядок — номер слота в протоколе). */
+    /**
+     * Слоты обвеса (порядок — номер слота в протоколе). LASER2 — второй ЛЦУ справа (только у оружия, что его объявило,
+     * сейчас plasma_rifle): принимает те же ЛЦУ, что LASER; в конце, чтобы номера прежних слотов не сдвинулись.
+     */
     enum Slot {
         SCOPE("scope", "hoka_att_scope", "Прицел"),
         MUZZLE("muzzle", "hoka_att_muzzle", "Дуло"),
         STOCK("stock", "hoka_att_stock", "Приклад"),
         GRIP("grip", "hoka_att_grip", "Рукоять"),
         LASER("laser", "hoka_att_laser", "ЛЦУ"),
-        MAG("extended_mag", "hoka_att_mag", "Магазин");
+        MAG("extended_mag", "hoka_att_mag", "Магазин"),
+        LASER2("laser2", "hoka_att_laser2", "ЛЦУ (право)");
 
         final String key;
         final String tag;
@@ -57,6 +61,16 @@ final class Attachments {
 
         static Slot of(int index) {
             return index >= 0 && index < values().length ? values()[index] : null;
+        }
+
+        /** Встаёт ли в этот слот обвес вида kind (во второй ЛЦУ — те же ЛЦУ, что в первый). */
+        boolean accepts(Slot kind) {
+            return this == kind || this == LASER2 && kind == LASER;
+        }
+
+        /** Название слота по-русски у оружия ga (с двумя ЛЦУ первый — «ЛЦУ (лево)»). */
+        String ru(GunAtt ga) {
+            return this == LASER && ga != null && ga.has(LASER2) ? "ЛЦУ (лево)" : ru;
         }
     }
 
@@ -114,10 +128,11 @@ final class Attachments {
     /** Обвес одного оружия: слоты, что разрешено (метки раскрыты), встроенные, по умолчанию, запертые слоты и т.п. */
     record GunAtt(List<Slot> slots, Set<String> allow, Set<String> adapters, Map<Slot, List<String>> builtin,
                   Map<Slot, String> defaults, Set<Slot> locked, int[] extendedMag, GunDef.Reload xmagTactical,
-                  GunDef.Reload xmagEmpty, Explosion explosion, double armorIgnore, List<String> allowRaw) {
+                  GunDef.Reload xmagEmpty, Explosion explosion, double armorIgnore, List<String> allowRaw,
+                  boolean paint) {
 
         static final GunAtt NONE = new GunAtt(List.of(), Set.of(), Set.of(), Map.of(), Map.of(), Set.of(), new int[0],
-                null, null, null, 0, List.of());
+                null, null, null, 0, List.of(), false);
 
         boolean has(Slot s) {
             return slots.contains(s);
@@ -304,7 +319,7 @@ final class Attachments {
         double armor = Math.max(0, c.dbl("guns." + id + ".armor-ignore", 0));
         if (!(sec instanceof Map<?, ?>)) {
             return new GunAtt(List.of(), Set.of(), Set.of(), Map.of(), Map.of(), Set.of(), new int[0], null, null, ex,
-                    armor, List.of());
+                    armor, List.of(), false);
         }
         List<Slot> slots = new ArrayList<>();
         for (String s : c.list(b + ".slots")) {
@@ -358,7 +373,8 @@ final class Attachments {
             xe = reload(c, b + ".reload-xmag.empty");
         }
         return new GunAtt(List.copyOf(slots), Set.copyOf(allow), Set.copyOf(adapterIds), Map.copyOf(builtin),
-                Map.copyOf(defaults), Set.copyOf(locked), xmag, xt, xe, ex, armor, List.copyOf(rawAllow));
+                Map.copyOf(defaults), Set.copyOf(locked), xmag, xt, xe, ex, armor, List.copyOf(rawAllow),
+                Boolean.TRUE.equals(c.get(b + ".paint")));
     }
 
     private static GunDef.Reload reload(GunDef.Cfg c, String path) {
@@ -374,17 +390,22 @@ final class Attachments {
      * оружия, встроенный этого оружия или разрешён планкой в этом слоте.
      */
     boolean allowed(GunAtt ga, Def def, String adapter) {
-        if (def == null || !ga.has(def.slot())) {
+        return def != null && allowed(ga, def, adapter, def.slot());
+    }
+
+    /** То же для слота slot (второй ЛЦУ принимает ЛЦУ вида laser). */
+    boolean allowed(GunAtt ga, Def def, String adapter, Slot slot) {
+        if (def == null || slot == null || !slot.accepts(def.slot()) || !ga.has(slot)) {
             return false;
         }
         if (def.builtin()) {
-            return ga.builtinIn(def.slot(), def.id());
+            return ga.builtinIn(slot, def.id());
         }
         if (ga.allow().contains(def.id())) {
             return true;
         }
         Adapter a = adapter(adapter);
-        return a != null && a.slot() == def.slot() && ga.adapters().contains(a.id()) && a.allow().contains(def.id());
+        return a != null && a.slot() == slot && ga.adapters().contains(a.id()) && a.allow().contains(def.id());
     }
 
     private static String str(Object o, String def) {

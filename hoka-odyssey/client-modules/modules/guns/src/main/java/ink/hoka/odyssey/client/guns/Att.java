@@ -25,17 +25,29 @@ import java.util.Set;
  * клиент шлёт просьбы и рисует то, что сервер прислал.
  */
 final class Att {
-    /** Слоты по номеру протокола: 0 прицел, 1 дуло, 2 приклад, 3 рукоять, 4 ЛЦУ, 5 магазин. */
-    static final String[] SLOTS = {"scope", "muzzle", "stock", "grip", "laser", "extended_mag"};
-    static final String[] SLOT_RU = {"Прицел", "Дуло", "Приклад", "Рукоять", "ЛЦУ", "Магазин"};
+    /** Слоты по номеру протокола: 0 прицел, 1 дуло, 2 приклад, 3 рукоять, 4 ЛЦУ, 5 магазин, 6 второй ЛЦУ (справа). */
+    static final String[] SLOTS = {"scope", "muzzle", "stock", "grip", "laser", "extended_mag", "laser2"};
+    static final String[] SLOT_RU = {"Прицел", "Дуло", "Приклад", "Рукоять", "ЛЦУ", "Магазин", "ЛЦУ (право)"};
     static final int SCOPE = 0;
     static final int MUZZLE = 1;
     static final int STOCK = 2;
     static final int GRIP = 3;
     static final int LASER = 4;
     static final int MAG = 5;
+    static final int LASER2 = 6;
 
     private Att() {
+    }
+
+    /** Встаёт ли в слот slot обвес вида kind (во второй ЛЦУ — те же ЛЦУ, что в первый). */
+    static boolean accepts(int slot, int kind) {
+        return slot == kind || slot == LASER2 && kind == LASER;
+    }
+
+    /** Название слота у оружия g (с двумя ЛЦУ первый — «ЛЦУ (лево)»). */
+    static String slotName(GunAtt g, int slot) {
+        if (slot == LASER && g != null && g.has(LASER2)) return "ЛЦУ (лево)";
+        return slot >= 0 && slot < SLOT_RU.length ? SLOT_RU[slot] : "?";
     }
 
     static int slotOf(String key) {
@@ -97,8 +109,9 @@ final class Att {
 
     /** Обвес одного оружия: слоты, что подходит (метки раскрыты), планки, встроенные, по умолчанию, запертые. */
     record GunAtt(List<Integer> slots, Set<String> allow, List<String> adapters, Map<Integer, List<String>> builtin,
-                  Map<Integer, String> defaults, Set<Integer> locked, int[] extendedMag, int baseMagazine) {
-        static final GunAtt NONE = new GunAtt(List.of(), Set.of(), List.of(), Map.of(), Map.of(), Set.of(), new int[0], 0);
+                  Map<Integer, String> defaults, Set<Integer> locked, int[] extendedMag, int baseMagazine, boolean paint) {
+        static final GunAtt NONE = new GunAtt(List.of(), Set.of(), List.of(), Map.of(), Map.of(), Set.of(), new int[0], 0,
+                false);
 
         boolean has(int slot) {
             return slots.contains(slot);
@@ -150,9 +163,14 @@ final class Att {
 
         /** Подходит ли обвес id оружию gun (список allow оружия или планка adapter в слоте прицела). */
         boolean allowed(String gun, Def d, String adapter) {
-            if (d == null) return false;
+            return d != null && allowed(gun, d, adapter, d.slot());
+        }
+
+        /** То же для слота slot (второй ЛЦУ принимает ЛЦУ). */
+        boolean allowed(String gun, Def d, String adapter, int slot) {
+            if (d == null || !accepts(slot, d.slot())) return false;
             GunAtt g = gun(gun);
-            if (!g.has(d.slot())) return false;
+            if (!g.has(slot)) return false;
             if (g.allow().contains(d.id())) return true;
             if (d.slot() == SCOPE && adapter != null && !adapter.isEmpty()) {
                 Adapter a = adapters.get(adapter);
@@ -214,7 +232,8 @@ final class Att {
                     int[] xmi = new int[xm.length];
                     for (int i = 0; i < xm.length; i++) xmi[i] = Math.round(xm[i]);
                     c.guns.put(e.getKey(), new GunAtt(slots, new HashSet<>(strings(o.get("allow"))),
-                            strings(o.get("adapters")), bi, df, locked, xmi, (int) num(o, "base-magazine", 0)));
+                            strings(o.get("adapters")), bi, df, locked, xmi, (int) num(o, "base-magazine", 0),
+                            bool(o, "paint", false)));
                 }
             }
             return c;
@@ -274,6 +293,8 @@ final class Att {
         int zoom;
         /** Уровень удлинения магазина от сервера (−1 — считать по каталогу). */
         int xmag = -1;
+        /** Окраска: 0 — стандарт, 1 — чёрный металл. */
+        int paint;
 
         Gear() {
             Arrays.fill(laser, -1);
@@ -287,6 +308,7 @@ final class Att {
             g.adapter = adapter;
             g.zoom = zoom;
             g.xmag = xmag;
+            g.paint = paint;
             return g;
         }
 
@@ -315,7 +337,7 @@ final class Att {
             return b.append(adapter).append('|').append(xmag).toString();
         }
 
-        /** GEAR: «слот=id[:rrggbb]» через запятую и «adapter=id». */
+        /** GEAR: «слот=id[:rrggbb]» через запятую, «adapter=id» и «paint=n». */
         static Gear parseCsv(String csv) {
             Gear g = new Gear();
             if (csv == null || csv.isEmpty()) return g;
@@ -325,6 +347,14 @@ final class Att {
                 String k = part.substring(0, eq).trim(), v = part.substring(eq + 1).trim();
                 if (k.equals("adapter")) {
                     g.adapter = v;
+                    continue;
+                }
+                if (k.equals("paint")) {
+                    try {
+                        g.paint = Math.max(0, Integer.parseInt(v));
+                    } catch (NumberFormatException ignored) {
+                        // стандарт
+                    }
                     continue;
                 }
                 int s = slotOf(k);

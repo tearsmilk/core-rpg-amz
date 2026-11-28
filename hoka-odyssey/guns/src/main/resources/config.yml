@@ -809,6 +809,8 @@ guns:
     sounds:
       shoot: plasma_rifle_shoot
       shoot3p: plasma_rifle_shoot_3p
+      silence: plasma_rifle_silence        # с глушителем: приглушённый плазменный выстрел (tools/plasma)
+      silence3p: plasma_rifle_silence_3p
       draw: plasma_rifle_draw
       put_away: plasma_rifle_put_away
       dry_fire: gun_dry_fire
@@ -824,13 +826,17 @@ guns:
     item-icon: hoka/plasma_rifle_slot.png
     item-model: hoka/plasma_rifle_lod.bbmodel
     ammo-icon: hoka/plasma_cell.png
-    # Обвес: прицелы, рукояти, приклады и ЛЦУ — те же, что у M4A1 (ЛЦУ — на левой планке цевья, пистолетные — через
-    # переходник laser_adapter модели); дульных устройств нет. Встроенный приклад — свой каркасный (plasma_wire_stock),
-    # механический прицел прячется под оптикой. В слот магазина — только своя удлинённая ячейка plasma_cell_extended
-    # (72 выстрела, кость модели mag_extended_1; патроны TACZ ammo_mod_* и магазины TACZ сюда не ставятся).
+    # Обвес: прицелы, рукояти, приклады и ЛЦУ — те же, что у M4A1. Два ЛЦУ: laser — на левой планке цевья, laser2 —
+    # на правой (пистолетные — через переходники laser_adapter / laser_adapter_2 модели). Дуло (muzzle_pos — перед
+    # блоком стволов, по оси канала): глушители, ДТК и компенсаторы TACZ (#muzzle); с глушителем — звук silence и без
+    # вспышки. Встроенный приклад — свой каркасный (plasma_wire_stock), механический прицел прячется под оптикой. В слот
+    # магазина — только своя удлинённая ячейка plasma_cell_extended (72 выстрела, кость модели mag_extended_1; патроны
+    # TACZ ammo_mod_* и магазины TACZ сюда не ставятся). paint: true — в окне обвеса кнопка «Покрасить» (стандарт /
+    # чёрный металл: своя текстура в модели, метка предмета hoka_paint).
     attachments:
-      slots: ["scope", "stock", "laser", "grip", "extended_mag"]
-      allow: ["plasma_wire_stock", "plasma_cell_extended", "#scope_scope", "#scope_sight", "#grip", "#stock", "#ar_laser", "#pistol_laser", "#adapter/pistol_riser", "#adapter/rail_mid"]
+      slots: ["scope", "muzzle", "stock", "laser", "laser2", "grip", "extended_mag"]
+      allow: ["plasma_wire_stock", "plasma_cell_extended", "#scope_scope", "#scope_sight", "#muzzle", "#grip", "#stock", "#ar_laser", "#pistol_laser", "#adapter/pistol_riser", "#adapter/rail_mid"]
+      paint: true
       builtin: {stock: ["plasma_wire_stock"]}
       default: {stock: "plasma_wire_stock"}
       extended-mag: [72, 72, 72]
