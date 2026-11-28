@@ -133,7 +133,7 @@ public final class GunsModule extends OdysseyModule {
                 syncHeld(p);
                 ShooterState st = state(p);
                 Vec d = p.getPosition().direction();
-                fireOne(p, st, d.x(), d.y(), d.z(), 0, System.currentTimeMillis());
+                fireOne(p, st, d.x(), d.y(), d.z(), 0, System.currentTimeMillis(), null);
             }
         });
         // с оружием в руке блоки не ломаются (клиентский модуль забирает ЛКМ сам; это — для игроков без него и
@@ -933,7 +933,7 @@ public final class GunsModule extends OdysseyModule {
         ShooterState st = state(p);
         long now = System.currentTimeMillis();
         for (Proto.Shot s : f.shots()) {
-            if (!fireOne(p, st, s.dx(), s.dy(), s.dz(), f.seq(), now)) {
+            if (!fireOne(p, st, s.dx(), s.dy(), s.dz(), f.seq(), now, f.eye())) {
                 break;
             }
         }
@@ -941,7 +941,7 @@ public final class GunsModule extends OdysseyModule {
     }
 
     /** Один выстрел: проверка, патрон, пуля, эффекты. false — отклонён (остальные в пачке тоже). */
-    private boolean fireOne(Player p, ShooterState st, double dx, double dy, double dz, int seq, long now) {
+    private boolean fireOne(Player p, ShooterState st, double dx, double dy, double dz, int seq, long now, float[] eyeOff) {
         Instance inst = p.getInstance();
         if (inst == null || p.isDead() || p.getGameMode() == GameMode.SPECTATOR) {
             return false;
@@ -969,9 +969,10 @@ public final class GunsModule extends OdysseyModule {
                 st.speed > 0.08 || (!vac && !p.isOnGround()));
         double inacc = Spread.inaccuracy(g, stance);
         Pos pos = p.getPosition();
-        double ex = pos.x();
-        double ey = pos.y() + p.getEyeHeight();
-        double ez = pos.z();
+        // глаза: от клиента (на стене/потолке/в невесомости они не над ногами), иначе — над ногами
+        double ex = pos.x() + (eyeOff != null ? eyeOff[0] : 0);
+        double ey = pos.y() + (eyeOff != null ? eyeOff[1] : p.getEyeHeight());
+        double ez = pos.z() + (eyeOff != null ? eyeOff[2] : 0);
         double v = g.speed() / 20.0;
         double[] m = st.motion == null ? new double[3] : st.motion;
         double life = vac ? vacLife : g.life();

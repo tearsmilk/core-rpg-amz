@@ -37,7 +37,7 @@ final class Fx {
     /** Длина хвоста трассера: столько секунд полёта (у АКМ ~25 блоков), но не больше 40 блоков. */
     private static final double TAIL_SEC = 0.05;
     /** Свой трассер прячется первые N блоков от ствола (не мешать прицелу). */
-    private static final double OWN_SKIP = 0.5;
+    private static final double OWN_SKIP = 0.05;
     /** То же, когда ствол не виден (в оптике) и трассер идёт от глаз. */
     private static final double OWN_SKIP_EYE = 2.5;
     /** До скольких блоков трассер сходится и на сущность на пути (дальше — только на блок). */
@@ -79,7 +79,7 @@ final class Fx {
     /** Длина плазменного сгустка по умолчанию, блоков. */
     private static final double PLASMA_LEN = 0.8;
     /** Свой плазменный сгусток прячется только у самого ствола. */
-    private static final double OWN_SKIP_PLASMA = 0.3;
+    private static final double OWN_SKIP_PLASMA = 0.05;
     private final List<Glow> glows = new ArrayList<>();
     /** Круглое пятно (белое, к краям прозрачное) — текстура ореолов и искр. */
     private Identifier glowTex;

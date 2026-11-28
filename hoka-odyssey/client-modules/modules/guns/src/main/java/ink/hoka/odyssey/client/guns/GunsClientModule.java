@@ -870,7 +870,9 @@ public final class GunsClientModule implements ClientModule {
         while (!pending.isEmpty()) {
             List<Proto.Shot> part = new ArrayList<>(pending.subList(0, Math.min(16, pending.size())));
             pending.subList(0, part.size()).clear();
-            ctx.send(Proto.fire(seq, part));
+            var pl = Minecraft.getInstance().player;
+            Vec3 eo = pl == null ? new Vec3(0, 1.62, 0) : pl.getEyePosition().subtract(pl.position());
+            ctx.send(Proto.fire(seq, part, (float) eo.x, (float) eo.y, (float) eo.z));
             n += part.size();
             if (!pending.isEmpty()) seq++;
         }

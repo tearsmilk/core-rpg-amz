@@ -144,7 +144,12 @@ final class Proto {
 
     record Shot(int ms, float dx, float dy, float dz) {}
 
-    record Fire(int seq, List<Shot> shots) {}
+    /** eye — глаза стрелка относительно его позиции (хвост FIRE: на стене/потолке глаза не над ногами), null — нет. */
+    record Fire(int seq, List<Shot> shots, float[] eye) {
+        Fire(int seq, List<Shot> shots) {
+            this(seq, shots, null);
+        }
+    }
 
     /**
      * Сообщение клиента: op и данные (FIRE — выстрелы; FIREMODE/ADS/REFIT/ZOOM — mode; действия с обвесом — slot
@@ -210,7 +215,15 @@ final class Proto {
                         }
                         shots.add(new Shot(ms, (float) (x / len), (float) (y / len), (float) (z / len)));
                     }
-                    return new Msg(op, new Fire(seq, shots), 0);
+                    float[] eye = null;
+                    if (in.available() >= 12) {                       // хвост: f32 x, y, z глаз от позиции игрока
+                        float ex = in.readFloat(), ey = in.readFloat(), ez = in.readFloat();
+                        if (Float.isFinite(ex) && Float.isFinite(ey) && Float.isFinite(ez)
+                                && ex * ex + ey * ey + ez * ez <= 2.5f * 2.5f) {
+                            eye = new float[] {ex, ey, ez};
+                        }
+                    }
+                    return new Msg(op, new Fire(seq, shots, eye), 0);
                 }
                 default -> {
                     return null;

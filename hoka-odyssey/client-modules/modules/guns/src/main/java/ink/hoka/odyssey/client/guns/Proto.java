@@ -420,7 +420,7 @@ final class Proto {
         return new byte[] {C_FIREMODE, (byte) mode};
     }
 
-    static byte[] fire(int seq, List<Shot> shots) {
+    static byte[] fire(int seq, List<Shot> shots, float ex, float ey, float ez) {
         try {
             ByteArrayOutputStream bo = new ByteArrayOutputStream(8 + shots.size() * 14);
             DataOutputStream o = new DataOutputStream(bo);
@@ -433,6 +433,9 @@ final class Proto {
                 o.writeFloat(s.dy());
                 o.writeFloat(s.dz());
             }
+            o.writeFloat(ex);                                      // хвост: глаза от позиции игрока
+            o.writeFloat(ey);
+            o.writeFloat(ez);
             o.flush();
             return bo.toByteArray();
         } catch (IOException e) {
