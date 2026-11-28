@@ -1,0 +1,9 @@
+# Описание модуля. Обязательны id и main.
+id: gravzones
+name: Зоны гравитации
+version: 0.1.1
+main: ink.hoka.odyssey.gravzones.GravZonesModule
+authors: [tearsmilk]
+description: Зоны со своей гравитацией (0.1…10) и вакуумным выбросом (11…13), выделяются топориком /hozone axe
+depends: [gravity]
+softdepends: []

@@ -1,0 +1,9 @@
+# Тестовый модуль только для tools/e2e/blackholes.sh — на сервер не выкладывать.
+id: itemtest
+name: Тестовые предметы
+version: 0.0.1
+main: ink.hoka.odyssey.e2e.ItemSpawnerModule
+authors: [tearsmilk]
+description: Только для живой проверки gravity — создаёт обычные ItemEntity
+depends: []
+softdepends: []

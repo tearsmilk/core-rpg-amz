@@ -1,0 +1,7 @@
+{
+  "id": "skyspike",
+  "version": "0.1.0",
+  "main": "ink.hoka.odyssey.client.skyspike.SkySpikeModule",
+  "authors": ["tearsmilk"],
+  "description": "Спайк: небо полноэкранным проходом в START_MAIN (до террейна), без патча ядра"
+}

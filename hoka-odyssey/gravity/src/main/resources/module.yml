@@ -1,0 +1,9 @@
+# Описание модуля. Обязательны id и main.
+id: gravity
+name: Невесомость
+version: 0.4.0
+main: ink.hoka.odyssey.gravity.GravityModule
+authors: [tearsmilk]
+description: Вакуум на выбранных картах — настоящая инерция и притяжение тел (1/r²), толчок от блоков, ранец, удары; предметы и чёрные дыры
+depends: []
+softdepends: [clientmods]

@@ -1,0 +1,946 @@
+# guns — огнестрел. Стреляет сервер: клиентский модуль guns (мод Hoka Odyssey) только присылает «выстрел» и
+# направление, а сервер проверяет темп, патроны, перезарядку и угол, сам разбрасывает пули (разброс), летит пулей
+# по тикам, считает попадания и урон. Без клиентского модуля можно стрелять ЛКМ (по одному выстрелу), перезарядка — F.
+# Перечитать: homodule reload guns.
+#
+# Модели, текстуры и звуки АКМ, AWP (с прицелом 8x), Glock 17, M4A1, M16A1, Desert Eagle и M1897 — из мода TACZ (https://github.com/MCModderAnchor/TACZ), лицензия CC BY-NC-ND 4.0:
+# только некоммерческое использование, без изменений, с указанием авторов (см. NOTICE.md в jar, папка tacz/).
+# Поставить предмет и звуки в hoitems/hosounds — /hogun install (OP), потом всё работает само.
+
+# Урон другим игрокам (false — пули проходят сквозь игроков без урона, только искры).
+pvp: true
+
+# Урон мобам и другим живым сущностям.
+damage-mobs: true
+
+# Насколько направление выстрела от клиента может отличаться от взгляда игрока на сервере, градусов.
+# Больше — выстрел отклоняется (защита от «стрельбы за спину»). Отдача и разброс в это не входят.
+max-aim-deviation: 25
+
+# Запас по темпу стрельбы: в «ведре» выстрелов столько штук сверх темпа (задержки сети приходят пачками).
+rate-burst: 3
+
+# Вакуум (модуль gravity): отдача относит стрелка назад (vacuum-recoil у оружия), звуки выстрела слышит только он сам.
+vacuum:
+  # Толчок цели при попадании в вакууме, блоков/с (0 — нет).
+  target-impulse: 0.15
+  # Кто слышит выстрел в вакууме: self — только стрелок (тише и глуше), none — никто, all — как на планете.
+  sound: self
+  # Сколько секунд летит пуля в вакууме (нет трения и тяжести, летит дальше). Не дальше прогруженных чанков.
+  bullet-life: 3.0
+
+# Частицы для всех (видны и без мода): крошка блока при попадании в блок, «сердечки урона» при попадании в цель.
+particles: true
+
+# Писать каждое попадание в лог сервера (кто, в кого, урон, расстояние) — для проверки и разбора жалоб.
+log-hits: false
+
+# Оружие за спиной: оружие в быстрой панели (не в руке) висит у игрока на спине — видят игроки с клиентским
+# модулем guns (и он сам в F5). false — не рассылать.
+back-gun: true
+
+# Кто слышит выстрел на планете (блоков) — не дальше этого (сам звук ещё ограничен range в hosounds).
+sound-range: 96
+
+# Обвес оружия (как в TACZ): экран обвеса — клавиша Y с оружием в руке (клиентский модуль guns). Все обвесы пака
+# TACZ — в attachments.yml (в jar; свой — module/guns/attachments.yml), какие подходят оружию — guns.<id>.attachments.
+attachments:
+  # Патроны (ammo_mod_*) стоят в слоте магазина и, как в TACZ, удлиняют магазин (их уровень extended-mag).
+  # false — патроны магазин не меняют.
+  ammo-mods-extend-mag: true
+
+# Оружие. Ключ — id оружия (он же в custom_data предмета: hoka_gun=<id>).
+guns:
+  ak47:
+    # Название и описание предмета (если предмета нет в hoitems — делаем свой с этим названием).
+    name: "АКМ"
+    lore: ["От Вьетнама до Афгана — он побывал везде.", "Модель и звуки: TACZ, CC BY-NC-ND 4.0"]
+    # Предмет из hoitems (модель в руке и иконка). Нет hoitems или такого id — простой предмет из material.
+    item: ak47
+    material: iron_horse_armor
+    # Патроны: предмет hoitems с этим id (или простой предмет с меткой hoka_ammo=<caliber>, если hoitems нет).
+    ammo-item: ammo_762x39
+    ammo-material: gold_nugget
+    ammo-name: "Патроны 7,62×39"
+    caliber: "762x39"
+    # Бесконечные патроны (перезарядка без патронов в инвентаре). В креативе патроны тоже не тратятся.
+    infinite-ammo: false
+    # Магазин и патрон в патроннике (true — тактическая перезарядка даёт 30+1).
+    magazine: 30
+    chamber: true
+    # Темп, выстрелов в минуту, и режимы огня (auto — очередь, пока зажата ЛКМ; semi — по одному).
+    rpm: 600
+    modes: [auto, semi]
+    # Урон по расстоянию: до distance блоков — damage (последний — для всего дальше). Сердце = 2 урона.
+    damage:
+      - {distance: 30, damage: 9}
+      - {distance: 60, damage: 7.5}
+      - {distance: inf, damage: 6}
+    # Множитель урона в голову (попадание в пределах ±0,25 блока от уровня глаз).
+    headshot: 1.5
+    # Пуля: скорость (блоков/с), время жизни (с), тяжесть (блоков/тик² вниз) и трение (доля скорости за тик),
+    # сколько целей пробивает, отбрасывание цели (0 — нет), цвет трассера.
+    bullet:
+      speed: 500
+      life: 0.8
+      gravity: 0.15
+      friction: 0.02
+      pierce: 1
+      knockback: 0
+      tracer: "#FF8888"
+    # Разброс, градусов (примерно): стоя, в движении (и в прыжке), присев, в прицеле, в вакууме без прицела.
+    spread:
+      stand: 4.5
+      move: 5
+      sneak: 2.5
+      aim: 0.15
+      vacuum: 4.5
+    # Отдача камеры (рисует клиент): ключевые точки «время (с): [мин, макс] градусов», значение — случайное в
+    # пределах. pitch > 0 — ствол вверх, yaw — вбок.
+    recoil:
+      pitch:
+        - {time: 0, min: 0.8, max: 0.8}
+        - {time: 0.1, min: 1.4, max: 1.4}
+        - {time: 0.15, min: 0.8, max: 0.8}
+        - {time: 0.45, min: -0.175, max: -0.175}
+        - {time: 0.6, min: 0, max: 0}
+      yaw:
+        - {time: 0, min: -0.23, max: 0.18}
+        - {time: 0.35, min: 0, max: 0}
+    # Перезарядка, секунд: feed — когда патроны уже в магазине, total — когда снова можно стрелять.
+    # tactical — в магазине ещё что-то есть, empty — магазин пуст (дольше: надо передёрнуть затвор).
+    reload:
+      tactical: {feed: 1.55, total: 2.0}
+      empty: {feed: 2.25, total: 2.6}
+    # Достать оружие (нельзя стрелять), секунд; время прицеливания; приближение в прицеле; скорость в прицеле.
+    draw: 0.35
+    aim-time: 0.22
+    zoom: 1.33
+    aim-speed: 0.8
+    # Файлы для клиентского модуля (раздаёт этот модуль из jar, папка tacz/): модель в руке, силуэт для HUD,
+    # вспышка у ствола, анимации тела от третьего лица (формат PlayerAnimator, как в TACZ).
+    model: guns/ak47.bbmodel
+    hud: guns/ak47_hud.png
+    flash: guns/common_muzzle_flash.png
+    player-animation: guns/rifle_default.player_animation.json
+    # Звуки (id в hosounds, в игре hoka:<id>). Ставит /hogun install.
+    sounds:
+      shoot: ak47_shoot            # свой выстрел (стерео, слышит только стрелок)
+      shoot3p: ak47_shoot_3p       # выстрел для остальных (из точки)
+      silence: ak47_silence        # с глушителем (для обвесов): свой выстрел и для остальных
+      silence3p: ak47_silence_3p
+      draw: ak47_draw
+      put_away: ak47_put_away
+      dry_fire: gun_dry_fire
+      fire_select: gun_fire_select
+      flesh_hit: gun_flesh_hit
+      head_hit: gun_head_hit
+      kill: gun_kill
+    # Звуки перезарядки, которые слышат остальные (на планете): секунда от начала → id звука.
+    reload-sounds-3p:
+      tactical: {"0.35": ak47_reload_magout, "1.4": ak47_reload_magin}
+      empty: {"0.5": ak47_reload_empty_magout, "1.15": ak47_reload_empty_magin, "1.75": ak47_reload_empty_chamber}
+    # Вид: rifle (за спиной), sniper (за спиной), pistol (в кобуре на бедре, поза тела pistol_default).
+    type: rifle
+    # Отдача в вакууме: на сколько блоков выстрел относит стрелка назад в свободном полёте (без опоры под
+    # ногами; стоя на земле или у блока — не относит). Выстрелы складываются. 0 — без отдачи.
+    vacuum-recoil: 1.0
+    # Предмет hoitems, который ставит /hogun install: иконка в инвентаре ("" — в инвентаре модель) и модель.
+    item-icon: tacz/ak47_slot.png
+    item-model: tacz/ak47_lod.bbmodel
+    ammo-icon: tacz/762x39.png
+    # Обвес (как в TACZ, клавиша Y с оружием в руке): slots — какие слоты есть; allow — какие обвесы можно (id
+    # и #метки из attachments.yml; метки adapter/… — повышающие планки); builtin — встроенные (ставятся без
+    # предмета); default — что стоит на новом оружии; locked — слоты, которые нельзя менять; extended-mag —
+    # патронов в магазине с удлинённым магазином 1/2/3 уровня; reload-xmag — перезарядка с ним (как reload).
+    attachments:
+      slots: ["scope", "stock", "muzzle", "extended_mag"]
+      allow: ["#scope_scope", "#scope_sight", "#muzzle", "#extended_mag", "#oem_stock", "#stock", "#bayonet_ak", "#ammo_mod_no_he", "#adapter/pistol_riser", "#adapter/rail_mid"]
+      builtin: {stock: ["oem_stock_light", "oem_stock_tactical", "oem_stock_heavy"]}
+      default: {stock: "oem_stock_tactical"}
+      extended-mag: [34, 37, 40]
+      reload-xmag: {tactical: {feed: 1.54, total: 2.29}, empty: {feed: 2.5, total: 2.85}}
+
+  # AWP (ai_awp из TACZ) с прицелом 8x (scope_standard_8x) — прицел часть винтовки, не снимается. Ручной затвор:
+  # после каждого выстрела — передёргивание (bolt-time), в прицеле — чёрный экран и круг прицела с сеткой TACZ.
+  ai_awp:
+    name: "AWP"
+    lore: ["Снайперская винтовка с прицелом 8x.", "Модель и звуки: TACZ, CC BY-NC-ND 4.0"]
+    item: ai_awp
+    material: iron_horse_armor
+    ammo-item: ammo_338
+    ammo-material: gold_nugget
+    ammo-name: "Патроны .338 Lapua Magnum"
+    caliber: "338"
+    infinite-ammo: false
+    magazine: 5
+    chamber: true
+    rpm: 171
+    modes: [semi]
+    # Ручной затвор: секунд на передёргивание после выстрела (TACZ bolt_action_time). 0 — нет затвора.
+    bolt-time: 0.9
+    damage:
+      - {distance: 80, damage: 50}
+      - {distance: 160, damage: 45}
+      - {distance: inf, damage: 40}
+    headshot: 2
+    bullet:
+      speed: 575
+      life: 0.9
+      gravity: 0.15
+      friction: 0.015
+      pierce: 4
+      knockback: 0
+      tracer: "#FF8888"
+    # От бедра разброс большой (TACZ: 5°), в прицеле — 0,05°.
+    spread:
+      stand: 5
+      move: 5.5
+      sneak: 3
+      aim: 0.05
+      vacuum: 5
+    recoil:
+      pitch:
+        - {time: 0, min: 3.5, max: 3.5}
+        - {time: 0.07, min: 2.5, max: 2.5}
+        - {time: 0.16, min: 3.25, max: 3.25}
+        - {time: 0.24, min: 2, max: 2}
+        - {time: 0.6, min: -0.5, max: -0.5}
+        - {time: 0.71, min: 0.25, max: 0.25}
+        - {time: 0.83, min: 0, max: 0}
+        - {time: 0.88, min: 0, max: 0}
+      yaw:
+        - {time: 0, min: -0.75, max: -0.75}
+        - {time: 0.08, min: 0.6, max: 0.6}
+        - {time: 0.17, min: -0.35, max: -0.35}
+        - {time: 0.28, min: 0.25, max: 0.25}
+        - {time: 0.5, min: 0, max: 0}
+        - {time: 0.8, min: 0, max: 0}
+    reload:
+      tactical: {feed: 2.05, total: 2.25}
+      empty: {feed: 2.85, total: 3.25}
+    draw: 0.35
+    aim-time: 0.33
+    # Оптика: в прицеле экран чёрный, кроме круга прицела; приближение 8x.
+    scope: true
+    zoom: 8
+    aim-speed: 0.6
+    model: guns/ai_awp.bbmodel
+    hud: guns/ai_awp_hud.png
+    flash: guns/common_muzzle_flash.png
+    player-animation: guns/rifle_default.player_animation.json
+    sounds:
+      shoot: awp_shoot
+      shoot3p: awp_shoot_3p
+      silence: awp_silence
+      silence3p: awp_silence_3p
+      draw: awp_draw
+      put_away: awp_put_away
+      dry_fire: gun_dry_fire
+      fire_select: gun_fire_select
+      flesh_hit: gun_flesh_hit
+      head_hit: gun_head_hit
+      kill: gun_kill
+    reload-sounds-3p:
+      tactical: {"0.55": awp_reload_magout, "1.98": awp_reload_magin}
+      empty: {"0.58": awp_reload_empty_magout, "2.03": awp_reload_empty_magin, "2.62": awp_reload_empty_boltclose}
+    # Звуки затвора, которые слышат остальные: секунда от начала передёргивания → id звука.
+    bolt-sounds-3p: {"0.17": awp_rechamber_out, "0.62": awp_rechamber_in}
+    type: sniper
+    # Отдача в вакууме: на сколько блоков выстрел относит стрелка назад в свободном полёте (без опоры под
+    # ногами; стоя на земле или у блока — не относит). Выстрелы складываются. 0 — без отдачи.
+    vacuum-recoil: 3.0
+    # В инвентаре — модель (с прицелом), а не плоская иконка TACZ без прицела.
+    item-icon: ""
+    item-model: tacz/ai_awp_lod.bbmodel
+    ammo-icon: tacz/338.png
+    # Обвес (как в TACZ, клавиша Y с оружием в руке): slots — какие слоты есть; allow — какие обвесы можно (id
+    # и #метки из attachments.yml; метки adapter/… — повышающие планки); builtin — встроенные (ставятся без
+    # предмета); default — что стоит на новом оружии; locked — слоты, которые нельзя менять; extended-mag —
+    # патронов в магазине с удлинённым магазином 1/2/3 уровня; reload-xmag — перезарядка с ним (как reload).
+    attachments:
+      slots: ["extended_mag", "scope", "muzzle"]
+      allow: ["#scope", "#sniper_extended_mag", "#muzzle_silencer", "#ammo_mod", "#scope_lowsight", "#adapter/pistol_riser", "#adapter/rail_mid"]
+      builtin: {}
+      default: {}
+      extended-mag: [6, 7, 8]
+      locked: [scope]                  # прицел 8x — часть винтовки (модель с ним), не снимается
+    # Взрыв (только с фугасными патронами ammo_mod_he): урон в центре, радиус (блоков), отбрасывает ли.
+    explosion: {damage: 25, radius: 1.25, knockback: true}
+
+  # Glock 17 (glock_17 из TACZ): пистолет, одиночный огонь; поза тела — pistol_default TACZ.
+  glock_17:
+    name: "Glock 17"
+    lore: ["Пистолет под 9×19.", "Модель и звуки: TACZ, CC BY-NC-ND 4.0"]
+    item: glock_17
+    material: iron_horse_armor
+    ammo-item: ammo_9mm
+    ammo-material: gold_nugget
+    ammo-name: "Патроны 9×19"
+    caliber: "9mm"
+    infinite-ammo: false
+    magazine: 17
+    chamber: true
+    rpm: 400
+    modes: [semi]
+    damage:
+      - {distance: 18, damage: 7}
+      - {distance: 45, damage: 5}
+      - {distance: inf, damage: 4}
+    headshot: 1.5
+    bullet:
+      speed: 150
+      life: 0.8
+      gravity: 0.15
+      friction: 0.025
+      pierce: 1
+      knockback: 0
+      tracer: "#FF8888"
+    spread:
+      stand: 2
+      move: 2.5
+      sneak: 1.5
+      aim: 0.2
+      vacuum: 2
+    recoil:
+      pitch:
+        - {time: 0, min: 1, max: 1}
+        - {time: 0.1, min: 1, max: 1}
+        - {time: 0.25, min: 0.1, max: 0.1}
+        - {time: 0.3, min: 0.05, max: 0.05}
+        - {time: 0.35, min: 0, max: 0}
+      yaw:
+        - {time: 0, min: -0.5, max: 0.5}
+        - {time: 0.2, min: 0, max: 0}
+        - {time: 0.3, min: 0, max: 0}
+    reload:
+      tactical: {feed: 1.05, total: 1.5}
+      empty: {feed: 1.63, total: 1.88}
+    draw: 0.32
+    aim-time: 0.16
+    zoom: 1.2
+    aim-speed: 1.0
+    # Размер вспышки у ствола (TACZ muzzle_flash.scale; 1 — как у винтовок).
+    flash-scale: 0.4
+    model: guns/glock_17.bbmodel
+    hud: guns/glock_17_hud.png
+    flash: guns/common_muzzle_flash.png
+    player-animation: guns/pistol_default.player_animation.json
+    sounds:
+      shoot: glock17_shoot
+      shoot3p: glock17_shoot_3p
+      silence: glock17_silence
+      silence3p: glock17_silence_3p
+      draw: glock17_draw
+      put_away: ""
+      dry_fire: gun_dry_fire
+      fire_select: gun_fire_select
+      flesh_hit: gun_flesh_hit
+      head_hit: gun_head_hit
+      kill: gun_kill
+    reload-sounds-3p:
+      tactical: {"0.48": glock17_reload_magout, "0.87": glock17_reload_magin}
+      empty: {"0.0": glock17_reload_empty_magout, "0.87": glock17_reload_empty_magin, "1.5": glock17_reload_empty_charge}
+    type: pistol
+    # Отдача в вакууме: на сколько блоков выстрел относит стрелка назад в свободном полёте (без опоры под
+    # ногами; стоя на земле или у блока — не относит). Выстрелы складываются. 0 — без отдачи.
+    vacuum-recoil: 0.5
+    item-icon: tacz/glock_17_slot.png
+    item-model: tacz/glock_17_lod.bbmodel
+    ammo-icon: tacz/9mm.png
+    # Обвес (как в TACZ, клавиша Y с оружием в руке): slots — какие слоты есть; allow — какие обвесы можно (id
+    # и #метки из attachments.yml; метки adapter/… — повышающие планки); builtin — встроенные (ставятся без
+    # предмета); default — что стоит на новом оружии; locked — слоты, которые нельзя менять; extended-mag —
+    # патронов в магазине с удлинённым магазином 1/2/3 уровня; reload-xmag — перезарядка с ним (как reload).
+    attachments:
+      slots: ["scope", "muzzle", "extended_mag", "laser"]
+      allow: ["#pistol_sight", "#pistol_muzzle", "#light_extended_mag", "#ammo_mod_no_he", "#pistol_laser"]
+      builtin: {}
+      default: {}
+      extended-mag: [20, 25, 30]
+      reload-xmag: {tactical: {feed: 1.32, total: 2.1}, empty: {feed: 1.9, total: 2.23}}
+
+  # M4A1 (m4a1 из TACZ): карабин под 5,56×45, очередь/одиночный. Числа — из m4a1_data.json TACZ.
+  m4a1:
+    name: "M4A1"
+    lore: ["Карабин под 5,56×45 НАТО.", "Модель и звуки: TACZ, CC BY-NC-ND 4.0"]
+    item: m4a1
+    material: iron_horse_armor
+    ammo-item: ammo_556x45
+    ammo-material: gold_nugget
+    ammo-name: "Патроны 5,56×45"
+    caliber: "556x45"
+    infinite-ammo: false
+    magazine: 30
+    chamber: true
+    rpm: 800
+    modes: [auto, semi]
+    damage:
+      - {distance: 32, damage: 7}
+      - {distance: 64, damage: 6}
+      - {distance: inf, damage: 4.5}
+    headshot: 1.5
+    bullet:
+      speed: 270
+      life: 0.75
+      gravity: 0.15
+      friction: 0.015
+      pierce: 1
+      knockback: 0
+      tracer: "#FF8888"
+    spread:
+      stand: 5
+      move: 5.5
+      sneak: 2.75
+      aim: 0.1
+      vacuum: 5
+    recoil:
+      pitch:
+        - {time: 0, min: 0.55, max: 0.55}
+        - {time: 0.3, min: 0.55, max: 0.55}
+        - {time: 0.5, min: -0.125, max: -0.125}
+        - {time: 0.65, min: 0, max: 0}
+      yaw:
+        - {time: 0, min: -0.35, max: 0.25}
+        - {time: 0.3, min: -0.35, max: 0.25}
+        - {time: 0.5, min: 0, max: 0}
+    reload:
+      tactical: {feed: 1.4, total: 1.87}
+      empty: {feed: 1.87, total: 2.2}
+    draw: 0.3
+    aim-time: 0.2
+    zoom: 1.33
+    aim-speed: 0.85
+    flash-scale: 0.65
+    model: guns/m4a1.bbmodel
+    hud: guns/m4a1_hud.png
+    flash: guns/common_muzzle_flash.png
+    player-animation: guns/rifle_default.player_animation.json
+    sounds:
+      shoot: m4a1_shoot
+      shoot3p: m4a1_shoot_3p
+      silence: m4a1_silence
+      silence3p: m4a1_silence_3p
+      draw: m4a1_draw
+      put_away: m4a1_put_away
+      dry_fire: gun_dry_fire
+      fire_select: gun_fire_select
+      flesh_hit: gun_flesh_hit
+      head_hit: gun_head_hit
+      kill: gun_kill
+    reload-sounds-3p:
+      tactical: {"0.87": m4a1_reload_tactical_magout, "1.27": m4a1_reload_tactical_magin}
+      empty: {"0.5": m4a1_reload_empty_magout, "1.23": m4a1_reload_empty_magin, "1.83": m4a1_reload_empty_charge}
+    type: rifle
+    vacuum-recoil: 1.0
+    item-icon: tacz/m4a1_slot.png
+    item-model: tacz/m4a1_lod.bbmodel
+    ammo-icon: tacz/556x45.png
+    # Обвес (как в TACZ, клавиша Y с оружием в руке): slots — какие слоты есть; allow — какие обвесы можно (id
+    # и #метки из attachments.yml; метки adapter/… — повышающие планки); builtin — встроенные (ставятся без
+    # предмета); default — что стоит на новом оружии; locked — слоты, которые нельзя менять; extended-mag —
+    # патронов в магазине с удлинённым магазином 1/2/3 уровня; reload-xmag — перезарядка с ним (как reload).
+    attachments:
+      slots: ["scope", "stock", "laser", "grip", "muzzle", "extended_mag"]
+      allow: ["oem_sight_1", "oem_sight_2", "oem_side_cover", "oem_grip_cover", "oem_stock_tactical", "#scope_scope", "#scope_sight", "#muzzle", "#extended_mag", "#grip", "#bayonet_ar", "#stock", "#ammo_mod_no_he", "#ar_laser", "#pistol_laser", "#adapter/pistol_riser", "#adapter/rail_mid"]
+      builtin: {scope: ["oem_sight_1", "oem_sight_2"], laser: ["oem_side_cover"], grip: ["oem_grip_cover"], stock: ["oem_stock_tactical"]}
+      default: {stock: "oem_stock_tactical"}
+      extended-mag: [40, 50, 60]
+      reload-xmag: {tactical: {feed: 1.46, total: 2.29}, empty: {feed: 2.29, total: 2.67}}
+
+  # M16A1 (m16a1 из TACZ): винтовка под те же патроны 5,56×45, что у M4A1. Перезарядка — один звук на всю
+  # перезарядку (sounds.reload_tactical / reload_empty: в анимации TACZ звуков нет).
+  m16a1:
+    name: "M16A1"
+    lore: ["Винтовка под 5,56×45 времён Вьетнама.", "Модель и звуки: TACZ, CC BY-NC-ND 4.0"]
+    item: m16a1
+    material: iron_horse_armor
+    ammo-item: ammo_556x45
+    ammo-material: gold_nugget
+    ammo-name: "Патроны 5,56×45"
+    caliber: "556x45"
+    infinite-ammo: false
+    magazine: 20
+    chamber: true
+    rpm: 700
+    modes: [auto, semi]
+    damage:
+      - {distance: 45, damage: 8.5}
+      - {distance: 70, damage: 7}
+      - {distance: inf, damage: 5}
+    headshot: 1.5
+    bullet:
+      speed: 360
+      life: 0.75
+      gravity: 0.15
+      friction: 0.015
+      pierce: 1
+      knockback: 0
+      tracer: "#FF8888"
+    spread:
+      stand: 3.75
+      move: 4.5
+      sneak: 2.5
+      aim: 0.1
+      vacuum: 3.75
+    recoil:
+      pitch:
+        - {time: 0, min: 0.45, max: 0.45}
+        - {time: 0.25, min: 0.4, max: 0.4}
+        - {time: 0.55, min: 0, max: 0}
+        - {time: 0.7, min: 0, max: 0}
+      yaw:
+        - {time: 0, min: -0.2, max: 0.25}
+        - {time: 0.3, min: -0.2, max: 0.25}
+        - {time: 0.5, min: 0, max: 0}
+    reload:
+      tactical: {feed: 1.33, total: 1.85}
+      empty: {feed: 2.17, total: 2.65}
+    draw: 0.43
+    aim-time: 0.22
+    zoom: 1.33
+    aim-speed: 0.8
+    flash-scale: 0.5
+    model: guns/m16a1.bbmodel
+    hud: guns/m16a1_hud.png
+    flash: guns/common_muzzle_flash.png
+    player-animation: guns/rifle_default.player_animation.json
+    sounds:
+      shoot: m16a1_shoot
+      shoot3p: m16a1_shoot_3p
+      silence: m16a1_silence
+      silence3p: m16a1_silence_3p
+      draw: m16a1_draw
+      put_away: m16a1_put_away
+      reload_tactical: m16a1_reload_tactical   # свой звук в начале перезарядки
+      reload_empty: m16a1_reload_empty
+      dry_fire: gun_dry_fire
+      fire_select: gun_fire_select
+      flesh_hit: gun_flesh_hit
+      head_hit: gun_head_hit
+      kill: gun_kill
+    reload-sounds-3p:
+      tactical: {"0": m16a1_reload_tactical}
+      empty: {"0": m16a1_reload_empty}
+    type: rifle
+    vacuum-recoil: 1.0
+    item-icon: tacz/m16a1_slot.png
+    item-model: tacz/m16a1_lod.bbmodel
+    ammo-icon: tacz/556x45.png
+    # Обвес (как в TACZ, клавиша Y с оружием в руке): slots — какие слоты есть; allow — какие обвесы можно (id
+    # и #метки из attachments.yml; метки adapter/… — повышающие планки); builtin — встроенные (ставятся без
+    # предмета); default — что стоит на новом оружии; locked — слоты, которые нельзя менять; extended-mag —
+    # патронов в магазине с удлинённым магазином 1/2/3 уровня; reload-xmag — перезарядка с ним (как reload).
+    attachments:
+      slots: ["muzzle", "extended_mag", "scope", "grip"]
+      allow: ["#muzzle", "#extended_mag", "#bayonet_ar", "#m16a1_scope", "oem_m16a1_handguard_a2", "#ammo_mod_no_he", "#adapter/pistol_riser", "#adapter/rail_mid"]
+      builtin: {grip: ["oem_m16a1_handguard_a2"]}
+      default: {}
+      extended-mag: [30, 40, 50]
+
+  # Desert Eagle (deagle из TACZ): пистолет под .50 AE, одиночный; поза тела — pistol_default TACZ.
+  deagle:
+    name: "Desert Eagle"
+    lore: ["Пистолет под .50 AE — мощный и тяжёлый.", "Модель и звуки: TACZ, CC BY-NC-ND 4.0"]
+    item: deagle
+    material: iron_horse_armor
+    ammo-item: ammo_50ae
+    ammo-material: gold_nugget
+    ammo-name: "Патроны .50 AE"
+    caliber: "50ae"
+    infinite-ammo: false
+    magazine: 7
+    chamber: true
+    rpm: 300
+    modes: [semi]
+    damage:
+      - {distance: 15, damage: 16}
+      - {distance: 30, damage: 14}
+      - {distance: 50, damage: 12}
+      - {distance: inf, damage: 10}
+    headshot: 1.75
+    bullet:
+      speed: 170
+      life: 0.7
+      gravity: 0.15
+      friction: 0.03
+      pierce: 1
+      knockback: 0.1
+      tracer: "#FF8888"
+    spread:
+      stand: 4
+      move: 4.5
+      sneak: 2.25
+      aim: 0.1
+      vacuum: 4
+    recoil:
+      pitch:
+        - {time: 0, min: 0.95, max: 0.95}
+        - {time: 0.4, min: 0.95, max: 0.95}
+        - {time: 0.65, min: -0.225, max: -0.225}
+        - {time: 0.85, min: 0.125, max: 0.125}
+        - {time: 1.1, min: 0, max: 0}
+        - {time: 1.2, min: 0, max: 0}
+      yaw:
+        - {time: 0, min: -0.3, max: 0.3}
+        - {time: 0.5, min: 0, max: 0}
+    reload:
+      tactical: {feed: 1.2, total: 1.64}
+      empty: {feed: 1.67, total: 2.0}
+    draw: 0.33
+    aim-time: 0.2
+    zoom: 1.2
+    aim-speed: 0.9
+    flash-scale: 0.7
+    model: guns/deagle.bbmodel
+    hud: guns/deagle_hud.png
+    flash: guns/common_muzzle_flash.png
+    player-animation: guns/pistol_default.player_animation.json
+    sounds:
+      shoot: deagle_shoot
+      shoot3p: deagle_shoot_3p
+      silence: deagle_silence
+      silence3p: deagle_silence_3p
+      draw: deagle_draw
+      put_away: deagle_put_away
+      dry_fire: gun_dry_fire
+      fire_select: gun_fire_select
+      flesh_hit: gun_flesh_hit
+      head_hit: gun_head_hit
+      kill: gun_kill
+    reload-sounds-3p:
+      tactical: {"0.5": deagle_reload_magout, "1.1": deagle_reload_magin}
+      empty: {"0.33": deagle_reload_empty_magout, "1.0": deagle_reload_empty_magin, "1.53": deagle_reload_empty_slideback}
+    type: pistol
+    vacuum-recoil: 0.8
+    item-icon: tacz/deagle_slot.png
+    item-model: tacz/deagle_lod.bbmodel
+    ammo-icon: tacz/50ae.png
+    # Обвес (как в TACZ, клавиша Y с оружием в руке): slots — какие слоты есть; allow — какие обвесы можно (id
+    # и #метки из attachments.yml; метки adapter/… — повышающие планки); builtin — встроенные (ставятся без
+    # предмета); default — что стоит на новом оружии; locked — слоты, которые нельзя менять; extended-mag —
+    # патронов в магазине с удлинённым магазином 1/2/3 уровня; reload-xmag — перезарядка с ним (как reload).
+    attachments:
+      slots: ["scope", "muzzle", "extended_mag", "laser"]
+      allow: ["#scope_sight", "#deagle_sight", "#pistol_muzzle", "#light_extended_mag", "#ammo_mod", "#pistol_laser", "#scope_lowsight", "#adapter/pistol_riser"]
+      builtin: {}
+      default: {}
+      extended-mag: [8, 10, 12]
+      reload-xmag: {tactical: {feed: 1.53, total: 1.93}, empty: {feed: 1.93, total: 2.33}}
+    # Взрыв (только с фугасными патронами ammo_mod_he): урон в центре, радиус (блоков), отбрасывает ли.
+    explosion: {damage: 10, radius: 1, knockback: true}
+
+  # M1897 (m1897 из TACZ): помповый дробовик. За выстрел 8 дробин (pellets), урон из damage — на весь выстрел
+  # (делится между дробинами, как у TACZ). После выстрела — помпа (bolt-time, как затвор AWP); зажатая ЛКМ — стреляет
+  # и передёргивает подряд. Перезарядка — по одному патрону (shell-reload); выстрел её прерывает.
+  m1897:
+    name: "M1897"
+    lore: ["Помповый дробовик под 12 калибр.", "Модель и звуки: TACZ, CC BY-NC-ND 4.0"]
+    item: m1897
+    material: iron_horse_armor
+    ammo-item: ammo_12g
+    ammo-material: gold_nugget
+    ammo-name: "Патроны 12 калибра"
+    caliber: "12g"
+    infinite-ammo: false
+    # Трубчатый магазин на 5 и патрон в патроннике.
+    magazine: 5
+    chamber: true
+    rpm: 400
+    modes: [auto]
+    bolt-time: 0.2
+    # Дробин за выстрел.
+    pellets: 8
+    damage:
+      - {distance: 16, damage: 32}
+      - {distance: 20, damage: 28}
+      - {distance: 24, damage: 24}
+      - {distance: inf, damage: 16}
+    headshot: 1.25
+    bullet:
+      speed: 150
+      life: 0.6
+      gravity: 0.15
+      friction: 0.05
+      pierce: 1
+      knockback: 0.15
+      tracer: "#FF8888"
+    # У дробовика конус широкий и в прицеле.
+    spread:
+      stand: 3.65
+      move: 3.7
+      sneak: 3.65
+      aim: 3.5
+      vacuum: 3.65
+    recoil:
+      pitch:
+        - {time: 0, min: 2.25, max: 2.25}
+        - {time: 0.2, min: 2.25, max: 2.25}
+        - {time: 0.5, min: 0.15, max: 0.15}
+        - {time: 0.75, min: 0, max: 0}
+      yaw:
+        - {time: 0, min: -1.5, max: -1.5}
+        - {time: 0.1, min: -1, max: -1}
+        - {time: 0.5, min: 0.15, max: 0.15}
+        - {time: 0.75, min: 0, max: 0}
+    # Перезарядка по одному патрону, секунд (TACZ m870_unload_gun_logic): вступление intro (в магазине что-то есть)
+    # или intro-empty (пустой: патрон в патронник в intro-empty-feed), потом на каждый патрон цикл loop (патрон в
+    # магазине в loop-feed от начала цикла), в конце end.
+    shell-reload:
+      intro: 0.47
+      intro-empty: 2.1
+      intro-empty-feed: 1.53
+      loop: 0.53
+      loop-feed: 0.27
+      end: 0.37
+    draw: 0.25
+    aim-time: 0.18
+    zoom: 1.25
+    aim-speed: 0.9
+    flash-scale: 2.0
+    # Своего прицела (крестика по разбросу) на экране нет — как у TACZ.
+    crosshair: false
+    model: guns/m1897.bbmodel
+    hud: guns/m1897_hud.png
+    flash: guns/common_muzzle_flash.png
+    player-animation: guns/rifle_default.player_animation.json
+    sounds:
+      shoot: m1897_shoot
+      shoot3p: m1897_shoot_3p
+      silence: m1897_silence
+      silence3p: m1897_silence_3p
+      draw: m1897_draw
+      put_away: m1897_put_away
+      dry_fire: gun_dry_fire
+      fire_select: gun_fire_select
+      flesh_hit: gun_flesh_hit
+      head_hit: gun_head_hit
+      kill: gun_kill
+    # Для остальных: tactical — вступление, empty — вступление с пустым магазином, loop — каждый патрон, end — конец.
+    reload-sounds-3p:
+      tactical: {"0": m1897_reload_empty_start}
+      empty: {"0": m1897_reload_empty_start, "0.33": m1897_bolt_out, "1.47": m1897_bolt_in}
+      loop: {"0.03": m1897_reload_shellinsert}
+      end: {"0": m1897_reload_end}
+    bolt-sounds-3p: {"0.03": m1897_bolt_in, "0.23": m1897_bolt_out}
+    type: rifle
+    vacuum-recoil: 2.0
+    # В TACZ нет упрощённой модели M1897 — предмет hoitems из полной модели (без рук и штыка).
+    item-icon: tacz/m1897_slot.png
+    item-model: tacz/m1897_item.bbmodel
+    ammo-icon: tacz/12g.png
+    # Обвес (как в TACZ, клавиша Y с оружием в руке): slots — какие слоты есть; allow — какие обвесы можно (id
+    # и #метки из attachments.yml; метки adapter/… — повышающие планки); builtin — встроенные (ставятся без
+    # предмета); default — что стоит на новом оружии; locked — слоты, которые нельзя менять; extended-mag —
+    # патронов в магазине с удлинённым магазином 1/2/3 уровня; reload-xmag — перезарядка с ним (как reload).
+    attachments:
+      slots: ["extended_mag", "muzzle"]
+      allow: ["#ammo_mod_no_he", "#ammo_mod_shotgun_exclusive", "#muzzle_shotgun", "oem_m1897_bayonet"]
+      builtin: {muzzle: ["oem_m1897_bayonet"]}
+      default: {}
+    # Взрыв (только с фугасными патронами ammo_mod_he): урон в центре, радиус (блоков), отбрасывает ли.
+    explosion: {damage: 50, radius: 3, knockback: false}
+
+  # Плазменная винтовка ПВ-7 — наше оружие (не TACZ): модель, текстура, анимации, иконки и звуки сделаны скриптами
+  # tools/plasma (gen_plasma_rifle.py, gen_plasma_sounds.py), лежат в jar в папке hoka/. Блок из четырёх коротких
+  # стволов проворачивается на каждый выстрел; питание — энергоячейка (патроны ammo_plasma_cell). Выстрел — короткий
+  # голубой сгусток плазмы (bullet.tracer-style: plasma), летит заметно медленнее пули.
+  plasma_rifle:
+    name: "Плазменная винтовка ПВ-7"
+    lore: ["Импульсная винтовка с вращающимся блоком стволов.", "Питание — плазменные ячейки."]
+    item: plasma_rifle
+    material: iron_horse_armor
+    ammo-item: ammo_plasma_cell
+    ammo-material: prismarine_crystals
+    ammo-name: "Плазменная ячейка"
+    caliber: "plasma_cell"
+    infinite-ammo: false
+    # Заряд ячейки — 36 выстрелов; патронника нет (ячейка питает стволы напрямую).
+    magazine: 36
+    chamber: false
+    rpm: 650
+    modes: [auto, semi]
+    damage:
+      - {distance: 30, damage: 8.5}
+      - {distance: 55, damage: 7}
+      - {distance: inf, damage: 5.5}
+    headshot: 1.5
+    # Сгусток плазмы: медленный (его видно в полёте), почти без падения; tracer-style: plasma — короткий светящийся
+    # заряд вместо ленты трассера, голубая вспышка и искры при попадании; tracer-length — длина сгустка (блоков).
+    bullet:
+      speed: 90
+      life: 1.4
+      gravity: 0.01
+      friction: 0.0
+      pierce: 1
+      knockback: 0.05
+      tracer: "#46C8FF"
+      tracer-style: plasma
+      tracer-length: 0.8
+    spread:
+      stand: 4.0
+      move: 4.75
+      sneak: 2.25
+      aim: 0.15
+      vacuum: 4.0
+    recoil:
+      pitch:
+        - {time: 0, min: 0.55, max: 0.65}
+        - {time: 0.08, min: 0.9, max: 1.0}
+        - {time: 0.2, min: 0.35, max: 0.35}
+        - {time: 0.4, min: -0.1, max: -0.1}
+        - {time: 0.55, min: 0, max: 0}
+      yaw:
+        - {time: 0, min: -0.2, max: 0.2}
+        - {time: 0.3, min: 0, max: 0}
+    # Ячейка вставлена в 1,42 с; с пустой ещё рукоять заряжания (1,75–1,9 с).
+    reload:
+      tactical: {feed: 1.45, total: 1.9}
+      empty: {feed: 1.45, total: 2.35}
+    draw: 0.35
+    aim-time: 0.22
+    zoom: 1.33
+    aim-speed: 0.8
+    flash-scale: 0.7
+    model: guns/plasma_rifle.bbmodel
+    hud: guns/plasma_rifle_hud.png
+    flash: guns/plasma_flash.png
+    player-animation: guns/rifle_default.player_animation.json
+    sounds:
+      shoot: plasma_rifle_shoot
+      shoot3p: plasma_rifle_shoot_3p
+      silence: plasma_rifle_silence        # с глушителем: приглушённый плазменный выстрел (tools/plasma)
+      silence3p: plasma_rifle_silence_3p
+      draw: plasma_rifle_draw
+      put_away: plasma_rifle_put_away
+      dry_fire: gun_dry_fire
+      fire_select: gun_fire_select
+      flesh_hit: gun_flesh_hit
+      head_hit: gun_head_hit
+      kill: gun_kill
+    reload-sounds-3p:
+      tactical: {"0.5": plasma_rifle_cell_out, "1.4": plasma_rifle_cell_in}
+      empty: {"0.5": plasma_rifle_cell_out, "1.4": plasma_rifle_cell_in, "1.74": plasma_rifle_charge}
+    type: rifle
+    vacuum-recoil: 0.8
+    item-icon: hoka/plasma_rifle_slot.png
+    item-model: hoka/plasma_rifle_lod.bbmodel
+    ammo-icon: hoka/plasma_cell.png
+    # Обвес: прицелы, рукояти, приклады и ЛЦУ — те же, что у M4A1. Два ЛЦУ: laser — на левой планке цевья, laser2 —
+    # на правой (пистолетные — через переходники laser_adapter / laser_adapter_2 модели). Дуло (muzzle_pos — перед
+    # блоком стволов, по оси канала): глушители, ДТК и компенсаторы TACZ (#muzzle); с глушителем — звук silence и без
+    # вспышки. Встроенный приклад — свой каркасный (plasma_wire_stock), механический прицел прячется под оптикой. В слот
+    # магазина — только своя удлинённая ячейка plasma_cell_extended (72 выстрела, кость модели mag_extended_1; патроны
+    # TACZ ammo_mod_* и магазины TACZ сюда не ставятся). paint: true — в окне обвеса кнопка «Покрасить» (стандарт /
+    # чёрный металл: своя текстура в модели, метка предмета hoka_paint).
+    attachments:
+      slots: ["scope", "muzzle", "stock", "laser", "laser2", "grip", "extended_mag"]
+      allow: ["plasma_wire_stock", "plasma_cell_extended", "#scope_scope", "#scope_sight", "#muzzle", "#grip", "#stock", "#ar_laser", "#pistol_laser", "#adapter/pistol_riser", "#adapter/rail_mid"]
+      paint: true
+      builtin: {stock: ["plasma_wire_stock"]}
+      default: {stock: "plasma_wire_stock"}
+      extended-mag: [72, 72, 72]
+      # длинную ячейку дольше вынимать и вставлять (анимации reload_*_xmag — те же ×1,12)
+      reload-xmag: {tactical: {feed: 1.62, total: 2.13}, empty: {feed: 1.62, total: 2.63}}
+
+  # Плазменная ВССК «Выхлоп» — наше оружие (не TACZ): компактная снайперская винтовка-буллпап с огромным
+  # интегрированным глушителем, стреляет плазмой. Модель, текстура (чёрный металл), анимации, иконки и звуки — скрипты
+  # tools/plasma (gen_vssk.py, gen_vssk_sounds.py), в jar в папке hoka/. Только одиночный огонь, тяжёлый быстрый
+  # сгусток плазмы (bullet.tracer-width — толще обычного), питание — тяжёлые плазменные ячейки (ammo_heavy_plasma_cell).
+  vssk_vykhlop:
+    name: "ВССК «Выхлоп»"
+    lore: ["Компактная плазменная снайперская винтовка-буллпап.", "Глушитель — часть винтовки.", "Питание — тяжёлые плазменные ячейки."]
+    item: vssk_vykhlop
+    material: iron_horse_armor
+    ammo-item: ammo_heavy_plasma_cell
+    ammo-material: prismarine_shard
+    ammo-name: "Тяжёлая плазменная ячейка"
+    caliber: "heavy_plasma_cell"
+    infinite-ammo: false
+    # Заряд тяжёлой ячейки — 6 выстрелов; патронника нет.
+    magazine: 6
+    chamber: false
+    # Самозарядная, но тяжёлому разряду нужно время: выстрел не чаще раза в 0,75 с.
+    rpm: 80
+    modes: [semi]
+    damage:
+      - {distance: 80, damage: 44}
+      - {distance: 160, damage: 39}
+      - {distance: inf, damage: 34}
+    headshot: 2
+    # Сгусток быстрее, чем у ПВ-7 (160 блоков/с), длиннее (tracer-length) и толще (tracer-width — множитель толщины);
+    # цвет — глубже, сине-фиолетовый.
+    bullet:
+      speed: 160
+      life: 1.3
+      gravity: 0.02
+      friction: 0.0
+      pierce: 3
+      knockback: 0.15
+      tracer: "#6A78FF"
+      tracer-style: plasma
+      tracer-length: 1.4
+      tracer-width: 1.6
+    spread:
+      stand: 4.0
+      move: 5.0
+      sneak: 2.5
+      aim: 0.08
+      vacuum: 4.0
+    # Сильная отдача на выстрел.
+    recoil:
+      pitch:
+        - {time: 0, min: 2.6, max: 3.0}
+        - {time: 0.07, min: 1.8, max: 2.0}
+        - {time: 0.18, min: 0.9, max: 0.9}
+        - {time: 0.35, min: -0.3, max: -0.3}
+        - {time: 0.5, min: 0, max: 0}
+      yaw:
+        - {time: 0, min: -0.6, max: 0.6}
+        - {time: 0.12, min: 0.3, max: 0.3}
+        - {time: 0.3, min: 0, max: 0}
+    # Ячейка вставлена в 1,42 с; с пустой ещё затворная рукоятка (1,72–1,9 с).
+    reload:
+      tactical: {feed: 1.45, total: 1.9}
+      empty: {feed: 1.45, total: 2.35}
+    draw: 0.45
+    aim-time: 0.3
+    # Механический прицел (мушка и целик на планке), приближение 1,5.
+    zoom: 1.5
+    aim-speed: 0.7
+    flash-scale: 0.6
+    model: guns/vssk_vykhlop.bbmodel
+    hud: guns/vssk_vykhlop_hud.png
+    flash: guns/plasma_flash.png
+    player-animation: guns/rifle_default.player_animation.json
+    # Глушитель встроен: выстрел всегда «с глушителем» (silence — те же звуки).
+    sounds:
+      shoot: vssk_vykhlop_shoot
+      shoot3p: vssk_vykhlop_shoot_3p
+      silence: vssk_vykhlop_shoot
+      silence3p: vssk_vykhlop_shoot_3p
+      draw: vssk_vykhlop_draw
+      put_away: vssk_vykhlop_put_away
+      dry_fire: gun_dry_fire
+      fire_select: gun_fire_select
+      flesh_hit: gun_flesh_hit
+      head_hit: gun_head_hit
+      kill: gun_kill
+    reload-sounds-3p:
+      tactical: {"0.5": vssk_vykhlop_cell_out, "1.4": vssk_vykhlop_cell_in}
+      empty: {"0.5": vssk_vykhlop_cell_out, "1.4": vssk_vykhlop_cell_in, "1.74": vssk_vykhlop_charge}
+    type: sniper
+    vacuum-recoil: 2.0
+    item-icon: hoka/vssk_vykhlop_slot.png
+    item-model: hoka/vssk_vykhlop_lod.bbmodel
+    ammo-icon: hoka/heavy_plasma_cell.png
+    # Обвес: прицелы (оптика и коллиматоры, с повышающими планками), рукоять (планка под передней частью корпуса),
+    # приклады (встроенный — свой затыльник vssk_buttpad), два ЛЦУ — laser слева и laser2 справа на передней части
+    # корпуса (пистолетные — через переходники laser_adapter / laser_adapter_2). Дуло заперто: встроенный глушитель
+    # vssk_suppressor — часть винтовки (выстрел тихий, без вспышки). Механический прицел прячется под оптикой.
+    attachments:
+      slots: ["scope", "muzzle", "stock", "laser", "laser2", "grip"]
+      allow: ["vssk_buttpad", "vssk_suppressor", "#scope_scope", "#scope_sight", "#grip", "#stock", "#ar_laser", "#pistol_laser", "#adapter/pistol_riser", "#adapter/rail_mid"]
+      builtin: {stock: ["vssk_buttpad"], muzzle: ["vssk_suppressor"]}
+      default: {stock: "vssk_buttpad", muzzle: "vssk_suppressor"}
+      locked: [muzzle]                 # глушитель — часть винтовки, не снимается

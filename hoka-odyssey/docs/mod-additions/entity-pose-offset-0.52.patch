@@ -1,0 +1,152 @@
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/api/ClientContext.java b/client/core/src/main/java/ink/hoka/odyssey/client/api/ClientContext.java
+index 93a4725..506a08e 100644
+--- a/client/core/src/main/java/ink/hoka/odyssey/client/api/ClientContext.java
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/api/ClientContext.java
+@@ -180,8 +180,19 @@ public interface ClientContext {
+ 
+     interface EntityTiltHook { org.joml.Quaternionfc tilt(net.minecraft.world.entity.Entity entity, float partialTick); }
+ 
+-    /** Поза модели: поворот (мир) и углы в его системе (градусы, как у игры: тело, курс головы, наклон головы). */
+-    record EntityPose(org.joml.Quaternionfc tilt, float bodyYaw, float headYaw, float headPitch) {}
++    /**
++     * Поза модели: поворот (мир) и углы в его системе (градусы, как у игры: тело, курс головы, наклон головы).
++     * offset — сдвиг модели в мировых осях (блоки) от позиции сущности до точки, вокруг которой она поворачивается
++     * на tilt; null — поворот вокруг ног, как раньше (свободный полёт — вокруг середины тела, стоя на стене — ноги
++     * на стене, а рамка сущности остаётся ровной).
++     */
++    record EntityPose(org.joml.Quaternionfc tilt, float bodyYaw, float headYaw, float headPitch,
++                      org.joml.Vector3fc offset) {
++        /** Без сдвига — как раньше: уже собранные модули работают без изменений. */
++        public EntityPose(org.joml.Quaternionfc tilt, float bodyYaw, float headYaw, float headPitch) {
++            this(tilt, bodyYaw, headYaw, headPitch, null);
++        }
++    }
+ 
+     interface EntityPoseHook { EntityPose pose(net.minecraft.world.entity.Entity entity, float partialTick); }
+ 
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/mixin/EntityTiltMixin.java b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/EntityTiltMixin.java
+index 7393ddf..5b15fc8 100644
+--- a/client/core/src/main/java/ink/hoka/odyssey/client/mixin/EntityTiltMixin.java
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/EntityTiltMixin.java
+@@ -16,25 +16,33 @@ import org.spongepowered.asm.mixin.injection.Inject;
+ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+ 
+ /**
+- * Поворот модели сущности от модулей (ClientContext.onEntityTilt): при сборе состояния модели — запомнить поворот и
+- * перевести углы тела/головы в его систему (взгляд в мире тот же); при отрисовке — повернуть модель вокруг ног.
++ * Поворот модели сущности от модулей. Поза целиком (ClientContext.onEntityPose) — углы как есть, поворот tilt и
++ * сдвиг offset; иначе поворот onEntityTilt — углы тела/головы переводятся в его систему (взгляд в мире тот же).
++ * При отрисовке (начало setupRotations, PoseStack — в мировых осях, уже со scale сущности): сдвинуть на offset,
++ * затем повернуть на tilt (то есть вокруг ног модели после сдвига).
++ * <p>
++ * Восстановлено по байткоду 0.48.0 (javap) + исходникам 0.25; добавка — всё, что касается HOKA_OFFSET.
+  */
+ @Mixin(LivingEntityRenderer.class)
+ public abstract class EntityTiltMixin {
+ 
+     @Unique private static final RenderStateDataKey<Quaternionf> HOKA_TILT = RenderStateDataKey.create(() -> "hoka_odyssey:tilt");
++    /** НОВОЕ: сдвиг модели (мир, блоки) из EntityPose.offset. */
++    @Unique private static final RenderStateDataKey<Vector3f> HOKA_OFFSET = RenderStateDataKey.create(() -> "hoka_odyssey:offset");
+ 
+     @Inject(method = "extractRenderState(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;F)V",
+             at = @At("TAIL"))
+     private void hokaOdyssey$extract(LivingEntity e, LivingEntityRenderState s, float pt, CallbackInfo ci) {
+         var pose = Hooks.pose(e, pt);
+-        if (pose != null) {                                                     // углы уже в системе поворота
++        if (pose != null) {
+             s.bodyRot = pose.bodyYaw();
+             s.yRot = Mth.wrapDegrees(pose.headYaw() - pose.bodyYaw());
+             s.xRot = pose.headPitch();
+             s.setData(HOKA_TILT, pose.tilt() == null ? null : new Quaternionf(pose.tilt()));
++            s.setData(HOKA_OFFSET, pose.offset() == null ? null : new Vector3f(pose.offset()));   // НОВОЕ
+             return;
+         }
++        s.setData(HOKA_OFFSET, null);                                                              // НОВОЕ
+         var t = Hooks.tilt(e, pt);
+         if (t == null) { s.setData(HOKA_TILT, null); return; }
+         Quaternionf q = new Quaternionf(t);
+@@ -54,6 +62,10 @@ public abstract class EntityTiltMixin {
+ 
+     @Inject(method = "setupRotations", at = @At("HEAD"))
+     private void hokaOdyssey$rotate(LivingEntityRenderState s, PoseStack pose, float bodyRot, float scale, CallbackInfo ci) {
++        // НОВОЕ: сдвиг — до поворота, в мировых осях. PoseStack здесь уже умножен на scale сущности
++        // (LivingEntityRenderer.submit: scale(s, s, s) → setupRotations), а offset — в блоках мира: делим на scale.
++        Vector3f off = s.getData(HOKA_OFFSET);
++        if (off != null && scale > 1e-6f) pose.translate(off.x / scale, off.y / scale, off.z / scale);
+         Quaternionf q = s.getData(HOKA_TILT);
+         if (q != null) pose.mulPose(q);
+     }
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/mixin/HitboxTiltMixin.java b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/HitboxTiltMixin.java
+index 610a70a..0af99bf 100644
+--- a/client/core/src/main/java/ink/hoka/odyssey/client/mixin/HitboxTiltMixin.java
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/HitboxTiltMixin.java
+@@ -6,6 +6,7 @@ import net.minecraft.gizmos.Gizmos;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.phys.Vec3;
+ import org.joml.Quaternionf;
++import org.joml.Quaternionfc;
+ import org.joml.Vector3f;
+ import org.spongepowered.asm.mixin.Mixin;
+ import org.spongepowered.asm.mixin.Unique;
+@@ -16,6 +17,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+ /**
+  * Хитбокс (F3+B) сущности, модель которой повёрнута модулем (onEntityTilt), — повёрнутым так же, вокруг ног:
+  * именно такую коробку (стоит по палубе корабля) считают столкновения ядра. Плюс линия глаз и стрелка взгляда.
++ * <p>
++ * НОВОЕ: поза onEntityPose со сдвигом offset — коробка модели рисуется так же, как модель (сдвиг, потом поворот),
++ * чтобы было видно, где модель на самом деле. Поза без offset — как в 0.48.0 (только onEntityTilt).
++ * <p>
++ * Восстановлено по байткоду 0.48.0 (javap) + исходникам 0.25.
+  */
+ @Mixin(EntityHitboxDebugRenderer.class)
+ public abstract class HitboxTiltMixin {
+@@ -23,10 +29,16 @@ public abstract class HitboxTiltMixin {
+     @Inject(method = "showHitboxes", at = @At("HEAD"), cancellable = true)
+     private void hokaOdyssey$tilted(Entity e, float pt, boolean server, CallbackInfo ci) {
+         if (server) return;
+-        var t = Hooks.tilt(e, pt);
++        Quaternionfc t = null;
++        Vec3 feet = e.getPosition(pt);
++        var pose = Hooks.pose(e, pt);                                                    // НОВОЕ
++        if (pose != null && pose.tilt() != null && pose.offset() != null) {             // НОВОЕ
++            t = pose.tilt();
++            feet = feet.add(pose.offset().x(), pose.offset().y(), pose.offset().z());
++        }
++        if (t == null) t = Hooks.tilt(e, pt);
+         if (t == null) return;
+         Quaternionf q = new Quaternionf(t);
+-        Vec3 feet = e.getPosition(pt);
+         float hw = e.getBbWidth() / 2, h = e.getBbHeight(), eye = e.getEyeHeight();
+         Vec3[] c = new Vec3[8];
+         for (int i = 0; i < 8; i++) c[i] = at(q, feet, (i & 1) == 0 ? -hw : hw, (i & 2) == 0 ? 0 : h, (i & 4) == 0 ? -hw : hw);
+diff --git a/client/core/src/main/java/ink/hoka/odyssey/client/mixin/PickupTargetMixin.java b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/PickupTargetMixin.java
+index 4fb2346..9aa7d9c 100644
+--- a/client/core/src/main/java/ink/hoka/odyssey/client/mixin/PickupTargetMixin.java
++++ b/client/core/src/main/java/ink/hoka/odyssey/client/mixin/PickupTargetMixin.java
+@@ -13,8 +13,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
+ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+ 
+ /**
+- * Подбор: предмет летит в середину тела игрока — игра считает её по вертикали мира. Своему игроку на корабле (поза
+- * модели от модуля) — по «верху» корабля, иначе на корабле на боку предмет улетал вбок.
++ * (Необязательно.) Подбираемый предмет летит к середине повёрнутого тела своего игрока: «вверх» — по tilt позы.
++ * НОВОЕ — плюс offset, если он задан (иначе предмет летит к телу, повёрнутому вокруг ног, а не к показанному).
++ * <p>
++ * Восстановлено по байткоду 0.48.0 (javap); в исходниках 0.25 этого миксина нет — сверить со своим.
+  */
+ @Mixin(ItemPickupParticle.class)
+ public abstract class PickupTargetMixin {
+@@ -30,8 +32,10 @@ public abstract class PickupTargetMixin {
+         if (pose == null || pose.tilt() == null) return;
+         Vector3f up = pose.tilt().transform(new Vector3f(0, 1, 0), new Vector3f());
+         double h = p.getEyeHeight() / 2.0;
+-        targetX = p.getX() + up.x * h;
+-        targetY = p.getY() + up.y * h;
+-        targetZ = p.getZ() + up.z * h;
++        var off = pose.offset();                                                        // НОВОЕ
++        double ox = off == null ? 0 : off.x(), oy = off == null ? 0 : off.y(), oz = off == null ? 0 : off.z();
++        targetX = p.getX() + ox + up.x * h;
++        targetY = p.getY() + oy + up.y * h;
++        targetZ = p.getZ() + oz + up.z * h;
+     }
+ }

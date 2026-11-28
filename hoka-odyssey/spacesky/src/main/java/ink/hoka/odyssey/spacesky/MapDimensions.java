@@ -1,0 +1,70 @@
+package ink.hoka.odyssey.spacesky;
+
+import ink.hoka.odyssey.api.ModuleConfig;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
+
+/**
+ * Тип мира карт: ключ {@code dimension} в maps/&lt;карта&gt;/map.yml (его читает ядро при загрузке карты). Только файлы —
+ * вызывать из async. Остальные ключи map.yml (генерация, точка появления) сохраняются.
+ */
+final class MapDimensions {
+    static final String KEY = "dimension";
+    static final String DEFAULT = "minecraft:overworld";
+    /** Имя карты — как в ядре (Maps.NAME). */
+    static final Pattern NAME = Pattern.compile("[a-z0-9_\\-]{1,32}");
+    /** Папка карт ядра (Maps: Path.of("maps") от рабочей папки сервера). */
+    static final Path MAPS = Path.of("maps");
+
+    private MapDimensions() {
+    }
+
+    static Path file(Path mapsDir, String map) {
+        return mapsDir.resolve(map).resolve("map.yml");
+    }
+
+    /** Тип мира каждой карты (нет ключа — minecraft:overworld); карта без папки пропускается. */
+    static Map<String, String> read(Path mapsDir, Collection<String> maps) {
+        Map<String, String> out = new LinkedHashMap<>();
+        for (String m : maps) {
+            if (!NAME.matcher(m).matches() || !Files.isDirectory(mapsDir.resolve(m))) {
+                continue;
+            }
+            String d;
+            try {
+                d = new ModuleConfig(file(mapsDir, m)).getString(KEY, DEFAULT);
+            } catch (IllegalStateException e) {
+                d = "? (map.yml не читается)";
+            }
+            out.put(m, d);
+        }
+        return out;
+    }
+
+    /**
+     * Записать тип мира {@code dimension} (например «hoka:mars») или, если dimension = null, убрать ключ — только когда
+     * там тип мира профиля неба («hoka:…», см. {@link Profiles#profileOf}): чужой тип мира не трогается. Возвращает
+     * прежнее значение ключа (null — не было). Файл пишется, только если что-то меняется. Исключение — нет такой
+     * карты или файл не прочитать/записать.
+     */
+    static String write(Path mapsDir, String map, String dimension) {
+        if (!NAME.matcher(map).matches() || !Files.isDirectory(mapsDir.resolve(map))) {
+            throw new IllegalArgumentException("нет карты «" + map + "»");
+        }
+        ModuleConfig c = new ModuleConfig(file(mapsDir, map));
+        Object o = c.get(KEY);
+        String prev = o == null ? null : String.valueOf(o);
+        if (dimension != null && !dimension.equals(prev)) {
+            c.set(KEY, dimension);
+            c.save();
+        } else if (dimension == null && Profiles.profileOf(prev) != null) {
+            c.set(KEY, null);
+            c.save();
+        }
+        return prev;
+    }
+}

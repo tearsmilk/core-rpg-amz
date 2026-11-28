@@ -1,0 +1,9 @@
+# Описание модуля. Обязательны id и main.
+id: guns
+name: Оружие
+version: 0.1.0
+main: ink.hoka.odyssey.guns.GunsModule
+authors: [tearsmilk]
+description: "Огнестрел — АКМ, AWP с прицелом 8x, Glock 17, M4A1, M16A1, Desert Eagle, дробовик M1897 (модели и звуки TACZ, CC BY-NC-ND 4.0): стрельба, прицел, магазин, перезарядка, затвор и помпа, дробь, отдача в вакууме"
+depends: []
+softdepends: [clientmods, hoitems, hosounds, gravity]

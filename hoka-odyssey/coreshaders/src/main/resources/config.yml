@@ -1,0 +1,229 @@
+# coreshaders — «окна в другой мир»: куб или плоскость, в которых видна панорама 360°. Автор: tearsmilk.
+# Перечитать: /hocs reload (или homodule reload coreshaders). Эффекты хранятся в module/coreshaders/effects/<карта>.json.
+
+# Картинки: должны быть в паке (coreshaders:cube_<картинка>, coreshaders:plane_<картинка>). Свои картинки модуль
+# дописывает сюда сам (/hocs upload, /hocs import).
+images:
+  - sky_sea
+  - space
+  - nether
+  - aurora
+  - end
+  - sunset
+  - volcano
+  - hell_end
+  - heaven
+  - walk
+  - rain
+  - sea_sand
+
+# Названия картинок для сообщений и описания жезла.
+image-names:
+  sky_sea: "Небо и море"
+  space: "Космос"
+  nether: "Незер"
+  aurora: "Северное сияние"
+  end: "Энд"
+  sunset: "Закат"
+  volcano: "Вулкан"
+  hell_end: "Ад и Энд"
+  heaven: "Рай"
+  walk: "Прогулка"
+  rain: "Дождь"
+  sea_sand: "Море и песок"
+
+defaults:
+  shape: cube
+  image: sky_sea
+  color: "#FFFFFF"
+
+# Дальность луча для команд и ЛКМ жезлом (в блоках).
+max-distance: 8.0
+
+# Отступ плоскости от грани блока (в блоках), чтобы не было мерцания.
+plane-offset: 0.015
+
+# Светящийся обод по краям граней и рамка вокруг плоскости. По умолчанию выключен: окна без линий, соседние кубы и
+# плоскости сливаются в одну поверхность. Для эффекта: /hocs rim on|off [group]. Включённый обод рисуется только
+# по внешнему краю группы соседних эффектов.
+rim: false
+
+# Яркость дисплеев (0–15). Шейдер светится сам, это влияет только на клиентов без пака.
+brightness: 15
+
+# Команды на эффектах (порталы, варпы).
+commands:
+  # Триггер по умолчанию при первой команде: enter (вошёл в блок эффекта), click (ПКМ без жезла), both.
+  default-trigger: enter
+  # Пауза между срабатываниями для игрока, секунды (защита от петель телепорта). /hocs cooldown меняет у эффекта.
+  default-cooldown: 2.0
+  # Максимум эффектов в группе (флаг group — все соседние эффекты, например стена портала).
+  max-group: 1024
+
+# Свои картинки: /hocs upload <имя> <https-ссылка>, /hocs import <имя> (файл module/coreshaders/images/<имя>.png|jpg|gif).
+# Файлы пака пишутся в module/coreshaders/pack/ и передаются модулю respack, он пересобирает и рассылает пак.
+custom-images:
+  # Сколько своих картинок можно добавить (картинка — спрайт 1024x512 в атласе, 2 МБ видеопамяти).
+  max: 24
+  # Предел размера файла (МБ) и картинки (мегапиксели).
+  max-download-mb: 16
+  max-megapixels: 40
+  timeout-seconds: 20
+  # Номера картинок для шейдера (33–200). Заполняет модуль, руками не менять.
+  kinds: {}
+  # Анимированные GIF: кадры превращаются в панорамы и идут столбиком в одном PNG с .png.mcmeta.
+  animation:
+    # Не больше стольких кадров (время сохраняется: кадры прореживаются, frametime подбирается).
+    max-frames: 32
+    # Ширина кадра: 256, 512 или 1024 (высота — половина). Другие числа округляются до ближайшего.
+    width: 512
+    # Плавный переход между кадрами (interpolate в mcmeta).
+    interpolate: false
+    # Предел одной анимации в памяти клиента (ширина x высота x кадры x 4 байта), МБ.
+    max-texture-mb: 16
+    # Предел всех своих анимаций вместе в памяти клиента, МБ.
+    total-texture-mb: 96
+    # Предел размера PNG одной анимации в паке, МБ.
+    max-file-mb: 8
+    # Сколько кадров может быть в исходном GIF.
+    max-source-frames: 1000
+
+# Именованные цвета для /hocs color и /hocs give. Можно добавлять свои: имя: "#RRGGBB".
+colors:
+  white: "#FFFFFF"
+  red: "#FF5050"
+  orange: "#FFA040"
+  yellow: "#FFE060"
+  green: "#70FF70"
+  cyan: "#60FFFF"
+  blue: "#6080FF"
+  purple: "#C070FF"
+  pink: "#FF80C0"
+  gray: "#A0A0A0"
+  dark: "#505050"
+  белый: "#FFFFFF"
+  красный: "#FF5050"
+  оранжевый: "#FFA040"
+  жёлтый: "#FFE060"
+  желтый: "#FFE060"
+  зелёный: "#70FF70"
+  зеленый: "#70FF70"
+  голубой: "#60FFFF"
+  синий: "#6080FF"
+  фиолетовый: "#C070FF"
+  розовый: "#FF80C0"
+  серый: "#A0A0A0"
+  тёмный: "#505050"
+
+# Сообщения: цвета через & (&a, &c, &#7FD3FF), подстановки {имя}. Пропущенный ключ берётся по умолчанию.
+messages:
+  prefix: "&#7FD3FFcore&#C69BFFshaders &8| "
+  players-only: "&cЭта команда — только для игрока."
+  player-not-found: "&cИгрок &f{name}&c не найден."
+  unknown-shape: "&cНеизвестная форма &f{value}&c. Есть: cube, plane."
+  unknown-image: "&cНеизвестная картинка &f{value}&c. Есть: &f{list}&c."
+  unknown-color: "&cНе понял цвет &f{value}&c. Пиши #RRGGBB или имя: &f{list}&c."
+  given: "&aВыдан жезл игроку &f{name}&a: &f{shape}&a, &f{image}&a, {color}&a."
+  inventory-full: "&cУ игрока &f{name}&c нет места в инвентаре."
+  wand-name: "&#7FD3FF&lШейдерный &#C69BFF&lжезл"
+  wand-lore:
+    - "&7Форма: &f{shape}"
+    - "&7Картинка: &f{image}"
+    - "&7Цвет: {color}"
+    - ""
+    - "&8ПКМ по блоку — поставить"
+    - "&8ЛКМ по эффекту — убрать"
+    - "&8Shift + ПКМ — сменить картинку"
+    - "&8Shift + ЛКМ — сменить форму"
+  placed: "&aПоставлено: &f{shape}&a, &f{image}&a."
+  not-air: "&cТам не воздух — некуда ставить куб."
+  not-free: "&cТам уже есть эффект."
+  plane-blocked: "&cГрань закрыта блоком — плоскость не будет видна."
+  no-support: "&cЗа плоскостью нет блока — ей не на чем держаться."
+  not-map: "&cЭффекты ставятся только на картах из maps/ (здесь их негде сохранить)."
+  occupied: "&eТут уже стоит эффект. ЛКМ жезлом — убрать, /hocs image и /hocs color — изменить."
+  bad-radius: "&cРадиус &f{value}&c — не число от 0 до 512."
+  removeall-confirm: "&eЭто уберёт все эффекты на карте. Подтверди: &f/hocs removeall all&e, или укажи радиус: &f/hocs removeall 16&e."
+  click-block: "&eНаведись на блок, чтобы поставить эффект."
+  removed: "&eЭффект убран."
+  nothing-targeted: "&cНе вижу эффекта перед тобой (до &f{distance}&c блоков)."
+  wand-image: "&bКартинка жезла: &f{image}"
+  wand-shape: "&bФорма жезла: &f{shape}"
+  color-set: "&aЦвет эффекта: {color}"
+  image-set: "&aКартинка эффекта: &f{image}"
+  shape-set: "&aФорма эффекта: &f{shape}"
+  shape-blocked: "&cНельзя сменить форму: блок занят или грань закрыта."
+  info: "&7Эффект: форма &f{shape}&7, картинка &f{image}&7, цвет {color}&7, блок &f{x} {y} {z}&7, грань &f{face}&7, обод &f{rim}&7."
+  scope-one: "эффект"
+  scope-group: "группа"
+  cmd-usage: "&cПиши: &f/hocs cmd add <player|console> <команда> [group]&c, &f/hocs cmd list&c, &f/hocs cmd remove <номер> [group]&c, &f/hocs cmd clear [group]&c, &f/hocs cmd perm <op|off> [group]&c, &f/hocs cmd msg <текст|off> [group]&c."
+  cmd-added: "&aКоманда добавлена ({scope}, эффектов: &f{count}&a): &f{value}"
+  cmd-removed: "&eКоманда убрана ({scope}, эффектов: &f{count}&e): &f{value}"
+  cmd-cleared: "&eКоманды очищены ({scope}, эффектов: &f{count}&e)."
+  cmd-perm-set: "&aКто может срабатывать ({scope}, эффектов: &f{count}&a): &f{value}"
+  cmd-msg-set: "&aСообщение при срабатывании ({scope}, эффектов: &f{count}&a): &f{value}"
+  cmd-bad-index: "&cНет команды с номером &f{value}&c (всего &f{count}&c)."
+  cmd-header: "&7Команды: &f{count}&7, триггер &f{trigger}&7, пауза &f{cooldown}&7 с, кто может &f{permission}&7, сообщение &f{message}&7, эффектов в группе &f{group}&7."
+  cmd-entry: "&8 {index}. &b{executor} &f/{command}"
+  trigger-usage: "&cПиши: &f/hocs trigger <enter|click|both|off> [group]&c."
+  trigger-set: "&aТриггер ({scope}, эффектов: &f{count}&a): &f{value}"
+  cooldown-usage: "&cПауза &f{value}&c — не число от 0 до 86400. Пиши: &f/hocs cooldown <секунды> [group]&c."
+  cooldown-set: "&aПауза ({scope}, эффектов: &f{count}&a): &f{value}&a с"
+  rim-usage: "&cПиши: &f/hocs rim <on|off> [group]&c."
+  rim-set: "&aОбод ({scope}, эффектов: &f{count}&a): &f{value}"
+  trigger-no-permission: "&cЭтот портал только для операторов."
+  trigger-cooldown: "&eПодожди немного."
+  upload-usage: "&cПиши: &f/hocs upload <имя> <https-ссылка на png/jpg/gif>&c. Имя: a-z, 0-9, _."
+  import-usage: "&cПиши: &f/hocs import <имя>&c (файл {folder}/<имя>.png, .jpg или .gif). Есть: &f{list}&c."
+  delete-usage: "&cПиши: &f/hocs delete-image <имя>&c. Свои картинки: &f{list}&c."
+  image-bad-name: "&cИмя &f{value}&c не подходит: только a-z, 0-9, _ (до 32 символов)."
+  image-builtin: "&f{image}&c — встроенная картинка, её не заменить."
+  image-reserved: "&cИмя &f{image}&c занято: имена на &f_glow&c нельзя (так называются рамки картинок)."
+  image-exists: "&cИмя &f{image}&c занято: файл &f{value}&c уже есть в паке. Выбери другое имя."
+  image-limit: "&cУже максимум своих картинок (&f{max}&c). Удали лишнюю: /hocs delete-image."
+  image-busy: "&eС картинкой &f{image}&e уже идёт работа, подожди."
+  image-bad-url: "&cСсылка &f{value}&c не подходит: нужна https."
+  image-no-file: "&cНет файла &f{image}.png&c (или .jpg, .gif) в &f{folder}&c."
+  image-downloading: "&7Скачиваю &f{image}&7..."
+  image-too-big: "&cФайл &f{image}&c больше &f{value}&c МБ."
+  image-too-large: "&cКартинка &f{image}&c слишком большая: &f{value}&c."
+  image-not-image: "&f{image}&c — не png, не jpg и не gif."
+  image-anim-frames: "&cВ GIF &f{image}&c слишком много кадров: &f{value}&c. Обрежь GIF или подними &fcustom-images.animation.max-source-frames&c."
+  image-anim-budget: "&cАнимация &f{image}&c слишком тяжёлая для клиента: &f{value}&c МБ. Уменьши &fanimation.max-frames&c или &fanimation.width&c (или подними &fanimation.max-texture-mb&c)."
+  image-anim-total: "&cНе хватает места под анимацию &f{image}&c: все свои анимации займут &f{value}&c МБ памяти клиента. Удали лишнюю (/hocs delete-image) или подними &fanimation.total-texture-mb&c."
+  image-anim-file: "&cАнимация &f{image}&c вышла слишком большой для пака: PNG &f{value}&c МБ. Уменьши &fanimation.max-frames&c или &fanimation.width&c (или подними &fanimation.max-file-mb&c)."
+  image-timeout: "&cНе скачалось &f{image}&c: дольше &f{value}&c с."
+  image-private: "&cНе скачалось &f{image}&c: адрес &f{value}&c внутренний (локальная сеть, localhost) — так нельзя."
+  image-http: "&cНе скачалось &f{image}&c: ответ &f{value}&c."
+  image-failed: "&cНе вышло с &f{image}&c: &f{value}&c."
+  image-added: "&aКартинка &f{image}&a готова (&f{size}&a, &f{mode}&a, номер &f{kind}&a)."
+  image-added-anim: "&aАнимация &f{image}&a готова (&f{size}&a, &f{mode}&a, кадров &f{frames}&a по &f{frame}&a, цикл &f{seconds}&a с, PNG &f{file}&a МБ, номер &f{kind}&a)."
+  image-not-custom: "&f{image}&c — не своя картинка (удалять можно только добавленные через upload/import)."
+  image-deleted: "&eКартинка &f{image}&e удалена: файлов &f{files}&e, эффектов переключено на картинку по умолчанию &f{count}&e."
+  pack-rebuilding: "&7Пересобираю ресурспак..."
+  pack-ready: "&aРесурспак пересобран (модуль respack разошлёт его игрокам)."
+  pack-failed: "&cРесурспак не собран: &f{value}&c. Подробности в логе сервера."
+  list-header: "&7Картинки: &f{images}&7. Формы: &fcube, plane&7. Цвета: &f{colors}&7."
+  list-count: "&7Эффектов рядом (&f{radius}&7 блоков): &f{count}&7."
+  list-entry: "&8 - &f{shape} &7{image} {color} &8({map} {x} {y} {z})"
+  removed-all: "&eУбрано эффектов: &f{count}&e."
+  reloaded: "&aКонфиг перечитан."
+  help:
+    - "&#7FD3FFcore&#C69BFFshaders &7— команды:"
+    - "&f/hocs give [игрок] [cube|plane] [картинка] [цвет] &7— жезл"
+    - "&f/hocs color <#RRGGBB|имя> &7— цвет эффекта под прицелом"
+    - "&f/hocs image <картинка> &7— картинка эффекта под прицелом"
+    - "&f/hocs shape <cube|plane> &7— форма эффекта под прицелом"
+    - "&f/hocs remove &7— убрать эффект под прицелом"
+    - "&f/hocs info &7— что за эффект под прицелом"
+    - "&f/hocs list &7— картинки, цвета и эффекты рядом"
+    - "&f/hocs removeall <радиус|all> &7— убрать эффекты рядом или на всей карте"
+    - "&f/hocs cmd add <player|console> <команда> [group] &7— команда на эффект (портал, варп)"
+    - "&f/hocs cmd list|remove <n>|clear|perm <op|off>|msg <текст> &7— команды эффекта"
+    - "&f/hocs trigger <enter|click|both|off> [group] &7— когда срабатывает"
+    - "&f/hocs cooldown <секунды> [group] &7— пауза для игрока"
+    - "&f/hocs rim <on|off> [group] &7— светящийся обод"
+    - "&f/hocs upload <имя> <ссылка> &7— своя картинка из интернета (png, jpg, gif)"
+    - "&f/hocs import <имя> &7— своя картинка или GIF из module/coreshaders/images"
+    - "&f/hocs delete-image <имя> &7— удалить свою картинку"
+    - "&f/hocs reload &7— перечитать конфиг"

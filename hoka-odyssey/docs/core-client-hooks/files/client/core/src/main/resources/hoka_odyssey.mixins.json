@@ -1,0 +1,30 @@
+{
+  "required": true,
+  "package": "ink.hoka.odyssey.client.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "CameraMixin",
+    "PackRepositoryMixin",
+    "MouseHandlerMixin",
+    "BlockModelShaperMixin",
+    "ItemBlockRenderTypesMixin",
+    "LeavesBlockMixin",
+    "ItemModelResolverMixin",
+    "SoundManagerMixin",
+    "SoundBufferLibraryMixin",
+    "BlockStateSoundMixin",
+    "BlockItemMixin",
+    "LevelRendererSkyMixin",
+    "SkyRendererMixin",
+    "FogRendererMixin",
+    "WeatherEffectRendererMixin",
+    "AvatarRendererMixin",
+    "PlayerPoseMixin",
+    "KeyboardInputMixin",
+    "LocalPlayerTravelMixin",
+    "GlDeviceAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

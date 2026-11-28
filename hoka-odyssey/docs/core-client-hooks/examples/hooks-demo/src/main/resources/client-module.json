@@ -1,0 +1,7 @@
+{
+  "id": "hooks-demo",
+  "version": "0.1.0",
+  "main": "ink.hoka.odyssey.client.hooksdemo.HooksDemoModule",
+  "authors": ["Hoka Odyssey"],
+  "description": "Проверка крючков ядра 0.10: своё небо шейдером, туман, без облаков и дождя, крен чужих тел, поза «лёжа» в полёте"
+}

@@ -1,0 +1,7 @@
+{
+  "id": "starmap",
+  "version": "0.1.0",
+  "main": "ink.hoka.odyssey.client.starmap.StarmapClientModule",
+  "authors": ["tearsmilk"],
+  "description": "Карта-радар на M: блоки вокруг, ты, корабли и игроки, свои точки"
+}
