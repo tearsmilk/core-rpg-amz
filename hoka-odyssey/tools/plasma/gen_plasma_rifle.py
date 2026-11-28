@@ -7,7 +7,8 @@
 #   textures/plasma_rifle_slot.png   — иконка в инвентаре (64×64);
 #   textures/plasma_cell.png         — иконка «Плазменной ячейки» (32×32);
 #   textures/plasma_flash.png        — голубая вспышка у ствола (128×128);
-#   textures/plasma_wire_stock.png   — иконка встроенного каркасного приклада для окна обвеса (64×64).
+#   textures/plasma_wire_stock.png   — иконка встроенного каркасного приклада для окна обвеса (64×64);
+#   textures/plasma_cell_extended.png — иконка обвеса «Удлинённая плазменная ячейка» (64×64; кость mag_extended_1).
 # И превью (вид сбоку и 3/4) — путь первым аргументом (необязательно).
 #
 # Формат — как у конвертированных моделей TACZ (geo2bbmodel.py): .bbmodel 4.10, «free»; ключи анимаций — в
@@ -121,6 +122,29 @@ def hand_bone(W):
     return [round(float(v), 4) for v in W[:, 3]], euler_zyx(R)
 
 
+def energy_cell(m, bone, glow, segs, step, extended=False):
+    """Изогнутая ячейка из segs сегментов (поворот step° на сегмент): корпус navy, светящиеся полосы, донце."""
+    p = np.array([6.2, 1.0])            # (y, z) верх сегмента
+    ang = 0.0
+    seg_h = 1.95
+    for i in range(segs):
+        y, zc = float(p[0]), float(p[1])
+        kw = dict(origin=(0, y, zc), rotation=(ang, 0, 0))
+        box(m, bone, -1.05, 1.05, y - seg_h - 0.05, y, zc - 1.55, zc + 1.55, 'navy', pattern='panel', **kw)
+        box(m, bone, -1.1, 1.1, y - 0.25, y - 0.05, zc - 1.6, zc + 1.6, 'gun', **kw)
+        sym(m, glow, 1.05, 1.12, y - 1.25, y - 0.85, zc - 1.2, zc + 1.2, 'cyan', **kw)
+        box(m, glow, -0.3, 0.3, y - 1.45, y - 0.65, zc - 1.62, zc - 1.55, 'cyan_w', **kw)
+        if extended and i == 3:          # стык удлинения: красный поясок и белая метка сзади
+            box(m, bone, -1.14, 1.14, y - seg_h - 0.05, y - seg_h + 0.3, zc - 1.64, zc + 1.64, 'red', **kw)
+            box(m, glow, -0.45, 0.45, y - 1.2, y - 0.9, zc + 1.55, zc + 1.62, 'white', **kw)
+        ang += step
+        a = math.radians(ang - step / 2)
+        p = p + np.array([-seg_h * math.cos(a), -seg_h * math.sin(a)])
+    y, zc = float(p[0]), float(p[1])
+    box(m, bone, -1.2, 1.2, y - 0.45, y + 0.05, zc - 1.7, zc + 1.7, 'red_d',
+        origin=(0, y, zc), rotation=(ang - step, 0, 0))
+
+
 # ------------------------------------------------------------------ геометрия
 def build():
     m = Model()
@@ -230,26 +254,16 @@ def build():
     box(m, 'grip', -0.55, 0.55, 1.9, 6.0, 8.5, 8.8, 'red', **gk)
     box(m, 'grip', -0.85, 0.85, 1.35, 1.65, 6.1, 8.7, 'gun', **gk)
 
-    # --- энергоячейка (изогнутый «рожок» из сегментов) — кость magazine, для перезарядки
+    # --- энергоячейка (изогнутый «рожок» из сегментов) — кость magazine, для перезарядки. Внутри две: штатная
+    # mag_standard (36 выстрелов) и удлинённая mag_extended_1 (обвес plasma_cell_extended, 72 выстрела; длиннее ×1,75,
+    # видна только с ним) — клиент показывает одну из них по уровню удлинённого магазина, анимации двигают magazine.
     m.bone('magazine', (0, 6.2, 1.0), 'body')
     m.bone('mag_standard', (0, 6.2, 1.0), 'magazine')
     m.bone('cell_illuminated', (0, 4.0, 0), 'mag_standard')
-    p = np.array([6.2, 1.0])            # (y, z) верх сегмента
-    ang = 0.0
-    seg_h = 1.95
-    for i in range(4):
-        y, zc = float(p[0]), float(p[1])
-        kw = dict(origin=(0, y, zc), rotation=(ang, 0, 0))
-        box(m, 'mag_standard', -1.05, 1.05, y - seg_h - 0.05, y, zc - 1.55, zc + 1.55, 'navy', pattern='panel', **kw)
-        box(m, 'mag_standard', -1.1, 1.1, y - 0.25, y - 0.05, zc - 1.6, zc + 1.6, 'gun', **kw)
-        sym(m, 'cell_illuminated', 1.05, 1.12, y - 1.25, y - 0.85, zc - 1.2, zc + 1.2, 'cyan', **kw)
-        box(m, 'cell_illuminated', -0.3, 0.3, y - 1.45, y - 0.65, zc - 1.62, zc - 1.55, 'cyan_w', **kw)
-        ang += 8.0
-        a = math.radians(ang - 4.0)
-        p = p + np.array([-seg_h * math.cos(a), -seg_h * math.sin(a)])
-    y, zc = float(p[0]), float(p[1])
-    box(m, 'mag_standard', -1.2, 1.2, y - 0.45, y + 0.05, zc - 1.7, zc + 1.7, 'red_d',
-        origin=(0, y, zc), rotation=(ang - 8.0, 0, 0))
+    energy_cell(m, 'mag_standard', 'cell_illuminated', 4, 8.0)
+    m.bone('mag_extended_1', (0, 6.2, 1.0), 'magazine')
+    m.bone('cell_xl_illuminated', (0, 1.0, -2.0), 'mag_extended_1')
+    energy_cell(m, 'mag_extended_1', 'cell_xl_illuminated', 7, 6.0, extended=True)
     m.bone('additional_magazine', (0, 6.2, 1.0), 'body')
 
     # --- каркасный приклад (встроенный обвес plasma_wire_stock: кость = display.adapter)
@@ -278,6 +292,14 @@ def build():
     box(m, 'ar_stock_adapter', -0.65, 0.65, 8.05, 9.35, 10.25, 13.8, 'gun')
     box(m, 'ar_stock_adapter', -0.8, 0.8, 7.9, 9.5, 10.25, 10.8, 'steel')
 
+    # --- переходник ЛЦУ (display.adapter «laser_adapter» пистолетных ЛЦУ, например laser_compact): прижимные
+    # планки на левой планке цевья — видны только с таким ЛЦУ (клиент прячет кости-переходники без своего обвеса)
+    m.bone('laser_adapter', (-1.55, 8.6, -7.5), 'body')
+    box(m, 'laser_adapter', -1.68, -1.2, 9.0, 9.22, -9.0, -5.9, 'gun')
+    box(m, 'laser_adapter', -1.68, -1.2, 7.98, 8.2, -9.0, -5.9, 'gun')
+    box(m, 'laser_adapter', -1.72, -1.6, 8.05, 9.15, -9.1, -8.75, 'red')
+    box(m, 'laser_adapter', -1.72, -1.6, 8.05, 9.15, -6.15, -5.8, 'red')
+
     # --- точки обвеса и вспышки
     m.bone('positioning2', (0, 0, 0), 'body')
     m.bone('scope_pos', (0, 11.2, 3.5), 'positioning2')
@@ -305,6 +327,7 @@ def build():
     m.bone('refit_stock_view', (-16.0, 9.0, 14.0), 'views', rotation=(0, -90, 0))
     m.bone('refit_laser_view', (-12.0, 12.0, -21.0), 'views', rotation=(-15, -135, 0))
     m.bone('refit_grip_view', (-16.0, 5.0, -7.0), 'views', rotation=(0, -90, 0))
+    m.bone('refit_extended_mag_view', (-19.0, 1.5, 2.0), 'views', rotation=(0, -90, 0))
     return m
 
 
@@ -429,6 +452,7 @@ def anim(m, name, length, loop, tracks, sounds=()):
 
 
 ARM = [(0, ARM_STRETCH)]
+XMAG = 1.12          # перезарядка с удлинённой ячейкой медленнее во столько раз
 
 
 def animations(m):
@@ -511,6 +535,16 @@ def animations(m):
                   sounds=[(0.5, S + 'cell_out'), (1.4, S + 'cell_in')]))
     A.append(anim(m, 'reload_empty', 2.5, 'once', reload_tracks(True),
                   sounds=[(0.5, S + 'cell_out'), (1.4, S + 'cell_in'), (1.74, S + 'charge')]))
+    # с удлинённой ячейкой (клиент берёт <анимация>_xmag): то же, но на XMAG медленнее — длинную ячейку дольше
+    # вынимать и вставлять (reload-xmag в config.yml — те же времена ×XMAG)
+    def slower(tr):
+        return {b: {ch: [(k[0] * XMAG,) + tuple(k[1:]) for k in kl] if ch != 'scale' else kl
+                    for ch, kl in chans.items()} for b, chans in tr.items()}
+    A.append(anim(m, 'reload_tactical_xmag', round(2.0 * XMAG, 3), 'once', slower(reload_tracks(False)),
+                  sounds=[(round(0.5 * XMAG, 3), S + 'cell_out'), (round(1.4 * XMAG, 3), S + 'cell_in')]))
+    A.append(anim(m, 'reload_empty_xmag', round(2.5 * XMAG, 3), 'once', slower(reload_tracks(True)),
+                  sounds=[(round(0.5 * XMAG, 3), S + 'cell_out'), (round(1.4 * XMAG, 3), S + 'cell_in'),
+                          (round(1.74 * XMAG, 3), S + 'charge')]))
     # осмотр: показать левый бок, потом правый, стволы прокрутить
     A.append(anim(m, 'inspect', 3.4, 'once', {
         'root': {'rotation': [(0, (0, 0, 0)), (0.5, (6, -32, 22), 'catmullrom'), (1.4, (8, -38, 26), 'catmullrom'),
@@ -629,9 +663,67 @@ def world_faces(m, cubes, pos, size, keep):
     return out
 
 
+def bone_world(m, name):
+    """Матрица кости name в позе по умолчанию, в её точке (как ViewModel.mount)."""
+    chain = []
+    b = name
+    while b is not None:
+        chain.append(b)
+        b = m.bones[b]['parent']
+    M = np.eye(4)
+    for bn in reversed(chain):
+        o = np.array(m.bones[bn]['origin'])
+        M = M @ M4(t=o) @ M4(Rxyz(m.bones[bn]['rotation'])) @ M4(t=-o)
+    return M @ M4(t=np.array(m.bones[name]['origin']))
+
+
+def att_faces(path, mount):
+    """Грани модели обвеса (.bbmodel TACZ) в точке mount — только для превью."""
+    d = json.load(open(path, encoding='utf-8'))
+    src = d['textures'][0]['source'].split(',', 1)[1]
+    T = np.asarray(Image.open(io.BytesIO(base64.b64decode(src))).convert('RGBA'), np.float32)
+    k = T.shape[1] / d['resolution']['width']
+    els = {e['uuid']: e for e in d['elements']}
+    out = []
+
+    def walk(n, parent, glow):
+        if isinstance(n, str):
+            e = els.get(n)
+            if e is None or e.get('type', 'cube') != 'cube':
+                return
+            o = np.array(e.get('origin', [0, 0, 0]), float)
+            CM = parent @ M4(t=o) @ M4(Rxyz(e.get('rotation', [0, 0, 0]))) @ M4(t=-o)
+            x0, y0, z0 = e['from']
+            x1, y1, z1 = e['to']
+            q = {'north': [(x1, y1, z0), (x1, y0, z0), (x0, y0, z0), (x0, y1, z0)],
+                 'south': [(x0, y1, z1), (x0, y0, z1), (x1, y0, z1), (x1, y1, z1)],
+                 'east': [(x1, y1, z1), (x1, y0, z1), (x1, y0, z0), (x1, y1, z0)],
+                 'west': [(x0, y1, z0), (x0, y0, z0), (x0, y0, z1), (x0, y1, z1)],
+                 'up': [(x0, y1, z0), (x0, y1, z1), (x1, y1, z1), (x1, y1, z0)],
+                 'down': [(x0, y0, z1), (x0, y0, z0), (x1, y0, z0), (x1, y0, z1)]}
+            for f, fd in e.get('faces', {}).items():
+                if fd.get('texture') is None or 'uv' not in fd:
+                    continue
+                u0, v0, u1, v1 = (v * k for v in fd['uv'])
+                uv = np.array([(u0, v0), (u0, v1), (u1, v1), (u1, v0)], float)
+                P = np.array([(CM @ np.array([*p, 1.0]))[:3] for p in q[f]])
+                out.append((P, uv, glow, T))
+            return
+        if n['name'].startswith('laser_beam'):
+            return
+        o = np.array(n['origin'], float)
+        M = parent @ M4(t=o) @ M4(Rxyz(n.get('rotation', [0, 0, 0]))) @ M4(t=-o)
+        for c in n['children']:
+            walk(c, M, glow or n['name'].endswith('_illuminated'))
+
+    for r in d['outliner']:
+        walk(r, mount, False)
+    return out
+
+
 def raster(faces, tex, view, W, H, margin=0.06, light=(-0.4, 0.8, 0.45), bg=(0, 0, 0, 0)):
     """Ортогональная проекция: view — 3×3 (строки: вправо, вверх, к зрителю)."""
-    T = np.asarray(tex.convert('RGBA'), np.float32)
+    T0 = np.asarray(tex.convert('RGBA'), np.float32)
     V = np.array(view, float)
     allp = np.concatenate([f[0] for f in faces]) @ V.T
     mn, mx = allp.min(0), allp.max(0)
@@ -643,7 +735,9 @@ def raster(faces, tex, view, W, H, margin=0.06, light=(-0.4, 0.8, 0.45), bg=(0, 
     zb = np.full((H, W), -1e9)
     L = np.array(light, float)
     L /= np.linalg.norm(L)
-    for P, uv, glow in faces:
+    for face in faces:
+        P, uv, glow = face[:3]
+        T = face[3] if len(face) > 3 else T0          # своя текстура грани (модель обвеса в превью)
         Q = P @ V.T
         n = np.cross(P[1] - P[0], P[3] - P[0])
         nl = np.linalg.norm(n)
@@ -776,10 +870,10 @@ def main():
     every = lambda bn: True
     write_model(m, os.path.join(OUT, 'models', NAME + '.bbmodel'), NAME, cubes, size, pos, tex, every, anims=anims,
                 extra={'hoka_view': {'model_fov': 60.0, 'zoom_model_fov': 45.0},
-                       'hoka_hidden': ['ar_stock_adapter']})
+                       'hoka_hidden': ['ar_stock_adapter', 'mag_extended_1', 'laser_adapter']})
     # упрощённая (предмет hoitems): без рук, «глаз» и трубки AR; display — под точку рукояти (как у АКМ)
     lod_skip = {'righthand', 'righthand_pos', 'lefthand', 'lefthand_pos', 'camera', 'views', 'ar_stock_adapter',
-                'additional_magazine'}
+                'additional_magazine', 'mag_extended_1', 'cell_xl_illuminated', 'laser_adapter'}
 
     def lod_keep(bn):
         return bn not in lod_skip and not (m.bones[bn]['parent'] == 'views')
@@ -803,6 +897,12 @@ def main():
     slot_icon(faces, tex).save(os.path.join(OUT, 'textures', NAME + '_slot.png'), optimize=True)
     cell_icon().save(os.path.join(OUT, 'textures', 'plasma_cell.png'), optimize=True)
     flash_png().save(os.path.join(OUT, 'textures', 'plasma_flash.png'), optimize=True)
+    xl = world_faces(m, cubes, pos, size, lambda bn: bn in ('mag_extended_1', 'cell_xl_illuminated'))
+    xi = raster(xl, tex, view_side_right(), 256, 256, margin=0.08)
+    a = np.asarray(xi, np.float32).copy()
+    a[..., :3] = np.clip(a[..., :3] * 1.5 + 16, 0, 255)
+    Image.fromarray(a.astype(np.uint8), 'RGBA').resize((64, 64), Image.LANCZOS).save(
+        os.path.join(OUT, 'textures', 'plasma_cell_extended.png'), optimize=True)
     stock = world_faces(m, cubes, pos, size, lambda bn: bn == 'plasma_wire_stock')
     si = raster(stock, tex, view_side_right(), 256, 256, margin=0.08)
     a = np.asarray(si, np.float32).copy()
@@ -812,6 +912,12 @@ def main():
     print(f'{NAME}: кубов {len(cubes)}, костей {len(m.order)}, текстура {size}×{size}, анимаций {len(anims)}')
 
     if len(sys.argv) > 1:
+        # превью: с удлинённой ячейкой и ЛЦУ laser_compact (модель TACZ) в laser_pos, с переходником laser_adapter
+        skip = lod_skip - {'mag_extended_1', 'cell_xl_illuminated', 'laser_adapter'} | {'mag_standard', 'cell_illuminated'}
+        faces = world_faces(m, cubes, pos, size, lambda bn: bn not in skip and m.bones[bn]['parent'] != 'views')
+        lz = os.path.join(OUT, '..', 'assets-tacz', 'models', 'att', 'laser_compact.bbmodel')
+        if os.path.isfile(lz):
+            faces += att_faces(lz, bone_world(m, 'laser_pos'))
         side = raster(faces, tex, view_side_left(), 1600, 560, bg=(26, 28, 34, 255))
         tq = raster(faces, tex, view_34(), 1600, 700, bg=(26, 28, 34, 255))
         top = raster(faces, tex, view_34(-150, 12), 1600, 700, bg=(26, 28, 34, 255))

@@ -1758,3 +1758,16 @@ attachments:
     mods:
       aim-inaccuracy: {mul: 0.9}
       recoil-pitch: {mul: 0.88}
+  # Удлинённая плазменная ячейка ПВ-7: в модели винтовки — кость mag_extended_1 (видна вместо mag_standard),
+  # иконка — tools/plasma/gen_plasma_rifle.py; заряд — extended-mag оружия (у plasma_rifle — 72).
+  plasma_cell_extended:
+    type: extended_mag
+    name: "Удлинённая плазменная ячейка"
+    sort: 1
+    weight: 0.5
+    item: att_plasma_cell_extended
+    icon: guns/plasma_cell_extended.png
+    sounds: {install: "gun_att_extended_mag_install", uninstall: "gun_att_extended_mag_uninstall"}
+    mods:
+      ads: {add: 0.02}
+      extended-mag-level: 1

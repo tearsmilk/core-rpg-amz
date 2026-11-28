@@ -824,10 +824,15 @@ guns:
     item-icon: hoka/plasma_rifle_slot.png
     item-model: hoka/plasma_rifle_lod.bbmodel
     ammo-icon: hoka/plasma_cell.png
-    # Обвес: прицелы, рукояти, приклады и ЛЦУ — те же, что у M4A1; дульных устройств и удлинённых ячеек нет.
-    # Встроенный приклад — свой каркасный (plasma_wire_stock), механический прицел прячется под оптикой.
+    # Обвес: прицелы, рукояти, приклады и ЛЦУ — те же, что у M4A1 (ЛЦУ — на левой планке цевья, пистолетные — через
+    # переходник laser_adapter модели); дульных устройств нет. Встроенный приклад — свой каркасный (plasma_wire_stock),
+    # механический прицел прячется под оптикой. В слот магазина — только своя удлинённая ячейка plasma_cell_extended
+    # (72 выстрела, кость модели mag_extended_1; патроны TACZ ammo_mod_* и магазины TACZ сюда не ставятся).
     attachments:
-      slots: ["scope", "stock", "laser", "grip"]
-      allow: ["plasma_wire_stock", "#scope_scope", "#scope_sight", "#grip", "#stock", "#ar_laser", "#pistol_laser", "#adapter/pistol_riser", "#adapter/rail_mid"]
+      slots: ["scope", "stock", "laser", "grip", "extended_mag"]
+      allow: ["plasma_wire_stock", "plasma_cell_extended", "#scope_scope", "#scope_sight", "#grip", "#stock", "#ar_laser", "#pistol_laser", "#adapter/pistol_riser", "#adapter/rail_mid"]
       builtin: {stock: ["plasma_wire_stock"]}
       default: {stock: "plasma_wire_stock"}
+      extended-mag: [72, 72, 72]
+      # длинную ячейку дольше вынимать и вставлять (анимации reload_*_xmag — те же ×1,12)
+      reload-xmag: {tactical: {feed: 1.62, total: 2.13}, empty: {feed: 1.62, total: 2.63}}

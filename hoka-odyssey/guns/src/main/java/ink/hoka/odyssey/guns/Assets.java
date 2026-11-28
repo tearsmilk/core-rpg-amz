@@ -249,6 +249,8 @@ final class Assets {
             for (Attachments.Def d : cat.all()) {
                 if (d.icon().startsWith("tacz/")) {
                     files.add("textures/" + d.icon().substring(5));
+                } else if (!d.builtin() && ownAttIcon(d) != null) {   // свой обвес (не TACZ) — иконка в assets/hoka/
+                    own.add("textures/" + ownAttIcon(d).substring(HOKA.length() + 1));
                 }
             }
         }
@@ -337,6 +339,205 @@ final class Assets {
             return new Result("config.yml в jar не найден", null);
         }
         return addEntries(file, "guns", gunBlocks(text));
+    }
+
+    /**
+     * Обвес оружия, который поменялся в новой версии модуля (id → слот, которого не было): если в module/guns/config.yml
+     * у оружия в attachments.slots нет этого слота, блок attachments записи заменяется блоком из jar (остальная
+     * запись и файл не трогаются). plasma_rifle — удлинённая ячейка plasma_cell_extended (слот extended_mag).
+     */
+    static final Map<String, String> ATT_UPGRADES = Map.of("plasma_rifle", "extended_mag");
+
+    /** Обновить блоки attachments оружия из {@link #ATT_UPGRADES}, где их ещё нет (см. там). */
+    static Result upgradeGunAttachments(Path file) throws IOException {
+        if (!Files.isRegularFile(file)) {
+            return new Result("обвес оружия обновлять не нужно", null);
+        }
+        String jar;
+        try (InputStream in = Assets.class.getResourceAsStream("/config.yml")) {
+            jar = in == null ? null : new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        if (jar == null) {
+            return new Result("config.yml в jar не найден", null);
+        }
+        String text = Files.readString(file, StandardCharsets.UTF_8);
+        Map<?, ?> guns;
+        try {
+            Object o = new Yaml(new SafeConstructor(new LoaderOptions())).load(text);
+            Object g = o instanceof Map<?, ?> r ? r.get("guns") : null;
+            guns = g instanceof Map<?, ?> m ? m : Map.of();
+        } catch (RuntimeException e) {
+            return new Result("config.yml не читается (" + e.getMessage() + ")", null);
+        }
+        Map<String, String> jarBlocks = gunBlocks(jar);
+        List<String> done = new ArrayList<>();
+        StringBuilder manual = new StringBuilder();
+        String updated = text;
+        for (Map.Entry<String, String> u : ATT_UPGRADES.entrySet()) {
+            if (!(guns.get(u.getKey()) instanceof Map<?, ?> gun) || !jarBlocks.containsKey(u.getKey())) {
+                continue;
+            }
+            Object slots = gun.get("attachments") instanceof Map<?, ?> a ? a.get("slots") : null;
+            if (slots instanceof List<?> l && l.contains(u.getValue())) {
+                continue;                                     // уже новый (или настроен руками)
+            }
+            String att = attachmentsBlock(jarBlocks.get(u.getKey()));
+            if (att == null) {
+                continue;
+            }
+            String next = replaceAttachments(updated, u.getKey(), att);
+            if (next == null) {
+                manual.append("# guns.").append(u.getKey()).append(".attachments:\n").append(att);
+                continue;
+            }
+            updated = next;
+            done.add(u.getKey());
+        }
+        if (done.isEmpty()) {
+            return new Result(manual.isEmpty() ? "обвес оружия уже новый" : "обвес оружия не обновлён — допишите вручную",
+                    manual.isEmpty() ? null : manual.toString());
+        }
+        try {
+            Object o = new Yaml(new SafeConstructor(new LoaderOptions())).load(updated);
+            Object g = o instanceof Map<?, ?> r ? r.get("guns") : null;
+            for (String id : done) {
+                Object a = g instanceof Map<?, ?> gm && gm.get(id) instanceof Map<?, ?> e ? e.get("attachments") : null;
+                if (!(a instanceof Map<?, ?> am) || !(am.get("slots") instanceof List<?> sl) || !sl.contains(ATT_UPGRADES.get(id))) {
+                    throw new IllegalStateException("обвес " + id + " не виден после замены");
+                }
+            }
+        } catch (RuntimeException e) {
+            StringBuilder b = new StringBuilder(manual);
+            for (String id : done) {
+                b.append("# guns.").append(id).append(".attachments:\n").append(attachmentsBlock(jarBlocks.get(id)));
+            }
+            return new Result("обвес оружия не обновлён (" + e.getMessage() + ") — допишите вручную", b.toString());
+        }
+        Files.copy(file, file.resolveSibling(file.getFileName() + ".bak-guns"), StandardCopyOption.REPLACE_EXISTING);
+        Files.writeString(file, updated, StandardCharsets.UTF_8);
+        return new Result("обвес обновлён: " + String.join(", ", done), manual.isEmpty() ? null : manual.toString());
+    }
+
+    /** Блок «attachments:» из текста записи оружия (gunBlocks: ключи записи с начала строки) — как есть, или null. */
+    static String attachmentsBlock(String gunBody) {
+        StringBuilder b = null;
+        for (String l : gunBody.split("\n", -1)) {
+            if (b == null) {
+                if (l.matches("attachments:[ \\t]*(#.*)?")) {
+                    b = new StringBuilder(l).append('\n');
+                }
+                continue;
+            }
+            if (!l.isBlank() && !l.startsWith(" ") && !l.startsWith("#")) {
+                break;
+            }
+            b.append(l).append('\n');
+        }
+        if (b == null) {
+            return null;
+        }
+        String s = b.toString();
+        while (s.endsWith("\n\n") || s.matches("(?s).*\n#[^\n]*\n")) {   // хвостовые пустые строки и комментарии
+            s = s.endsWith("\n\n") ? s.substring(0, s.length() - 1) : s.substring(0, s.lastIndexOf('\n', s.length() - 2) + 1);
+        }
+        return s;
+    }
+
+    /**
+     * Заменить в тексте config.yml блок attachments записи guns.&lt;id&gt; на att (ключ с начала строки; отступ — как
+     * у ключей записи в файле). Нет блока — дописать в конец записи. null — запись не найдена.
+     */
+    static String replaceAttachments(String text, String id, String att) {
+        String[] lines = text.split("\n", -1);
+        int gi = -1;
+        int gIndent = 0;
+        boolean inGuns = false;
+        for (int i = 0; i < lines.length; i++) {
+            String l = lines[i];
+            if (!l.isBlank() && !l.startsWith(" ") && !l.startsWith("#")) {
+                inGuns = l.startsWith("guns:");
+                continue;
+            }
+            if (inGuns && l.matches(" +" + Pattern.quote(id) + ":[ \\t]*(#.*)?")) {
+                gi = i;
+                gIndent = indentOf(l);
+                break;
+            }
+        }
+        if (gi < 0) {
+            return null;
+        }
+        int end = gi + 1;                                     // конец записи (не включительно)
+        int lastBody = gi;
+        String keyIndent = null;
+        for (; end < lines.length; end++) {
+            String l = lines[end];
+            if (l.isBlank() || l.stripLeading().startsWith("#")) {
+                continue;
+            }
+            if (indentOf(l) <= gIndent) {
+                break;
+            }
+            if (keyIndent == null) {
+                keyIndent = l.substring(0, indentOf(l));
+            }
+            lastBody = end;
+        }
+        if (keyIndent == null) {
+            keyIndent = " ".repeat(gIndent + 2);
+        }
+        int ai = -1;
+        for (int i = gi + 1; i <= lastBody; i++) {
+            String l = lines[i];
+            if (indentOf(l) == keyIndent.length() && l.substring(keyIndent.length()).matches("attachments:[ \\t]*(#.*)?")) {
+                ai = i;
+                break;
+            }
+        }
+        StringBuilder ins = new StringBuilder();
+        for (String l : att.split("\n")) {
+            ins.append(l.isEmpty() ? "" : keyIndent + l).append('\n');
+        }
+        String insert = ins.toString();
+        int from;
+        int to;                                               // заменяются строки [from, to)
+        if (ai >= 0) {
+            from = ai;
+            to = ai + 1;
+            for (int i = ai + 1; i <= lastBody; i++) {
+                String l = lines[i];
+                if (l.isBlank() || l.stripLeading().startsWith("#")) {
+                    continue;
+                }
+                if (indentOf(l) <= keyIndent.length()) {
+                    break;
+                }
+                to = i + 1;
+            }
+        } else {
+            from = lastBody + 1;
+            to = lastBody + 1;
+        }
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < from; i++) {
+            out.append(lines[i]).append('\n');
+        }
+        out.append(insert);
+        for (int i = to; i < lines.length; i++) {
+            out.append(lines[i]);
+            if (i < lines.length - 1) {
+                out.append('\n');
+            }
+        }
+        return out.toString();
+    }
+
+    private static int indentOf(String l) {
+        int n = 0;
+        while (n < l.length() && l.charAt(n) == ' ') {
+            n++;
+        }
+        return n;
     }
 
     /**
@@ -450,14 +651,30 @@ final class Assets {
                 fits.append(fits.isEmpty() ? "" : ", ").append(g.name());
             }
         }
+        String own = ownAttIcon(d);
+        String icon = own != null ? own : d.icon();
         return "name: " + q(d.name()) + "\n"
                 + "color: aqua\n"
                 + "material: paper\n"
-                + (d.icon().isEmpty() ? "" : "icon: " + d.icon() + "\n")
+                + (icon.isEmpty() ? "" : "icon: " + icon + "\n")
                 + "stack: 1\n"
                 + "lore: [" + q("Обвес: " + Attachments.slotRu(d.slot())) + ", "
                 + q(fits.isEmpty() ? "Пока ни к чему не подходит" : "Подходит: " + fits) + ", "
-                + q("Y с оружием в руке — поставить") + ", " + q("Иконка: TACZ, CC BY-NC-ND 4.0") + "]\n";
+                + q("Y с оружием в руке — поставить")
+                + (icon.startsWith("tacz/") ? ", " + q("Иконка: TACZ, CC BY-NC-ND 4.0") : "") + "]\n";
+    }
+
+    /**
+     * Иконка своего обвеса (не TACZ) для hoitems: icon вида guns/<файл>.png, файл есть в jar в hoka/textures —
+     * путь hoka/<файл>.png (в hoitems — assets/hoka/). Иначе null.
+     */
+    static String ownAttIcon(Attachments.Def d) {
+        String icon = d.icon();
+        if (!icon.startsWith("guns/") || icon.startsWith("guns/att/")) {
+            return null;
+        }
+        String name = icon.substring(5);
+        return resource(HOKA, "textures/" + name) != null ? HOKA + "/" + name : null;
     }
 
     static String soundYaml(SoundEntry s) {

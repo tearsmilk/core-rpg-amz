@@ -304,6 +304,20 @@ final class HoGunCommand extends Command {
         } catch (IOException | RuntimeException e) {
             s.sendMessage(Component.text("Оружие в config.yml не дописано: " + e, NamedTextColor.RED));
         }
+        // оружие, у которого в новой версии поменялся обвес (plasma_rifle — удлинённая ячейка), — обновить блок attachments
+        try {
+            Assets.Result ru = Assets.upgradeGunAttachments(mod.dataFolder().resolve("config.yml"));
+            s.sendMessage(Component.text("guns: " + ru.message(), NamedTextColor.GRAY));
+            if (ru.manual() != null) {
+                s.sendMessage(Component.text("Допишите в module/guns/config.yml вручную (YAML — в лог сервера)", NamedTextColor.YELLOW));
+                mod.logger().info("guns: обвес оружия — допишите в module/guns/config.yml:\n{}", ru.manual());
+            }
+            if (ru.message().startsWith("обвес обновлён")) {
+                mod.reloadGuns();
+            }
+        } catch (IOException | RuntimeException e) {
+            s.sendMessage(Component.text("Обвес оружия в config.yml не обновлён: " + e, NamedTextColor.RED));
+        }
         if (mod.guns().isEmpty()) {
             s.sendMessage(Component.text("В config.yml нет оружия", NamedTextColor.RED));
             return;
