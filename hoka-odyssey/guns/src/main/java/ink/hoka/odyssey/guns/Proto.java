@@ -73,8 +73,10 @@ import java.util.Map;
  * у ствола (TACZ muzzle_flash.scale); за ним четвёртый хвост: u16 оружий, на каждое UTF id и f32 отдача в вакууме
  * (блоков за выстрел в свободном полёте, 0 — нет; клиентский модуль отдаёт её spaceflight); за ним пятый хвост:
  * u16 оружий, на каждое UTF id, u8 пуль за выстрел (дробь), u8 флаги (1 — без своего прицела на экране, 2 — дальше
- * перезарядка по одному патрону: f32 intro, intro-empty, intro-empty-feed, loop, loop-feed, end). Старые клиенты
- * хвосты не читают. В BACK вместо одного id может прийти список через запятую (длинное оружие за спиной и
+ * перезарядка по одному патрону: f32 intro, intro-empty, intro-empty-feed, loop, loop-feed, end); за ним шестой
+ * хвост: u16 оружий, на каждое UTF id, u8 вид трассера (0 — пуля, 1 — плазма: короткий светящийся сгусток, голубая
+ * вспышка и искры попадания) и f32 его длина (блоков, 0 — по умолчанию). Старые клиенты хвосты не читают. У TRACER
+ * флаг 4 — плазма, за флагами тогда f32 длина сгустка (старые клиенты лишнее не читают). В BACK вместо одного id может прийти список через запятую (длинное оружие за спиной и
  * пистолет в кобуре).
  */
 final class Proto {
@@ -110,6 +112,8 @@ final class Proto {
     /** Флаги TRACER: 1 — вакуум, 2 — с глушителем (у дула нет вспышки). */
     static final int TRACER_VACUUM = 1;
     static final int TRACER_SILENCED = 2;
+    /** Флаг TRACER: плазменный сгусток (короткий светящийся заряд); за флагами — f32 его длина, блоков. */
+    static final int TRACER_PLASMA = 4;
 
     /** Итог действия с обвесом (REFIT_RESULT). */
     static final int REFIT_OK = 0;
@@ -292,6 +296,12 @@ final class Proto {
                     o.writeFloat((float) sh.end());
                 }
             }
+            o.writeShort(guns.size());                        // шестой хвост: вид трассера (пуля / плазма) и его длина
+            for (GunDef g : guns) {
+                o.writeUTF(g.id());
+                o.writeByte(g.plasma() ? 1 : 0);
+                o.writeFloat((float) g.tracerLength());
+            }
         });
     }
 
@@ -356,6 +366,12 @@ final class Proto {
     /** TRACER с флагами (TRACER_VACUUM, TRACER_SILENCED). */
     static byte[] tracer(int shooter, double x, double y, double z, double vx, double vy, double vz, double life,
                          int color, int flags) {
+        return tracer(shooter, x, y, z, vx, vy, vz, life, color, flags, 0);
+    }
+
+    /** TRACER с флагами; с TRACER_PLASMA за флагами — length (длина сгустка, блоков). */
+    static byte[] tracer(int shooter, double x, double y, double z, double vx, double vy, double vz, double life,
+                         int color, int flags, double length) {
         return write(o -> {
             o.writeByte(S_TRACER);
             o.writeInt(shooter);
@@ -368,6 +384,9 @@ final class Proto {
             o.writeFloat((float) life);
             o.writeInt(color);
             o.writeByte(flags);
+            if ((flags & TRACER_PLASMA) != 0) {
+                o.writeFloat((float) length);
+            }
         });
     }
 

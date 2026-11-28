@@ -82,6 +82,10 @@ public final class GunsClientModule implements ClientModule {
     private Map<String, Float> vacRecoil = new HashMap<>();
     /** Дробь, свой прицел, перезарядка по одному патрону по id (пятый хвост CONFIG). */
     private Map<String, Proto.Extra> extras = new HashMap<>();
+    /** Вид трассера по id (шестой хвост CONFIG): плазма или пуля. */
+    private Map<String, Proto.Tracer> tracerKinds = new HashMap<>();
+    /** Картинки вспышки у ствола по пути файла (у каждого оружия своя; flashTex — первая, для чужих выстрелов). */
+    private final Map<String, Identifier> flashTexs = new HashMap<>();
     private float vacVolume = 0.35f;
     private final Map<String, ViewModel> models = new HashMap<>();
     private final Set<String> watched = new HashSet<>();
@@ -356,9 +360,11 @@ public final class GunsClientModule implements ClientModule {
                     Map<String, Proto.Kind> k = new HashMap<>();
                     Map<String, Float> vr = new HashMap<>();
                     Map<String, Proto.Extra> ex = new HashMap<>();
-                    specs = Proto.readConfig(in, vv, playerAnimPaths, gunItems, k, vr, ex);
+                    Map<String, Proto.Tracer> tk = new HashMap<>();
+                    specs = Proto.readConfig(in, vv, playerAnimPaths, gunItems, k, vr, ex, tk);
                     kinds = k;
                     extras = ex;
+                    tracerKinds = tk;
                     vacRecoil = vr;
                     if (back != null) back.setItems(gunItems, k);
                     vacVolume = vv[0];
@@ -393,7 +399,10 @@ public final class GunsClientModule implements ClientModule {
                     float life = in.readFloat();
                     int color = in.readInt();
                     int tf = in.available() > 0 ? in.readUnsignedByte() : 0;
-                    otherShot(shooter, o, v, life, color, (tf & Proto.TRACER_SILENCED) != 0);
+                    boolean plasma = (tf & Proto.TRACER_PLASMA) != 0;
+                    float plen = plasma && in.available() >= 4 ? in.readFloat() : 0;
+                    otherShot(shooter, o, v, life, color, (tf & Proto.TRACER_SILENCED) != 0, plasma,
+                            Float.isFinite(plen) ? Math.max(0, Math.min(8, plen)) : 0);
                 }
                 case Proto.S_IMPACT -> {
                     // искры и крошку блока рассылает сервер частицами игры — здесь ничего
@@ -495,6 +504,7 @@ public final class GunsClientModule implements ClientModule {
         }
         if (!s.hud().isEmpty()) hudTex.computeIfAbsent(s.hud(), ctx::texture);
         if (!s.flash().isEmpty() && flashTex == null) flashTex = ctx.texture(s.flash());
+        if (!s.flash().isEmpty()) flashTexs.computeIfAbsent(s.flash(), ctx::texture);
     }
 
     /** Анимации тела для оружия gun — файл с сервера (обновится сам при смене). */
@@ -518,7 +528,8 @@ public final class GunsClientModule implements ClientModule {
         else apply.run();
     }
 
-    private void otherShot(int shooterId, Vec3 eye, Vec3 v, float life, int color, boolean silenced) {
+    private void otherShot(int shooterId, Vec3 eye, Vec3 v, float life, int color, boolean silenced, boolean plasma,
+                           float plasmaLength) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null && shooterId == mc.player.getId()) return;
         third.signals(shooterId).shotNs = System.nanoTime();
@@ -532,8 +543,8 @@ public final class GunsClientModule implements ClientModule {
             o = eye.add(look.scale(0.9)).add(right.scale(0.3)).add(up.scale(-0.4));
         }
         if (cfg.tracers) {
-            fx.tracer(o, v, life, color, false);
-            if (!silenced) fx.flash(o, 0.55f);
+            fx.tracer(o, v, life, color, false, plasma, plasmaLength);
+            if (!silenced) fx.flash(o, plasma ? 0.45f : 0.55f, plasma, color);
         }
     }
 
@@ -1217,11 +1228,14 @@ public final class GunsClientModule implements ClientModule {
             Vec3 o = mc.options.getCameraType().isFirstPerson() && muzzleWorld != null ? muzzleWorld
                     : p.getEyePosition().add(dir.scale(0.8));
             int pellets = extra().pellets();                       // дробь — трассер на каждую дробину
+            Proto.Tracer tk = tracerKinds.getOrDefault(g.id(), Proto.Tracer.BULLET);
             for (int k = 0; k < pellets; k++) {
                 Vec3 d = dir.add(tri(s), tri(s), tri(s)).normalize();
-                fx.tracer(o, d.scale(g.speed()), vac ? 3 : g.life(), g.tracerColor(), true);
+                fx.tracer(o, d.scale(g.speed()), vac ? 3 : g.life(), g.tracerColor(), true, tk.plasma(), tk.length());
             }
-            if (!mc.options.getCameraType().isFirstPerson()) fx.flash(o, 0.55f);
+            if (!mc.options.getCameraType().isFirstPerson()) {
+                fx.flash(o, tk.plasma() ? 0.45f : 0.55f, tk.plasma(), g.tracerColor());
+            }
         }
     }
 
@@ -1324,11 +1338,12 @@ public final class GunsClientModule implements ClientModule {
             Vector3f w = new Vector3f(mz).rotate(q);
             Vec3 c = frame.camera();
             muzzleWorld = new Vec3(c.x + w.x, c.y + w.y, c.z + w.z);
-            if (flashNs > 0 && now - flashNs < 55_000_000L && flashTex != null && cfg.tracers) {
+            Identifier ft = flashTexs.getOrDefault(g().flash(), flashTex);    // своя вспышка оружия (у плазмы — голубая)
+            if (flashNs > 0 && now - flashNs < 55_000_000L && ft != null && cfg.tracers) {
                 Proto.Stats st = ownStats();
                 float scale = st != null ? st.flashScale() : kind().flashScale();
                 float size = cfg.viewmodelScale * 13f / 16f * (vacuum() ? 0.6f : 1f) * scale;
-                vm.renderFlash(frame.buffers(), camToBuf, mz, flashTex, size * fov.m00(), flashSpin);  // в плоскости экрана
+                vm.renderFlash(frame.buffers(), camToBuf, mz, ft, size * fov.m00(), flashSpin);  // в плоскости экрана
             }
         }
         fx.renderBeams(frame.buffers(), camToBuf, frame.camera(), q);

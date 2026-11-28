@@ -9,6 +9,7 @@ dependencies {
 
 tasks.processResources {
     from("assets-tacz") { into("tacz") }
+    from("assets-hoka") { into("hoka") }   // свои ассеты (плазменная винтовка ПВ-7, tools/plasma) — не TACZ
 }
 
 tasks.jar { archiveFileName.set("guns.jar") }

@@ -202,8 +202,16 @@ final class ViewModel {
         return AdsBlend.lerp(modelFov, zoomFov > 0 ? zoomFov : zoomModelFov, w);
     }
 
-    /** «tacz:ak47/ak47_reload_magout» → «ak47_reload_magout» (так звук назван в hosounds). Чужие (без tacz:) — null. */
+    /**
+     * «tacz:ak47/ak47_reload_magout» → «ak47_reload_magout» (так звук назван в hosounds); наши модели (tools/plasma)
+     * пишут «hoka:plasma_rifle_cell_out». Чужие (без tacz: / hoka:) — null.
+     */
     static String soundId(String effect) {
+        if (effect != null && effect.startsWith("hoka:")) {
+            String s = effect.substring(effect.lastIndexOf('/') + 1);
+            if (s.startsWith("hoka:")) s = s.substring(5);
+            return s.isEmpty() ? null : s.toLowerCase(Locale.ROOT);
+        }
         if (effect == null || !effect.startsWith("tacz:")) return null;
         String s = effect.substring(effect.lastIndexOf('/') + 1);
         if (s.startsWith("tacz:")) s = s.substring(5);

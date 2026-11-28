@@ -56,6 +56,8 @@ final class Proto {
     static final int S_REFIT_RESULT = 12;
     /** Флаг TRACER: выстрел с глушителем (вспышки у дула нет). */
     static final int TRACER_SILENCED = 2;
+    /** Флаг TRACER: плазменный сгусток; за флагами — f32 его длина (блоков). */
+    static final int TRACER_PLASMA = 4;
 
     static final int POSE_HOLDING = 1;
     static final int POSE_AIM = 2;
@@ -94,6 +96,14 @@ final class Proto {
         float shellTotal(boolean empty, int loops) {
             return (empty ? shell[1] : shell[0]) + loops * shell[3] + shell[5];
         }
+    }
+
+    /**
+     * Шестой хвост CONFIG: вид трассера — plasma (короткий светящийся сгусток, голубая вспышка и искры) или пуля, и
+     * длина сгустка (блоков, 0 — по умолчанию).
+     */
+    record Tracer(boolean plasma, float length) {
+        static final Tracer BULLET = new Tracer(false, 0);
     }
 
     /** Ключевая точка отдачи. */
@@ -146,6 +156,14 @@ final class Proto {
     static Map<String, Spec> readConfig(DataInputStream in, float[] vacuumVolume, Map<String, String> playerAnims,
                                         Map<String, String> gunItems, Map<String, Kind> kinds,
                                         Map<String, Float> vacuumRecoil, Map<String, Extra> extras) throws IOException {
+        return readConfig(in, vacuumVolume, playerAnims, gunItems, kinds, vacuumRecoil, extras, new HashMap<>());
+    }
+
+    /** То же и шестой хвост: tracers — вид трассера по id ({@link Tracer}; старый сервер не шлёт — пуля). */
+    static Map<String, Spec> readConfig(DataInputStream in, float[] vacuumVolume, Map<String, String> playerAnims,
+                                        Map<String, String> gunItems, Map<String, Kind> kinds,
+                                        Map<String, Float> vacuumRecoil, Map<String, Extra> extras,
+                                        Map<String, Tracer> tracers) throws IOException {
         int ver = in.readUnsignedByte();
         if (ver != VERSION) throw new IOException("версия протокола сервера " + ver + ", модуля " + VERSION);
         int n = in.readUnsignedShort();
@@ -229,6 +247,15 @@ final class Proto {
                     shell[3] = Math.max(0.05f, shell[3]);
                 }
                 extras.put(id, new Extra(pellets, (flags & 1) == 0, shell));
+            }
+        }
+        if (in.available() >= 2) {
+            int m = in.readUnsignedShort();
+            for (int i = 0; i < m; i++) {
+                String id = in.readUTF();
+                int style = in.readUnsignedByte();
+                float len = in.readFloat();
+                tracers.put(id, new Tracer(style == 1, Float.isFinite(len) ? Math.max(0, Math.min(8, len)) : 0));
             }
         }
         return out;

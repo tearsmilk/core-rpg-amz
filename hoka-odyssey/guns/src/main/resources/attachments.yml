@@ -1744,3 +1744,17 @@ attachments:
       recoil-pitch: {mul: 0.75}
       recoil-yaw: {mul: 0.75}
       melee: {damage: 4, distance: 2}
+  # ---- свои обвесы (не TACZ; при перегенерации файла attachments2yml.py — дописать заново)
+  # Каркасный приклад плазменной винтовки ПВ-7: часть её модели (кость plasma_wire_stock, tools/plasma).
+  plasma_wire_stock:
+    type: stock
+    name: "Каркасный приклад ПВ-7"
+    sort: 1
+    builtin: true
+    weight: 0
+    icon: guns/plasma_wire_stock.png
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "plasma_wire_stock"}
+    mods:
+      aim-inaccuracy: {mul: 0.9}
+      recoil-pitch: {mul: 0.88}

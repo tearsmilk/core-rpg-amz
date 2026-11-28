@@ -31,6 +31,15 @@ final class Effects {
 
     /** Крошка блока в точке попадания. */
     void blockHit(Instance inst, Block block, double x, double y, double z, double nx, double ny, double nz) {
+        blockHit(inst, block, x, y, z, nx, ny, nz, false);
+    }
+
+    /** То же; plasma — плазменный заряд: вместо части крошки — голубые искры (видны и без мода). */
+    void blockHit(Instance inst, Block block, double x, double y, double z, double nx, double ny, double nz,
+                  boolean plasma) {
+        if (plasma) {
+            sparks(inst, x + nx * 0.08, y + ny * 0.08, z + nz * 0.08);
+        }
         if (mod.particles() && block != null && !block.isAir()) {
             ParticlePacket pk = new ParticlePacket(Particle.BLOCK.withBlock(block), x + nx * 0.05, y + ny * 0.05,
                     z + nz * 0.05, 0.08f, 0.08f, 0.08f, 0.15f, 6);
@@ -45,6 +54,15 @@ final class Effects {
 
     /** Попадание в цель. */
     void entityHit(Instance inst, double x, double y, double z, double nx, double ny, double nz, boolean head) {
+        entityHit(inst, x, y, z, nx, ny, nz, head, false);
+    }
+
+    /** То же; plasma — ещё голубые искры. */
+    void entityHit(Instance inst, double x, double y, double z, double nx, double ny, double nz, boolean head,
+                   boolean plasma) {
+        if (plasma) {
+            sparks(inst, x, y, z);
+        }
         if (mod.particles()) {
             ParticlePacket pk = new ParticlePacket(Particle.DAMAGE_INDICATOR, x, y, z, 0.1f, 0.1f, 0.1f, 0.1f, head ? 3 : 1);
             for (Player v : inst.getPlayers()) {
@@ -54,6 +72,21 @@ final class Effects {
             }
         }
         impact(inst, x, y, z, nx, ny, nz, head ? 2 : 1);
+    }
+
+    /** Голубые искры плазмы (частицы игры electric_spark и немного «души» огня) всем рядом. */
+    private void sparks(Instance inst, double x, double y, double z) {
+        if (!mod.particles()) {
+            return;
+        }
+        ParticlePacket spark = new ParticlePacket(Particle.ELECTRIC_SPARK, x, y, z, 0.06f, 0.06f, 0.06f, 0.35f, 7);
+        ParticlePacket glow = new ParticlePacket(Particle.SOUL_FIRE_FLAME, x, y, z, 0.03f, 0.03f, 0.03f, 0.02f, 2);
+        for (Player v : inst.getPlayers()) {
+            if (near(v, x, y, z, PARTICLE_RANGE)) {
+                v.sendPacket(spark);
+                v.sendPacket(glow);
+            }
+        }
     }
 
     private void impact(Instance inst, double x, double y, double z, double nx, double ny, double nz, int kind) {
@@ -98,7 +131,8 @@ final class Effects {
             if (mod.modded(v) && near(v, x, y, z, mod.tracerRange())) {
                 if (tracer == null) {
                     tracer = Proto.tracer(shooter.getEntityId(), x, y, z, vx, vy, vz, life, g.tracerColor(),
-                            (vacuum ? Proto.TRACER_VACUUM : 0) | (silenced ? Proto.TRACER_SILENCED : 0));
+                            (vacuum ? Proto.TRACER_VACUUM : 0) | (silenced ? Proto.TRACER_SILENCED : 0)
+                                    | (g.plasma() ? Proto.TRACER_PLASMA : 0), g.tracerLength());
                 }
                 mod.links().send(v, tracer);
             }

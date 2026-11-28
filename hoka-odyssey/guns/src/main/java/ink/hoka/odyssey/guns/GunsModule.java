@@ -415,6 +415,8 @@ public final class GunsModule extends OdysseyModule {
             att.add(d.lod());
             if (d.icon().startsWith("tacz/")) {
                 att.add("guns/" + d.icon().substring(5));
+            } else if (d.icon().startsWith("guns/")) {           // свои иконки (не TACZ) — как есть
+                att.add(d.icon());
             }
         }
         for (Attachments.Adapter a : catalog.adapters()) {
@@ -1040,7 +1042,7 @@ public final class GunsModule extends OdysseyModule {
                 } catch (RuntimeException e) {
                     block = null;
                 }
-                effects.blockHit(l.inst(), block, x, y, z, nx, ny, nz);
+                effects.blockHit(l.inst(), block, x, y, z, nx, ny, nz, l.gun().plasma());
                 explode(l, x, y, z, null);
             }
         });
@@ -1050,7 +1052,7 @@ public final class GunsModule extends OdysseyModule {
                            double fromStart, boolean head) {
         GunDef g = l.gun();
         Player shooter = l.shooter();
-        effects.entityHit(l.inst(), x, y, z, nx, ny, nz, head);
+        effects.entityHit(l.inst(), x, y, z, nx, ny, nz, head, g.plasma());
         explode(l, x, y, z, target);
         boolean allowed = target instanceof Player ? pvp : damageMobs;
         if (!allowed || target.isDead()) {

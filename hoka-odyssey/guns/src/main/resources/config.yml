@@ -740,3 +740,94 @@ guns:
       default: {}
     # Взрыв (только с фугасными патронами ammo_mod_he): урон в центре, радиус (блоков), отбрасывает ли.
     explosion: {damage: 50, radius: 3, knockback: false}
+
+  # Плазменная винтовка ПВ-7 — наше оружие (не TACZ): модель, текстура, анимации, иконки и звуки сделаны скриптами
+  # tools/plasma (gen_plasma_rifle.py, gen_plasma_sounds.py), лежат в jar в папке hoka/. Блок из четырёх коротких
+  # стволов проворачивается на каждый выстрел; питание — энергоячейка (патроны ammo_plasma_cell). Выстрел — короткий
+  # голубой сгусток плазмы (bullet.tracer-style: plasma), летит заметно медленнее пули.
+  plasma_rifle:
+    name: "Плазменная винтовка ПВ-7"
+    lore: ["Импульсная винтовка с вращающимся блоком стволов.", "Питание — плазменные ячейки."]
+    item: plasma_rifle
+    material: iron_horse_armor
+    ammo-item: ammo_plasma_cell
+    ammo-material: prismarine_crystals
+    ammo-name: "Плазменная ячейка"
+    caliber: "plasma_cell"
+    infinite-ammo: false
+    # Заряд ячейки — 36 выстрелов; патронника нет (ячейка питает стволы напрямую).
+    magazine: 36
+    chamber: false
+    rpm: 650
+    modes: [auto, semi]
+    damage:
+      - {distance: 30, damage: 8.5}
+      - {distance: 55, damage: 7}
+      - {distance: inf, damage: 5.5}
+    headshot: 1.5
+    # Сгусток плазмы: медленный (его видно в полёте), почти без падения; tracer-style: plasma — короткий светящийся
+    # заряд вместо ленты трассера, голубая вспышка и искры при попадании; tracer-length — длина сгустка (блоков).
+    bullet:
+      speed: 90
+      life: 1.4
+      gravity: 0.01
+      friction: 0.0
+      pierce: 1
+      knockback: 0.05
+      tracer: "#46C8FF"
+      tracer-style: plasma
+      tracer-length: 0.8
+    spread:
+      stand: 4.0
+      move: 4.75
+      sneak: 2.25
+      aim: 0.15
+      vacuum: 4.0
+    recoil:
+      pitch:
+        - {time: 0, min: 0.55, max: 0.65}
+        - {time: 0.08, min: 0.9, max: 1.0}
+        - {time: 0.2, min: 0.35, max: 0.35}
+        - {time: 0.4, min: -0.1, max: -0.1}
+        - {time: 0.55, min: 0, max: 0}
+      yaw:
+        - {time: 0, min: -0.2, max: 0.2}
+        - {time: 0.3, min: 0, max: 0}
+    # Ячейка вставлена в 1,42 с; с пустой ещё рукоять заряжания (1,75–1,9 с).
+    reload:
+      tactical: {feed: 1.45, total: 1.9}
+      empty: {feed: 1.45, total: 2.35}
+    draw: 0.35
+    aim-time: 0.22
+    zoom: 1.33
+    aim-speed: 0.8
+    flash-scale: 0.7
+    model: guns/plasma_rifle.bbmodel
+    hud: guns/plasma_rifle_hud.png
+    flash: guns/plasma_flash.png
+    player-animation: guns/rifle_default.player_animation.json
+    sounds:
+      shoot: plasma_rifle_shoot
+      shoot3p: plasma_rifle_shoot_3p
+      draw: plasma_rifle_draw
+      put_away: plasma_rifle_put_away
+      dry_fire: gun_dry_fire
+      fire_select: gun_fire_select
+      flesh_hit: gun_flesh_hit
+      head_hit: gun_head_hit
+      kill: gun_kill
+    reload-sounds-3p:
+      tactical: {"0.5": plasma_rifle_cell_out, "1.4": plasma_rifle_cell_in}
+      empty: {"0.5": plasma_rifle_cell_out, "1.4": plasma_rifle_cell_in, "1.74": plasma_rifle_charge}
+    type: rifle
+    vacuum-recoil: 0.8
+    item-icon: hoka/plasma_rifle_slot.png
+    item-model: hoka/plasma_rifle_lod.bbmodel
+    ammo-icon: hoka/plasma_cell.png
+    # Обвес: прицелы, рукояти, приклады и ЛЦУ — те же, что у M4A1; дульных устройств и удлинённых ячеек нет.
+    # Встроенный приклад — свой каркасный (plasma_wire_stock), механический прицел прячется под оптикой.
+    attachments:
+      slots: ["scope", "stock", "laser", "grip"]
+      allow: ["plasma_wire_stock", "#scope_scope", "#scope_sight", "#grip", "#stock", "#ar_laser", "#pistol_laser", "#adapter/pistol_riser", "#adapter/rail_mid"]
+      builtin: {stock: ["plasma_wire_stock"]}
+      default: {stock: "plasma_wire_stock"}

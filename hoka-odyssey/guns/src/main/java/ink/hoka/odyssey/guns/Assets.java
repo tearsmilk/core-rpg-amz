@@ -20,7 +20,9 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
- * Ассеты TACZ из jar (папка {@code tacz/}: models, textures, sounds, NOTICE.md — CC BY-NC-ND 4.0, без изменений).
+ * Ассеты TACZ из jar (папка {@code tacz/}: models, textures, sounds, NOTICE.md — CC BY-NC-ND 4.0, без изменений) и
+ * наши собственные (папка {@code hoka/} — плазменная винтовка ПВ-7: модель, иконки и звуки сделаны скриптами
+ * tools/plasma, к TACZ отношения не имеют; в hoitems/hosounds ставятся в {@code assets/hoka/}).
  * <ul>
  *   <li>{@link #read} — файл для клиентского модуля (модель в руке, силуэт HUD, вспышка). Сначала
  *       {@code module/guns/files/<путь>} (своё оружие без пересборки), потом jar;</li>
@@ -33,8 +35,16 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 final class Assets {
     static final String NOTICE = "NOTICE.md";
 
-    /** Звуки для hosounds: id → файл в tacz/sounds; дальность (блоков); подпись. */
-    record SoundEntry(String id, String file, int range, String subtitle) {}
+    /** Наши ассеты (не TACZ): папка в jar и в assets/ hoitems/hosounds. */
+    static final String HOKA = "hoka";
+    static final String TACZ = "tacz";
+
+    /** Звуки для hosounds: id → файл в &lt;dir&gt;/sounds (tacz или hoka); дальность (блоков); подпись. */
+    record SoundEntry(String id, String file, int range, String subtitle, String dir) {
+        SoundEntry(String id, String file, int range, String subtitle) {
+            this(id, file, range, subtitle, TACZ);
+        }
+    }
 
     /** Ассеты одного оружия: файлы предмета для hoitems (tacz/models, tacz/textures) и его звуки для hosounds. */
     record GunAssets(List<String> itemFiles, List<SoundEntry> sounds) {}
@@ -47,6 +57,11 @@ final class Assets {
         return new SoundEntry(id, id + ".ogg", range, subtitle);
     }
 
+    /** Наш звук (папка hoka/sounds). */
+    private static SoundEntry h(String id, int range, String subtitle) {
+        return new SoundEntry(id, id + ".ogg", range, subtitle, HOKA);
+    }
+
     /** Общие звуки (осечка, режим огня, попадания). */
     static final List<SoundEntry> COMMON_SOUNDS = List.of(
             new SoundEntry("gun_dry_fire", "dry_fire.ogg", 8, null),
@@ -57,6 +72,12 @@ final class Assets {
 
     /** Оружие из пака TACZ, которое модуль везёт в jar (id оружия → его файлы и звуки). */
     static final Map<String, GunAssets> GUNS = Map.of(
+            // своё оружие (не TACZ): файлы предмета — по item-model/item-icon/ammo-icon вида hoka/…, звуки — hoka/sounds
+            "plasma_rifle", new GunAssets(List.of(),
+                    List.of(h("plasma_rifle_shoot", 16, null), h("plasma_rifle_shoot_3p", 112, "Выстрел плазмой"),
+                            h("plasma_rifle_draw", 12, null), h("plasma_rifle_put_away", 12, null),
+                            h("plasma_rifle_cell_out", 16, "Смена ячейки"), h("plasma_rifle_cell_in", 16, null),
+                            h("plasma_rifle_charge", 16, "Заряд"))),
             "m4a1", new GunAssets(List.of("models/m4a1_lod.bbmodel", "textures/m4a1_slot.png", "textures/556x45.png"),
                     List.of(s("m4a1_shoot", 16), s("m4a1_shoot_3p", 128, "Выстрел M4A1"), s("m4a1_silence", 16),
                             s("m4a1_silence_3p", 48, "Выстрел с глушителем"), s("m4a1_draw", 12),
@@ -146,7 +167,12 @@ final class Assets {
 
     /** Файл из jar: tacz/<rel>. */
     static byte[] resource(String rel) {
-        try (InputStream in = Assets.class.getResourceAsStream("/tacz/" + rel)) {
+        return resource(TACZ, rel);
+    }
+
+    /** Файл из jar: <dir>/<rel> (dir — tacz или hoka). */
+    static byte[] resource(String dir, String rel) {
+        try (InputStream in = Assets.class.getResourceAsStream("/" + dir + "/" + rel)) {
             return in == null ? null : in.readAllBytes();
         } catch (IOException e) {
             return null;
@@ -175,7 +201,9 @@ final class Assets {
         }
         byte[] b = resource("models/" + name);
         if (b == null) b = resource("animations/" + name);
-        return b != null ? b : resource("textures/" + name);
+        if (b == null) b = resource("textures/" + name);
+        if (b == null) b = resource(HOKA, "models/" + name);       // наше оружие (hoka/)
+        return b != null ? b : resource(HOKA, "textures/" + name);
     }
 
     // ---------------------------------------------------------------- /hogun install
@@ -209,6 +237,7 @@ final class Assets {
         Path soundDir = sounds.resolve("assets").resolve("tacz");
         Files.createDirectories(soundDir);
         Set<String> files = new LinkedHashSet<>();
+        Set<String> own = new LinkedHashSet<>();               // наши (hoka/) — в assets/hoka/, без NOTICE TACZ
         Map<String, SoundEntry> snd = new LinkedHashMap<>();
         for (SoundEntry e : COMMON_SOUNDS) {
             snd.put(e.id(), e);
@@ -231,10 +260,13 @@ final class Assets {
                     snd.putIfAbsent(e.id(), e);
                 }
             }
-            for (String own : new String[] {g.itemModel(), g.itemIcon(), g.ammoIcon()}) {
-                if (own != null && own.startsWith("tacz/")) {
-                    String name = own.substring(5);
+            for (String f : new String[] {g.itemModel(), g.itemIcon(), g.ammoIcon()}) {
+                if (f != null && f.startsWith("tacz/")) {
+                    String name = f.substring(5);
                     files.add((name.endsWith(".bbmodel") ? "models/" : "textures/") + name);
+                } else if (f != null && f.startsWith(HOKA + "/")) {
+                    String name = f.substring(HOKA.length() + 1);
+                    own.add((name.endsWith(".bbmodel") ? "models/" : "textures/") + name);
                 }
             }
         }
@@ -245,11 +277,24 @@ final class Assets {
             copied += copy(rel, to);
         }
         copied += copy(NOTICE, itemDir.resolve(NOTICE));
+        Path ownItemDir = items.resolve("assets").resolve(HOKA);
+        for (String rel : own) {
+            Path to = ownItemDir.resolve(rel.substring(rel.indexOf('/') + 1));
+            Files.createDirectories(to.getParent());
+            copied += copy(HOKA, rel, to);
+        }
+        boolean ownSounds = false;
         for (SoundEntry e : snd.values()) {
-            copied += copy("sounds/" + e.file(), soundDir.resolve(e.file()));
+            Path dir = sounds.resolve("assets").resolve(e.dir());
+            if (!TACZ.equals(e.dir())) {
+                Files.createDirectories(dir);
+                ownSounds = true;
+            }
+            copied += copy(e.dir(), "sounds/" + e.file(), dir.resolve(e.file()));
         }
         copied += copy(NOTICE, soundDir.resolve(NOTICE));
-        lines.add("Файлов скопировано: " + copied + " (" + itemDir + ", " + soundDir + ")");
+        lines.add("Файлов скопировано: " + copied + " (" + itemDir + ", " + soundDir
+                + (own.isEmpty() && !ownSounds ? "" : "; свои, не TACZ — в assets/" + HOKA + "/") + ")");
 
         // записи config.yml
         Map<String, String> itemEntries = new LinkedHashMap<>();
@@ -334,7 +379,11 @@ final class Assets {
     private static final Pattern GUN_KEY = Pattern.compile("^  ([A-Za-z0-9_\\-]+):[ \\t]*(#.*)?$");
 
     private static int copy(String rel, Path to) throws IOException {
-        byte[] b = resource(rel);
+        return copy(TACZ, rel, to);
+    }
+
+    private static int copy(String dir, String rel, Path to) throws IOException {
+        byte[] b = resource(dir, rel);
         if (b == null) {
             return 0;
         }
@@ -379,7 +428,9 @@ final class Assets {
                 + "material: " + g.ammoMaterial() + "\n"
                 + "icon: " + g.ammoIcon() + "\n"
                 + "stack: 64\n"
-                + "lore: [" + q("Для: " + forGuns) + ", " + q("Иконка: TACZ, CC BY-NC-ND 4.0") + "]\n";
+                + "lore: [" + q("Для: " + forGuns)
+                + (g.ammoIcon() != null && g.ammoIcon().startsWith("tacz/") ? ", " + q("Иконка: TACZ, CC BY-NC-ND 4.0") : "")
+                + "]\n";
     }
 
     /** Предмет-обвес для hoitems: иконка TACZ, описание — вид обвеса и к какому оружию подходит. */
@@ -410,7 +461,7 @@ final class Assets {
     }
 
     static String soundYaml(SoundEntry s) {
-        return "files: [tacz/" + s.file() + "]\n"
+        return "files: [" + s.dir() + "/" + s.file() + "]\n"
                 + "range: " + s.range() + "\n"
                 + (s.subtitle() != null ? "subtitle: " + q(s.subtitle()) + "\n" : "");
     }

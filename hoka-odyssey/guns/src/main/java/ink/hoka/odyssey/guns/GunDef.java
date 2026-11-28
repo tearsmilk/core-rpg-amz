@@ -79,7 +79,17 @@ record GunDef(
         ShellReload shellReload,
         boolean crosshair,
         Map<Double, String> reloadSoundsLoop,
-        Map<Double, String> reloadSoundsEnd) {
+        Map<Double, String> reloadSoundsEnd,
+        String tracerStyle,
+        double tracerLength) {
+
+    /** Вид трассера ({@code bullet.tracer-style}): bullet — длинная лента (пуля), plasma — короткий светящийся сгусток. */
+    static final String TRACER_BULLET = "bullet";
+    static final String TRACER_PLASMA = "plasma";
+
+    boolean plasma() {
+        return TRACER_PLASMA.equals(tracerStyle);
+    }
 
     /** Виды оружия: длинное — за спиной, пистолет — в кобуре. */
     static final String RIFLE = "rifle";
@@ -121,7 +131,7 @@ record GunDef(
                 recoilPitch, recoilYaw, tactical, empty, draw, aimTime, zoom, aimSpeed, model, hud, flash,
                 playerAnimation, sounds, reloadSoundsTactical, reloadSoundsEmpty, type, boltTime, scope, itemIcon,
                 itemModel, ammoIcon, boltSounds3p, flashScale, vacuumRecoil, pellets, shellReload, crosshair,
-                reloadSoundsLoop, reloadSoundsEnd);
+                reloadSoundsLoop, reloadSoundsEnd, tracerStyle, tracerLength);
     }
 
     /** Сколько патронов вмещает оружие с перезарядкой по одному: магазин и патрон в патроннике. */
@@ -280,7 +290,10 @@ record GunDef(
                 shellReload(c, b + "shell-reload"),
                 c.bool(b + "crosshair", true),
                 timeline(c, b + "reload-sounds-3p.loop"),
-                timeline(c, b + "reload-sounds-3p.end"));
+                timeline(c, b + "reload-sounds-3p.end"),
+                TRACER_PLASMA.equalsIgnoreCase(c.str(b + "bullet.tracer-style", TRACER_BULLET).trim())
+                        ? TRACER_PLASMA : TRACER_BULLET,
+                clamp(c.dbl(b + "bullet.tracer-length", 0), 0, 8));
     }
 
     /** Перезарядка по одному патрону (раздел shell-reload); нет раздела — null (обычная, магазином). */
