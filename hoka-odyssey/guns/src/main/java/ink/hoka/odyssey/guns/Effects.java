@@ -139,7 +139,7 @@ final class Effects {
                 if (tracer == null) {
                     tracer = Proto.tracer(shooter.getEntityId(), x, y, z, vx, vy, vz, life, g.tracerColor(),
                             (vacuum ? Proto.TRACER_VACUUM : 0) | (silenced ? Proto.TRACER_SILENCED : 0)
-                                    | (g.plasma() ? Proto.TRACER_PLASMA : 0), g.tracerLength());
+                                    | (g.plasma() ? Proto.TRACER_PLASMA : 0), g.tracerLength(), g.tracerWidth());
                 }
                 mod.links().send(v, tracer);
             }

@@ -198,16 +198,19 @@ final class GunItems {
         return lore.isEmpty() ? s.without(DataComponents.LORE) : s.with(DataComponents.LORE, lore);
     }
 
-    /** Обвес по умолчанию (default у оружия) — на оружие без обвеса, один раз (метка hoka_att_init). */
+    /**
+     * Обвес по умолчанию (default у оружия) — на оружие без обвеса, один раз (метка hoka_att_init). Встроенный обвес
+     * запертого слота (ВССК: глушитель — часть винтовки) возвращается всегда, если его там нет.
+     */
     static Loadout defaults(Loadout lo, Attachments.GunAtt ga, Attachments cat) {
-        if (lo.init) {
-            return lo;
-        }
-        Loadout out = lo.withInit();
+        Loadout out = lo.init ? lo : lo.withInit();
         if (ga != null) {
             for (var e : ga.defaults().entrySet()) {
+                if (lo.init && !ga.locked(e.getKey())) {
+                    continue;
+                }
                 Attachments.Def d = cat.get(e.getValue());
-                if (d != null && out.get(e.getKey()) == null && e.getKey().accepts(d.slot())) {
+                if (d != null && (!lo.init || d.builtin()) && out.get(e.getKey()) == null && e.getKey().accepts(d.slot())) {
                     out = out.with(e.getKey(), new Loadout.Entry(d.id(), d.builtin(), -1));
                 }
             }

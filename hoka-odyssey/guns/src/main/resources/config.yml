@@ -842,3 +842,105 @@ guns:
       extended-mag: [72, 72, 72]
       # длинную ячейку дольше вынимать и вставлять (анимации reload_*_xmag — те же ×1,12)
       reload-xmag: {tactical: {feed: 1.62, total: 2.13}, empty: {feed: 1.62, total: 2.63}}
+
+  # Плазменная ВССК «Выхлоп» — наше оружие (не TACZ): компактная снайперская винтовка-буллпап с огромным
+  # интегрированным глушителем, стреляет плазмой. Модель, текстура (чёрный металл), анимации, иконки и звуки — скрипты
+  # tools/plasma (gen_vssk.py, gen_vssk_sounds.py), в jar в папке hoka/. Только одиночный огонь, тяжёлый быстрый
+  # сгусток плазмы (bullet.tracer-width — толще обычного), питание — тяжёлые плазменные ячейки (ammo_heavy_plasma_cell).
+  vssk_vykhlop:
+    name: "ВССК «Выхлоп»"
+    lore: ["Компактная плазменная снайперская винтовка-буллпап.", "Глушитель — часть винтовки.", "Питание — тяжёлые плазменные ячейки."]
+    item: vssk_vykhlop
+    material: iron_horse_armor
+    ammo-item: ammo_heavy_plasma_cell
+    ammo-material: prismarine_shard
+    ammo-name: "Тяжёлая плазменная ячейка"
+    caliber: "heavy_plasma_cell"
+    infinite-ammo: false
+    # Заряд тяжёлой ячейки — 6 выстрелов; патронника нет.
+    magazine: 6
+    chamber: false
+    # Самозарядная, но тяжёлому разряду нужно время: выстрел не чаще раза в 0,75 с.
+    rpm: 80
+    modes: [semi]
+    damage:
+      - {distance: 80, damage: 44}
+      - {distance: 160, damage: 39}
+      - {distance: inf, damage: 34}
+    headshot: 2
+    # Сгусток быстрее, чем у ПВ-7 (160 блоков/с), длиннее (tracer-length) и толще (tracer-width — множитель толщины);
+    # цвет — глубже, сине-фиолетовый.
+    bullet:
+      speed: 160
+      life: 1.3
+      gravity: 0.02
+      friction: 0.0
+      pierce: 3
+      knockback: 0.15
+      tracer: "#6A78FF"
+      tracer-style: plasma
+      tracer-length: 1.4
+      tracer-width: 1.6
+    spread:
+      stand: 4.0
+      move: 5.0
+      sneak: 2.5
+      aim: 0.08
+      vacuum: 4.0
+    # Сильная отдача на выстрел.
+    recoil:
+      pitch:
+        - {time: 0, min: 2.6, max: 3.0}
+        - {time: 0.07, min: 1.8, max: 2.0}
+        - {time: 0.18, min: 0.9, max: 0.9}
+        - {time: 0.35, min: -0.3, max: -0.3}
+        - {time: 0.5, min: 0, max: 0}
+      yaw:
+        - {time: 0, min: -0.6, max: 0.6}
+        - {time: 0.12, min: 0.3, max: 0.3}
+        - {time: 0.3, min: 0, max: 0}
+    # Ячейка вставлена в 1,42 с; с пустой ещё затворная рукоятка (1,72–1,9 с).
+    reload:
+      tactical: {feed: 1.45, total: 1.9}
+      empty: {feed: 1.45, total: 2.35}
+    draw: 0.45
+    aim-time: 0.3
+    # Механический прицел (мушка и целик на планке), приближение 1,5.
+    zoom: 1.5
+    aim-speed: 0.7
+    flash-scale: 0.6
+    model: guns/vssk_vykhlop.bbmodel
+    hud: guns/vssk_vykhlop_hud.png
+    flash: guns/plasma_flash.png
+    player-animation: guns/rifle_default.player_animation.json
+    # Глушитель встроен: выстрел всегда «с глушителем» (silence — те же звуки).
+    sounds:
+      shoot: vssk_vykhlop_shoot
+      shoot3p: vssk_vykhlop_shoot_3p
+      silence: vssk_vykhlop_shoot
+      silence3p: vssk_vykhlop_shoot_3p
+      draw: vssk_vykhlop_draw
+      put_away: vssk_vykhlop_put_away
+      dry_fire: gun_dry_fire
+      fire_select: gun_fire_select
+      flesh_hit: gun_flesh_hit
+      head_hit: gun_head_hit
+      kill: gun_kill
+    reload-sounds-3p:
+      tactical: {"0.5": vssk_vykhlop_cell_out, "1.4": vssk_vykhlop_cell_in}
+      empty: {"0.5": vssk_vykhlop_cell_out, "1.4": vssk_vykhlop_cell_in, "1.74": vssk_vykhlop_charge}
+    type: sniper
+    vacuum-recoil: 2.0
+    item-icon: hoka/vssk_vykhlop_slot.png
+    item-model: hoka/vssk_vykhlop_lod.bbmodel
+    ammo-icon: hoka/heavy_plasma_cell.png
+    # Обвес: прицелы (оптика и коллиматоры, с повышающими планками), рукоять (планка под передней частью корпуса),
+    # приклады (встроенный — свой затыльник vssk_buttpad), два ЛЦУ — laser слева и laser2 справа на передней части
+    # корпуса (пистолетные — через переходники laser_adapter / laser_adapter_2). Дуло заперто: встроенный глушитель
+    # vssk_suppressor — часть винтовки (выстрел тихий, без вспышки). Механический прицел прячется под оптикой.
+    attachments:
+      slots: ["scope", "muzzle", "stock", "laser", "laser2", "grip"]
+      allow: ["vssk_buttpad", "vssk_suppressor", "#scope_scope", "#scope_sight", "#grip", "#stock", "#ar_laser", "#pistol_laser", "#adapter/pistol_riser", "#adapter/rail_mid"]
+      builtin: {stock: ["vssk_buttpad"], muzzle: ["vssk_suppressor"]}
+      default: {stock: "vssk_buttpad", muzzle: "vssk_suppressor"}
+      locked: [muzzle]                 # глушитель — часть винтовки, не снимается

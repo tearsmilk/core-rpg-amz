@@ -216,6 +216,11 @@ final class RefitScreen extends Screen {
         if (slot == Att.SCOPE && s != null) {
             return "Прицел " + GunsClientModule.fmt(s.zoom()) + "x — часть винтовки, не снимается";
         }
+        // встроенный обвес запертого слота (ВССК: глушитель) — «Глушитель — часть винтовки, не снимается»
+        Att.Gear gr = gear();
+        Att.Def d = gr == null ? null : mod.cat.def(gr.ids[slot]);
+        if (d == null) d = mod.cat.def(mod.cat.gun(gunId()).defaults().get(slot));
+        if (d != null && d.builtin()) return d.name() + " — часть винтовки, не снимается";
         return Att.slotName(mod.cat.gun(gunId()), slot) + ": слот заперт";
     }
 

@@ -84,11 +84,25 @@ final class Refit {
             return new Outcome(Proto.REFIT_NOT_ALLOWED, "У " + st.base.name() + " нет такого слота");
         }
         if (ga.locked(slot)) {
-            return new Outcome(Proto.REFIT_LOCKED, slot == Attachments.Slot.SCOPE && st.base.scope()
-                    ? "Прицел " + fmt(st.base.zoom()) + "x — часть винтовки, не снимается"
-                    : "Этот слот у " + st.base.name() + " не меняется");
+            return new Outcome(Proto.REFIT_LOCKED, lockedText(st, ga, slot));
         }
         return null;
+    }
+
+    /**
+     * Почему слот заперт: прицел оружия с оптикой (AWP) — «Прицел 8x — часть винтовки…», встроенный обвес по умолчанию
+     * (ВССК: глушитель) — «Глушитель — часть винтовки, не снимается», иначе — слот не меняется.
+     */
+    private String lockedText(ShooterState st, Attachments.GunAtt ga, Attachments.Slot slot) {
+        if (slot == Attachments.Slot.SCOPE && st.base.scope()) {
+            return "Прицел " + fmt(st.base.zoom()) + "x — часть винтовки, не снимается";
+        }
+        Loadout.Entry e = st.loadout == null ? null : st.loadout.get(slot);
+        Attachments.Def d = mod.catalog().get(e != null ? e.id() : ga.defaults().get(slot));
+        if (d != null && d.builtin()) {
+            return d.name() + " — часть винтовки, не снимается";
+        }
+        return "Этот слот у " + st.base.name() + " не меняется";
     }
 
     /** Поставить обвес из слота инвентаря invSlot. */

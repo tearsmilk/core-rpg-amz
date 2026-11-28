@@ -1771,3 +1771,32 @@ attachments:
     mods:
       ads: {add: 0.02}
       extended-mag-level: 1
+  # Затыльник плазменной ВССК «Выхлоп»: часть её модели (кость vssk_buttpad, tools/plasma/gen_vssk.py).
+  vssk_buttpad:
+    type: stock
+    name: "Затыльник ВССК"
+    sort: 1
+    builtin: true
+    weight: 0
+    icon: guns/vssk_buttpad.png
+    sounds: {install: "gun_att_attachment_general_a", uninstall: "gun_att_attachment_general_uninstall"}
+    display: {adapter: "vssk_buttpad"}
+    mods:
+      aim-inaccuracy: {mul: 0.9}
+      recoil-pitch: {mul: 0.88}
+  # Интегрированный глушитель ВССК «Выхлоп»: часть модели винтовки (кость suppressor), слот дула у неё заперт —
+  # выстрел всегда тихий (звук silence оружия) и без вспышки (flash-hider: 0).
+  vssk_suppressor:
+    type: muzzle
+    name: "Глушитель"
+    sort: 1
+    builtin: true
+    weight: 0
+    icon: guns/vssk_suppressor.png
+    sounds: {install: "gun_att_muzzle_general", uninstall: "gun_att_muzzle_general"}
+    mods:
+      effective-range: {mul: 1.1}
+      recoil-pitch: {mul: 0.85}
+      recoil-yaw: {mul: 0.85}
+      flash-hider: 0
+      silence: {distance: -26, sound: true}

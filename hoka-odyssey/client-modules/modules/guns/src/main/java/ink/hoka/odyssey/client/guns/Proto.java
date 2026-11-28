@@ -106,10 +106,10 @@ final class Proto {
 
     /**
      * Шестой хвост CONFIG: вид трассера — plasma (короткий светящийся сгусток, голубая вспышка и искры) или пуля, и
-     * длина сгустка (блоков, 0 — по умолчанию).
+     * длина сгустка (блоков, 0 — по умолчанию); седьмой — толщина (множитель, 1 — обычная; старый сервер не шлёт).
      */
-    record Tracer(boolean plasma, float length) {
-        static final Tracer BULLET = new Tracer(false, 0);
+    record Tracer(boolean plasma, float length, float width) {
+        static final Tracer BULLET = new Tracer(false, 0, 1);
     }
 
     /** Ключевая точка отдачи. */
@@ -261,10 +261,24 @@ final class Proto {
                 String id = in.readUTF();
                 int style = in.readUnsignedByte();
                 float len = in.readFloat();
-                tracers.put(id, new Tracer(style == 1, Float.isFinite(len) ? Math.max(0, Math.min(8, len)) : 0));
+                tracers.put(id, new Tracer(style == 1, Float.isFinite(len) ? Math.max(0, Math.min(8, len)) : 0, 1));
+            }
+        }
+        if (in.available() >= 2) {                           // седьмой хвост: толщина трассера
+            int m = in.readUnsignedShort();
+            for (int i = 0; i < m; i++) {
+                String id = in.readUTF();
+                float w = in.readFloat();
+                Tracer t = tracers.get(id);
+                if (t != null) tracers.put(id, new Tracer(t.plasma(), t.length(), width(w)));
             }
         }
         return out;
+    }
+
+    /** Толщина трассера с сервера: множитель 0,25…4 (не число — 1). */
+    static float width(float w) {
+        return Float.isFinite(w) ? Math.max(0.25f, Math.min(4f, w)) : 1f;
     }
 
     private static List<Key> keys(DataInputStream in) throws IOException {

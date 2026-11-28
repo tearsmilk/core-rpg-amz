@@ -404,8 +404,9 @@ public final class GunsClientModule implements ClientModule {
                     int tf = in.available() > 0 ? in.readUnsignedByte() : 0;
                     boolean plasma = (tf & Proto.TRACER_PLASMA) != 0;
                     float plen = plasma && in.available() >= 4 ? in.readFloat() : 0;
+                    float pw = plasma && in.available() >= 4 ? Proto.width(in.readFloat()) : 1;   // толщина (новый сервер)
                     otherShot(shooter, o, v, life, color, (tf & Proto.TRACER_SILENCED) != 0, plasma,
-                            Float.isFinite(plen) ? Math.max(0, Math.min(8, plen)) : 0);
+                            Float.isFinite(plen) ? Math.max(0, Math.min(8, plen)) : 0, pw);
                 }
                 case Proto.S_IMPACT -> {
                     // искры и крошку блока рассылает сервер частицами игры; здесь — след пули на блоке
@@ -540,14 +541,14 @@ public final class GunsClientModule implements ClientModule {
     }
 
     private void otherShot(int shooterId, Vec3 eye, Vec3 v, float life, int color, boolean silenced, boolean plasma,
-                           float plasmaLength) {
+                           float plasmaLength, float plasmaWidth) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null && shooterId == mc.player.getId()) return;
         third.signals(shooterId).shotNs = System.nanoTime();
         Entity e = mc.level == null ? null : mc.level.getEntity(shooterId);
         Vec3 o = handMuzzle(e, eye, v);
         if (cfg.tracers) {
-            fx.tracer(eye, o, v, life, color, false, plasma, plasmaLength, e);
+            fx.tracer(eye, o, v, life, color, false, plasma, plasmaLength, plasmaWidth, e);
             if (!silenced) fx.flash(o, plasma ? 0.45f : 0.55f, plasma, color);
         }
     }
@@ -1258,7 +1259,8 @@ public final class GunsClientModule implements ClientModule {
             Proto.Tracer tk = tracerKinds.getOrDefault(g.id(), Proto.Tracer.BULLET);
             for (int k = 0; k < pellets; k++) {
                 Vec3 d = dir.add(tri(s), tri(s), tri(s)).normalize();
-                fx.tracer(eye, o, d.scale(g.speed()), vac ? 3 : g.life(), g.tracerColor(), true, tk.plasma(), tk.length(), p);
+                fx.tracer(eye, o, d.scale(g.speed()), vac ? 3 : g.life(), g.tracerColor(), true, tk.plasma(), tk.length(),
+                        tk.width(), p);
             }
             if (!fp) {
                 fx.flash(o, tk.plasma() ? 0.45f : 0.55f, tk.plasma(), g.tracerColor());

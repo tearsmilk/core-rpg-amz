@@ -21,7 +21,7 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
  * Ассеты TACZ из jar (папка {@code tacz/}: models, textures, sounds, NOTICE.md — CC BY-NC-ND 4.0, без изменений) и
- * наши собственные (папка {@code hoka/} — плазменная винтовка ПВ-7: модель, иконки и звуки сделаны скриптами
+ * наши собственные (папка {@code hoka/} — плазменная винтовка ПВ-7 и ВССК «Выхлоп»: модель, иконки и звуки сделаны скриптами
  * tools/plasma, к TACZ отношения не имеют; в hoitems/hosounds ставятся в {@code assets/hoka/}).
  * <ul>
  *   <li>{@link #read} — файл для клиентского модуля (модель в руке, силуэт HUD, вспышка). Сначала
@@ -29,7 +29,7 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  *   <li>{@link #install} — /hogun install: положить предметы и звуки всего оружия в {@code module/hoitems/assets/tacz/}
  *       и {@code module/hosounds/assets/tacz/} и дописать недостающие записи в их config.yml (с копией .bak-guns);
  *       {@link #addMissingGuns} — дописать в свой config.yml оружие, которого там ещё нет (AWP, Glock 17, M4A1,
- *       M16A1, Desert Eagle, M1897).</li>
+ *       M16A1, Desert Eagle, M1897, ВССК «Выхлоп»).</li>
  * </ul>
  */
 final class Assets {
@@ -79,6 +79,12 @@ final class Assets {
                             h("plasma_rifle_cell_out", 16, "Смена ячейки"), h("plasma_rifle_cell_in", 16, null),
                             h("plasma_rifle_charge", 16, "Заряд"), h("plasma_rifle_silence", 16, null),
                             h("plasma_rifle_silence_3p", 48, "Выстрел с глушителем"))),
+            // ВССК «Выхлоп» (своя, tools/plasma): глушитель встроен — выстрел всегда тихий
+            "vssk_vykhlop", new GunAssets(List.of(),
+                    List.of(h("vssk_vykhlop_shoot", 16, null), h("vssk_vykhlop_shoot_3p", 40, "Тихий выстрел плазмой"),
+                            h("vssk_vykhlop_draw", 12, null), h("vssk_vykhlop_put_away", 12, null),
+                            h("vssk_vykhlop_cell_out", 16, "Смена ячейки"), h("vssk_vykhlop_cell_in", 16, null),
+                            h("vssk_vykhlop_charge", 16, "Затвор"))),
             "m4a1", new GunAssets(List.of("models/m4a1_lod.bbmodel", "textures/m4a1_slot.png", "textures/556x45.png"),
                     List.of(s("m4a1_shoot", 16), s("m4a1_shoot_3p", 128, "Выстрел M4A1"), s("m4a1_silence", 16),
                             s("m4a1_silence_3p", 48, "Выстрел с глушителем"), s("m4a1_draw", 12),

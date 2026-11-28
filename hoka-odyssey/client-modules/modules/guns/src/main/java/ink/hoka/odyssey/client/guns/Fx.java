@@ -57,6 +57,7 @@ final class Fx {
         /** Плазма: длина сгустка (блоков), упёрся ли в блок (тогда в конце — вспышка), была ли она, след искр. */
         boolean plasma;
         double length;
+        float width = 1;
         boolean hit;
         boolean impactDone;
         long nextSpark;
@@ -418,6 +419,12 @@ final class Fx {
      */
     void tracer(Vec3 eye, Vec3 muzzle, Vec3 v, double life, int rgb, boolean own, boolean plasma, double length,
                 Entity shooter) {
+        tracer(eye, muzzle, v, life, rgb, own, plasma, length, 1, shooter);
+    }
+
+    /** То же; width — толщина плазменного сгустка (множитель, 1 — обычная). */
+    void tracer(Vec3 eye, Vec3 muzzle, Vec3 v, double life, int rgb, boolean own, boolean plasma, double length,
+                double width, Entity shooter) {
         Minecraft mc = Minecraft.getInstance();
         double speed = v.length();
         if (speed < 1e-3 || mc.level == null) return;
@@ -458,6 +465,7 @@ final class Fx {
         Tracer t = new Tracer(o, d, speed, dist, System.nanoTime(), rgb, skip);
         t.plasma = plasma;
         t.length = length > 0 ? length : PLASMA_LEN;
+        t.width = (float) width;
         t.hit = blocked;
         tracers.add(t);
     }
@@ -566,12 +574,13 @@ final class Fx {
         Vec3 hw = t.o.add(t.dir.scale(head));
         Vec3 a = t.o.add(t.dir.scale(tail)).subtract(cam);
         Vec3 b = hw.subtract(cam);
-        ribbon(vc, pose, a, b, width(a, 0.05f), width(b, 0.11f), t.rgb, 0.05f, 0.55f);
-        ribbon(vc, pose, a, b, width(a, 0.025f), width(b, 0.055f), t.rgb, 0.3f, 1f);
-        ribbon(vc, pose, a, b, width(a, 0.008f), width(b, 0.022f), 0xFFFFFF, 0.4f, 1f);
+        float k = t.width;                                     // толщина сгустка (bullet.tracer-width оружия)
+        ribbon(vc, pose, a, b, width(a, 0.05f * k), width(b, 0.11f * k), t.rgb, 0.05f, 0.55f);
+        ribbon(vc, pose, a, b, width(a, 0.025f * k), width(b, 0.055f * k), t.rgb, 0.3f, 1f);
+        ribbon(vc, pose, a, b, width(a, 0.008f * k), width(b, 0.022f * k), 0xFFFFFF, 0.4f, 1f);
         if (now >= t.nextSpark) {                              // след: ореол на голове и искры
             t.nextSpark = now + 16_000_000L;
-            glow(hw, t.dir.scale(t.speed * 0.9), 0.03, 0.55f, t.rgb, 0.45f, 0);
+            glow(hw, t.dir.scale(t.speed * 0.9), 0.03, 0.55f * t.width, t.rgb, 0.45f, 0);
             Vec3 v = new Vec3(rnd.nextGaussian(), rnd.nextGaussian(), rnd.nextGaussian()).scale(0.6);
             glow(hw.subtract(t.dir.scale(t.length * rnd.nextDouble())), v, 0.22, 0.05f, rnd.nextInt(3) == 0 ? 0xFFFFFF : t.rgb,
                     0.9f, 0);

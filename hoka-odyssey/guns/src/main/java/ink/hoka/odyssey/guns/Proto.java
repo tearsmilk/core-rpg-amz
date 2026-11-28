@@ -321,6 +321,11 @@ final class Proto {
                 o.writeByte(g.plasma() ? 1 : 0);
                 o.writeFloat((float) g.tracerLength());
             }
+            o.writeShort(guns.size());                        // седьмой хвост: толщина трассера (множитель, 1 — обычная)
+            for (GunDef g : guns) {
+                o.writeUTF(g.id());
+                o.writeFloat((float) g.tracerWidth());
+            }
         });
     }
 
@@ -391,6 +396,15 @@ final class Proto {
     /** TRACER с флагами; с TRACER_PLASMA за флагами — length (длина сгустка, блоков). */
     static byte[] tracer(int shooter, double x, double y, double z, double vx, double vy, double vz, double life,
                          int color, int flags, double length) {
+        return tracer(shooter, x, y, z, vx, vy, vz, life, color, flags, length, 1);
+    }
+
+    /**
+     * То же; с TRACER_PLASMA за length — width (толщина сгустка, множитель; старые клиенты хвост не читают). При
+     * width 1 хвост не пишется.
+     */
+    static byte[] tracer(int shooter, double x, double y, double z, double vx, double vy, double vz, double life,
+                         int color, int flags, double length, double width) {
         return write(o -> {
             o.writeByte(S_TRACER);
             o.writeInt(shooter);
@@ -405,6 +419,9 @@ final class Proto {
             o.writeByte(flags);
             if ((flags & TRACER_PLASMA) != 0) {
                 o.writeFloat((float) length);
+                if (width != 1) {
+                    o.writeFloat((float) width);
+                }
             }
         });
     }
