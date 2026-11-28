@@ -87,6 +87,8 @@ final class RefitScreen extends Screen {
      */
     private record Entry(Att.Def def, int invSlot, int count, boolean builtin, boolean installed, int slot) {}
 
+    private boolean hudWas;
+
     RefitScreen(GunsClientModule mod) {
         super(Component.literal("Обвес"));
         this.mod = mod;
@@ -96,6 +98,8 @@ final class RefitScreen extends Screen {
     protected void init() {
         if (openedAt == 0) {
             openedAt = System.currentTimeMillis();
+            hudWas = mc.options.hideGui;
+            mc.options.hideGui = true;                       // без хотбара и прочего HUD игры, пока окно открыто
             mod.send(Proto.refit(true));
             mod.refitLook(-1);
         }
@@ -113,6 +117,7 @@ final class RefitScreen extends Screen {
 
     @Override
     public void removed() {
+        mc.options.hideGui = hudWas;
         mod.send(Proto.refit(false));
         mod.preview = null;
         mod.refitLook(-1);

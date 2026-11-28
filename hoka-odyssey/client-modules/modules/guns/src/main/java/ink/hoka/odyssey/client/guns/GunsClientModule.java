@@ -190,6 +190,8 @@ public final class GunsClientModule implements ClientModule {
     private boolean zoomWas;
     /** Окно обвеса: насколько открыто (0…1, «камера» к refit_view), какой слот смотрим (−1 — общий вид) и прошлый. */
     private float refitW;
+    /** Подъём оружия в окне обвеса: доля глубины (≈4% высоты экрана). */
+    private static final float REFIT_LIFT = 0.055f;
     private int refitView = -1;
     private int refitPrevView = -1;
     private long refitViewNs;
@@ -1341,6 +1343,9 @@ public final class GunsClientModule implements ClientModule {
         Matrix4f m2c = vm.modelToCamera(cfg.viewmodelScale, ads, sightEye, sd == null ? 0 : sd.heightAdjust(), refitInv, refitW);
         Matrix4f sway = new Matrix4f().rotateY((float) Math.toRadians(swayX)).rotateX((float) Math.toRadians(swayY));
         m2c = sway.mul(m2c);
+        if (refitW > 0) {                                         // в окне обвеса оружие чуть выше середины кадра
+            m2c = new Matrix4f().m21(-REFIT_LIFT * AdsBlend.easeOutCubic(refitW)).mul(m2c);
+        }
         Matrix4f camToBuf = new Matrix4f(pose).rotate(q);
         // свой угол обзора оружия (как у TACZ — model_fov оружия при любой настройке): x, y камеры ×k
         Matrix4f fov = ViewModel.fovMatrix(viewFovScale(mc, frame.partialTick(), vm));
